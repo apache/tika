@@ -358,6 +358,28 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
+     * Returns diagnostic language-signal info for the given text: the label
+     * with the highest logit, its raw logit value, and sigmoid(maxLogit).
+     * Package-private for testing.
+     */
+    static float[] maxLogitInfo(String text) {
+        int[] features = EXTRACTOR.extract(text);
+        float[] logits = MODEL.predictLogits(features);
+        int bestIdx = 0;
+        for (int i = 1; i < logits.length; i++) {
+            if (logits[i] > logits[bestIdx]) {
+                bestIdx = i;
+            }
+        }
+        return new float[]{bestIdx, logits[bestIdx], sigmoid(logits[bestIdx])};
+    }
+
+    /** Returns the label for a class index (for use alongside {@link #maxLogitInfo}). */
+    static String labelAt(int idx) {
+        return MODEL.getLabel(idx);
+    }
+
+    /**
      * Ratio of junk characters (U+FFFD replacement + ISO control + C1
      * control range U+0080-U+009F) to total characters. High values
      * indicate a wrong-charset decoding.

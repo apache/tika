@@ -22,10 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -133,7 +135,9 @@ public class HtmlEncodingDetectorTest {
     private Charset detectCharset(String test) throws IOException {
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(test.getBytes(StandardCharsets.UTF_8))) {
-            return new HtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+            List<EncodingResult> results =
+                    new HtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+            return results.isEmpty() ? null : results.get(0).getCharset();
         }
     }
 }

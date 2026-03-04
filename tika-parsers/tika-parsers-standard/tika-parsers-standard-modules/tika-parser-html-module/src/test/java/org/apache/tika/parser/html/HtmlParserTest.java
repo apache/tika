@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,6 +64,7 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
@@ -1252,12 +1252,8 @@ public class HtmlParserTest extends TikaTest {
 
     public String getEncoding(EncodingDetector detector, Path p) throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(p)) {
-            Charset charset = detector.detect(tis, new Metadata(), new ParseContext());
-            if (charset == null) {
-                return "NULL";
-            } else {
-                return charset.toString();
-            }
+            List<EncodingResult> results = detector.detect(tis, new Metadata(), new ParseContext());
+            return results.isEmpty() ? "NULL" : results.get(0).getCharset().toString();
         }
     }
 

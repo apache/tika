@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -60,7 +61,8 @@ public class WideUnicodeDetectorTest {
 
     private Charset detectViaStream(byte[] bytes) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes))) {
-            return detector.detect(tis, new Metadata(), new ParseContext());
+            List<EncodingResult> results = detector.detect(tis, new Metadata(), new ParseContext());
+            return results.isEmpty() ? null : results.get(0).getCharset();
         }
     }
 
@@ -170,6 +172,26 @@ public class WideUnicodeDetectorTest {
                 WideUnicodeDetector.detectEncoding(encode(mixed, StandardCharsets.UTF_16LE)));
     }
 
+    @Test
+    void utf16LeCjkWithFullwidthPunctuation() {
+        // Fullwidth punctuation (U+FF0C ，, U+FF01 ！) has high byte 0xFF in UTF-16,
+        // above the old BMP_BLOCK_PREFIX_MAX threshold (0xD8).  Phase 3 must use the
+        // extended block-prefix range check (isBlockPrefixColumn) to detect this.
+        String text = ("\u4e2d\u6587\uff0c\u6d4b\u8bd5\uff01\u8bf7\u95ee\uff1f").repeat(12);
+        assertEquals(StandardCharsets.UTF_16LE,
+                WideUnicodeDetector.detectEncoding(encode(text, StandardCharsets.UTF_16LE)));
+    }
+
+    @Test
+    void utf16LeCjkCompatIdeographs() {
+        // CJK Compatibility Ideographs U+F900-U+FAFF have high byte 0xF9 or 0xFA,
+        // also above 0xD8.  The isBlockPrefixColumn check allows 0xF9+ while
+        // blocking surrogates (0xD8-0xDF) and PUA (0xE0-0xF8).
+        String text = ("\uF900\uF901\uF902\uF903\uF904\uF905\uF906\uF907").repeat(20);
+        assertEquals(StandardCharsets.UTF_16LE,
+                WideUnicodeDetector.detectEncoding(encode(text, StandardCharsets.UTF_16LE)));
+    }
+
     // ── UTF-16 BE ────────────────────────────────────────────────────────────
 
     @Test
@@ -217,6 +239,20 @@ public class WideUnicodeDetectorTest {
     @Test
     void utf16BeCjkWithAsciiSpaces() {
         String text = ("\u4ee5\u4eec\u8bf4\u4e2d\u6587 ").repeat(12);
+        assertEquals(StandardCharsets.UTF_16BE,
+                WideUnicodeDetector.detectEncoding(encode(text, StandardCharsets.UTF_16BE)));
+    }
+
+    @Test
+    void utf16BeCjkWithFullwidthPunctuation() {
+        String text = ("\u4e2d\u6587\uff0c\u6d4b\u8bd5\uff01\u8bf7\u95ee\uff1f").repeat(12);
+        assertEquals(StandardCharsets.UTF_16BE,
+                WideUnicodeDetector.detectEncoding(encode(text, StandardCharsets.UTF_16BE)));
+    }
+
+    @Test
+    void utf16BeCjkCompatIdeographs() {
+        String text = ("\uF900\uF901\uF902\uF903\uF904\uF905\uF906\uF907").repeat(20);
         assertEquals(StandardCharsets.UTF_16BE,
                 WideUnicodeDetector.detectEncoding(encode(text, StandardCharsets.UTF_16BE)));
     }

@@ -17,6 +17,8 @@
 package org.apache.tika.detect;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.List;
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
@@ -26,13 +28,22 @@ import org.apache.tika.config.ServiceLoader;
  * implementations available through the
  * {@link ServiceRegistry service provider mechanism}.
  *
- * <p>Those loaded via the service provider mechanism are ordered by how
- * they appear in the file, if there is a single service file. If
- * multiple, there is no guarantee of order.</p>
+ * <p>Loaded detectors are sorted in two tiers:
+ * <ol>
+ *   <li>Base detectors (non-{@link MetaEncodingDetector}) sorted by full
+ *       class name (non-Tika before Tika, then ascending alphabetically).
+ *       The package ordering guarantees:
+ *       {@code org.apache.tika.detect.WideUnicodeDetector} →
+ *       {@code org.apache.tika.ml.*} (Mojibuster) →
+ *       {@code org.apache.tika.parser.*} (HTML).</li>
+ *   <li>{@link MetaEncodingDetector} instances always run last, after all
+ *       base detectors have collected their candidates into
+ *       {@link EncodingDetectorContext}.</li>
+ * </ol></p>
  *
- * <p>If you need to control the order of the Detectors, you should
- * instead construct your own {@link CompositeEncodingDetector} and pass
- * in the list of Detectors in the required order.</p>
+ * <p>If you need to control the order of the Detectors explicitly, construct
+ * your own {@link CompositeEncodingDetector} and pass in the list in the
+ * required order.</p>
  *
  * <p>{@link MetaEncodingDetector} handling (collect-all-then-arbitrate)
  * is provided by {@link CompositeEncodingDetector}.</p>
@@ -46,13 +57,23 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
     }
 
     public DefaultEncodingDetector(ServiceLoader loader) {
-        super(loader.loadServiceProviders(EncodingDetector.class));
+        super(sorted(loader.loadServiceProviders(EncodingDetector.class)));
     }
 
     public DefaultEncodingDetector(ServiceLoader loader,
                                    Collection<Class<? extends EncodingDetector>>
                                            excludeEncodingDetectors) {
-        super(loader.loadServiceProviders(EncodingDetector.class),
+        super(sorted(loader.loadServiceProviders(EncodingDetector.class)),
                 excludeEncodingDetectors);
+    }
+
+    private static List<EncodingDetector> sorted(List<EncodingDetector> detectors) {
+        // Two-key sort: base detectors first (meta=0) then MetaEncodingDetectors (meta=1),
+        // within each tier sorted by full class name for stability across JARs.
+        detectors.sort(Comparator
+                .<EncodingDetector, Integer>comparing(
+                        d -> (d instanceof MetaEncodingDetector) ? 1 : 0)
+                .thenComparing(d -> d.getClass().getName()));
+        return detectors;
     }
 }

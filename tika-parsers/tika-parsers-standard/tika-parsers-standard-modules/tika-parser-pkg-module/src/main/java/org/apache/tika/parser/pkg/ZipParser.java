@@ -45,6 +45,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -101,8 +102,6 @@ public class ZipParser extends AbstractArchiveParser {
     private static final long serialVersionUID = -5331043266963888709L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = MediaType.set(ZIP, JAR);
-
-    private static final int MIN_BYTES_FOR_DETECTING_CHARSET = 100;
 
     /**
      * Maximum number of entries to record in integrity check metadata fields.
@@ -532,17 +531,11 @@ public class ZipParser extends AbstractArchiveParser {
         // If charset detection is enabled, try to detect and decode
         if (config.isDetectCharsetsInEntryNames()) {
             byte[] entryName = entry.getRawName();
-            byte[] extendedEntryName = entryName;
-            if (0 < entryName.length && entryName.length < MIN_BYTES_FOR_DETECTING_CHARSET) {
-                int len = entryName.length * (MIN_BYTES_FOR_DETECTING_CHARSET / entryName.length);
-                extendedEntryName = new byte[len];
-                for (int i = 0; i < len; i++) {
-                    extendedEntryName[i] = entryName[i % entryName.length];
-                }
-            }
 
-            try (TikaInputStream detectStream = TikaInputStream.get(extendedEntryName)) {
-                Charset candidate = getEncodingDetector().detect(detectStream, parentMetadata, context);
+            try (TikaInputStream detectStream = TikaInputStream.get(entryName)) {
+                List<EncodingResult> encResults =
+                        getEncodingDetector().detect(detectStream, parentMetadata, context);
+                Charset candidate = encResults.isEmpty() ? null : encResults.get(0).getCharset();
                 if (candidate != null) {
                     return new String(entry.getRawName(), candidate);
                 }

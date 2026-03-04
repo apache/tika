@@ -18,12 +18,14 @@
 Build charset-detection training, devtest, and test data from:
 
   1. MADLAD-400 per-language sentence files  (--madlad-dir, default ~/datasets/madlad/data)
-  2. Flores-200 Traditional Chinese files    (--flores-dir, default ~/datasets/flores-200/flores200_dataset)
-     Used only for Big5, Big5-HKSCS, EUC-TW (no Traditional Chinese in MADLAD).
+  2. Cantonese Wikipedia plain-text sentences (--zh-yue-file,
+     default ~/datasets/zh_yuewiki/sentences_zh_yue.txt)
+     Used for Big5 and Big5-HKSCS (Traditional Chinese).
 
 Pipeline per language
 ---------------------
   1. Load up to --max-source-per-lang sentences from sentences_madlad.txt
+     (or sentences_zh_yue.txt for the "yue" virtual language).
   2. Apply fastText contamination filter (optional but recommended):
        remove sentences that fastText confidently (>= 0.80) assigns to one of
        the top-10 internet languages but the directory label says otherwise.
@@ -44,6 +46,25 @@ Charset design decisions
     ISO-8859-3  (Maltese — ħ, ġ, ċ, ż not representable in any Windows charset)
   Distinct Cyrillic variants retained:
     KOI8-R, KOI8-U, IBM855, IBM866, x-mac-cyrillic
+  Superset-only policy (subset encodings dropped from training):
+    Big5-HKSCS only  (superset of Big5 — files labelled Big5 decode safely as HKSCS)
+    GB18030 only     (superset of GBK and GB2312 — byte patterns are identical for
+                      the common character subset; the model cannot distinguish them)
+    Shift_JIS trained via cp932 codec (Windows-31J superset — Java's Shift_JIS
+                      resolves to CP932 internally; training on strict JIS X 0208
+                      would miss NEC/IBM extension characters in real Windows files)
+    windows-874 replaces TIS-620 (superset; Thai chars 0xA1–0xFB are identical,
+                      Charset.forName("TIS-620") not guaranteed on all JVMs)
+  Handled structurally (not by the ML model):
+    UTF-16-LE/BE, UTF-32-LE/BE — WideUnicodeDetector intercepts these before the
+                      model runs; the feature extractor's high-byte filter makes
+                      the model nearly blind to them anyway (dominant 0x00 bytes)
+    US-ASCII, ISO-2022-JP/KR/CN — structural gates in MojibusterEncodingDetector
+    HZ-GB-2312 — dropped: Java has no HZ Charset and returning a wrong decode
+                 charset (GB18030) would silently corrupt content
+  Not supported (no Python codec):
+    EUC-TW — JDK-only extension, vanishingly rare in practice (superseded by
+             Big5/UTF-8). Falls through to ICU4J/Universal as fallback.
 
 Encoding quality gates
 ----------------------
@@ -54,17 +75,16 @@ Encoding quality gates
   High-byte ratio: encoded chunk must have enough bytes >= 0x80 to be
     discriminative (thresholds vary by encoding family).
 
-Flores Traditional Chinese (Big5, Big5-HKSCS, EUC-TW)
--------------------------------------------------------
-  MADLAD-400 does not include Cantonese (yue) or Min Nan (nan) in Han script.
-  Flores-200 provides ~2000 sentences each of yue_Hant and zho_Hant.
-  ALL Flores sentences go to train. Devtest and test are in-sample copies
-  of train for these charsets.
+Traditional Chinese (Big5, Big5-HKSCS)
+------------------------------------------------
+  Sourced from the Cantonese Wikipedia dump (zh_yuewiki), extracted to
+  ~/datasets/zh_yuewiki/sentences_zh_yue.txt (~940K sentences).
+  The "yue" virtual language in LANG_CHARSETS maps to Big5 and Big5-HKSCS.
+  All three splits (train/devtest/test) are proper held-out partitions —
+  no in-sample evaluation.
 
-  *** WARNING: Big5 / Big5-HKSCS / EUC-TW devtest and test accuracy numbers
-  are IN-SAMPLE (trained and evaluated on the same Flores sentences).
-  They are NOT held-out and should NOT be compared to other charsets.
-  The manifest flags these with "eval_is_in_sample": true. ***
+  EUC-TW is omitted: Python has no euc_tw codec (JDK-only extension) and
+  the encoding is vanishingly rare in practice, superseded by Big5/UTF-8.
 
 Output structure
 ----------------
@@ -75,8 +95,8 @@ Output structure
     manifest.json
 
 Caps (configurable):
-  --train-cap    50000   encoded samples per charset
-  --devtest-cap   5000   encoded samples per charset
+  --train-cap    20000   encoded samples per charset
+  --devtest-cap   2000   encoded samples per charset
   --test-cap      5000   encoded samples per charset
 
 Usage
@@ -85,7 +105,7 @@ Usage
 
   python build_charset_training.py \\
       --madlad-dir  ~/datasets/madlad/data \\
-      --flores-dir  ~/datasets/flores-200/flores200_dataset \\
+      --zh-yue-file ~/datasets/zh_yuewiki/sentences_zh_yue.txt \\
       --output-dir  ~/datasets/madlad/charset-detect2 \\
       --fasttext-model ~/datasets/madlad/lid.176.bin
 """
@@ -100,6 +120,17 @@ import sys
 import unicodedata
 from collections import defaultdict
 from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Optional ebcdic dependency — registers cp420 (IBM420) and other EBCDIC
+# codecs not available in the standard CPython codec library.
+# Install with: pip install ebcdic
+# ---------------------------------------------------------------------------
+try:
+    import ebcdic as _ebcdic  # noqa: F401 — import for side-effect (codec registration)
+    EBCDIC_AVAILABLE = True
+except ImportError:
+    EBCDIC_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # Optional fastText dependency
@@ -118,24 +149,36 @@ except ImportError:
 
 CHARSET_CODEC: dict[str, str] = {
     "UTF-8":          "utf-8",
+    # UTF-16/32 variants without BOM — detected by WideUnicodeDetector before
+    # the ML model runs.  Included as eval-only (STRUCTURAL_ONLY_CHARSETS) so
+    # EvalCharsetDetectors can measure full-pipeline coverage.
     "UTF-16-LE":      "utf-16-le",
     "UTF-16-BE":      "utf-16-be",
     "UTF-32-LE":      "utf-32-le",
     "UTF-32-BE":      "utf-32-be",
     "US-ASCII":       "ascii",
-    "Shift_JIS":      "shift-jis",
+    # CP932 (Windows-31J) is trained under the IANA name Shift_JIS because
+    # Java's Charset.forName("Shift_JIS") resolves to CP932 internally.
+    # Training on Python's strict "shift-jis" codec would miss the NEC/IBM
+    # extension characters (0x87–0x9F, 0xE0–0xEA lead-byte ranges) that real
+    # Windows Shift-JIS files use. The superset covers everything the subset does.
+    "Shift_JIS":      "cp932",
     "EUC-JP":         "euc-jp",
     "ISO-2022-JP":    "iso-2022-jp",
     "EUC-KR":         "euc-kr",
     "ISO-2022-KR":    "iso-2022-kr",
     "ISO-2022-CN":    "iso2022_cn",
+    # GB18030 is the superset of GBK and GB2312; training only on GB18030
+    # avoids teaching the model to distinguish encodings that share identical
+    # byte patterns for the common character subset. Files labelled GB2312 or
+    # GBK in the wild are safely decoded as GB18030.
     "GB18030":        "gb18030",
-    "GB2312":         "gb2312",
-    "GBK":            "gbk",
-    "Big5":           "big5",
+    # Big5-HKSCS is the superset of plain Big5; same rationale as GB18030.
     "Big5-HKSCS":     "big5hkscs",
-    "EUC-TW":         "euc_tw",
-    "HZ":             "hz",
+    # EUC-TW omitted: Python has no euc_tw codec (JDK-only extension).
+    # EUC-TW is vanishingly rare in practice, superseded by Big5/UTF-8.
+    # Files encountered in the wild will fall through to ICU4J/Universal as
+    # fallback detectors.
     # ISO-8859-3 kept: no Windows equivalent (Maltese)
     "ISO-8859-3":     "iso-8859-3",
     # Windows single-byte charsets (ISO-8859-X equivalents dropped)
@@ -154,8 +197,10 @@ CHARSET_CODEC: dict[str, str] = {
     "IBM855":         "cp855",
     "IBM866":         "cp866",
     "x-mac-cyrillic": "mac_cyrillic",
-    # Thai
-    "TIS-620":        "cp874",
+    # Thai — windows-874 (CP874) is the superset of TIS-620; Thai characters
+    # occupy 0xA1–0xFB in both. Charset.forName("TIS-620") is not guaranteed
+    # on all JVMs; windows-874 is. Training on cp874 covers all real Thai files.
+    "windows-874":    "cp874",
     # EBCDIC
     "IBM500":         "cp500",
     "IBM424-ltr":     "cp424",
@@ -228,36 +273,50 @@ LANG_CHARSETS: dict[str, list[str]] = {
     "vie": ["windows-1258"],
     # Japanese
     "jpn": ["Shift_JIS", "EUC-JP", "ISO-2022-JP"],
-    # Chinese simplified
-    "zho": ["GB18030", "GBK", "GB2312", "HZ", "ISO-2022-CN"],
+    # Chinese simplified — also used for UTF-16/32 eval (CJK text has few null
+    # bytes in UTF-16 and reveals WideUnicodeDetector's null-pattern detection)
+    "zho": ["GB18030", "ISO-2022-CN",
+            "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE"],
     # Korean
     "kor": ["EUC-KR", "ISO-2022-KR"],
     # Thai
-    "tha": ["TIS-620"],
+    "tha": ["windows-874"],
+    # Traditional Chinese — sourced from Cantonese Wikipedia (zh_yuewiki),
+    # not MADLAD (which has no Cantonese/Traditional Chinese in Han script).
+    # "yue" is a virtual language key handled by load_plaintext_sentences().
+    # Big5-HKSCS only (superset of plain Big5).
+    "yue": ["Big5-HKSCS"],
 }
 
-# UTF-* added for all MADLAD languages below
-UNICODE_CHARSETS = ["UTF-8", "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE"]
+# UTF-8 is added for all MADLAD languages.
+# UTF-16-LE/BE and UTF-32-LE/BE are intentionally EXCLUDED:
+#   - WideUnicodeDetector in tika-core intercepts them via structural checks
+#     (null-column, variety-ratio, block-prefix range) before the ML model runs.
+#   - The feature extractor's high-byte filter (skip bytes < 0x80) makes the
+#     model nearly blind to UTF-16/32 anyway — Latin UTF-16 is dominated by
+#     0x00 bytes, which are all below 0x80 and produce no features.
+#   - Including them as trained classes wastes model capacity for inputs that
+#     will never reach the model in production.
+UNICODE_CHARSETS = ["UTF-8"]
 
 # These charsets produce zero high bytes (all content < 0x80), so the ML
 # feature extractor sees no signal.  They are detected by structural gates
 # in MlEncodingDetector before the model is ever called:
-#   - US-ASCII  → checkAscii()   → returns UTF-8
-#   - HZ        → checkHz()      → returns HZ
-#   - ISO-2022* → detectIso2022() → returns ISO-2022-JP/KR/CN
+#   - US-ASCII  → checkAscii()      → returns UTF-8
+#   - ISO-2022* → detectIso2022()   → returns ISO-2022-JP/KR/CN
 #
 # We still generate devtest/test files so EvalCharsetDetectors can measure
 # full-pipeline accuracy (with structural gates enabled), but we skip train
 # files so these classes don't pollute the ML model with zero-feature samples.
 STRUCTURAL_ONLY_CHARSETS = frozenset({
-    "US-ASCII", "HZ", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
+    "US-ASCII", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
+    "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE",
 })
 
-# Charsets sourced from Flores Traditional Chinese.
-# MADLAD-400 has no Cantonese/Min Nan in Han script.
-# *** devtest and test for these charsets are IN-SAMPLE copies of train. ***
-FLORES_CHARSETS = ["Big5", "Big5-HKSCS", "EUC-TW"]
-FLORES_LANGS    = ["yue_Hant", "zho_Hant"]   # file basenames (without extension)
+# Virtual language key used in LANG_CHARSETS for Traditional Chinese.
+# Sentences are loaded from --zh-yue-file (Cantonese Wikipedia) rather than
+# a MADLAD per-language directory.
+YUE_LANG = "yue"
 
 # ---------------------------------------------------------------------------
 # fastText contamination filter
@@ -327,11 +386,11 @@ def load_fasttext_model(model_path: Path):
 
 _HIGH_BYTE_EXEMPT = frozenset({
     "ascii", "utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be",
-    "iso-2022-jp", "iso-2022-kr", "iso2022_cn", "hz",
+    "iso-2022-jp", "iso-2022-kr", "iso2022_cn",
 })
 _HIGH_BYTE_CJK = frozenset({
-    "big5", "big5hkscs", "euc-jp", "euc-kr", "euc_tw",
-    "gb18030", "gbk", "gb2312", "shift-jis",
+    "big5hkscs", "euc-jp", "euc-kr",
+    "gb18030", "cp932",
 })
 MIN_HIGH_BYTE_CJK  = 0.20
 MIN_HIGH_BYTE_UTF8 = 0.05
@@ -343,6 +402,51 @@ RTL_CHARSETS = {"IBM424-rtl", "IBM420-rtl"}
 # MADLAD is NFC, so we must decompose before encoding and recompose before
 # the drop-count comparison.
 NFD_CHARSETS = {"windows-1258"}
+
+# IBM420 (Arabic EBCDIC) encodes only the 28 basic Arabic letters plus a
+# small set of punctuation, digits, and presentation forms.  Modern Arabic
+# Unicode text (especially from web corpora like MADLAD) contains:
+#   • Harakat / tashkeel (U+064B–U+065F, U+0610–U+061A, etc.) — not in IBM420
+#   • إ (U+0625, alef with hamza below) and ٱ (U+0671, alef wasla) — not in IBM420
+# Mainframe Arabic text was written without combining diacritics; stripping
+# them and normalising the two missing alef forms produces valid training data.
+# The drop-count is measured against the pre-processed text so MAX_DROPPED_CHARS
+# still catches genuine failures (emoji, unsupported Latin-extended chars, etc.).
+STRIP_ARABIC_DIACRITICS_CHARSETS = {"IBM420-ltr", "IBM420-rtl"}
+
+# Arabic combining mark codepoint ranges to strip for IBM420:
+#   U+0610–U+061A  Arabic extended combining (salat, etc.)
+#   U+064B–U+065F  Harakat (fatha, damma, kasra, shadda, sukun, tanwin, etc.)
+#   U+06D6–U+06E4  Quranic annotation signs (combining)
+#   U+06E7–U+06E8  Combining above / below
+#   U+06EA–U+06ED  Combining letters
+_ARABIC_DIACRITIC_RANGES = (
+    (0x0610, 0x061A),
+    (0x064B, 0x065F),
+    (0x06D6, 0x06E4),
+    (0x06E7, 0x06E8),
+    (0x06EA, 0x06ED),
+)
+
+# IBM420 only encodes the 28 basic Arabic letters plus a small set of
+# punctuation/digits.  Several common Unicode Arabic letters are absent:
+#   U+0625 إ  ARABIC LETTER ALEF WITH HAMZA BELOW  → ا  (U+0627)
+#   U+0671 ٱ  ARABIC LETTER ALEF WASLA             → ا  (U+0627)
+# These are normalised to their plain alef base before encoding, matching
+# the simplified Arabic orthography used on mainframes.
+_IBM420_ALEF_MAP: dict[str, str] = {
+    "\u0625": "\u0627",  # إ → ا
+    "\u0671": "\u0627",  # ٱ → ا
+}
+
+
+def _prepare_for_ibm420(text: str) -> str:
+    """Strip Arabic diacritics and normalise alef variants for IBM420."""
+    text = "".join(
+        c for c in text
+        if not any(lo <= ord(c) <= hi for lo, hi in _ARABIC_DIACRITIC_RANGES)
+    )
+    return "".join(_IBM420_ALEF_MAP.get(c, c) for c in text)
 
 # Maximum number of characters that may be silently dropped during encoding
 # (unencodable chars removed by errors='ignore') plus corrupt sequences
@@ -373,6 +477,15 @@ def encode_chunk(text: str, charset: str, codec: str,
     """
     if charset in RTL_CHARSETS:
         text = text[::-1]
+
+    # IBM420 (Arabic EBCDIC): strip harakat and normalise alef variants before
+    # encoding.  Mainframe Arabic text was never written with combining
+    # diacritics, and certain hamza forms (إ U+0625, ٱ U+0671) absent from the
+    # IBM420 codepage are normalised to plain alef (ا U+0627).  The drop-count
+    # is measured against the pre-processed text so MAX_DROPPED_CHARS still
+    # catches genuine encoding failures (emoji, Latin-extended, etc.).
+    if charset in STRIP_ARABIC_DIACRITICS_CHARSETS:
+        text = _prepare_for_ibm420(text)
 
     # CP1258 needs NFD decomposition; compare after recomposing back to NFC
     norm_text = unicodedata.normalize("NFD", text) if charset in NFD_CHARSETS else text
@@ -417,6 +530,20 @@ def encode_chunk(text: str, charset: str, codec: str,
 # Sentence loading
 # ---------------------------------------------------------------------------
 
+def _clean_madlad_text(text: str) -> str:
+    """Normalise a raw MADLAD sentence.
+
+    MADLAD stores multi-paragraph source documents as a single sentence with
+    embedded literal \\n / \\r / \\t escape sequences (two-character sequences,
+    not actual control characters).  Replace them with a single space so they
+    don't become unencodable backslash characters in EBCDIC charsets (e.g.
+    IBM420, which has no backslash in its mapping) or spurious punctuation in
+    single-byte charsets that do encode backslash.
+    """
+    text = text.replace("\\n", " ").replace("\\r", "").replace("\\t", " ")
+    return " ".join(text.split())  # collapse runs of whitespace
+
+
 def load_madlad_sentences(lang_dir: Path, max_sentences: int) -> list[str]:
     """Load up to max_sentences from sentences_madlad.txt (lineNum\\ttext format)."""
     sentences = []
@@ -431,6 +558,7 @@ def load_madlad_sentences(lang_dir: Path, max_sentences: int) -> list[str]:
                     continue
                 tab = line.find("\t")
                 text = line[tab + 1:] if tab >= 0 else line
+                text = _clean_madlad_text(text)
                 if text:
                     sentences.append(text)
                 if len(sentences) >= max_sentences:
@@ -440,21 +568,22 @@ def load_madlad_sentences(lang_dir: Path, max_sentences: int) -> list[str]:
     return sentences
 
 
-def load_flores_sentences(flores_dir: Path) -> list[str]:
-    """Load all Traditional Chinese sentences from Flores dev + devtest files."""
+def load_plaintext_sentences(path: Path, max_sentences: int) -> list[str]:
+    """Load up to max_sentences from a plain text file (one sentence per line)."""
     sentences = []
-    for split in ("dev", "devtest"):
-        for lang in FLORES_LANGS:
-            ext = "dev" if split == "dev" else "devtest"
-            p = flores_dir / split / f"{lang}.{ext}"
-            if not p.exists():
-                print(f"  WARNING: Flores file not found: {p}", file=sys.stderr)
-                continue
-            with open(p, encoding="utf-8", errors="replace") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        sentences.append(line)
+    if not path.exists():
+        print(f"  WARNING: file not found: {path}", file=sys.stderr)
+        return sentences
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                text = line.strip()
+                if text:
+                    sentences.append(text)
+                if len(sentences) >= max_sentences:
+                    break
+    except OSError as e:
+        print(f"  WARNING: could not read {path}: {e}", file=sys.stderr)
     return sentences
 
 # ---------------------------------------------------------------------------
@@ -516,7 +645,9 @@ def probe_codec(charset: str, codec: str) -> bool:
         "hello".encode(codec)
         return True
     except LookupError:
-        print(f"  WARNING: codec '{codec}' for {charset} not available — skipping",
+        hint = (" (install the 'ebcdic' package: pip install ebcdic)"
+                if codec.startswith("cp4") and not EBCDIC_AVAILABLE else "")
+        print(f"  WARNING: codec '{codec}' for {charset} not available — skipping{hint}",
               file=sys.stderr)
         return False
 
@@ -525,7 +656,7 @@ def probe_codec(charset: str, codec: str) -> bool:
 # ---------------------------------------------------------------------------
 
 DEFAULT_MADLAD_DIR   = Path.home() / "datasets" / "madlad" / "data"
-DEFAULT_FLORES_DIR   = Path.home() / "datasets" / "flores-200" / "flores200_dataset"
+DEFAULT_ZH_YUE_FILE  = Path.home() / "datasets" / "zh_yuewiki" / "sentences_zh_yue.txt"
 DEFAULT_OUTPUT_DIR   = Path.home() / "datasets" / "madlad" / "charset-detect2"
 DEFAULT_FASTTEXT     = Path.home() / "datasets" / "madlad" / "lid.176.bin"
 DEFAULT_MAX_SOURCE   = 200_000
@@ -543,7 +674,9 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument("--madlad-dir",     type=Path, default=DEFAULT_MADLAD_DIR)
-    parser.add_argument("--flores-dir",     type=Path, default=DEFAULT_FLORES_DIR)
+    parser.add_argument("--zh-yue-file",   type=Path, default=DEFAULT_ZH_YUE_FILE,
+                        help="Plain-text Cantonese Wikipedia sentences (one per line); "
+                             "used for Big5 and Big5-HKSCS")
     parser.add_argument("--output-dir",     type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--fasttext-model", type=Path, default=DEFAULT_FASTTEXT,
                         help="Path to lid.176.bin; omit to skip contamination filter")
@@ -572,18 +705,6 @@ def main():
     else:
         print("fastText filter: disabled (model not found)")
 
-    # -----------------------------------------------------------------------
-    # Step 1: Load Flores Traditional Chinese (tiny — ~4K sentences — load once)
-    # -----------------------------------------------------------------------
-    print("=== Loading Flores Traditional Chinese ===")
-    flores_sentences = load_flores_sentences(args.flores_dir)
-    rng_flores = random.Random(args.seed)
-    rng_flores.shuffle(flores_sentences)
-    print(f"  Loaded {len(flores_sentences):,} sentences from Flores "
-          f"({', '.join(FLORES_LANGS)})")
-    print("  *** ALL Flores sentences go to TRAIN; devtest/test are "
-          "IN-SAMPLE copies ***")
-
     caps = {"train": args.train_cap, "devtest": args.devtest_cap,
             "test": args.test_cap}
 
@@ -593,7 +714,6 @@ def main():
     )
     all_charsets = {cs for cs in target_charsets
                     if cs in CHARSET_CODEC and probe_codec(cs, CHARSET_CODEC[cs])}
-    flores_charsets = {cs for cs in FLORES_CHARSETS if flores_sentences} & all_charsets
 
     # -----------------------------------------------------------------------
     # Step 2 + 3: For each charset, load only the languages it needs, encode,
@@ -610,43 +730,40 @@ def main():
 
     for charset in sorted(all_charsets):
         codec = CHARSET_CODEC[charset]
-        in_sample = charset in flores_charsets
-        flag = "  *** IN-SAMPLE ***" if in_sample else ""
-        print(f"  {charset}{flag}", flush=True)
+        print(f"  {charset}", flush=True)
 
         split_counts: dict[str, int] = {}
 
-        if in_sample:
-            # Flores charsets: same sentences go to all splits (in-sample eval)
-            for split in split_names:
-                out_file = args.output_dir / split / f"{charset}.bin.gz"
-                n = build_split_file(
-                    list(flores_sentences), charset, codec, out_file,
-                    caps[split], args.min_chunk, args.max_chunk,
-                    random.Random(args.seed + hash(charset + split + "enc")),
-                )
-                split_counts[split] = n
-                print(f"    {split:7s}: {n:>6,} samples")
-        else:
-            # MADLAD charsets: determine contributing languages
-            is_unicode = charset in UNICODE_CHARSETS
-            contributing = sorted(
-                lang for lang, csets in LANG_CHARSETS.items()
-                if is_unicode or charset in csets
-            )
+        # Determine contributing languages for this charset
+        is_unicode = charset in UNICODE_CHARSETS
+        contributing = sorted(
+            lang for lang, csets in LANG_CHARSETS.items()
+            if is_unicode or charset in csets
+        )
 
-            # Load sentences for each contributing language.
-            # Per-language load cap: we need roughly train_cap*6/n_langs sentences
-            # total to survive encoding rejections; the 80/10/10 split means
-            # train gets 80% of loaded data.  Use max_source_per_lang as ceiling.
-            n_langs = max(1, len(contributing))
-            load_cap = min(
-                args.max_source_per_lang,
-                max(5_000, (args.train_cap * 10) // n_langs),
-            )
+        # Load sentences for each contributing language.
+        # Per-language load cap: we need roughly train_cap*6/n_langs sentences
+        # total to survive encoding rejections; the 80/10/10 split means
+        # train gets 80% of loaded data.  Use max_source_per_lang as ceiling.
+        n_langs = max(1, len(contributing))
+        load_cap = min(
+            args.max_source_per_lang,
+            max(5_000, (args.train_cap * 10) // n_langs),
+        )
 
-            lang_pools: dict[str, dict[str, list[str]]] = {}
-            for lang in contributing:
+        lang_pools: dict[str, dict[str, list[str]]] = {}
+        for lang in contributing:
+            if lang == YUE_LANG:
+                # Traditional Chinese: load from Cantonese Wikipedia dump
+                raw = load_plaintext_sentences(args.zh_yue_file, load_cap)
+                if not raw:
+                    continue
+                lang_pools[lang] = split_pool(raw, args.seed)
+                pools = lang_pools[lang]
+                print(f"    load {lang} (zh_yuewiki): {len(raw):>6,} → split "
+                      f"{len(pools['train']):>5,}/{len(pools['devtest']):>4,}"
+                      f"/{len(pools['test']):>4,}", flush=True)
+            else:
                 lang_dir = args.madlad_dir / lang
                 if not lang_dir.is_dir():
                     continue
@@ -665,43 +782,42 @@ def main():
                       + (f"  (-{removed} filtered)" if removed else ""),
                       flush=True)
 
-            structural_only = charset in STRUCTURAL_ONLY_CHARSETS
-            if structural_only:
-                print(f"    (structural-only: skipping train, generating devtest/test only)")
+        structural_only = charset in STRUCTURAL_ONLY_CHARSETS
+        if structural_only:
+            print(f"    (structural-only: skipping train, generating devtest/test only)")
 
-            for split in split_names:
-                # Skip train split for structural-only charsets: the ML model
-                # sees zero features for these encodings; structural gates in
-                # MlEncodingDetector handle them before the model is called.
-                if structural_only and split == "train":
-                    split_counts[split] = 0
-                    continue
+        for split in split_names:
+            # Skip train split for structural-only charsets: the ML model
+            # sees zero features for these encodings; structural gates in
+            # MlEncodingDetector handle them before the model is called.
+            if structural_only and split == "train":
+                split_counts[split] = 0
+                continue
 
-                cap = caps[split]
-                per_lang = max(200, (cap * 4) // max(1, len(lang_pools)))
-                sents: list[str] = []
-                for lang, pools in lang_pools.items():
-                    sents.extend(pools[split][:per_lang])
-                rng_split = random.Random(args.seed + hash(charset + split))
-                rng_split.shuffle(sents)
+            cap = caps[split]
+            per_lang = max(200, (cap * 4) // max(1, len(lang_pools)))
+            sents: list[str] = []
+            for lang, pools in lang_pools.items():
+                sents.extend(pools[split][:per_lang])
+            rng_split = random.Random(args.seed + hash(charset + split))
+            rng_split.shuffle(sents)
 
-                out_file = args.output_dir / split / f"{charset}.bin.gz"
-                n = build_split_file(
-                    sents, charset, codec, out_file,
-                    cap, args.min_chunk, args.max_chunk,
-                    random.Random(args.seed + hash(charset + split + "enc")),
-                )
-                split_counts[split] = n
-                print(f"    {split:7s}: {n:>6,} samples")
+            out_file = args.output_dir / split / f"{charset}.bin.gz"
+            n = build_split_file(
+                sents, charset, codec, out_file,
+                cap, args.min_chunk, args.max_chunk,
+                random.Random(args.seed + hash(charset + split + "enc")),
+            )
+            split_counts[split] = n
+            print(f"    {split:7s}: {n:>6,} samples")
 
-            # Release the sentence pools for this charset before moving on
-            del lang_pools
+        # Release the sentence pools for this charset before moving on
+        del lang_pools
 
         manifest[charset] = {
-            "codec":              codec,
-            "eval_is_in_sample":  in_sample,
-            "structural_only":    charset in STRUCTURAL_ONLY_CHARSETS,
-            "samples":            split_counts,
+            "codec":           codec,
+            "structural_only": charset in STRUCTURAL_ONLY_CHARSETS,
+            "samples":         split_counts,
         }
 
     # -----------------------------------------------------------------------
@@ -718,11 +834,6 @@ def main():
     print(f"  train:   {total['train']:>8,} total samples")
     print(f"  devtest: {total['devtest']:>8,} total samples")
     print(f"  test:    {total['test']:>8,} total samples")
-    in_sample_charsets = [cs for cs, v in manifest.items()
-                          if v["eval_is_in_sample"]]
-    if in_sample_charsets:
-        print(f"\n  *** IN-SAMPLE eval charsets (Big5 family from Flores): "
-              f"{', '.join(sorted(in_sample_charsets))} ***")
     print(f"  Manifest: {manifest_path}")
 
 

@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -46,12 +48,13 @@ import org.apache.tika.parser.ParseContext;
  *       (Arabic 0x06, Hebrew 0x05, Greek 0x03, Devanagari 0x09, …): the
  *       glyph-index column has at least 2× as many distinct values as the
  *       block-prefix column.</li>
- *   <li><em>Block-prefix range</em> — CJK (0x4E–0x9F, 82 values) and
- *       Hangul (0xAC–0xD7, 44 values) where the variety ratio alone may not
- *       be decisive with limited samples: if all values in one column fall
- *       below the surrogate boundary (0xD8) and the other column has more
- *       distinct values, the constrained column is carrying Unicode
- *       block-prefix bytes.</li>
+ *   <li><em>Block-prefix range</em> — CJK Unified (0x4E–0x9F), Hangul
+ *       (0xAC–0xD7), CJK Compatibility Ideographs (0xF9–0xFA), and Halfwidth
+ *       and Fullwidth Forms (0xFF, e.g. Chinese fullwidth punctuation ，！？):
+ *       where the variety ratio alone may not be decisive with limited samples.
+ *       The constrained column must have no bytes in the surrogate/PUA zone
+ *       (0xD8–0xF8); the glyph column must have at least one byte ≥ 0xD8;
+ *       and non-null bytes in the constrained column must all be ≥ 0x20.</li>
  * </ol>
  * </p>
  *
@@ -135,12 +138,29 @@ public class WideUnicodeDetector implements EncodingDetector {
     private static final double UTF16_CONSTRAINED_MAX_RATIO = 0.40;
 
     /**
-     * Upper bound (exclusive) for the UTF-16 block-prefix range check.
-     * Set to 0xD8 — the start of the UTF-16 surrogate range — which covers
-     * every assigned BMP script: Latin, Greek, Cyrillic, Arabic, Hebrew,
-     * Devanagari, CJK (0x4E–0x9F), Yi (0xA0–0xA4), Hangul (0xAC–0xD7).
+     * Boundary of the UTF-16 surrogate range. Bytes ≥ this value in the glyph
+     * (high-diversity) column confirm it is not the block-prefix column: the
+     * block-prefix column of any well-formed BMP document stays below 0xD8 for
+     * the most common scripts, and the glyph column overflows above it for CJK
+     * low bytes and other diverse content.
      */
     private static final int BMP_BLOCK_PREFIX_MAX = 0xD8;
+
+    /**
+     * Lower bound of the re-allowed block-prefix bytes above the surrogate zone.
+     * Bytes in [{@code BMP_BLOCK_PREFIX_MAX}, {@code BLOCK_PREFIX_EXCLUSION_MAX})
+     * — i.e. 0xD8–0xF8 — are excluded from the block-prefix column:
+     * 0xD8–0xDF are UTF-16 surrogates (handled separately by the surrogate
+     * validator) and 0xE0–0xF8 are Private Use Area high bytes unlikely to
+     * appear as legitimate block prefixes in ordinary text.
+     * Bytes from {@code BLOCK_PREFIX_EXCLUSION_MAX} onward are re-allowed:
+     * <ul>
+     *   <li>0xF9–0xFA: CJK Compatibility Ideographs (U+F900–U+FAFF)</li>
+     *   <li>0xFF: Halfwidth and Fullwidth Forms (U+FF00–U+FFEF) — extremely
+     *       common in Chinese text as fullwidth punctuation (，！？：；（）…)</li>
+     * </ul>
+     */
+    private static final int BLOCK_PREFIX_EXCLUSION_MAX = 0xF9;
 
     /**
      * Known BOM sequences, longest first so that the 4-byte UTF-32 BOMs are
@@ -155,10 +175,10 @@ public class WideUnicodeDetector implements EncodingDetector {
     };
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata,
-                          ParseContext context) throws IOException {
+    public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
         if (tis == null || !tis.markSupported()) {
-            return null;
+            return Collections.emptyList();
         }
 
         tis.mark(STREAM_READ_LIMIT);
@@ -171,10 +191,51 @@ public class WideUnicodeDetector implements EncodingDetector {
 
         // 12 = longest BOM (4 bytes) + minimum analysable content (8 bytes)
         if (buf.length < 12) {
-            return null;
+            return Collections.emptyList();
         }
 
-        return detectEncoding(buf);
+        WideUnicodeSignal signal = detectSignal(buf);
+        if (signal == null) {
+            return Collections.emptyList();
+        }
+
+        // Write the signal into the per-detection context so downstream detectors
+        // (e.g. ML models not trained on null-heavy UTF-16/32 data) can defer
+        // without re-examining the bytes.  We use EncodingDetectorContext rather
+        // than ParseContext directly so the signal does not outlive this single
+        // detection pass and does not bleed into embedded-document parses.
+        EncodingDetectorContext encodingContext =
+                parseContext.get(EncodingDetectorContext.class);
+        if (encodingContext != null) {
+            encodingContext.setWideUnicodeSignal(signal);
+        }
+
+        if (signal.getKind() == WideUnicodeSignal.Kind.ILLEGAL_SURROGATES) {
+            return Collections.emptyList();
+        }
+        // Structural heuristic, not a BOM read — use high but not absolute confidence
+        // so that language-scoring arbitration can override if the decoded text is garbage.
+        return List.of(new EncodingResult(signal.getCharset(), 0.95f));
+    }
+
+    /**
+     * Full detection returning a {@link WideUnicodeSignal}, distinguishing
+     * "valid detection", "illegal surrogates", and "not wide Unicode" (null).
+     */
+    private static WideUnicodeSignal detectSignal(byte[] bytes) {
+        if (bytes == null || bytes.length < 8) {
+            return null;
+        }
+        bytes = skipBom(bytes);
+        int sampleLen = (Math.min(bytes.length, SAMPLE_LIMIT) / 4) * 4;
+        if (sampleLen < 8) {
+            return null;
+        }
+        Charset utf32 = tryUtf32(bytes, sampleLen);
+        if (utf32 != null) {
+            return WideUnicodeSignal.valid(utf32);
+        }
+        return tryUtf16Signal(bytes, sampleLen);
     }
 
     /**
@@ -183,27 +244,22 @@ public class WideUnicodeDetector implements EncodingDetector {
      * group alignment is preserved. Callers do not need to strip the BOM
      * themselves.
      *
+     * <p>Returns {@code null} for both "not wide Unicode" and
+     * "illegal surrogates". Use
+     * {@link #detect(TikaInputStream, Metadata, ParseContext)} with a live
+     * {@link ParseContext} containing an {@link EncodingDetectorContext} if
+     * you need to distinguish those two cases via {@link WideUnicodeSignal}.</p>
+     *
      * @param bytes raw content bytes, with or without a leading BOM
      * @return detected charset, or {@code null} if no wide Unicode structure
-     *         is found
+     *         is found or if surrogates are illegal
      */
     public static Charset detectEncoding(byte[] bytes) {
-        if (bytes == null || bytes.length < 8) {
+        WideUnicodeSignal signal = detectSignal(bytes);
+        if (signal == null || signal.isIllegalSurrogates()) {
             return null;
         }
-
-        bytes = skipBom(bytes);
-
-        int sampleLen = (Math.min(bytes.length, SAMPLE_LIMIT) / 4) * 4;
-        if (sampleLen < 8) {
-            return null;
-        }
-
-        Charset utf32 = tryUtf32(bytes, sampleLen);
-        if (utf32 != null) {
-            return utf32;
-        }
-        return tryUtf16(bytes, sampleLen);
+        return signal.getCharset();
     }
 
     /**
@@ -288,16 +344,18 @@ public class WideUnicodeDetector implements EncodingDetector {
     }
 
     /**
-     * UTF-16 detection via three phases, with surrogate-pair sequence validation
-     * running in parallel to rule out structurally impossible byte sequences.
+     * UTF-16 detection via three phases, returning a {@link WideUnicodeSignal}
+     * that distinguishes a valid detection, illegal surrogates, and no match.
      *
      * <p>Surrogate validation: in UTF-16BE the even byte is the high byte of
      * each code unit; in UTF-16LE the odd byte is the high byte. A high surrogate
      * (0xD8–0xDB) must be immediately followed by a low surrogate (0xDC–0xDF).
      * A lone low surrogate, or a high surrogate not followed by a low surrogate,
-     * marks that byte order as invalid.</p>
+     * marks that byte order as invalid. When a structural phase would have fired
+     * but validity failed, {@link WideUnicodeSignal#illegalSurrogates()} is
+     * returned so downstream detectors know not to attempt decoding.</p>
      */
-    private static Charset tryUtf16(byte[] bytes, int sampleLen) {
+    private static WideUnicodeSignal tryUtf16Signal(byte[] bytes, int sampleLen) {
         int pairs = sampleLen / 2;
         int nullsAtEven = 0;
         int nullsAtOdd  = 0;
@@ -361,8 +419,14 @@ public class WideUnicodeDetector implements EncodingDetector {
         // Phase 1: null-column (Latin/ASCII)
         boolean highEven = nullsAtEven * NULL_THRESHOLD_DENOM > pairs;
         boolean highOdd  = nullsAtOdd  * NULL_THRESHOLD_DENOM > pairs;
-        if (highOdd  && !highEven && !invalidLe) return StandardCharsets.UTF_16LE;
-        if (highEven && !highOdd  && !invalidBe) return StandardCharsets.UTF_16BE;
+        if (highOdd && !highEven) {
+            return invalidLe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16LE);
+        }
+        if (highEven && !highOdd) {
+            return invalidBe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16BE);
+        }
 
         // Phase 2: variety-ratio (Arabic, Hebrew, Greek, Devanagari, …)
         //
@@ -377,54 +441,60 @@ public class WideUnicodeDetector implements EncodingDetector {
         int uniqueOdd  = countUnique(countsOdd);
         double constrainedMax = pairs * UTF16_CONSTRAINED_MAX_RATIO;
 
-        if (!invalidLe && (double) uniqueEven / uniqueOdd >= UTF16_VARIETY_RATIO
+        if ((double) uniqueEven / uniqueOdd >= UTF16_VARIETY_RATIO
                 && uniqueOdd <= constrainedMax
                 && mostCommon(countsOdd) != 0) {
-            return StandardCharsets.UTF_16LE;
+            return invalidLe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16LE);
         }
-        if (!invalidBe && (double) uniqueOdd / uniqueEven >= UTF16_VARIETY_RATIO
+        if ((double) uniqueOdd / uniqueEven >= UTF16_VARIETY_RATIO
                 && uniqueEven <= constrainedMax
                 && mostCommon(countsEven) != 0) {
-            return StandardCharsets.UTF_16BE;
+            return invalidBe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16BE);
         }
 
-        // Phase 3: block-prefix range (CJK, Hangul — wide block-prefix ranges)
+        // Phase 3: block-prefix range (CJK, Hangul, Fullwidth, CJK Compat)
         //
-        // We require:
-        //   oddInRange  — all odd-position bytes < 0xD8 (below the surrogate
-        //                 boundary).  This is the high-byte (block-prefix)
-        //                 column for UTF-16LE.
-        //   !evenInRange — at least one even-position byte ≥ 0xD8 (the glyph-
-        //                 index column overflows the surrogate boundary, which
-        //                 is expected for CJK low bytes like 0xE5, 0xEF, 0xF4).
-        //   nonNullAllAbove — no non-null byte below 0x20 in the constrained
+        // Two separate range checks are used — one for each role:
+        //
+        //   isBlockPrefixColumn(col) — RELAXED — identifies the block-prefix
+        //                 (constrained) column.  Requires no bytes in the
+        //                 surrogate/PUA exclusion zone [0xD8, 0xF9).  Allows
+        //                 0xF9–0xFF so that CJK Compatibility Ideographs and
+        //                 Fullwidth Forms (0xFF) are accepted.  Chinese text
+        //                 routinely mixes fullwidth punctuation (U+FF0C ，,
+        //                 U+FF01 ！, …) with CJK Unified Ideographs; the 0xFF
+        //                 high byte would break the old strict "all < 0xD8"
+        //                 check even though the stream is perfectly valid UTF-16.
+        //
+        //   !allInRange(col, 0xD8) — STRICT — identifies the glyph-index
+        //                 (high-diversity) column.  At least one byte ≥ 0xD8
+        //                 must be present; this is the natural overflow from
+        //                 CJK low bytes (0xD8–0xFF for characters like 以=0xE5,
+        //                 们=0xEC, 说=0xF4) and provides orientation so we can
+        //                 tell which column is which.
+        //
+        //   nonNullAllAbove — no non-null byte below 0x20 in the block-prefix
         //                 column.  Binary formats inject control tokens here
         //                 (ISOBMFF 0x01/0x02, LZ4 0x04/0x15); CJK and Hangul
-        //                 block-prefix bytes are always ≥ 0x4E/0xAC.
+        //                 block-prefix bytes are always ≥ 0x4E/0xAC, and
+        //                 Fullwidth Forms are 0xFF.
         //
-        // We also require uniqueEven > uniqueOdd for LE (uniqueOdd > uniqueEven
-        // for BE).  This is not about discriminating from random binary — the
-        // scenario where "12 vs 11 unique values, all below 0xD8" could cause
-        // a false positive is already prevented by !evenInRange (which requires
-        // at least one byte ≥ 0xD8 in the even column, contradicting "all
-        // below 0xD8").  The real purpose is orientation: it prevents Latin
-        // UTF-16BE data (whose odd column is full of diverse ASCII content
-        // bytes and whose even column is dominated by 0x00) from being
-        // misidentified as UTF-16LE when a stray byte ≥ 0xD8 lands in the
-        // even column (e.g. an injected or corrupted surrogate byte).  In that
-        // pathological case uniqueEven ≈ 2 << uniqueOdd, so the check fails
-        // cleanly.  For legitimate CJK and Hangul the glyph-index column
-        // always has at least as many distinct values as the block-prefix
-        // column, so a gap of 1 is enough.
-        boolean oddInRange  = allInRange(countsOdd,  BMP_BLOCK_PREFIX_MAX);
-        boolean evenInRange = allInRange(countsEven, BMP_BLOCK_PREFIX_MAX);
-        if (!invalidLe && oddInRange  && !evenInRange && uniqueEven > uniqueOdd
-                && nonNullAllAbove(countsOdd,  0x20)) {
-            return StandardCharsets.UTF_16LE;
+        //   uniqueGlyph > uniquePrefix — orientation guard (see Phase 2 note).
+        boolean oddInRange   = allInRange(countsOdd,  BMP_BLOCK_PREFIX_MAX);
+        boolean evenInRange  = allInRange(countsEven, BMP_BLOCK_PREFIX_MAX);
+        boolean oddIsPrefix  = isBlockPrefixColumn(countsOdd);
+        boolean evenIsPrefix = isBlockPrefixColumn(countsEven);
+        if (oddIsPrefix && !evenInRange && uniqueEven > uniqueOdd
+                && nonNullAllAbove(countsOdd, 0x20)) {
+            return invalidLe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16LE);
         }
-        if (!invalidBe && evenInRange && !oddInRange  && uniqueOdd  > uniqueEven
+        if (evenIsPrefix && !oddInRange && uniqueOdd > uniqueEven
                 && nonNullAllAbove(countsEven, 0x20)) {
-            return StandardCharsets.UTF_16BE;
+            return invalidBe ? WideUnicodeSignal.illegalSurrogates()
+                             : WideUnicodeSignal.valid(StandardCharsets.UTF_16BE);
         }
 
         return null;
@@ -438,6 +508,26 @@ public class WideUnicodeDetector implements EncodingDetector {
 
     private static boolean allInRange(int[] counts, int maxExclusive) {
         for (int v = maxExclusive; v < counts.length; v++) {
+            if (counts[v] > 0) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Returns {@code true} if {@code counts} is consistent with a UTF-16
+     * block-prefix column: no bytes in the surrogate/PUA exclusion zone
+     * [{@link #BMP_BLOCK_PREFIX_MAX}, {@link #BLOCK_PREFIX_EXCLUSION_MAX})
+     * (i.e. 0xD8–0xF8).
+     *
+     * <p>This is a relaxed alternative to {@link #allInRange(int[], int)}
+     * for Phase 3's constrained-column check. It accepts high block-prefix
+     * bytes used in CJK-family documents — 0xF9–0xFA (CJK Compatibility
+     * Ideographs) and 0xFF (Halfwidth and Fullwidth Forms) — while still
+     * rejecting surrogates (0xD8–0xDF) and Private Use Area bytes (0xE0–0xF8)
+     * that should not appear as standalone block prefixes.</p>
+     */
+    private static boolean isBlockPrefixColumn(int[] counts) {
+        for (int v = BMP_BLOCK_PREFIX_MAX; v < BLOCK_PREFIX_EXCLUSION_MAX; v++) {
             if (counts[v] > 0) return false;
         }
         return true;

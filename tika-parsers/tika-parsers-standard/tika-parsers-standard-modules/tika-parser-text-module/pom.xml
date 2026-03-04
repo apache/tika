@@ -31,10 +31,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.github.albfernandez</groupId>
-      <artifactId>juniversalchardet</artifactId>
-    </dependency>
-    <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
     </dependency>
@@ -74,7 +70,6 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</inputExclude>
             <inputExclude>src/test/resources/test-documents/**</inputExclude>
           </inputExcludes>
         </configuration>

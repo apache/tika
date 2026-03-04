@@ -41,7 +41,7 @@ import org.apache.tika.parser.ParseContext;
  * {@link EncodingDetectorContext}, then the meta detector runs last
  * to arbitrate. Only one meta detector is supported.</p>
  *
- * <p>If no meta detector is present, the first non-null result wins
+ * <p>If no meta detector is present, the first non-empty result wins
  * (traditional behavior).</p>
  */
 public class CompositeEncodingDetector implements EncodingDetector, Serializable {
@@ -74,9 +74,6 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
         this.metaDetector = partition(this.detectors, baseDetectors);
     }
 
-    /**
-     * Partition detectors into base detectors and at most one meta detector.
-     */
     private static MetaEncodingDetector partition(
             List<EncodingDetector> all, List<EncodingDetector> base) {
         MetaEncodingDetector meta = null;
@@ -85,8 +82,7 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
                 if (meta == null) {
                     meta = (MetaEncodingDetector) d;
                 } else {
-                    LOG.warn("Multiple MetaEncodingDetectors found; " +
-                            "ignoring {}",
+                    LOG.warn("Multiple MetaEncodingDetectors found; ignoring {}",
                             d.getClass().getName());
                 }
             } else {
@@ -97,8 +93,8 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     }
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata,
-                          ParseContext parseContext) throws IOException {
+    public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
         if (metaDetector != null) {
             return detectWithMeta(tis, metadata, parseContext);
         }
@@ -106,80 +102,94 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
     }
 
     /**
-     * Traditional first-match-wins behavior.
+     * Traditional first-match-wins behavior: returns the results from the
+     * first detector that produces a non-empty list.
      */
-    private Charset detectFirstMatch(TikaInputStream tis, Metadata metadata,
-                                     ParseContext parseContext)
+    private List<EncodingResult> detectFirstMatch(TikaInputStream tis, Metadata metadata,
+                                                  ParseContext parseContext)
             throws IOException {
         for (EncodingDetector detector : getDetectors()) {
-            Charset detected = detector.detect(tis, metadata, parseContext);
-            if (detected != null) {
-                metadata.set(TikaCoreProperties.DETECTED_ENCODING,
-                        detected.name());
+            List<EncodingResult> results = detector.detect(tis, metadata, parseContext);
+            if (!results.isEmpty()) {
+                Charset detected = results.get(0).getCharset();
+                metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
                 if (!detector.getClass().getSimpleName()
                         .equals("CompositeEncodingDetector")) {
                     metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
                             detector.getClass().getSimpleName());
                 }
-                return detected;
+                return results;
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     /**
      * Collect-all mode: run every base detector, populate context,
      * then let the meta detector arbitrate.
+     *
+     * <p>The stream is marked once before the base-detector loop.  After all
+     * base detectors have run (potentially consuming the stream), it is reset
+     * to that mark so the meta detector can re-read the raw bytes for
+     * language-based arbitration.  Base detectors are not reset between
+     * themselves — each handles its own mark/reset internally if needed.</p>
      */
-    private Charset detectWithMeta(TikaInputStream tis, Metadata metadata,
-                                   ParseContext parseContext)
+    private List<EncodingResult> detectWithMeta(TikaInputStream tis, Metadata metadata,
+                                                ParseContext parseContext)
             throws IOException {
         EncodingDetectorContext context = new EncodingDetectorContext();
         parseContext.set(EncodingDetectorContext.class, context);
+
+        // Mark so CharSoup can re-read the raw bytes after all base detectors finish.
+        if (tis != null) {
+            tis.mark(Integer.MAX_VALUE);
+        }
+
         try {
             for (EncodingDetector detector : baseDetectors) {
-                Charset detected =
-                        detector.detect(tis, metadata, parseContext);
-                if (detected != null) {
-                    context.addResult(detected,
-                            detector.getClass().getSimpleName());
+                List<EncodingResult> detected = detector.detect(tis, metadata, parseContext);
+                if (!detected.isEmpty()) {
+                    context.addResult(detected, detector.getClass().getSimpleName());
                 }
             }
 
-            Charset result =
+            // Reset so the meta detector can re-read from the beginning.
+            if (tis != null) {
+                tis.reset();
+            }
+
+            List<EncodingResult> metaResults =
                     metaDetector.detect(tis, metadata, parseContext);
 
-            // If meta detector returned null (disabled or no candidates),
-            // fall back to first base detector's result
-            if (result == null && !context.getResults().isEmpty()) {
-                EncodingDetectorContext.Result first =
-                        context.getResults().get(0);
-                result = first.getCharset();
-                metadata.set(TikaCoreProperties.DETECTED_ENCODING,
-                        result.name());
-                metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                        first.getDetectorName());
-            } else if (result != null) {
-                metadata.set(TikaCoreProperties.DETECTED_ENCODING,
-                        result.name());
-                String detectorName =
-                        metaDetector.getClass().getSimpleName();
-                for (EncodingDetectorContext.Result r :
-                        context.getResults()) {
-                    if (r.getCharset().equals(result)) {
+            List<EncodingResult> finalResults;
+            String detectorName;
+
+            if (metaResults.isEmpty() && !context.getResults().isEmpty()) {
+                // Meta detector abstained — fall back to first base detector's results
+                EncodingDetectorContext.Result first = context.getResults().get(0);
+                finalResults = first.getEncodingResults();
+                detectorName = first.getDetectorName();
+            } else if (!metaResults.isEmpty()) {
+                finalResults = metaResults;
+                Charset winner = metaResults.get(0).getCharset();
+                // Credit the base detector that originally proposed the winning charset
+                detectorName = metaDetector.getClass().getSimpleName();
+                for (EncodingDetectorContext.Result r : context.getResults()) {
+                    if (r.getCharset().equals(winner)) {
                         detectorName = r.getDetectorName();
                         break;
                     }
                 }
-                metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                        detectorName);
+            } else {
+                return Collections.emptyList();
             }
 
-            // Build and set the detection trace
-            metadata.set(TikaCoreProperties.ENCODING_DETECTION_TRACE,
-                    buildTrace(context));
+            Charset detected = finalResults.get(0).getCharset();
+            metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
+            metadata.set(TikaCoreProperties.ENCODING_DETECTOR, detectorName);
+            metadata.set(TikaCoreProperties.ENCODING_DETECTION_TRACE, buildTrace(context));
 
-            return result;
+            return finalResults;
         } finally {
             parseContext.set(EncodingDetectorContext.class, null);
         }
@@ -191,12 +201,14 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
             if (sb.length() > 0) {
                 sb.append(", ");
             }
-            sb.append(r.getDetectorName()).append("->")
-                    .append(r.getCharset().name());
+            sb.append(r.getDetectorName()).append("->").append(r.getCharset().name());
+            if (r.getConfidence() < EncodingResult.CONFIDENCE_DEFINITIVE) {
+                sb.append(String.format(java.util.Locale.ROOT, "(%.2f)", r.getConfidence()));
+            }
         }
         String info = context.getArbitrationInfo();
         if (info != null) {
-            sb.append(" (").append(info).append(")");
+            sb.append(" [").append(info).append("]");
         }
         return sb.toString();
     }

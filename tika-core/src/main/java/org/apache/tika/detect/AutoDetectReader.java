@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.List;
 
 import org.xml.sax.InputSource;
 
@@ -96,10 +97,11 @@ public class AutoDetectReader extends BufferedReader {
                                   EncodingDetector detector)
             throws IOException, TikaException {
         // Ask all given detectors for the character encoding
-        Charset charset = detector.detect(tis, metadata, new ParseContext());
-        if (charset != null) {
-            return charset;
+        List<EncodingResult> results = detector.detect(tis, metadata, new ParseContext());
+        if (!results.isEmpty()) {
+            return results.get(0).getCharset();
         }
+        Charset charset = null;
 
         // Try determining the encoding based on hints in document metadata
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
