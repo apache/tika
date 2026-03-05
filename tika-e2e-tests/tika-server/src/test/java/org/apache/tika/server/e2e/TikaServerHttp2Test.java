@@ -71,8 +71,7 @@ public class TikaServerHttp2Test {
         String serverHome = System.getProperty("tika.server.home");
         if (serverHome == null) {
             // fall back to conventional location relative to this module
-            Path moduleDir = Paths.get("").toAbsolutePath();
-            Path repoRoot = moduleDir;
+            Path repoRoot = Paths.get("").toAbsolutePath();
             while (repoRoot != null && !repoRoot.resolve("tika-server").toFile().isDirectory()) {
                 repoRoot = repoRoot.getParent();
             }
@@ -120,7 +119,10 @@ public class TikaServerHttp2Test {
     void stopServer() throws Exception {
         if (serverProcess != null && serverProcess.isAlive()) {
             serverProcess.destroy();
-            serverProcess.waitFor();
+            if (!serverProcess.waitFor(5, java.util.concurrent.TimeUnit.SECONDS)) {
+                serverProcess.destroyForcibly();
+                serverProcess.waitFor(30, java.util.concurrent.TimeUnit.SECONDS);
+            }
         }
     }
 
