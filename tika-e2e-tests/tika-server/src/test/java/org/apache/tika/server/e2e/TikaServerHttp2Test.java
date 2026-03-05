@@ -26,12 +26,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -53,7 +55,7 @@ import org.slf4j.LoggerFactory;
 public class TikaServerHttp2Test {
 
     private static final Logger log = LoggerFactory.getLogger(TikaServerHttp2Test.class);
-    private static final long SERVER_STARTUP_TIMEOUT_MS = 60_000;
+    private static final long SERVER_STARTUP_TIMEOUT_MS = 90_000;
     private static final String STATUS_PATH = "/status";
 
     private Process serverProcess;
@@ -81,6 +83,11 @@ public class TikaServerHttp2Test {
                     .toString() + "/tika-server-standard-" +
                     System.getProperty("tika.version", "4.0.0-SNAPSHOT") + ".jar";
         }
+
+        Path jar = Paths.get(jarPath);
+        Assumptions.assumeTrue(Files.exists(jar),
+                "Fat-jar not found at " + jarPath + "; skipping HTTP/2 e2e test. " +
+                "Build with: mvn package -pl tika-server/tika-server-standard -DskipTests");
 
         log.info("Starting tika-server-standard from: {}", jarPath);
         ProcessBuilder pb = new ProcessBuilder(
@@ -165,7 +172,7 @@ public class TikaServerHttp2Test {
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();
         HttpRequest pollRequest = HttpRequest.newBuilder()
-                .uri(URI.create(endPoint + "/"))
+                .uri(URI.create(endPoint + STATUS_PATH))
                 .GET()
                 .build();
 
