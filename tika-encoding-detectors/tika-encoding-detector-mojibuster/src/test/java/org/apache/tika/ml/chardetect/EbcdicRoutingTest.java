@@ -72,7 +72,7 @@ public class EbcdicRoutingTest {
     }
 
     @BeforeAll
-    static void setUp() {
+    static void setUp() throws Exception {
         detector = new MojibusterEncodingDetector();
     }
 
