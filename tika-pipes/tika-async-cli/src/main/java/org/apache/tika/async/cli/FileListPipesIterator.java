@@ -16,11 +16,12 @@
  */
 package org.apache.tika.async.cli;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -50,32 +51,60 @@ class FileListPipesIterator implements PipesIterator {
 
     @Override
     public Iterator<FetchEmitTuple> iterator() {
-        List<String> lines;
+        BufferedReader reader;
         try {
-            lines = Files.readAllLines(fileListPath);
+            reader = Files.newBufferedReader(fileListPath);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read file list: " + fileListPath, e);
+            throw new RuntimeException("Failed to open file list: " + fileListPath, e);
         }
 
         AtomicInteger id = new AtomicInteger();
-        return lines.stream()
-                .map(String::trim)
-                .filter(line -> !line.isEmpty() && !line.startsWith("#"))
-                .map(line -> {
-                    String fetchPath;
-                    if (basePath != null) {
-                        // Treat as relative to basePath; resolve then relativize
-                        // so the fetcher can find it
-                        fetchPath = line;
-                    } else {
-                        fetchPath = line;
+        return new Iterator<>() {
+            private FetchEmitTuple next;
+            private boolean done;
+
+            @Override
+            public boolean hasNext() {
+                if (next != null) {
+                    return true;
+                }
+                if (done) {
+                    return false;
+                }
+                try {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.isEmpty() && !line.startsWith("#")) {
+                            next = new FetchEmitTuple(
+                                    String.valueOf(id.getAndIncrement()),
+                                    new FetchKey(TikaConfigAsyncWriter.FETCHER_NAME, line),
+                                    new EmitKey(TikaConfigAsyncWriter.EMITTER_NAME, line));
+                            return true;
+                        }
                     }
-                    return new FetchEmitTuple(
-                            String.valueOf(id.getAndIncrement()),
-                            new FetchKey(TikaConfigAsyncWriter.FETCHER_NAME, fetchPath),
-                            new EmitKey(TikaConfigAsyncWriter.EMITTER_NAME, fetchPath));
-                })
-                .iterator();
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed reading file list", e);
+                }
+                done = true;
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+                return false;
+            }
+
+            @Override
+            public FetchEmitTuple next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                FetchEmitTuple t = next;
+                next = null;
+                return t;
+            }
+        };
     }
 
     @Override
