@@ -84,6 +84,7 @@ public class ElasticsearchTest {
     private static GenericContainer<?> CONTAINER;
 
     protected static final String TEST_INDEX = "tika-pipes-index";
+    protected static final String REPORTER_INDEX = "tika-pipes-reporter-index";
     private int numTestDocs = 0;
 
     @BeforeAll
@@ -110,8 +111,8 @@ public class ElasticsearchTest {
     @AfterEach
     public void clearIndex() throws TikaConfigException, IOException {
         ElasticsearchTestClient client = getNewClient();
-        String endpoint = getEndpoint();
-        client.deleteIndex(endpoint);
+        client.deleteIndex(getEndpoint());
+        client.deleteIndex(getReporterEndpoint());
     }
 
     @Test
@@ -154,9 +155,15 @@ public class ElasticsearchTest {
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
 
-        // validate reporter fields
+        // validate reporter fields from the reporter index
+        String reporterEndpoint = getReporterEndpoint();
+        String reporterQuery = "{ \"track_total_hits\": true, \"query\": " +
+                "{ \"match_all\": {} }, " +
+                "\"from\": 0, \"size\": 1000 }";
+        JsonResponse reporterResults = client.postJson(reporterEndpoint + "/_search", reporterQuery);
+        assertEquals(200, reporterResults.getStatus());
         Map<String, Integer> statusCounts = new HashMap<>();
-        for (JsonNode n : results.getJson().get("hits").get("hits")) {
+        for (JsonNode n : reporterResults.getJson().get("hits").get("hits")) {
             String status = n.get("_source").get("my_test_parse_status").asText();
             long parseTimeMs = n.get("_source").get("my_test_parse_time_ms").asLong();
             Integer cnt = statusCounts.get(status);
@@ -261,7 +268,7 @@ public class ElasticsearchTest {
                         .asInt());
 
         // verify reporter wrote status for all top-level documents
-        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
+        assertReporterCounts(client, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -345,7 +352,7 @@ public class ElasticsearchTest {
         assertEquals(400, results.getStatus());
 
         // verify reporter wrote status for all top-level documents
-        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
+        assertReporterCounts(client, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -379,7 +386,7 @@ public class ElasticsearchTest {
                         .asInt());
 
         // verify reporter wrote status for all top-level documents
-        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
+        assertReporterCounts(client, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -582,6 +589,10 @@ public class ElasticsearchTest {
         return getBaseUrl() + "/" + TEST_INDEX;
     }
 
+    private String getReporterEndpoint() {
+        return getBaseUrl() + "/" + REPORTER_INDEX;
+    }
+
     private ElasticsearchTestClient getNewClient()
             throws TikaConfigException {
         HttpClientFactory httpClientFactory = new HttpClientFactory();
@@ -641,6 +652,7 @@ public class ElasticsearchTest {
 
         // refresh to make content searchable
         client.getJson(endpoint + "/_refresh");
+        client.getJson(getReporterEndpoint() + "/_refresh");
     }
 
     @NotNull
@@ -671,6 +683,7 @@ public class ElasticsearchTest {
         replacements.put("PARSE_MODE", parseMode.name());
         replacements.put("INCLUDE_ROUTING", includeRouting);
         replacements.put("ELASTICSEARCH_URL", endpoint);
+        replacements.put("REPORTER_ELASTICSEARCH_URL", getReporterEndpoint());
         replacements.put("LOG4J_JVM_ARG",
                 "-Dlog4j.configurationFile=" +
                         log4jPropFile.toAbsolutePath());
@@ -687,11 +700,11 @@ public class ElasticsearchTest {
      * Queries for docs that have the reporter's {@code my_test_parse_status} field.
      */
     private void assertReporterCounts(ElasticsearchTestClient client,
-                                       String endpoint,
                                        int expectedTotal) throws Exception {
+        String reporterEndpoint = getReporterEndpoint();
         String query = "{ \"track_total_hits\": true, \"query\": " +
                 "{ \"exists\": { \"field\": \"my_test_parse_status\" } } }";
-        JsonResponse results = client.postJson(endpoint + "/_search", query);
+        JsonResponse results = client.postJson(reporterEndpoint + "/_search", query);
         assertEquals(200, results.getStatus());
         int actual = results.getJson().get("hits").get("total").get("value").asInt();
         assertEquals(expectedTotal, actual,

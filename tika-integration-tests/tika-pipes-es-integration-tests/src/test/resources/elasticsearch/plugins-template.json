@@ -32,7 +32,7 @@
   },
   "pipes-reporters": {
     "es-pipes-reporter": {
-      "esUrl": "ELASTICSEARCH_URL",
+      "esUrl": "REPORTER_ELASTICSEARCH_URL",
       "keyPrefix": "my_test_",
       "includeRouting": "INCLUDE_ROUTING",
       "httpClientConfig": {
