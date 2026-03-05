@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+  <title>Sample E2E Test Document</title>
+  <body>This XML fixture is used by the tika-grpc end-to-end tests.</body>
+</document>

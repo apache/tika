@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core;
 
 import java.io.IOException;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -28,6 +29,7 @@ import org.apache.tika.parser.ParseContext;
  * Detector that crashes with SystemExit
  * Used for testing crash handling during pre-parse detection phase.
  */
+@TikaComponent(spi = false)
 public class CrashingDetector implements Detector {
 
     @Override

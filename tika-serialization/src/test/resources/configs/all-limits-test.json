@@ -18,7 +18,8 @@
       "zipBombRatio": 100
     },
     "timeout-limits": {
-      "taskTimeoutMillis": 60000
+      "totalTaskTimeoutMillis": 3600000,
+      "progressTimeoutMillis": 60000
     },
     "standard-metadata-limiter-factory": {
       "maxTotalBytes": 1048576,

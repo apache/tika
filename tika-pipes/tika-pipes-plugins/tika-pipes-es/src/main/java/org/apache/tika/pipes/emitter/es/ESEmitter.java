@@ -112,11 +112,11 @@ public class ESEmitter extends AbstractEmitter {
         if (http != null) {
             httpClientFactory.setUserName(http.userName());
             httpClientFactory.setPassword(http.password());
-            if (http.socketTimeout() > 0) {
-                httpClientFactory.setSocketTimeout(http.socketTimeout());
+            if (http.socketTimeoutMillis() > 0) {
+                httpClientFactory.setSocketTimeout(http.socketTimeoutMillis());
             }
-            if (http.connectionTimeout() > 0) {
-                httpClientFactory.setConnectTimeout(http.connectionTimeout());
+            if (http.connectionTimeoutMillis() > 0) {
+                httpClientFactory.setConnectTimeout(http.connectionTimeoutMillis());
             }
             if (http.authScheme() != null) {
                 httpClientFactory.setAuthScheme(http.authScheme());

@@ -40,6 +40,7 @@ public class TikaGrpcServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaGrpcServer.class);
     public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
+    private TikaGrpcServerImpl serviceImpl;
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
@@ -94,9 +95,10 @@ public class TikaGrpcServer {
         }
         File tikaConfigFile = new File(tikaConfig.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
+        serviceImpl = new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginRoots);
         server = Grpc
                 .newServerBuilderForPort(port, creds)
-                .addService(new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginRoots))
+                .addService(serviceImpl)
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()
@@ -118,6 +120,9 @@ public class TikaGrpcServer {
     }
 
     public void stop() throws InterruptedException {
+        if (serviceImpl != null) {
+            serviceImpl.shutdown();
+        }
         if (server != null) {
             server
                     .shutdown()

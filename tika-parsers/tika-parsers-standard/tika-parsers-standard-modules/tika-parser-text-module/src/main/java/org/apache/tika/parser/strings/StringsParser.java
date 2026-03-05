@@ -38,6 +38,8 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -120,7 +122,7 @@ public class StringsParser implements Parser, Initializable {
 
             xhtml.startDocument();
 
-            totalBytes = doStrings(input, stringsConfig, xhtml);
+            totalBytes = doStrings(input, stringsConfig, xhtml, context);
 
             xhtml.endDocument();
 
@@ -176,7 +178,8 @@ public class StringsParser implements Parser, Initializable {
      * @throws TikaException if the parsing process has been interrupted.
      * @throws SAXException
      */
-    private int doStrings(File input, StringsConfig config, XHTMLContentHandler xhtml)
+    private int doStrings(File input, StringsConfig config, XHTMLContentHandler xhtml,
+                          ParseContext context)
             throws IOException, TikaException, SAXException {
 
         String stringsProg = defaultConfig.getStringsPath() + getStringsProg();
@@ -204,11 +207,13 @@ public class StringsParser implements Parser, Initializable {
         Thread gobbler = logStream(out, xhtml, totalBytes);
         gobbler.start();
         try {
-            boolean completed = process.waitFor(config.getTimeoutSeconds(), TimeUnit.SECONDS);
+            long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, config.getTimeoutSeconds() * 1000L);
+            boolean completed = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS);
             if (!completed) {
                 throw new TimeoutException("timed out");
             }
             gobbler.join(10000);
+            TikaProgressTracker.update(context);
         } catch (InterruptedException | TimeoutException e) {
             throw new TikaException("strings process failed", e);
         } finally {

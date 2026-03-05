@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -187,7 +187,7 @@ public class TesseractOCRParserTest extends TikaTest {
                     .loadAutoDetectParser();
             Metadata m = new Metadata();
             ParseContext parseContext = new ParseContext();
-            parseContext.set(TikaTaskTimeout.class, new TikaTaskTimeout(50));
+            parseContext.set(TimeoutLimits.class, new TimeoutLimits(50, 50));
             getXML("testRotated+10.png", p, m, parseContext);
             fail("should have thrown a timeout");
         } catch (TikaException e) {

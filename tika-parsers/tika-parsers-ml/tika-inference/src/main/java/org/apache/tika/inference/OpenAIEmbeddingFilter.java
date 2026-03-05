@@ -17,24 +17,18 @@
 package org.apache.tika.inference;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import okhttp3.ConnectionPool;
-import okhttp3.Dispatcher;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -57,10 +51,7 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private static final MediaType JSON_MEDIA_TYPE =
-            MediaType.parse("application/json; charset=utf-8");
-
-    private transient OkHttpClient httpClient;
+    private transient TikaHttpClient httpClient;
 
     /**
      * URL path appended to {@code baseUrl} for embeddings requests.
@@ -77,12 +68,12 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
 
     public OpenAIEmbeddingFilter() {
         super();
-        buildHttpClient();
+        this.httpClient = TikaHttpClient.build(30);
     }
 
     public OpenAIEmbeddingFilter(InferenceConfig config) {
         super(config);
-        buildHttpClient();
+        this.httpClient = TikaHttpClient.build(30);
     }
 
     @Override
@@ -93,33 +84,17 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
             return;
         }
 
-        // Build the request with all chunk texts in one batch
         String requestJson = buildRequest(chunks, config);
         String url = config.getBaseUrl().replaceAll("/+$", "") + embeddingsPath;
 
-        Request.Builder builder = new Request.Builder()
-                .url(url)
-                .post(RequestBody.create(requestJson, JSON_MEDIA_TYPE));
-
+        Map<String, String> headers = new HashMap<>();
         if (!StringUtils.isBlank(config.getApiKey())) {
-            builder.header(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
+            headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
 
-        OkHttpClient client = getClientWithTimeout(config);
-
-        try (Response response = client.newCall(builder.build()).execute()) {
-            if (!response.isSuccessful()) {
-                String body = response.body() != null
-                        ? response.body().string() : "";
-                throw new TikaException(
-                        "Embedding request failed with HTTP "
-                                + response.code() + ": " + body);
-            }
-
-            String responseBody = response.body() != null
-                    ? response.body().string() : "";
-            parseResponse(responseBody, chunks);
-        }
+        String responseBody = httpClient.postJson(url, requestJson, headers,
+                config.getTimeoutSeconds());
+        parseResponse(responseBody, chunks);
     }
 
     String buildRequest(List<Chunk> chunks, InferenceConfig config) {
@@ -165,44 +140,6 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
             throw new TikaException(
                     "Failed to parse embedding response: " + e.getMessage(), e);
         }
-    }
-
-    private void buildHttpClient() {
-        int timeout = getDefaultConfig().getTimeoutSeconds();
-        // Zero idle connections so sockets are closed immediately after each request.
-        // This prevents MockWebServer (and any similar server) from hanging on shutdown
-        // while waiting for keep-alive connections to time out. The TCP handshake overhead
-        // is negligible compared to embedding inference latency.
-        // TODO: make maxIdleConnections configurable from a system-wide setting in
-        //  tika-config.json once that exists, so high-throughput deployments can tune it.
-        httpClient = new OkHttpClient.Builder()
-                .connectionPool(new ConnectionPool(0, 1, TimeUnit.NANOSECONDS))
-                .dispatcher(new Dispatcher(Executors.newCachedThreadPool(r -> {
-                    Thread t = new Thread(r, "tika-okhttp-dispatcher");
-                    t.setDaemon(true);
-                    return t;
-                })))
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(timeout, TimeUnit.SECONDS)
-                .writeTimeout(60, TimeUnit.SECONDS)
-                .build();
-    }
-
-    private OkHttpClient getClientWithTimeout(InferenceConfig config) {
-        long defaultMs = getDefaultConfig().getTimeoutSeconds() * 1000L;
-        long requestMs = config.getTimeoutSeconds() * 1000L;
-        if (requestMs == defaultMs) {
-            return httpClient;
-        }
-        return httpClient.newBuilder()
-                .readTimeout(requestMs, TimeUnit.MILLISECONDS)
-                .build();
-    }
-
-    @Override
-    public void close() {
-        httpClient.dispatcher().executorService().shutdown();
-        httpClient.connectionPool().evictAll();
     }
 
     // ---- Azure / endpoint config getters/setters ----------------------------

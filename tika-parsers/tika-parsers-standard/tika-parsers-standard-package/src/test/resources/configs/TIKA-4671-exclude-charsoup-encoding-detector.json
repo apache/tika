@@ -1,0 +1,11 @@
+{
+  "encoding-detectors": [
+    {
+      "default-encoding-detector": {
+        "exclude": [
+          "charsoup-encoding-detector"
+        ]
+      }
+    }
+  ]
+}

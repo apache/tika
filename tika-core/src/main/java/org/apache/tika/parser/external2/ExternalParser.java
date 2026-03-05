@@ -36,7 +36,8 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.config.TikaTaskTimeout;
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -140,7 +141,7 @@ public class ExternalParser implements Parser {
                 }
             }
             FileProcessResult result = null;
-            long localTimeoutMillis = TikaTaskTimeout.getTimeoutMillis(context, config.getTimeoutMs());
+            long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, config.getTimeoutMs());
             if (outputFileInCommandline) {
                 result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
                         localTimeoutMillis, config.getMaxStdOut(), config.getMaxStdErr());
@@ -151,6 +152,7 @@ public class ExternalParser implements Parser {
             }
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
+            TikaProgressTracker.update(context);
             metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
             metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED,
                     result.isStdoutTruncated());

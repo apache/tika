@@ -24,8 +24,8 @@ package org.apache.tika.pipes.emitter.es;
  * @param userName          Username for basic authentication (optional)
  * @param password          Password for basic authentication (optional)
  * @param authScheme        Auth scheme passed to HttpClientFactory, e.g. {@code "basic"} or {@code "ntlm"}
- * @param connectionTimeout Connect timeout in milliseconds
- * @param socketTimeout     Socket read timeout in milliseconds
+ * @param connectionTimeoutMillis Connect timeout in milliseconds
+ * @param socketTimeoutMillis     Socket read timeout in milliseconds
  * @param proxyHost         HTTP proxy host (optional)
  * @param proxyPort         HTTP proxy port
  * @param verifySsl         When {@code true}, the HTTP client validates server certificates and
@@ -33,7 +33,7 @@ package org.apache.tika.pipes.emitter.es;
  *                          {@code false} for backward compatibility (trust-all / no hostname check).
  */
 public record HttpClientConfig(String userName, String password,
-                               String authScheme, int connectionTimeout,
-                               int socketTimeout, String proxyHost, int proxyPort,
+                               String authScheme, int connectionTimeoutMillis,
+                               int socketTimeoutMillis, String proxyHost, int proxyPort,
                                boolean verifySsl) {
 }

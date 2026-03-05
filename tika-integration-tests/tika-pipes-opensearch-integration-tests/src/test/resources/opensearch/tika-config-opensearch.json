@@ -110,8 +110,7 @@
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
       "LOG4J_JVM_ARG"
-    ],
-    "timeoutMillis": 60000
+    ]
   },
   "plugin-roots": "target/plugins"
 }

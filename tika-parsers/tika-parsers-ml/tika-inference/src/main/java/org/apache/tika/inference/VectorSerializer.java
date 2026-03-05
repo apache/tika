@@ -17,7 +17,6 @@
 package org.apache.tika.inference;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.Base64;
 
@@ -39,8 +38,7 @@ public final class VectorSerializer {
      * Encode a float array as a base64 string (big-endian float32).
      */
     public static String encode(float[] vector) {
-        ByteBuffer buf = ByteBuffer.allocate(vector.length * Float.BYTES)
-                .order(ByteOrder.BIG_ENDIAN);
+        ByteBuffer buf = ByteBuffer.allocate(vector.length * Float.BYTES);
         buf.asFloatBuffer().put(vector);
         return Base64.getEncoder().encodeToString(buf.array());
     }
@@ -50,9 +48,7 @@ public final class VectorSerializer {
      */
     public static float[] decode(String base64) {
         byte[] bytes = Base64.getDecoder().decode(base64);
-        FloatBuffer fb = ByteBuffer.wrap(bytes)
-                .order(ByteOrder.BIG_ENDIAN)
-                .asFloatBuffer();
+        FloatBuffer fb = ByteBuffer.wrap(bytes).asFloatBuffer();
         float[] vector = new float[fb.remaining()];
         fb.get(vector);
         return vector;

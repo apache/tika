@@ -27,14 +27,12 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -42,17 +40,16 @@ public class OpenAIEmbeddingFilterTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private MockWebServer server;
+    private TikaTestHttpServer server;
     private OpenAIEmbeddingFilter filter;
     private InferenceConfig config;
 
     @BeforeEach
     void setUp() throws Exception {
-        server = new MockWebServer();
-        server.start();
+        server = new TikaTestHttpServer();
 
         config = new InferenceConfig();
-        config.setBaseUrl(server.url("").toString().replaceAll("/+$", ""));
+        config.setBaseUrl(server.url());
         config.setModel("text-embedding-3-small");
         config.setMaxChunkChars(500);
         config.setOverlapChars(0);
@@ -62,8 +59,7 @@ public class OpenAIEmbeddingFilterTest {
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        filter.close();
+    void tearDown() {
         server.shutdown();
     }
 
@@ -72,10 +68,8 @@ public class OpenAIEmbeddingFilterTest {
         String content = "# Section A\n\nSome text about section A.\n\n"
                 + "# Section B\n\nSome text about section B.";
 
-        // Mock embeddings response with 2 vectors (3 dims each)
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(2, 3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(2, 3)));
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), content);
@@ -96,10 +90,9 @@ public class OpenAIEmbeddingFilterTest {
         assertNotNull(chunks.get(1).getVector());
         assertEquals(3, chunks.get(0).getVector().length);
 
-        // Verify the request
-        RecordedRequest request = server.takeRequest();
-        assertEquals("/v1/embeddings", request.getPath());
-        JsonNode body = MAPPER.readTree(request.getBody().readUtf8());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("/v1/embeddings", request.path());
+        JsonNode body = MAPPER.readTree(request.body());
         assertEquals("text-embedding-3-small", body.get("model").asText());
         assertEquals(2, body.get("input").size());
     }
@@ -110,9 +103,8 @@ public class OpenAIEmbeddingFilterTest {
         filter.close();
         filter = new OpenAIEmbeddingFilter(config);
 
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(1, 3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
@@ -121,7 +113,7 @@ public class OpenAIEmbeddingFilterTest {
         filter.filter(list);
 
         assertEquals("Bearer sk-test-key",
-                server.takeRequest().getHeader("Authorization"));
+                server.takeRequest().header("authorization"));
     }
 
     @Test
@@ -150,8 +142,7 @@ public class OpenAIEmbeddingFilterTest {
 
     @Test
     void testServerError() {
-        server.enqueue(new MockResponse().setResponseCode(500)
-                .setBody("{\"error\":\"boom\"}"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
@@ -188,9 +179,8 @@ public class OpenAIEmbeddingFilterTest {
 
     @Test
     void testVectorSerialization() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(1, 3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Single chunk of text.");
@@ -205,16 +195,14 @@ public class OpenAIEmbeddingFilterTest {
         // Vector should be base64, not a JSON array
         String vectorField = array.get(0).get("vector").asText();
         assertNotNull(vectorField);
-        // Should be decodable
         float[] decoded = VectorSerializer.decode(vectorField);
         assertEquals(3, decoded.length);
     }
 
     @Test
     void testMergeWithExistingChunks() throws Exception {
-        server.enqueue(new MockResponse()
-                .setBody(buildEmbeddingResponse(1, 3))
-                .setHeader("Content-Type", "application/json"));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
@@ -237,9 +225,7 @@ public class OpenAIEmbeddingFilterTest {
                 metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         // Should have the pre-existing image chunk + the new text chunk
         assertEquals(2, merged.size());
-        // First is the image chunk (no text)
         assertNull(merged.get(0).getText());
-        // Second is the text chunk
         assertNotNull(merged.get(1).getText());
         assertNotNull(merged.get(1).getVector());
     }
@@ -260,7 +246,8 @@ public class OpenAIEmbeddingFilterTest {
                 if (d > 0) {
                     sb.append(",");
                 }
-                sb.append(String.format(java.util.Locale.ROOT, "%.6f", (i + 1) * 0.1 + d * 0.01));
+                sb.append(String.format(java.util.Locale.ROOT,
+                        "%.6f", (i + 1) * 0.1 + d * 0.01));
             }
             sb.append("]}");
         }

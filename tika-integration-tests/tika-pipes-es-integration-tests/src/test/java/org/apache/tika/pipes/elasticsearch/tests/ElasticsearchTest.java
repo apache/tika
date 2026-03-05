@@ -92,6 +92,7 @@ public class ElasticsearchTest {
                 .withExposedPorts(9200)
                 .withEnv("discovery.type", "single-node")
                 .withEnv("xpack.security.enabled", "false")
+                .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
                 .withEnv("cluster.routing.allocation.disk.threshold_enabled",
                         "false")
                 .waitingFor(new HttpWaitStrategy()
@@ -258,6 +259,9 @@ public class ElasticsearchTest {
         assertEquals(11,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
+
+        // verify reporter wrote status for all top-level documents
+        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -339,6 +343,9 @@ public class ElasticsearchTest {
                 "\"id\": \"test_recursive_embedded.docx\" } } } ";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(400, results.getStatus());
+
+        // verify reporter wrote status for all top-level documents
+        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -370,6 +377,9 @@ public class ElasticsearchTest {
         assertEquals(numHtmlDocs + 1,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
+
+        // verify reporter wrote status for all top-level documents
+        assertReporterCounts(client, endpoint, numHtmlDocs + numTestDocs);
     }
 
     @Test
@@ -583,6 +593,7 @@ public class ElasticsearchTest {
                         10, DEFAULT_EMBEDDED_FILE_FIELD_NAME, null,
                         new HttpClientConfig(null, null, null,
                                 -1, -1, null, 0, false));
+
         return new ElasticsearchTestClient(config,
                 httpClientFactory.build());
     }
@@ -669,6 +680,22 @@ public class ElasticsearchTest {
                 ElasticsearchTest.class, replacements, tikaConfig);
 
         return tikaConfig;
+    }
+
+    /**
+     * Asserts that the reporter wrote a parse status for every document.
+     * Queries for docs that have the reporter's {@code my_test_parse_status} field.
+     */
+    private void assertReporterCounts(ElasticsearchTestClient client,
+                                       String endpoint,
+                                       int expectedTotal) throws Exception {
+        String query = "{ \"track_total_hits\": true, \"query\": " +
+                "{ \"exists\": { \"field\": \"my_test_parse_status\" } } }";
+        JsonResponse results = client.postJson(endpoint + "/_search", query);
+        assertEquals(200, results.getStatus());
+        int actual = results.getJson().get("hits").get("total").get("value").asInt();
+        assertEquals(expectedTotal, actual,
+                "expected " + expectedTotal + " docs with reporter status, got " + actual);
     }
 
     private void createTestHtmlFiles(String bodyContent,

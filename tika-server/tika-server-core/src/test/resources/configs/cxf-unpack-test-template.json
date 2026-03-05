@@ -16,7 +16,6 @@
   },
   "pipes": {
     "numClients": 2,
-    "timeoutMillis": "TIMEOUT_MILLIS",
     "emitIntermediateResults": false,
     "forkedJvmArgs": [
       "-Xmx512m"
@@ -32,6 +31,9 @@
           { "algorithm": "MD5" }
         ]
       }
+    },
+    "timeout-limits": {
+      "progressTimeoutMillis": "TIMEOUT_MILLIS"
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

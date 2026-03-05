@@ -35,7 +35,6 @@
     "parseMode": "RMETA",
     "onParseException": "EMIT",
     "numClients": 1,
-    "timeoutMillis": 5000,
     "emitIntermediateResults": false,
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
@@ -53,6 +52,9 @@
       "maxFieldSize": 1000,
       "maxTotalBytes": 10000,
       "maxValuesPerField": 5
+    },
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

@@ -125,12 +125,14 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     }
 
     /**
-     * Creates a WORKING heartbeat with a progress counter in the payload.
+     * Creates a WORKING heartbeat with the last-progress timestamp in the payload.
+     *
+     * @param lastProgressMillis epoch millis of the last progress update
      */
-    public static PipesMessage working(long counter) {
+    public static PipesMessage working(long lastProgressMillis) {
         byte[] payload = ByteBuffer.allocate(Long.BYTES)
                 .order(ByteOrder.BIG_ENDIAN)
-                .putLong(counter)
+                .putLong(lastProgressMillis)
                 .array();
         return new PipesMessage(PipesMessageType.WORKING, payload);
     }
@@ -156,11 +158,13 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     }
 
     /**
-     * Extracts the progress counter from a WORKING message payload.
+     * Extracts the last-progress timestamp from a WORKING message payload.
+     *
+     * @return epoch millis of the last progress update reported by the server
      */
-    public long progressCounter() {
+    public long lastProgressMillis() {
         if (type != PipesMessageType.WORKING) {
-            throw new IllegalStateException("progressCounter() only valid for WORKING messages");
+            throw new IllegalStateException("lastProgressMillis() only valid for WORKING messages");
         }
         return ByteBuffer.wrap(payload)
                 .order(ByteOrder.BIG_ENDIAN)

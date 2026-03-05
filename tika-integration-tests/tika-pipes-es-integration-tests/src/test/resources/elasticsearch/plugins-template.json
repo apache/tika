@@ -24,8 +24,8 @@
         "embeddedFileFieldName": "embedded",
         "httpClientConfig": {
           "authScheme": "http",
-          "connectionTimeout": 60,
-          "socketTimeout": 60
+          "connectionTimeoutMillis": 30000,
+          "socketTimeoutMillis": 30000
         }
       }
     }
@@ -65,8 +65,12 @@
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
       "LOG4J_JVM_ARG"
-    ],
-    "timeoutMillis": 60000
+    ]
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
   },
   "metadata-filters": [
     {

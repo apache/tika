@@ -100,9 +100,6 @@ public class PluginsWriter {
             if (simpleAsyncConfig.getXmx() != null) {
                 pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
             }
-            if (simpleAsyncConfig.getTimeoutMs() != null) {
-                pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
-            }
             if (simpleAsyncConfig.isContentOnly()) {
                 pipesConfig.setParseMode(ParseMode.CONTENT_ONLY);
             } else if (simpleAsyncConfig.isConcatenate()) {
@@ -122,6 +119,18 @@ public class PluginsWriter {
             }
 
             root.set("pipes", objectMapper.valueToTree(pipesConfig));
+
+            // Write timeout limits to parse-context if configured
+            if (simpleAsyncConfig.getTimeoutMs() != null) {
+                ObjectNode parseContext = (ObjectNode) root.get("parse-context");
+                if (parseContext == null) {
+                    parseContext = objectMapper.createObjectNode();
+                    root.set("parse-context", parseContext);
+                }
+                ObjectNode timeoutNode = objectMapper.createObjectNode();
+                timeoutNode.put("progressTimeoutMillis", simpleAsyncConfig.getTimeoutMs());
+                parseContext.set("timeout-limits", timeoutNode);
+            }
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(output.toFile(), root);
         } catch (Exception e) {

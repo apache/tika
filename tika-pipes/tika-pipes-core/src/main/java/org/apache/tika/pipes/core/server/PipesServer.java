@@ -45,6 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -342,11 +344,13 @@ public class PipesServer implements AutoCloseable {
                         ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                         // Resolve friendly-named configs in ParseContext to actual objects
                         ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                        TikaProgressTracker tracker = new TikaProgressTracker();
+                        mergedContext.set(TikaProgressTracker.class, tracker);
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
                         try {
-                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch);
+                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, tracker);
                         } catch (Throwable t) {
                             LOG.error("Serious problem processing request", t);
                         }
@@ -388,10 +392,13 @@ public class PipesServer implements AutoCloseable {
 
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
-                               ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch) throws InterruptedException, IOException {
+                               ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
+                               TikaProgressTracker tracker) throws InterruptedException, IOException {
         Instant start = Instant.now();
-        long timeoutMillis = PipesClient.getTimeoutMillis(pipesConfig, mergedContext);
-        long progressCounter = 1;
+        TimeoutLimits limits = TimeoutLimits.get(mergedContext);
+        long progressTimeoutMillis = limits.getProgressTimeoutMillis();
+        long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
+        long heartbeatCounter = 1;
         boolean wroteIntermediateResult = false;
 
         while (true) {
@@ -431,22 +438,36 @@ public class PipesServer implements AutoCloseable {
 
             // Send fire-and-forget heartbeat if we've waited long enough
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > progressCounter * heartbeatIntervalMs) {
-                LOG.debug("still processing: {}", progressCounter);
-                PipesMessage.working(progressCounter++).write(output);
+            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
+                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+                heartbeatCounter++;
             }
 
-            if (checkTimeout(start, timeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
+            }
+            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+                return;
             }
         }
 
     }
 
-    private boolean checkTimeout(Instant start, long timeoutMillis, String id) {
-        if (Duration.between(start, Instant.now()).toMillis() > timeoutMillis) {
+    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
+        long elapsed = Duration.between(start, Instant.now()).toMillis();
+        if (elapsed > totalTaskTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
-                    new RuntimeException("Server-side timeout after " + timeoutMillis + "ms"));
+                    new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
+            return true;
+        }
+        return false;
+    }
+
+    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+        if (timeSinceProgress > progressTimeoutMillis) {
+            handleCrash(PipesMessageType.TIMEOUT, id,
+                    new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));
             return true;
         }
         return false;

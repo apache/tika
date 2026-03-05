@@ -68,8 +68,6 @@ import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
-import org.apache.tika.serialization.serdes.ParseContextDeserializer;
-import org.apache.tika.serialization.serdes.ParseContextSerializer;
 import org.apache.tika.utils.StringUtils;
 
 public class PDFParserTest extends TikaTest {
@@ -578,30 +576,22 @@ public class PDFParserTest extends TikaTest {
 
     @Test
     public void testPDFParserConfigSerialization() throws Exception {
-        // Test that PDFParserConfig can be serialized and deserialized through ParseContext
-        PDFParserConfig config = new PDFParserConfig();
-        config.setSortByPosition(true);
-        config.setExtractInlineImages(true);
-        config.setOcrStrategy(OcrConfig.Strategy.AUTO);
+        // PDFParser is self-configuring: config goes via "pdf-parser" JSON config path
+        String json = "{\"pdf-parser\": {\"sortByPosition\": true, " +
+                "\"extractInlineImages\": true, \"ocrStrategy\": \"AUTO\"}}";
 
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(PDFParserConfig.class, config);
-
-        // Serialize using ParseContextSerializer
         com.fasterxml.jackson.databind.ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
-        com.fasterxml.jackson.databind.module.SimpleModule module = new com.fasterxml.jackson.databind.module.SimpleModule();
-        module.addSerializer(ParseContext.class, new ParseContextSerializer());
-        module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
-        mapper.registerModule(module);
-
-        String json = mapper.writeValueAsString(parseContext);
-        // Deserialize
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
 
-        // Verify PDFParserConfig was preserved - get it directly from ParseContext
-        PDFParserConfig deserializedConfig = deserialized.get(PDFParserConfig.class);
+        // Verify config was stored as a JSON config entry
+        assertNotNull(deserialized.getJsonConfigs().get("pdf-parser"),
+                "pdf-parser config should be stored as JSON config");
 
-        assertNotNull(deserializedConfig, "PDFParserConfig should not be null after deserialization");
+        // Verify the config can be deserialized to PDFParserConfig
+        String configJson = deserialized.getJsonConfigs().get("pdf-parser").json();
+        PDFParserConfig deserializedConfig =
+                mapper.readValue(configJson, PDFParserConfig.class);
+
         assertTrue(deserializedConfig.isSortByPosition(),
                 "sortByPosition should be preserved");
         assertTrue(deserializedConfig.isExtractInlineImages(),

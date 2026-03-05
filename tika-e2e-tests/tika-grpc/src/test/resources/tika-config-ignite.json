@@ -3,7 +3,7 @@
   "pipes": {
     "numClients": 1,
     "configStoreType": "ignite",
-    "configStoreParams": "{\"cacheName\": \"tika-e2e-test\", \"cacheMode\": \"REPLICATED\", \"igniteInstanceName\": \"TikaE2ETest\", \"autoClose\": true}",
+    "configStoreParams": "{\"tableName\": \"tika_e2e_test\", \"igniteInstanceName\": \"TikaE2ETest\", \"replicas\": 2, \"partitions\": 10, \"autoClose\": true}",
     "forkedJvmArgs": [
       "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
       "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",

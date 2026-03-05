@@ -1,47 +1,65 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.tika.pipes.filesystem;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
-import io.grpc.ManagedChannel;
-import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.GetFetcherReply;
-import org.apache.tika.GetFetcherRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
-import org.apache.tika.pipes.ExternalTestBase;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
+import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+
+import org.apache.tika.FetchAndParseReply;
+import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.SaveFetcherReply;
+import org.apache.tika.SaveFetcherRequest;
+import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.ExternalTestBase;
+import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
+
 @Slf4j
+@DisabledOnOs(value = OS.WINDOWS, disabledReason = "exec:exec classpath exceeds Windows CreateProcess command-line length limit")
 class FileSystemFetcherTest extends ExternalTestBase {
     
     @Test
     void testFileSystemFetcher() throws Exception {
         String fetcherId = "defaultFetcher";
         ManagedChannel channel = getManagedChannel();
+        try {
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-        // Create and save the fetcher dynamically
         FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-        config.setBasePath("/tika/govdocs1");
+        boolean useLocalServer = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
+        String basePath = useLocalServer ? TEST_FOLDER.getAbsolutePath() : GOV_DOCS_FOLDER;
+        config.setBasePath(basePath);
         
         String configJson = OBJECT_MAPPER.writeValueAsString(config);
-        log.info("Creating fetcher with config: {}", configJson);
+        log.info("Creating fetcher with config (basePath={}): {}", basePath, configJson);
         
         SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
@@ -83,18 +101,14 @@ class FileSystemFetcherTest extends ExternalTestBase {
             }
         });
 
-        // Submit all files for parsing
-        int maxDocs = Integer.parseInt(System.getProperty("corpa.numdocs", "-1"));
-        log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
-        
+        int maxDocs = Integer.parseInt(System.getProperty("corpus.numDocs", "-1"));
         try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
-            Stream<Path> fileStream = paths.filter(Files::isRegularFile);
-            
-            // Limit number of documents if specified
+            Stream<Path> fileStream = paths
+                    .filter(Files::isRegularFile)
+                    .filter(p -> !p.toString().endsWith(".zip"));
             if (maxDocs > 0) {
                 fileStream = fileStream.limit(maxDocs);
             }
-            
             fileStream.forEach(file -> {
                         try {
                             String relPath = TEST_FOLDER.toPath().relativize(file).toString();
@@ -112,7 +126,6 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
         requestStreamObserver.onCompleted();
 
-        // Wait for all parsing to complete
         try {
             if (!countDownLatch.await(3, TimeUnit.MINUTES)) {
                 log.error("Timed out waiting for parse to complete");
@@ -123,7 +136,6 @@ class FileSystemFetcherTest extends ExternalTestBase {
             Assertions.fail("Interrupted while waiting for parsing to complete");
         }
         
-        // Verify all files were processed (unless we limited the number)
         if (maxDocs == -1) {
             assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
         } else {
@@ -137,5 +149,16 @@ class FileSystemFetcherTest extends ExternalTestBase {
         
         log.info("Test completed successfully - {} successes, {} errors", 
             successes.size(), errors.size());
+        } finally {
+            channel.shutdown();
+            try {
+                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                    channel.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                channel.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 }
