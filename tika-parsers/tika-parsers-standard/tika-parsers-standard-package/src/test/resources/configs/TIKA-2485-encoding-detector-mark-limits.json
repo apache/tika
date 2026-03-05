@@ -1,19 +1,15 @@
 {
   "encoding-detectors": [
     {
+      "mojibuster-encoding-detector": {}
+    },
+    {
       "html-encoding-detector": {
         "markLimit": 64000
       }
     },
     {
-      "universal-encoding-detector": {
-        "markLimit": 64001
-      }
-    },
-    {
-      "icu4j-encoding-detector": {
-        "markLimit": 64002
-      }
+      "standard-html-encoding-detector": {}
     }
   ]
 }

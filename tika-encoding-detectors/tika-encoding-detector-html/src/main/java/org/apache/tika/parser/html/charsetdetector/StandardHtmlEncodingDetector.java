@@ -56,7 +56,7 @@ import org.apache.tika.parser.ParseContext;
  * }</pre>
  * <p>
  */
-@TikaComponent(spi = false)
+@TikaComponent(name = "standard-html-encoding-detector")
 public final class StandardHtmlEncodingDetector implements EncodingDetector {
     private static final int META_TAG_BUFFER_SIZE = 8192;
 

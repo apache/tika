@@ -36,7 +36,6 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
-import org.apache.tika.detect.WideUnicodeDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.CharsetConfusables;
@@ -77,15 +76,15 @@ public class EvalCharsetDetectors {
     );
     private static final Set<String> OOV_EXEMPT = Set.of(
             "US-ASCII", "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE",
-            "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN"
+            "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
+            // Routing label used by the two-model EBCDIC pipeline: not a Java Charset
+            "EBCDIC"
     );
 
-    private static final String[] COL_NAMES = {"Stat", "+ISO", "+CJK", "All", "Pipeline", "ICU4J", "juniv"};
+    private static final String[] COL_NAMES = {"Stat", "+ISO", "+CJK", "All", "ICU4J", "juniv"};
     private static final int NUM_DETECTORS = COL_NAMES.length;
-    // Index of the "All" detector — used for confusion matrix
+    // Index of the "All" detector — used for confusion matrix and score-only output
     private static final int IDX_ALL = 3;
-    // Index of the full pipeline (Wide + ML) detector
-    private static final int IDX_PIPELINE = 4;
 
     public static void main(String[] args) throws Exception {
         Path modelPath = null;
@@ -127,17 +126,11 @@ public class EvalCharsetDetectors {
                 ? new MojibusterEncodingDetector(modelPath)
                 : new MojibusterEncodingDetector();
 
-        WideUnicodeDetector wide = new WideUnicodeDetector();
         EncodingDetector[] detectors = {
             base.withRules(EnumSet.noneOf(Rule.class)),
             base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.ISO_TO_WINDOWS)),
             base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.CJK_GRAMMAR)),
             base,
-            // Full pipeline: WideUnicodeDetector first, then ML
-            (tis, meta, ctx) -> {
-                List<EncodingResult> wideResult = wide.detect(tis, meta, ctx);
-                return !wideResult.isEmpty() ? wideResult : base.detect(tis, meta, ctx);
-            },
             new Icu4jEncodingDetector(),
             new UniversalEncodingDetector()
         };
@@ -175,7 +168,7 @@ public class EvalCharsetDetectors {
             long totalN = 0;
             long[][] totals = new long[NUM_DETECTORS][2];
             long[] totalNanos = new long[NUM_DETECTORS];
-            // confusion[trueIdx][predLabel] = count  (only for IDX_PIPELINE)
+            // confusion[trueIdx][predLabel] = count  (only for IDX_ALL)
             List<Map<String, Integer>> confusion = new ArrayList<>();
             for (int ci = 0; ci < charsets.size(); ci++) {
                 confusion.add(new HashMap<>());
@@ -201,7 +194,7 @@ public class EvalCharsetDetectors {
                         if (isSoft(charset, pred)) {
                             counts[d][1]++;
                         }
-                        if (d == IDX_PIPELINE && !isStrict(charset, pred)) {
+                        if (d == IDX_ALL && !isStrict(charset, pred)) {
                             confusion.get(ci).merge(pred, 1, Integer::sum);
                         }
                     }
@@ -218,8 +211,8 @@ public class EvalCharsetDetectors {
             }
 
             if (scoreOnly) {
-                // Emit a single machine-readable line: strict accuracy of the Pipeline detector
-                double strictPct = totalN == 0 ? 0.0 : 100.0 * totals[IDX_PIPELINE][0] / totalN;
+                // Emit a single machine-readable line: strict accuracy of the All detector
+                double strictPct = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][0] / totalN;
                 System.out.printf(Locale.ROOT, "SCORE %.4f%n", strictPct);
             } else {
                 printFooter(totalN, totals, totalNanos);
@@ -238,7 +231,7 @@ public class EvalCharsetDetectors {
                                        List<List<byte[]>> allSamplesPerCharset,
                                        List<Map<String, Integer>> confusion,
                                        int probeLen, String lenLabel) {
-        System.out.println("\n--- Confusion (Pipeline, " + lenLabel
+        System.out.println("\n--- Confusion (All/ML+rules, " + lenLabel
                 + ", top errors per charset) ---");
 
         boolean anyError = false;
@@ -319,7 +312,7 @@ public class EvalCharsetDetectors {
         sb.append("|");
         System.out.println(sb);
         System.out.println("  Stat=model only | +ISO=+C1-correction | +CJK=+grammar | "
-                + "All=ML+rules | Pipeline=Wide+ML | R%=strict | S%=soft");
+                + "All=ML+rules | R%=strict | S%=soft");
 
         // Timing row
         StringBuilder timing = new StringBuilder();

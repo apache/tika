@@ -36,8 +36,8 @@ import org.apache.tika.parser.ParseContext;
  * {@link EncodingResult#CONFIDENCE_DEFINITIVE} when a BOM is found.
  *
  * <p>Not SPI-loaded by default — add explicitly to your encoding-detector
- * chain when needed.  UTF-16/32 content without a BOM is handled by
- * {@link WideUnicodeDetector}.</p>
+ * chain when needed.  UTF-16/32 content without a BOM is detected by
+ * {@code MojibusterEncodingDetector} via stride-2 byte n-gram features.</p>
  *
  * @since Apache Tika 0.x (moved to org.apache.tika.detect in 4.0)
  */

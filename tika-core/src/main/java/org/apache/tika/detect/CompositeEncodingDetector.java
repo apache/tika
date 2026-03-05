@@ -140,11 +140,6 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
         EncodingDetectorContext context = new EncodingDetectorContext();
         parseContext.set(EncodingDetectorContext.class, context);
 
-        // Mark so CharSoup can re-read the raw bytes after all base detectors finish.
-        if (tis != null) {
-            tis.mark(Integer.MAX_VALUE);
-        }
-
         try {
             for (EncodingDetector detector : baseDetectors) {
                 List<EncodingResult> detected = detector.detect(tis, metadata, parseContext);
@@ -153,11 +148,8 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
                 }
             }
 
-            // Reset so the meta detector can re-read from the beginning.
-            if (tis != null) {
-                tis.reset();
-            }
-
+            // Each base detector handles its own mark/reset, so the stream is
+            // back at the start here. CharSoup handles its own mark/reset too.
             List<EncodingResult> metaResults =
                     metaDetector.detect(tis, metadata, parseContext);
 

@@ -55,10 +55,12 @@ Charset design decisions
                       would miss NEC/IBM extension characters in real Windows files)
     windows-874 replaces TIS-620 (superset; Thai chars 0xA1–0xFB are identical,
                       Charset.forName("TIS-620") not guaranteed on all JVMs)
+  Trained in ML model using stride-2 bigram features:
+    UTF-16-LE/BE, UTF-32-LE/BE — generated from all MADLAD languages so the
+                      model sees Arabic, Hebrew, Greek, Japanese, Korean, Thai,
+                      Chinese, Russian, etc. in wide Unicode encodings.
+                      BOM-free codecs used; U+FEFF stripped from source text.
   Handled structurally (not by the ML model):
-    UTF-16-LE/BE, UTF-32-LE/BE — WideUnicodeDetector intercepts these before the
-                      model runs; the feature extractor's high-byte filter makes
-                      the model nearly blind to them anyway (dominant 0x00 bytes)
     US-ASCII, ISO-2022-JP/KR/CN — structural gates in MojibusterEncodingDetector
     HZ-GB-2312 — dropped: Java has no HZ Charset and returning a wrong decode
                  charset (GB18030) would silently corrupt content
@@ -273,10 +275,7 @@ LANG_CHARSETS: dict[str, list[str]] = {
     "vie": ["windows-1258"],
     # Japanese
     "jpn": ["Shift_JIS", "EUC-JP", "ISO-2022-JP"],
-    # Chinese simplified — also used for UTF-16/32 eval (CJK text has few null
-    # bytes in UTF-16 and reveals WideUnicodeDetector's null-pattern detection)
-    "zho": ["GB18030", "ISO-2022-CN",
-            "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE"],
+    "zho": ["GB18030", "ISO-2022-CN"],
     # Korean
     "kor": ["EUC-KR", "ISO-2022-KR"],
     # Thai
@@ -288,29 +287,33 @@ LANG_CHARSETS: dict[str, list[str]] = {
     "yue": ["Big5-HKSCS"],
 }
 
-# UTF-8 is added for all MADLAD languages.
-# UTF-16-LE/BE and UTF-32-LE/BE are intentionally EXCLUDED:
-#   - WideUnicodeDetector in tika-core intercepts them via structural checks
-#     (null-column, variety-ratio, block-prefix range) before the ML model runs.
-#   - The feature extractor's high-byte filter (skip bytes < 0x80) makes the
-#     model nearly blind to UTF-16/32 anyway — Latin UTF-16 is dominated by
-#     0x00 bytes, which are all below 0x80 and produce no features.
-#   - Including them as trained classes wastes model capacity for inputs that
-#     will never reach the model in production.
-UNICODE_CHARSETS = ["UTF-8"]
+# Charsets added for every language in LANG_CHARSETS.
+# UTF-16/32 are included here so the ML model sees them encoded in many scripts
+# (Arabic, Hebrew, Greek, Japanese, Korean, Thai, Chinese, Russian, etc.) rather
+# than only Chinese.  The stride-2 bigram features in ByteNgramFeatureExtractor
+# give the model direct code-unit visibility into UTF-16/32 structure.
+# BOM-free codecs (utf-16-le, utf-16-be, utf-32-le, utf-32-be) are used, and
+# U+FEFF is stripped from source text, so the model never sees BOM bytes.
+UNICODE_CHARSETS = [
+    "UTF-8",
+    "UTF-16-LE", "UTF-16-BE",
+    "UTF-32-LE", "UTF-32-BE",
+]
 
 # These charsets produce zero high bytes (all content < 0x80), so the ML
 # feature extractor sees no signal.  They are detected by structural gates
-# in MlEncodingDetector before the model is ever called:
+# in MojibusterEncodingDetector before the model is ever called:
 #   - US-ASCII  → checkAscii()      → returns UTF-8
 #   - ISO-2022* → detectIso2022()   → returns ISO-2022-JP/KR/CN
 #
 # We still generate devtest/test files so EvalCharsetDetectors can measure
 # full-pipeline accuracy (with structural gates enabled), but we skip train
 # files so these classes don't pollute the ML model with zero-feature samples.
+#
+# UTF-16/32 are NOT in this set — they are now trained in the ML model using
+# stride-2 bigram features which capture code-unit structure directly.
 STRUCTURAL_ONLY_CHARSETS = frozenset({
     "US-ASCII", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
-    "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE",
 })
 
 # Virtual language key used in LANG_CHARSETS for Traditional Chinese.
@@ -475,6 +478,13 @@ def encode_chunk(text: str, charset: str, codec: str,
     (curly quote, em-dash, ellipsis) not representable in the target charset.
     The drop count gate still catches sentences where most content is lost.
     """
+    # Strip U+FEFF (BOM / zero-width no-break space) unconditionally.
+    # The model must never see BOM bytes — BOMDetector owns that signal at
+    # inference time and strips BOMs before bytes reach the model.
+    text = text.replace("\ufeff", "")
+    if not text:
+        return None
+
     if charset in RTL_CHARSETS:
         text = text[::-1]
 
@@ -539,7 +549,11 @@ def _clean_madlad_text(text: str) -> str:
     don't become unencodable backslash characters in EBCDIC charsets (e.g.
     IBM420, which has no backslash in its mapping) or spurious punctuation in
     single-byte charsets that do encode backslash.
+
+    U+FEFF (BOM / zero-width no-break space) is stripped here so it can never
+    propagate into any encoded sample; the model must never see BOM bytes.
     """
+    text = text.replace("\ufeff", "")
     text = text.replace("\\n", " ").replace("\\r", "").replace("\\t", " ")
     return " ".join(text.split())  # collapse runs of whitespace
 

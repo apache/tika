@@ -13,8 +13,3 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# DefaultEncodingDetector sorts all loaded detectors by full class name.
-# org.apache.tika.detect.* (this module) sorts before org.apache.tika.ml.*,
-# so WideUnicodeDetector always runs first and can write a WideUnicodeSignal
-# into EncodingDetectorContext before MojibusterEncodingDetector reads it.
-org.apache.tika.detect.WideUnicodeDetector

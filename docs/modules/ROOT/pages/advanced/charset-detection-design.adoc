@@ -234,6 +234,53 @@ Plan:
   ** Take the top 64, sorted — drop in as the `commonChars` array
   ** This produces corpus-specific tables tuned to our training distribution
 
+== Feature set decision — UB-AS, 16384 buckets
+
+Selected via grid search over `charset-detect3` corpus (34 charsets, 20K train /
+2K devtest samples each, MadLAD source).  Each config trained 3× and averaged
+to reduce SGD noise.
+
+[cols="1,1,1", options="header"]
+|===
+| Config | Buckets | Avg devtest accuracy
+
+| UB-AS | 32768 | 95.28%
+| UB-AS | 16384 | 95.27%
+| UB--S | 16384 | 95.26%
+| UB-AS |  8192 | 95.24%
+| UB--S | 32768 | 95.21%
+| UB--S |  8192 | 94.80%
+|===
+
+**Decision: UB-AS at 16384 buckets.**
+
+Rationale:
+
+* Trigrams (T) were dropped — no accuracy improvement over UB-AS, adds hash
+  collisions and model size.
+* Anchored bigrams (A) add ~0.04% consistently across bucket sizes.  Small but
+  reproducible, and conceptually sound (captures Shift-JIS/Big5 low trail bytes
+  at character boundaries).
+* Accuracy plateau from 8192 to 32768 buckets is within SGD noise (~0.1%).
+  16384 chosen as the best size/accuracy trade-off (half the model vs. 32768).
+* Stride-2 bigrams (S) are the largest single accuracy driver — lifting overall
+  accuracy from ~73% (UBT- without UTF-16/32 training) to ~95% by giving the
+  model direct code-unit visibility into UTF-16/32 structure.
+
+=== UTF-16/32 training change
+
+UTF-16-LE/BE and UTF-32-LE/BE were previously excluded from ML training
+(`STRUCTURAL_ONLY_CHARSETS`) and detected solely by `WideUnicodeDetector`
+structural heuristics.  They are now trained in the ML model:
+
+* Added to `UNICODE_CHARSETS` — samples generated from **all** MADLAD languages
+  (Arabic, Hebrew, Greek, Japanese, Korean, Thai, Chinese, Russian, etc.) using
+  BOM-free codecs (`utf-16-le`, `utf-16-be`, `utf-32-le`, `utf-32-be`).
+* U+FEFF stripped from all source text before encoding — the model never sees
+  BOM bytes.  `BOMDetector` owns that signal at inference time.
+* Stride-2 bigrams give the model structural visibility: UTF-16LE → many
+  `(XX, 0x00)` pairs; UTF-16BE → `(0x00, XX)`; UTF-32 → dense `(0x00, 0x00)`.
+
 == Training data plan
 
 === Single-byte encodings

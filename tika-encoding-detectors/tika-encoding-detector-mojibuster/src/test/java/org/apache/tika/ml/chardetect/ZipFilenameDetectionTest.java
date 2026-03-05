@@ -68,8 +68,8 @@ public class ZipFilenameDetectionTest {
         }
         long wideCount = Arrays.stream(labels).filter(this::isWideUnicode).count();
         System.out.println("Wide-unicode labels in model: " + wideCount
-                + " (expected 0 — handled structurally by WideUnicodeDetector)");
-        assertEquals(0, wideCount, "v2 model should have no wide-unicode labels");
+                + " (detected natively via stride-2 features)");
+        assertTrue(wideCount >= 4, "Model should have UTF-16/32 labels (LE+BE for each)");
     }
 
     @Test

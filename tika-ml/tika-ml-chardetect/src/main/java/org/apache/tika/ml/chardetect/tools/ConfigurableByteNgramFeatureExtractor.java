@@ -41,19 +41,27 @@ import org.apache.tika.ml.FeatureExtractor;
  *   <li><b>useAnchoredBigrams</b>: emit one feature per (low-trail, next) pair
  *       when the trail byte is {@code < 0x80} — captures cross-character
  *       boundaries in encodings like Shift-JIS and Big5 with low trail bytes</li>
+ *   <li><b>useStride2Bigrams</b>: emit one feature per (b[i], b[i+1]) pair at
+ *       even positions i = 0, 2, 4, ... covering all bytes (not just high bytes).
+ *       A distinct FNV salt prevents hash collision with stride-1 bigrams.
+ *       Teaches the model to distinguish UTF-16BE/LE and UTF-32 via their
+ *       characteristic 0x00-byte code-unit patterns.</li>
  * </ul>
  */
 public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
 
-    private static final int FNV_PRIME  = 0x01000193;
-    private static final int FNV_OFFSET = 0x811c9dc5;
-    private static final int FNV_ANCHOR_SALT = 0x27d4eb2f;
+    private static final int FNV_PRIME        = 0x01000193;
+    private static final int FNV_OFFSET       = 0x811c9dc5;
+    private static final int FNV_ANCHOR_SALT  = 0x27d4eb2f;
+    /** Distinct salt for stride-2 bigrams — prevents collision with stride-1 hashes. */
+    private static final int FNV_STRIDE2_SALT = 0x9e3779b9;
 
     private final int numBuckets;
     private final boolean useUnigrams;
     private final boolean useBigrams;
     private final boolean useTrigrams;
     private final boolean useAnchoredBigrams;
+    private final boolean useStride2Bigrams;
 
     /**
      * @param numBuckets         number of hash buckets (feature-vector dimension)
@@ -61,12 +69,14 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
      * @param useBigrams         emit bigram anchored on each high byte
      * @param useTrigrams        emit trigram anchored on each high byte
      * @param useAnchoredBigrams emit bigram anchored on each low trail byte
+     * @param useStride2Bigrams  emit stride-2 bigrams at even positions (all bytes)
      */
     public ConfigurableByteNgramFeatureExtractor(int numBuckets,
                                                  boolean useUnigrams,
                                                  boolean useBigrams,
                                                  boolean useTrigrams,
-                                                 boolean useAnchoredBigrams) {
+                                                 boolean useAnchoredBigrams,
+                                                 boolean useStride2Bigrams) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException("numBuckets must be positive: " + numBuckets);
         }
@@ -75,6 +85,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
         this.useBigrams = useBigrams;
         this.useTrigrams = useTrigrams;
         this.useAnchoredBigrams = useAnchoredBigrams;
+        this.useStride2Bigrams = useStride2Bigrams;
     }
 
     @Override
@@ -100,6 +111,8 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
             return 0;
         }
         int n = 0;
+
+        // Stride-1: high-byte-anchored features.
         for (int i = 0; i < input.length; i++) {
             int bi = input[i] & 0xFF;
             if (bi < 0x80) {
@@ -153,10 +166,27 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 }
             }
         }
+
+        // Stride-2: code-unit pairs at positions 0, 2, 4, ...
+        if (useStride2Bigrams) {
+            for (int i = 0; i + 1 < input.length; i += 2) {
+                int b0 = input[i] & 0xFF;
+                int b1 = input[i + 1] & 0xFF;
+                int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
+                h = (h ^ b1) * FNV_PRIME;
+                int bkt = (h & 0x7fffffff) % numBuckets;
+                if (dense[bkt] == 0) {
+                    touched[n++] = bkt;
+                }
+                dense[bkt]++;
+            }
+        }
+
         return n;
     }
 
     private void extractInto(byte[] b, int from, int to, int[] counts) {
+        // Stride-1: high-byte-anchored features.
         for (int i = from; i < to; i++) {
             int bi = b[i] & 0xFF;
             if (bi < 0x80) {
@@ -193,6 +223,17 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 }
             }
         }
+
+        // Stride-2: code-unit pairs at positions 0, 2, 4, ...
+        if (useStride2Bigrams) {
+            for (int i = from; i + 1 < to; i += 2) {
+                int b0 = b[i] & 0xFF;
+                int b1 = b[i + 1] & 0xFF;
+                int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
+                h = (h ^ b1) * FNV_PRIME;
+                counts[bucket(h)]++;
+            }
+        }
     }
 
     private int bucket(int hash) {
@@ -207,7 +248,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
     @Override
     public String toString() {
         return String.format(java.util.Locale.ROOT,
-                "ConfigurableByteNgramFeatureExtractor{buckets=%d, uni=%b, bi=%b, tri=%b, anchored=%b}",
-                numBuckets, useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams);
+                "ConfigurableByteNgramFeatureExtractor{buckets=%d, uni=%b, bi=%b, tri=%b, anchored=%b, stride2=%b}",
+                numBuckets, useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
     }
 }

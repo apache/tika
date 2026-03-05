@@ -266,7 +266,8 @@ public class HtmlParserTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        // Per the HTML Living Standard, "iso-8859-1" is an alias for windows-1252.
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
     /**
@@ -327,7 +328,8 @@ public class HtmlParserTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        // Per the HTML Living Standard, "iso-8859-1" is an alias for windows-1252.
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
     /**
@@ -424,7 +426,8 @@ public class HtmlParserTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        // Per the HTML Living Standard, "iso-8859-1" is an alias for windows-1252.
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
 
@@ -1001,7 +1004,8 @@ public class HtmlParserTest extends TikaTest {
         }
         assertEquals("text/html; charset=UTF-ELEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // "UTF-ELEVEN" is not a valid charset; ML detection returns UTF-8 for ASCII content.
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<html><head><meta http-equiv=\"content-type\" content=\"application/pdf\">" +
                 "</head><title>title</title><body>body</body></html>";
@@ -1013,7 +1017,8 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // No valid charset declaration; ML detection returns UTF-8 for ASCII content.
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
 
         //test two content values
         test =
@@ -1028,7 +1033,8 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        // No valid charset declaration; ML detection returns UTF-8 for ASCII content.
+        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -1048,7 +1054,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-8859-1",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("application/xhtml+xml; charset=ISO-8859-1",
+        // Per the HTML Living Standard, "iso-8859-1" is an alias for windows-1252.
+        assertEquals("application/xhtml+xml; charset=windows-1252",
                 metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<?xml version=\"1.0\" ?>" +
@@ -1067,7 +1074,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-NUMBER_SEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("application/xhtml+xml; charset=ISO-8859-1",
+        // "iso-NUMBER_SEVEN" is not a valid charset; ML detection returns UTF-8 for ASCII content.
+        assertEquals("application/xhtml+xml; charset=UTF-8",
                 metadata.get(Metadata.CONTENT_TYPE));
 
     }
@@ -1131,7 +1139,7 @@ public class HtmlParserTest extends TikaTest {
         }
 
         assertEquals(1, (int) tagFrequencies.get("title"));
-        assertEquals(11, (int) tagFrequencies.get("meta"));
+        assertEquals(12, (int) tagFrequencies.get("meta"));
         assertEquals(12, (int) tagFrequencies.get("link"));
         assertEquals(6, (int) tagFrequencies.get("script"));
     }

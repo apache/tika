@@ -22,7 +22,10 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +66,45 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     private static final long serialVersionUID = 1L;
 
     private static final int DEFAULT_READ_LIMIT = 16384;
+
+    /**
+     * Symmetric confusable peer groups: within each group, encoding variants
+     * (e.g. ISO-8859-6 vs windows-1256) produce different decoded text for the
+     * same byte sequence (unlike ISO-8859-1 vs windows-1252 which are functional
+     * supersets). When the language-quality winner and a CONFIDENCE_DEFINITIVE
+     * declaration are in the same peer group, the language model cannot reliably
+     * distinguish them — it merely reflects which variant happens to produce
+     * Arabic (or Cyrillic, …) n-grams its training data favoured.
+     * In that case we prefer the explicit declaration.
+     */
+    private static final Map<String, Set<String>> PEER_GROUPS;
+
+    static {
+        Map<String, Set<String>> m = new HashMap<>();
+        for (String[] group : new String[][] {
+                {"ISO-8859-1",  "ISO-8859-15", "windows-1252"},
+                {"ISO-8859-2",  "windows-1250"},
+                {"ISO-8859-5",  "windows-1251"},
+                {"KOI8-R",      "KOI8-U"},
+                {"ISO-8859-6",  "windows-1256"},
+                {"ISO-8859-7",  "windows-1253"},
+                {"ISO-8859-8",  "windows-1255"},
+                {"ISO-8859-9",  "windows-1254"},
+                {"ISO-8859-13", "windows-1257"},
+                {"ISO-8859-4",  "windows-1257"},
+        }) {
+            Set<String> s = new HashSet<>(Arrays.asList(group));
+            for (String name : group) {
+                m.put(name, s);
+            }
+        }
+        PEER_GROUPS = Collections.unmodifiableMap(m);
+    }
+
+    private static boolean arePeers(Charset a, Charset b) {
+        Set<String> peers = PEER_GROUPS.get(a.name());
+        return peers != null && peers.contains(b.name());
+    }
 
     private int readLimit = DEFAULT_READ_LIMIT;
 
@@ -116,7 +158,74 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         CharSoupLanguageDetector langDetector = new CharSoupLanguageDetector();
         Charset bestCharset = langDetector.compareLanguageSignal(candidates);
         if (bestCharset == null) {
-            bestCharset = firstResult.getCharset();
+            Charset fallback = firstResult.getCharset();
+            String fallbackDecoded = candidates.get(fallback);
+            float fallbackJunk = fallbackDecoded != null
+                    ? CharSoupLanguageDetector.junkRatio(fallbackDecoded) : 1f;
+
+            // If the fallback charset produces garbled output (replacement chars) but
+            // a definitive declaration decodes the bytes cleanly, the probe was likely
+            // too short or ASCII-only. Trust the explicit declaration in that case.
+            Charset cleanerDeclared = null;
+            if (fallbackJunk > 0f) {
+                for (EncodingDetectorContext.Result r : context.getResults()) {
+                    if (r.getConfidence() >= EncodingResult.CONFIDENCE_DEFINITIVE) {
+                        String declaredDecoded = candidates.get(r.getCharset());
+                        float declaredJunk = declaredDecoded != null
+                                ? CharSoupLanguageDetector.junkRatio(declaredDecoded) : 1f;
+                        if (declaredJunk < fallbackJunk / 2) {
+                            cleanerDeclared = r.getCharset();
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (cleanerDeclared != null) {
+                context.setArbitrationInfo("scored-inconclusive-use-cleaner-declared");
+                return cleanerDeclared;
+            }
+            bestCharset = fallback;
+        }
+
+        // If a structurally-declared charset (CONFIDENCE_DEFINITIVE, e.g. HTML meta tag)
+        // decodes the bytes to the same string as the language-quality winner, prefer
+        // the declaration. This validates the HTML header against the actual bytes:
+        // if they are functionally equivalent, trust the author's stated encoding.
+        // If they produce different text (a real conflict), the bytes win.
+        //
+        // Additionally, when the winner and the declared charset are in the same
+        // confusable peer group (e.g. ISO-8859-6 vs windows-1256) and the declared
+        // charset decodes cleanly (low junk ratio), the language model cannot
+        // reliably distinguish them — they both produce valid same-script text.
+        // In that case, prefer the explicit declaration over the model's guess.
+        String winnerDecoded = candidates.get(bestCharset);
+        float winnerJunk = winnerDecoded != null ? CharSoupLanguageDetector.junkRatio(winnerDecoded) : 1f;
+        if (winnerDecoded != null) {
+            for (EncodingDetectorContext.Result r : context.getResults()) {
+                if (r.getConfidence() >= EncodingResult.CONFIDENCE_DEFINITIVE
+                        && !r.getCharset().equals(bestCharset)) {
+                    Charset declared = r.getCharset();
+                    String declaredDecoded = candidates.get(declared);
+                    if (declaredDecoded == null) {
+                        continue;
+                    }
+                    if (declaredDecoded.equals(winnerDecoded)) {
+                        context.setArbitrationInfo("scored-prefer-declared");
+                        return declared;
+                    }
+                    // When the winner and the declared charset are in the same confusable
+                    // peer group (e.g. ISO-8859-6 vs windows-1256), and the declared
+                    // charset decodes at least as cleanly as the winner (not junkier),
+                    // prefer the explicit declaration — the language model cannot reliably
+                    // distinguish same-script encoding variants.
+                    float declaredJunk = CharSoupLanguageDetector.junkRatio(declaredDecoded);
+                    if (arePeers(bestCharset, declared) && declaredJunk <= winnerJunk) {
+                        context.setArbitrationInfo("scored-prefer-declared-peer");
+                        return declared;
+                    }
+                }
+            }
         }
 
         context.setArbitrationInfo("scored");

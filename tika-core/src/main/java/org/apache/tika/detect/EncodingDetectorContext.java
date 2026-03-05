@@ -41,7 +41,6 @@ public class EncodingDetectorContext {
 
     private final List<Result> results = new ArrayList<>();
     private String arbitrationInfo;
-    private WideUnicodeSignal wideUnicodeSignal;
 
     /**
      * Record the ranked results from a child detector.
@@ -109,25 +108,6 @@ public class EncodingDetectorContext {
 
     public String getArbitrationInfo() {
         return arbitrationInfo;
-    }
-
-    /**
-     * Records the outcome of {@link WideUnicodeDetector} for this detection
-     * pass. Stored here rather than directly in the {@code ParseContext} so
-     * that it is scoped to this single detection and does not bleed into
-     * embedded-document parses.
-     */
-    public void setWideUnicodeSignal(WideUnicodeSignal signal) {
-        this.wideUnicodeSignal = signal;
-    }
-
-    /**
-     * Returns the {@link WideUnicodeSignal} written by {@link WideUnicodeDetector},
-     * or {@code null} if {@code WideUnicodeDetector} has not yet run or did not
-     * find wide-Unicode structure.
-     */
-    public WideUnicodeSignal getWideUnicodeSignal() {
-        return wideUnicodeSignal;
     }
 
     /**

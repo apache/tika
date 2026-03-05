@@ -36,7 +36,6 @@ import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.detect.OverrideEncodingDetector;
-import org.apache.tika.detect.WideUnicodeDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -48,9 +47,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
-import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.TXTParser;
-import org.apache.tika.parser.txt.UniversalEncodingDetector;
 
 public class TikaEncodingDetectorTest extends TikaTest {
 
@@ -59,14 +56,13 @@ public class TikaEncodingDetectorTest extends TikaTest {
         EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
-        // 3 base detectors (WideUnicode, ML, StandardHtml) + CharSoupEncodingDetector (MetaEncodingDetector)
-        assertEquals(4, detectors.size());
+        // 2 base detectors (ML, StandardHtml) + CharSoupEncodingDetector (MetaEncodingDetector)
+        assertEquals(3, detectors.size());
         // meta detector is always last (partitioned by CompositeEncodingDetector)
-        assertTrue(detectors.get(3) instanceof MetaEncodingDetector);
+        assertTrue(detectors.get(2) instanceof MetaEncodingDetector);
         // base detectors — sorted by full class name; check by type
-        Set<Class<?>> baseClasses = detectors.subList(0, 3).stream()
+        Set<Class<?>> baseClasses = detectors.subList(0, 2).stream()
                 .map(Object::getClass).collect(Collectors.toSet());
-        assertTrue(baseClasses.contains(WideUnicodeDetector.class));
         assertTrue(baseClasses.contains(MojibusterEncodingDetector.class));
         assertTrue(baseClasses.contains(StandardHtmlEncodingDetector.class));
     }
@@ -85,13 +81,12 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector1 instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors1Children =
                 ((CompositeEncodingDetector) detector1).getDetectors();
-        // WideUnicode + ML base detectors + CharSoup meta (html excluded)
-        assertEquals(3, detectors1Children.size());
-        Set<Class<?>> innerClasses = detectors1Children.subList(0, 2).stream()
+        // ML base detector + CharSoup meta (html excluded)
+        assertEquals(2, detectors1Children.size());
+        Set<Class<?>> innerClasses = detectors1Children.subList(0, 1).stream()
                 .map(Object::getClass).collect(Collectors.toSet());
-        assertTrue(innerClasses.contains(WideUnicodeDetector.class));
         assertTrue(innerClasses.contains(MojibusterEncodingDetector.class));
-        assertTrue(detectors1Children.get(2) instanceof MetaEncodingDetector);
+        assertTrue(detectors1Children.get(1) instanceof MetaEncodingDetector);
 
         assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
 
@@ -104,7 +99,8 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
         assertEquals(2, detectors.size());
-        assertTrue(((Icu4jEncodingDetector) detectors.get(0)).getDefaultConfig().stripMarkup);
+        assertTrue(detectors.get(0) instanceof HtmlEncodingDetector);
+        assertEquals(65000, ((HtmlEncodingDetector) detectors.get(0)).getDefaultConfig().getMarkLimit());
         assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
     }
 
@@ -118,16 +114,21 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
     @Test
     public void testEncodingDetectorConfigurability() throws Exception {
-        // CP500 (EBCDIC) is now detected by MojibusterEncodingDetector's structural IBM500 rule,
-        // so the default config should handle it successfully.
-        Metadata metadata = getXML("english.cp500.txt").metadata;
+        // CP500 (EBCDIC) is now detected by MojibusterEncodingDetector's structural IBM500 rule.
+        // We must hint Content-Type=text/plain so that TXTParser is selected; without the filename
+        // extension the byte-level MIME sniffer classifies the EBCDIC data as octet-stream.
+        Metadata md = new Metadata();
+        md.set("Content-Type", "text/plain");
+        Metadata metadata = getXML("english.cp500.txt", md).metadata;
         assertNotNull(metadata.get(TikaCoreProperties.DETECTED_ENCODING));
 
         // Excluding ICU4J from the config (which is already not in the default chain)
         // should still work — ML handles EBCDIC detection.
         TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-no-icu4j-encoding-detector.json");
         Parser p = tikaLoader.loadAutoDetectParser();
-        metadata = getXML("english.cp500.txt", p).metadata;
+        md = new Metadata();
+        md.set("Content-Type", "text/plain");
+        metadata = getXML("english.cp500.txt", p, md).metadata;
         assertNotNull(metadata.get(TikaCoreProperties.DETECTED_ENCODING));
     }
 
@@ -177,9 +178,9 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     ((AbstractEncodingDetectorParser) encodingDetectingParser)
                             .getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
-            // WideUnicode, ML, Html base detectors + CharSoup MetaEncodingDetector
+            // ML, Html base detectors + CharSoup MetaEncodingDetector
             // (ICU4J is excluded but was already not in the default chain)
-            assertEquals(4, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
+            assertEquals(3, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
             for (EncodingDetector child : ((CompositeEncodingDetector) encodingDetector)
                     .getDetectors()) {
                 assertNotContained("cu4j", child.getClass().getCanonicalName());
@@ -204,23 +205,16 @@ public class TikaEncodingDetectorTest extends TikaTest {
             EncodingDetector encodingDetector =
                     ((AbstractEncodingDetectorParser) childParser).getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
-            assertEquals(3, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
-            for (EncodingDetector childEncodingDetector :
-                    ((CompositeEncodingDetector) encodingDetector).getDetectors()) {
-                if (childEncodingDetector instanceof HtmlEncodingDetector) {
-                    assertEquals(64000,
-                            ((HtmlEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
-                            childParser.getClass().toString());
-                } else if (childEncodingDetector instanceof UniversalEncodingDetector) {
-                    assertEquals(64001,
-                            ((UniversalEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
-                            childParser.getClass().toString());
-                } else if (childEncodingDetector instanceof Icu4jEncodingDetector) {
-                    assertEquals(64002,
-                            ((Icu4jEncodingDetector) childEncodingDetector).getDefaultConfig().getMarkLimit(),
-                            childParser.getClass().toString());
-                }
-            }
+            List<EncodingDetector> children =
+                    ((CompositeEncodingDetector) encodingDetector).getDetectors();
+            assertEquals(3, children.size(), childParser.getClass().toString());
+            assertTrue(children.get(0) instanceof MojibusterEncodingDetector,
+                    childParser.getClass().toString());
+            HtmlEncodingDetector htmlDet = (HtmlEncodingDetector) children.get(1);
+            assertEquals(64000, htmlDet.getDefaultConfig().getMarkLimit(),
+                    childParser.getClass().toString());
+            assertTrue(children.get(2) instanceof StandardHtmlEncodingDetector,
+                    childParser.getClass().toString());
         }
     }
 
@@ -239,16 +233,17 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
         byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-        //assert default fails -- will need to fix this if we change our defaults!
+        // The new pipeline (StandardHtmlEncodingDetector reads past the script block
+        // and finds the meta charset) correctly detects UTF-8 even by default.
         Parser p = AUTO_DETECT_PARSER;
 
         Metadata metadata = new Metadata();
         String xml = getXML(TikaInputStream.get(bytes), p, metadata).xml;
 
         assertContains("gr\u00F8nd", xml);
-        assertNotContained("\u00f8kologisk", xml);
-        assertNotContained("gr\u00F8nt", xml);
-        assertNotContained("g\u00E5 til", xml);
+        assertContains("\u00f8kologisk", xml);
+        assertContains("gr\u00F8nt", xml);
+        assertContains("g\u00E5 til", xml);
 
         //now test that fix works
         p = TikaLoaderHelper.getLoader("TIKA-2485-encoding-detector-mark-limits.json").loadAutoDetectParser();
@@ -271,11 +266,10 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors =
                 ((CompositeEncodingDetector) detector).getDetectors();
-        // 3 base detectors (WideUnicode + ML + StandardHtml), no MetaEncodingDetector
-        assertEquals(3, detectors.size());
+        // 2 base detectors (ML + StandardHtml), no MetaEncodingDetector
+        assertEquals(2, detectors.size());
         Set<Class<?>> excludedCharSoupClasses = detectors.stream()
                 .map(Object::getClass).collect(Collectors.toSet());
-        assertTrue(excludedCharSoupClasses.contains(WideUnicodeDetector.class));
         assertTrue(excludedCharSoupClasses.contains(MojibusterEncodingDetector.class));
         assertTrue(excludedCharSoupClasses.contains(StandardHtmlEncodingDetector.class));
         for (EncodingDetector d : detectors) {

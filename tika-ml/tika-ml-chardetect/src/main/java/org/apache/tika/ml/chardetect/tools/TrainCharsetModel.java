@@ -79,6 +79,11 @@ public class TrainCharsetModel {
         boolean useBigrams = true;
         boolean useTrigrams = true;
         boolean useAnchoredBigrams = false;
+        boolean useStride2Bigrams = true;
+        // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
+        // one target label at training time (e.g. collapse EBCDIC variants into
+        // a single "EBCDIC" routing label for the general model).
+        Map<String, String> labelRemap = new HashMap<>();
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -100,12 +105,40 @@ public class TrainCharsetModel {
                 case "--max-samples-per-class":
                     maxSamplesPerClass = Integer.parseInt(args[++i]);
                     break;
-                case "--no-uni":      useUnigrams = false;       break;
-                case "--no-bi":       useBigrams = false;        break;
-                case "--tri":         useTrigrams = true;        break;
-                case "--no-tri":      useTrigrams = false;       break;
-                case "--anchored":    useAnchoredBigrams = true; break;
-                case "--no-anchored": useAnchoredBigrams = false; break;
+                case "--label-remap":
+                    for (String pair : args[++i].split(",")) {
+                        String[] kv = pair.split(":", 2);
+                        if (kv.length != 2) {
+                            System.err.println("Bad --label-remap entry (expected src:dst): " + pair);
+                            System.exit(1);
+                        }
+                        labelRemap.put(kv[0].trim(), kv[1].trim());
+                    }
+                    break;
+                case "--no-uni":
+                    useUnigrams = false;
+                    break;
+                case "--no-bi":
+                    useBigrams = false;
+                    break;
+                case "--tri":
+                    useTrigrams = true;
+                    break;
+                case "--no-tri":
+                    useTrigrams = false;
+                    break;
+                case "--anchored":
+                    useAnchoredBigrams = true;
+                    break;
+                case "--no-anchored":
+                    useAnchoredBigrams = false;
+                    break;
+                case "--stride2":
+                    useStride2Bigrams = true;
+                    break;
+                case "--no-stride2":
+                    useStride2Bigrams = false;
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.exit(1);
@@ -114,14 +147,17 @@ public class TrainCharsetModel {
 
         if (dataDir == null) {
             System.err.println("Usage: TrainCharsetModel --data <dir> [options]");
-            System.err.println("  --buckets N          feature hash buckets (default " + DEFAULT_NUM_BUCKETS + ")");
-            System.err.println("  --epochs N           SGD epochs (default " + DEFAULT_EPOCHS + ")");
-            System.err.println("  --lr F               learning rate (default " + DEFAULT_LR + ")");
+            System.err.println("  --buckets N              feature hash buckets (default " + DEFAULT_NUM_BUCKETS + ")");
+            System.err.println("  --epochs N               SGD epochs (default " + DEFAULT_EPOCHS + ")");
+            System.err.println("  --lr F                   learning rate (default " + DEFAULT_LR + ")");
             System.err.println("  --max-samples-per-class N");
-            System.err.println("  --no-uni             disable unigram features");
-            System.err.println("  --no-bi              disable bigram features");
-            System.err.println("  --tri / --no-tri     enable/disable trigram features (default: on)");
+            System.err.println("  --label-remap src1:dst1,src2:dst2");
+            System.err.println("                           merge source labels into target (e.g. collapse EBCDIC variants)");
+            System.err.println("  --no-uni                 disable unigram features");
+            System.err.println("  --no-bi                  disable bigram features");
+            System.err.println("  --tri / --no-tri         enable/disable trigram features (default: on)");
             System.err.println("  --anchored / --no-anchored  anchored bigrams (default: off)");
+            System.err.println("  --stride2 / --no-stride2    stride-2 bigrams at even positions (default: on)");
             System.exit(1);
         }
 
@@ -136,24 +172,36 @@ public class TrainCharsetModel {
             System.exit(1);
         }
 
-        // Build class label list (charset names stripped of .bin.gz)
-        String[] labels = charsetFiles.stream()
-                .map(p -> p.getFileName().toString()
-                        .replaceAll("\\.bin\\.gz$", ""))
-                .toArray(String[]::new);
+        // Build class label list (charset names stripped of .bin.gz, with remap applied).
+        // Multiple source files that remap to the same target label are merged into one
+        // class — their samples are pooled under the remapped label.
+        List<String> labelList = new ArrayList<>();
+        Map<String, List<Path>> labelToFiles = new java.util.LinkedHashMap<>();
+        for (Path p : charsetFiles) {
+            String raw = p.getFileName().toString().replaceAll("\\.bin\\.gz$", "");
+            String label = labelRemap.getOrDefault(raw, raw);
+            labelToFiles.computeIfAbsent(label, k -> new ArrayList<>()).add(p);
+            if (!labelList.contains(label)) {
+                labelList.add(label);
+            }
+        }
+        String[] labels = labelList.toArray(new String[0]);
         int numClasses = labels.length;
 
+        if (!labelRemap.isEmpty()) {
+            System.out.println("Label remaps: " + labelRemap);
+        }
         System.out.println("Classes (" + numClasses + "): " + Arrays.toString(labels));
         System.out.printf(java.util.Locale.ROOT,
                 "Buckets: %d  epochs: %d  lr: %.4f  max-samples/class: %d%n",
                 numBuckets, epochs, lr, maxSamplesPerClass);
         System.out.printf(java.util.Locale.ROOT,
-                "Features: uni=%b  bi=%b  tri=%b  anchored=%b%n",
-                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams);
+                "Features: uni=%b  bi=%b  tri=%b  anchored=%b  stride2=%b%n",
+                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
 
         ConfigurableByteNgramFeatureExtractor extractor =
                 new ConfigurableByteNgramFeatureExtractor(numBuckets,
-                        useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams);
+                        useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
 
         // Build class index map
         Map<String, Integer> labelIndex = new HashMap<>();
@@ -161,14 +209,26 @@ public class TrainCharsetModel {
             labelIndex.put(labels[i], i);
         }
 
-        // Load samples (up to maxSamplesPerClass per class)
+        // Load samples (up to maxSamplesPerClass per class, pooling remapped sources)
         System.out.println("Loading training data ...");
         List<byte[]>[] samplesPerClass = new List[numClasses];
         long totalSamples = 0;
         for (int ci = 0; ci < numClasses; ci++) {
-            samplesPerClass[ci] = loadSamples(charsetFiles.get(ci), maxSamplesPerClass);
-            totalSamples += samplesPerClass[ci].size();
-            System.out.printf(java.util.Locale.ROOT, "  %-30s  %,d samples%n", labels[ci], samplesPerClass[ci].size());
+            List<Path> sources = labelToFiles.get(labels[ci]);
+            List<byte[]> pooled = new ArrayList<>();
+            int perFile = sources.size() > 1
+                    ? maxSamplesPerClass / sources.size() : maxSamplesPerClass;
+            for (Path src : sources) {
+                pooled.addAll(loadSamples(src, perFile));
+            }
+            // Re-cap in case per-file rounding left excess
+            if (pooled.size() > maxSamplesPerClass) {
+                pooled = pooled.subList(0, maxSamplesPerClass);
+            }
+            samplesPerClass[ci] = pooled;
+            totalSamples += pooled.size();
+            System.out.printf(java.util.Locale.ROOT, "  %-30s  %,d samples  (from %d file(s))%n",
+                    labels[ci], pooled.size(), sources.size());
         }
         System.out.printf(java.util.Locale.ROOT, "Total training samples: %,d%n", totalSamples);
 

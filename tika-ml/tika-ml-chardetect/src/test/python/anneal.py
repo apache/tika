@@ -74,29 +74,33 @@ EVAL_CLASS  = "org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors"
 # ---------------------------------------------------------------------------
 
 class Config:
-    __slots__ = ("bucket_idx", "uni", "bi", "tri", "anchored")
+    __slots__ = ("bucket_idx", "uni", "bi", "tri", "anchored", "stride2")
 
-    def __init__(self, bucket_idx=2, uni=True, bi=True, tri=True, anchored=False):
+    def __init__(self, bucket_idx=2, uni=True, bi=True, tri=True, anchored=False,
+                 stride2=True):
         self.bucket_idx = bucket_idx   # index into BUCKET_CHOICES
         self.uni      = uni
         self.bi       = bi
         self.tri      = tri
         self.anchored = anchored
+        self.stride2  = stride2
 
     @property
     def num_buckets(self):
         return BUCKET_CHOICES[self.bucket_idx]
 
     def copy(self):
-        return Config(self.bucket_idx, self.uni, self.bi, self.tri, self.anchored)
+        return Config(self.bucket_idx, self.uni, self.bi, self.tri, self.anchored,
+                      self.stride2)
 
     def train_flags(self):
         """Return extra CLI flags for TrainCharsetModel."""
         flags = []
-        if not self.uni:      flags.append("--no-uni")
-        if not self.bi:       flags.append("--no-bi")
-        if not self.tri:      flags.append("--no-tri")
-        if self.anchored:     flags.append("--anchored")
+        if not self.uni:     flags.append("--no-uni")
+        if not self.bi:      flags.append("--no-bi")
+        if not self.tri:     flags.append("--no-tri")
+        if self.anchored:    flags.append("--anchored")
+        if not self.stride2: flags.append("--no-stride2")
         return flags
 
     def __str__(self):
@@ -105,6 +109,7 @@ class Config:
             "B" if self.bi       else "-",
             "T" if self.tri      else "-",
             "A" if self.anchored else "-",
+            "S" if self.stride2  else "-",
         ])
         return f"buckets={self.num_buckets:>6}  features={feats}"
 
@@ -115,14 +120,15 @@ class Config:
             "bi":          self.bi,
             "tri":         self.tri,
             "anchored":    self.anchored,
+            "stride2":     self.stride2,
         }
 
 
 def random_neighbor(cfg: Config, rng: random.Random) -> Config:
     """Return a neighbouring config: flip one random dimension."""
     n = cfg.copy()
-    # 5 dimensions: bucket_idx (±1 step) + 4 boolean flags
-    dim = rng.randint(0, 4)
+    # 6 dimensions: bucket_idx (±1 step) + 5 boolean flags
+    dim = rng.randint(0, 5)
     if dim == 0:
         # Step bucket_idx up or down by 1, clamped
         delta = rng.choice([-1, 1])
@@ -133,8 +139,10 @@ def random_neighbor(cfg: Config, rng: random.Random) -> Config:
         n.bi = not n.bi
     elif dim == 3:
         n.tri = not n.tri
-    else:
+    elif dim == 4:
         n.anchored = not n.anchored
+    else:
+        n.stride2 = not n.stride2
     return n
 
 
@@ -249,10 +257,21 @@ def main():
                         help="Max training samples per class")
     parser.add_argument("--best-output",  type=Path, default=None,
                         help="Save the best model to this path")
+    parser.add_argument("--min-buckets",  type=int, default=None,
+                        help="Restrict bucket search to this minimum (e.g. 8192)")
     args = parser.parse_args()
 
     args.work_dir.mkdir(parents=True, exist_ok=True)
     rng = random.Random(args.seed)
+
+    # Optionally restrict the bucket search space to high values only.
+    global BUCKET_CHOICES
+    if args.min_buckets is not None:
+        BUCKET_CHOICES = [b for b in BUCKET_CHOICES if b >= args.min_buckets]
+        if not BUCKET_CHOICES:
+            print(f"ERROR: --min-buckets {args.min_buckets} excludes all choices", file=sys.stderr)
+            sys.exit(1)
+        print(f"Bucket search space restricted to: {BUCKET_CHOICES}")
 
     # Resolve glob in jar path (e.g. target/tika-ml-chardetect-*-tools.jar)
     jar = str(args.jar)
@@ -273,14 +292,16 @@ def main():
     print()
 
     csv_fields = ["trial", "timestamp", "num_buckets", "uni", "bi", "tri", "anchored",
-                  "score", "best_score", "accepted", "temperature"]
+                  "stride2", "score", "best_score", "accepted", "temperature"]
 
     with open(log_path, "w", newline="") as log_fh:
         writer = csv.DictWriter(log_fh, fieldnames=csv_fields)
         writer.writeheader()
 
-        # Start from default config (matches shipped model defaults)
-        current = Config(bucket_idx=2, uni=True, bi=True, tri=True, anchored=False)
+        # Start from the middle of the (possibly restricted) bucket range.
+        start_bucket_idx = len(BUCKET_CHOICES) // 2
+        current = Config(bucket_idx=start_bucket_idx, uni=True, bi=True, tri=True,
+                         anchored=False, stride2=True)
         current_score = None
         best = current.copy()
         best_score = -1.0

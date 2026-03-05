@@ -33,7 +33,6 @@ import org.apache.tika.config.ServiceLoader;
  *   <li>Base detectors (non-{@link MetaEncodingDetector}) sorted by full
  *       class name (non-Tika before Tika, then ascending alphabetically).
  *       The package ordering guarantees:
- *       {@code org.apache.tika.detect.WideUnicodeDetector} →
  *       {@code org.apache.tika.ml.*} (Mojibuster) →
  *       {@code org.apache.tika.parser.*} (HTML).</li>
  *   <li>{@link MetaEncodingDetector} instances always run last, after all
