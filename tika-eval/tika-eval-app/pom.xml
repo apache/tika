@@ -126,6 +126,11 @@
         <version>${maven.jar.version}</version>
         <configuration>
           <archive>
+            <manifest>
+              <mainClass>org.apache.tika.eval.app.TikaEvalCLI</mainClass>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+            </manifest>
             <manifestEntries>
               <Automatic-Module-Name>org.apache.tika.eval.app</Automatic-Module-Name>
             </manifestEntries>
