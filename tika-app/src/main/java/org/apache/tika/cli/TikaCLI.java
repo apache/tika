@@ -405,7 +405,9 @@ public class TikaCLI {
             if (arg.equals("-Z") || arg.equals("-z") || arg.equals("--extract") || arg.startsWith("--extract-dir")) {
                 return true;
             }
-
+            if (arg.equals("--fileList")) {
+                return true;
+            }
         }
         return false;
     }
@@ -834,6 +836,8 @@ public class TikaCLI {
         out.println("    -n                         Number of forked processes");
         out.println("    -X                         -Xmx in the forked processes");
         out.println("    -T                         Timeout in milliseconds");
+        out.println("    --fileList                  File list (one path per line, relative to -i or absolute)");
+        out.println("    --handler                  Handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
         out.println("    -Z                         Recursively unpack all the attachments, too");
         out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
         out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY");

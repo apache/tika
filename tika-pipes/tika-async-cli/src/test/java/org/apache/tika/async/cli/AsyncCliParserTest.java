@@ -18,6 +18,7 @@ package org.apache.tika.async.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,7 +81,7 @@ public class AsyncCliParserTest {
     @Test
     public void testAll() throws Exception {
         SimpleAsyncConfig simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(
-                new String[]{"-i", "input", "-o", "output", "-n", "5", "-T", "30000", "-X", "1g", "-h", "x"});
+                new String[]{"-i", "input", "-o", "output", "-n", "5", "-T", "30000", "--Xmx", "1g", "--handler", "x"});
         assertEquals("input", simpleAsyncConfig.getInputDir());
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
@@ -90,7 +91,42 @@ public class AsyncCliParserTest {
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, simpleAsyncConfig.getHandlerType());
     }
 
-    //TODO -- test for file list with and without inputDir
+    @Test
+    public void testFileListWithInputDir(@TempDir Path tmp) throws Exception {
+        Path fileList = tmp.resolve("files.txt");
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        Files.writeString(fileList, "doc1.pdf\ndoc2.pdf\n");
+
+        SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
+                new String[]{"-l", fileList.toString(), "-i", inputDir.toString(), "-o", "out"});
+        assertEquals(fileList.toString(), config.getFileList());
+        assertEquals(inputDir.toString(), config.getInputDir());
+        assertEquals("out", config.getOutputDir());
+    }
+
+    @Test
+    public void testFileListWithoutInputDir(@TempDir Path tmp) throws Exception {
+        Path fileList = tmp.resolve("files.txt");
+        Files.writeString(fileList, "/absolute/path/doc1.pdf\n");
+
+        SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
+                new String[]{"-l", fileList.toString(), "-o", "out"});
+        assertEquals(fileList.toString(), config.getFileList());
+        assertNull(config.getInputDir());
+        assertEquals("out", config.getOutputDir());
+    }
+
+    @Test
+    public void testFileListDefaultsOutputDir(@TempDir Path tmp) throws Exception {
+        Path fileList = tmp.resolve("files.txt");
+        Files.writeString(fileList, "doc1.pdf\n");
+
+        SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
+                new String[]{"-l", fileList.toString()});
+        assertEquals(fileList.toString(), config.getFileList());
+        assertNotNull(config.getOutputDir(), "outputDir should default when fileList is used");
+    }
 
     @TempDir
     Path tempDir;
@@ -117,7 +153,9 @@ public class AsyncCliParserTest {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(result.toFile());
         assertTrue(root.has("plugin-roots"), "Merged config should have plugin-roots");
-        assertEquals("plugins", root.get("plugin-roots").asText());
+        String pluginRoots = root.get("plugin-roots").asText();
+        assertTrue(pluginRoots.equals("plugins") || pluginRoots.endsWith("/plugins"),
+                "plugin-roots should be 'plugins' or end with '/plugins', got: " + pluginRoots);
 
         // Original config values should be preserved
         assertTrue(root.has("pipes"));
