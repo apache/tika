@@ -178,16 +178,32 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.remainingCapacity();
     }
 
-    public synchronized boolean offer(FetchEmitTuple t, long offerMs)
+    public boolean offer(FetchEmitTuple t, long offerMs)
             throws PipesException, InterruptedException {
         if (fetchEmitTuples == null) {
             throw new IllegalStateException("queue hasn't been initialized yet.");
-        } else if (isShuttingDown) {
-            throw new IllegalStateException(
-                    "Can't call offer after calling close() or " + "shutdownNow()");
         }
-        checkActive();
-        return fetchEmitTuples.offer(t, offerMs, TimeUnit.MILLISECONDS);
+        long deadline = System.currentTimeMillis() + offerMs;
+        while (System.currentTimeMillis() < deadline) {
+            synchronized (this) {
+                if (isShuttingDown) {
+                    throw new IllegalStateException(
+                            "Can't call offer after calling close() or shutdownNow()");
+                }
+                checkActive();
+            }
+            // Try a short offer outside the synchronized block so checkActive()
+            // can still be called by other threads (e.g. the watcher).
+            long remaining = deadline - System.currentTimeMillis();
+            long pollMs = Math.min(remaining, 1000);
+            if (pollMs <= 0) {
+                return false;
+            }
+            if (fetchEmitTuples.offer(t, pollMs, TimeUnit.MILLISECONDS)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void finished() throws InterruptedException {
