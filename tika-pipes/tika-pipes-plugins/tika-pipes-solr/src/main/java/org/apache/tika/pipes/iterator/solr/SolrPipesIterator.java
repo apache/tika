@@ -187,7 +187,7 @@ public class SolrPipesIterator extends PipesIteratorBase {
             }
             http2SolrClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(config.getConnectionTimeout(), TimeUnit.MILLISECONDS);
+                    .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
 
 
             Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
@@ -197,8 +197,8 @@ public class SolrPipesIterator extends PipesIteratorBase {
 
         }
         return new LBHttpSolrClient.Builder()
-                .withConnectionTimeout(config.getConnectionTimeout())
-                .withSocketTimeout(config.getSocketTimeout())
+                .withConnectionTimeout(config.getConnectionTimeoutMillis())
+                .withSocketTimeout(config.getSocketTimeoutMillis())
                 .withHttpClient(httpClientFactory.build())
                 .withBaseSolrUrls(solrUrls.toArray(new String[]{}))
                 .build();

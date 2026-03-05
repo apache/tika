@@ -37,8 +37,8 @@
       "includeRouting": "INCLUDE_ROUTING",
       "httpClientConfig": {
         "authScheme": "http",
-        "connectionTimeout": 60,
-        "socketTimeout": 60
+        "connectionTimeoutMillis": 60000,
+        "socketTimeoutMillis": 60000
       }
     }
   },
