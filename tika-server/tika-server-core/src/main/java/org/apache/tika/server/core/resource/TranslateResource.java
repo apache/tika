@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.server.core.ServerStatus;
@@ -109,7 +109,7 @@ public class TranslateResource {
     }
 
     private String doAutoTranslate(String content, String translator, String dLang) throws TikaException, IOException {
-        LanguageResult language = new OptimaizeLangDetector()
+        LanguageResult language = LanguageDetector.getDefaultLanguageDetector()
                 .loadModels()
                 .detect(content);
         if (language.isUnknown()) {

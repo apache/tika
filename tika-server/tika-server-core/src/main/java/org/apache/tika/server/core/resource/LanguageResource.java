@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
@@ -30,7 +31,7 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 
 @Path("/language")
@@ -76,11 +77,28 @@ public class LanguageResource {
     }
 
     private String detectString(String string) throws IOException {
-        LanguageResult language = new OptimaizeLangDetector()
+        LanguageResult language = LanguageDetector.getDefaultLanguageDetector()
                 .loadModels()
                 .detect(string);
-        String detectedLang = language.getLanguage();
+        String detectedLang = toIso1(language.getLanguage());
         LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;
+    }
+
+    /**
+     * Normalize a detected language code to ISO 639-1 for backward compatibility
+     * with existing API consumers. Falls back to the original code (which may be
+     * ISO 639-3) for languages with no ISO 639-1 equivalent.
+     */
+    static String toIso1(String lang) {
+        if (lang == null || lang.length() != 3) {
+            return lang;
+        }
+        for (String code : Locale.getISOLanguages()) {
+            if (new Locale(code).getISO3Language().equals(lang)) {
+                return code;
+            }
+        }
+        return lang;
     }
 }

@@ -35,22 +35,26 @@ import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 
 /**
- * Hash-based bigram language detector using INT8-quantized multinomial logistic regression.
- * <p>
- * This detector uses character bigrams with FNV-1a hashing, trained on the Leipzig Corpora
- * Collection for ~150 languages. It supports detection of RTL text that was extracted
- * left-to-right (e.g., from PDFs) via {@code xxx-x-ltr} classes.
- * </p>
+ * CharSoup language detector using INT8-quantized multinomial logistic regression
+ * trained on Wikipedia (primary corpus) with MADLAD supplements for thin languages.
  * <p>
  * Text is buffered via {@link #addText(char[], int, int)} up to
  * {@link CharSoupFeatureExtractor#MAX_TEXT_LENGTH} characters. At {@link #detectAll()} time,
  * the buffer is evaluated in independent {@value #CHUNK_SIZE}-character chunks.
  * Each chunk runs the full preprocessing pipeline (truncate → strip URLs/emails →
- * NFC normalize → extract bigram features → predict via softmax). If the first
+ * NFC normalize → extract bigram features → score via raw logits). If the first
  * chunk produces high entropy (indicating junk, code, or non-language content),
  * the next chunk is tried. The result from the chunk with the lowest entropy
  * is returned. This avoids polluting the language signal with leading junk while
  * keeping the implementation simple and predictable.
+ * </p>
+ * <p>
+ * Inference uses raw logits throughout — the softmax array is never materialized.
+ * The reported {@code rawScore} for each class is
+ * {@code sigmoid(logit_c − logsumexp(other logits)) = exp(logit_c − logsumexp(all))},
+ * computed by a single logsumexp pass followed by one {@code exp()} per class.
+ * This is numerically equivalent to the softmax probability of class c but avoids
+ * allocating or mutating a full probability distribution array.
  * </p>
  */
 @TikaComponent(name = "charsoup-language-detector")
@@ -95,28 +99,11 @@ public class CharSoupLanguageDetector extends LanguageDetector {
 
     /**
      * Confusable language groups — languages within the same group are nearly
-     * indistinguishable by character bigrams. Their softmax probabilities are
-     * summed and assigned to the top scorer, so the model reports confidence
+     * indistinguishable by character bigrams. Their logits are combined via
+     * logsumexp and assigned to the top scorer, so the model reports confidence
      * in the <em>group</em> rather than a noisy choice within it.
      */
-    static final String[][] CONFUSABLE_GROUPS = {
-            {"nob", "nno", "nor", "dan"},       // Scandinavian + Norwegian variants
-            {"hrv", "srp", "bos", "hbs"},       // South Slavic + Serbo-Croatian
-            {"msa", "zlm", "zsm", "ind"},       // Malay / Indonesian
-            {"pes", "prs", "fas"},               // Persian / Dari
-            {"zho", "cmn", "wuu", "yue"},        // Chinese varieties
-            {"aze", "azj"},                      // Azerbaijani
-            {"ekk", "est"},                      // Estonian
-            {"lvs", "lav"},                      // Latvian
-            {"plt", "mlg"},                      // Malagasy
-            {"khk", "mon"},                      // Mongolian
-            {"ydd", "yid"},                      // Yiddish
-            {"sme", "smi"},                      // Sami
-            {"sqi", "als"},                      // Albanian / Tosk Albanian
-            {"tat", "bak"},                      // Tatar / Bashkir
-            {"ita", "vec"},                      // Italian / Venetian
-            {"spa", "arg", "ast"},               // Spanish / Aragonese / Asturian
-    };
+    static final String[][] CONFUSABLE_GROUPS = ConfusableGroups.load();
 
     /**
      * Maps each class index to the array of all class indices in its group.
@@ -124,6 +111,13 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * to a singleton array containing only themselves (no-op during collapsing).
      */
     private static int[][] GROUP_INDICES;
+
+    /**
+     * Per-class expected ScriptCategory. Built once after MODEL loads.
+     * Latin-script languages map to {@link ScriptCategory#LATIN}.
+     * A value of -1 means "no gate applied" (mixed/unknown script).
+     */
+    private static int[] CLASS_SCRIPT;
 
     private static final CharSoupModel MODEL;
     private static final FeatureExtractor EXTRACTOR;
@@ -137,6 +131,7 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             Collections.addAll(langs, MODEL.getLabels());
             SUPPORTED_LANGUAGES = Collections.unmodifiableSet(langs);
             GROUP_INDICES = buildGroupIndices(MODEL);
+            CLASS_SCRIPT = buildClassScript(MODEL);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load built-in language model: " + MODEL_RESOURCE,
                     e);
@@ -186,36 +181,208 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         return result;
     }
 
+    private static int[] buildClassScript(CharSoupModel model) {
+        Map<String, Integer> langToScript = new HashMap<>();
+
+        for (String l : new String[]{"rus", "ukr", "bul", "bel", "mkd", "srp", "bak", "tat",
+                "sah", "chv", "bua", "kir", "myv", "mdf", "krc", "ava", "che", "oss", "kom",
+                "udm", "kjh", "kum", "mrj", "chm", "inh", "kbd", "mon", "abk",
+                // Turkic/Iranian languages written in Cyrillic in their Wikipedia corpora:
+                "kaz", "tgk"}) {
+            langToScript.put(l, ScriptCategory.CYRILLIC);
+        }
+        for (String l : new String[]{"ara", "fas", "urd", "pus", "ckb", "uig", "snd", "kur",
+                "bal", "hau_Arab", "arz", "arb", "ary", "aeb", "acm", "acq", "ajp", "apc",
+                "ars",
+                // South Azerbaijani: Perso-Arabic script (distinct from North Azerbaijani azj/aze
+                // which use Latin script and are merged into aze in our model)
+                "azb",
+                // Panjabi (Shahmukhi): Perso-Arabic script
+                "pnb"}) {
+            langToScript.put(l, ScriptCategory.ARABIC);
+        }
+        for (String l : new String[]{"zho", "yue", "wuu", "nan", "cmn", "lzh"}) {
+            langToScript.put(l, ScriptCategory.HAN);
+        }
+        langToScript.put("jpn", ScriptCategory.HAN);
+        langToScript.put("kor", ScriptCategory.HANGUL);
+        for (String l : new String[]{"hin", "mar", "nep", "san", "awa", "bho", "mai", "hne",
+                "mag", "new", "gom", "kok", "doi"}) {
+            langToScript.put(l, ScriptCategory.DEVANAGARI);
+        }
+        langToScript.put("tha", ScriptCategory.THAI);
+        langToScript.put("ell", ScriptCategory.GREEK);
+        for (String l : new String[]{"heb", "ydd"}) {
+            langToScript.put(l, ScriptCategory.HEBREW);
+        }
+        for (String l : new String[]{"ben", "asm", "mni"}) {
+            langToScript.put(l, ScriptCategory.BENGALI);
+        }
+        langToScript.put("kat", ScriptCategory.GEORGIAN);
+        langToScript.put("hye", ScriptCategory.ARMENIAN);
+        for (String l : new String[]{"amh", "tir", "tig", "orm_Ethi", "gez"}) {
+            langToScript.put(l, ScriptCategory.ETHIOPIC);
+        }
+        langToScript.put("iku", ScriptCategory.CANADIAN_ABORIGINAL);
+        for (String l : new String[]{"mya", "ksw", "shn", "kht"}) {
+            langToScript.put(l, ScriptCategory.MYANMAR);
+        }
+        langToScript.put("bod", ScriptCategory.TIBETAN);
+        langToScript.put("khm", ScriptCategory.KHMER);
+        // Distinct Indic scripts — skip gate for now
+        for (String l : new String[]{"tel", "kan", "mal", "sin", "tam", "ory"}) {
+            langToScript.put(l, -1);
+        }
+
+        int[] result = new int[model.getNumClasses()];
+        Arrays.fill(result, ScriptCategory.LATIN);
+        for (int i = 0; i < model.getNumClasses(); i++) {
+            String label = model.getLabel(i);
+            Integer scriptId = langToScript.get(label);
+            if (scriptId != null) {
+                result[i] = scriptId;
+            }
+        }
+        return result;
+    }
+
     /**
-     * Collapse confusable group probabilities: sum each group's probabilities
-     * and assign the total to the highest-scoring member. Other members get 0.
+     * Returns the dominant ScriptCategory of the input text by letter count,
+     * or -1 if fewer than 5 letters or no script reaches the 85% threshold.
+     */
+    private static int dominantScript(String text) {
+        int[] counts = new int[ScriptCategory.COUNT];
+        int totalLetters = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.isLetter(cp)) {
+                counts[ScriptCategory.of((char) cp)]++;
+                totalLetters++;
+            }
+        }
+        if (totalLetters < 5) {
+            return -1;
+        }
+        int best = 0;
+        for (int s = 1; s < counts.length; s++) {
+            if (counts[s] > counts[best]) {
+                best = s;
+            }
+        }
+        return ((double) counts[best] / totalLetters >= 0.85) ? best : -1;
+    }
+
+    /**
+     * Logit value used to mask out classes that are incompatible with the
+     * detected script. Effectively -infinity: exp(-1e30) ≈ 0.
+     */
+    private static final float MASKED_LOGIT = -1e30f;
+
+    /**
+     * Masks logits whose expected script does not match the dominant script of
+     * {@code inputText} by setting them to {@link #MASKED_LOGIT}. No renormalization
+     * is needed — logit-space operations (argmax, logsumexp) handle masked values
+     * naturally. Returns {@code logits} unchanged if no dominant script is detected
+     * or it is {@link ScriptCategory#OTHER}.
+     */
+    private static float[] applyScriptGate(float[] logits, String inputText) {
+        int domScript = dominantScript(inputText);
+        if (domScript < 0 || domScript == ScriptCategory.OTHER) {
+            return logits;
+        }
+        float[] gated = Arrays.copyOf(logits, logits.length);
+        for (int i = 0; i < gated.length; i++) {
+            int classScript = CLASS_SCRIPT[i];
+            boolean compatible = (classScript == domScript)
+                    || (domScript == ScriptCategory.HAN
+                        && (classScript == ScriptCategory.HIRAGANA
+                            || classScript == ScriptCategory.KATAKANA));
+            if (!compatible) {
+                gated[i] = MASKED_LOGIT;
+            }
+        }
+        return gated;
+    }
+
+    /**
+     * Collapse confusable groups in logit space using logsumexp.
+     * Each group's combined logit is {@code logsumexp(group logits)}, assigned
+     * to the highest-scoring member; other members are masked out.
      * Returns a new array; the input is not modified.
      */
-    static float[] collapseGroups(float[] probs, int[][] groupIndices) {
-        float[] collapsed = Arrays.copyOf(probs, probs.length);
-        boolean[] visited = new boolean[probs.length];
+    static float[] collapseGroups(float[] logits, int[][] groupIndices) {
+        float[] collapsed = Arrays.copyOf(logits, logits.length);
+        boolean[] visited = new boolean[logits.length];
 
-        for (int i = 0; i < probs.length; i++) {
+        for (int i = 0; i < logits.length; i++) {
             if (visited[i] || groupIndices[i].length <= 1) {
                 continue;
             }
             int[] group = groupIndices[i];
-            // Find the top scorer and sum
-            float sum = 0f;
             int best = group[0];
+            float maxLogit = logits[group[0]];
             for (int idx : group) {
-                sum += probs[idx];
-                if (probs[idx] > probs[best]) {
+                if (logits[idx] > maxLogit) {
+                    maxLogit = logits[idx];
                     best = idx;
                 }
                 visited[idx] = true;
             }
-            // Assign sum to top scorer, zero the rest
+            // logsumexp: max + log(sum(exp(logit - max))) for numerical stability
+            float sumExp = 0f;
             for (int idx : group) {
-                collapsed[idx] = (idx == best) ? sum : 0f;
+                sumExp += Math.exp(logits[idx] - maxLogit);
+            }
+            float groupLogit = maxLogit + (float) Math.log(sumExp);
+            for (int idx : group) {
+                collapsed[idx] = (idx == best) ? groupLogit : MASKED_LOGIT;
             }
         }
         return collapsed;
+    }
+
+    /**
+     * Numerically stable logsumexp over an array of logits.
+     */
+    private static float logSumExp(float[] logits) {
+        float max = Float.NEGATIVE_INFINITY;
+        for (float v : logits) {
+            if (v > max) max = v;
+        }
+        float sumExp = 0f;
+        for (float v : logits) {
+            sumExp += Math.exp(v - max);
+        }
+        return max + (float) Math.log(sumExp);
+    }
+
+    /**
+     * Shannon entropy (in bits) computed directly from logits without exposing
+     * softmax probabilities. Equivalent to {@code CharSoupModel.entropy(softmax(logits))}
+     * but computed as {@code (logsumexp(L) - E[L under softmax]) / ln(2)}.
+     */
+    private static float entropyFromLogits(float[] logits) {
+        float lse = logSumExp(logits);
+        double weightedSumLogits = 0.0;
+        for (float l : logits) {
+            weightedSumLogits += Math.exp(l - lse) * l;
+        }
+        return (float) ((lse - weightedSumLogits) / Math.log(2.0));
+    }
+
+    /**
+     * Score of the top class via sigmoid(top_logit − logsumexp(other logits)),
+     * which equals exp(top_logit − logsumexp(all logits)) — the softmax probability
+     * of the top class, computed stably without materializing a probability distribution.
+     */
+    private static float topClassScore(float[] logits) {
+        float lse = logSumExp(logits);
+        float topLogit = Float.NEGATIVE_INFINITY;
+        for (float v : logits) {
+            if (v > topLogit) topLogit = v;
+        }
+        return (float) Math.exp(topLogit - lse);
     }
 
     private final StringBuilder buffer = new StringBuilder();
@@ -238,13 +405,19 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
-     * Compute the confidence level from the top softmax score and distribution
+     * Compute the confidence level from the sigmoid-of-margin score and distribution
      * entropy. High entropy (uncertain distribution) downgrades confidence even
      * if the top score looks reasonable — this catches junk text that happens to
      * activate one class slightly more than others.
+     * <p>
+     * {@code score} is {@code sigmoid(logit_margin)}, so the thresholds map to:
+     * <ul>
+     *   <li>&gt;0.90 — logit margin &gt; 2.2 (strong discrimination)</li>
+     *   <li>&gt;0.70 — logit margin &gt; 0.85 (moderate discrimination)</li>
+     *   <li>&gt;0.20 — logit margin &gt; -1.4 (weak but present signal)</li>
+     * </ul>
      */
     private static LanguageConfidence toConfidence(float score, float entropy) {
-        // High entropy means the model is guessing — likely junk
         if (entropy > 4.0f) {
             return LanguageConfidence.NONE;
         }
@@ -274,19 +447,19 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
-     * Minimum confidence (inverse logit of the max logit) for a candidate to
-     * be considered a genuine language match. If no candidate exceeds this
-     * threshold, the comparison is inconclusive and {@code null} is returned.
+     * Minimum sigmoid-of-margin score for a candidate to be considered a genuine
+     * language match in {@link #compareLanguageSignal}. If no candidate exceeds
+     * this threshold, the comparison is inconclusive and {@code null} is returned.
      * <p>
-     * 0.88 corresponds to a raw logit of ~2.0. Typical values:
+     * 0.60 corresponds to a logit margin of ~0.4 (top logit 0.4 units above second).
+     * Typical values:
      * <ul>
-     *   <li>Arabic (windows-1256): 0.9999994 (logit +14.3)</li>
-     *   <li>UTF-8 garbled: 0.97 (logit +3.5)</li>
-     *   <li>EBCDIC garbage: 0.79 (logit +1.3) — below threshold</li>
-     *   <li>Short English: 0.025 (logit -3.7) — well below threshold</li>
+     *   <li>Arabic (windows-1256): sigmoid(margin) &gt; 0.99</li>
+     *   <li>UTF-8 garbled: skipped by junk-ratio filter</li>
+     *   <li>Short/ambiguous text: sigmoid(margin) &lt; 0.60 — below threshold</li>
      * </ul>
      */
-    private static final float MIN_CONFIDENCE_THRESHOLD = 0.88f;
+    private static final float MIN_CONFIDENCE_THRESHOLD = 0.60f;
 
     /**
      * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
@@ -307,8 +480,9 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * Compare multiple candidate texts and return the key of the one with
      * the strongest language signal. Candidates with a high ratio of
      * replacement or control characters are discarded first. Remaining
-     * candidates are scored using the inverse logit (sigmoid) of the
-     * model's maximum pre-softmax logit.
+     * candidates are scored using {@code sigmoid(top_logit − logsumexp(other logits))}
+     * — the log-normalized probability of the top class, computed without materializing
+     * a full softmax distribution.
      * <p>
      * Returns {@code null} if no candidate exceeds the minimum confidence
      * threshold, indicating the comparison is inconclusive.
@@ -337,7 +511,8 @@ public class CharSoupLanguageDetector extends LanguageDetector {
 
             int[] features = EXTRACTOR.extract(entry.getValue());
             float[] logits = MODEL.predictLogits(features);
-            float confidence = sigmoid(max(logits));
+            logits = applyScriptGate(logits, entry.getValue());
+            float confidence = topClassScore(logits);
 
             LOG.debug("compareLanguageSignal: {} -> confidence={}",
                     entry.getKey(), confidence);
@@ -377,20 +552,6 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             }
         }
         return total == 0 ? 0f : (float) junk / total;
-    }
-
-    private static float sigmoid(float x) {
-        return 1.0f / (1.0f + (float) Math.exp(-x));
-    }
-
-    private static float max(float[] arr) {
-        float m = Float.NEGATIVE_INFINITY;
-        for (float v : arr) {
-            if (v > m) {
-                m = v;
-            }
-        }
-        return m;
     }
 
     @Override
@@ -468,21 +629,23 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         }
 
         int len = text.length();
-        float[] bestProbs = null;
+        float[] bestLogits = null;
         float bestEntropy = Float.MAX_VALUE;
+        int[] features = new int[EXTRACTOR.getNumBuckets()];
 
         for (int start = 0; start < len; start += CHUNK_SIZE) {
             int end = Math.min(start + CHUNK_SIZE, len);
             String chunk = text.substring(start, end);
 
-            int[] features = EXTRACTOR.extract(chunk);
-            float[] probs = MODEL.predict(features);
-            float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-            float entropy = CharSoupModel.entropy(collapsed);
+            EXTRACTOR.extractAndCount(chunk, features);
+            float[] logits = MODEL.predictLogits(features);
+            float[] scriptGated = applyScriptGate(logits, chunk);
+            float[] collapsed = collapseGroups(scriptGated, GROUP_INDICES);
+            float entropy = entropyFromLogits(collapsed);
 
             if (entropy < bestEntropy) {
                 bestEntropy = entropy;
-                bestProbs = probs;
+                bestLogits = scriptGated;
             }
 
             if (entropy < ENTROPY_THRESHOLD) {
@@ -490,7 +653,7 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             }
         }
 
-        return buildResults(bestProbs);
+        return buildResults(bestLogits, bestEntropy);
     }
 
     /**
@@ -510,26 +673,26 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
-     * Build sorted LanguageResult list from raw probabilities.
+     * Build sorted LanguageResult list from gated logits and pre-computed entropy.
+     * Each class's {@code rawScore} is {@code sigmoid(logit_c − logsumexp(other logits))}
+     * which equals {@code exp(logit_c − logsumexp(all logits))} — the probability of
+     * class c under a stable log-sum-exp normalization. logsumexp is computed once;
+     * each per-class score is a single exp() call. No softmax array is materialized.
      */
-    private List<LanguageResult> buildResults(float[] probs) {
-        // Compute entropy on collapsed distribution
-        float[] collapsed = collapseGroups(probs, GROUP_INDICES);
-        lastEntropy = CharSoupModel.entropy(collapsed);
+    private List<LanguageResult> buildResults(float[] logits, float entropy) {
+        lastEntropy = entropy;
         float confScore = entropyToConfidenceScore(lastEntropy);
+        float lse = logSumExp(logits);
 
-        // Build results from raw probabilities sorted by probability descending
         List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
         for (int c = 0; c < MODEL.getNumClasses(); c++) {
+            float score = (float) Math.exp(logits[c] - lse);
             results.add(new LanguageResult(
-                    MODEL.getLabel(c), toConfidence(probs[c], lastEntropy),
-                    probs[c], confScore));
+                    MODEL.getLabel(c), toConfidence(score, lastEntropy),
+                    score, confScore));
         }
         results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
 
-        // If top score is below NONE threshold, return a NULL-like result
-        // but preserve the confidenceScore so encoding arbitration can
-        // still compare across candidate decodings.
         if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
             return Collections.singletonList(
                     new LanguageResult("", LanguageConfidence.NONE, 0.0f, confScore));

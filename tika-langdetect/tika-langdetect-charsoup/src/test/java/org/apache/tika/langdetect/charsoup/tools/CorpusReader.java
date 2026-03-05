@@ -100,21 +100,35 @@ public class CorpusReader {
     }
 
     /**
+     * When the candidate pool exceeds this multiple of {@code maxPerLang} the
+     * reservoir is statistically well-mixed and we stop reading early.
+     * Keeps large-language files (e.g. 500k-line English) from dominating I/O
+     * when only a small sample is needed.
+     */
+    private static final int RESERVOIR_EARLY_STOP_FACTOR = 10;
+
+    /**
      * Read sentence files from a language directory using reservoir sampling
-     * to cap at {@code maxPerLang} sentences. This reads through the entire
-     * file but only keeps a fixed-size sample in memory.
+     * to cap at {@code maxPerLang} sentences.  Reading stops as soon as
+     * {@code RESERVOIR_EARLY_STOP_FACTOR * maxPerLang} candidates have been
+     * seen, which is sufficient to produce a well-mixed reservoir while
+     * avoiding a full scan of very large files.
      */
     static void readLanguageDirSampled(Path langDir, String language,
                                        int maxPerLang,
                                        List<LabeledSentence> allSentences)
             throws IOException {
-        // Reservoir sampling: read all lines, keep at most maxPerLang
         List<LabeledSentence> reservoir = new ArrayList<>(maxPerLang);
         Random rng = new Random(language.hashCode()); // deterministic per language
         int count = 0;
+        final int earlyStop = maxPerLang * RESERVOIR_EARLY_STOP_FACTOR;
+        boolean done = false;
 
         try (DirectoryStream<Path> files = Files.newDirectoryStream(langDir, "*.txt")) {
             for (Path file : files) {
+                if (done) {
+                    break;
+                }
                 try (BufferedReader reader = Files.newBufferedReader(file,
                         StandardCharsets.UTF_8)) {
                     String line;
@@ -123,19 +137,28 @@ public class CorpusReader {
                         if (tab < 0) {
                             continue;
                         }
-                        String text = line.substring(tab + 1).trim();
-                        if (text.isEmpty()) {
-                            continue;
-                        }
-                        count++;
-                        if (reservoir.size() < maxPerLang) {
-                            reservoir.add(new LabeledSentence(language, text));
-                        } else {
-                            // Replace with decreasing probability
-                            int j = rng.nextInt(count);
-                            if (j < maxPerLang) {
-                                reservoir.set(j, new LabeledSentence(language, text));
+                        String doc = line.substring(tab + 1);
+                        for (String part : doc.split("\\\\n")) {
+                            String text = part.trim();
+                            if (text.length() < MIN_SENTENCE_CHARS) {
+                                continue;
                             }
+                            count++;
+                            if (reservoir.size() < maxPerLang) {
+                                reservoir.add(new LabeledSentence(language, text));
+                            } else {
+                                int j = rng.nextInt(count);
+                                if (j < maxPerLang) {
+                                    reservoir.set(j, new LabeledSentence(language, text));
+                                }
+                            }
+                            if (count >= earlyStop) {
+                                done = true;
+                                break;
+                            }
+                        }
+                        if (done) {
+                            break;
                         }
                     }
                 }
@@ -144,10 +167,15 @@ public class CorpusReader {
         allSentences.addAll(reservoir);
     }
 
+    private static final int MIN_SENTENCE_CHARS = 20;
+
     /**
-     * Read a single Leipzig-format sentence file.
-     * Each line: {@code lineNumber\tsentence text}
-     * Lines without a tab or with empty text are skipped.
+     * Read a single MADLAD-format sentence file.
+     * Each line: {@code lineNumber\tdocument text}
+     * Documents contain sentences separated by the literal two-character
+     * sequence {@code \n} (backslash + n). Lines without a tab or with
+     * empty text are skipped. Sentence fragments shorter than
+     * {@link #MIN_SENTENCE_CHARS} characters are also skipped.
      */
     static void readSentenceFile(Path file, String language,
                                  List<LabeledSentence> sentences) throws IOException {
@@ -158,9 +186,12 @@ public class CorpusReader {
                 if (tab < 0) {
                     continue;
                 }
-                String text = line.substring(tab + 1).trim();
-                if (!text.isEmpty()) {
-                    sentences.add(new LabeledSentence(language, text));
+                String doc = line.substring(tab + 1);
+                for (String part : doc.split("\\\\n")) {
+                    String text = part.trim();
+                    if (text.length() >= MIN_SENTENCE_CHARS) {
+                        sentences.add(new LabeledSentence(language, text));
+                    }
                 }
             }
         }

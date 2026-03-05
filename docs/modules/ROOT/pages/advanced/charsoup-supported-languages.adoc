@@ -1,0 +1,90 @@
+// Auto-generated — do not edit by hand.
+// Regenerate with CommonTokenGenerator --model and the DumpLabels tool.
+
+= CharSoup Supported Languages
+
+The CharSoup language detector supports *229 languages* (v3, MADLAD build).
+Language codes are ISO 639-3.
+
+[cols="2,3,2,3,2,3",options="header"]
+|===
+| Code | Language | Code | Language | Code | Language
+
+| `ace` | Acehnese | `qub` | Huallaga Huánuco Quechua | `pap` | Papiamento
+| `ada` | Adangme | `hui` | Huli | `pus` | Pashto
+| `ady` | Adyghe | `hun` | Hungarian | `fas` | Persian
+| `afr` | Afrikaans | `iba` | Iban | `pon` | Pohnpeian
+| `aka` | Akan | `isl` | Icelandic | `pol` | Polish
+| `sqi` | Albanian | `ibo` | Igbo | `por` | Portuguese
+| `amh` | Amharic | `ilo` | Iloko | `que` | Quechua
+| `grc` | Ancient Greek (to 1453) | `ind` | Indonesian | `otq` | Querétaro Otomi
+| `ara` | Arabic | `iku` | Inuktitut | `rom` | Romani
+| `hye` | Armenian | `gle` | Irish | `ron` | Romanian
+| `asm` | Assamese | `iso` | Isoko | `roh` | Romansh
+| `ava` | Avar | `ita` | Italian | `rus` | Russian
+| `aym` | Aymara | `jpn` | Japanese | `rcf` | Réunion Creole
+| `aze` | Azerbaijani | `jav` | Javanese | `ksw` | S'gaw Karen
+| `bci` | Baoulé | `quc` | K'iche' | `smo` | Samoan
+| `bak` | Bashkir | `kbd` | Kabardian | `cuk` | San Blas Kuna
+| `eus` | Basque | `kbp` | Kabiyè | `sag` | Sango
+| `btx` | Batak Karo | `kac` | Kachin | `san` | Sanskrit
+| `bts` | Batak Simalungun | `kal` | Kalaallisut | `gla` | Scottish Gaelic
+| `bbc` | Batak Toba | `xal` | Kalmyk | `srp` | Serbian
+| `bel` | Belarusian | `kan` | Kannada | `crs` | Seselwa Creole French
+| `ben` | Bengali | `krc` | Karachay-Balkar | `shn` | Shan
+| `bik` | Bikol | `kaa` | Karakalpak | `sna` | Shona
+| `bre` | Breton | `kaz` | Kazakh | `snd` | Sindhi
+| `bul` | Bulgarian | `kjh` | Khakas | `sin` | Sinhala
+| `mya` | Burmese | `kha` | Khasi | `slk` | Slovak
+| `bua` | Buryat | `khm` | Khmer | `slv` | Slovenian
+| `cat` | Catalan | `kin` | Kinyarwanda | `som` | Somali
+| `ceb` | Cebuano | `kir` | Kirghiz | `alt` | Southern Altai
+| `ckb` | Central Kurdish | `tlh` | Klingon | `spa` | Spanish
+| `che` | Chechen | `kom` | Komi | `srn` | Sranan Tongo
+| `chr` | Cherokee | `kor` | Korean | `sun` | Sundanese
+| `zho` | Chinese | `ksd` | Kuanua | `swh` | Swahili
+| `chk` | Chuukese | `kua` | Kuanyama | `ssw` | Swati
+| `chv` | Chuvash | `kum` | Kumyk | `swe` | Swedish
+| `cor` | Cornish | `kur` | Kurdish | `syr` | Syriac
+| `cos` | Corsican | `lao` | Lao | `tab` | Tabassaran
+| `hrv` | Croatian | `ltg` | Latgalian | `tgk` | Tajik
+| `ces` | Czech | `lav` | Latvian | `tam` | Tamil
+| `mps` | Dadibi | `lin` | Lingala | `tat` | Tatar
+| `dan` | Danish | `lit` | Lithuanian | `tel` | Telugu
+| `div` | Dhivehi | `lub` | Luba-Katanga | `tet` | Tetum
+| `tbz` | Ditammari | `lug` | Luganda | `tha` | Thai
+| `dov` | Dombe | `mkd` | Macedonian | `tir` | Tigrinya
+| `nld` | Dutch | `mgh` | Makhuwa-Meetto | `tiv` | Tiv
+| `nhe` | Eastern Huasteca Nahuatl | `mlg` | Malagasy | `ton` | Tonga (Tonga Islands)
+| `ydd` | Eastern Yiddish | `msa` | Malay | `tso` | Tsonga
+| `eng` | English | `mal` | Malayalam | `tsn` | Tswana
+| `myv` | Erzya | `mlt` | Maltese | `tur` | Turkish
+| `epo` | Esperanto | `mam` | Mam | `tuk` | Turkmen
+| `est` | Estonian | `mar` | Marathi | `tvl` | Tuvalu
+| `ewe` | Ewe | `chm` | Mari | `tyv` | Tuvinian
+| `fao` | Faroese | `mbt` | Matigsalug Manobo | `tzo` | Tzotzil
+| `fij` | Fijian | `min` | Minangkabau | `tyz` | Tày
+| `fil` | Filipino | `lus` | Mizo | `udm` | Udmurt
+| `fin` | Finnish | `ell` | Modern Greek (1453-) | `ukr` | Ukrainian
+| `fip` | Fipa | `mdf` | Moksha | `ppk` | Uma
+| `fon` | Fon | `mon` | Mongolian | `ubu` | Umbu-Ungu
+| `fra` | French | `meu` | Motu | `urd` | Urdu
+| `gag` | Gagauz | `mri` | Māori | `uig` | Uyghur
+| `glg` | Galician | `emp` | N. Emberá | `uzb` | Uzbek
+| `kat` | Georgian | `nnb` | Nande | `ven` | Venda
+| `deu` | German | `nav` | Navajo | `vie` | Vietnamese
+| `gom` | Goan Konkani | `new` | Nepal Bhasa | `wln` | Walloon
+| `grn` | Guaraní | `nep` | Nepali (macrolanguage) | `war` | Waray
+| `ngu` | Guerrero Nahuatl | `gym` | Ngäbere | `cym` | Welsh
+| `guj` | Gujarati | `sme` | Northern Sami | `fry` | Western Frisian
+| `hat` | Haitian | `nso` | Northern Sotho | `mrj` | Western Mari
+| `cfm` | Hakha Chin | `nob` | Norwegian Bokmål | `wol` | Wolof
+| `cnh` | Hakha Chin (Alternate) | `nya` | Nyanja | `xho` | Xhosa
+| `hau` | Hausa | `nzi` | Nzima | `sah` | Yakut
+| `haw` | Hawaiian | `ori` | Odia | `yor` | Yoruba
+| `heb` | Hebrew | `orm` | Oromo | `yua` | Yucateco
+| `hil` | Hiligaynon | `oss` | Ossetian | `zap` | Zapotec
+| `hin` | Hindi | `pck` | Paite Chin | `zul` | Zulu
+| `hmo` | Hiri Motu | `pag` | Pangasinan |  | 
+| `hmn` | Hmong | `pan` | Panjabi |  | 
+|===

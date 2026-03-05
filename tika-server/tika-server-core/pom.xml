@@ -54,7 +54,7 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-langdetect-optimaize</artifactId>
+      <artifactId>tika-langdetect-charsoup</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

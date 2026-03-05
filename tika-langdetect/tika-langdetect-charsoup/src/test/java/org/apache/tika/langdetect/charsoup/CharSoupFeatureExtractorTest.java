@@ -249,7 +249,7 @@ public class CharSoupFeatureExtractorTest {
         String reversed = "\u0628\u062A\u0643";
         int[] countsNormal = ext.extract(normal);
         int[] countsReversed = ext.extract(reversed);
-        // These must differ — this is the ara vs ara-x-ltr signal
+        // These must differ — reversed text produces different bigram distributions
         assertNotEquals(sum(countsNormal), 0);
         assertNotEquals(sum(countsReversed), 0);
         // Bigram counts should be equal (same number of bigrams) but in different buckets

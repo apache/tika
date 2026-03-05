@@ -30,6 +30,7 @@ import java.util.Locale;
  * <p>
  * Binary format (big-endian, magic "LDM1"):
  * <pre>
+ *   v1 layout:
  *   Offset  Field
  *   0       4B magic: 0x4C444D31
  *   4       4B version: 1
@@ -39,6 +40,15 @@ import java.util.Locale;
  *           Scales: C × 4B float (per-class dequantization)
  *           Biases: C × 4B float (per-class bias term)
  *           Weights: B × C bytes (bucket-major, INT8 signed)
+ *
+ *   v2 layout (adds feature flags after numClasses):
+ *   Offset  Field
+ *   0       4B magic: 0x4C444D31
+ *   4       4B version: 2
+ *   8       4B numBuckets (B)
+ *   12      4B numClasses (C)
+ *   16      4B featureFlags (bitmask of FLAG_* constants)
+ *   20+     Labels, Scales, Biases, Weights (same as v1)
  * </pre>
  * <p>
  * Weights are stored in bucket-major order:
@@ -56,7 +66,26 @@ import java.util.Locale;
 public class CharSoupModel {
 
     static final int MAGIC = 0x4C444D31; // "LDM1"
-    static final int VERSION = 1;
+    static final int VERSION_V1 = 1;
+    static final int VERSION_V2 = 2;
+
+    /** Feature flag: enable character trigrams. */
+    public static final int FLAG_TRIGRAMS      = 1 << 0;
+    /** Feature flag: enable skip bigrams. */
+    public static final int FLAG_SKIP_BIGRAMS  = 1 << 1;
+    /** Feature flag: enable 3-char word suffixes. */
+    public static final int FLAG_SUFFIXES      = 1 << 2;
+    /** Feature flag: enable 4-char word suffixes. */
+    public static final int FLAG_SUFFIX4       = 1 << 3;
+    /** Feature flag: enable 3-char word prefixes. */
+    public static final int FLAG_PREFIX        = 1 << 4;
+    /** Feature flag: enable whole-word unigrams. */
+    public static final int FLAG_WORD_UNIGRAMS = 1 << 5;
+    /** Feature flag: enable non-CJK character unigrams. */
+    public static final int FLAG_CHAR_UNIGRAMS = 1 << 6;
+
+    /** Default flags for v1 models (word unigrams only). */
+    public static final int V1_DEFAULT_FLAGS = FLAG_WORD_UNIGRAMS;
 
     private final int numBuckets;
     private final int numClasses;
@@ -71,29 +100,51 @@ public class CharSoupModel {
     private final byte[] flatWeights;
 
     /**
-     * Construct from class-major {@code byte[][]} weights.
-     * Transposes to bucket-major flat layout internally.
+     * Bitmask of feature flags that were active during training.
+     * See {@code FLAG_*} constants. Used by {@link #createExtractor()} to
+     * reconstruct the exact same feature extractor at inference time.
+     */
+    private final int featureFlags;
+
+    /**
+     * Construct from class-major {@code byte[][]} weights with default feature
+     * configuration (word unigrams only — backward compatible with v1).
      */
     public CharSoupModel(int numBuckets, int numClasses,
                        String[] labels, float[] scales,
                        float[] biases, byte[][] weights) {
+        this(numBuckets, numClasses, labels, scales, biases, weights, V1_DEFAULT_FLAGS);
+    }
+
+    /**
+     * Construct from class-major {@code byte[][]} weights with explicit feature flags.
+     *
+     * @param featureFlags bitmask of {@code FLAG_*} constants
+     */
+    public CharSoupModel(int numBuckets, int numClasses,
+                       String[] labels, float[] scales,
+                       float[] biases, byte[][] weights,
+                       int featureFlags) {
         this.numBuckets = numBuckets;
         this.numClasses = numClasses;
         this.labels = labels;
         this.scales = scales;
         this.biases = biases;
         this.flatWeights = transposeToBucketMajor(weights, numBuckets, numClasses);
+        this.featureFlags = featureFlags;
     }
 
     private CharSoupModel(int numBuckets, int numClasses,
                         String[] labels, float[] scales,
-                        float[] biases, byte[] flatWeights) {
+                        float[] biases, byte[] flatWeights,
+                        int featureFlags) {
         this.numBuckets = numBuckets;
         this.numClasses = numClasses;
         this.labels = labels;
         this.scales = scales;
         this.biases = biases;
         this.flatWeights = flatWeights;
+        this.featureFlags = featureFlags;
     }
 
     private static byte[] transposeToBucketMajor(
@@ -132,6 +183,7 @@ public class CharSoupModel {
 
     /**
      * Load a model from an input stream.
+     * Supports both v1 (LDM1) and v2 (LDM2) formats.
      */
     public static CharSoupModel load(InputStream is)
             throws IOException {
@@ -143,14 +195,20 @@ public class CharSoupModel {
                     MAGIC, magic));
         }
         int version = dis.readInt();
-        if (version != VERSION) {
+        if (version != VERSION_V1 && version != VERSION_V2) {
             throw new IOException(
                     "Unsupported version: " + version
-                            + " (expected " + VERSION + ")");
+                            + " (expected " + VERSION_V1
+                            + " or " + VERSION_V2 + ")");
         }
 
         int numBuckets = dis.readInt();
         int numClasses = dis.readInt();
+
+        int featureFlags = V1_DEFAULT_FLAGS;
+        if (version == VERSION_V2) {
+            featureFlags = dis.readInt();
+        }
 
         String[] labels = readLabels(dis, numClasses);
         float[] scales = readFloats(dis, numClasses);
@@ -160,7 +218,7 @@ public class CharSoupModel {
         dis.readFully(flat);
 
         return new CharSoupModel(numBuckets, numClasses,
-                labels, scales, biases, flat);
+                labels, scales, biases, flat, featureFlags);
     }
 
     // ================================================================
@@ -168,14 +226,15 @@ public class CharSoupModel {
     // ================================================================
 
     /**
-     * Write the model in LDM1 binary format.
+     * Write the model in LDM2 binary format (includes feature flags).
      */
     public void save(OutputStream os) throws IOException {
         DataOutputStream dos = new DataOutputStream(os);
         dos.writeInt(MAGIC);
-        dos.writeInt(VERSION);
+        dos.writeInt(VERSION_V2);
         dos.writeInt(numBuckets);
         dos.writeInt(numClasses);
+        dos.writeInt(featureFlags);
         writeLabels(dos);
         writeFloats(dos, scales);
         writeFloats(dos, biases);
@@ -324,12 +383,15 @@ public class CharSoupModel {
     }
 
     /**
-     * Create the {@link ScriptAwareFeatureExtractor} for this
-     * model. Ensures inference uses the same feature extraction
-     * pipeline as training.
+     * Create the {@link ScriptAwareFeatureExtractor} for this model.
+     * Uses the hardcoded production feature configuration.
      */
     public FeatureExtractor createExtractor() {
         return new ScriptAwareFeatureExtractor(numBuckets);
+    }
+
+    public int getFeatureFlags() {
+        return featureFlags;
     }
 
     // ================================================================

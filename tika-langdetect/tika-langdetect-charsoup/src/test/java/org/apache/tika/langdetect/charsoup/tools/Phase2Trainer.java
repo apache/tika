@@ -1238,6 +1238,16 @@ public class Phase2Trainer {
 
     public F1Result evaluateMacroF1(
             List<LabeledSentence> data) {
+        return evaluateMacroF1(data, null);
+    }
+
+    /**
+     * Macro F1 evaluation. If {@code perLangOut} is non-null, it is
+     * populated with per-language F1 scores keyed by language label.
+     */
+    public F1Result evaluateMacroF1(
+            List<LabeledSentence> data,
+            java.util.Map<String, Double> perLangOut) {
         int[][] counts = new int[numClasses][3];
         FeatureExtractor ext = createExtractor();
         int[] featureBuf = new int[numBuckets];
@@ -1276,6 +1286,9 @@ public class Phase2Trainer {
                     ? 2 * p * r / (p + r) : 0;
             f1Sum += f1;
             n++;
+            if (perLangOut != null) {
+                perLangOut.put(labels[c], f1);
+            }
         }
         return new F1Result(
                 n > 0 ? f1Sum / n : 0, n);
@@ -1372,6 +1385,57 @@ public class Phase2Trainer {
     // ================================================================
     //  Helpers
     // ================================================================
+
+    private boolean useTrigrams    = false;
+    private boolean useSkipBigrams = false;
+    private boolean useWordSuffixes = false;
+    private boolean useWordSuffix4  = false;
+    private boolean useWordPrefix   = false;
+    private boolean useWordUnigrams = true;
+    private boolean useCharUnigrams = false;
+
+    public Phase2Trainer setUseTrigrams(boolean v) {
+        this.useTrigrams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseSkipBigrams(boolean v) {
+        this.useSkipBigrams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordSuffixes(boolean v) {
+        this.useWordSuffixes = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordSuffix4(boolean v) {
+        this.useWordSuffix4 = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordPrefix(boolean v) {
+        this.useWordPrefix = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordUnigrams(boolean v) {
+        this.useWordUnigrams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseCharUnigrams(boolean v) {
+        this.useCharUnigrams = v;
+        return this;
+    }
+
+    public boolean isUseTrigrams()     { return useTrigrams; }
+    public boolean isUseSkipBigrams()  { return useSkipBigrams; }
+    public boolean isUseWordSuffixes() { return useWordSuffixes; }
+    public boolean isUseWordSuffix4()  { return useWordSuffix4; }
+    public boolean isUseWordPrefix()   { return useWordPrefix; }
+    public boolean isUseWordUnigrams() { return useWordUnigrams; }
+    public boolean isUseCharUnigrams() { return useCharUnigrams; }
 
     private FeatureExtractor createExtractor() {
         return new ScriptAwareFeatureExtractor(numBuckets);

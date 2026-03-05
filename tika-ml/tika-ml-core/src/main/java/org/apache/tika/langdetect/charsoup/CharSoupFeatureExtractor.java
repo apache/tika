@@ -61,8 +61,7 @@ import java.util.regex.Pattern;
  * during n-gram extraction so that base letters on either side form a contiguous pair.
  * This is critical for Arabic and Hebrew where diacritical marks (harakat, niqqud) are
  * Unicode nonspacing marks ({@code Mn}) that would otherwise break words into isolated
- * single-letter fragments, destroying the bigram signal needed to distinguish
- * {@code ara} from {@code ara-x-ltr} (Arabic misrepresented as LTR).
+ * single-letter fragments, destroying the bigram signal.
  * </p>
  * <p>See {@link #isTransparent(int)} for the full list of skipped codepoints.</p>
  */
@@ -278,9 +277,7 @@ public class CharSoupFeatureExtractor implements TextFeatureExtractor {
      *       U+05C4–U+05C5, U+05C7). Without this, diacritics break Arabic/Hebrew
      *       words into isolated single-letter fragments because
      *       {@link Character#isLetter(int)} returns {@code false} for Mn
-     *       codepoints. Stripping them yields clean base-letter bigrams, which
-     *       is essential for distinguishing {@code ara} from {@code ara-x-ltr}
-     *       (reversed Arabic) where character <em>order</em> is the signal.</li>
+     *       codepoints. Stripping them yields clean base-letter bigrams.</li>
      *   <li><b>Arabic Tatweel / Kashida (U+0640)</b> — a typographic stretching
      *       character that is classified as a letter but carries no linguistic
      *       information. "كتب" and "كـتـب" should produce identical bigrams.</li>

@@ -92,11 +92,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-langdetect-opennlp</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-optimaize</artifactId>
         <version>${revision}</version>
       </dependency>
@@ -128,11 +123,6 @@
       <dependency>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-charset-detectors-tools</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
-        <artifactId>tika-langdetect-tika</artifactId>
         <version>${revision}</version>
       </dependency>
       <dependency>

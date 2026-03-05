@@ -61,6 +61,33 @@ public interface FeatureExtractor {
     void extractFromPreprocessed(String preprocessedText, int[] counts, boolean clear);
 
     /**
+     * Extract features into {@code counts} and return the total n-gram emission count.
+     * <p>
+     * The count is the raw number of individual n-gram tokens processed before bucket
+     * hashing.  It is a script-neutral measure of how much signal the input carries:
+     * whitespace-only input yields 0; ~200 chars of typical Latin or CJK prose yields
+     * roughly 400.  This is the right threshold variable for length-gated confusables
+     * because it is insensitive to padding spaces or punctuation-heavy inputs, and it
+     * naturally accounts for the higher feature density of CJK text vs. Latin text.
+     * <p>
+     * The default implementation sums the feature vector after extraction, which is
+     * correct because every emission does {@code counts[bucket]++}; the sum therefore
+     * equals the total emission count regardless of hash collisions.
+     *
+     * @param rawText raw input text (may be {@code null})
+     * @param counts  pre-allocated int array of size {@link #getNumBuckets()} (will be zeroed)
+     * @return total n-gram emission count (≥ 0)
+     */
+    default int extractAndCount(String rawText, int[] counts) {
+        extract(rawText, counts);
+        int n = 0;
+        for (int c : counts) {
+            n += c;
+        }
+        return n;
+    }
+
+    /**
      * @return number of hash buckets (feature vector size)
      */
     int getNumBuckets();

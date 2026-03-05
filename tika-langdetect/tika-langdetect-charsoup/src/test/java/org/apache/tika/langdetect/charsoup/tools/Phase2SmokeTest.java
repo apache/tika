@@ -123,7 +123,7 @@ public class Phase2SmokeTest {
         t0 = System.nanoTime();
         double testAcc =
                 TrainLanguageModel.evaluateQuantized(
-                        model, test);
+                        model, test).accuracy;
         System.out.printf(Locale.US,
                 "Test accuracy (quantized): %.4f  "
                         + "[%.1f s]%n",

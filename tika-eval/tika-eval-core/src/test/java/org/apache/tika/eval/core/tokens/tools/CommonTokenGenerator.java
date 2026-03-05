@@ -73,15 +73,16 @@ public class CommonTokenGenerator {
 
     /**
      * Languages excluded from common-token generation. Must stay in sync with
-     * {@code TrainLanguageModel.EXCLUDED_LANGS}. These languages are excluded
+     * {@code PrepareCorpus.EXCLUDED_LANGS}. These languages are excluded
      * because they are indistinguishable from closely related majority languages
-     * at the character n-gram level, causing collateral accuracy damage or
+     * at the character n-gram level, causing accuracy interference or
      * having unacceptably low own-detection accuracy. See the build
      * documentation for per-language justifications.
      */
     static final Set<String> EXCLUDED_LANGS;
     static {
         Set<String> ex = new HashSet<>();
+        // MADLAD-era drops
         ex.add("vec"); // Venetian: Italian (ita) dropped to 83.6%
         ex.add("als"); // Tosk Albanian: Albanian (sqi) collapsed to 51.6%
         ex.add("mad"); // Madurese: 9.1% own accuracy; indistinguishable from Javanese/Indonesian
@@ -89,6 +90,30 @@ public class CommonTokenGenerator {
         ex.add("knn"); // Konkani: 46.2% own accuracy; indistinguishable from Marathi
         ex.add("glk"); // Gilaki: 88.6% own accuracy; overlaps with Persian/Mazanderani
         ex.add("mkw"); // Kituba: 80.1% own accuracy; overlaps with Kongo/Lingala
+        // Wikipedia-era drops (March 2026) — see language-drop-decisions.md
+        ex.add("hbs"); // Serbo-Croatian: F1@500=0.849, same language as hrv/srp/bos
+        ex.add("mai"); // Maithili: F1@50=0.490, Devanagari contamination with hin/nep
+        ex.add("koi"); // Komi-Permyak: F1@500=0.765, permanently confused with kpv
+        ex.add("hat"); // Haitian Creole: F1@20=0.155, destroys English recall at short text
+        ex.add("sco"); // Scots: Scots Wikipedia is mostly English; mutual eng confusion
+        ex.add("que"); // Quechua: F1@500=0.833, mutually confused with aym
+        ex.add("aym"); // Aymara: F1@500=0.837, mutually confused with que
+        ex.add("pcd"); // Picard: F1@500=0.805, never separable from French
+        ex.add("gor"); // Gorontalo: F1@500=0.801, F1@50=0.503, persistently poor
+        // v5 drops: bot-generated Wikipedia corpora (see language-drop-decisions.md)
+        ex.add("arz"); // Egyptian Arabic: F1@500=0.999 Wikipedia, 5.3% FLORES — Lsjbot stubs
+        ex.add("bug"); // Buginese: ~95% French municipality stubs
+        ex.add("bpy"); // Bishnupriya Manipuri: Brazilian/US/South Asian location stubs
+        ex.add("mlg"); // Malagasy: French commune stubs (~179k sentences of template)
+        ex.add("nan-x-rom"); // Min Nan romanized: geographic stubs across 455k sentences
+        ex.add("new"); // Newari: Indian village stubs
+        ex.add("lld"); // Ladin: all samples are stubs
+        ex.add("che"); // Chechen: 19/20 samples are Russian/Turkish/other village stubs
+        ex.add("nav"); // Navajo: species distribution templates ~95% of 47k sentences
+        // v5 drops: gate-simplification (length-gating mechanism removed entirely)
+        ex.add("nds-nl"); // Low Saxon Dutch: dual confusable complexity (nds + nld)
+        ex.add("map-bms"); // Banyumasan: 5.7% bleed into ind at full length
+        // note: hat already excluded above; bjn retained without gate
         EXCLUDED_LANGS = Collections.unmodifiableSet(ex);
     }
 
@@ -102,21 +127,15 @@ public class CommonTokenGenerator {
         m.put("azj", "aze");
         m.put("ekk", "est");
         m.put("pes", "fas");
-        m.put("prs", "fas");
         m.put("zsm", "msa");
         m.put("nor", "nob");
         m.put("plt", "mlg");
         m.put("cmn", "zho");
-        m.put("wuu", "zho");
         m.put("lvs", "lav");
         m.put("gug", "grn");
         m.put("quz", "que");
         m.put("swa", "swh");
         m.put("yid", "ydd");
-        m.put("khk", "mon");
-        m.put("uzn", "uzb");
-        m.put("hbs", "srp");
-        m.put("cnr", "srp");
         LANG_MERGE_MAP = Collections.unmodifiableMap(m);
     }
 
@@ -140,13 +159,16 @@ public class CommonTokenGenerator {
     public static void main(String[] args) throws Exception {
         if (args.length < 2) {
             System.err.println(
-                    "Usage: CommonTokenGenerator <corpusDir> <outputDir> [topN] [minDocFreq]");
-            System.err.println("  corpusDir  — directory with lang/sentences.txt files");
-            System.err.println("  outputDir  — where to write per-language token files");
-            System.err.println("  topN       — max tokens per language (default "
+                    "Usage: CommonTokenGenerator <corpusDir> <outputDir> [topN] [minDocFreq]"
+                    + " [--model <modelFile>]");
+            System.err.println("  corpusDir   — directory with lang/sentences.txt files");
+            System.err.println("  outputDir   — where to write per-language token files");
+            System.err.println("  topN        — max tokens per language (default "
                     + DEFAULT_TOP_N + ")");
-            System.err.println("  minDocFreq — minimum document frequency (default "
+            System.err.println("  minDocFreq  — minimum document frequency (default "
                     + DEFAULT_MIN_DOC_FREQ + ")");
+            System.err.println("  --model <f> — only generate tokens for languages in this"
+                    + " CharSoup model (LDM1 binary)");
             System.exit(1);
         }
 
@@ -155,30 +177,48 @@ public class CommonTokenGenerator {
         int topN = args.length > 2 ? Integer.parseInt(args[2]) : DEFAULT_TOP_N;
         int minDocFreq = args.length > 3 ? Integer.parseInt(args[3]) : DEFAULT_MIN_DOC_FREQ;
 
+        Set<String> modelLangs = null;
+        for (int i = 4; i < args.length - 1; i++) {
+            if ("--model".equals(args[i])) {
+                modelLangs = loadModelLabels(Paths.get(args[++i]));
+                System.out.printf(Locale.US, "Model filter: %d languages%n", modelLangs.size());
+            }
+        }
+        final Set<String> allowedLangs = modelLangs;
+
         Files.createDirectories(outputDir);
 
         // Scan corpus directories and group by canonical language code
         Map<String, List<Path>> langToFiles = new TreeMap<>();
         try (DirectoryStream<Path> ds = Files.newDirectoryStream(corpusDir)) {
             for (Path p : ds) {
-                if (!Files.isDirectory(p)) {
+                Path sentencesFile;
+                String entryName = p.getFileName().toString();
+                if (Files.isDirectory(p)) {
+                    // Leipzig / MADLAD subdirectory layout: lang/sentences[_madlad].txt
+                    sentencesFile = p.resolve("sentences_madlad.txt");
+                    if (!Files.isRegularFile(sentencesFile)) {
+                        sentencesFile = p.resolve("sentences.txt");
+                    }
+                    if (!Files.isRegularFile(sentencesFile)) {
+                        continue;
+                    }
+                } else if (Files.isRegularFile(p)) {
+                    // Flat pool layout: one file per language, filename = lang code
+                    sentencesFile = p;
+                } else {
                     continue;
                 }
-                // Accept sentences.txt (Leipzig) or sentences_madlad.txt (MADLAD)
-                Path sentencesFile = p.resolve("sentences_madlad.txt");
-                if (!Files.isRegularFile(sentencesFile)) {
-                    sentencesFile = p.resolve("sentences.txt");
-                }
-                if (!Files.isRegularFile(sentencesFile)) {
-                    continue;
-                }
-                String dirName = p.getFileName().toString();
-                String canonical = LANG_MERGE_MAP.getOrDefault(dirName, dirName);
-                if (!canonical.equals(dirName)) {
-                    System.out.printf(Locale.US, "Merging %s -> %s%n", dirName, canonical);
+                String canonical = LANG_MERGE_MAP.getOrDefault(entryName, entryName);
+                if (!canonical.equals(entryName)) {
+                    System.out.printf(Locale.US, "Merging %s -> %s%n", entryName, canonical);
                 }
                 if (EXCLUDED_LANGS.contains(canonical)) {
                     System.out.printf(Locale.US, "Skipping excluded language: %s%n", canonical);
+                    continue;
+                }
+                if (allowedLangs != null && !allowedLangs.contains(canonical)) {
+                    System.out.printf(Locale.US, "Skipping (not in model): %s%n", canonical);
                     continue;
                 }
                 langToFiles.computeIfAbsent(canonical, k -> new ArrayList<>())
@@ -309,6 +349,16 @@ public class CommonTokenGenerator {
 
         System.out.printf(Locale.US, "  %,d docs, %,d unique terms, wrote top %d (minDF=%d)%n",
                 docCount, uniqueTerms, topN, minDocFreq);
+    }
+
+    private static Set<String> loadModelLabels(Path modelFile) throws IOException {
+        try (java.io.InputStream is = Files.newInputStream(modelFile)) {
+            org.apache.tika.langdetect.charsoup.CharSoupModel model =
+                    org.apache.tika.langdetect.charsoup.CharSoupModel.load(is);
+            Set<String> labels = new HashSet<>(model.getNumClasses());
+            Collections.addAll(labels, model.getLabels());
+            return Collections.unmodifiableSet(labels);
+        }
     }
 
     static long fnv1a64(String s) {

@@ -36,7 +36,8 @@ public class TikaEvalMetadataFilterTest {
                 //make sure that the TikaEvalMetadataFilter is loaded automatically
                 new DefaultMetadataFilter()}) {
             Metadata metadata = new Metadata();
-            String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog";
+            String content = "the quick brown fox, Zothro 1234 1235, jumped over the lazy dog. " +
+                    "English is widely spoken in the United Kingdom, United States and Australia.";
             metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
 
             List<Metadata> metadataList = new ArrayList<>();
@@ -44,11 +45,11 @@ public class TikaEvalMetadataFilterTest {
             filter.filter(metadataList);
             metadata = metadataList.get(0);
             assertEquals("eng", metadata.get(TikaEvalMetadataFilter.LANGUAGE));
-            assertEquals(12, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_TOKENS));
-            assertEquals(11, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));
-            assertEquals(10, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_ALPHA_TOKENS));
-            assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
-            assertEquals(9, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_COMMON_TOKENS));
+            assertEquals(24, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_TOKENS));
+            assertEquals(21, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_TOKENS));
+            assertEquals(22, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_ALPHA_TOKENS));
+            assertEquals(19, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_UNIQUE_ALPHA_TOKENS));
+            assertEquals(19, (int) metadata.getInt(TikaEvalMetadataFilter.NUM_COMMON_TOKENS));
 
 
             assertEquals(0.0999,

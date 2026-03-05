@@ -123,8 +123,7 @@ ISO1_TO_ISO3 = {
     "yi": "ydd", "yo": "yor", "zh": "zho", "zu": "zul",
 }
 
-# Same merge map as TrainLanguageModel.java — keeps MADLAD and Leipzig
-# data under the same canonical code.
+# Same merge map as PrepareCorpus.java — keeps MADLAD data under canonical codes.
 LANG_MERGE_MAP = {
     "azj": "aze", "ekk": "est", "pes": "fas", "zsm": "msa",
     "nor": "nob", "plt": "mlg", "cmn": "zho", "lvs": "lav",
