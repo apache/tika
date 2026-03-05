@@ -46,7 +46,9 @@ public class PluginsWriter {
         Path baseInput = StringUtils.isBlank(simpleAsyncConfig.getInputDir())
                 ? Paths.get(".").toAbsolutePath()
                 : Paths.get(simpleAsyncConfig.getInputDir());
-        Path baseOutput = Paths.get(simpleAsyncConfig.getOutputDir());
+        Path baseOutput = StringUtils.isBlank(simpleAsyncConfig.getOutputDir())
+                ? null
+                : Paths.get(simpleAsyncConfig.getOutputDir());
         if (Files.isRegularFile(baseInput)) {
             baseInput = baseInput.toAbsolutePath().getParent();
             if (baseInput == null) {
@@ -70,7 +72,7 @@ public class PluginsWriter {
 
             // Set emitter basePath
             ObjectNode emitters = (ObjectNode) root.get("emitters");
-            if (emitters != null && emitters.has("fse")) {
+            if (baseOutput != null && emitters != null && emitters.has("fse")) {
                 ObjectNode fse = (ObjectNode) emitters.get("fse");
                 if (fse != null && fse.has("file-system-emitter")) {
                     ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
