@@ -37,8 +37,10 @@
     <description>End-to-end tests for tika-server-standard, including HTTP/2 support verification</description>
 
     <properties>
-        <!-- Path to the tika-server-standard fat-jar built in the same reactor -->
-        <tika.server.jar>${project.basedir}/../../tika-server/tika-server-standard/target/tika-server-standard-${revision}.jar</tika.server.jar>
+        <!-- Path to the tika-server-standard binary assembly zip built in the same reactor -->
+        <tika.server.zip>${project.basedir}/../../tika-server/tika-server-standard/target/tika-server-standard-${revision}-bin.zip</tika.server.zip>
+        <!-- Directory where the assembly is unpacked before tests run -->
+        <tika.server.home>${project.build.directory}/tika-server-dist</tika.server.home>
     </properties>
 
     <dependencies>
@@ -96,11 +98,37 @@
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>unpack-tika-server</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.apache.tika</groupId>
+                                            <artifactId>tika-server-standard</artifactId>
+                                            <version>${revision}</version>
+                                            <classifier>bin</classifier>
+                                            <type>zip</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${tika.server.home}</outputDirectory>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
                             <skipTests>false</skipTests>
                             <systemPropertyVariables>
-                                <tika.server.jar>${tika.server.jar}</tika.server.jar>
+                                <tika.server.home>${tika.server.home}</tika.server.home>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

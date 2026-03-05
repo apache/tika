@@ -56,7 +56,8 @@ public class TikaServerHttp2Test {
 
     private static final Logger log = LoggerFactory.getLogger(TikaServerHttp2Test.class);
     private static final long SERVER_STARTUP_TIMEOUT_MS = 90_000;
-    private static final String STATUS_PATH = "/status";
+    /** Health-check polls root (/), which always returns 200 without requiring endpoint config. */
+    private static final String HEALTH_PATH = "/";
 
     private Process serverProcess;
     private int port;
@@ -67,8 +68,8 @@ public class TikaServerHttp2Test {
         port = findFreePort();
         endPoint = "http://localhost:" + port;
 
-        String jarPath = System.getProperty("tika.server.jar");
-        if (jarPath == null) {
+        String serverHome = System.getProperty("tika.server.home");
+        if (serverHome == null) {
             // fall back to conventional location relative to this module
             Path moduleDir = Paths.get("").toAbsolutePath();
             Path repoRoot = moduleDir;
@@ -76,25 +77,24 @@ public class TikaServerHttp2Test {
                 repoRoot = repoRoot.getParent();
             }
             if (repoRoot == null) {
-                throw new IllegalStateException("Cannot locate tika root. Pass -Dtika.server.jar=/path/to/tika-server-standard.jar");
+                throw new IllegalStateException("Cannot locate tika root. Pass -Dtika.server.home=/path/to/extracted-assembly");
             }
-            jarPath = repoRoot.resolve("tika-server/tika-server-standard/target")
-                    .toAbsolutePath()
-                    .toString() + "/tika-server-standard-" +
-                    System.getProperty("tika.version", "4.0.0-SNAPSHOT") + ".jar";
+            serverHome = repoRoot.resolve("tika-e2e-tests/tika-server/target/tika-server-dist").toAbsolutePath().toString();
         }
 
-        Path jar = Paths.get(jarPath);
-        Assumptions.assumeTrue(Files.exists(jar),
-                "Fat-jar not found at " + jarPath + "; skipping HTTP/2 e2e test. " +
-                "Build with: mvn package -pl tika-server/tika-server-standard -DskipTests");
+        Path serverJar = Paths.get(serverHome, "tika-server.jar");
+        Assumptions.assumeTrue(Files.exists(serverJar),
+                "tika-server.jar not found at " + serverJar + "; skipping HTTP/2 e2e test. " +
+                "Build with: mvn package -pl tika-server/tika-server-standard && " +
+                "mvn test -pl tika-e2e-tests/tika-server -Pe2e");
 
-        log.info("Starting tika-server-standard from: {}", jarPath);
+        log.info("Starting tika-server from: {}", serverJar);
         ProcessBuilder pb = new ProcessBuilder(
-                "java", "-jar", jarPath,
+                "java", "-jar", "tika-server.jar",
                 "-p", String.valueOf(port),
                 "-h", "localhost"
         );
+        pb.directory(Paths.get(serverHome).toFile());
         pb.redirectErrorStream(true);
         serverProcess = pb.start();
 
@@ -104,7 +104,7 @@ public class TikaServerHttp2Test {
                     new InputStreamReader(serverProcess.getInputStream(), UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.debug("tika-server: {}", line);
+                    log.info("tika-server: {}", line);
                 }
             } catch (Exception e) {
                 log.debug("Server output stream closed", e);
@@ -125,19 +125,19 @@ public class TikaServerHttp2Test {
     }
 
     @Test
-    void testH2cStatusEndpoint() throws Exception {
+    void testH2cTikaEndpoint() throws Exception {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .build();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endPoint + STATUS_PATH))
-                .header("Accept", "application/json")
+                .uri(URI.create(endPoint + "/tika"))
+                .header("Accept", "text/plain")
                 .GET()
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
 
-        assertEquals(200, response.statusCode(), "Expected 200 from /status");
+        assertEquals(200, response.statusCode(), "Expected 200 from /tika");
         assertEquals(HttpClient.Version.HTTP_2, response.version(),
                 "Expected HTTP/2 protocol; server may be missing http2-server on classpath");
         log.info("HTTP/2 h2c verified: {} {}", response.statusCode(), response.version());
@@ -149,7 +149,14 @@ public class TikaServerHttp2Test {
                 .version(HttpClient.Version.HTTP_2)
                 .build();
 
-        // Send a small plain-text document for parsing
+        // First: GET / to negotiate h2c upgrade, establishing an HTTP/2 connection
+        HttpRequest warmup = HttpRequest.newBuilder()
+                .uri(URI.create(endPoint + "/"))
+                .GET()
+                .build();
+        httpClient.send(warmup, HttpResponse.BodyHandlers.discarding());
+
+        // Now PUT /tika — the existing HTTP/2 connection is reused
         byte[] body = "Hello, HTTP/2 world!".getBytes(UTF_8);
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(endPoint + "/tika"))
@@ -166,26 +173,34 @@ public class TikaServerHttp2Test {
     }
 
     private void awaitServerStartup() throws Exception {
-        // Use HTTP/1.1 for the health-check poll so we don't depend on HTTP/2 during startup
+        // Use HTTP/1.1 for the health-check poll so we don't depend on HTTP/2 during startup.
+        // Both connectTimeout and request timeout are set to avoid hanging when Jetty has bound
+        // the port but CXF has not yet finished initializing (accepts TCP but doesn't respond).
         HttpClient pollClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(2))
-                .build();
-        HttpRequest pollRequest = HttpRequest.newBuilder()
-                .uri(URI.create(endPoint + STATUS_PATH))
-                .GET()
+                .connectTimeout(Duration.ofSeconds(5))
                 .build();
 
         Instant deadline = Instant.now().plusMillis(SERVER_STARTUP_TIMEOUT_MS);
         while (Instant.now().isBefore(deadline)) {
+            if (!serverProcess.isAlive()) {
+                throw new IllegalStateException(
+                        "tika-server process exited unexpectedly with code " + serverProcess.exitValue());
+            }
             try {
+                HttpRequest pollRequest = HttpRequest.newBuilder()
+                        .uri(URI.create(endPoint + HEALTH_PATH))
+                        .timeout(Duration.ofSeconds(5))
+                        .GET()
+                        .build();
                 HttpResponse<Void> resp = pollClient.send(pollRequest, HttpResponse.BodyHandlers.discarding());
                 if (resp.statusCode() == 200) {
                     log.info("tika-server ready on port {}", port);
                     return;
                 }
+                log.debug("Server returned {} on {}; still waiting...", resp.statusCode(), HEALTH_PATH);
             } catch (Exception e) {
-                log.debug("Waiting for server on port {} ...", port);
+                log.debug("Waiting for server on port {}: {}", port, e.getMessage());
             }
             Thread.sleep(1000);
         }
