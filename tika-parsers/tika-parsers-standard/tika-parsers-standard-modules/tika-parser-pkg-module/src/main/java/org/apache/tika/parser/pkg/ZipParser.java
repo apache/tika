@@ -109,6 +109,7 @@ public class ZipParser extends AbstractArchiveParser {
      */
     private static final int MAX_INTEGRITY_CHECK_ENTRIES = 100;
 
+
     private final ZipParserConfig defaultConfig;
 
     private static Set<MediaType> loadZipSpecializations() {

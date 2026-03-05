@@ -31,7 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
-@TikaComponent(spi = false)
+@TikaComponent(spi = false, name = "universal-encoding-detector")
 public class UniversalEncodingDetector implements EncodingDetector {
 
     private static final int BUFSIZE = 1024;

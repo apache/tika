@@ -20,31 +20,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.Charset;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.langdetect.charsoup.CharSoupEncodingDetector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.ml.LinearModel;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Diagnostic: raw logits and CharSoup arbitration for Shift-JIS zip entry name bytes.
+ * Integration tests for charset detection of short byte sequences typical of
+ * ZIP entry names — a particularly hard case because the probes are tiny (6-23
+ * bytes) and structurally valid in several encodings simultaneously.
  *
- * The v2 model (28 classes) removes the UTF-16/32 labels that were confusing the model.
- * With v2, Shift-JIS (logit ~10.5) scores clearly above GB18030 (logit ~6.2) for the
- * bytes "文章1.txt" in Shift-JIS encoding.
+ * Detection strategy: Mojibuster ranks candidates by raw logit; CharSoup
+ * arbitrates using language signal (positive max-logit wins).
  */
 public class ZipFilenameDetectionTest {
 
     // 文章1.txt in Shift-JIS (9 raw bytes from a real zip entry)
-    private static final byte[] SJIS_RAW = hexToBytes("95b68fcd312e747874");
+    private static final byte[] SJIS_RAW  = hexToBytes("95b68fcd312e747874");
+    // 文章2.txt in Shift-JIS (same but '2' instead of '1')
+    private static final byte[] SJIS_RAW2 = hexToBytes("95b68fcd322e747874");
+    // 审计压缩包文件检索测试/ in GBK (23 bytes from gbk.zip)
+    private static final byte[] GBK_RAW   = hexToBytes("c9f3bcc6d1b9cbf5b0fccec4bcfebceccbf7b2e2cad42f");
 
     private static byte[] hexToBytes(String hex) {
         byte[] b = new byte[hex.length() / 2];
@@ -54,79 +57,21 @@ public class ZipFilenameDetectionTest {
         return b;
     }
 
-    private boolean isWideUnicode(String label) {
-        return label.startsWith("UTF-16") || label.startsWith("UTF-32");
-    }
-
-    @Test
-    public void printModelLabels() throws Exception {
-        LinearModel model = new MojibusterEncodingDetector().getModel();
-        String[] labels = model.getLabels();
-        System.out.println("Model labels (" + labels.length + "):");
-        for (String l : labels) {
-            System.out.println("  " + l);
-        }
-        long wideCount = Arrays.stream(labels).filter(this::isWideUnicode).count();
-        System.out.println("Wide-unicode labels in model: " + wideCount
-                + " (detected natively via stride-2 features)");
-        assertTrue(wideCount >= 4, "Model should have UTF-16/32 labels (LE+BE for each)");
-    }
-
-    @Test
-    public void diagnoseLogits() throws Exception {
-        MojibusterEncodingDetector detector = new MojibusterEncodingDetector();
-        LinearModel model = detector.getModel();
-        ByteNgramFeatureExtractor extractor =
-                new ByteNgramFeatureExtractor(model.getNumBuckets());
-        String[] labels = model.getLabels();
-
-        float[] logits = model.predictLogits(extractor.extract(SJIS_RAW));
-
-        Integer[] idx = new Integer[labels.length];
-        for (int i = 0; i < idx.length; i++) {
-            idx[i] = i;
-        }
-        Arrays.sort(idx, (a, b) -> Float.compare(logits[b], logits[a]));
-
-        System.out.printf(Locale.ROOT, "%n=== Raw logits for 文章1.txt (9 bytes) ===%n");
-        System.out.printf(Locale.ROOT, "%-24s %8s%n", "charset", "logit");
-        System.out.println("-".repeat(35));
-        float shiftJisLogit = Float.NEGATIVE_INFINITY;
-        float gb18030Logit = Float.NEGATIVE_INFINITY;
-        for (int rank = 0; rank < labels.length; rank++) {
-            int i = idx[rank];
-            boolean cjk = labels[i].contains("JIS") || labels[i].contains("GB")
-                    || labels[i].contains("Big5") || labels[i].contains("EUC");
-            if (rank < 6 || cjk) {
-                System.out.printf(Locale.ROOT, "  %-24s %8.2f%n", labels[i], logits[i]);
-            }
-            if ("Shift_JIS".equals(labels[i])) {
-                shiftJisLogit = logits[i];
-            } else if ("GB18030".equals(labels[i])) {
-                gb18030Logit = logits[i];
-            }
-        }
-        // Verify Shift-JIS ranks ahead of GB18030 on raw (un-tiled) bytes.
-        // ZipParser no longer tiles short filenames, so this is the actual input.
-        assertTrue(shiftJisLogit > gb18030Logit,
-                String.format(Locale.ROOT,
-                        "Shift_JIS logit (%.2f) should beat GB18030 logit (%.2f)",
-                        shiftJisLogit, gb18030Logit));
-    }
-
     /**
-     * Verifies CharSoup correctly picks Shift-JIS when it and GB18030 are both candidates.
-     * With v2 model, Mojibuster already ranks Shift-JIS above GB18030 (logit ~10.5 vs ~6.2).
-     * This test uses Shift-JIS as the higher-confidence candidate to reflect that reality.
+     * CharSoup should confirm Shift-JIS even when Mojibuster ranks Big5-HKSCS first,
+     * because the language model gives a higher logit to the Japanese text decoded
+     * from the same bytes.
      */
     @Test
-    public void charSoupPicksShiftJis() throws Exception {
+    public void charSoupOverridesModelRankingForShiftJis() throws Exception {
+        Charset big5 = Charset.forName("Big5-HKSCS");
         Charset shiftJis = Charset.forName("Shift_JIS");
-        Charset gb18030 = Charset.forName("GB18030");
 
         EncodingDetectorContext ctx = new EncodingDetectorContext();
-        ctx.addResult(List.of(new EncodingResult(shiftJis, 0.6f)), "MojibusterEncodingDetector");
-        ctx.addResult(List.of(new EncodingResult(gb18030, 0.5f)), "MojibusterEncodingDetector");
+        ctx.addResult(List.of(
+                new EncodingResult(big5,     0.9f, "Big5-HKSCS", EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(shiftJis, 0.3f, "Shift_JIS",  EncodingResult.ResultType.STATISTICAL)
+        ), "MojibusterEncodingDetector");
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(EncodingDetectorContext.class, ctx);
@@ -134,17 +79,46 @@ public class ZipFilenameDetectionTest {
         CharSoupEncodingDetector charSoup = new CharSoupEncodingDetector();
         try (TikaInputStream tis = TikaInputStream.get(SJIS_RAW)) {
             List<EncodingResult> result = charSoup.detect(tis, new Metadata(), parseContext);
+            assertTrue(!result.isEmpty(), "CharSoup should return a result");
+            assertEquals(shiftJis, result.get(0).getCharset(),
+                    "CharSoup should pick Shift-JIS (文章) over Big5-HKSCS via language signal");
+        }
+    }
 
-            System.out.println("\n=== CharSoup arbitration: Shift-JIS(0.6) vs GB18030(0.5) ===");
-            System.out.println("arbitration: " + ctx.getArbitrationInfo());
-            if (!result.isEmpty()) {
-                System.out.printf(Locale.ROOT, "winner: %s (conf=%.4f)%n",
-                        result.get(0).getCharset().name(), result.get(0).getConfidence());
-                assertEquals(shiftJis, result.get(0).getCharset(),
-                        "CharSoup should confirm Shift-JIS (文章) over GB18030");
-            } else {
-                System.out.println("result: empty — CharSoup abstained (Mojibuster winner stands)");
+    /**
+     * Full pipeline (BOM → Metadata → Mojibuster → StandardHtml → CharSoup) run
+     * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
+     * what ZipParser does when iterating entries with the same ParseContext.
+     */
+    @Test
+    public void fullPipelineDetectsBothSjisEntries() throws Exception {
+        DefaultEncodingDetector detector = new DefaultEncodingDetector();
+        Metadata parentMeta = new Metadata();
+        ParseContext outerContext = new ParseContext();
+
+        for (byte[] raw : new byte[][]{SJIS_RAW, SJIS_RAW2}) {
+            String label = (raw == SJIS_RAW) ? "文章1.txt" : "文章2.txt";
+            try (TikaInputStream tis = TikaInputStream.get(raw)) {
+                List<EncodingResult> results = detector.detect(tis, parentMeta, outerContext);
+                String charset = results.isEmpty() ? "(empty)" : results.get(0).getCharset().name();
+                assertTrue(!results.isEmpty() && "Shift_JIS".equals(results.get(0).getCharset().name()),
+                        label + " should be detected as Shift_JIS, got: " + charset);
             }
+        }
+    }
+
+    /**
+     * Full pipeline should detect GBK-encoded entry names as GB18030.
+     */
+    @Test
+    public void fullPipelineDetectsGbkEntry() throws Exception {
+        DefaultEncodingDetector detector = new DefaultEncodingDetector();
+        Metadata meta = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(GBK_RAW)) {
+            List<EncodingResult> results = detector.detect(tis, meta, new ParseContext());
+            String charset = results.isEmpty() ? "(empty)" : results.get(0).getCharset().name();
+            assertTrue(!results.isEmpty() && results.get(0).getCharset().name().startsWith("GB"),
+                    "GBK entry should be detected as GB18030/GBK, got: " + charset);
         }
     }
 }

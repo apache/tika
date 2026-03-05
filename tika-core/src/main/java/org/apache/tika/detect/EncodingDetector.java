@@ -31,11 +31,12 @@ import org.apache.tika.parser.ParseContext;
  * metadata or the first few bytes of the document stream.
  *
  * <p>Detectors return a ranked list of {@link EncodingResult}s in descending
- * confidence order. An empty list means no opinion. A single result with
- * confidence {@link EncodingResult#CONFIDENCE_DEFINITIVE} (1.0) indicates a
- * structural detection that requires no further arbitration. Multiple results
- * or lower confidence values invite arbitration by a
- * {@link MetaEncodingDetector}.</p>
+ * confidence order. An empty list means no opinion. Results carry a
+ * {@link EncodingResult.ResultType} indicating the nature of the evidence:
+ * {@code DECLARATIVE} (BOM, HTML meta charset), {@code STRUCTURAL} (byte-grammar
+ * proof), or {@code STATISTICAL} (probabilistic model). A
+ * {@link MetaEncodingDetector} uses these types to arbitrate when detectors
+ * disagree.</p>
  *
  * @since Apache Tika 0.4
  */

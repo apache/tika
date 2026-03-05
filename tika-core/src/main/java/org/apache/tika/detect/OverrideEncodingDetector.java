@@ -85,7 +85,8 @@ public class OverrideEncodingDetector implements EncodingDetector {
     @Override
     public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
-        return List.of(new EncodingResult(charset, EncodingResult.CONFIDENCE_DEFINITIVE));
+        return List.of(new EncodingResult(charset, 1.0f, charset.name(),
+                EncodingResult.ResultType.DECLARATIVE));
     }
 
     public Charset getCharset() {

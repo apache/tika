@@ -1004,8 +1004,8 @@ public class HtmlParserTest extends TikaTest {
         }
         assertEquals("text/html; charset=UTF-ELEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        // "UTF-ELEVEN" is not a valid charset; ML detection returns UTF-8 for ASCII content.
-        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        // "UTF-ELEVEN" is not a valid charset; no declaration available, ML defaults to windows-1252.
+        assertEquals("text/html; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<html><head><meta http-equiv=\"content-type\" content=\"application/pdf\">" +
                 "</head><title>title</title><body>body</body></html>";
@@ -1017,8 +1017,8 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        // No valid charset declaration; ML detection returns UTF-8 for ASCII content.
-        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        // No valid charset declaration; ML defaults to windows-1252 for pure ASCII content.
+        assertEquals("text/html; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         //test two content values
         test =
@@ -1033,8 +1033,8 @@ public class HtmlParserTest extends TikaTest {
                             metadata, new ParseContext());
         }
         assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        // No valid charset declaration; ML detection returns UTF-8 for ASCII content.
-        assertEquals("text/html; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        // No valid charset declaration; ML defaults to windows-1252 for pure ASCII content.
+        assertEquals("text/html; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test
@@ -1074,8 +1074,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-NUMBER_SEVEN",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        // "iso-NUMBER_SEVEN" is not a valid charset; ML detection returns UTF-8 for ASCII content.
-        assertEquals("application/xhtml+xml; charset=UTF-8",
+        // "iso-NUMBER_SEVEN" is not a valid charset; ML defaults to windows-1252 for pure ASCII.
+        assertEquals("application/xhtml+xml; charset=windows-1252",
                 metadata.get(Metadata.CONTENT_TYPE));
 
     }

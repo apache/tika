@@ -129,6 +129,7 @@ public class CharsetDetectorTest extends TikaTest {
         assertEquals("UTF-8", detector.detect().getName());
     }
 
+    @org.junit.jupiter.api.Disabled("Integration test requiring TXT parser — run via tika-parser-text-module")
     @Test
     public void testIgnoreCharset() throws Exception {
         //TIKA-3516, TIKA-3525, TIKA-1236

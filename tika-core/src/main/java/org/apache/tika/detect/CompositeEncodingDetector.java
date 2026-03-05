@@ -194,7 +194,8 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
                 sb.append(", ");
             }
             sb.append(r.getDetectorName()).append("->").append(r.getCharset().name());
-            if (r.getConfidence() < EncodingResult.CONFIDENCE_DEFINITIVE) {
+            sb.append("[").append(r.getResultType()).append("]");
+            if (r.getResultType() == EncodingResult.ResultType.STATISTICAL) {
                 sb.append(String.format(java.util.Locale.ROOT, "(%.2f)", r.getConfidence()));
             }
         }

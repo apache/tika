@@ -71,8 +71,8 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
      * Symmetric confusable peer groups: within each group, encoding variants
      * (e.g. ISO-8859-6 vs windows-1256) produce different decoded text for the
      * same byte sequence (unlike ISO-8859-1 vs windows-1252 which are functional
-     * supersets). When the language-quality winner and a CONFIDENCE_DEFINITIVE
-     * declaration are in the same peer group, the language model cannot reliably
+     * supersets). When the language-quality winner and a DECLARATIVE result
+     * are in the same peer group, the language model cannot reliably
      * distinguish them — it merely reflects which variant happens to produce
      * Arabic (or Cyrillic, …) n-grams its training data favoured.
      * In that case we prefer the explicit declaration.
@@ -158,25 +158,31 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         CharSoupLanguageDetector langDetector = new CharSoupLanguageDetector();
         Charset bestCharset = langDetector.compareLanguageSignal(candidates);
         if (bestCharset == null) {
+            // Language signal inconclusive. When a DECLARATIVE result (HTML meta charset,
+            // BOM, HTTP Content-Type) exists and decodes the bytes at least as cleanly as
+            // the statistical fallback, trust the declaration. This covers:
+            //  • Pure-ASCII probe (both decodings identical) — prefer the declared charset.
+            //  • Probe with high bytes that are valid in BOTH charsets (e.g. Cyrillic in a
+            //    page that starts with ASCII JavaScript) — the bytes look "clean" in both
+            //    windows-1252 (decoded as Latin Extended) and windows-1251 (decoded as
+            //    Cyrillic), so junkRatio cannot distinguish them; trust the declaration.
             Charset fallback = firstResult.getCharset();
             String fallbackDecoded = candidates.get(fallback);
             float fallbackJunk = fallbackDecoded != null
                     ? CharSoupLanguageDetector.junkRatio(fallbackDecoded) : 1f;
 
-            // If the fallback charset produces garbled output (replacement chars) but
-            // a definitive declaration decodes the bytes cleanly, the probe was likely
-            // too short or ASCII-only. Trust the explicit declaration in that case.
             Charset cleanerDeclared = null;
-            if (fallbackJunk > 0f) {
-                for (EncodingDetectorContext.Result r : context.getResults()) {
-                    if (r.getConfidence() >= EncodingResult.CONFIDENCE_DEFINITIVE) {
-                        String declaredDecoded = candidates.get(r.getCharset());
-                        float declaredJunk = declaredDecoded != null
-                                ? CharSoupLanguageDetector.junkRatio(declaredDecoded) : 1f;
-                        if (declaredJunk < fallbackJunk / 2) {
-                            cleanerDeclared = r.getCharset();
-                            break;
-                        }
+            for (EncodingDetectorContext.Result r : context.getResults()) {
+                if (r.getResultType() == EncodingResult.ResultType.DECLARATIVE) {
+                    String declaredDecoded = candidates.get(r.getCharset());
+                    float declaredJunk = declaredDecoded != null
+                            ? CharSoupLanguageDetector.junkRatio(declaredDecoded) : 1f;
+                    // Trust the declaration when it decodes at least as cleanly as
+                    // the statistical fallback (≤ junk). A declaration that produces
+                    // MORE junk than the fallback is likely wrong (e.g. a lying BOM).
+                    if (declaredJunk <= fallbackJunk) {
+                        cleanerDeclared = r.getCharset();
+                        break;
                     }
                 }
             }
@@ -188,22 +194,22 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
             bestCharset = fallback;
         }
 
-        // If a structurally-declared charset (CONFIDENCE_DEFINITIVE, e.g. HTML meta tag)
-        // decodes the bytes to the same string as the language-quality winner, prefer
-        // the declaration. This validates the HTML header against the actual bytes:
-        // if they are functionally equivalent, trust the author's stated encoding.
-        // If they produce different text (a real conflict), the bytes win.
+        // If a DECLARATIVE result (e.g. HTML meta charset) decodes the bytes to the same
+        // string as the language-quality winner, prefer the declaration. This validates the
+        // declared encoding against the actual bytes: if they are functionally equivalent,
+        // trust the author's stated encoding. If they produce different text (a real conflict
+        // — e.g. a lying BOM or a wrong meta tag), the bytes win and the language scorer's
+        // choice stands.
         //
-        // Additionally, when the winner and the declared charset are in the same
-        // confusable peer group (e.g. ISO-8859-6 vs windows-1256) and the declared
-        // charset decodes cleanly (low junk ratio), the language model cannot
-        // reliably distinguish them — they both produce valid same-script text.
-        // In that case, prefer the explicit declaration over the model's guess.
+        // Additionally, when the winner and a DECLARATIVE charset are in the same confusable
+        // peer group (e.g. ISO-8859-6 vs windows-1256) and the declared charset decodes
+        // cleanly (low junk ratio), the language model cannot reliably distinguish them —
+        // they both produce valid same-script text. Prefer the explicit declaration.
         String winnerDecoded = candidates.get(bestCharset);
         float winnerJunk = winnerDecoded != null ? CharSoupLanguageDetector.junkRatio(winnerDecoded) : 1f;
         if (winnerDecoded != null) {
             for (EncodingDetectorContext.Result r : context.getResults()) {
-                if (r.getConfidence() >= EncodingResult.CONFIDENCE_DEFINITIVE
+                if (r.getResultType() == EncodingResult.ResultType.DECLARATIVE
                         && !r.getCharset().equals(bestCharset)) {
                     Charset declared = r.getCharset();
                     String declaredDecoded = candidates.get(declared);
@@ -214,11 +220,9 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
                         context.setArbitrationInfo("scored-prefer-declared");
                         return declared;
                     }
-                    // When the winner and the declared charset are in the same confusable
-                    // peer group (e.g. ISO-8859-6 vs windows-1256), and the declared
-                    // charset decodes at least as cleanly as the winner (not junkier),
-                    // prefer the explicit declaration — the language model cannot reliably
-                    // distinguish same-script encoding variants.
+                    // Same-script peer group: language model cannot distinguish variants
+                    // (e.g. ISO-8859-6 vs windows-1256 both produce valid Arabic text).
+                    // Prefer the declaration when it decodes at least as cleanly as the winner.
                     float declaredJunk = CharSoupLanguageDetector.junkRatio(declaredDecoded);
                     if (arePeers(bestCharset, declared) && declaredJunk <= winnerJunk) {
                         context.setArbitrationInfo("scored-prefer-declared-peer");

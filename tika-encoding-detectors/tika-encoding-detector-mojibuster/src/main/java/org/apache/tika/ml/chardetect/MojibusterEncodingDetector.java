@@ -94,7 +94,23 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          * 0x40–0xFE), so their presence is definitive proof that a GB18030 codec
          * is required to avoid replacement characters.
          */
-        GB_FOUR_BYTE_UPGRADE
+        GB_FOUR_BYTE_UPGRADE,
+        /**
+         * Upgrade an ISO-8859-X result to its Windows-12XX equivalent when the
+         * probe contains at least one CRLF pair ({@code 0x0D 0x0A}) but no C1
+         * bytes ({@code 0x80–0x9F}).
+         *
+         * <p>Files originating on Windows use CRLF line endings.  The presence
+         * of a {@code \r\n} pair in a probe that is otherwise 7-bit ASCII (or
+         * has only high bytes above {@code 0x9F}) is weak evidence of Windows
+         * origin and therefore of a Windows code page.  {@link Rule#ISO_TO_WINDOWS}
+         * already handles the C1-byte case definitively; this rule covers the
+         * weaker case where C1 bytes have not been seen but CRLF line endings
+         * suggest Windows origin.  A bare {@code 0x0D} (old Mac Classic CR-only
+         * line ending) does <em>not</em> trigger this rule.  Mirrors the legacy
+         * {@code UniversalEncodingListener.report()} heuristic.</p>
+         */
+        CRLF_TO_WINDOWS
     }
 
     private static final long serialVersionUID = 1L;
@@ -278,28 +294,28 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         }
 
         byte[] probe = readProbe(input, maxProbeBytes);
+        // Strip BOM bytes before feature extraction. BOM detection is handled
+        // by BOMDetector (which runs earlier in the chain and returns DECLARATIVE).
+        // BOMs are excluded from training data; stripping ensures consistent
+        // model inference. A lying BOM (e.g. UTF-8 BOM on a Windows-1252 file)
+        // is caught by CharSoup comparing BOMDetector's DECLARATIVE claim against
+        // Mojibuster's byte-content analysis.
         probe = stripBom(probe);
-        if (probe.length == 0) {
-            return singleResult(StandardCharsets.UTF_8.name(), EncodingResult.CONFIDENCE_DEFINITIVE, Integer.MAX_VALUE);
-        }
-
+        // An empty probe (e.g. empty file, or a file that was only a BOM) falls
+        // through to detectAll where isPureAscii returns true for a zero-length
+        // array, yielding the same windows-1252 default as any other pure-ASCII probe.
         return detectAll(probe, Integer.MAX_VALUE);
     }
 
     /**
-     * Structural gates: deterministic early exits before the general model runs.
-     * Only bulletproof, zero-false-positive checks belong here.
-     * EBCDIC discrimination is intentionally absent — it is handled by the sub-model.
+     * Applies structural encoding rules that produce {@link EncodingResult.ResultType#STRUCTURAL}
+     * results. Returns non-null only when a byte-level pattern unambiguously identifies the
+     * charset (ISO-2022 escape sequences, sparse valid UTF-8 multibyte sequences).
+     *
+     * Pure ASCII is deliberately excluded — ASCII is compatible with virtually all
+     * single-byte encodings and is not structurally definitive.
      */
-    /**
-     * Applies structural encoding rules that produce CONFIDENCE_DEFINITIVE results.
-     * Returns non-null only when a byte-level pattern unambiguously identifies the charset
-     * (e.g. ISO-2022 escape sequences, sparse valid UTF-8 multibyte sequences).
-     * Pure ASCII is deliberately excluded here — ASCII is compatible with virtually all
-     * single-byte encodings, so it is NOT definitive. Use {@link #applyAsciiHeuristic}
-     * for the ASCII case.
-     */
-    private Charset applyDefinitiveStructuralRules(byte[] probe) {
+    private Charset applyStructuralRules(byte[] probe) {
         // ISO-2022 before ASCII: all three variants are 7-bit so checkAscii fires first.
         Charset iso2022 = StructuralEncodingRules.detectIso2022(probe);
         if (iso2022 != null) {
@@ -327,11 +343,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     /**
-     * Returns UTF-8 if the probe is pure 7-bit ASCII (no bytes ≥ 0x80, no null bytes).
-     * ASCII is a strict subset of UTF-8 and of every single-byte encoding, so this is
-     * a heuristic only — the confidence returned by the caller must be below
-     * CONFIDENCE_DEFINITIVE to allow downstream detectors (e.g. HTML meta charset) to
-     * override it without ambiguity.
+     * Returns true if the probe is pure 7-bit ASCII (no bytes ≥ 0x80, no null bytes).
+     * ASCII is compatible with virtually every single-byte encoding, so this is a
+     * heuristic — we report US-ASCII to honestly reflect what the probe showed.
+     * CharSoup will upgrade to a declared encoding (e.g. ISO-8859-15) when the document
+     * contains an explicit declaration consistent with the ASCII bytes.
      */
     private static boolean isPureAscii(byte[] probe) {
         return StructuralEncodingRules.checkAscii(probe) && !hasNullBytes(probe);
@@ -396,17 +412,24 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         boolean gates = enabledRules.contains(Rule.STRUCTURAL_GATES);
 
         if (gates) {
-            // Definitive structural rules (BOM, ISO-2022, sparse UTF-8) → CONFIDENCE_DEFINITIVE.
-            Charset definitive = applyDefinitiveStructuralRules(probe);
-            if (definitive != null) {
-                return singleResult(definitive.name(), EncodingResult.CONFIDENCE_DEFINITIVE, topN);
+            // Structural rules: byte-grammar proof (ISO-2022, sparse UTF-8).
+            Charset structural = applyStructuralRules(probe);
+            if (structural != null) {
+                return singleResult(structural.name(), 1.0f,
+                        EncodingResult.ResultType.STRUCTURAL, topN);
             }
-            // ASCII heuristic: pure 7-bit ASCII is valid in virtually every single-byte
-            // encoding, so we report UTF-8 with a sub-definitive confidence. This allows
-            // an HTML meta-charset declaration (which IS CONFIDENCE_DEFINITIVE) to override
-            // the ASCII heuristic without non-deterministic tie-breaking.
+            // Pure ASCII: no high bytes seen in the probe. We default to windows-1252 —
+            // the WHATWG-canonical "Western Latin, I saw only ASCII bytes" encoding.
+            // HTML5 explicitly defines ISO-8859-1 as an alias for windows-1252, making
+            // windows-1252 the right default: it is the correct superset, it avoids the
+            // ambiguity between ISO-8859-1 and windows-1252 in the 0x80–0x9F range, and
+            // it keeps the no-hint path consistent with the HTML-spec path (where a stated
+            // "charset=iso-8859-1" is normalized to windows-1252 by StandardHtmlEncodingDetector).
+            // CharSoup will further upgrade to any compatible DECLARATIVE encoding
+            // (e.g. an HTML meta charset=UTF-8) when one is present and consistent.
             if (isPureAscii(probe)) {
-                return singleResult(StandardCharsets.UTF_8.name(), 0.75f, topN);
+                return singleResult("windows-1252", 0.5f,
+                        EncodingResult.ResultType.STATISTICAL, topN);
             }
         }
 
@@ -420,14 +443,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             return runEbcdicSubModel(probe, topN);
         }
 
-        // Grammar filtering can leave the list empty on very short probes (e.g. a single
-        // high byte that is a valid CJK lead but has an invalid trail byte). Fall back to
-        // UTF-8 rather than returning empty and causing AutoDetectReader to throw.
+        // If the model had no evidence (probe too short or all tokens filtered), fall back to
+        // windows-1252 at very low confidence rather than returning empty and letting
+        // AutoDetectReader throw. CharSoup will override this with any DECLARATIVE hint.
         if (results.isEmpty()) {
-            return singleResult(StandardCharsets.UTF_8.name(),
-                    EncodingResult.CONFIDENCE_DEFINITIVE / 2, Integer.MAX_VALUE);
+            return singleResult("windows-1252", 0.1f, EncodingResult.ResultType.STATISTICAL, topN);
         }
-
         return results;
     }
 
@@ -443,9 +464,27 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
 
-        List<EncodingResult> results = selectByLogitGap(model, logits, topN);
+        // For short probes the model has limited signal; widen the candidate set so
+        // that CharSoup's language arbitration can rescue the correct answer even when
+        // the gap between competitors exceeds LOGIT_GAP.
+        List<EncodingResult> results;
+        if (probe.length < 50) {
+            results = selectTopN(model, logits, 3);
+        } else if (probe.length < 100) {
+            results = selectTopN(model, logits, 2);
+        } else {
+            results = selectByLogitGap(model, logits, topN);
+        }
 
         if (enabledRules.contains(Rule.ISO_TO_WINDOWS) && StructuralEncodingRules.hasC1Bytes(probe)) {
+            results = upgradeIsoToWindows(results);
+        }
+        // CRLF_TO_WINDOWS: when C1 bytes were absent (ISO_TO_WINDOWS didn't fire) but
+        // CRLF pairs suggest Windows line endings, apply the same ISO→Windows upgrade as
+        // weak evidence of Windows file origin. If ISO_TO_WINDOWS already fired, the
+        // results are already Windows-12XX and upgradeIsoToWindows is a no-op.
+        // Bare CR (old Mac Classic line endings) does NOT trigger this rule.
+        if (enabledRules.contains(Rule.CRLF_TO_WINDOWS) && StructuralEncodingRules.hasCrlfBytes(probe)) {
             results = upgradeIsoToWindows(results);
         }
         if (enabledRules.contains(Rule.CJK_GRAMMAR)) {
@@ -475,6 +514,78 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * hiding plausible alternatives that downstream arbitrators (e.g. CharSoup)
      * should evaluate. Linear confidence within the gap preserves the signal.</p>
      */
+    /**
+     * Maximum confidence assigned to a STATISTICAL model result.  Kept strictly
+     * below 1.0 so that statistical results are never mistaken for STRUCTURAL or
+     * DECLARATIVE evidence by downstream arbitrators (e.g. CharSoupEncodingDetector).
+     * The top result from the logit-gap window always maps to this value.
+     */
+    private static final float MAX_STATISTICAL_CONFIDENCE = 0.99f;
+
+    /**
+     * Return the top {@code n} single-byte/CJK candidates by logit rank, regardless of gap.
+     * Used for short probes where the model has limited signal and we want
+     * CharSoup's language arbitration to have multiple candidates to compare.
+     * <p>
+     * Wide encodings (UTF-16/32) are excluded: stride-2 features can spuriously
+     * boost them on very short probes that lack the null-byte density that
+     * genuinely characterises UTF-16/32. A 9-byte filename without a BOM is
+     * never UTF-16/32 in practice.
+     * <p>
+     * Confidence is still scaled relative to the logit-gap window so that
+     * results remain in the statistical range below DECLARATIVE/STRUCTURAL.
+     */
+    private static List<EncodingResult> selectTopN(LinearModel m, float[] logits, int n) {
+        // Collect all positive-logit, non-excluded candidates with their array index.
+        // We sort by RAW LOGIT (not sigmoid) so that the model's actual ranking is
+        // preserved even when all logits are large-positive (sigmoid ≈ 1.0 for all).
+        // Example: GB18030=43, EUC-JP=28, Big5=21 — all sigmoid≈0.99 — would tie on
+        // sigmoid and fall back to label-insertion order; sorting by logit keeps GB18030 first.
+        List<int[]> candidates = new ArrayList<>(); // [label-index]
+        for (int i = 0; i < logits.length; i++) {
+            // logit ≤ 0 means sigmoid ≤ 0.5 — the model actively disfavours this encoding.
+            if (logits[i] <= 0) {
+                continue;
+            }
+            String lbl = m.getLabel(i);
+            if (isExcludedFromShortProbe(lbl)) {
+                continue;
+            }
+            if (labelToCharset(lbl) == null) {
+                continue;
+            }
+            candidates.add(new int[]{i});
+        }
+        // Sort descending by logit so model ranking is preserved.
+        candidates.sort((a, b) -> Float.compare(logits[b[0]], logits[a[0]]));
+
+        // Take the top N and assign sigmoid confidence so downstream code has a meaningful score.
+        List<EncodingResult> result = new ArrayList<>(Math.min(n, candidates.size()));
+        for (int rank = 0; rank < Math.min(n, candidates.size()); rank++) {
+            int i = candidates.get(rank)[0];
+            String lbl = m.getLabel(i);
+            Charset cs = labelToCharset(lbl);
+            float conf = (1f / (1f + (float) Math.exp(-logits[i]))) * MAX_STATISTICAL_CONFIDENCE;
+            result.add(new EncodingResult(cs, conf, lbl, EncodingResult.ResultType.STATISTICAL));
+        }
+        return result;
+    }
+
+    /**
+     * Returns true for encodings that should be excluded from short-probe top-N selection.
+     * <ul>
+     *   <li>Wide encodings (UTF-16/32): stride-2 features spuriously boost them on short
+     *       probes that lack the null-byte density that genuinely characterises UTF-16/32.</li>
+     *   <li>EBCDIC family (IBM4xx, IBM500, "EBCDIC" routing label): EBCDIC has its own
+     *       dedicated sub-model pipeline and should never surface as a candidate for
+     *       short single-byte or CJK content.</li>
+     * </ul>
+     */
+    private static boolean isExcludedFromShortProbe(String label) {
+        return label.startsWith("UTF-16") || label.startsWith("UTF-32")
+                || label.startsWith("IBM") || label.equals("EBCDIC");
+    }
+
     private static List<EncodingResult> selectByLogitGap(LinearModel m, float[] logits, int topN) {
         float maxLogit = Float.NEGATIVE_INFINITY;
         for (float l : logits) {
@@ -486,11 +597,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         List<EncodingResult> results = new ArrayList<>();
         for (int i = 0; i < logits.length; i++) {
             if (logits[i] >= floor) {
-                float conf = (logits[i] - floor) / LOGIT_GAP;
+                // Scale to [0, MAX_STATISTICAL_CONFIDENCE] so no statistical result
+                // reaches 1.0, keeping the range unambiguously below STRUCTURAL/DECLARATIVE.
+                float conf = ((logits[i] - floor) / LOGIT_GAP) * MAX_STATISTICAL_CONFIDENCE;
                 String lbl = m.getLabel(i);
                 Charset cs = labelToCharset(lbl);
                 if (cs != null) {
-                    results.add(new EncodingResult(cs, conf, lbl));
+                    results.add(new EncodingResult(cs, conf, lbl,
+                            EncodingResult.ResultType.STATISTICAL));
                 }
             }
         }
@@ -552,7 +666,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             return results;
         }
 
-        // Score every CJK charset in the result list.
+        // Grammar-filter CJK charsets: drop those that produce invalid byte sequences
+        // (score == 0 means the grammar walker found bad bytes — the model was wrong).
+        // Charsets that pass grammar keep their model confidence unchanged so that
+        // all candidates remain on the same sigmoid scale for CharSoup to compare.
+        // Non-CJK charsets pass through unchanged.
         List<EncodingResult> refined = new ArrayList<>(results.size());
         for (EncodingResult er : results) {
             if (!CjkEncodingRules.isCjk(er.getCharset())) {
@@ -561,17 +679,13 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
             int score = CjkEncodingRules.match(probe, er.getCharset());
             if (score == 0) {
-                // grammar rejects this charset — drop entirely
-            } else if (score >= CjkEncodingRules.CLEAN_SHORT_PROBE_CONFIDENCE) {
-                // structurally clean (bad == 0) — use grammar confidence
-                refined.add(new EncodingResult(er.getCharset(), score / 100f));
-            } else {
-                // some bad bytes within tolerance — keep model confidence
-                refined.add(er);
+                // grammar rejects this charset entirely — drop it
+                continue;
             }
+            // Grammar passes: keep the model's sigmoid confidence so everything
+            // is on the same scale when CharSoup compares candidates.
+            refined.add(er);
         }
-
-        refined.sort((a, b) -> Float.compare(b.getConfidence(), a.getConfidence()));
         return refined;
     }
 
@@ -617,7 +731,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return upgraded;
     }
 
-    private static List<EncodingResult> singleResult(String label, float confidence, int topN) {
+    private static List<EncodingResult> singleResult(String label, float confidence,
+                                                      EncodingResult.ResultType type, int topN) {
         if (topN <= 0) {
             return Collections.emptyList();
         }
@@ -625,7 +740,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         if (cs == null) {
             return Collections.emptyList();
         }
-        return List.of(new EncodingResult(cs, confidence, label));
+        return List.of(new EncodingResult(cs, confidence, label, type));
     }
 
     /**
@@ -667,6 +782,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     public LinearModel getModel() {
         return model;
+    }
+
+    public LinearModel getEbcdicModel() {
+        return ebcdicModel;
     }
 
     public EnumSet<Rule> getEnabledRules() {

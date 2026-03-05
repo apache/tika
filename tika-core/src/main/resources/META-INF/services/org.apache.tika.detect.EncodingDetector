@@ -13,3 +13,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+# Both detectors are in the org.apache.tika.detect.* namespace and sort before
+# all other detectors, ensuring DECLARATIVE evidence from in-band signals (BOM)
+# and out-of-band declarations (HTTP/MIME headers) reaches CharSoupEncodingDetector
+# before any statistical detector runs.
+#
+# Within the namespace, class-name order is: BOMDetector < MetadataCharsetDetector
+# so BOM evidence (highest confidence) is recorded first.
+org.apache.tika.detect.BOMDetector
+org.apache.tika.detect.MetadataCharsetDetector
+

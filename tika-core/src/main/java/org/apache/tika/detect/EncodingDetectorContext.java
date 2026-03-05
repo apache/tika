@@ -144,6 +144,13 @@ public class EncodingDetectorContext {
             return encodingResults.get(0).getConfidence();
         }
 
+        /**
+         * The {@link EncodingResult.ResultType} of the top-ranked result from this detector.
+         */
+        public EncodingResult.ResultType getResultType() {
+            return encodingResults.get(0).getResultType();
+        }
+
         public String getDetectorName() {
             return detectorName;
         }

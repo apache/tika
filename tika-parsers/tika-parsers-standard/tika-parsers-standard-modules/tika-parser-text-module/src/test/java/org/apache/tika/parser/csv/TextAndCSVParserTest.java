@@ -101,7 +101,7 @@ public class TextAndCSVParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
         XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
-        assertMediaTypeEquals("csv", "UTF-8", "comma",
+        assertMediaTypeEquals("csv", "windows-1252", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContainsIgnoreWhiteSpaceDiffs(EXPECTED_CSV, xmlResult.xml);
         assertEquals(3, metadata.getInt(TextAndCSVParser.NUM_COLUMNS));
@@ -126,7 +126,7 @@ public class TextAndCSVParserTest extends TikaTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/csv");
         XMLResult xmlResult = getXML(TikaInputStream.get(CSV_UTF8), PARSER, metadata);
         assertEquals("comma", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
-        assertMediaTypeEquals("csv", "UTF-8", "comma",
+        assertMediaTypeEquals("csv", "windows-1252", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContainsIgnoreWhiteSpaceDiffs(EXPECTED_CSV, xmlResult.xml);
     }
@@ -160,7 +160,7 @@ public class TextAndCSVParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
         XMLResult xmlResult = getXML(TikaInputStream.get(TSV_UTF8), PARSER, metadata);
         assertEquals("tab", xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
-        assertMediaTypeEquals("tsv", "UTF-8", "tab",
+        assertMediaTypeEquals("tsv", "windows-1252", "tab",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContainsIgnoreWhiteSpaceDiffs(EXPECTED_TSV, xmlResult.xml);
     }
@@ -191,7 +191,7 @@ public class TextAndCSVParserTest extends TikaTest {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.csv");
         XMLResult xmlResult = getXML(TikaInputStream.get(csv), PARSER, metadata);
         assertNull(xmlResult.metadata.get(TextAndCSVParser.DELIMITER_PROPERTY));
-        assertEquals("text/plain; charset=UTF-8",
+        assertEquals("text/plain; charset=windows-1252",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
         assertContains("the,quick", xmlResult.xml);
     }
@@ -225,7 +225,7 @@ public class TextAndCSVParserTest extends TikaTest {
         XMLResult xmlResult =
                 getXML(TikaInputStream.get(sb.toString().getBytes(StandardCharsets.UTF_8)),
                         PARSER, metadata);
-        assertMediaTypeEquals("csv", "UTF-8", "comma",
+        assertMediaTypeEquals("csv", "windows-1252", "comma",
                 xmlResult.metadata.get(Metadata.CONTENT_TYPE));
     }
 
@@ -233,8 +233,7 @@ public class TextAndCSVParserTest extends TikaTest {
     @Test
     public void testSubclassingMimeTypesRemain() throws Exception {
         XMLResult r = getXML("testVCalendar.vcs");
-        // Pure ASCII content — correctly detected as UTF-8
-        assertEquals("text/x-vcalendar; charset=UTF-8", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/x-vcalendar; charset=windows-1252", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
     @Test

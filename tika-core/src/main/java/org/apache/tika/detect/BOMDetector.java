@@ -32,16 +32,18 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * Encoding detector that identifies the character set from a byte-order mark
- * (BOM) at the start of the stream.  Returns a single result with confidence
- * {@link EncodingResult#CONFIDENCE_DEFINITIVE} when a BOM is found.
+ * (BOM) at the start of the stream.  Returns a single {@link EncodingResult.ResultType#DECLARATIVE}
+ * result when a BOM is found — a BOM is an explicit in-band declaration of encoding
+ * and takes priority over all statistical or structural inference.
  *
- * <p>Not SPI-loaded by default — add explicitly to your encoding-detector
- * chain when needed.  UTF-16/32 content without a BOM is detected by
- * {@code MojibusterEncodingDetector} via stride-2 byte n-gram features.</p>
+ * <p>SPI-loaded first in the default encoding-detector chain so that BOM evidence
+ * reaches {@code CharSoupEncodingDetector} before any statistical detector runs.
+ * {@code MojibusterEncodingDetector} strips the BOM from its own probe independently
+ * to ensure consistent model inference (BOMs are excluded from training data).</p>
  *
  * @since Apache Tika 0.x (moved to org.apache.tika.detect in 4.0)
  */
-@TikaComponent(spi = false)
+@TikaComponent
 public class BOMDetector implements EncodingDetector {
 
     private static final ByteOrderMark[] BOMS =
@@ -88,8 +90,8 @@ public class BOMDetector implements EncodingDetector {
         for (int i = 0; i < BOMS.length; i++) {
             ByteOrderMark bom = BOMS[i];
             if (startsWith(bom, bytes) && CHARSETS[i] != null) {
-                return List.of(new EncodingResult(CHARSETS[i],
-                        EncodingResult.CONFIDENCE_DEFINITIVE));
+                return List.of(new EncodingResult(CHARSETS[i], 1.0f,
+                        CHARSETS[i].name(), EncodingResult.ResultType.DECLARATIVE));
             }
         }
         return Collections.emptyList();

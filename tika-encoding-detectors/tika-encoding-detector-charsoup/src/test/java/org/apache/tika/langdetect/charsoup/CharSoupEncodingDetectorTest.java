@@ -191,9 +191,13 @@ public class CharSoupEncodingDetectorTest {
         assertEquals(0.25f,
                 CharSoupLanguageDetector.junkRatio("abc\u0080"), 0.001f);
 
-        // Mixed: \r\n are control chars too
-        assertEquals(2f / 13f,
+        // \r and \n are ordinary whitespace — not junk
+        assertEquals(0f,
                 CharSoupLanguageDetector.junkRatio("hello world\r\n"), 0.001f);
+
+        // Non-whitespace C1 control char mixed with ordinary whitespace
+        assertEquals(1f / 14f,
+                CharSoupLanguageDetector.junkRatio("hello world\r\n\u0080"), 0.001f);
 
         // Empty/null
         assertEquals(0f, CharSoupLanguageDetector.junkRatio(""), 0.001f);

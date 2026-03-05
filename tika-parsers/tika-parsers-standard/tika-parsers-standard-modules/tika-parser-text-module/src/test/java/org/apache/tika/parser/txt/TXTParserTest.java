@@ -29,9 +29,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -54,8 +56,8 @@ public class TXTParserTest extends TikaTest {
         }
         String content = writer.toString();
 
-        // Pure ASCII — correctly detected as UTF-8 (ASCII is a subset of UTF-8)
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        // Pure ASCII — detected as windows-1252 (the HTML5/WHATWG default for 8-bit Western)
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         // TIKA-501: Remove language detection from TXTParser
         assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
@@ -89,7 +91,7 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("\n", handler.toString());
     }
 
@@ -102,9 +104,9 @@ public class TXTParserTest extends TikaTest {
      */
     @Test
     public void testLatinDetectionHeuristics() throws Exception {
-        // These were previously testing CR/LF heuristics specific to UniversalEncodingDetector.
-        // The ML-based detector (MojibusterEncodingDetector + CharSoup) correctly identifies
-        // pure-ASCII content as UTF-8 and does not rely on line-ending heuristics.
+        // Previously tested CR/LF heuristics specific to UniversalEncodingDetector.
+        // The ML-based detector defaults to windows-1252 for pure ASCII regardless of
+        // line endings (CRLF_TO_WINDOWS is a secondary confirmation, not the primary path).
         String windows = "test\r\n";
         String unix = "test\n";
         String euro = "test \u20ac\n";
@@ -115,15 +117,13 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(windows.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        // Pure ASCII — UTF-8 is correct
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(unix.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        // Pure ASCII — UTF-8 is correct
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(euro.getBytes("ISO-8859-15"))) {
@@ -247,8 +247,7 @@ public class TXTParserTest extends TikaTest {
             parser.parse(tis, new WriteOutContentHandler(writer), metadata, new ParseContext());
         }
 
-        // Pure ASCII — UTF-8 is correct
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     /**
@@ -264,11 +263,10 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(text.getBytes(UTF_8))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
-        // Pure ASCII — UTF-8 is correct
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
-        // Now verify that if we tell the parser the encoding is UTF-8, that's what
-        // we get back (see TIKA-868)
+        // TIKA-868: MetadataCharsetDetector (tika-core) reads the charset from Content-Type
+        // and returns it as DECLARATIVE, which CharSoup prefers over the statistical windows-1252.
         metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
         try (TikaInputStream tis = TikaInputStream.get(text.getBytes(UTF_8))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
@@ -280,8 +278,23 @@ public class TXTParserTest extends TikaTest {
     @Test
     public void testSubclassingMimeTypesRemain() throws Exception {
         XMLResult r = getXML("testVCalendar.vcs");
-        // Pure ASCII content — correctly detected as UTF-8
-        assertEquals("text/x-vcalendar; charset=UTF-8", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/x-vcalendar; charset=windows-1252", r.metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    // TIKA-3516, TIKA-3525, TIKA-1236
+    @Test
+    public void testIgnoreCharset() throws Exception {
+        AutoDetectParser parser = (AutoDetectParser) TikaLoader.load(
+                        getConfigPath(TXTParserTest.class, "tika-config-ignore-charset.json"))
+                .loadAutoDetectParser();
+
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
+        assertContains("ACTIVE AGE", getXML("testIgnoreCharset.txt", parser, m).xml);
+
+        m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "texty-text.txt");
+        assertContains("Please check your email", getXML("test_ignore_IBM420.html", parser, m).xml);
     }
 
 }

@@ -5,11 +5,16 @@
     },
     {
       "html-encoding-detector": {
-        "markLimit": 64000
+        "markLimit": 100000
       }
     },
     {
-      "standard-html-encoding-detector": {}
+      "standard-html-encoding-detector": {
+        "markLimit": 100000
+      }
+    },
+    {
+      "charsoup-encoding-detector": {}
     }
   ]
 }

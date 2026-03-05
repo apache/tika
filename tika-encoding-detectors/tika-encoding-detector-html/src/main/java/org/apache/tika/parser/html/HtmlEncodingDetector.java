@@ -171,7 +171,8 @@ public class HtmlEncodingDetector implements EncodingDetector {
         if (charset == null) {
             return Collections.emptyList();
         }
-        return List.of(new EncodingResult(charset, EncodingResult.CONFIDENCE_DEFINITIVE));
+        return List.of(new EncodingResult(charset, 1.0f, charset.name(),
+                EncodingResult.ResultType.DECLARATIVE));
     }
 
     //returns null if no charset was found

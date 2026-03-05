@@ -374,6 +374,35 @@ public final class StructuralEncodingRules {
     private static final double IBM500_LATIN_THRESHOLD = 0.25;
 
     /**
+     * Returns {@code true} if the probe contains at least one CRLF pair
+     * ({@code 0x0D 0x0A}).
+     *
+     * <p>Files originating on Windows use CRLF as the line separator.
+     * The presence of a {@code 0x0D 0x0A} pair in a probe that is otherwise
+     * 7-bit ASCII is weak evidence that the file was created on Windows and
+     * therefore more likely to use a Windows code page (e.g. windows-1252)
+     * than a Unix-origin ISO-8859-X encoding for any high-byte content
+     * beyond the probe window.</p>
+     *
+     * <p>A bare {@code 0x0D} without a following {@code 0x0A} is <em>not</em>
+     * counted: classic Mac OS used bare CR as its line ending, and that is a
+     * different case that does not imply Windows origin.</p>
+     */
+    public static boolean hasCrlfBytes(byte[] bytes) {
+        return hasCrlfBytes(bytes, 0, bytes.length);
+    }
+
+    public static boolean hasCrlfBytes(byte[] bytes, int offset, int length) {
+        int end = offset + length;
+        for (int i = offset; i < end - 1; i++) {
+            if (bytes[i] == 0x0D && bytes[i + 1] == 0x0A) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns {@code true} if the probe contains any byte in the C1 control
      * range {@code 0x80–0x9F}.
      *

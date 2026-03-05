@@ -19,20 +19,50 @@ package org.apache.tika.detect;
 import java.nio.charset.Charset;
 
 /**
- * A charset detection result pairing a {@link Charset} with a confidence score.
+ * A charset detection result pairing a {@link Charset} with a confidence score
+ * and a {@link ResultType} indicating the nature of the evidence.
  *
- * <p>Confidence is in the range {@code [0.0, 1.0]}. A score of {@code 1.0}
- * indicates a definitive structural detection (e.g. UTF-16/32 from null-byte
- * patterns, or a declared {@code charset} attribute in an HTML meta tag) that
- * requires no further arbitration. Lower scores reflect statistical estimates
- * where arbitration by a {@link MetaEncodingDetector} may improve accuracy.</p>
+ * <h3>Result types</h3>
+ * <ul>
+ *   <li>{@link ResultType#DECLARATIVE} — the document explicitly stated its
+ *       encoding (BOM, HTML {@code <meta charset>}).  These are authoritative
+ *       claims about author intent and get preference over inferred results
+ *       <em>when consistent with the actual bytes</em>.</li>
+ *   <li>{@link ResultType#STRUCTURAL} — byte-grammar proof (ISO-2022 escape
+ *       sequences, UTF-8 multibyte validation).  The encoding is proven by the
+ *       byte structure itself, independent of any declaration.</li>
+ *   <li>{@link ResultType#STATISTICAL} — probabilistic inference from a
+ *       statistical model.  The {@code confidence} float is meaningful here
+ *       for ranking among candidates; for DECLARATIVE and STRUCTURAL results
+ *       it is conventionally {@code 1.0} but carries no additional information.</li>
+ * </ul>
  *
  * @since Apache Tika 4.0
  */
 public class EncodingResult {
 
-    /** Confidence value indicating a definitive, structural detection. */
-    public static final float CONFIDENCE_DEFINITIVE = 1.0f;
+    /**
+     * The nature of the evidence that produced this result.
+     */
+    public enum ResultType {
+        /**
+         * The document explicitly declared its encoding (BOM, HTML meta charset).
+         * Authoritative about author intent; preferred over inferred results when
+         * consistent with the actual bytes.
+         */
+        DECLARATIVE,
+        /**
+         * The encoding is proven by byte-grammar structure (ISO-2022 escape
+         * sequences, UTF-8 multibyte validation).  Not a guess — the byte
+         * patterns are only valid in this encoding.
+         */
+        STRUCTURAL,
+        /**
+         * Probabilistic inference from a statistical model.  The confidence
+         * float is meaningful for ranking among candidates.
+         */
+        STATISTICAL
+    }
 
     private final Charset charset;
     private final float confidence;
@@ -47,28 +77,53 @@ public class EncodingResult {
      * prediction without going through {@code Charset.name()}.
      */
     private final String label;
+    private final ResultType resultType;
 
     /**
+     * Constructs a STATISTICAL result. Existing detectors that do not yet
+     * classify their evidence type default to statistical (probabilistic)
+     * treatment, which is the safe, arbitratable assumption.
+     *
      * @param charset    the detected charset; must not be {@code null}
      * @param confidence detection confidence in {@code [0.0, 1.0]}
      */
     public EncodingResult(Charset charset, float confidence) {
-        this(charset, confidence, charset.name());
+        this(charset, confidence, charset.name(), ResultType.STATISTICAL);
     }
 
     /**
+     * Constructs a STATISTICAL result with a detector-specific label.
+     *
      * @param charset    the detected charset; must not be {@code null}
      * @param confidence detection confidence in {@code [0.0, 1.0]}
      * @param label      the detector's original label (e.g. {@code "IBM420-ltr"});
      *                   if {@code null}, defaults to {@code charset.name()}
      */
     public EncodingResult(Charset charset, float confidence, String label) {
+        this(charset, confidence, label, ResultType.STATISTICAL);
+    }
+
+    /**
+     * Constructs a result with an explicit {@link ResultType}.
+     *
+     * @param charset    the detected charset; must not be {@code null}
+     * @param confidence detection confidence in {@code [0.0, 1.0]}
+     * @param label      the detector's original label; if {@code null},
+     *                   defaults to {@code charset.name()}
+     * @param resultType the nature of the evidence; must not be {@code null}
+     */
+    public EncodingResult(Charset charset, float confidence, String label,
+                          ResultType resultType) {
         if (charset == null) {
             throw new IllegalArgumentException("charset must not be null");
+        }
+        if (resultType == null) {
+            throw new IllegalArgumentException("resultType must not be null");
         }
         this.charset = charset;
         this.confidence = Math.max(0f, Math.min(1f, confidence));
         this.label = (label != null) ? label : charset.name();
+        this.resultType = resultType;
     }
 
     public Charset getCharset() {
@@ -76,11 +131,23 @@ public class EncodingResult {
     }
 
     /**
-     * Detection confidence in {@code [0.0, 1.0]}.
-     * {@code 1.0} means definitive; lower values invite arbitration.
+     * Detection confidence in {@code [0.0, 1.0]}.  Meaningful for ranking
+     * among {@link ResultType#STATISTICAL} candidates.  For
+     * {@link ResultType#DECLARATIVE} and {@link ResultType#STRUCTURAL} results
+     * the value is conventionally {@code 1.0} but carries no additional
+     * information beyond the type itself.
      */
     public float getConfidence() {
         return confidence;
+    }
+
+    /**
+     * The nature of the evidence that produced this result.
+     *
+     * @see ResultType
+     */
+    public ResultType getResultType() {
+        return resultType;
     }
 
     /**
@@ -97,6 +164,7 @@ public class EncodingResult {
     public String toString() {
         String cs = charset.name();
         String lbl = label.equals(cs) ? cs : label + "(" + cs + ")";
-        return lbl + "@" + String.format(java.util.Locale.ROOT, "%.2f", confidence);
+        return lbl + "@" + String.format(java.util.Locale.ROOT, "%.2f", confidence)
+                + "[" + resultType + "]";
     }
 }

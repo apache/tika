@@ -46,17 +46,19 @@ public class ByteNgramFeatureExtractorTest {
     }
 
     @Test
-    public void testAsciiOnlyProducesNoFeatures() {
+    public void testAsciiOnlyProducesStride2Features() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // All bytes < 0x80 are skipped — HTML tags, ASCII text, etc. produce nothing
+        // Stride-1 skips bytes < 0x80, but stride-2 covers ALL bytes (needed for UTF-16/32
+        // null-byte detection). "hello world" (11 bytes) → 5 stride-2 pairs at positions
+        // 0,2,4,6,8 → 5 features total.
         byte[] ascii = "hello world".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        assertEquals(0, sum(ext.extract(ascii)));
+        assertEquals(5, sum(ext.extract(ascii)));
     }
 
     @Test
     public void testSingleHighByteProducesOneUnigram() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // One high byte → one unigram, no bigram (no following byte)
+        // One high byte, no following byte → 1 stride-1 unigram; no stride-2 pair
         int[] counts = ext.extract(new byte[]{(byte) 0xE0});
         assertEquals(1, sum(counts));
     }
@@ -64,25 +66,31 @@ public class ByteNgramFeatureExtractorTest {
     @Test
     public void testTwoHighBytesProduceUnigramAndBigram() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // 0xE0 → unigram; (0xE0, 0xE1) → bigram; 0xE1 → unigram  = 3 features
+        // Stride-1: unigram(0xE0) + bigram(0xE0,0xE1) + unigram(0xE1) = 3
+        // Stride-2: pair(0xE0,0xE1) at position 0 = 1
+        // Total = 4
         int[] counts = ext.extract(new byte[]{(byte) 0xE0, (byte) 0xE1});
-        assertEquals(3, sum(counts));
+        assertEquals(4, sum(counts));
     }
 
     @Test
-    public void testHighByteFollowedByAsciiProducesUnigramAndBigram() {
+    public void testHighByteFollowedByAsciiProducesUnigramBigramAndAnchoredBigram() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // 0xE0 → unigram; (0xE0, 0x41) → bigram; 0x41 is ASCII so no further features = 2
+        // Stride-1: unigram(0xE0) + bigram(0xE0,0x41) + anchored_bigram(0x41,end) = 3
+        // Stride-2: pair(0xE0,0x41) at position 0 = 1
+        // Total = 4
         int[] counts = ext.extract(new byte[]{(byte) 0xE0, 0x41});
-        assertEquals(2, sum(counts));
+        assertEquals(4, sum(counts));
     }
 
     @Test
-    public void testAsciiFollowedByHighByteProducesUnigramAndBigram() {
+    public void testAsciiFollowedByHighByteProducesUnigramAndStride2() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // 0x41 skipped; 0xE0 → unigram; no following byte → 1 feature
+        // Stride-1: 0x41 skipped; unigram(0xE0), no following byte = 1
+        // Stride-2: pair(0x41,0xE0) at position 0 = 1
+        // Total = 2
         int[] counts = ext.extract(new byte[]{0x41, (byte) 0xE0});
-        assertEquals(1, sum(counts));
+        assertEquals(2, sum(counts));
     }
 
     @Test
