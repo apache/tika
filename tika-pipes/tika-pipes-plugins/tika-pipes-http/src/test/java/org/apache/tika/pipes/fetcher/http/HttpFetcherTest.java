@@ -88,14 +88,14 @@ class HttpFetcherTest extends TikaTest {
         httpFetcherConfig = new HttpFetcherConfig();
         httpFetcherConfig.setHttpHeaders(new ArrayList<>());
         httpFetcherConfig.setUserAgent("Test app");
-        httpFetcherConfig.setConnectTimeout(240_000);
-        httpFetcherConfig.setRequestTimeout(240_000);
-        httpFetcherConfig.setSocketTimeout(240_000);
+        httpFetcherConfig.setConnectTimeoutMillis(240_000);
+        httpFetcherConfig.setRequestTimeoutMillis(240_000);
+        httpFetcherConfig.setSocketTimeoutMillis(240_000);
         httpFetcherConfig.setMaxConnections(500);
         httpFetcherConfig.setMaxConnectionsPerRoute(20);
         httpFetcherConfig.setMaxRedirects(-1);
         httpFetcherConfig.setMaxErrMsgSize(500_000_000);
-        httpFetcherConfig.setOverallTimeout(400_000L);
+        httpFetcherConfig.setOverallTimeoutMillis(400_000L);
         httpFetcherConfig.setMaxSpoolSize(-1L);
 
         String json = OBJECT_MAPPER.writeValueAsString(httpFetcherConfig);

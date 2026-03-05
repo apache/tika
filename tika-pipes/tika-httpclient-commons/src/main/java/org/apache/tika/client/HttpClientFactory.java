@@ -99,9 +99,9 @@ public class HttpClientFactory {
     private Set<String> allowedHostsForRedirect = new HashSet<>();
     private int maxConnectionsPerRoute = 1000;
     private int maxConnections = 2000;
-    private int requestTimeout = 120000;
-    private int connectTimeout = 120000;
-    private int socketTimeout = 120000;
+    private int requestTimeoutMillis = 120000;
+    private int connectTimeoutMillis = 120000;
+    private int socketTimeoutMillis = 120000;
     private int keepAliveOnBadKeepAliveValueMs = 1000;
     private String userName;
     private String password;
@@ -151,28 +151,28 @@ public class HttpClientFactory {
         this.maxConnections = maxConnections;
     }
 
-    public int getRequestTimeout() {
-        return requestTimeout;
+    public int getRequestTimeoutMillis() {
+        return requestTimeoutMillis;
     }
 
-    public void setRequestTimeout(int requestTimeout) {
-        this.requestTimeout = requestTimeout;
+    public void setRequestTimeoutMillis(int requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
     }
 
-    public int getConnectTimeout() {
-        return connectTimeout;
+    public int getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
+    public void setConnectTimeoutMillis(int connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
-    public int getSocketTimeout() {
-        return socketTimeout;
+    public int getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
-    public void setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
+    public void setSocketTimeoutMillis(int socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
     }
 
     public int getKeepAliveOnBadKeepAliveValueMs() {
@@ -246,7 +246,7 @@ public class HttpClientFactory {
         HttpClientFactory cp = new HttpClientFactory();
         cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
         cp.setAuthScheme(authScheme);
-        cp.setConnectTimeout(connectTimeout);
+        cp.setConnectTimeoutMillis(connectTimeoutMillis);
         cp.setCredentialsAESEncrypted(credentialsAESEncrypted);
         cp.setDisableContentCompression(disableContentCompression);
         cp.setKeepAliveOnBadKeepAliveValueMs(keepAliveOnBadKeepAliveValueMs);
@@ -257,8 +257,8 @@ public class HttpClientFactory {
         cp.setUserName(userName);
         cp.setProxyHost(proxyHost);
         cp.setProxyPort(proxyPort);
-        cp.setRequestTimeout(requestTimeout);
-        cp.setSocketTimeout(socketTimeout);
+        cp.setRequestTimeoutMillis(requestTimeoutMillis);
+        cp.setSocketTimeoutMillis(socketTimeoutMillis);
         cp.setVerifySsl(verifySsl);
         return cp;
     }
@@ -309,8 +309,8 @@ public class HttpClientFactory {
                 .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
                 .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
                         Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
-                        .setConnectionRequestTimeout(requestTimeout)
-                        .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
+                        .setConnectionRequestTimeout(requestTimeoutMillis)
+                        .setConnectTimeout(connectTimeoutMillis).setSocketTimeout(socketTimeoutMillis)
                         .build()).setKeepAliveStrategy(getKeepAliveStrategy())
                 .setSSLSocketFactory(sslsf)
                 .setSSLHostnameVerifier(verifySsl

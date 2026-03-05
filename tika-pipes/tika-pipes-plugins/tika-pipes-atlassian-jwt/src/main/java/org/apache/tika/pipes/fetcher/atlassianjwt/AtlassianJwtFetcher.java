@@ -108,14 +108,14 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
 
     public void initialize() throws IOException, TikaConfigException {
         // Configure HTTP client factory
-        if (config.getSocketTimeout() != null) {
-            httpClientFactory.setSocketTimeout(config.getSocketTimeout());
+        if (config.getSocketTimeoutMillis() != null) {
+            httpClientFactory.setSocketTimeoutMillis(config.getSocketTimeoutMillis());
         }
-        if (config.getRequestTimeout() != null) {
-            httpClientFactory.setRequestTimeout(config.getRequestTimeout());
+        if (config.getRequestTimeoutMillis() != null) {
+            httpClientFactory.setRequestTimeoutMillis(config.getRequestTimeoutMillis());
         }
-        if (config.getConnectTimeout() != null) {
-            httpClientFactory.setConnectTimeout(config.getConnectTimeout());
+        if (config.getConnectTimeoutMillis() != null) {
+            httpClientFactory.setConnectTimeoutMillis(config.getConnectTimeoutMillis());
         }
         if (config.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(config.getMaxConnections());
@@ -181,7 +181,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
         Timer timer = null;
-        long overallTimeout = config.getOverallTimeout() == null ? -1 : config.getOverallTimeout();
+        long overallTimeout = config.getOverallTimeoutMillis() == null ? -1 : config.getOverallTimeoutMillis();
         try {
             if (overallTimeout > -1) {
                 TimerTask task = new TimerTask() {

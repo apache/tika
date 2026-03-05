@@ -87,10 +87,10 @@ public class ESPipesReporter extends PipesReporterBase {
             httpClientFactory.setUserName(http.userName());
             httpClientFactory.setPassword(http.password());
             if (http.socketTimeoutMillis() > 0) {
-                httpClientFactory.setSocketTimeout(http.socketTimeoutMillis());
+                httpClientFactory.setSocketTimeoutMillis(http.socketTimeoutMillis());
             }
             if (http.connectionTimeoutMillis() > 0) {
-                httpClientFactory.setConnectTimeout(http.connectionTimeoutMillis());
+                httpClientFactory.setConnectTimeoutMillis(http.connectionTimeoutMillis());
             }
             if (http.authScheme() != null) {
                 httpClientFactory.setAuthScheme(http.authScheme());

@@ -266,7 +266,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
         Timer timer = null;
-        long overallTimeout = httpFetcherConfig.getOverallTimeout() == null ? -1 : httpFetcherConfig.getOverallTimeout();
+        long overallTimeout = httpFetcherConfig.getOverallTimeoutMillis() == null ? -1 : httpFetcherConfig.getOverallTimeoutMillis();
         try {
             if (overallTimeout > -1) {
                 TimerTask task = new TimerTask() {
@@ -459,14 +459,14 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
 
     //we should make this private. Try to fix test so we can.
     void initialize() throws TikaConfigException {
-        if (httpFetcherConfig.getSocketTimeout() != null) {
-            httpClientFactory.setSocketTimeout(httpFetcherConfig.getSocketTimeout());
+        if (httpFetcherConfig.getSocketTimeoutMillis() != null) {
+            httpClientFactory.setSocketTimeoutMillis(httpFetcherConfig.getSocketTimeoutMillis());
         }
-        if (httpFetcherConfig.getRequestTimeout() != null) {
-            httpClientFactory.setRequestTimeout(httpFetcherConfig.getRequestTimeout());
+        if (httpFetcherConfig.getRequestTimeoutMillis() != null) {
+            httpClientFactory.setRequestTimeoutMillis(httpFetcherConfig.getRequestTimeoutMillis());
         }
-        if (httpFetcherConfig.getConnectTimeout() != null) {
-            httpClientFactory.setSocketTimeout(httpFetcherConfig.getConnectTimeout());
+        if (httpFetcherConfig.getConnectTimeoutMillis() != null) {
+            httpClientFactory.setSocketTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
         }
         if (httpFetcherConfig.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(httpFetcherConfig.getMaxConnections());
