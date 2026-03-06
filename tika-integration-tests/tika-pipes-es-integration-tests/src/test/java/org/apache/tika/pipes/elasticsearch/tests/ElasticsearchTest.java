@@ -151,7 +151,9 @@ public class ElasticsearchTest {
                 "\"from\": 0, \"size\": 1000 }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + numTestDocs,
+        // OOM/crash docs (oom.xml, fake_oom.xml) kill the forked JVM and
+        // never emit to the data index, so subtract 2
+        assertEquals(numHtmlDocs + numTestDocs - 2,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
 
@@ -219,8 +221,9 @@ public class ElasticsearchTest {
         JsonResponse results =
                 client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 3 + 12,
-                // 3 mock files and the .docx has 11 embedded + itself
+        // 1 mock file (npe.xml emits; oom.xml + fake_oom.xml crash)
+        // + the .docx has 11 embedded + itself = 12
+        assertEquals(numHtmlDocs + 1 + 12,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
 
@@ -306,7 +309,9 @@ public class ElasticsearchTest {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 3 + 12,
+        // 1 mock file (npe.xml emits; oom.xml + fake_oom.xml crash)
+        // + the .docx has 11 embedded + itself = 12
+        assertEquals(numHtmlDocs + 1 + 12,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
 
