@@ -36,34 +36,28 @@ import org.apache.tika.parser.ParseContext;
 /**
  * Verifies the two-phase EBCDIC detection pipeline:
  * <ol>
- *   <li>General model emits {@code "EBCDIC"} routing label for EBCDIC-family bytes.</li>
+ *   <li>The general model emits an {@code "EBCDIC"} routing label for true EBCDIC bytes
+ *       (IBM420, IBM424, IBM500 variants).</li>
  *   <li>{@code MojibusterEncodingDetector} routes to the EBCDIC sub-model, which
- *       returns a specific IBM variant (IBM500, IBM420, IBM855, etc.) — never the
- *       bare {@code "EBCDIC"} routing label.</li>
+ *       returns a specific IBM variant — never the bare {@code "EBCDIC"} routing label.</li>
  * </ol>
+ *
+ * IBM855 and IBM866 are DOS/OEM Cyrillic code pages, not true EBCDIC.  They appear
+ * as direct labels in the general model (alongside windows-1251, KOI8-R, etc.) and
+ * never trigger the EBCDIC routing path.
  */
 public class EbcdicRoutingTest {
 
     private static MojibusterEncodingDetector detector;
 
     // Representative English prose encoded in IBM500 (International EBCDIC).
-    // Generated via: text.getBytes(Charset.forName("IBM500"))
-    private static final byte[] IBM500_BYTES = makeEbcdic("IBM500",
+    private static final byte[] IBM500_BYTES = encode("IBM500",
             "The quick brown fox jumps over the lazy dog. " +
             "This sentence contains every letter of the English alphabet. " +
             "EBCDIC encoding is used on IBM mainframe systems. " +
             "Fields are often fixed-width and space-padded in EBCDIC files.");
 
-    // Russian text encoded in IBM855 (Cyrillic EBCDIC).
-    private static final byte[] IBM855_BYTES = makeEbcdic("IBM855",
-            "\u041f\u0440\u0438\u0432\u0435\u0442 \u043c\u0438\u0440! " +  // Привет мир!
-            "\u042d\u0442\u043e \u0442\u0435\u043a\u0441\u0442 \u043d\u0430 " + // Это текст на
-            "\u0440\u0443\u0441\u0441\u043a\u043e\u043c \u044f\u0437\u044b\u043a\u0435. " + // русском языке.
-            "\u041a\u043e\u0434\u0438\u0440\u043e\u0432\u043a\u0430 IBM855 " + // Кодировка IBM855
-            "\u0438\u0441\u043f\u043e\u043b\u044c\u0437\u0443\u0435\u0442\u0441\u044f " + // используется
-            "\u043d\u0430 \u043c\u0435\u0439\u043d\u0444\u0440\u0435\u0439\u043c\u0430\u0445."); // на мейнфреймах.
-
-    private static byte[] makeEbcdic(String charsetName, String text) {
+    private static byte[] encode(String charsetName, String text) {
         try {
             return text.getBytes(Charset.forName(charsetName));
         } catch (Exception e) {
@@ -77,51 +71,42 @@ public class EbcdicRoutingTest {
     }
 
     /**
-     * The general model must have exactly one EBCDIC routing label.
-     * Individual IBM variants must NOT appear as top-level labels — they live
-     * only in the EBCDIC sub-model.
+     * The general model must have:
+     * - one "EBCDIC" routing label for true EBCDIC variants (IBM420, IBM424, IBM500)
+     * - IBM855 and IBM866 as direct labels (DOS Cyrillic — not routed via sub-model)
+     *
+     * True EBCDIC variants must NOT appear as direct general-model labels.
      */
     @Test
-    public void generalModelHasSingleEbcdicRoutingLabel() {
+    public void generalModelHasCorrectEbcdicLabels() {
         LinearModel general = detector.getModel();
-        String[] labels = general.getLabels();
+        List<String> labels = Arrays.asList(general.getLabels());
 
-        assertTrue(Arrays.asList(labels).contains("EBCDIC"),
+        assertTrue(labels.contains("EBCDIC"),
                 "General model must have an 'EBCDIC' routing label");
 
-        // No individual IBM variant should appear as a direct label in the general model —
-        // they live only in the EBCDIC sub-model
-        for (String label : labels) {
-            assertFalse(label.startsWith("IBM"),
-                    "General model must not contain individual IBM variant: " + label);
+        // True EBCDIC variants must not be direct labels — they live in the sub-model
+        for (String trueEbcdic : new String[]{"IBM420-ltr", "IBM420-rtl", "IBM424-ltr", "IBM424-rtl", "IBM500"}) {
+            assertFalse(labels.contains(trueEbcdic),
+                    "True EBCDIC variant must not be a direct general-model label: " + trueEbcdic);
         }
+
+        // DOS Cyrillic variants must be direct labels (not routed via sub-model)
+        assertTrue(labels.contains("IBM855"),
+                "IBM855 (DOS Cyrillic) must be a direct general-model label");
+        assertTrue(labels.contains("IBM866"),
+                "IBM866 (DOS Cyrillic) must be a direct general-model label");
     }
 
     /**
-     * IBM500 bytes must route through the sub-model and return a specific IBM variant,
-     * not the bare "EBCDIC" routing label.
+     * IBM500 bytes must route through the EBCDIC sub-model and return a specific IBM
+     * variant, not the bare "EBCDIC" routing label.
      */
     @Test
     public void ibm500RoutesToSubModel() throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(IBM500_BYTES)) {
             List<EncodingResult> results = detector.detect(tis, new Metadata(), new ParseContext());
             assertFalse(results.isEmpty(), "Should detect something for IBM500 bytes");
-            String topLabel = results.get(0).getLabel();
-            assertNotEquals("EBCDIC", topLabel,
-                    "Result must be a specific IBM variant, not the routing label");
-            assertTrue(topLabel.startsWith("IBM"),
-                    "Result should be an IBM variant, got: " + topLabel);
-        }
-    }
-
-    /**
-     * IBM855 (Cyrillic EBCDIC) bytes must similarly route through the sub-model.
-     */
-    @Test
-    public void ibm855RoutesToSubModel() throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(IBM855_BYTES)) {
-            List<EncodingResult> results = detector.detect(tis, new Metadata(), new ParseContext());
-            assertFalse(results.isEmpty(), "Should detect something for IBM855 bytes");
             String topLabel = results.get(0).getLabel();
             assertNotEquals("EBCDIC", topLabel,
                     "Result must be a specific IBM variant, not the routing label");
