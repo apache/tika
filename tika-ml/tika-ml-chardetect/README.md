@@ -481,71 +481,84 @@ and the encoding is vanishingly rare in practice, superseded by Big5 and UTF-8.
 
 ## Generating the Dataset
 
-All scripts live in `src/test/python/`.
+Data generation is handled entirely by the Java tool
+`BuildCharsetTrainingData` (in `src/main/java/.../tools/`).  It replaces the
+former Python `build_charset_training.py` script, which was removed because
+Java supports charsets unavailable in CPython's standard codec library
+(IBM1047, x-EUC-TW, IBM420, IBM424) and because eliminating the
+Python / `ebcdic` / fastText dependency chain simplifies the build.
 
 ### Step 1 — Build training, devtest, and test splits
 
-`build_charset_training.py` loads sentences from MADLAD (and zh_yuewiki for
+`BuildCharsetTrainingData` loads sentences from MADLAD (and zh_yuewiki for
 the `yue` virtual language), applies quality gates, and writes per-charset
 gzipped binary files in each split directory.
 
 **Encoding quality gates (both must pass):**
 
-1. **Round-trip verification**: encode with `errors='strict'`, decode back,
-   verify the result is identical to the original.  Any character that fails
-   strict encoding causes the sentence to be skipped.  This catches all silent
-   failures without needing a survival-ratio heuristic.
+1. **Drop-count gate**: text is encoded with `IGNORE` (unencodable characters
+   are silently dropped) and decoded back with `REPLACE` (corrupt byte
+   sequences become U+FFFD).  A sentence is rejected if
+   `(dropped characters + U+FFFD count) > 3`.  This allows one or two
+   typographic characters (curly quotes, em-dash) without discarding an
+   otherwise useful sentence, while still catching sentences where substantial
+   content is lost.
 
-2. **High-byte ratio**: the encoded chunk must have enough bytes ≥ 0x80 to
-   carry encoding-specific signal.  Thresholds by family:
+2. **High-byte ratio gate**: the encoded chunk must have enough bytes ≥ 0x80
+   to carry encoding-specific signal.  Thresholds by family:
 
    | Encoding family | Min high-byte ratio | Rationale |
    |---|---|---|
-   | CJK multibyte (Big5, EUC-*, GBK, …) | ≥ 20% | Each CJK character = 2 high bytes; sparse chunks indicate wrong source language |
-   | UTF-8 | ≥ 5% | Ensures enough lead/continuation byte pairs for the model to learn Latin-Extended patterns |
-   | SBCS / other legacy | ≥ 2% | Even 1 accented character per 50 bytes is informative |
-   | ASCII, ISO-2022, HZ, UTF-16/32 | exempt | No high bytes by design |
+   | CJK multibyte (Big5, EUC-*, GB18030, Shift_JIS, x-EUC-TW) | ≥ 20% | Each CJK character = 2 high bytes; a sparse chunk indicates wrong source language or heavily ASCII content |
+   | UTF-8 | ≥ 5% | Ensures enough lead/continuation byte pairs for the model to learn multi-byte structure |
+   | SBCS / EBCDIC | ≥ 2% | Even 1 accented character per 50 bytes is informative; rejects pure-ASCII sentences that look identical across all SBCS charsets |
+   | US-ASCII, ISO-2022-*, UTF-16/32 | exempt | No high bytes by design; these are detected structurally, not by the ML model |
 
-**Split sizes (defaults):**
+**Split sizes:**
 
-| Split | Samples/charset |
-|---|---|
-| train | 20 000 |
-| devtest | 2 000 |
-| test | 5 000 |
+The tool uses different sample caps for CJK/Unicode charsets and for
+SBCS/EBCDIC charsets.  See [Training Data Size Rationale](#training-data-size-rationale)
+below for the full derivation.
+
+| Charset family | train | devtest | test |
+|---|---|---|---|
+| CJK multibyte (Shift_JIS, EUC-JP, EUC-KR, GB18030, Big5-HKSCS, x-EUC-TW) | 20 000 | 2 000 | 5 000 |
+| Unicode (UTF-8, UTF-16-LE/BE, UTF-32-LE/BE) | 20 000 | 2 000 | 5 000 |
+| Structural-only (US-ASCII, ISO-2022-*) | — (no train) | 2 000 | 5 000 |
+| SBCS and EBCDIC (all others) | **50 000** | 2 000 | **10 000** |
+
+Build the fat JAR once, then run:
 
 ```bash
-python build_charset_training.py \
+# Build the tools JAR
+mvn package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests \
+    -Dmaven.repo.local=.local_m2_repo -Dcheckstyle.skip=true -q
+
+JAR=tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar
+
+java -cp $JAR \
+    org.apache.tika.ml.chardetect.tools.BuildCharsetTrainingData \
     --madlad-dir  ~/datasets/madlad/data \
     --zh-yue-file ~/datasets/zh_yuewiki/sentences_zh_yue.txt \
     --output-dir  ~/datasets/madlad/charset-detect3
 ```
 
-The script prints a summary of samples written per charset per split.
+The tool prints a summary of samples written per charset per split and writes
+a `manifest.json` describing the full run.
 
-### Step 2 — Compile the tools
+### Step 2 — Train
 
-```bash
-cd /path/to/tika-main-chardet
-mvn -pl tika-core -am -DskipTests install -q
-mvn -pl tika-ml/tika-ml-chardetect -am -DskipTests compile test-compile -q
-
-# Export classpath once for subsequent Java invocations
-CP=$(mvn -pl tika-ml/tika-ml-chardetect -q dependency:build-classpath \
-         -Dmdep.outputFile=/dev/stdout 2>/dev/null)
-JARS="tika-ml/tika-ml-chardetect/target/classes:\
-tika-ml/tika-ml-chardetect/target/test-classes:$CP"
-```
-
-### Step 3 — Train
+The fat JAR built in Step 1 contains `TrainCharsetModel` as well:
 
 ```bash
-java -cp "$JARS" \
+JAR=tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar
+
+java -cp $JAR \
   org.apache.tika.ml.chardetect.tools.TrainCharsetModel \
   --data    ~/datasets/madlad/charset-detect3/train \
   --output  ~/datasets/madlad/chardetect.bin \
-  --buckets 8192 \
-  --epochs  5
+  --buckets 16384 \
+  --epochs  3
 ```
 
 The trainer prints per-epoch loss and in-sample accuracy, then a per-charset
@@ -557,10 +570,10 @@ cp ~/datasets/madlad/chardetect.bin \
    src/main/resources/org/apache/tika/ml/chardetect/chardetect.bin
 ```
 
-### Step 4 — Evaluate
+### Step 3 — Evaluate
 
 ```bash
-java -cp "$JARS" \
+java -cp $JAR \
   org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors \
   --model   ~/datasets/madlad/chardetect.bin \
   --data    ~/datasets/madlad/charset-detect3/test \
@@ -584,22 +597,187 @@ Each column shows **R%** (strict — exact charset match) and **S%** (soft —
 exact or confusable-group match).  A timing row (`µs/sample`) is printed below
 each probe-length section.
 
+---
+
+## Training Data Size Rationale
+
+This section documents why the train/devtest/test sample counts were chosen,
+including the empirical experiments that justified the SBCS/EBCDIC uplift to
+50 000 training samples.
+
+### Model parameter count
+
+The production model is a multinomial logistic regression with
+`numBuckets × numClasses` weights.  At 16 384 buckets and 38 trained classes:
+
+```
+16 384 × 38 = 622 592 weight parameters + 38 biases ≈ 623 K parameters
+```
+
+At 20 000 samples/class × 38 classes = 760 K total training samples, the
+overall samples-to-parameters ratio is about **1.2 : 1** — tight by dense
+neural-network standards but appropriate for a sparse linear classifier,
+where each sample only activates ≈ 50–150 of the 16 384 buckets and leaves
+the rest unchanged.
+
+### Why CJK and Unicode are capped at 20 000
+
+CJK charsets have overwhelming signal per sample:
+
+- Every CJK character encodes to 2–4 bytes that are all ≥ 0x80.  A 256-byte
+  Shift_JIS chunk contains ≈ 100 lead/trail bigrams — far more distinctive
+  features than any SBCS chunk of the same length.
+- The byte grammars of Shift_JIS, EUC-JP, EUC-KR, GB18030, and Big5 are
+  disjoint in their lead-byte ranges, giving the model near-perfect
+  separability even at short probe lengths.
+- In-sample accuracy for all CJK and Unicode charsets is consistently
+  ≥ 99.7% from the first epoch.  More data cannot improve what is already
+  converged.
+
+UTF-16/32 are equally clear-cut: stride-2 bigrams at even positions expose the
+code-unit structure directly (BMP UTF-16LE produces dense `(XX, 0x00)` pairs;
+UTF-32 produces `(0x00, 0x00)` pairs every other stride-2 position).
+
+### Why SBCS/EBCDIC use 50 000
+
+Single-byte charsets differ in how they assign the 128 positions `0x80–0xFF`.
+The challenge is that adjacent or related charsets share most of that range and
+differ only in a handful of positions.  Two pairs expose this cleanly:
+
+**IBM500 vs IBM1047 — 9 differing byte positions**
+
+IBM1047 (EBCDIC Open Systems Latin-1, used on z/OS Unix) and IBM500 (classic
+international EBCDIC) share 247 of 256 byte mappings.  The 9 that differ:
+
+| Byte | IBM500 | IBM1047 |
+|------|--------|---------|
+| 0x25 | LF (U+000A) | NEL (U+0085) — the z/OS Unix line terminator |
+| 0x4F | `!` | `\|` |
+| 0x5A | `]` | `!` |
+| 0x4A | `[` | `¢` |
+| 0xAD | `Ý` | `[` |
+| 0xB0 | `¢` | `¬` |
+| 0xBA | `¬` | `Ý` |
+| 0xBB | `\|` | `¨` |
+| 0xBD | `¨` | `]` |
+
+Five of the nine differing byte positions are below 0x80 and therefore
+invisible to stride-1 (high-byte-anchored) features.  They are only visible
+through stride-2 bigrams at even byte positions.  The exclamation mark (`!`)
+is the most frequent distinguishing character in prose text: it encodes to
+byte 0x4F in IBM500 and 0x5A in IBM1047.  In typical Wikipedia prose, `!`
+appears roughly 0.3–0.5% of the time — about **1 occurrence per 256-byte
+sample**, with a 50% chance of landing at an even stride-2 position.
+
+At 20 000 samples this gives the model approximately 20 000 × 0.5 = 10 000
+observations of the key distinguishing bigram — statistically sufficient in
+theory, but in practice the signal-to-noise ratio is low because the same
+stride-2 bucket receives contributions from many other byte pairs that happen
+to hash to it.  Empirically, training at 20 000 samples/class and 16 384
+buckets produced:
+
+```
+IBM500  in-sample accuracy:  68.5%
+IBM1047 in-sample accuracy:  52.0%
+```
+
+Increasing to 32 768 buckets (reducing hash collision noise) changed the
+balance dramatically:
+
+```
+IBM500  in-sample accuracy:  28.5%   ← model now over-predicts IBM1047
+IBM1047 in-sample accuracy:  91.1%
+```
+
+This reveals that the 16 384-bucket model is not bucket-limited — it is
+**data-limited for this specific pair**.  More buckets give the model enough
+capacity to memorise the IBM1047 signal and then swing hard in that direction,
+at the cost of IBM500 accuracy.  The solution is more training samples (so the
+frequency estimates become more reliable) rather than more buckets.  Bumping
+to **50 000 samples** at 16 384 buckets brings IBM1047 to ~91% without
+collapsing IBM500 (see the bucket-size note in the next section).
+
+**IBM437 vs IBM850 — superset/subset pair**
+
+IBM850 is a superset of IBM437.  The characters that differ are in the
+`0xB0–0xFF` range, where IBM437 uses box-drawing characters and IBM850 uses
+Latin extended characters.  Box-drawing characters never appear in prose text,
+so the quality gate (high-byte ≥ 2%) combined with the IGNORE encoder means
+that the training samples for IBM437 and IBM850 contain nearly identical
+high-byte distributions for most sentences.  This is a fundamental signal
+limitation, not a sample-count limitation (see [Known Limitations](#known-limitations)).
+
+### Why devtest is 2 000
+
+Devtest is used for **model selection** — choosing between bucket counts,
+feature flag combinations, and learning-rate schedules during the simulated
+annealing search in `anneal.py`.  The expected accuracy differences between
+candidate configurations are in the range 0.5–3 percentage points.  At 2 000
+samples per charset (76 000 total for 38 trained classes), the 95% confidence
+interval on a binomial proportion at 90% accuracy is ±1.4 pp — sufficient to
+distinguish configurations that differ by more than noise.
+
+More than 2 000 devtest samples per charset would lengthen each annealing
+trial without improving selection quality, since the variance across annealing
+trials (caused by SGD randomness) dominates over the devtest estimation error.
+
+### Why test is 5 000 for CJK/Unicode and 10 000 for SBCS/EBCDIC
+
+The held-out test set is evaluated **once** after all hyperparameter choices
+are locked in.  The precision required differs by charset family:
+
+- **CJK/Unicode**: accuracy is consistently above 95%.  At 5 000 samples the
+  95% CI on a 99% accuracy measurement is ±0.3 pp — more than adequate.
+
+- **SBCS/EBCDIC**: the hard confusable pairs (IBM500/IBM1047, IBM850/IBM437,
+  windows-1250/windows-1252) produce accuracy in the 50–95% range.  At 5 000
+  samples the CI at 90% accuracy is ±0.8 pp.  Doubling to **10 000 samples**
+  tightens the CI to ±0.6 pp and, more importantly, gives enough samples to
+  compute meaningful **per-pair confusion matrices** (e.g., how often IBM1047
+  is predicted for an IBM500 file) — which are the primary diagnostic for
+  deciding whether confusable pairs should be added to `CharsetConfusables`.
+
+### Known limitations
+
+**IBM500 vs IBM1047** and **IBM437 vs IBM850** remain genuinely difficult to
+distinguish from Wikipedia prose text alone:
+
+- The distinguishing bytes are either low (< 0x80, invisible to stride-1
+  features) or map to characters that rarely appear in prose.
+- The quality gate that rejects unencodable sentences inadvertently filters
+  out the most discriminating sentences for the IBM437/IBM850 pair.
+
+Planned mitigations:
+
+1. Add both pairs to `CharsetConfusables` so that predicting either member
+   of a pair counts as a soft hit in evaluation and downstream decoding
+   remains correct.
+2. Supplement training data with technical/code-like text (shell scripts, C
+   source) where `!`, `[`, `]`, `|` appear at higher frequency, strengthening
+   the stride-2 bigram signal for IBM500/IBM1047.
+3. Consider merging IBM437 into IBM850 as a single "DOS Western European"
+   class, since IBM850 is the superset and correctly decodes all IBM437 content.
+
 ### Bucket size sweep
 
-Evaluation across bucket sizes showed negligible accuracy differences,
-confirming the feature space is not the bottleneck:
+Earlier evaluation across bucket sizes on the 34-class corpus showed negligible
+accuracy differences, confirming the feature space is not the primary bottleneck:
 
 | Buckets | Model size | Strict (full) | Soft (full) |
 |---|---|---|---|
 | 65 536 | 2.0 MB | 70.6% | 85.6% |
 | 32 768 | 1.0 MB | 70.9% | 85.6% |
 | 16 384 | 512 KB | 71.2% | 85.6% |
-| **8 192** | **257 KB** | **70.9%** | **85.6%** |
+| 8 192 | 257 KB | 70.9% | 85.6% |
 | 4 096 | 129 KB | 70.3% | 85.5% |
 
-(ML-All column, held-out test set at full probe length.)
+(ML-All column, 34-class held-out test set at full probe length.)
 
-The production model uses 8 192 buckets as the best accuracy-to-size tradeoff.
+The **current production model** uses **16 384 buckets** (38 classes, ~1.02 MB).
+See [Training Data Size Rationale](#training-data-size-rationale) for why 32 768
+buckets is not recommended despite the larger corpus — for the hardest confusable
+pairs (IBM500/IBM1047) more buckets cause the model to overfit one label at the
+expense of the other rather than improving overall accuracy.
 
 ---
 

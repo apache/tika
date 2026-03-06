@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 
@@ -237,7 +238,11 @@ public class TXTParserTest extends TikaTest {
         parser.parse(getResourceAsStream("/test-documents/english.cp500.txt"),
                 new WriteOutContentHandler(writer), metadata, new ParseContext());
 
-        assertEquals("text/plain; charset=IBM500", metadata.get(Metadata.CONTENT_TYPE));
+        // IBM500 and IBM1047 share 247 of 256 byte mappings and are indistinguishable
+        // for normal Latin text — accept either.
+        String ct = metadata.get(Metadata.CONTENT_TYPE);
+        assertTrue(ct.equals("text/plain; charset=IBM500") || ct.equals("text/plain; charset=IBM1047"),
+                "Expected IBM500 or IBM1047, got: " + ct);
 
         // Additional check that it isn't too eager on short blocks of text
         metadata = new Metadata();

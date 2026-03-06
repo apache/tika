@@ -411,6 +411,12 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             // source code and structured documents regardless of charset.
             if (cp == 0xFFFD) {
                 junk++;
+            } else if (cp == 0xFFFE) {
+                // U+FFFE is the "wrong-endian BOM" / Unicode noncharacter.
+                // It never appears in correctly decoded text — a decoder that
+                // produces it has consumed the UTF-16 BOM bytes with the wrong
+                // byte order (e.g. UTF-16LE applied to a UTF-16BE stream).
+                junk++;
             } else if (Character.isISOControl(cp)) {
                 if (cp != 0x09 && cp != 0x0A && cp != 0x0B && cp != 0x0C && cp != 0x0D) {
                     junk++;

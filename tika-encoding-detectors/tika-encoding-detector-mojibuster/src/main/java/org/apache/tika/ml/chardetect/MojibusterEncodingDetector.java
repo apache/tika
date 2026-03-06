@@ -38,29 +38,24 @@ import org.apache.tika.ml.LinearModel;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Tika {@link EncodingDetector} backed by a two-stage statistical pipeline.
+ * Tika {@link EncodingDetector} backed by a single statistical model with
+ * structural pre- and post-processing rules.
  *
  * <h3>Detection pipeline</h3>
  * <ol>
  *   <li><strong>Structural gates</strong> ({@link StructuralEncodingRules}) —
- *       cheap deterministic checks before any model call:
- *       ASCII, ISO-2022 family, and UTF-8 grammar exclusion.</li>
- *   <li><strong>General model</strong> ({@link LinearModel}, 2048 buckets,
- *       ~23 labels) — covers all common charsets plus an {@code "EBCDIC"}
- *       routing label for the EBCDIC family.</li>
- *   <li><strong>EBCDIC sub-model</strong> ({@link LinearModel}, 1024 buckets,
- *       5 labels) — invoked only when the general model returns {@code "EBCDIC"};
- *       discriminates IBM420-ltr/rtl, IBM424-ltr/rtl, and IBM500.  Callers
- *       never see the routing label; they always receive a specific variant.</li>
+ *       cheap deterministic checks before the model: ASCII, ISO-2022 family,
+ *       and UTF-8 grammar exclusion.</li>
+ *   <li><strong>Statistical model</strong> ({@link LinearModel}) — covers all
+ *       charsets as direct labels, including EBCDIC variants (IBM420-ltr/rtl,
+ *       IBM424-ltr/rtl, IBM500, IBM1047) alongside CJK, Latin, and other
+ *       single-byte encodings.</li>
+ *   <li><strong>Post-model rules</strong> — CJK grammar walkers, ISO→Windows
+ *       C1-byte upgrade, GB18030 four-byte upgrade.</li>
  * </ol>
  *
- * <p>Both models are bundled in the jar.  The two-model approach lets the common
- * path run a smaller weight matrix while giving EBCDIC detection its own focused
- * label space — improving IBM424 ltr/rtl accuracy without bloating the general
- * model.</p>
- *
- * <p>This class is thread-safe: models are loaded once at construction time and
- * feature extraction is stateless.</p>
+ * <p>This class is thread-safe: the model is loaded once at construction time
+ * and feature extraction is stateless.</p>
  */
 @TikaComponent(name = "mojibuster-encoding-detector")
 public class MojibusterEncodingDetector implements EncodingDetector {
@@ -115,16 +110,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     private static final long serialVersionUID = 1L;
 
-    /** Default general-model resource path on the classpath. */
+    /** Default model resource path on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
             "/org/apache/tika/ml/chardetect/chardetect.bin";
-
-    /**
-     * EBCDIC sub-model resource path.  Loaded alongside the general model;
-     * invoked only when the general model's top label is {@code "EBCDIC"}.
-     */
-    public static final String EBCDIC_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/chardetect-ebcdic.bin";
 
     /**
      * Maps model label strings (from training-data filenames) to the canonical
@@ -138,13 +126,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      *       (same rationale as IBM424)</li>
      *   <li>{@code windows-874} → {@code x-windows-874}
      *       (Java's canonical name for the Thai Windows code page)</li>
-     *   <li>{@code EBCDIC} → {@code IBM500}
-     *       (routing label for the two-model EBCDIC pipeline; the general model
-     *       emits this when it detects EBCDIC-family bytes without committing to a
-     *       specific variant.  IBM500 is used as the decode-as charset so the label
-     *       resolves to a valid {@link Charset}, but in production the routing layer
-     *       always sends "EBCDIC" results to the EBCDIC sub-model and overrides this
-     *       placeholder with the sub-model's specific result.)</li>
      * </ul>
      */
     private static final Map<String, String> LABEL_TO_JAVA_NAME;
@@ -157,7 +138,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         m.put("IBM420-ltr", "IBM420");
         m.put("IBM420-rtl", "IBM420");
         m.put("windows-874",  "x-windows-874");
-        m.put("EBCDIC",       "IBM500");
         // Training filenames use hyphens (UTF-16-LE) but Java requires no hyphen (UTF-16LE)
         m.put("UTF-16-LE", "UTF-16LE");
         m.put("UTF-16-BE", "UTF-16BE");
@@ -191,72 +171,64 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public static final float LOGIT_GAP = 5.0f;
 
     private final LinearModel model;
-    private final LinearModel ebcdicModel;
     private final ByteNgramFeatureExtractor extractor;
-    private final ByteNgramFeatureExtractor ebcdicExtractor;
     private final EnumSet<Rule> enabledRules;
     private final int maxProbeBytes;
 
     /**
-     * Load both models from their default classpath locations with all rules enabled
+     * Load the model from its default classpath location with all rules enabled
      * and default configuration.
      *
-     * @throws IOException if either model resource is missing or unreadable
+     * @throws IOException if the model resource is missing or unreadable
      */
     public MojibusterEncodingDetector() throws IOException {
         this(new Config());
     }
 
     /**
-     * Load both models from their default classpath locations using the supplied
+     * Load the model from its default classpath location using the supplied
      * {@link Config}.
      *
      * @param config configuration (e.g. custom {@code maxProbeBytes})
-     * @throws IOException if either model resource is missing or unreadable
+     * @throws IOException if the model resource is missing or unreadable
      */
     public MojibusterEncodingDetector(Config config) throws IOException {
         this(LinearModel.loadFromClasspath(DEFAULT_MODEL_RESOURCE),
-             LinearModel.loadFromClasspath(EBCDIC_MODEL_RESOURCE),
              EnumSet.allOf(Rule.class),
              config.maxProbeBytes);
     }
 
     /**
-     * Load both models from their default classpath locations using JSON configuration.
+     * Load the model from its default classpath location using JSON configuration.
      * Requires Jackson on the classpath.
      *
      * <p>Example JSON: {@code { "maxProbeBytes": 1024 }}
      *
      * @param jsonConfig JSON configuration
-     * @throws IOException if either model resource is missing or unreadable
+     * @throws IOException if the model resource is missing or unreadable
      */
     public MojibusterEncodingDetector(JsonConfig jsonConfig) throws IOException {
         this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
     /**
-     * Load the general model from a custom path on disk; the EBCDIC sub-model
-     * is still loaded from its default classpath location.  Useful for
-     * evaluation runs with different general-model candidates.
+     * Load the model from a custom path on disk.  Useful for evaluation runs
+     * with different model candidates.
      *
-     * @param modelPath path to the general model binary on disk
-     * @throws IOException if either model is missing or unreadable
+     * @param modelPath path to the model binary on disk
+     * @throws IOException if the model is missing or unreadable
      */
     public MojibusterEncodingDetector(java.nio.file.Path modelPath) throws IOException {
         this(LinearModel.loadFromPath(modelPath),
-             LinearModel.loadFromClasspath(EBCDIC_MODEL_RESOURCE),
              EnumSet.allOf(Rule.class),
              MAX_PROBE_BYTES);
     }
 
-    private MojibusterEncodingDetector(LinearModel model, LinearModel ebcdicModel,
-                                        EnumSet<Rule> rules, int maxProbeBytes) {
-        this.model           = model;
-        this.ebcdicModel     = ebcdicModel;
-        this.extractor       = new ByteNgramFeatureExtractor(model.getNumBuckets());
-        this.ebcdicExtractor = new ByteNgramFeatureExtractor(ebcdicModel.getNumBuckets());
-        this.enabledRules    = rules.isEmpty() ? EnumSet.noneOf(Rule.class) : EnumSet.copyOf(rules);
-        this.maxProbeBytes   = maxProbeBytes;
+    private MojibusterEncodingDetector(LinearModel model, EnumSet<Rule> rules, int maxProbeBytes) {
+        this.model        = model;
+        this.extractor    = new ByteNgramFeatureExtractor(model.getNumBuckets());
+        this.enabledRules = rules.isEmpty() ? EnumSet.noneOf(Rule.class) : EnumSet.copyOf(rules);
+        this.maxProbeBytes = maxProbeBytes;
     }
 
     /**
@@ -272,18 +244,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         if (probeBytes <= 0) {
             throw new IllegalArgumentException("probeBytes must be > 0, got: " + probeBytes);
         }
-        return new MojibusterEncodingDetector(this.model, this.ebcdicModel,
-                                               this.enabledRules, probeBytes);
+        return new MojibusterEncodingDetector(this.model, this.enabledRules, probeBytes);
     }
 
     /**
-     * Return a new detector that shares both models but runs only the specified
+     * Return a new detector that shares the model but runs only the specified
      * rules.  Use {@code EnumSet.noneOf(Rule.class)} for statistical-only mode.
-     * Neither model is reloaded; this is cheap to call.
+     * The model is not reloaded; this is cheap to call.
      */
     public MojibusterEncodingDetector withRules(EnumSet<Rule> rules) {
-        return new MojibusterEncodingDetector(this.model, this.ebcdicModel,
-                                               rules, this.maxProbeBytes);
+        return new MojibusterEncodingDetector(this.model, rules, this.maxProbeBytes);
     }
 
     @Override
@@ -294,26 +264,25 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         }
 
         byte[] probe = readProbe(input, maxProbeBytes);
-        // Strip BOM bytes before feature extraction. BOM detection is handled
-        // by BOMDetector (which runs earlier in the chain and returns DECLARATIVE).
-        // BOMs are excluded from training data; stripping ensures consistent
-        // model inference. A lying BOM (e.g. UTF-8 BOM on a Windows-1252 file)
-        // is caught by CharSoup comparing BOMDetector's DECLARATIVE claim against
-        // Mojibuster's byte-content analysis.
+        // Strip BOM bytes before feature extraction. BOMs are excluded from training
+        // data; stripping ensures consistent model inference. BOM detection is handled
+        // by BOMDetector (which runs earlier in the chain and returns DECLARATIVE), and
+        // CharSoup strips BOMs from raw bytes before language scoring so a BOM-detected
+        // charset is not disadvantaged against other candidates.
         probe = stripBom(probe);
         // An empty probe (e.g. empty file, or a file that was only a BOM) falls
         // through to detectAll where isPureAscii returns true for a zero-length
-        // array, yielding the same windows-1252 default as any other pure-ASCII probe.
+        // array, yielding windows-1252 as the default.
         return detectAll(probe, Integer.MAX_VALUE);
     }
 
     /**
      * Applies structural encoding rules that produce {@link EncodingResult.ResultType#STRUCTURAL}
      * results. Returns non-null only when a byte-level pattern unambiguously identifies the
-     * charset (ISO-2022 escape sequences, sparse valid UTF-8 multibyte sequences).
+     * charset (ISO-2022 escape sequences, valid UTF-8 grammar).
      *
-     * Pure ASCII is deliberately excluded — ASCII is compatible with virtually all
-     * single-byte encodings and is not structurally definitive.
+     * <p>Pure ASCII is deliberately excluded — ASCII is compatible with virtually all
+     * single-byte encodings and is not structurally definitive.</p>
      */
     private Charset applyStructuralRules(byte[] probe) {
         // ISO-2022 before ASCII: all three variants are 7-bit so checkAscii fires first.
@@ -321,22 +290,26 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         if (iso2022 != null) {
             return iso2022;
         }
-        // Sparse high-byte UTF-8: structurally valid UTF-8 with few non-ASCII bytes (< 5%).
-        // CJK and single-byte encodings with real content would have many more high bytes.
-        // We accept both DEFINITIVE_UTF8 and AMBIGUOUS from checkUtf8 (which counts only lead
-        // bytes for its ratio, so files with few 2-byte sequences may appear AMBIGUOUS even
-        // though they have valid multibyte sequences). NOT_UTF8 is excluded because it means
-        // at least one byte is structurally invalid UTF-8.
-        if (probe.length >= 16
-                && StructuralEncodingRules.checkUtf8(probe) != StructuralEncodingRules.Utf8Result.NOT_UTF8) {
-            int highCount = 0;
-            for (byte b : probe) {
-                if ((b & 0xFF) >= 0x80) {
-                    highCount++;
-                }
-            }
-            if (highCount > 0 && (float) highCount / probe.length < 0.05f) {
+        // UTF-8 structural check.  DEFINITIVE_UTF8 means every multi-byte sequence is
+        // valid *and* at least 1 % of bytes are high — this is genuine UTF-8 regardless
+        // of whether the high-byte ratio is sparse or dense.  The previous < 5 % threshold
+        // caused dense UTF-8 (e.g. text with many accented Latin characters) to fall through
+        // to the model, where EBCDIC labels could outscore UTF-8 on short probes.
+        if (probe.length >= 16) {
+            StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
+            if (utf8 == StructuralEncodingRules.Utf8Result.DEFINITIVE_UTF8) {
                 return StandardCharsets.UTF_8;
+            }
+            // AMBIGUOUS: < 1 % high bytes but all sequences structurally valid.
+            // Even a single valid multi-byte sequence in an otherwise-ASCII probe is
+            // strong evidence of UTF-8; single-byte encodings would produce invalid
+            // sequences at any meaningful high-byte density.
+            if (utf8 == StructuralEncodingRules.Utf8Result.AMBIGUOUS) {
+                for (byte b : probe) {
+                    if ((b & 0xFF) >= 0x80) {
+                        return StandardCharsets.UTF_8;
+                    }
+                }
             }
         }
         return null;
@@ -396,11 +369,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * <p>The pipeline is:
      * <ol>
      *   <li>Structural gates (ISO-2022, ASCII) — definitive, no model needed.</li>
-     *   <li>General model — returns one of ~23 labels or the routing label
-     *       {@code "EBCDIC"}.</li>
-     *   <li>If the general model returns {@code "EBCDIC"}, the EBCDIC sub-model
-     *       runs on the same probe and returns the specific variant
-     *       (IBM420-ltr/rtl, IBM424-ltr/rtl, IBM500).</li>
+     *   <li>Statistical model — covers all charsets including EBCDIC variants
+     *       (IBM420-ltr/rtl, IBM424-ltr/rtl, IBM500, IBM1047) as direct labels.</li>
      * </ol>
      * </p>
      *
@@ -438,11 +408,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         List<EncodingResult> results = runModel(probe, excludeUtf8, topN);
 
-        // If the general model flagged this as EBCDIC, route to the sub-model.
-        if (!results.isEmpty() && "EBCDIC".equals(results.get(0).getLabel())) {
-            return runEbcdicSubModel(probe, topN);
-        }
-
         // If the model had no evidence (probe too short or all tokens filtered), fall back to
         // windows-1252 at very low confidence rather than returning empty and letting
         // AutoDetectReader throw. CharSoup will override this with any DECLARATIVE hint.
@@ -464,16 +429,13 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
 
-        // For short probes the model has limited signal; widen the candidate set so
-        // that CharSoup's language arbitration can rescue the correct answer even when
-        // the gap between competitors exceeds LOGIT_GAP.
-        List<EncodingResult> results;
-        if (probe.length < 50) {
-            results = selectTopN(model, logits, 3);
-        } else if (probe.length < 100) {
-            results = selectTopN(model, logits, 2);
-        } else {
-            results = selectByLogitGap(model, logits, topN);
+        List<EncodingResult> results = selectByLogitGap(model, logits, topN);
+        // On short probes a single spurious candidate can dominate the logit gap window
+        // (e.g. x-EUC-TW scoring 58 on a 9-byte Shift_JIS filename while Shift_JIS scores 17),
+        // leaving the correct charset with no chance to be evaluated by grammar or CharSoup.
+        // For long probes, a single dominant candidate means genuine model confidence — trust it.
+        if (probe.length < SHORT_PROBE_THRESHOLD && results.size() < MIN_CANDIDATES) {
+            results = selectAtLeast(model, logits, MIN_CANDIDATES);
         }
 
         if (enabledRules.contains(Rule.ISO_TO_WINDOWS) && StructuralEncodingRules.hasC1Bytes(probe)) {
@@ -494,26 +456,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 && StructuralEncodingRules.hasGb18030FourByteSequence(probe)) {
             results = upgradeGbToGb18030(results);
         }
+        // Trim to topN after all rules have fired, not before.
         return results.subList(0, Math.min(topN, results.size()));
     }
 
-    /** Run the EBCDIC sub-model and return its specific variant result. */
-    private List<EncodingResult> runEbcdicSubModel(byte[] probe, int topN) {
-        int[] features = ebcdicExtractor.extract(probe);
-        float[] logits = ebcdicModel.predictLogits(features);
-        return selectByLogitGap(ebcdicModel, logits, topN);
-    }
-
-    /**
-     * Candidate selection: collect every charset whose logit is within
-     * {@link #LOGIT_GAP} points of the maximum, assigning confidence linearly
-     * within the window (1.0 at the top, 0.0 at the floor).
-     *
-     * <p>Softmax is intentionally avoided: it exponentially amplifies small logit
-     * differences, collapsing genuine ambiguity into a false 99%/1% split and
-     * hiding plausible alternatives that downstream arbitrators (e.g. CharSoup)
-     * should evaluate. Linear confidence within the gap preserves the signal.</p>
-     */
     /**
      * Maximum confidence assigned to a STATISTICAL model result.  Kept strictly
      * below 1.0 so that statistical results are never mistaken for STRUCTURAL or
@@ -523,67 +469,50 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static final float MAX_STATISTICAL_CONFIDENCE = 0.99f;
 
     /**
-     * Return the top {@code n} single-byte/CJK candidates by logit rank, regardless of gap.
-     * Used for short probes where the model has limited signal and we want
-     * CharSoup's language arbitration to have multiple candidates to compare.
-     * <p>
-     * Wide encodings (UTF-16/32) are excluded: stride-2 features can spuriously
-     * boost them on very short probes that lack the null-byte density that
-     * genuinely characterises UTF-16/32. A 9-byte filename without a BOM is
-     * never UTF-16/32 in practice.
-     * <p>
-     * Confidence is still scaled relative to the logit-gap window so that
-     * results remain in the statistical range below DECLARATIVE/STRUCTURAL.
+     * Minimum number of candidates always passed to downstream rules and CharSoup,
+     * regardless of the logit gap.  When the top candidate has a very high logit
+     * and all others fall outside the gap window, CharSoup would see only one option
+     * and cannot arbitrate.  Ensuring at least this many candidates lets grammar rules
+     * and language signal correct a dominant-but-wrong top candidate.
      */
-    private static List<EncodingResult> selectTopN(LinearModel m, float[] logits, int n) {
-        // Collect all positive-logit, non-excluded candidates with their array index.
-        // We sort by RAW LOGIT (not sigmoid) so that the model's actual ranking is
-        // preserved even when all logits are large-positive (sigmoid ≈ 1.0 for all).
-        // Example: GB18030=43, EUC-JP=28, Big5=21 — all sigmoid≈0.99 — would tie on
-        // sigmoid and fall back to label-insertion order; sorting by logit keeps GB18030 first.
-        List<int[]> candidates = new ArrayList<>(); // [label-index]
-        for (int i = 0; i < logits.length; i++) {
-            // logit ≤ 0 means sigmoid ≤ 0.5 — the model actively disfavours this encoding.
-            if (logits[i] <= 0) {
-                continue;
-            }
-            String lbl = m.getLabel(i);
-            if (isExcludedFromShortProbe(lbl)) {
-                continue;
-            }
-            if (labelToCharset(lbl) == null) {
-                continue;
-            }
-            candidates.add(new int[]{i});
-        }
-        // Sort descending by logit so model ranking is preserved.
-        candidates.sort((a, b) -> Float.compare(logits[b[0]], logits[a[0]]));
+    /**
+     * Probes shorter than this (in bytes) may produce a single dominant but wrong
+     * candidate (the logit gap window collapses to 1 result). Below this threshold,
+     * {@link #selectAtLeast} supplements the gap-window results up to {@link #MIN_CANDIDATES}
+     * so that grammar rules and CharSoup have real alternatives to evaluate.
+     */
+    private static final int SHORT_PROBE_THRESHOLD = 50;
 
-        // Take the top N and assign sigmoid confidence so downstream code has a meaningful score.
-        List<EncodingResult> result = new ArrayList<>(Math.min(n, candidates.size()));
-        for (int rank = 0; rank < Math.min(n, candidates.size()); rank++) {
-            int i = candidates.get(rank)[0];
-            String lbl = m.getLabel(i);
-            Charset cs = labelToCharset(lbl);
-            float conf = (1f / (1f + (float) Math.exp(-logits[i]))) * MAX_STATISTICAL_CONFIDENCE;
-            result.add(new EncodingResult(cs, conf, lbl, EncodingResult.ResultType.STATISTICAL));
-        }
-        return result;
-    }
+    /** Minimum candidates guaranteed to downstream rules on short probes. */
+    private static final int MIN_CANDIDATES = 8;
 
     /**
-     * Returns true for encodings that should be excluded from short-probe top-N selection.
-     * <ul>
-     *   <li>Wide encodings (UTF-16/32): stride-2 features spuriously boost them on short
-     *       probes that lack the null-byte density that genuinely characterises UTF-16/32.</li>
-     *   <li>EBCDIC family (IBM4xx, IBM500, "EBCDIC" routing label): EBCDIC has its own
-     *       dedicated sub-model pipeline and should never surface as a candidate for
-     *       short single-byte or CJK content.</li>
-     * </ul>
+     * Same as {@link #selectByLogitGap} but guarantees at least {@code minN} results
+     * by extending the window to include the next-best candidates by raw logit rank.
      */
-    private static boolean isExcludedFromShortProbe(String label) {
-        return label.startsWith("UTF-16") || label.startsWith("UTF-32")
-                || label.startsWith("IBM") || label.equals("EBCDIC");
+    private static List<EncodingResult> selectAtLeast(LinearModel m, float[] logits, int minN) {
+        // Collect all candidates with a valid charset, sorted by logit descending.
+        List<int[]> all = new ArrayList<>();
+        for (int i = 0; i < logits.length; i++) {
+            if (labelToCharset(m.getLabel(i)) != null) {
+                all.add(new int[]{i});
+            }
+        }
+        all.sort((a, b) -> Float.compare(logits[b[0]], logits[a[0]]));
+
+        float maxLogit = all.isEmpty() ? 0f : logits[all.get(0)[0]];
+        List<EncodingResult> results = new ArrayList<>(minN);
+        for (int rank = 0; rank < Math.min(minN, all.size()); rank++) {
+            int i = all.get(rank)[0];
+            String lbl = m.getLabel(i);
+            Charset cs = labelToCharset(lbl);
+            // Confidence scaled relative to the max logit so ordering is preserved.
+            float conf = maxLogit > 0
+                    ? Math.max(0f, logits[i] / maxLogit) * MAX_STATISTICAL_CONFIDENCE
+                    : 0f;
+            results.add(new EncodingResult(cs, conf, lbl, EncodingResult.ResultType.STATISTICAL));
+        }
+        return results;
     }
 
     private static List<EncodingResult> selectByLogitGap(LinearModel m, float[] logits, int topN) {
@@ -782,10 +711,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     public LinearModel getModel() {
         return model;
-    }
-
-    public LinearModel getEbcdicModel() {
-        return ebcdicModel;
     }
 
     public EnumSet<Rule> getEnabledRules() {

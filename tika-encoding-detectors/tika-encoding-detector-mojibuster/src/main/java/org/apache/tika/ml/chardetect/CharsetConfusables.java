@@ -74,8 +74,9 @@ import java.util.Set;
  * {@link #collapseGroups} for inference-time probability pooling (direction
  * does not matter when merging probability mass).
  * <p>
- * This class is kept in sync with {@code CONFUSABLE_GROUPS} and
- * {@code SUPERSET_OF} in {@code build_charset_training.py}.
+ * This class is kept in sync with the charset configuration in
+ * {@code BuildCharsetTrainingData} (see {@code CHARSET_JAVA} and the
+ * language-to-charset mappings).
  */
 public final class CharsetConfusables {
 
@@ -152,7 +153,29 @@ public final class CharsetConfusables {
                 // Cyrillic: differ only in C1 range
                 group("ISO-8859-5", "windows-1251"),
 
-                // KOI8 family: share all Cyrillic letters
+                // KOI8 family: share all 32 basic Russian Cyrillic letters at
+                // identical byte positions.  Pure Russian text is byte-identical
+                // in both encodings and cannot be distinguished by any byte-level
+                // classifier.
+                //
+                // IMPORTANT — this is a LOSSY confusable, unlike most others:
+                // KOI8-U reassigns some byte positions that KOI8-R uses for
+                // Russian characters.  Specifically, byte 0xA4 is Ё (capital)
+                // in KOI8-R but є (Ukrainian small e) in KOI8-U.  Predicting
+                // KOI8-U for a KOI8-R file will misrender Ё as є and two other
+                // characters.  Predicting KOI8-R for a KOI8-U file will
+                // misrender the Ukrainian letters Ї, І, Є, Ґ.
+                //
+                // Ukrainian text (containing Ї, І, Є, Ґ) IS distinguishable:
+                // those characters encode to different bytes in each variant.
+                // The model can correctly identify KOI8-U from Ukrainian content.
+                // The ambiguity is specific to pure-Russian content, where neither
+                // encoding can be preferred on byte evidence alone.
+                //
+                // This group is declared for soft-match evaluation (predicting
+                // either variant for a pure-Russian file is pragmatically
+                // acceptable), but callers that care about correct rendering of
+                // Ё should treat KOI8-R/KOI8-U as distinct.
                 group("KOI8-R", "KOI8-U"),
 
                 // Arabic
@@ -185,7 +208,24 @@ public final class CharsetConfusables {
                 // windows-874 is the training label; Java's canonical name for the
                 // same charset is "x-windows-874".  Both refer to the Thai Windows
                 // code page (superset of TIS-620).
-                group("windows-874", "x-windows-874")
+                group("windows-874", "x-windows-874"),
+
+                // IBM500 vs IBM1047: share 247 of 256 byte mappings. The 9
+                // differing positions involve low-byte characters (!, [, ], |)
+                // and the LF/NEL line terminator swap — all rare in prose text
+                // and mostly below 0x80, invisible to stride-1 features.
+                // Prose-level training data cannot reliably distinguish them;
+                // both decode each other's content correctly for typical text.
+                group("IBM500", "IBM1047"),
+
+                // IBM437 vs IBM850: IBM437's distinguishing bytes are box-drawing
+                // and graphical characters (0xB0–0xDF range) that never appear
+                // in prose text. IBM850 is the preferred Western European DOS
+                // code page; IBM437 is not trained as a separate class.
+                // This group exists so that evaluation tools and
+                // post-processing handle legacy files labelled "IBM437"
+                // gracefully by treating IBM850 as an equally acceptable result.
+                group("IBM437", "IBM850")
         );
         SYMMETRIC_GROUPS = Collections.unmodifiableList(sym);
 
@@ -198,6 +238,15 @@ public final class CharsetConfusables {
         supersetOf.put("GBK", "GB18030");
         // Traditional Chinese: Big5 ⊂ Big5-HKSCS
         supersetOf.put("Big5", "Big5-HKSCS");
+        // Japanese Windows: Shift_JIS ⊂ windows-31j (CP932).
+        // Java's Shift_JIS resolves to CP932 internally; training uses cp932
+        // bytes. Returning Shift_JIS for a windows-31j file is safe because
+        // every Shift_JIS decoder on the JVM actually uses the CP932 mapping.
+        supersetOf.put("Shift_JIS", "windows-31j");
+        // Korean Windows: EUC-KR ⊂ x-windows-949 (MS949).
+        // MS949 extends EUC-KR with additional Hangul syllables. Returning
+        // EUC-KR for an MS949 file is safe for all standard Korean content.
+        supersetOf.put("EUC-KR", "x-windows-949");
         // US-ASCII ⊂ UTF-8: every UTF-8 decoder handles ASCII bytes correctly,
         // so predicting UTF-8 for a US-ASCII file is always safe.
         supersetOf.put("US-ASCII", "UTF-8");
@@ -210,6 +259,10 @@ public final class CharsetConfusables {
         List<Set<String>> all = new ArrayList<>(sym);
         all.add(group("GB2312", "GBK", "GB18030")); // flattened chain
         all.add(group("Big5", "Big5-HKSCS"));
+        all.add(group("Shift_JIS", "windows-31j"));
+        all.add(group("EUC-KR", "x-windows-949"));
+        // IBM500/IBM1047 and IBM437/IBM850 are already in sym (symmetric groups),
+        // so they are included transitively — no extra entries needed here.
         GROUPS = Collections.unmodifiableList(all);
 
         // ----------------------------------------------------------------

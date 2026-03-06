@@ -76,9 +76,7 @@ public class EvalCharsetDetectors {
     );
     private static final Set<String> OOV_EXEMPT = Set.of(
             "US-ASCII", "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE",
-            "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN",
-            // Routing label used by the two-model EBCDIC pipeline: not a Java Charset
-            "EBCDIC"
+            "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN"
     );
 
     private static final String[] COL_NAMES = {"Stat", "+ISO", "+CJK", "All", "ICU4J", "juniv"};

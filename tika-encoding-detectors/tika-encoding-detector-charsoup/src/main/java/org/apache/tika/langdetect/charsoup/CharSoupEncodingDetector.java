@@ -149,6 +149,7 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
             context.setArbitrationInfo("empty-stream");
             return firstResult.getCharset();
         }
+        bytes = stripBomBytes(bytes);
 
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset candidate : uniqueCharsets) {
@@ -220,12 +221,24 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
                         context.setArbitrationInfo("scored-prefer-declared");
                         return declared;
                     }
+                    float declaredJunk = CharSoupLanguageDetector.junkRatio(declaredDecoded);
                     // Same-script peer group: language model cannot distinguish variants
                     // (e.g. ISO-8859-6 vs windows-1256 both produce valid Arabic text).
                     // Prefer the declaration when it decodes at least as cleanly as the winner.
-                    float declaredJunk = CharSoupLanguageDetector.junkRatio(declaredDecoded);
                     if (arePeers(bestCharset, declared) && declaredJunk <= winnerJunk) {
                         context.setArbitrationInfo("scored-prefer-declared-peer");
+                        return declared;
+                    }
+                    // DECLARATIVE result decodes cleanly and has a positive language signal:
+                    // trust the declaration over the language-model winner. The language scorer
+                    // can be fooled on short probes (e.g. 4 CJK code points from a wrong-endian
+                    // UTF-16 decode score higher than "test" in English), but a DECLARATIVE
+                    // charset that itself produces meaningful text is almost certainly correct.
+                    // A lying BOM or wrong meta-tag would produce high junk (replacement chars),
+                    // so the declaredJunk guard prevents false positives.
+                    float[] declaredLang = CharSoupLanguageDetector.maxLogitInfo(declaredDecoded);
+                    if (declaredJunk <= winnerJunk && declaredLang[1] > 0) {
+                        context.setArbitrationInfo("scored-prefer-declared-positive-lang");
                         return declared;
                     }
                 }
@@ -234,6 +247,58 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
 
         context.setArbitrationInfo("scored");
         return bestCharset;
+    }
+
+    /**
+     * Strip any leading byte-order mark from {@code bytes}, returning the
+     * suffix after the BOM, or the original array if no BOM is found.
+     * UTF-32 signatures are checked before UTF-16 because the UTF-32 LE BOM
+     * ({@code FF FE 00 00}) starts with the UTF-16 LE BOM ({@code FF FE}).
+     */
+    private static byte[] stripBomBytes(byte[] bytes) {
+        return bomCharsetName(bytes) != null ? Arrays.copyOfRange(bytes, bomLength(bytes), bytes.length) : bytes;
+    }
+
+    /**
+     * Return the Java charset name for a leading BOM, or {@code null} if none.
+     */
+    static String bomCharsetName(byte[] bytes) {
+        if (bytes.length >= 4
+                && (bytes[0] & 0xFF) == 0x00 && (bytes[1] & 0xFF) == 0x00
+                && (bytes[2] & 0xFF) == 0xFE && (bytes[3] & 0xFF) == 0xFF) {
+            return "UTF-32BE";
+        }
+        if (bytes.length >= 4
+                && (bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xFE
+                && (bytes[2] & 0xFF) == 0x00 && (bytes[3] & 0xFF) == 0x00) {
+            return "UTF-32LE";
+        }
+        if (bytes.length >= 3
+                && (bytes[0] & 0xFF) == 0xEF && (bytes[1] & 0xFF) == 0xBB
+                && (bytes[2] & 0xFF) == 0xBF) {
+            return "UTF-8";
+        }
+        if (bytes.length >= 2
+                && (bytes[0] & 0xFF) == 0xFE && (bytes[1] & 0xFF) == 0xFF) {
+            return "UTF-16BE";
+        }
+        if (bytes.length >= 2
+                && (bytes[0] & 0xFF) == 0xFF && (bytes[1] & 0xFF) == 0xFE) {
+            return "UTF-16LE";
+        }
+        return null;
+    }
+
+    private static int bomLength(byte[] bytes) {
+        if (bytes.length >= 4
+                && ((bytes[0] & 0xFF) == 0x00 || (bytes[0] & 0xFF) == 0xFF)
+                && (bytes[2] & 0xFF) == 0x00) {
+            return 4; // UTF-32
+        }
+        if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF) {
+            return 3; // UTF-8
+        }
+        return 2; // UTF-16
     }
 
     private byte[] readBytes(TikaInputStream tis) throws IOException {

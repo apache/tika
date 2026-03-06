@@ -81,8 +81,7 @@ public class TrainCharsetModel {
         boolean useAnchoredBigrams = false;
         boolean useStride2Bigrams = true;
         // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
-        // one target label at training time (e.g. collapse EBCDIC variants into
-        // a single "EBCDIC" routing label for the general model).
+        // one target label at training time (e.g. merge script variants into one class).
         Map<String, String> labelRemap = new HashMap<>();
 
         for (int i = 0; i < args.length; i++) {
@@ -152,7 +151,7 @@ public class TrainCharsetModel {
             System.err.println("  --lr F                   learning rate (default " + DEFAULT_LR + ")");
             System.err.println("  --max-samples-per-class N");
             System.err.println("  --label-remap src1:dst1,src2:dst2");
-            System.err.println("                           merge source labels into target (e.g. collapse EBCDIC variants)");
+            System.err.println("                           merge source labels into a single target label");
             System.err.println("  --no-uni                 disable unigram features");
             System.err.println("  --no-bi                  disable bigram features");
             System.err.println("  --tri / --no-tri         enable/disable trigram features (default: on)");
