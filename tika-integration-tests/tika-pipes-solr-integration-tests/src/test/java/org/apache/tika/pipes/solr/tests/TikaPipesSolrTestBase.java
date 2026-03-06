@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +43,8 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -54,6 +58,10 @@ import org.apache.tika.utils.SystemUtils;
 
 
 public abstract class TikaPipesSolrTestBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaPipesSolrTestBase.class);
+    private static final int SOLR_READY_TIMEOUT_MS = 30_000;
+    private static final int SOLR_READY_POLL_MS = 500;
 
     private final String collection = "testcol";
     private final int numDocs = 42;
@@ -95,9 +103,40 @@ public abstract class TikaPipesSolrTestBase {
                     .withCommand("-DzkRun");
         }
         solr.start();
+        waitForSolrReady();
+    }
 
-        // Ideally wanted to use TestContainers WaitStrategy but they were inconsistent
-        Thread.sleep(2000);
+    private void waitForSolrReady() {
+        String host = solr.getHost();
+        int port = solr.getMappedPort(8983);
+        String adminUrl = "http://" + host + ":" + port + "/solr/admin/info/system";
+        long deadline = System.currentTimeMillis() + SOLR_READY_TIMEOUT_MS;
+        LOG.info("Waiting for Solr to be ready at {}...", adminUrl);
+        while (System.currentTimeMillis() < deadline) {
+            try {
+                HttpURLConnection conn = (HttpURLConnection) new URL(adminUrl).openConnection();
+                conn.setConnectTimeout(1000);
+                conn.setReadTimeout(1000);
+                int code = conn.getResponseCode();
+                conn.disconnect();
+                if (code == 200) {
+                    LOG.info("Solr is ready (responded 200 in {} ms)",
+                            SOLR_READY_TIMEOUT_MS - (deadline - System.currentTimeMillis()));
+                    return;
+                }
+                LOG.debug("Solr returned status {}, retrying...", code);
+            } catch (Exception e) {
+                LOG.debug("Solr not ready yet: {}", e.getMessage());
+            }
+            try {
+                Thread.sleep(SOLR_READY_POLL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("Interrupted waiting for Solr", e);
+            }
+        }
+        LOG.error("Solr did not become ready within {} ms at {}", SOLR_READY_TIMEOUT_MS, adminUrl);
+        throw new RuntimeException("Solr did not become ready within " + SOLR_READY_TIMEOUT_MS + " ms");
     }
 
     @AfterEach
@@ -140,7 +179,15 @@ public abstract class TikaPipesSolrTestBase {
         zkPort = solr.getMappedPort(9983);
         solrEndpoint = "http://" + solrHost + ":" + solrPort + "/solr";
 
-        solr.execInContainer("/opt/solr/bin/solr", "create_collection", "-c", collection);
+        org.testcontainers.containers.Container.ExecResult createResult =
+                solr.execInContainer("/opt/solr/bin/solr", "create_collection", "-c", collection);
+        if (createResult.getExitCode() != 0) {
+            LOG.error("Failed to create Solr collection '{}'. Exit code: {}, stdout: {}, stderr: {}",
+                    collection, createResult.getExitCode(),
+                    createResult.getStdout(), createResult.getStderr());
+            throw new RuntimeException("Failed to create Solr collection: " + createResult.getStderr());
+        }
+        LOG.info("Created Solr collection '{}': {}", collection, createResult.getStdout().trim());
 
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
 
