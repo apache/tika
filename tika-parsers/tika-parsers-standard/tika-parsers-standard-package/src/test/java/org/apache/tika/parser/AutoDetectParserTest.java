@@ -55,7 +55,7 @@ public class AutoDetectParserTest extends TikaTest {
     // Easy to read constants for the MIME types:
     private static final String RAW = "application/octet-stream";
     private static final String EXCEL = "application/vnd.ms-excel";
-    private static final String HTML = "text/html; charset=ISO-8859-1";
+    private static final String HTML = "text/html; charset=windows-1252";
     private static final String PDF = "application/pdf";
     private static final String POWERPOINT = "application/vnd.ms-powerpoint";
     private static final String KEYNOTE = "application/vnd.apple.keynote";
@@ -63,7 +63,7 @@ public class AutoDetectParserTest extends TikaTest {
     private static final String NUMBERS = "application/vnd.apple.numbers";
     private static final String CHM = "application/vnd.ms-htmlhelp";
     private static final String RTF = "application/rtf";
-    private static final String PLAINTEXT = "text/plain; charset=ISO-8859-1";
+    private static final String PLAINTEXT = "text/plain; charset=windows-1252";
     private static final String UTF8TEXT = "text/plain; charset=UTF-8";
     private static final String WORD = "application/msword";
     private static final String XML = "application/xml";

@@ -274,19 +274,13 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     }
 
     /**
-     * Minimum confidence (inverse logit of the max logit) for a candidate to
-     * be considered a genuine language match. If no candidate exceeds this
-     * threshold, the comparison is inconclusive and {@code null} is returned.
-     * <p>
-     * 0.88 corresponds to a raw logit of ~2.0. Typical values:
-     * <ul>
-     *   <li>Arabic (windows-1256): 0.9999994 (logit +14.3)</li>
-     *   <li>UTF-8 garbled: 0.97 (logit +3.5)</li>
-     *   <li>EBCDIC garbage: 0.79 (logit +1.3) — below threshold</li>
-     *   <li>Short English: 0.025 (logit -3.7) — well below threshold</li>
-     * </ul>
+     * The language model's max pre-softmax logit must be positive (sigmoid &gt; 0.5)
+     * for a candidate to be considered a genuine language match. A positive logit
+     * means the model actively predicts some language as more likely than random;
+     * a negative logit means the text is too short, too junk-heavy, or too ambiguous
+     * for any language to stand out. When the best candidate's logit is positive,
+     * we always return it — the model's relative ordering is the signal we trust.
      */
-    private static final float MIN_CONFIDENCE_THRESHOLD = 0.88f;
 
     /**
      * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
@@ -307,24 +301,24 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * Compare multiple candidate texts and return the key of the one with
      * the strongest language signal. Candidates with a high ratio of
      * replacement or control characters are discarded first. Remaining
-     * candidates are scored using the inverse logit (sigmoid) of the
-     * model's maximum pre-softmax logit.
+     * candidates are scored using the model's maximum pre-softmax logit.
      * <p>
-     * Returns {@code null} if no candidate exceeds the minimum confidence
-     * threshold, indicating the comparison is inconclusive.
+     * The winning candidate is returned if its max logit is positive (sigmoid &gt; 0.5),
+     * meaning the model actively predicts some language as more likely than random.
+     * Returns {@code null} if the map is empty, all candidates are junk, or the
+     * best candidate's logit is non-positive (model has no real signal).
      *
      * @param candidates map of arbitrary keys to candidate text strings
      * @param <K>        key type (e.g., {@link java.nio.charset.Charset})
      * @return the key whose text has the strongest language signal,
-     *         or {@code null} if the map is empty or no candidate is
-     *         confident enough
+     *         or {@code null} if no candidate has a positive language signal
      */
     public <K> K compareLanguageSignal(Map<K, String> candidates) {
         if (candidates.isEmpty()) {
             return null;
         }
 
-        float bestConfidence = Float.NEGATIVE_INFINITY;
+        float bestMaxLogit = Float.NEGATIVE_INFINITY;
         K bestKey = null;
 
         for (Map.Entry<K, String> entry : candidates.entrySet()) {
@@ -337,30 +331,68 @@ public class CharSoupLanguageDetector extends LanguageDetector {
 
             int[] features = EXTRACTOR.extract(entry.getValue());
             float[] logits = MODEL.predictLogits(features);
-            float confidence = sigmoid(max(logits));
+            float maxLogit = max(logits);
 
-            LOG.debug("compareLanguageSignal: {} -> confidence={}",
-                    entry.getKey(), confidence);
+            LOG.debug("compareLanguageSignal: {} -> maxLogit={}", entry.getKey(), maxLogit);
 
-            if (confidence > bestConfidence) {
-                bestConfidence = confidence;
+            if (maxLogit > bestMaxLogit) {
+                bestMaxLogit = maxLogit;
                 bestKey = entry.getKey();
             }
         }
 
-        if (bestConfidence < MIN_CONFIDENCE_THRESHOLD) {
-            LOG.debug("compareLanguageSignal: inconclusive (bestConfidence={} < {})",
-                    bestConfidence, MIN_CONFIDENCE_THRESHOLD);
-            return null;
+        if (bestKey != null && bestMaxLogit > 0) {
+            return bestKey;
         }
 
-        return bestKey;
+        LOG.debug("compareLanguageSignal: inconclusive (bestMaxLogit={})", bestMaxLogit);
+        return null;
+    }
+
+    /**
+     * Returns diagnostic language-signal info for the given text: the label
+     * with the highest logit, its raw logit value, and sigmoid(maxLogit).
+     * Package-private for testing.
+     */
+    public static float[] maxLogitInfo(String text) {
+        int[] features = EXTRACTOR.extract(text);
+        float[] logits = MODEL.predictLogits(features);
+        int bestIdx = 0;
+        for (int i = 1; i < logits.length; i++) {
+            if (logits[i] > logits[bestIdx]) {
+                bestIdx = i;
+            }
+        }
+        return new float[]{bestIdx, logits[bestIdx], sigmoid(logits[bestIdx])};
+    }
+
+    /** Returns the label for a class index (for use alongside {@link #maxLogitInfo}). */
+    public static String labelAt(int idx) {
+        return MODEL.getLabel(idx);
     }
 
     /**
      * Ratio of junk characters (U+FFFD replacement + ISO control + C1
      * control range U+0080-U+009F) to total characters. High values
      * indicate a wrong-charset decoding.
+     * <p>
+     * TODO: consider also counting non-ASCII, non-alphabetic, non-digit characters
+     * (e.g. bullet U+2022, pilcrow U+00B6) as fractional junk (weight ~0.3).
+     * Single-byte encodings like windows-1256 assign punctuation/symbols to byte
+     * positions like 0x95 and 0xB6 that multi-byte encodings (Shift_JIS, GB18030)
+     * use as lead bytes for alphabetic characters.  When those bytes appear in text
+     * that should be meaningful (e.g. filenames), the single-byte interpretation
+     * "wastes" bytes on punctuation while the multi-byte interpretation yields 100%
+     * alphabetic content.  Counting such punctuation as partial junk would lower the
+     * MAX_JUNK_RATIO gate for those candidates and pass the decision to the language
+     * model sooner.  Needs careful tuning: legitimate body text can intentionally
+     * contain bullet lists, em-dashes, etc. in windows-125x encodings.
+     * Counter-example: Chinese GB18030 bytes decoded as UTF-16 produce pairs
+     * interpreted as Unicode code points — many of which happen to be alphabetic
+     * (Unicode has alphabetic characters scattered throughout the range), so
+     * alphabetic yield would look high even for complete mojibake.  The language
+     * model already handles this correctly; the alphabetic density heuristic alone
+     * would not.
      */
     static float junkRatio(String text) {
         if (text == null || text.isEmpty()) {
@@ -372,8 +404,23 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
             total++;
-            if (cp == 0xFFFD || Character.isISOControl(cp)) {
+            // U+FFFD = replacement char (wrong-charset decode)
+            // C1 control range 0x80-0x9F = garbage when a byte is decoded as ISO-8859-1
+            //   (those code points are never produced by correct Windows-125x decoding).
+            // Ordinary whitespace (tab, LF, CR, FF, VT) is not junk — it appears in
+            // source code and structured documents regardless of charset.
+            if (cp == 0xFFFD) {
                 junk++;
+            } else if (cp == 0xFFFE) {
+                // U+FFFE is the "wrong-endian BOM" / Unicode noncharacter.
+                // It never appears in correctly decoded text — a decoder that
+                // produces it has consumed the UTF-16 BOM bytes with the wrong
+                // byte order (e.g. UTF-16LE applied to a UTF-16BE stream).
+                junk++;
+            } else if (Character.isISOControl(cp)) {
+                if (cp != 0x09 && cp != 0x0A && cp != 0x0B && cp != 0x0C && cp != 0x0D) {
+                    junk++;
+                }
             }
         }
         return total == 0 ? 0f : (float) junk / total;

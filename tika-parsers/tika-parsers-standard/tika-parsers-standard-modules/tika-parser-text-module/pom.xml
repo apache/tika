@@ -31,8 +31,14 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.github.albfernandez</groupId>
-      <artifactId>juniversalchardet</artifactId>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-charsoup</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -41,6 +47,18 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-universal</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -74,7 +92,6 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</inputExclude>
             <inputExclude>src/test/resources/test-documents/**</inputExclude>
           </inputExcludes>
         </configuration>

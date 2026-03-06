@@ -24,11 +24,16 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Context object that collects encoding detection results from base
- * detectors. Stored in {@link org.apache.tika.parser.ParseContext} by
- * {@link DefaultEncodingDetector} so that the {@link MetaEncodingDetector}
- * can see all candidates and arbitrate. Removed after detection to
- * prevent contamination during recursive parsing.
+ * Context object that collects encoding detection results from base detectors.
+ * Stored in {@link org.apache.tika.parser.ParseContext} by
+ * {@link CompositeEncodingDetector} so that a {@link MetaEncodingDetector}
+ * can see all candidates and arbitrate. Removed after detection to prevent
+ * contamination during recursive parsing.
+ *
+ * <p>Each base detector contributes a ranked {@link List} of
+ * {@link EncodingResult}s. The context exposes the top result from each
+ * detector as the primary signal, and provides access to all candidates
+ * for richer arbitration strategies.</p>
  *
  * @since Apache Tika 3.2
  */
@@ -38,36 +43,64 @@ public class EncodingDetectorContext {
     private String arbitrationInfo;
 
     /**
-     * Record a detection result from a child detector.
+     * Record the ranked results from a child detector.
      *
-     * @param charset      the detected charset (must not be null)
-     * @param detectorName the simple class name of the detector
+     * @param encodingResults ranked results, highest confidence first; must not be empty
+     * @param detectorName    simple class name of the detector
      */
-    public void addResult(Charset charset, String detectorName) {
-        results.add(new Result(charset, detectorName));
+    public void addResult(List<EncodingResult> encodingResults, String detectorName) {
+        if (encodingResults != null && !encodingResults.isEmpty()) {
+            results.add(new Result(encodingResults, detectorName));
+        }
     }
 
     /**
-     * @return unmodifiable list of all results in detection order
+     * @return unmodifiable list of all per-detector results in detection order
      */
     public List<Result> getResults() {
         return Collections.unmodifiableList(results);
     }
 
     /**
-     * @return unique charsets in detection order
+     * Returns the unique charsets from ALL results of every detector,
+     * in detection order (top result first within each detector).
+     *
+     * <p>Using all candidates rather than just each detector's top-1 is
+     * important when a single detector returns a ranked list (e.g., Mojibuster
+     * on a short probe returns [windows-1252, windows-1250, Shift-JIS]). If
+     * only the top-1 were used, CharSoup would see a single charset and
+     * return "unanimous" without ever attempting arbitration.</p>
      */
     public Set<Charset> getUniqueCharsets() {
         Set<Charset> charsets = new LinkedHashSet<>();
         for (Result r : results) {
-            charsets.add(r.getCharset());
+            for (EncodingResult er : r.getEncodingResults()) {
+                charsets.add(er.getCharset());
+            }
         }
         return charsets;
     }
 
     /**
+     * Returns the highest confidence seen for the given charset across all
+     * detector results (not just top results). Useful for arbitrators that
+     * want to propagate the base detector's confidence for the winning charset.
+     */
+    public float getTopConfidenceFor(Charset charset) {
+        float best = 0f;
+        for (Result r : results) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                if (er.getCharset().equals(charset) && er.getConfidence() > best) {
+                    best = er.getConfidence();
+                }
+            }
+        }
+        return best;
+    }
+
+    /**
      * Set by the meta detector to describe how it reached its decision.
-     * Values: "unanimous", "compatible", "scored", "too-few-bigrams", "disabled".
+     * Values: "unanimous", "scored", "no-stream", "empty-stream", etc.
      */
     public void setArbitrationInfo(String info) {
         this.arbitrationInfo = info;
@@ -78,19 +111,44 @@ public class EncodingDetectorContext {
     }
 
     /**
-     * A single detection result pairing a charset with the detector that found it.
+     * A single detector's contribution: its ranked list of candidates and its name.
      */
     public static class Result {
-        private final Charset charset;
+        private final List<EncodingResult> encodingResults;
         private final String detectorName;
 
-        public Result(Charset charset, String detectorName) {
-            this.charset = charset;
+        public Result(List<EncodingResult> encodingResults, String detectorName) {
+            this.encodingResults = Collections.unmodifiableList(
+                    new ArrayList<>(encodingResults));
             this.detectorName = detectorName;
         }
 
+        /**
+         * All ranked results from this detector, highest confidence first.
+         */
+        public List<EncodingResult> getEncodingResults() {
+            return encodingResults;
+        }
+
+        /**
+         * The top-ranked charset from this detector.
+         */
         public Charset getCharset() {
-            return charset;
+            return encodingResults.get(0).getCharset();
+        }
+
+        /**
+         * The confidence of the top-ranked result from this detector.
+         */
+        public float getConfidence() {
+            return encodingResults.get(0).getConfidence();
+        }
+
+        /**
+         * The {@link EncodingResult.ResultType} of the top-ranked result from this detector.
+         */
+        public EncodingResult.ResultType getResultType() {
+            return encodingResults.get(0).getResultType();
         }
 
         public String getDetectorName() {
@@ -99,7 +157,7 @@ public class EncodingDetectorContext {
 
         @Override
         public String toString() {
-            return detectorName + "=" + charset.name();
+            return detectorName + "=" + encodingResults.get(0);
         }
     }
 }

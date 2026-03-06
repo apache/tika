@@ -1,8 +1,8 @@
 {
   "encoding-detectors": [
     {
-      "icu4j-encoding-detector": {
-        "stripMarkup": true
+      "html-encoding-detector": {
+        "markLimit": 65000
       }
     },
     {

@@ -42,6 +42,8 @@
     <module>tika-serialization</module>
     <module>tika-plugins-core</module>
     <module>tika-detectors</module>
+    <module>tika-ml</module>
+    <module>tika-encoding-detectors</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>

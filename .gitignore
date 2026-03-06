@@ -9,6 +9,8 @@ dependency-reduced-pom.xml
 *.ipr
 *.iws
 *.bin
+# Allow the bundled ML model resources
+!**/src/main/resources/**/*.bin
 nbactions.xml
 nb-configuration.xml
 *.DS_Store

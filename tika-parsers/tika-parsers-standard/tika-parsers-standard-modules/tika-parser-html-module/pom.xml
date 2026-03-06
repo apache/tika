@@ -31,6 +31,12 @@
 
   <dependencies>
     <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-html</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
     </dependency>
@@ -45,6 +51,18 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-text-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-encoding-detector-charsoup</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

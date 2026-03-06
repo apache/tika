@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import javax.xml.XMLConstants;
 
@@ -48,6 +49,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -158,8 +160,9 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         EncodingDetector encodingDetector = getEncodingDetector(context);
-        Charset charset = encodingDetector.detect(tis, metadata, context);
-        charset = charset == null ? DEFAULT_CHARSET : charset;
+        List<EncodingResult> encResults = encodingDetector.detect(tis, metadata, context);
+        Charset charset = encResults.isEmpty() ? DEFAULT_CHARSET
+                : encResults.get(0).getCharset();
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;
         if (previous == null || previous.startsWith("text/html")) {
