@@ -6,7 +6,7 @@ End-to-end integration tests for Apache Tika components.
 
 This module contains standalone end-to-end (E2E) tests for various Apache Tika distribution formats and deployment modes. Unlike unit and integration tests in the main Tika build, these E2E tests validate complete deployment scenarios using Docker containers and real-world test data.
 
-**Note:** This module is intentionally **NOT** included in the main Tika parent POM. It is designed to be built and run independently to avoid slowing down the primary build process.
+**Note:** This module is included in the main Tika build under the `e2e` Maven profile (`-Pe2e`). Run `mvn test -Pe2e` from the repo root to execute these tests.
 
 ## Test Modules
 
@@ -16,28 +16,28 @@ This module contains standalone end-to-end (E2E) tests for various Apache Tika d
 
 - Java 17 or later
 - Maven 3.6 or later
-- Docker and Docker Compose
-- Internet connection (for downloading test documents)
+- Internet connection (only when running tests that download external corpora, e.g. with `-Dtika.e2e.useGovdocs=true`)
+- Docker and Docker Compose (only required for Docker Compose mode; not needed for the default local-server mode)
 
 ## Building All E2E Tests
 
 From this directory:
 
 ```bash
-./mvnw clean install
+../mvnw clean install
 ```
 
 ## Running All E2E Tests
 
 ```bash
-./mvnw test
+../mvnw test
 ```
 
 ## Running Specific Test Module
 
 ```bash
 cd tika-grpc
-./mvnw test
+../../mvnw test
 ```
 
 ## Why Standalone?

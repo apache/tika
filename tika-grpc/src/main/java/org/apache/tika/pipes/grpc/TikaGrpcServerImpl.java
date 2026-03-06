@@ -71,6 +71,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.ignite.server.IgniteStoreServer;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -89,6 +90,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     ConfigStore configStore;
     Path tikaConfigPath;
     PluginManager pluginManager;
+    private IgniteStoreServer igniteStoreServer;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -153,24 +155,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private void startIgniteServer(ExtensionConfig config) {
         try {
             LOG.info("Starting embedded Ignite server for ConfigStore");
-            
-            // Parse config to get Ignite settings
+
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
             com.fasterxml.jackson.databind.JsonNode params = mapper.readTree(config.json());
-            
-            String cacheName = params.has("cacheName") ? params.get("cacheName").asText() : "tika-config-store";
-            String cacheMode = params.has("cacheMode") ? params.get("cacheMode").asText() : "REPLICATED";
+
+            String tableName = params.has("tableName") ? params.get("tableName").asText() :
+                               params.has("cacheName") ? params.get("cacheName").asText() : "tika_config_store";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
-            
-            // Direct instantiation - no reflection needed
-            org.apache.ignite.cache.CacheMode mode = org.apache.ignite.cache.CacheMode.valueOf(cacheMode);
-            org.apache.tika.pipes.ignite.server.IgniteStoreServer server = 
-                new org.apache.tika.pipes.ignite.server.IgniteStoreServer(cacheName, mode, instanceName);
-            
-            server.startAsync();
-            
+
+            igniteStoreServer = new IgniteStoreServer(tableName, instanceName);
+            igniteStoreServer.start();
+
             LOG.info("Embedded Ignite server started successfully");
-            
         } catch (Exception e) {
             LOG.error("Failed to start embedded Ignite server", e);
             throw new RuntimeException("Failed to start Ignite server", e);
@@ -476,6 +472,21 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     .withDescription("Failed to delete pipes iterator: " + e.getMessage())
                     .withCause(e)
                     .asRuntimeException());
+        }
+    }
+
+    /**
+     * Releases resources, including the embedded Ignite server if one was started.
+     */
+    public void shutdown() {
+        if (igniteStoreServer != null) {
+            LOG.info("Shutting down embedded Ignite server");
+            try {
+                igniteStoreServer.close();
+                igniteStoreServer = null;
+            } catch (Exception e) {
+                LOG.error("Error shutting down Ignite server", e);
+            }
         }
     }
 }

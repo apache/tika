@@ -1,12 +1,12 @@
 # Tika gRPC End-to-End Tests
 
-End-to-end integration tests for Apache Tika gRPC Server using Testcontainers.
+End-to-end integration tests for Apache Tika gRPC Server.
 
 ## Overview
 
 This test module validates the functionality of Apache Tika gRPC Server by:
-- Starting a tika-grpc Docker container using Docker Compose
-- Loading test documents from the GovDocs1 corpus
+- Starting a local tika-grpc server using the Maven exec plugin (default)
+- Parsing small committed test fixture documents
 - Testing various fetchers (filesystem, Ignite config store, etc.)
 - Verifying parsing results and metadata extraction
 
@@ -14,130 +14,70 @@ This test module validates the functionality of Apache Tika gRPC Server by:
 
 - Java 17 or later
 - Maven 3.6 or later
-- Docker and Docker Compose
-- Internet connection (for downloading test documents)
-- Docker image `apache/tika-grpc:local` (see below)
+- Docker and Docker Compose (only required when using `tika.e2e.useLocalServer=false`)
 
 ## Building
 
 ```bash
-./mvnw clean install
+../../mvnw clean install
 ```
 
 ## Running Tests
 
-### Run all tests
+### Run all tests (default: local server mode, committed fixtures)
 
 ```bash
-./mvnw test
+../../mvnw test
 ```
 
 ### Run specific test
 
 ```bash
-./mvnw test -Dtest=FileSystemFetcherTest
-./mvnw test -Dtest=IgniteConfigStoreTest
+../../mvnw test -Dtest=FileSystemFetcherTest
+../../mvnw test -Dtest=IgniteConfigStoreTest
 ```
 
-### Configure test document range
+### Test with the full GovDocs1 corpus (opt-in)
 
-By default, only the first batch of GovDocs1 documents (001.zip) is downloaded. To test with more documents:
+By default tests use small committed fixture files. To run against the real GovDocs1 corpus, pass `-Dtika.e2e.useGovdocs=true` to trigger a download:
 
 ```bash
-./mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5
+../../mvnw test -Dtika.e2e.useGovdocs=true
 ```
 
-This will download and test with batches 001.zip through 005.zip.
-
-### Limit number of documents to process
-
-To limit the test to only process a specific number of documents (useful for quick testing):
+`govdocs1.fromIndex` and `govdocs1.toIndex` control which zip files are downloaded (default: zip 001 only). To fetch a wider range or cap the number of documents parsed:
 
 ```bash
-./mvnw test -Dcorpa.numdocs=10
-```
-
-This will process only the first 10 documents instead of all documents in the corpus. Omit this parameter or set to -1 to process all documents.
-
-**Examples:**
-
-```bash
-# Test with just 5 documents
-./mvnw test -Dcorpa.numdocs=5
-
-# Test with 100 documents from multiple batches
-./mvnw test -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=2 -Dcorpa.numdocs=100
-
-# Test all documents (default behavior)
-./mvnw test
+../../mvnw test -Dtika.e2e.useGovdocs=true -Dgovdocs1.fromIndex=1 -Dgovdocs1.toIndex=5 -Dcorpus.numDocs=100
 ```
 
 ## Test Structure
 
 - `ExternalTestBase.java` - Base class for all tests
-  - Manages Docker Compose containers
-  - Downloads and extracts GovDocs1 test corpus
+  - Manages local server or Docker Compose containers
   - Provides utility methods for gRPC communication
 
 - `filesystem/FileSystemFetcherTest.java` - Tests for filesystem fetcher
   - Tests fetching and parsing files from local filesystem
-  - Verifies all documents are processed
 
 - `ignite/IgniteConfigStoreTest.java` - Tests for Ignite config store
   - Tests configuration storage and retrieval via Ignite
-  - Validates config persistence
 
-## GovDocs1 Test Corpus
+## Docker Mode
 
-The tests use the [GovDocs1](https://digitalcorpora.org/corpora/govdocs) corpus, a collection of real-world documents from US government websites. Documents are automatically downloaded and cached in `target/govdocs1/`.
-
-## Docker Image
-
-The tests expect a Docker image named `apache/tika-grpc:local`. Build one using:
+To run against a Docker Compose deployment instead of a local server:
 
 ```bash
-cd /path/to/tika-docker/tika-grpc
-./build-from-branch.sh -l /path/to/tika -t local
+../../mvnw test -Dtika.e2e.useLocalServer=false -Dtika.docker.compose.file=/path/to/docker-compose.yml
 ```
 
-Or build from the main Tika repository and tag it:
+The Docker image `apache/tika-grpc:local` can be built from the Tika root:
 
 ```bash
 cd /path/to/tika
 ./mvnw clean install -DskipTests
-cd tika-grpc
-# Follow tika-grpc Docker build instructions
+# then follow tika-grpc Docker build instructions
 ```
-
-## Sample Configurations
-
-The `sample-configs/` directory contains example Tika configuration files for various scenarios:
-- `customocr/` - Custom OCR configurations
-- `grobid/` - GROBID PDF parsing configuration
-- `ignite/` - Ignite config store examples
-- `ner/` - Named Entity Recognition configuration
-- `vision/` - Computer vision and image analysis configs
-
-## Logs
-
-Test logs are output to console. Docker container logs are also captured and displayed.
-
-## Troubleshooting
-
-**Container fails to start:**
-- Ensure Docker is running
-- Check that port 50052 is available
-- Verify the `apache/tika-grpc:local` image exists: `docker images | grep tika-grpc`
-
-**Tests timeout:**
-- Increase timeout in test class
-- Check Docker container logs for errors
-- Ensure sufficient memory is available to Docker
-
-**Download failures:**
-- Check internet connection
-- GovDocs1 files are downloaded from digitalcorpora.org
-- Downloaded files are cached in `target/govdocs1/`
 
 ## License
 

@@ -297,7 +297,7 @@
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.2.0</maven.antrun.version>
     <maven.assembly.version>3.8.0</maven.assembly.version>
-    <maven.bundle.version>6.0.0</maven.bundle.version>
+    <maven.bundle.version>6.0.2</maven.bundle.version>
     <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.5.5</maven.failsafe.version>
     <maven.surefire.version>3.5.5</maven.surefire.version>
@@ -314,8 +314,8 @@
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.63.0</google.cloud.version>
-    <aws2.version>2.42.3</aws2.version>
+    <google.cloud.version>2.64.0</google.cloud.version>
+    <aws2.version>2.42.5</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -401,7 +401,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.1.0-M1</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>7.5.7</junrar.version>
+    <junrar.version>7.5.8</junrar.version>
     <jwarc.version>0.35.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
@@ -412,12 +412,13 @@
     <mchange.version>0.4.0</mchange.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
+    <micronaut.version>3.10.5</micronaut.version>
     <mime4j.version>0.8.13</mime4j.version>
-    <mockito.version>5.21.0</mockito.version>
-    <mockito-junit-jupiter.version>5.21.0</mockito-junit-jupiter.version>
+    <mockito.version>5.22.0</mockito.version>
+    <mockito-junit-jupiter.version>5.22.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.10.Final</netty.version>
-    <oak.jackrabbit.version>1.90.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>1.92.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.7</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -437,13 +438,19 @@
     <slf4j.version>2.0.17</slf4j.version>
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
-    <solrj.version>9.10.0</solrj.version>
+    <!-- TODO (incomplete) if updating to solrj 10:
+     https://solr.apache.org/guide/solr/latest/upgrade-notes/major-changes-in-solr-10.html
+     add solr-solrj-jetty artifact, add log4j
+     Http2SolrClient -> HttpJettySolrClient 
+     LBHttpSolrClient -> LBHttp2SolrClient -> LBJettySolrClient (doesn't work)
+     -->
+    <solrj.version>9.10.1</solrj.version>
     <spring.version>7.0.5</spring.version>
     <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
-    <tukaani.version>1.11</tukaani.version>
+    <tukaani.version>1.12</tukaani.version>
     <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
@@ -681,7 +688,7 @@
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
-        <version>2.47.0</version>
+        <version>2.48.0</version>
       </dependency>
       <!-- avoid dependency convergence error in Google Cloud Storage fetcher
            starting with grpc 1.79.0 with google cloud 2.62.1 -->
@@ -1144,6 +1151,94 @@
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
       </dependency>
+      <!-- Ignite 3.x convergence fixes -->
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>4.7.7</version>
+      </dependency>
+      <dependency>
+        <groupId>org.yaml</groupId>
+        <artifactId>snakeyaml</artifactId>
+        <version>2.6</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.validation</groupId>
+        <artifactId>validation-api</artifactId>
+        <version>2.0.1.Final</version>
+      </dependency>
+      <!-- Pin versions required by Apache Ignite 3.x transitive dependencies -->
+      <!-- using micronaut-bom fails with "TestEngine with ID 'junit-jupiter' failed to discover tests" -->
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-inject</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-runtime</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-server</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-websocket</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-netty</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-validation</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-http-client-core</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micronaut</groupId>
+        <artifactId>micronaut-core</artifactId>
+        <version>${micronaut.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.swagger.core.v3</groupId>
+        <artifactId>swagger-annotations</artifactId>
+        <version>2.2.44</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>2.3.10</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains</groupId>
+        <artifactId>annotations</artifactId>
+        <version>26.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>2.0.1.MR</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -1475,7 +1570,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.2.1</version>
+        <version>3.3.0</version>
         <configuration>
           <java>
             <includes>

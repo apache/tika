@@ -2,6 +2,8 @@
   "plugin-roots": ["/var/cache/tika/plugins"],
   "pipes": {
     "numClients": 1,
+    "configStoreType": "ignite",
+    "configStoreParams": "{\"tableName\": \"tika_e2e_test\", \"igniteInstanceName\": \"TikaE2ETest\", \"replicas\": 1, \"partitions\": 10, \"autoClose\": true}",
     "forkedJvmArgs": [
       "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
       "--add-opens=java.base/jdk.internal.misc=ALL-UNNAMED",
@@ -28,5 +30,23 @@
       "--add-opens=java.management/sun.management=ALL-UNNAMED",
       "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
     ]
-  }
+  },
+  "fetchers": [
+    {
+      "fs": {
+        "staticFetcher": {
+          "basePath": "target/govdocs1"
+        }
+      }
+    }
+  ],
+  "emitters": [
+    {
+      "fs": {
+        "defaultEmitter": {
+          "basePath": "/tmp/output"
+        }
+      }
+    }
+  ]
 }

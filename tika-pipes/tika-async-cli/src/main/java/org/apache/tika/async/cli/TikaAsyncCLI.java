@@ -64,12 +64,13 @@ public class TikaAsyncCLI {
         options.addOption("i", "inputDir", true, "input directory");
         options.addOption("o", "outputDir", true, "output directory");
         options.addOption("n", "numClients", true, "number of forked clients");
-        options.addOption("X", "Xmx", true, "heap for the forked clients in usual jvm heap amount, e.g. -X 1g");
-        options.addOption("?", "help", false, "this help message");
+        options.addOption(null, "Xmx", true, "heap for the forked clients, e.g. --Xmx 1g");
+        options.addOption("h", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
-        options.addOption("h", "handlerType", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
+        options.addOption(null, "handler", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
         options.addOption("p", "pluginsDir", true, "plugins directory");
-        //options.addOption("l", "fileList", true, "file list");
+        options.addOption("l", "fileList", true,
+                "file containing one path per line (relative to inputDir or absolute)");
         options.addOption("c", "config", true, "tikaConfig.json");
         options.addOption("z", "unzipShallow", false, "extract raw bytes from direct attachments only (depth=1)");
         options.addOption("Z", "unzipRecursive", false, "extract raw bytes from all attachments recursively");
@@ -110,33 +111,15 @@ public class TikaAsyncCLI {
 
         SimpleAsyncConfig simpleAsyncConfig = parseCommandLine(args);
 
-        Path tikaConfig = StringUtils.isBlank(simpleAsyncConfig.getTikaConfig()) ? null : Paths.get(simpleAsyncConfig.getTikaConfig());
-        Path tmpTikaConfig = null;
-        PipesIterator pipesIterator = null;
-
+        Path tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".json");
         try {
-            if (tikaConfig == null) {
-                tmpTikaConfig = Files.createTempFile("tika-async-tmp-", ".json");
-                tikaConfig = tmpTikaConfig;
-                PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, tikaConfig);
-                pluginsWriter.write(tikaConfig);
-            } else {
-                // User provided a config - ensure plugin-roots is set
-                tikaConfig = ensurePluginRoots(tikaConfig, simpleAsyncConfig.getPluginsDir());
-                if (!tikaConfig.equals(Paths.get(simpleAsyncConfig.getTikaConfig()))) {
-                    // A new merged config was created, mark for cleanup
-                    tmpTikaConfig = tikaConfig;
-                }
-            }
+            PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, tmpTikaConfig);
+            pluginsWriter.write(tmpTikaConfig);
 
-            pipesIterator = buildPipesIterator(tikaConfig, simpleAsyncConfig);
-
-
-            processWithTikaConfig(pipesIterator, tikaConfig, simpleAsyncConfig);
+            PipesIterator pipesIterator = buildPipesIterator(tmpTikaConfig, simpleAsyncConfig);
+            processWithTikaConfig(pipesIterator, tmpTikaConfig, simpleAsyncConfig);
         } finally {
-            if (tmpTikaConfig != null) {
-                Files.delete(tmpTikaConfig);
-            }
+            Files.deleteIfExists(tmpTikaConfig);
         }
     }
 
@@ -144,6 +127,14 @@ public class TikaAsyncCLI {
     private static PipesIterator buildPipesIterator(Path pluginsConfig, SimpleAsyncConfig simpleAsyncConfig) throws TikaConfigException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfig);
         String inputDirString = simpleAsyncConfig.getInputDir();
+
+        // If a file list is provided, use it
+        if (!StringUtils.isBlank(simpleAsyncConfig.getFileList())) {
+            Path fileListPath = Paths.get(simpleAsyncConfig.getFileList());
+            Path basePath = StringUtils.isBlank(inputDirString) ? null : Paths.get(inputDirString);
+            return new FileListPipesIterator(fileListPath, basePath);
+        }
+
         if (StringUtils.isBlank(inputDirString)) {
             Optional<PipesIterator> pipesIteratorOpt =  PipesIteratorManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
             if (pipesIteratorOpt.isEmpty()) {
@@ -196,8 +187,8 @@ public class TikaAsyncCLI {
         if (line.hasOption("o")) {
             outputDir = line.getOptionValue("o");
         }
-        if (line.hasOption("X")) {
-            xmx = line.getOptionValue("X");
+        if (line.hasOption("Xmx")) {
+            xmx = line.getOptionValue("Xmx");
         }
         if (line.hasOption("T")) {
             timeoutMs = Long.parseLong(line.getOptionValue("T"));
@@ -216,8 +207,8 @@ public class TikaAsyncCLI {
         } else if (line.hasOption("z")) {
             extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.SHALLOW;
         }
-        if (line.hasOption('h')) {
-            handlerType = getHandlerType(line.getOptionValue('h'));
+        if (line.hasOption("handler")) {
+            handlerType = getHandlerType(line.getOptionValue("handler"));
         }
         if (line.hasOption('a')) {
             asyncConfig = line.getOptionValue('a');
@@ -284,6 +275,11 @@ public class TikaAsyncCLI {
                     outputDir = Paths.get("output").toAbsolutePath().toString();
                 }
             }
+        }
+
+        // If fileList is provided without an outputDir, default to "output"
+        if (fileList != null && outputDir == null) {
+            outputDir = Paths.get("output").toAbsolutePath().toString();
         }
 
         return new SimpleAsyncConfig(inputDir, outputDir,
@@ -392,6 +388,37 @@ public class TikaAsyncCLI {
     private static final String DEFAULT_PLUGINS_DIR = "plugins";
 
     /**
+     * Resolves the default plugins directory. Looks for a "plugins" directory
+     * next to the running jar first, then falls back to the current working directory.
+     *
+     * @return the resolved plugins directory path, or "plugins" if neither location exists
+     */
+    static String resolveDefaultPluginsDir() {
+        try {
+            Path jarPath = Paths.get(
+                    TikaAsyncCLI.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+            Path jarDir = jarPath.getParent();
+            if (jarDir != null) {
+                // The jar is typically in lib/, so look for plugins/ as a sibling of lib/
+                Path parent = jarDir.getParent();
+                if (parent != null) {
+                    Path pluginsDir = parent.resolve(DEFAULT_PLUGINS_DIR);
+                    if (Files.isDirectory(pluginsDir)) {
+                        return pluginsDir.toAbsolutePath().toString();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fall through to cwd-relative
+        }
+        Path cwdPlugins = Paths.get(DEFAULT_PLUGINS_DIR);
+        if (Files.isDirectory(cwdPlugins)) {
+            return cwdPlugins.toAbsolutePath().toString();
+        }
+        return DEFAULT_PLUGINS_DIR;
+    }
+
+    /**
      * Ensures plugin-roots is set in the config. If missing, creates a merged config
      * with a default plugin-roots value.
      *
@@ -410,10 +437,13 @@ public class TikaAsyncCLI {
 
         // Need to add plugin-roots
         ObjectNode mutableRoot = (ObjectNode) rootNode;
-        String pluginString = StringUtils.isBlank(pluginsDir) ? DEFAULT_PLUGINS_DIR : pluginsDir;
-        Path plugins = Paths.get(pluginString);
-        if (Files.isDirectory(plugins)) {
-            pluginString = plugins.toAbsolutePath().toString();
+        String pluginString;
+        if (!StringUtils.isBlank(pluginsDir)) {
+            Path plugins = Paths.get(pluginsDir);
+            pluginString = Files.isDirectory(plugins) ?
+                    plugins.toAbsolutePath().toString() : pluginsDir;
+        } else {
+            pluginString = resolveDefaultPluginsDir();
         }
         mutableRoot.put("plugin-roots", pluginString);
 

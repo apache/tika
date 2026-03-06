@@ -16,103 +16,150 @@
  */
 package org.apache.tika.pipes.ignite.server;
 
-import org.apache.ignite.Ignite;
-import org.apache.ignite.IgniteCache;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.configuration.CacheConfiguration;
-import org.apache.ignite.configuration.IgniteConfiguration;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.ignite.IgniteServer;
+import org.apache.ignite.InitParameters;
+import org.apache.ignite.table.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.pipes.ignite.ExtensionConfigDTO;
-
 /**
- * Embedded Ignite server that hosts the distributed cache.
- * This runs as a background thread within the tika-grpc process.
- * Tika gRPC and forked PipesServer instances connect as clients.
+ * Embedded Ignite 3.x server node that hosts the config store table.
+ * The {@link org.apache.tika.pipes.ignite.IgniteConfigStore} connects to this node as a thin client.
  */
 public class IgniteStoreServer implements AutoCloseable {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(IgniteStoreServer.class);
-    private static final String DEFAULT_CACHE_NAME = "tika-config-store";
-    private static final String DEFAULT_INSTANCE_NAME = "TikaIgniteServer";
-    
-    private Ignite ignite;
-    private final String cacheName;
-    private final CacheMode cacheMode;
-    private final String instanceName;
-    
+    private static final String DEFAULT_TABLE_NAME = "tika_config_store";
+    private static final String DEFAULT_NODE_NAME = "TikaIgniteServer";
+
+    private IgniteServer node;
+    private final String tableName;
+    private final String nodeName;
+    private final Path workDir;
+
     public IgniteStoreServer() {
-        this(DEFAULT_CACHE_NAME, CacheMode.REPLICATED, DEFAULT_INSTANCE_NAME);
+        this(DEFAULT_TABLE_NAME, DEFAULT_NODE_NAME);
     }
-    
-    public IgniteStoreServer(String cacheName, CacheMode cacheMode, String instanceName) {
-        this.cacheName = cacheName;
-        this.cacheMode = cacheMode;
-        this.instanceName = instanceName;
+
+    public IgniteStoreServer(String tableName, String nodeName) {
+        this.tableName = tableName;
+        this.nodeName = nodeName;
+        this.workDir = Paths.get(System.getProperty("ignite.work.dir",
+                System.getProperty("java.io.tmpdir") + "/tika-ignite-work"));
     }
-    
+
     /**
-     * Start the Ignite server node in a background daemon thread.
+     * Start the Ignite server node and initialize the cluster synchronously.
      */
-    public void startAsync() {
-        Thread serverThread = new Thread(() -> {
-            try {
-                start();
-            } catch (Exception e) {
-                LOG.error("Failed to start Ignite server", e);
-            }
-        }, "IgniteServerThread");
-        serverThread.setDaemon(true);
-        serverThread.start();
-        
-        // Wait for server to initialize
+    public void start() throws Exception {
+        LOG.info("Starting Ignite 3.x server: node={}, table={}, workDir={}",
+                nodeName, tableName, workDir);
+
+        if (Files.exists(workDir)) {
+            deleteDirectory(workDir);
+        }
+        Files.createDirectories(workDir);
+
+        Path configPath = workDir.resolve("ignite-config.conf");
+        String config = """
+                ignite {
+                  network {
+                    port = 3344
+                    nodeFinder {
+                      netClusterNodes = [ "localhost:3344" ]
+                    }
+                  }
+                  clientConnector {
+                    port = 10800
+                  }
+                }
+                """;
+        Files.writeString(configPath, config);
+
+        node = IgniteServer.builder(nodeName, configPath, workDir)
+                .serviceLoaderClassLoader(Thread.currentThread().getContextClassLoader())
+                .build();
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            node.startAsync().get();
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            LOG.error("Ignite startup failed. Root cause: {}", cause.getMessage(), cause);
+            throw new RuntimeException("Ignite server startup failed", cause);
+        }
+
+        InitParameters initParameters = InitParameters.builder()
+                .clusterName("tika-cluster")
+                .metaStorageNodes(node)
+                .build();
+        node.initClusterAsync(initParameters).get();
+
+        Thread.sleep(2000);
+
+        createTable();
+
+        LOG.info("Ignite server is ready");
+    }
+
+    private void createTable() {
+        try {
+            // Create a single-replica distribution zone for single-node clusters.
+            // Without REPLICAS=1, the default zone may require multiple replicas,
+            // causing "Mandatory nodes was excluded from mapping" errors on 1-node clusters.
+            String createZoneSql = "CREATE ZONE IF NOT EXISTS tika_zone " +
+                    "WITH REPLICAS=1, PARTITIONS=10, STORAGE_PROFILES='default'";
+            node.api().sql().execute(null, createZoneSql);
+            LOG.info("Distribution zone 'tika_zone' created/verified");
+
+            Table existingTable = node.api().tables().table(tableName);
+            if (existingTable != null) {
+                LOG.info("Table {} already exists", tableName);
+                return;
+            }
+
+            String createTableSql = String.format(Locale.ROOT,
+                    "CREATE TABLE IF NOT EXISTS %s (" +
+                    "  id VARCHAR PRIMARY KEY," +
+                    "  name VARCHAR," +
+                    "  json VARCHAR(10000)" +
+                    ") ZONE tika_zone",
+                    tableName);
+
+            node.api().sql().execute(null, createTableSql);
+            LOG.info("Table {} created successfully", tableName);
+        } catch (Exception e) {
+            LOG.error("Failed to create table: {}", tableName, e);
+            throw new RuntimeException("Failed to create table", e);
         }
     }
-    
-    private void start() throws Exception {
-        LOG.info("Starting Ignite server: instance={}, cache={}, mode={}", 
-            instanceName, cacheName, cacheMode);
-        
-        // Disable Ignite's Object Input Filter autoconfiguration to avoid conflicts
-        System.setProperty("IGNITE_ENABLE_OBJECT_INPUT_FILTER_AUTOCONFIGURATION", "false");
-        
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setIgniteInstanceName(instanceName);
-        cfg.setClientMode(false); // Server mode
-        cfg.setPeerClassLoadingEnabled(false); // Disable to avoid classloader conflicts
-        
-        // Set work directory to /var/cache/tika to match Tika's cache location
-        cfg.setWorkDirectory(System.getProperty("ignite.work.dir", "/var/cache/tika/ignite-work"));
-        
-        ignite = Ignition.start(cfg);
-        
-        CacheConfiguration<String, ExtensionConfigDTO> cacheCfg = 
-            new CacheConfiguration<>(cacheName);
-        cacheCfg.setCacheMode(cacheMode);
-        cacheCfg.setBackups(cacheMode == CacheMode.PARTITIONED ? 1 : 0);
-        
-        IgniteCache<String, ExtensionConfigDTO> cache = ignite.getOrCreateCache(cacheCfg);
-        
-        LOG.info("Ignite server started successfully with cache: {}", cache.getName());
-        LOG.info("Ignite topology: {} nodes", ignite.cluster().nodes().size());
-    }
-    
+
     public boolean isRunning() {
-        return ignite != null;
+        return node != null;
     }
-    
+
+    private void deleteDirectory(Path dir) throws Exception {
+        Files.walk(dir)
+                .sorted((a, b) -> b.compareTo(a))
+                .forEach(path -> {
+                    try {
+                        Files.delete(path);
+                    } catch (Exception e) {
+                        LOG.warn("Failed to delete {}", path, e);
+                    }
+                });
+    }
+
     @Override
     public void close() {
-        if (ignite != null) {
-            LOG.info("Stopping Ignite server: {}", instanceName);
-            ignite.close();
-            ignite = null;
+        if (node != null) {
+            LOG.info("Stopping Ignite server: {}", nodeName);
+            node.shutdown();
+            node = null;
         }
     }
 }

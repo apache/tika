@@ -18,18 +18,17 @@ package org.apache.tika.pipes.ignite.config;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.ignite.cache.CacheMode;
 
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * Configuration for IgniteConfigStore.
- * 
- * Example JSON configuration:
+ * Configuration for {@link org.apache.tika.pipes.ignite.IgniteConfigStore}.
+ *
+ * <p>Example JSON configuration:
  * <pre>
  * {
- *   "cacheName": "my-tika-cache",
- *   "cacheMode": "REPLICATED",
+ *   "tableName": "my-tika-table",
+ *   "replicas": 2,
  *   "igniteInstanceName": "MyTikaCluster",
  *   "autoClose": true
  * }
@@ -50,45 +49,28 @@ public class IgniteConfigStoreConfig {
         }
     }
 
-    private String cacheName = "tika-config-store";
-    private String cacheMode = "REPLICATED";
+    private String tableName = "tika_config_store";
+    private int replicas = 2;
     private String igniteInstanceName = "TikaIgniteConfigStore";
     private boolean autoClose = true;
+    private int partitions = 10;
 
-    public String getCacheName() {
-        return cacheName;
+    public String getTableName() {
+        return tableName;
     }
 
-    public IgniteConfigStoreConfig setCacheName(String cacheName) {
-        this.cacheName = cacheName;
+    public IgniteConfigStoreConfig setTableName(String tableName) {
+        this.tableName = tableName;
         return this;
     }
 
-    public String getCacheMode() {
-        return cacheMode;
+    public int getReplicas() {
+        return replicas;
     }
 
-    public IgniteConfigStoreConfig setCacheMode(String cacheMode) {
-        this.cacheMode = cacheMode;
+    public IgniteConfigStoreConfig setReplicas(int replicas) {
+        this.replicas = replicas;
         return this;
-    }
-
-    public CacheMode getCacheModeEnum() {
-        if (cacheMode == null || cacheMode.trim().isEmpty()) {
-            return CacheMode.REPLICATED;
-        }
-        
-        if ("PARTITIONED".equalsIgnoreCase(cacheMode)) {
-            return CacheMode.PARTITIONED;
-        }
-        
-        if ("REPLICATED".equalsIgnoreCase(cacheMode)) {
-            return CacheMode.REPLICATED;
-        }
-        
-        throw new IllegalArgumentException(
-                "Unsupported cacheMode: '" + cacheMode
-                        + "'. Supported values are PARTITIONED and REPLICATED.");
     }
 
     public String getIgniteInstanceName() {
@@ -106,6 +88,15 @@ public class IgniteConfigStoreConfig {
 
     public IgniteConfigStoreConfig setAutoClose(boolean autoClose) {
         this.autoClose = autoClose;
+        return this;
+    }
+
+    public int getPartitions() {
+        return partitions;
+    }
+
+    public IgniteConfigStoreConfig setPartitions(int partitions) {
+        this.partitions = partitions;
         return this;
     }
 }
