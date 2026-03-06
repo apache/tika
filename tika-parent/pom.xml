@@ -301,7 +301,7 @@
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.5.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.shade.version>3.6.1</maven.shade.version>
+    <maven.shade.version>3.6.2</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
     <!-- can't update to 11, needs jdk17 -->
     <puppycrawl.version>10.26.1</puppycrawl.version>
@@ -313,8 +313,8 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.64.0</google.cloud.version>
-    <azure.version>1.3.4</azure.version>
-    <aws2.version>2.42.5</aws2.version>
+    <azure.version>1.3.5</azure.version>
+    <aws2.version>2.42.7</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -448,7 +448,7 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
-    <zookeeper.version>3.8.5</zookeeper.version>
+    <zookeeper.version>3.8.6</zookeeper.version>
     <zstd.version>1.5.7-7</zstd.version>
     <nimbus-jose-jwt.version>10.8</nimbus-jose-jwt.version>
     <logback.version>1.5.32</logback.version>
