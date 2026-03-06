@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class EvalConfig {
 
     private long minExtractLength = 0;
-    private long maxExtractLength = 2_000_000;
+    private long maxExtractLength = 100_000_000;
     private String jdbcString = null;
     private String jdbcDriverClass = null;
     private boolean forceDrop = true;
