@@ -39,6 +39,20 @@ under the License.
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <inputExcludes>
+                        <!-- AsciiDoc pages and plain-text data files do not carry ASF headers -->
+                        <inputExclude>modules/**/*.adoc</inputExclude>
+                        <inputExclude>modules/**/*.txt</inputExclude>
+                        <inputExclude>modules/**/*.yml</inputExclude>
+                        <!-- UI assets: CSS, SVG, and Handlebars templates -->
+                        <inputExclude>supplemental-ui/**</inputExclude>
+                    </inputExcludes>
+                </configuration>
+            </plugin>
             <!-- Ensure mvn clean removes Antora output -->
             <plugin>
                 <artifactId>maven-clean-plugin</artifactId>

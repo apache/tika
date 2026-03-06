@@ -276,6 +276,19 @@ public class BuildCharsetTrainingData {
     ));
 
     /**
+     * Charsets that must not appear in train, devtest, or test splits either
+     * because they are confusable aliases for a trained label (IBM437 → IBM850)
+     * or because they are structural-only charsets whose test data was generated
+     * before the structural-only category was established (x-ISO-2022-CN-CNS).
+     * The eval tool mirrors this set via {@code DEFAULT_EXCLUDE} so neither
+     * charset produces misleading 0% strict rows.
+     */
+    private static final Set<String> CONFUSABLE_ALIAS = new HashSet<>(Arrays.asList(
+            "IBM437",           // box-drawing bytes never appear in prose; IBM850 is the trained label
+            "x-ISO-2022-CN-CNS" // structural-only; detected by ISO-2022 escape gates, not the model
+    ));
+
+    /**
      * Charsets exempt from the high-byte ratio gate.  UTF-16/32 have a
      * variable mix of zero and non-zero bytes depending on script; applying
      * a fixed ratio threshold would reject valid samples.

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -84,12 +85,24 @@ public class EvalCharsetDetectors {
     // Index of the "All" detector — used for confusion matrix and score-only output
     private static final int IDX_ALL = 3;
 
+    /**
+     * Charsets present in the test directory but not as direct model labels —
+     * either confusable aliases for a trained label or structural-only charsets
+     * whose test data was generated before the structural-only distinction was
+     * introduced.  Skipped in per-row reporting to avoid misleading 0% numbers.
+     */
+    private static final Set<String> DEFAULT_EXCLUDE = Set.of(
+            "IBM437",          // superset IBM850 is the trained label; IBM437 is a confusable alias
+            "x-ISO-2022-CN-CNS" // structural-only (ISO-2022 escape gates); no ML model label
+    );
+
     public static void main(String[] args) throws Exception {
         Path modelPath = null;
         Path dataDir   = null;
         int[] probeLengths = {FULL_LENGTH};
         boolean showConfusion = false;
         boolean scoreOnly = false;
+        Set<String> exclude = new HashSet<>(DEFAULT_EXCLUDE);
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -108,6 +121,9 @@ public class EvalCharsetDetectors {
                 case "--score-only":
                     scoreOnly = true;
                     break;
+                case "--exclude":
+                    exclude.addAll(Arrays.asList(args[++i].split(",")));
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.exit(1);
@@ -116,7 +132,7 @@ public class EvalCharsetDetectors {
         if (dataDir == null) {
             System.err.println(
                     "Usage: EvalCharsetDetectors [--model <path>] --data <dir>"
-                    + " [--lengths 20,50,100,full] [--confusion]");
+                    + " [--lengths 20,50,100,full] [--confusion] [--exclude cs1,cs2]");
             System.exit(1);
         }
 
@@ -148,6 +164,9 @@ public class EvalCharsetDetectors {
         List<List<byte[]>> allSamplesPerCharset = new ArrayList<>();
         for (Path f : testFiles) {
             String cs = f.getFileName().toString().replaceAll("\\.bin\\.gz$", "");
+            if (exclude.contains(cs)) {
+                continue;
+            }
             List<byte[]> samples = loadSamples(f);
             if (!samples.isEmpty()) {
                 charsets.add(cs);

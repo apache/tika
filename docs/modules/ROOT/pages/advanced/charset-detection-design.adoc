@@ -37,8 +37,8 @@ every detector runs regardless of what the others returned, and the
 | `MojibusterEncodingDetector`
 | `tika-encoding-detector-mojibuster`
 | ML byte-ngram classifier + structural rules.  Returns up to N STATISTICAL
-  candidates ranked by logit.  Internally routes EBCDIC bytes through a
-  two-stage sub-model (see <<ebcdic>>).
+  candidates ranked by logit.  All charsets — including UTF-16/32 and all
+  EBCDIC variants — are direct labels in a single 37-class model.
 
 | 4
 | `StandardHtmlEncodingDetector`
@@ -63,7 +63,7 @@ Each `EncodingResult` carries:
 * `charset` — the detected `java.nio.charset.Charset`
 * `confidence` — 0.0–1.0 float
 * `label` — the detector's original internal label (e.g. `IBM424-ltr`,
-  `EBCDIC`) which may be finer-grained than the Java charset name
+  `UTF-16-BE`) which may be finer-grained than the Java charset name
 * `resultType` — one of:
 
 [cols="1,3", options="header"]
@@ -76,9 +76,9 @@ Each `EncodingResult` carries:
   unless structurally impossible.
 
 | `STRUCTURAL`
-| Derived from byte-level structure (UTF-8 validity, wide-Unicode null columns,
-  EBCDIC space distribution).  More reliable than statistics but less
-  authoritative than an explicit declaration.
+| Derived from byte-level structure (UTF-8 validity, EBCDIC space distribution).
+  More reliable than statistics but less authoritative than an explicit
+  declaration.
 
 | `STATISTICAL`
 | ML model output.  Plausible but not certain; subject to arbitration by
@@ -103,7 +103,9 @@ When no bytes ≥ 0x80 are present, `MojibusterEncodingDetector` returns
 == MojibusterEncodingDetector
 
 A multinomial logistic regression classifier trained on byte n-gram features
-extracted from the MADLAD-400 corpus and Cantonese Wikipedia.
+extracted from the MADLAD-400 corpus and Cantonese Wikipedia.  All 37 charset
+classes — including UTF-16/32 variants and all EBCDIC variants — are direct
+labels in a single unified model.
 
 === Feature extraction
 
@@ -116,7 +118,7 @@ ignored without stripping.
   captures multi-byte character structure (Shift_JIS, EUC-*, Big5, GB18030).
 * **Stride-2 bigrams** — pairs sampled at even positions `(b[2i], b[2i+2])`;
   gives the model structural visibility into UTF-16/32 null-column patterns
-  without requiring the `WideUnicodeDetector` pre-filter for those encodings.
+  directly within the single unified model.
 
 Features are FNV-1a hashed into **16 384 buckets** (≈ 400 KB model file).
 
@@ -126,14 +128,34 @@ Features are FNV-1a hashed into **16 384 buckets** (≈ 400 KB model file).
 |===
 | Rule | Trigger
 
-| `checkHz` | `~{` / `~}` escape sequences → HZ-GB-2312
 | `detectIso2022` | ESC designation sequences → ISO-2022-JP / KR / CN
 | `checkAscii` | No bytes ≥ 0x80 → `windows-1252` (pure ASCII default)
 | `checkUtf8` | Structurally valid UTF-8 multi-byte sequences → `UTF-8`;
   provably invalid sequences exclude UTF-8 from model candidates
 | `checkIbm424` | EBCDIC space (0x40) dominance + Hebrew-range bytes → IBM424-ltr/rtl
-| `checkIbm500` | EBCDIC space (0x40) + Latin letter cluster density → IBM500
 |===
+
+NOTE: `checkHz` (HZ-GB-2312) and `checkIbm500` exist in `StructuralEncodingRules`
+but are not called in the current detection path.  HZ is vanishingly rare in
+practice; IBM500 and IBM1047 are treated as a confusable pair in
+`CharsetConfusables` (they differ in only 9 of 256 byte mappings, 5 of which
+are below 0x80 and invisible to the model).
+
+=== Candidate selection for short probes
+
+After the model scores all 37 classes, candidate selection works in two steps:
+
+. **Logit-gap window** (`selectByLogitGap`) — include all candidates whose
+  logit is within `LOGIT_GAP` (5.0) of the top logit.
+. **Short-probe floor** — for probes shorter than 50 bytes, if the gap window
+  returns fewer than `MIN_CANDIDATES` (8) results, `selectAtLeast(8)` extends
+  the window to the top 8 candidates by raw logit rank.  This ensures that
+  CharSoup has a meaningful set of alternatives to arbitrate on short inputs
+  (e.g. ZIP entry filenames) where a single dominant-but-wrong logit would
+  otherwise shut out the correct answer.
+
+BOM bytes are stripped from the probe before feature extraction so that the
+BOM itself does not bias the byte-ngram features.
 
 === Post-model corrections
 
@@ -166,64 +188,19 @@ score.  Grammar confidence (a count ratio) and model confidence (sigmoid of a
 logit) are different quantities on different scales; mixing them produces
 apples-to-oranges comparisons that break downstream arbitration.
 
-[[ebcdic]]
-== Two-stage EBCDIC detection
+=== EBCDIC variants as direct model labels
 
-EBCDIC bytes are ambiguous to a general byte-ngram model because the 7 supported
-IBM variants share most of their byte distributions.  Detection is split into
-two stages to keep the general model focused on the broad charset landscape while
-giving EBCDIC discrimination its own tuned sub-model.
+All IBM EBCDIC variants are direct labels in the single 37-class model —
+there is no separate EBCDIC routing step or sub-model.  The model handles:
 
-=== Stage 1 — General model routing
+* `IBM500` / `IBM1047` — Latin international EBCDIC (confusable pair, differ in 9 of 256 byte positions)
+* `IBM424-ltr` / `IBM424-rtl` — EBCDIC Hebrew (ltr/rtl are the same code page; `checkIbm424` fires first for clear cases)
+* `IBM420-ltr` / `IBM420-rtl` — EBCDIC Arabic (aspirational; training data requires the `cp420` Python codec, unavailable on some platforms)
+* `IBM850` / `IBM852` / `IBM855` / `IBM866` — DOS/OEM code pages (not true EBCDIC; byte layouts follow the ASCII/Latin convention)
 
-The general model (25 labels) includes a single routing label `"EBCDIC"`.
-When the top logit from the general model is `"EBCDIC"`, the result is not
-returned directly.  `MojibusterEncodingDetector` routes the probe to the EBCDIC
-sub-model instead.
-
-NOTE: Individual IBM variant labels (`IBM500`, `IBM420`, etc.) do **not** appear
-in the general model.  They live only in the sub-model.
-
-=== Stage 2 — EBCDIC sub-model
-
-A separate smaller model (5 labels, 1 024 buckets) trained exclusively on the
-5 true EBCDIC variants:
-
-[cols="1,2", options="header"]
-|===
-| Label | Encoding
-
-| `IBM420-ltr` | EBCDIC Arabic, logical (left-to-right storage)
-| `IBM420-rtl` | EBCDIC Arabic, visual (right-to-left storage)
-| `IBM424-ltr` | EBCDIC Hebrew, logical
-| `IBM424-rtl` | EBCDIC Hebrew, visual
-| `IBM500` | International EBCDIC (Latin)
-|===
-
-NOTE: `IBM855` and `IBM866` are DOS/OEM Cyrillic code pages, not true EBCDIC.
-Their byte layouts are entirely different from EBCDIC (ASCII characters occupy
-the same positions as in other Latin encodings).  The general model classifies
-them directly as Cyrillic encodings — they never trigger the `"EBCDIC"` routing
-label and therefore never reach the sub-model.  They appear as direct labels in
-the general model alongside `windows-1251`, `KOI8-R`, and `x-mac-cyrillic`.
-
-The sub-model's narrower training distribution gives it much better
-discrimination between IBM variants than the general model could achieve with
-a single `"EBCDIC"` class.
-
-=== Structural pre-filters for EBCDIC
-
-Before the two-stage ML path, two structural rules catch the clearest EBCDIC
-cases immediately:
-
-* `checkIbm424` — EBCDIC space (0x40) dominance + bytes in the Hebrew letter
-  range (0x41–0x6A are all below 0x80, invisible to ML).  Returns IBM424-ltr
-  or IBM424-rtl without invoking either model.
-* `checkIbm500` — EBCDIC space (0x40) + Latin letter cluster density across six
-  byte bands (0x81–0x89, 0x91–0x99, etc.).  Returns IBM500 without invoking
-  the ML path.
-
-When neither structural rule fires, the two-stage ML path handles it.
+NOTE: `IBM855` and `IBM866` are DOS Cyrillic code pages, not EBCDIC.  Their
+byte layouts are entirely different from EBCDIC and they are classified directly
+alongside `windows-1251`, `KOI8-R`, and `x-mac-cyrillic`.
 
 [[charsoup]]
 == CharSoupEncodingDetector — language-signal arbitration
@@ -233,31 +210,57 @@ chain switches `CompositeEncodingDetector` into collect-all mode.  After all
 other detectors run, CharSoup receives the full `EncodingDetectorContext` and
 arbitrates.
 
+Before any charset decoding, CharSoup strips leading BOM bytes from the raw
+probe.  This ensures every candidate charset decodes the same content bytes,
+preventing the BOM itself from skewing language scores.
+
 === Arbitration rules (in priority order)
 
-. **DECLARATIVE wins outright** — if any detector returned a DECLARATIVE result
-  (BOM, HTML `<meta>`, Content-Type header, metadata hint), it is returned
-  unchanged.  Statistical candidates are not considered.
+. **Unanimous** — if all detectors agree (or only one result exists), return it
+  directly without language scoring.
 
-. **Single statistical candidate** — returned directly without language scoring.
+. **Language scoring** — for each unique candidate charset, the BOM-stripped
+  bytes are decoded using that charset and fed to `CharSoupLanguageDetector`
+  (a character-bigram language model covering ~165 languages).  Candidates
+  whose decoded text exceeds a junk-character threshold (`MAX_JUNK_RATIO = 0.10`)
+  are discarded before scoring.  The charset whose decoded text produces the
+  **highest maximum logit** across all languages wins, provided that logit is
+  **positive** (sigmoid > 0.5).
 
-. **Multiple statistical candidates — language scoring** — for each candidate
-  charset, the candidate bytes are decoded using that charset and fed to
-  `CharSoupLanguageDetector` (a character-bigram language model).  The charset
-  whose decoded text produces the **highest maximum logit** across all ~165
-  languages wins, provided that logit is **positive** (sigmoid > 0.5).
-  A positive logit means the language model actively predicts _some_ real
-  language in the decoded text; a non-positive logit means the text is too
-  short, too junk-heavy, or too ambiguous for any language to stand out.
+. **DECLARATIVE preference** — after language scoring, if the winner is not a
+  DECLARATIVE result but a DECLARATIVE candidate exists, the DECLARATIVE result
+  is preferred when both of the following hold:
+  * Its decoded text has junk ratio ≤ the language winner's junk ratio (it
+    decodes at least as cleanly).
+  * Its decoded text has a positive language signal (max logit > 0).
 +
-Before language scoring, candidates whose decoded text exceeds a junk-character
-ratio threshold (`MAX_JUNK_RATIO = 0.10`) are discarded.  Junk characters are
-U+FFFD replacement characters and ISO C1 control characters
-(excluding ordinary whitespace).
+This handles the case where a valid BOM (e.g. `UTF-16BE`) is overridden by a
+wrong-endian decoding that happens to look like CJK text, which the language
+model scores more confidently than short Latin text.  The junk guard prevents
+false positives from truly lying BOMs or wrong `<meta charset>` tags.
 
 . **Inconclusive** — if no candidate's logit is positive (all decodings are too
-  ambiguous for the language model to distinguish), CharSoup returns the
-  first candidate from the highest-confidence statistical detector.
+  ambiguous for the language model to distinguish), CharSoup falls back to the
+  DECLARATIVE result if one exists and its decoding is at least as clean as the
+  statistical winner; otherwise it returns the first candidate from the
+  highest-confidence statistical detector.
+
+=== junkRatio
+
+The junk ratio filters out clearly wrong-charset decodings before language
+scoring runs.  Currently counts:
+
+* U+FFFD replacement characters (wrong-charset multi-byte decode)
+* U+FFFE (the "wrong-endian BOM" / Unicode noncharacter — produced when a
+  UTF-16 BOM is decoded with the wrong byte order)
+* ISO C1 control characters 0x00–0x08, 0x0E–0x1F, 0x80–0x9F (excluding TAB,
+  LF, VT, FF, CR which appear in source code and structured documents)
+
+Ordinary whitespace is not junk.  Non-ASCII non-alphabetic punctuation
+(e.g. `•` U+2022, `¶` U+00B6) is also not junk — while these can indicate a
+wrong-charset single-byte decoding of multi-byte lead bytes, they also appear
+legitimately in windows-125x documents (bullet lists, legal symbols).  The
+language model already handles this discrimination correctly.
 
 === Why "positive logit" is the only threshold
 
@@ -274,21 +277,6 @@ Both were removed.  Rationale:
   signal could narrow the margin below threshold and force a fallback to the
   model's top statistical pick, which might be wrong.
 
-=== junkRatio
-
-The junk ratio filters out clearly wrong-charset decodings before language
-scoring runs.  Currently counts:
-
-* U+FFFD replacement characters (wrong-charset multi-byte decode)
-* ISO C1 control characters 0x00–0x08, 0x0E–0x1F, 0x80–0x9F (excluding TAB,
-  LF, VT, FF, CR which appear in source code and structured documents)
-
-Ordinary whitespace is not junk.  Non-ASCII non-alphabetic punctuation
-(e.g. `•` U+2022, `¶` U+00B6) is also not junk — while these can indicate a
-wrong-charset single-byte decoding of multi-byte lead bytes, they also appear
-legitimately in windows-125x documents (bullet lists, legal symbols).  The
-language model already handles this discrimination correctly.
-
 == MetadataCharsetDetector
 
 A lightweight detector in `tika-core` that reads declarative charset hints from
@@ -301,8 +289,8 @@ Applies WHATWG label normalization: `ISO-8859-1` and `US-ASCII` are mapped to
 `windows-1252` because browsers (and the HTML5 spec) treat them as aliases for
 windows-1252 in practice.
 
-Returns a DECLARATIVE result, so `CharSoupEncodingDetector` will not override it
-with a statistical guess.
+Returns a DECLARATIVE result, so `CharSoupEncodingDetector` will treat it with
+preference over statistical candidates.
 
 == BOMDetector
 
@@ -323,6 +311,68 @@ Returns a DECLARATIVE result.  `StandardHtmlEncodingDetector` has a `skipBOM`
 flag (default `false`) so that when `BOMDetector` is in the chain, the HTML
 detector does not also attempt BOM detection — keeping BOM arbitration in one
 place.
+
+== Performance and accuracy
+
+Numbers are from the held-out MADLAD-400 + Cantonese Wikipedia (zh_yuewiki)
+test set.  326 397 samples across 43 charsets.  "All" = ML model + all
+post-processing rules — this is the production configuration (there is no
+separate `WideUnicodeDetector` pre-filter; UTF-16/32 are direct model labels).
+Full per-charset results: link:charset-detection-eval.txt[charset-detection-eval.txt]
+
+[cols="2,1,1,1", options="header"]
+|===
+| Metric | ML + rules (All) | ICU4J | juniversalchardet
+
+| Strict accuracy (full probe) | **88.7%** | 38.4% | 28.1%
+| Soft accuracy (full probe)   | **93.4%** | 60.3% | 37.0%
+| Latency (full probe)         | **~11 µs** | ~153 µs | ~18 µs
+| UTF-16/UTF-32 (full probe)   | **~95%** | 84–100% | 0%
+| IBM424 / IBM420 / IBM500     | **Yes** | Partial | No
+| ISO-8859-3, TIS-620, KOI8-U, windows-1258 | **Yes** | No | No
+| x-mac-cyrillic, x-EUC-TW, ISO-8859-16 | **Yes** | No | No
+| Model size                   | **~400 KB** | ~12 MB (icu4j.jar) | ~100 KB
+|===
+
+**Strict accuracy** = exact charset name match. **Soft accuracy** = exact or
+confusable-group match (e.g. predicting IBM500 for an IBM1047 file counts as
+soft-correct since they share 247 of 256 byte mappings).
+
+NOTE: ICU4J's lower overall score reflects the expanded charset set — it has no
+support for many charsets the ML model handles (IBM850/852/855, windows-1257/1258,
+x-mac-cyrillic, x-EUC-TW, ISO-8859-16, x-MacRoman).  For the charsets ICU4J
+does support (CJK, Cyrillic, Arabic, Greek, Hebrew) it is competitive.
+
+Per-probe-length summary (All column, strict / soft):
+
+----
+Probe   ML+rules R%  S%   ICU4J R%   S%   juniv R%   S%   µs (ML)
+  20B      35.7  36.1      20.3  39.0  22.9  30.7     7.0
+  50B      49.9  50.2      29.8  52.4  26.5  35.2     8.1
+ 100B      82.1  86.7      33.4  56.3  27.6  36.4     7.9
+ 200B      86.5  91.3      35.8  58.6  28.0  36.9     8.9
+full       88.7  93.4      38.4  60.3  28.1  37.0    11.4
+----
+
+=== Notes on specific charsets
+
+**GB18030 low strict / high soft**: the GB family is a strict subset chain
+(GB2312 ⊂ GBK ⊂ GB18030).  When ML predicts GBK for a GB18030 file, the text
+decodes correctly unless the file uses GB18030-specific 4-byte sequences (rare
+minority-language characters).  The `GB_FOUR_BYTE_UPGRADE` rule catches those
+cases.  ICU4J's 99% strict score for GB18030 reflects grammar-based rules; the
+practical decoding difference is small for typical Han Chinese content.
+
+**IBM500 / IBM1047**: these share 247 of 256 byte mappings — the 9 positions
+that differ are mostly below 0x80 and invisible to high-byte features.  For
+normal Latin prose they are genuinely indistinguishable.  Both are listed in
+`CharsetConfusables` as a soft-confusable group; predicting either counts as a
+soft hit, and either charset decodes the other's content correctly for the vast
+majority of text.
+
+**IBM424 ~0% strict / ~100% soft**: the `checkIbm424` structural rule detects
+EBCDIC Hebrew correctly but does not determine directionality (ltr vs rtl), so
+the result is always the confusable-group partner — a soft hit.
 
 == Configuration
 
@@ -358,4 +408,32 @@ scanning for `<meta charset>` tags.  This can be tuned via `tika-config.json`
       "params": { "markLimit": 131072 } }
   ]
 }
+----
+
+== Model training and evaluation
+
+Full documentation for rebuilding the training dataset, retraining the model,
+and running the evaluation harness is in
+`tika-ml/tika-ml-chardetect/README.md` in the source tree.  The short version:
+
+[source,bash]
+----
+# 1. Build training data
+JAR=tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar
+java -cp $JAR org.apache.tika.ml.chardetect.tools.BuildCharsetTrainingData \
+    --madlad-dir  ~/datasets/madlad/data \
+    --zh-yue-file ~/datasets/zh_yuewiki/sentences_zh_yue.txt \
+    --output-dir  ~/datasets/charset-detect
+
+# 2. Train
+java -cp $JAR org.apache.tika.ml.chardetect.tools.TrainCharsetModel \
+    --data    ~/datasets/charset-detect/train \
+    --output  ~/datasets/chardetect.bin \
+    --buckets 16384 --epochs 5
+
+# 3. Evaluate
+java -cp $JAR org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors \
+    --model   ~/datasets/chardetect.bin \
+    --data    ~/datasets/charset-detect/test \
+    --lengths 20,50,100,200,full
 ----
