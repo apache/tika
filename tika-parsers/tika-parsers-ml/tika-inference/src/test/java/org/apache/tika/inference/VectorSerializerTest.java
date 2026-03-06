@@ -40,6 +40,19 @@ public class VectorSerializerTest {
         assertEquals(0, decoded.length);
     }
 
+    /**
+     * Pins the byte order to big-endian using the exact example from the
+     * Elasticsearch dense_vector documentation: [0.5, 10, 6] encodes to
+     * "PwAAAEEgAABAwAAA". If this test fails the byte order has been changed
+     * and ES indexing of vectors will silently produce wrong results.
+     */
+    @Test
+    void testKnownElasticsearchBase64() {
+        float[] vec = {0.5f, 10.0f, 6.0f};
+        assertEquals("PwAAAEEgAABAwAAA", VectorSerializer.encode(vec));
+        assertArrayEquals(vec, VectorSerializer.decode("PwAAAEEgAABAwAAA"), 1e-6f);
+    }
+
     @Test
     void testLargeVector() {
         float[] large = new float[768];

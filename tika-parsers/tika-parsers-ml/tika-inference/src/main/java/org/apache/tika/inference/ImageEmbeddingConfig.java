@@ -19,6 +19,7 @@ package org.apache.tika.inference;
 import java.io.Serializable;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -42,7 +43,7 @@ public class ImageEmbeddingConfig implements Serializable {
      * image vector and locators. Defaults to the canonical chunks field
      * so image embeddings merge with text chunks in a single array.
      */
-    private String outputField = ChunkSerializer.CHUNKS_FIELD;
+    private String outputField = TikaCoreProperties.TIKA_CHUNKS;
 
     public String getBaseUrl() {
         return baseUrl;

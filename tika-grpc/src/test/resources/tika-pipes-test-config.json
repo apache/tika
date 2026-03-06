@@ -26,13 +26,13 @@
     },
     "httpFetcherIdHere": {
       "http-fetcher": {
-        "requestTimeout": 30000,
-        "socketTimeout": 30000,
-        "connectTimeout": 20000,
+        "requestTimeoutMillis": 30000,
+        "socketTimeoutMillis": 30000,
+        "connectTimeoutMillis": 20000,
         "maxConnectionsPerRoute": 200,
         "maxRedirects": 0,
         "maxSpoolSize": -1,
-        "overallTimeout": 50000
+        "overallTimeoutMillis": 50000
       }
     }
   },

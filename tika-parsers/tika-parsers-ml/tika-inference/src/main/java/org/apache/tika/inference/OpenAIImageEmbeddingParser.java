@@ -16,6 +16,7 @@
  */
 package org.apache.tika.inference;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Base64;
@@ -72,11 +73,15 @@ import org.apache.tika.utils.StringUtils;
  * {@code {"input": [{"image": "data:image/png;base64,..."}]}}.
  * <p>
  * Configuration key: {@code "openai-image-embedding-parser"}
+ * <p>
+ * Thread safety: instances are safe for concurrent {@link #parse} calls once
+ * fully constructed. Setters must not be called concurrently with
+ * {@link #parse}.
  *
  * @since Apache Tika 4.0
  */
 @TikaComponent(name = "openai-image-embedding-parser", spi = false)
-public class OpenAIImageEmbeddingParser implements Parser, Initializable {
+public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closeable {
 
     private static final long serialVersionUID = 1L;
 
@@ -238,7 +243,13 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
 
             float[] vector = new float[embedding.size()];
             for (int i = 0; i < embedding.size(); i++) {
-                vector[i] = (float) embedding.get(i).asDouble();
+                float v = (float) embedding.get(i).asDouble();
+                if (Float.isNaN(v) || Float.isInfinite(v)) {
+                    throw new TikaException(
+                            "Embedding response contains invalid float at dim [" + i
+                                    + "]: " + v + " — image may be in an unsupported format");
+                }
+                vector[i] = v;
             }
             return vector;
         } catch (IOException e) {
@@ -293,6 +304,13 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable {
                     defaultConfig);
         }
         return defaultConfig;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (httpClient != null) {
+            httpClient.close();
+        }
     }
 
     // ---- delegating config getters/setters --------------------------------

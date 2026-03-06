@@ -72,8 +72,8 @@
         "attachmentStrategy": "{ATTACHMENT_STRATEGY}",
         "commitWithin": 1,
         "idField": "id",
-        "connectionTimeout": 10000,
-        "socketTimeout": 60000
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
       }
     },
     "fse": {

@@ -44,6 +44,7 @@ import org.apache.tika.config.TikaProgressTracker;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -151,9 +152,10 @@ public class ConnectionHandler implements Runnable, Closeable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             return; // connection is unsalvageable after deserialization failure
                         }
+                        ParseContext mergedContext = null;
                         try {
                             ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
-                            ParseContext mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
+                            mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             TikaProgressTracker tracker = new TikaProgressTracker();
                             mergedContext.set(TikaProgressTracker.class, tracker);
@@ -168,6 +170,17 @@ public class ConnectionHandler implements Runnable, Closeable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
                             LOG.error("handlerId={}: error processing request", handlerId, t);
+                        } finally {
+                            if (mergedContext != null) {
+                                MetadataFilter requestFilter = mergedContext.get(MetadataFilter.class);
+                                if (requestFilter != null) {
+                                    try {
+                                        requestFilter.close();
+                                    } catch (IOException e) {
+                                        LOG.warn("handlerId={}: failed to close per-request MetadataFilter", handlerId, e);
+                                    }
+                                }
+                            }
                         }
                         break;
                     case SHUT_DOWN:

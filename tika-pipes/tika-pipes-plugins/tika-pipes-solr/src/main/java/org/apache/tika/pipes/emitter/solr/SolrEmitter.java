@@ -113,8 +113,8 @@ public class SolrEmitter extends AbstractEmitter {
                 http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
             }
             http2SolrClientBuilder
-                    .withRequestTimeout(httpClientFactory.getRequestTimeout(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(config.getConnectionTimeoutOrDefault(), TimeUnit.MILLISECONDS);
+                    .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
+                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
 
             Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             return new CloudSolrClient.Builder(config.solrZkHosts(), Optional.ofNullable(config.solrZkChroot()))
@@ -123,8 +123,8 @@ public class SolrEmitter extends AbstractEmitter {
         } else {
             // Use direct URL-based LBHttpSolrClient
             return new LBHttpSolrClient.Builder()
-                    .withConnectionTimeout(config.getConnectionTimeoutOrDefault(), TimeUnit.MILLISECONDS)
-                    .withSocketTimeout(config.getSocketTimeoutOrDefault(), TimeUnit.MILLISECONDS)
+                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
+                    .withSocketTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
                     .withHttpClient(httpClientFactory.build())
                     .withBaseEndpoints(config.solrUrls().toArray(new String[]{}))
                     .build();

@@ -52,8 +52,8 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
     private String sizeFieldName;
     private List<String> additionalFields = Collections.emptyList();
     private int rows = 5000;
-    private int connectionTimeout = 10000;
-    private int socketTimeout = 60000;
+    private int connectionTimeoutMillis = 10000;
+    private int socketTimeoutMillis = 60000;
     private String userName;
     private String password;
     private String authScheme;
@@ -104,12 +104,12 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
         return rows;
     }
 
-    public int getConnectionTimeout() {
-        return connectionTimeout;
+    public int getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
     }
 
-    public int getSocketTimeout() {
-        return socketTimeout;
+    public int getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
     public String getUserName() {
@@ -141,8 +141,8 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
             return false;
         }
         return rows == that.rows &&
-                connectionTimeout == that.connectionTimeout &&
-                socketTimeout == that.socketTimeout &&
+                connectionTimeoutMillis == that.connectionTimeoutMillis &&
+                socketTimeoutMillis == that.socketTimeoutMillis &&
                 proxyPort == that.proxyPort &&
                 Objects.equals(solrCollection, that.solrCollection) &&
                 Objects.equals(solrUrls, that.solrUrls) &&
@@ -174,8 +174,8 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
         result = 31 * result + Objects.hashCode(sizeFieldName);
         result = 31 * result + Objects.hashCode(additionalFields);
         result = 31 * result + rows;
-        result = 31 * result + connectionTimeout;
-        result = 31 * result + socketTimeout;
+        result = 31 * result + connectionTimeoutMillis;
+        result = 31 * result + socketTimeoutMillis;
         result = 31 * result + Objects.hashCode(userName);
         result = 31 * result + Objects.hashCode(password);
         result = 31 * result + Objects.hashCode(authScheme);

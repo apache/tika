@@ -99,9 +99,9 @@ public class HttpClientFactory {
     private Set<String> allowedHostsForRedirect = new HashSet<>();
     private int maxConnectionsPerRoute = 1000;
     private int maxConnections = 2000;
-    private int requestTimeout = 120000;
-    private int connectTimeout = 120000;
-    private int socketTimeout = 120000;
+    private int requestTimeoutMillis = 120000;
+    private int connectTimeoutMillis = 120000;
+    private int socketTimeoutMillis = 120000;
     private int keepAliveOnBadKeepAliveValueMs = 1000;
     private String userName;
     private String password;
@@ -109,6 +109,7 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
+    private boolean verifySsl = false;
 
     public String getProxyHost() {
         return proxyHost;
@@ -150,28 +151,28 @@ public class HttpClientFactory {
         this.maxConnections = maxConnections;
     }
 
-    public int getRequestTimeout() {
-        return requestTimeout;
+    public int getRequestTimeoutMillis() {
+        return requestTimeoutMillis;
     }
 
-    public void setRequestTimeout(int requestTimeout) {
-        this.requestTimeout = requestTimeout;
+    public void setRequestTimeoutMillis(int requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
     }
 
-    public int getConnectTimeout() {
-        return connectTimeout;
+    public int getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
-    public void setConnectTimeout(int connectTimeout) {
-        this.connectTimeout = connectTimeout;
+    public void setConnectTimeoutMillis(int connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
     }
 
-    public int getSocketTimeout() {
-        return socketTimeout;
+    public int getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
-    public void setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
+    public void setSocketTimeoutMillis(int socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
     }
 
     public int getKeepAliveOnBadKeepAliveValueMs() {
@@ -237,11 +238,15 @@ public class HttpClientFactory {
         this.disableContentCompression = disableContentCompression;
     }
 
+    public void setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
+    }
+
     public HttpClientFactory copy() throws TikaConfigException {
         HttpClientFactory cp = new HttpClientFactory();
         cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
         cp.setAuthScheme(authScheme);
-        cp.setConnectTimeout(connectTimeout);
+        cp.setConnectTimeoutMillis(connectTimeoutMillis);
         cp.setCredentialsAESEncrypted(credentialsAESEncrypted);
         cp.setDisableContentCompression(disableContentCompression);
         cp.setKeepAliveOnBadKeepAliveValueMs(keepAliveOnBadKeepAliveValueMs);
@@ -249,28 +254,36 @@ public class HttpClientFactory {
         cp.setMaxConnections(maxConnections);
         cp.setNtDomain(ntDomain);
         cp.setPassword(password);
+        cp.setUserName(userName);
         cp.setProxyHost(proxyHost);
         cp.setProxyPort(proxyPort);
-        cp.setRequestTimeout(requestTimeout);
-        cp.setSocketTimeout(socketTimeout);
+        cp.setRequestTimeoutMillis(requestTimeoutMillis);
+        cp.setSocketTimeoutMillis(socketTimeoutMillis);
+        cp.setVerifySsl(verifySsl);
         return cp;
     }
 
 
     public HttpClient build() throws TikaConfigException {
-        LOG.info("http client does not verify ssl at this point.  " +
-                "If you need that, please open a ticket.");
-        TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
         SSLContext sslContext = null;
-        try {
-            sslContext =
-                    SSLContexts.custom().loadTrustMaterial(
-                            null, acceptingTrustStrategy).build();
-        } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
-            throw new TikaConfigException("", e);
+        SSLConnectionSocketFactory sslsf;
+        if (verifySsl) {
+            sslContext = SSLContexts.createDefault();
+            sslsf = new SSLConnectionSocketFactory(sslContext,
+                    SSLConnectionSocketFactory.getDefaultHostnameVerifier());
+        } else {
+            LOG.info("http client does not verify ssl at this point.  " +
+                    "If you need that, please open a ticket.");
+            TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+            try {
+                sslContext =
+                        SSLContexts.custom().loadTrustMaterial(
+                                null, acceptingTrustStrategy).build();
+            } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                throw new TikaConfigException("", e);
+            }
+            sslsf = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
         }
-        SSLConnectionSocketFactory sslsf =
-                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
 
         Registry<ConnectionSocketFactory> socketFactoryRegistry =
                 RegistryBuilder.<ConnectionSocketFactory>create().register("https", sslsf)
@@ -280,6 +293,10 @@ public class HttpClientFactory {
                 new PoolingHttpClientConnectionManager(socketFactoryRegistry);
         manager.setDefaultMaxPerRoute(maxConnectionsPerRoute);
         manager.setMaxTotal(maxConnections);
+        // Validate pooled connections before reuse so that connections idled
+        // for a long time (e.g. while a VLM is processing) are not returned
+        // stale, which would cause a SocketTimeoutException on the first read.
+        manager.setValidateAfterInactivity(1000);
 
         HttpClientBuilder builder = HttpClients.custom();
         if (disableContentCompression) {
@@ -288,13 +305,17 @@ public class HttpClientFactory {
         addCredentialsProvider(builder);
         addProxy(builder);
         return builder.setConnectionManager(manager)
+                .evictExpiredConnections()
                 .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
                 .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
                         Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
-                        .setConnectionRequestTimeout(requestTimeout)
-                        .setConnectionRequestTimeout(connectTimeout).setSocketTimeout(socketTimeout)
+                        .setConnectionRequestTimeout(requestTimeoutMillis)
+                        .setConnectTimeout(connectTimeoutMillis).setSocketTimeout(socketTimeoutMillis)
                         .build()).setKeepAliveStrategy(getKeepAliveStrategy())
-                .setSSLSocketFactory(sslsf).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
+                .setSSLSocketFactory(sslsf)
+                .setSSLHostnameVerifier(verifySsl
+                        ? SSLConnectionSocketFactory.getDefaultHostnameVerifier()
+                        : NoopHostnameVerifier.INSTANCE)
                 .build();
     }
 

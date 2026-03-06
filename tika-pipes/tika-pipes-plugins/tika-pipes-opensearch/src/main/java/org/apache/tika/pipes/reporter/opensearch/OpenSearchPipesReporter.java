@@ -128,8 +128,8 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
         httpClientFactory.setPassword(http.password());
         /*
             turn these back on as necessary
-        httpClientFactory.setSocketTimeout(http.socketTimeout());
-        httpClientFactory.setConnectTimeout(http.connectionTimeout());
+        httpClientFactory.setSocketTimeoutMillis(http.socketTimeoutMillis());
+        httpClientFactory.setConnectTimeoutMillis(http.connectionTimeoutMillis());
         httpClientFactory.setAuthScheme(http.authScheme());
         httpClientFactory.setProxyHost(http.proxyHost());
         httpClientFactory.setProxyPort(http.proxyPort());

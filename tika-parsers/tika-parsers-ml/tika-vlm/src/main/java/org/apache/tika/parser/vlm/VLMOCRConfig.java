@@ -37,6 +37,15 @@ public class VLMOCRConfig implements Serializable {
     /** Base URL of the OpenAI-compatible API (no trailing slash). */
     private String baseUrl = "http://127.0.0.1:8000";
 
+    /**
+     * URL path appended to {@code baseUrl} for chat completions requests.
+     * Default is {@code /v1/chat/completions} (standard OpenAI path).
+     * Override for non-standard endpoints, e.g. Google Gemini:
+     * {@code /chat/completions} with baseUrl
+     * {@code https://generativelanguage.googleapis.com/v1beta/openai}.
+     */
+    private String completionsPath = "/v1/chat/completions";
+
     /** Model identifier sent in the chat completions request. */
     private String model = "jinaai/jina-vlm";
 
@@ -105,6 +114,14 @@ public class VLMOCRConfig implements Serializable {
 
     public void setBaseUrl(String baseUrl) throws TikaConfigException {
         this.baseUrl = baseUrl;
+    }
+
+    public String getCompletionsPath() {
+        return completionsPath;
+    }
+
+    public void setCompletionsPath(String completionsPath) {
+        this.completionsPath = completionsPath;
     }
 
     public String getModel() {

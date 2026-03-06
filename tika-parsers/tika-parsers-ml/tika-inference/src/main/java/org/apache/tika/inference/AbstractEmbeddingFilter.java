@@ -28,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Base class for metadata filters that chunk text content and call a remote
@@ -48,6 +49,10 @@ import org.apache.tika.metadata.filter.MetadataFilter;
  * a different handler type, a warning is logged.
  * <p>
  * Subclasses implement {@link #embed} for their specific API format.
+ * <p>
+ * Thread safety: instances are safe for concurrent {@link #filter} calls once
+ * fully constructed. Setters must not be called concurrently with
+ * {@link #filter}.
  */
 public abstract class AbstractEmbeddingFilter extends MetadataFilter {
 
@@ -81,7 +86,11 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
             throws IOException, TikaException;
 
     @Override
-    public void filter(List<Metadata> metadataList) throws TikaException {
+    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+        InferenceConfig requestConfig = parseContext.get(InferenceConfig.class);
+        if (requestConfig != null && requestConfig.isSkipEmbedding()) {
+            return;
+        }
         for (Metadata metadata : metadataList) {
             processOne(metadata);
         }
@@ -89,7 +98,14 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
 
     private void processOne(Metadata metadata) throws TikaException {
         String content = metadata.get(defaultConfig.getContentField());
-        if (content == null || content.isBlank()) {
+        if (content == null) {
+            LOG.debug("No content found at field '{}'; skipping embedding. "
+                    + "If using this filter standalone, populate metadata using "
+                    + "TikaCoreProperties.TIKA_CONTENT as the key.",
+                    defaultConfig.getContentField());
+            return;
+        }
+        if (content.isBlank()) {
             return;
         }
 
@@ -206,6 +222,14 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
 
     public void setOutputField(String outputField) {
         defaultConfig.setOutputField(outputField);
+    }
+
+    public boolean isSkipEmbedding() {
+        return defaultConfig.isSkipEmbedding();
+    }
+
+    public void setSkipEmbedding(boolean skipEmbedding) {
+        defaultConfig.setSkipEmbedding(skipEmbedding);
     }
 
     public boolean isClearContentAfterChunking() {

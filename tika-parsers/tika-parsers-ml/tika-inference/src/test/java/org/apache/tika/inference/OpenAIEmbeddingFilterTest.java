@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class OpenAIEmbeddingFilterTest {
 
@@ -71,7 +72,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(2, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", content);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), content);
 
         List<Metadata> metadataList = new ArrayList<>();
         metadataList.add(metadata);
@@ -99,13 +100,14 @@ public class OpenAIEmbeddingFilterTest {
     @Test
     void testApiKeyHeader() throws Exception {
         config.setApiKey("sk-test-key");
+        filter.close();
         filter = new OpenAIEmbeddingFilter(config);
 
         server.enqueue(new TikaTestHttpServer.MockResponse(200,
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -129,7 +131,7 @@ public class OpenAIEmbeddingFilterTest {
     @Test
     void testBlankContent() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", "   ");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "   ");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -143,7 +145,7 @@ public class OpenAIEmbeddingFilterTest {
         server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
 
@@ -181,7 +183,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", "Single chunk of text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Single chunk of text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -203,7 +205,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set("tika:content", "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
 
         // Pre-populate with an image chunk
         Chunk imgChunk = new Chunk(null,
@@ -212,7 +214,7 @@ public class OpenAIEmbeddingFilterTest {
                                 new org.apache.tika.inference.locator
                                         .PaginatedLocator(1)));
         imgChunk.setVector(new float[]{0.5f, 0.6f});
-        metadata.set(ChunkSerializer.CHUNKS_FIELD,
+        metadata.set(TikaCoreProperties.TIKA_CHUNKS,
                 ChunkSerializer.toJson(List.of(imgChunk)));
 
         List<Metadata> list = new ArrayList<>();
@@ -220,7 +222,7 @@ public class OpenAIEmbeddingFilterTest {
         filter.filter(list);
 
         List<Chunk> merged = ChunkSerializer.fromJson(
-                metadata.get(ChunkSerializer.CHUNKS_FIELD));
+                metadata.get(TikaCoreProperties.TIKA_CHUNKS));
         // Should have the pre-existing image chunk + the new text chunk
         assertEquals(2, merged.size());
         assertNull(merged.get(0).getText());

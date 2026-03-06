@@ -181,6 +181,8 @@ public class OpenAIVLMParserTest {
     void testAzureStyleAuth() throws Exception {
         config.setApiKey("azure-key-123");
         parser = new OpenAIVLMParser(config);
+        config.setCompletionsPath("/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01");
+        parser = new OpenAIVLMParser(config);
         parser.setApiKeyHeaderName("api-key");
         parser.setApiKeyPrefix("");
         parser.setCompletionsPath(
@@ -206,7 +208,7 @@ public class OpenAIVLMParserTest {
 
     @Test
     void testCustomCompletionsPathSkipsHealthCheck() {
-        parser.setCompletionsPath("/custom/path");
+        config.setCompletionsPath("/custom/path");
         assertNull(parser.getHealthCheckUrl(config));
     }
 

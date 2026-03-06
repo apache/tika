@@ -32,8 +32,8 @@ public record SolrEmitterConfig(
         String solrZkChroot,
         @JsonProperty(defaultValue = "id") String idField,
         @JsonProperty(defaultValue = "1000") int commitWithin,
-        @JsonProperty(defaultValue = "10000") int connectionTimeout,
-        @JsonProperty(defaultValue = "60000") int socketTimeout,
+        @JsonProperty(defaultValue = "10000") int connectionTimeoutMillis,
+        @JsonProperty(defaultValue = "60000") int socketTimeoutMillis,
         @JsonProperty(defaultValue = "PARENT_CHILD") String attachmentStrategy,
         @JsonProperty(defaultValue = "ADD") String updateStrategy,
         @JsonProperty(defaultValue = "embedded") String embeddedFileFieldName,
@@ -98,12 +98,12 @@ public record SolrEmitterConfig(
         return commitWithin > 0 ? commitWithin : 1000;
     }
 
-    public int getConnectionTimeoutOrDefault() {
-        return connectionTimeout > 0 ? connectionTimeout : 10000;
+    public int getConnectionTimeoutMillisOrDefault() {
+        return connectionTimeoutMillis > 0 ? connectionTimeoutMillis : 10000;
     }
 
-    public int getSocketTimeoutOrDefault() {
-        return socketTimeout > 0 ? socketTimeout : 60000;
+    public int getSocketTimeoutMillisOrDefault() {
+        return socketTimeoutMillis > 0 ? socketTimeoutMillis : 60000;
     }
 
     public String getEmbeddedFileFieldNameOrDefault() {

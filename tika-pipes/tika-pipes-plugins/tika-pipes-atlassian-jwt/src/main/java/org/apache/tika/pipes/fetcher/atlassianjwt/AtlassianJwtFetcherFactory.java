@@ -35,8 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "my-atlassian-fetcher": {
  *       "sharedSecret": "your-shared-secret",
  *       "issuer": "your-app-key",
- *       "connectTimeout": 30000,
- *       "socketTimeout": 120000
+ *       "connectTimeoutMillis": 30000,
+ *       "socketTimeoutMillis": 120000
  *     }
  *   }
  * }

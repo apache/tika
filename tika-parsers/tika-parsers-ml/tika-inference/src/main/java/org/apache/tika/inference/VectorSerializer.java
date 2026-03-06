@@ -22,8 +22,12 @@ import java.util.Base64;
 
 /**
  * Serializes and deserializes float vectors as base64-encoded big-endian
- * float32 byte arrays. Big-endian (network byte order) matches what
- * Elasticsearch expects when ingesting base64-encoded dense vectors.
+ * float32 byte arrays.
+ *
+ * <p>Big-endian matches the format expected by Elasticsearch's
+ * {@code dense_vector} field type, which accepts either a JSON float array
+ * or a base64-encoded binary string in big-endian float32 order.
+ * See the Elasticsearch dense_vector mapping documentation for details.
  */
 public final class VectorSerializer {
 

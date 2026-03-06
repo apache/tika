@@ -1,0 +1,28 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings" : {
+    "dynamic": "strict",
+    "_routing": {
+      "required":true
+    },
+    "properties" : {
+      "content" : { "type" : "text"},
+      "length" : { "type" : "long"},
+      "creators" : { "type" : "text"},
+      "title" : { "type" : "text"},
+      "mime" : { "type" : "keyword"},
+      "tika_exception" : { "type" : "text"},
+      "relation_type":{
+        "type":"join",
+        "eager_global_ordinals":true,
+        "relations":{
+          "container":"embedded"
+        }
+      },
+      "my_test_parse_time_ms" : {"type": "long"},
+      "my_test_parse_status": {"type": "keyword"}
+    }
+  }
+}
