@@ -29,10 +29,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * CharSoup language detector using INT8-quantized multinomial logistic regression
@@ -58,13 +60,68 @@ import org.apache.tika.language.detect.LanguageResult;
  * </p>
  */
 @TikaComponent(name = "charsoup-language-detector")
-public class CharSoupLanguageDetector extends LanguageDetector {
+public class CharSoupLanguageDetector extends LanguageDetector implements SelfConfiguring {
+
+    /**
+     * Model selection strategy.
+     * <ul>
+     *   <li>{@link #AUTOMATIC} — use length and feature-density gates to choose
+     *       between the short-text model and the general model (default)</li>
+     *   <li>{@link #SHORT_TEXT} — always use the short-text model regardless of
+     *       input length or feature count (no-op if the short-text model is absent)</li>
+     *   <li>{@link #STANDARD} — always use the general model regardless of input
+     *       length or feature count</li>
+     * </ul>
+     */
+    public enum Strategy {
+        AUTOMATIC,
+        SHORT_TEXT,
+        STANDARD
+    }
 
     private static final Logger LOG =
             LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
     private static final String MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect.bin";
+
+    /**
+     * Classpath resource for the optional short-text model. When present, inputs
+     * shorter than {@link #SHORT_TEXT_LENGTH_THRESHOLD} characters or with fewer
+     * than {@link #SHORT_TEXT_FEATURE_THRESHOLD} n-gram emissions are routed to
+     * this model instead of the general model. Absent at runtime until the
+     * short-text model binary is committed.
+     */
+    private static final String SHORT_TEXT_MODEL_RESOURCE =
+            "/org/apache/tika/langdetect/charsoup/langdetect-short.bin";
+
+    /**
+     * Inputs shorter than this many characters are routed to the short-text model
+     * (when loaded). Calibrated from the FLORES per-length crossover point where
+     * the short-text model outperforms the general model.
+     * TODO: tune after ablation results are available.
+     */
+    static final int SHORT_TEXT_LENGTH_THRESHOLD = 200;
+
+    /**
+     * Inputs whose n-gram emission count is below this threshold are routed to
+     * the short-text model (when loaded), regardless of character length. This
+     * catches degenerate inputs such as a kilobyte of whitespace followed by a
+     * single word, where raw character length would incorrectly trigger the
+     * general-model path.
+     * <p>
+     * Calibration reference (from {@link FeatureExtractor} Javadoc):
+     * ~200 chars of typical Latin prose ≈ 400 emissions, so ~2 emissions/char.
+     * A threshold of 200 means "effective content below ~100 chars of prose
+     * → short-text model", regardless of how much padding surrounds it.
+     * <ul>
+     *   <li>1 KB whitespace + "the" → ~5 emissions → short-text ✓</li>
+     *   <li>1 KB whitespace + 20-char sentence → ~40 emissions → short-text ✓</li>
+     *   <li>200-char dense Latin text → ~400 emissions → general model ✓</li>
+     * </ul>
+     * TODO: tune on real document metadata samples.
+     */
+    static final int SHORT_TEXT_FEATURE_THRESHOLD = 200;
 
     /**
      * Size (in chars) of each independent chunk evaluated during detection.
@@ -123,6 +180,12 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     private static final FeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
 
+    /** Short-text model — {@code null} if the resource is not on the classpath. */
+    static final CharSoupModel SHORT_TEXT_MODEL;
+    static final FeatureExtractor SHORT_TEXT_EXTRACTOR;
+    private static int[][] SHORT_TEXT_GROUP_INDICES;
+    private static int[] SHORT_TEXT_CLASS_SCRIPT;
+
     static {
         try {
             MODEL = CharSoupModel.loadFromClasspath(MODEL_RESOURCE);
@@ -136,6 +199,22 @@ public class CharSoupLanguageDetector extends LanguageDetector {
             throw new RuntimeException("Failed to load built-in language model: " + MODEL_RESOURCE,
                     e);
         }
+
+        CharSoupModel shortModel = null;
+        FeatureExtractor shortExtractor = null;
+        try {
+            shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
+            shortExtractor = shortModel.createExtractor();
+            SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
+            SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
+            LOG.info("Short-text language model loaded ({} languages, {} buckets)",
+                    shortModel.getNumClasses(), shortModel.getNumBuckets());
+        } catch (IOException e) {
+            LOG.debug("Short-text language model not found ({}); using general model only",
+                    SHORT_TEXT_MODEL_RESOURCE);
+        }
+        SHORT_TEXT_MODEL = shortModel;
+        SHORT_TEXT_EXTRACTOR = shortExtractor;
     }
 
     /**
@@ -286,18 +365,17 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      * naturally. Returns {@code logits} unchanged if no dominant script is detected
      * or it is {@link ScriptCategory#OTHER}.
      */
-    private static float[] applyScriptGate(float[] logits, String inputText) {
+    private static float[] applyScriptGate(float[] logits, String inputText, int[] classScript) {
         int domScript = dominantScript(inputText);
         if (domScript < 0 || domScript == ScriptCategory.OTHER) {
             return logits;
         }
         float[] gated = Arrays.copyOf(logits, logits.length);
         for (int i = 0; i < gated.length; i++) {
-            int classScript = CLASS_SCRIPT[i];
-            boolean compatible = (classScript == domScript)
+            boolean compatible = (classScript[i] == domScript)
                     || (domScript == ScriptCategory.HAN
-                        && (classScript == ScriptCategory.HIRAGANA
-                            || classScript == ScriptCategory.KATAKANA));
+                        && (classScript[i] == ScriptCategory.HIRAGANA
+                            || classScript[i] == ScriptCategory.KATAKANA));
             if (!compatible) {
                 gated[i] = MASKED_LOGIT;
             }
@@ -388,6 +466,17 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     private final StringBuilder buffer = new StringBuilder();
     private int maxLength = CharSoupFeatureExtractor.MAX_TEXT_LENGTH;
 
+    /** Constructed (default) config — never null. */
+    private final CharSoupDetectorConfig config;
+
+    /**
+     * Per-document effective config, set in {@link #reset(ParseContext)}.
+     * May differ from {@link #config} when a caller injects a
+     * {@link CharSoupDetectorConfig} via {@link ParseContext}.
+     * Starts equal to {@link #config} and is reset to it on every {@link #reset()}.
+     */
+    private CharSoupDetectorConfig activeConfig;
+
     /**
      * Entropy (in bits) of the probability distribution from the most recent
      * {@link #detectAll()} call. Low entropy = confident, high entropy = uncertain/junk.
@@ -401,7 +490,24 @@ public class CharSoupLanguageDetector extends LanguageDetector {
      */
     private float lastEntropy = Float.NaN;
 
+    /** Constructs a detector with default configuration ({@link Strategy#AUTOMATIC}). */
     public CharSoupLanguageDetector() {
+        this(CharSoupDetectorConfig.DEFAULT);
+    }
+
+    /**
+     * Constructs a detector with the supplied configuration.
+     * Use {@link CharSoupDetectorConfig#fromMap(java.util.Map)} to build a config
+     * from JSON-decoded values read out of a ParseContext.
+     *
+     * @param config immutable configuration; must not be null
+     */
+    public CharSoupLanguageDetector(CharSoupDetectorConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("config must not be null");
+        }
+        this.config = config;
+        this.activeConfig = config;
     }
 
     /**
@@ -511,7 +617,7 @@ public class CharSoupLanguageDetector extends LanguageDetector {
 
             int[] features = EXTRACTOR.extract(entry.getValue());
             float[] logits = MODEL.predictLogits(features);
-            logits = applyScriptGate(logits, entry.getValue());
+            logits = applyScriptGate(logits, entry.getValue(), CLASS_SCRIPT);
             float confidence = topClassScore(logits);
 
             LOG.debug("compareLanguageSignal: {} -> confidence={}",
@@ -603,6 +709,37 @@ public class CharSoupLanguageDetector extends LanguageDetector {
     public void reset() {
         buffer.setLength(0);
         lastEntropy = Float.NaN;
+        activeConfig = config;
+    }
+
+    /**
+     * Reset for a new document, applying any {@link CharSoupDetectorConfig} found
+     * in {@code context}. A context config overrides the instance config for the
+     * duration of this document only; the next {@link #reset()} or
+     * {@link #reset(ParseContext)} call restores the baseline.
+     * <p>
+     * Also bridges the legacy {@link #shortText} boolean: if no context config is
+     * present but {@code shortText == true}, {@link Strategy#SHORT_TEXT} is applied.
+     *
+     * @param context parse context for the current document; may be {@code null}
+     */
+    @Override
+    public void reset(ParseContext context) {
+        reset();
+        if (context != null) {
+            CharSoupDetectorConfig ctxConfig = context.get(CharSoupDetectorConfig.class);
+            if (ctxConfig != null) {
+                activeConfig = ctxConfig;
+                return;
+            }
+        }
+        // Bridge legacy shortText hint when no explicit context config is present
+        if (shortText && activeConfig.getStrategy() == Strategy.AUTOMATIC) {
+            activeConfig = CharSoupDetectorConfig.fromMap(
+                    Map.of("strategy", Strategy.SHORT_TEXT.name(),
+                           "lengthThreshold", activeConfig.getLengthThreshold(),
+                           "featureThreshold", activeConfig.getFeatureThreshold()));
+        }
     }
 
     @Override
@@ -632,15 +769,47 @@ public class CharSoupLanguageDetector extends LanguageDetector {
         float[] bestLogits = null;
         float bestEntropy = Float.MAX_VALUE;
         int[] features = new int[EXTRACTOR.getNumBuckets()];
+        int[] shortFeatures = SHORT_TEXT_MODEL != null
+                ? new int[SHORT_TEXT_EXTRACTOR.getNumBuckets()] : null;
 
         for (int start = 0; start < len; start += CHUNK_SIZE) {
             int end = Math.min(start + CHUNK_SIZE, len);
             String chunk = text.substring(start, end);
 
-            EXTRACTOR.extractAndCount(chunk, features);
-            float[] logits = MODEL.predictLogits(features);
-            float[] scriptGated = applyScriptGate(logits, chunk);
-            float[] collapsed = collapseGroups(scriptGated, GROUP_INDICES);
+            // Determine model routing via strategy + gates.
+            // Gate 1 (length) and Gate 2 (feature density) only apply in AUTOMATIC mode.
+            // Gate 2 catches degenerate inputs (e.g. 1 KB of spaces + "the") where
+            // character length alone would incorrectly select the general-model path.
+            int emissionCount = EXTRACTOR.extractAndCount(chunk, features);
+            boolean useShortText;
+            switch (activeConfig.getStrategy()) {
+                case SHORT_TEXT:
+                    useShortText = SHORT_TEXT_MODEL != null;
+                    break;
+                case STANDARD:
+                    useShortText = false;
+                    break;
+                default: // AUTOMATIC
+                    useShortText = SHORT_TEXT_MODEL != null
+                            && (chunk.length() < activeConfig.getLengthThreshold()
+                                || emissionCount < activeConfig.getFeatureThreshold());
+                    break;
+            }
+
+            float[] logits;
+            float[] scriptGated;
+            float[] collapsed;
+            if (useShortText) {
+                SHORT_TEXT_EXTRACTOR.extractAndCount(chunk, shortFeatures);
+                logits = SHORT_TEXT_MODEL.predictLogits(shortFeatures);
+                scriptGated = applyScriptGate(logits, chunk, SHORT_TEXT_CLASS_SCRIPT);
+                collapsed = collapseGroups(scriptGated, SHORT_TEXT_GROUP_INDICES);
+            } else {
+                logits = MODEL.predictLogits(features);
+                scriptGated = applyScriptGate(logits, chunk, CLASS_SCRIPT);
+                collapsed = collapseGroups(scriptGated, GROUP_INDICES);
+            }
+
             float entropy = entropyFromLogits(collapsed);
 
             if (entropy < bestEntropy) {

@@ -187,10 +187,10 @@ public class PrepareCorpus {
         // Gorontalo (gor): F1@500=0.801, F1@50=0.503. Persistently poor at every
         // length — worst recovery rate of the post-Wikipedia drop candidates.
         ex.add("gor");
-        // Cebuano (ceb): F1@500=0.999 on Wikipedia but 13.9% on FLORES-200.
-        // Lsjbot-generated municipality stubs dominate the Wikipedia corpus; the
-        // model learned the template, not the language. Useless for real documents.
-        ex.add("ceb");
+        // Cebuano (ceb): Wikipedia corpus was Lsjbot-generated municipality stubs
+        // (F1@500=0.999 Wikipedia vs 13.9% FLORES-200). Re-enabled with MADLAD data
+        // (sentences_madlad.txt), which contains genuine Cebuano prose.
+        // POST-TRAINING: verify tgl/fil confusion is acceptable.
         // Zeelandic (zea): F1@500=0.827, below 0.85 threshold. Still bleeds 1.4%
         // into Dutch (nld) on FLORES at full sentence length even with the gate.
         // West Flemish (vls) and Low Saxon Dutch (nds-nl) are retained — both reach
@@ -215,10 +215,9 @@ public class PrepareCorpus {
         // and Indian/Bangladeshi location stubs. 18k sentences, near-zero genuine prose.
         ex.add("bpy");
 
-        // Malagasy (mlg): French commune stubs dominate
-        // ("Ny isam-ponin'i X dia Y mponina araka ny fanisana..."). 179k sentences
-        // but the model learned the template, not the language.
-        ex.add("mlg");
+        // Malagasy (mlg): Wikipedia corpus dominated by French commune stubs.
+        // Re-enabled with MADLAD data (sentences_madlad.txt), which contains
+        // genuine Malagasy prose. POST-TRAINING: verify F1 on FLORES.
 
         // Min Nan Chinese romanized (nan-x-rom): 6/8 random samples are geographic
         // stubs (Romanian communes, Bolivian municipalities, German/Iranian villages).
@@ -233,9 +232,9 @@ public class PrepareCorpus {
         // towns, incomplete game articles). 143k sentences.
         ex.add("lld");
 
-        // Chechen (che): 19/20 random samples are Russian, Turkish, Belarusian, and
-        // Mexican village/town stubs. 456k sentences but effectively all bot content.
-        ex.add("che");
+        // Chechen (che): Wikipedia corpus was overwhelmingly Russian/Mexican village
+        // stubs. Re-enabled with MADLAD data (sentences_madlad.txt), which contains
+        // genuine Chechen prose. POST-TRAINING: verify Russian (rus) F1 not degraded.
 
         // Navajo (nav): ~95% species distribution stubs following the template
         // "éí [animal] dah yikahjí atah yisdzoh... Ndaʼałkaahí dóó ééʼdeetįįhii éí
@@ -262,6 +261,37 @@ public class PrepareCorpus {
         // (above any threshold). Gating only addressed short text; the full-length
         // bleed remained. Not recoverable without a better corpus.
         ex.add("map-bms");
+
+        // --- v7 drops: Italian-dialect cluster and Spanish/Catalan bleed (March 2026) ---
+        // FLORES analysis showed these languages score 0% on independent evaluation
+        // while actively harming major neighbors as false-positive sources.
+        // Italian dialects / close relatives (all harm Italian precision):
+        // Neapolitan (nap): 966/~2000 Wikipedia FP sentences absorbed as Italian.
+        // Previously retained; FLORES analysis confirmed net-negative inclusion.
+        ex.add("nap");
+        // Friulian (fur): 0% FLORES (411/997 predicted as Italian).
+        ex.add("fur");
+        // Ligurian (lij): 0% FLORES (308/997 predicted as Italian).
+        ex.add("lij");
+        // Lombard (lmo): 0% FLORES (predicted as cat/roh/cos/ita across all sentences).
+        ex.add("lmo");
+        // Sicilian (scn): 0% FLORES (988/997 absorbed by Corsican cos).
+        ex.add("scn");
+        // Sardinian (srd): 0% FLORES (absorbed by cos/tet/ron/por/spa).
+        ex.add("srd");
+        // Piedmontese (pms): not in FLORES; Wikipedia FP source for Italian.
+        ex.add("pms");
+        // Tarantino (roa-tara): not in FLORES; 386 Wikipedia FP sentences into Italian.
+        ex.add("roa-tara");
+        // Twi (twi): 987/997 FLORES sentences absorbed by Akan (aka). Twi is a dialect
+        // of Akan; having both is structurally unsound. aka is retained (66.4% FLORES F1).
+        ex.add("twi");
+        // Asturian (ast): 0% FLORES (865/997 predicted as Spanish). Dumps 865 FP
+        // sentences into Spanish, holding Spanish FLORES F1 at 65%.
+        ex.add("ast");
+        // Occitan (oci): 0% FLORES (819/997 predicted as Catalan). Dumps 819 FP
+        // sentences into Catalan, holding Catalan FLORES F1 at 61.8%.
+        ex.add("oci");
 
                 EXCLUDED_LANGS = Collections.unmodifiableSet(ex);
     }

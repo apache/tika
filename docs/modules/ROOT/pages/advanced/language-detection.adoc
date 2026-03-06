@@ -63,7 +63,7 @@ preprocessed text:
   family do not create word boundaries.
 
 All features are hashed to bucket indices via FNV-1a. The current model uses
-8,192 buckets.
+16,384 buckets.
 
 === Preprocessing Pipeline
 
@@ -311,7 +311,7 @@ loads the model via `MappedByteBuffer`. A companion `saveSplit(Path, Path)`
 method writes the raw weights and metadata as separate files for true zero-copy
 loading.
 
-For the default classpath resource (1.6 MB), heap loading is used and the
+For the default classpath resource (3.2 MB), heap loading is used and the
 performance difference is negligible.
 
 == WordTokenizer (tika-eval integration)

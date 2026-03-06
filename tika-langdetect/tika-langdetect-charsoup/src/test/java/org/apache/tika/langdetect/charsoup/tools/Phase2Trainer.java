@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -564,6 +565,10 @@ public class Phase2Trainer {
                     continue;
                 }
                 String lang = line.substring(0, tab);
+                if (allowedLangs != null
+                        && !allowedLangs.contains(lang)) {
+                    continue;
+                }
                 if (!idx.containsKey(lang)) {
                     idx.put(lang, labelList.size());
                     labelList.add(lang);
@@ -1386,6 +1391,14 @@ public class Phase2Trainer {
     //  Helpers
     // ================================================================
 
+    private Set<String> allowedLangs = null; // null = all langs
+
+    public Phase2Trainer setAllowedLangs(Set<String> langs) {
+        this.allowedLangs = langs == null || langs.isEmpty()
+                ? null : langs;
+        return this;
+    }
+
     private boolean useTrigrams    = false;
     private boolean useSkipBigrams = false;
     private boolean useWordSuffixes = false;
@@ -1393,6 +1406,8 @@ public class Phase2Trainer {
     private boolean useWordPrefix   = false;
     private boolean useWordUnigrams = true;
     private boolean useCharUnigrams = false;
+    private boolean use4grams       = false;
+    private boolean use5grams       = false;
 
     public Phase2Trainer setUseTrigrams(boolean v) {
         this.useTrigrams = v;
@@ -1429,6 +1444,16 @@ public class Phase2Trainer {
         return this;
     }
 
+    public Phase2Trainer setUse4grams(boolean v) {
+        this.use4grams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUse5grams(boolean v) {
+        this.use5grams = v;
+        return this;
+    }
+
     public boolean isUseTrigrams()     { return useTrigrams; }
     public boolean isUseSkipBigrams()  { return useSkipBigrams; }
     public boolean isUseWordSuffixes() { return useWordSuffixes; }
@@ -1436,8 +1461,21 @@ public class Phase2Trainer {
     public boolean isUseWordPrefix()   { return useWordPrefix; }
     public boolean isUseWordUnigrams() { return useWordUnigrams; }
     public boolean isUseCharUnigrams() { return useCharUnigrams; }
+    public boolean isUse4grams()       { return use4grams; }
+    public boolean isUse5grams()       { return use5grams; }
 
     private FeatureExtractor createExtractor() {
+        boolean research = useTrigrams || useSkipBigrams
+                || useWordSuffixes || useWordSuffix4
+                || useWordPrefix || useCharUnigrams
+                || use4grams || use5grams;
+        if (research) {
+            return new ResearchFeatureExtractor(numBuckets,
+                    useTrigrams, useSkipBigrams,
+                    useWordSuffixes, useWordSuffix4,
+                    useWordPrefix, useWordUnigrams,
+                    useCharUnigrams, use4grams, use5grams);
+        }
         return new ScriptAwareFeatureExtractor(numBuckets);
     }
 

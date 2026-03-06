@@ -44,6 +44,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     static final int SUFFIX4_BASIS      = 0x5c8a1e49;
     static final int PREFIX_BASIS       = 0x3b7e9f12;
     static final int CHAR_UNIGRAM_BASIS = 0x1d4f8c3a;
+    static final int FOURGRAM_BASIS     = 0xa3d8f215;
+    static final int FIVEGRAM_BASIS     = 0xc7b46e38;
 
     static final int MAX_WORD_LENGTH = 30;
     static final int MIN_WORD_LENGTH = 2;
@@ -57,10 +59,12 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     private final boolean usePrefix;
     private final boolean useWordUnigrams;
     private final boolean useCharUnigrams;
+    private final boolean use4grams;
+    private final boolean use5grams;
 
     /** Minimal constructor: bigrams + word unigrams + CJK unigrams. */
     public ResearchFeatureExtractor(int numBuckets) {
-        this(numBuckets, false, false, false, false, false, true, false);
+        this(numBuckets, false, false, false, false, false, true, false, false, false);
     }
 
     /** Full-config constructor. All features share the same flat bucket space. */
@@ -71,7 +75,9 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                                     boolean useSuffix4,
                                     boolean usePrefix,
                                     boolean useWordUnigrams,
-                                    boolean useCharUnigrams) {
+                                    boolean useCharUnigrams,
+                                    boolean use4grams,
+                                    boolean use5grams) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException(
                     "numBuckets must be positive: " + numBuckets);
@@ -84,6 +90,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
         this.usePrefix = usePrefix;
         this.useWordUnigrams = useWordUnigrams;
         this.useCharUnigrams = useCharUnigrams;
+        this.use4grams = use4grams;
+        this.use5grams = use5grams;
     }
 
     @Override
@@ -132,6 +140,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
         boolean prevWasLetter = false;
         boolean prevWasCjk = false;
         int prevPrevCp = SENTINEL;
+        int prevPrevPrevCp = SENTINEL;
+        int prevPrevPrevPrevCp = SENTINEL;
 
         int wordHash = WORD_BASIS;
         int wordLen = 0;
@@ -170,6 +180,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                         wordHash = fnvFeedInt(wordHash, lower);
                         wordLen = 1;
                         wordScript = script;
+                        prevPrevPrevPrevCp = SENTINEL;
+                        prevPrevPrevCp = SENTINEL;
                         prevPrevCp = SENTINEL;
                         suf0 = SENTINEL;
                         suf1 = SENTINEL;
@@ -187,7 +199,15 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                             if (useSkipBigrams) {
                                 emitSkipBigram(counts, script, prevPrevCp, lower);
                             }
+                            if (use4grams && prevPrevPrevCp != SENTINEL) {
+                                emit4gram(counts, script, prevPrevPrevCp, prevPrevCp, prevCp, lower);
+                            }
+                            if (use5grams && prevPrevPrevPrevCp != SENTINEL) {
+                                emit5gram(counts, script, prevPrevPrevPrevCp, prevPrevPrevCp, prevPrevCp, prevCp, lower);
+                            }
                         }
+                        prevPrevPrevPrevCp = prevPrevPrevCp;
+                        prevPrevPrevCp = prevPrevCp;
                         prevPrevCp = prevCp;
                         wordHash = fnvFeedInt(wordHash, lower);
                         wordLen++;
@@ -203,6 +223,13 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                                 }
                             } else if (wordLen == 3) {
                                 preC = lower;
+                                if (use4grams) {
+                                    emit4gram(counts, script, SENTINEL, preA, preB, lower);
+                                }
+                            } else if (wordLen == 4) {
+                                if (use5grams) {
+                                    emit5gram(counts, script, SENTINEL, preA, preB, preC, lower);
+                                }
                             }
                         }
                     }
@@ -216,6 +243,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                         wordHash = fnvFeedInt(wordHash, lower);
                         wordLen = 1;
                         wordScript = script;
+                        prevPrevPrevPrevCp = SENTINEL;
+                        prevPrevPrevCp = SENTINEL;
                         prevPrevCp = SENTINEL;
                         suf0 = SENTINEL;
                         suf1 = SENTINEL;
@@ -251,6 +280,8 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                 prevWasCjk = false;
                 prevCp = SENTINEL;
                 prevPrevCp = SENTINEL;
+                prevPrevPrevCp = SENTINEL;
+                prevPrevPrevPrevCp = SENTINEL;
                 wordLen = 0;
                 suf0 = SENTINEL;
                 suf1 = SENTINEL;
@@ -283,6 +314,20 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
             emitBigram(counts, script, prevCp, SENTINEL);
             if (useTrigrams && wordLen >= 2) {
                 emitTrigram(counts, script, suf2, suf3, SENTINEL);
+            }
+            if (use4grams && wordLen >= 3) {
+                emit4gram(counts, wordScript, suf1, suf2, suf3, SENTINEL);
+            }
+            if (use4grams && wordLen == 2) {
+                // complete 2-letter word: (_, a, b, _)
+                emit4gram(counts, wordScript, SENTINEL, suf2, suf3, SENTINEL);
+            }
+            if (use5grams && wordLen >= 4) {
+                emit5gram(counts, wordScript, suf0, suf1, suf2, suf3, SENTINEL);
+            }
+            if (use5grams && wordLen == 3) {
+                // complete 3-letter word: (_, a, b, c, _)
+                emit5gram(counts, wordScript, SENTINEL, suf1, suf2, suf3, SENTINEL);
             }
             if (useWordUnigrams) {
                 emitWordIfEligible(counts, wordHash, wordLen);
@@ -331,6 +376,16 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
 
     private void emitSuffix4(int[] counts, int script, int cp1, int cp2, int cp3, int cp4) {
         int h = fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedByte(SUFFIX4_BASIS, script), cp1), cp2), cp3), cp4);
+        counts[(h & 0x7FFFFFFF) % numBuckets]++;
+    }
+
+    private void emit4gram(int[] counts, int script, int cp1, int cp2, int cp3, int cp4) {
+        int h = fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedByte(FOURGRAM_BASIS, script), cp1), cp2), cp3), cp4);
+        counts[(h & 0x7FFFFFFF) % numBuckets]++;
+    }
+
+    private void emit5gram(int[] counts, int script, int cp1, int cp2, int cp3, int cp4, int cp5) {
+        int h = fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedInt(fnvFeedByte(FIVEGRAM_BASIS, script), cp1), cp2), cp3), cp4), cp5);
         counts[(h & 0x7FFFFFFF) % numBuckets]++;
     }
 

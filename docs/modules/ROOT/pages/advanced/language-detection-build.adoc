@@ -24,40 +24,50 @@ xref:advanced/language-detection.adoc[Language Detection].
 
 == Training Corpus
 
-Training data is downloaded from
+The primary training data comes from Wikipedia database dumps
+(https://dumps.wikimedia.org/[dumps.wikimedia.org]). Wikipedia is preferred
+over web-crawl corpora for quality: articles are human-authored, editorial
+standards filter boilerplate and spam, and the sentence distribution reflects
+genuine prose rather than SEO content or duplicated web templates.
+
+Sentences are extracted from the Wikipedia XML dumps using the
+`extract_wiki_sentences.py` script, which strips markup, splits into sentences,
+and writes one `lineNum<TAB>sentence` file per language directory:
+
+----
+~/datasets/wikipedia-dumps/
+    eng/sentences.txt
+    deu/sentences.txt
+    ara/sentences.txt
+    ...
+----
+
+For 16 languages with insufficient Wikipedia coverage, sentences are
+supplemented from
 https://huggingface.co/datasets/allenai/MADLAD-400[MADLAD-400]
-(Magnusson et al., 2023), a massively multilingual web corpus covering 419
-languages derived from Common Crawl. MADLAD is preferred over the Leipzig
-Corpora Collection because it carries a permissive Creative Commons license
-suitable for redistribution with Tika.
-
-The download script `download_madlad.py` (checked into the repository at
-`~/datasets/madlad/`) streams the `_clean_` gzipped JSONL shards directly from
-Hugging Face, splits each web document on newlines into sentence-sized units,
-applies a minimum-length filter (50 characters), and takes the first 500,000
-sentences per language (stopping immediately — no reservoir sampling needed as
-MADLAD shards represent diverse web-crawl data).
-
-[source,bash]
-----
-python download_madlad.py ~/datasets/madlad/data
-----
-
-The script writes one file per language:
+(Magnusson et al., 2023). These languages are written into a parallel
+`sentences_madlad.txt` file alongside the Wikipedia data, and `PrepareCorpus`
+reads all `*.txt` files from each language directory automatically:
 
 ----
-~/datasets/madlad/data/
-    eng/
-        sentences_madlad.txt   (lineNum<TAB>sentence)
-    deu/
+~/datasets/wikipedia-dumps/
+    mya/
+        sentences.txt          (Wikipedia)
+        sentences_madlad.txt   (MADLAD supplement)
+    xho/
+        sentences.txt
         sentences_madlad.txt
     ...
 ----
 
-MADLAD uses ISO 639-1 two-letter codes for major languages; the script maps
-all of these to ISO 639-3 three-letter codes and renames directories
-accordingly. The 500k-sentence cap provides ample data for both the language
-model (100k used for training) and the common token lists used by `tika-eval`.
+The MADLAD-supplemented languages are:
+`mya`, `xho`, `nya`, `smo`, `sot`, `tet`, `orm`, `udm`, `tir`, `hil`,
+`ewe`, `tso`, `aka`, `tsn`, `ceb`, `mlg`, `che`.
+
+The `extract_madlad_to_wiki.py` script handles extraction from MADLAD's
+document-per-line format (paragraph boundaries encoded as literal `\n`
+sequences), applies quality filters identical to those used by the main
+download pipeline, and caps output at 500,000 sentences per language.
 
 === Deduplication
 
@@ -352,7 +362,121 @@ that did not survive the mislabel-filtering step and are not in the final model.
 NOTE: `CommonTokenGenerator` looks for `sentences_madlad.txt` files inside
 each language subdirectory.
 
-== Current Build: v3 (MADLAD)
+== Current Build: v7 (Wikipedia)
+
+v7 is the current production model. It is trained on Wikipedia dumps (primary)
+supplemented by MADLAD for 16 under-resourced languages, and uses 16,384
+hash buckets. Compared to v3 (MADLAD), v7 covers fewer languages (203 vs 229)
+but is substantially more accurate due to higher training data quality.
+
+=== v7 Training Configuration
+
+* **Corpus:** Wikipedia dumps (primary) + MADLAD supplement for 16 languages
+* **Languages:** 203
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
+  word unigrams, CJK character unigrams, script-aware boundaries
+* **Target epoch total:** 5,000,000 sentences per epoch
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs with within-epoch early stopping
+* **Two-pass training:** Pass 1 on full pool → mislabel filter (removed 1.5%) → Pass 2
+* **Model size:** 3.2 MB (INT8 quantized)
+* **JVM:** `-Xmx8g`
+
+=== v7 Evaluation: FLORES-200 Dev Set
+
+Results are evaluated on the
+https://github.com/facebookresearch/flores[FLORES-200] dev set
+(203 languages, 997 sentences each), a clean, curated multilingual benchmark
+independent of all training corpora.
+All scores are macro-averaged F1 across supported languages.
+
+==== Coverage-adjusted accuracy (each detector on its own supported languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | Lingua mF1 | Optimaize mF1
+
+| @20 chars  | 74.90% | 74.87% | 76.35% | **84.87%**
+| @50 chars  | 84.14% | 86.09% | 90.99% | **94.44%**
+| @100 chars | 86.01% | 90.25% | 95.43% | **96.51%**
+| @500 chars | 86.30% | 91.12% | 96.25% | **96.76%**
+| full text  | 86.30% | 91.12% | 96.25% | **96.76%**
+| Languages  | **203** | ~105 | 75 | 63
+|===
+
+NOTE: Coverage-adjusted scores reflect each detector's performance on the
+languages it actually supports. CharSoup covers 203 of the 203 FLORES test
+languages; Optimaize covers only 63, Lingua 75, and OpenNLP ~105. A detector
+can achieve a high coverage-adjusted score on a narrow, easy set of languages.
+
+==== Head-to-head: CharSoup vs OpenNLP (105 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
+
+| @20 chars  | **80.60%** | 76.69% |   613 |    376
+| @50 chars  | **90.08%** | 87.27% |   805 |    629
+| @100 chars | **92.00%** | 91.05% |   859 |  1,203
+| @500 chars | **92.30%** | 91.78% |   920 |  2,244
+| full text  | **92.30%** | 91.78% |   889 |  1,495
+|===
+
+CharSoup beats OpenNLP at every length on shared languages, while using a
+3.2 MB model vs OpenNLP's ~80 MB.
+
+==== Head-to-head: CharSoup vs Lingua (71 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
+
+| @20 chars  | **84.38%** | 77.78% |   378 |  3,535
+| @50 chars  | **93.88%** | 92.24% |   414 |  6,754
+| @100 chars | 95.67% | **96.58%** |   516 | 11,428
+| @500 chars | 95.98% | **97.38%** |   689 | 18,506
+| full text  | 95.98% | **97.38%** |   593 | 17,401
+|===
+
+CharSoup wins decisively at short text (@20/@50) — the regime most important for
+Tika's document processing use case. Lingua's advantage at full text is marginal
+(+1.4pp), and comes at a cost of ~30× slower throughput.
+
+==== Head-to-head: CharSoup vs Optimaize (63 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Optimaize mF1 | CharSoup ms | Optimaize ms
+
+| @20 chars  | 86.13% | **86.30%** |   307 |   116
+| @50 chars  | **95.61%** | 95.40% |   436 |   552
+| @100 chars | **97.37%** | 97.23% |   524 |   513
+| @500 chars | **97.68%** | 97.34% |   702 |   548
+| full text  | **97.68%** | 97.34% |   487 |   531
+|===
+
+CharSoup matches Optimaize on its narrow 63-language set while covering 3× more
+languages total.
+
+==== v7 Resource Usage
+
+[cols="1,1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Lingua (low accuracy) | Optimaize
+
+| Languages supported  | **203** | ~105 | 75 | 63
+| Model heap           | **~4.0 MB** | ~80 MB | ~300 MB | —
+| Model file (disk)    | **3.2 MB** | ~22 MB | — | —
+| Throughput (full)    | **~65K sent/s** | ~17K sent/s | ~1K sent/s | ~16K sent/s
+| Runtime dependencies | **None** | OpenNLP + model | Lingua jar + Kotlin | Optimaize jar
+|===
+
+NOTE: All detectors evaluated with 12 threads on the FLORES-200 dev set
+(203,381 sentences). Throughput is wall-clock sentences per second including
+full pipeline overhead (script gating, confusable group collapse for CharSoup).
+
+== Historical Build: v3 (MADLAD)
 
 v3 is the first build trained entirely on MADLAD-400, replacing the
 Leipzig Corpora Collection used in v1 and v2. MADLAD's permissive license
