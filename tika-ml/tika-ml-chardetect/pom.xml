@@ -91,6 +91,7 @@
           <inputExcludes>
             <inputExclude>**/manifest.json</inputExclude>
             <inputExclude>src/test/python/anneal_log.csv</inputExclude>
+            <inputExclude>README.md</inputExclude>
           </inputExcludes>
         </configuration>
       </plugin>
