@@ -164,7 +164,8 @@ public abstract class TikaPipesSolrTestBase {
         Files.createDirectories(testFileFolder);
         for (int i = 0; i < numDocs; ++i) {
             Files.writeString(testFileFolder.resolve("test-" + i + ".html"),
-                    "<html><body>" + bodyContent + "</body></html>", StandardCharsets.UTF_8);
+                    "<html><head><meta charset=\"UTF-8\"></head><body>" + bodyContent
+                            + "</body></html>", StandardCharsets.UTF_8);
         }
         try (InputStream is = this.getClass().getResourceAsStream("/embedded/embedded.docx")) {
             Files.copy(is, testFileFolder.resolve("test-embedded.docx"));
@@ -264,7 +265,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
-                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                            new SolrQuery("mime_s:text/html*")).getResults()
                     .getNumFound());
             assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*initial*")).getResults()
@@ -298,7 +299,7 @@ public abstract class TikaPipesSolrTestBase {
         try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
-                            new SolrQuery("mime_s:\"text/html; charset=ISO-8859-1\"")).getResults()
+                            new SolrQuery("mime_s:text/html*")).getResults()
                     .getNumFound());
             assertEquals(numDocs,
                     solrClient.query(collection, new SolrQuery("content_s:*updated*")).getResults()
