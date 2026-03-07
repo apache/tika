@@ -40,4 +40,27 @@
     <module>tika-encoding-detector-mojibuster</module>
     <module>tika-encoding-detector-charsoup</module>
   </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-annotation-processor</artifactId>
+              <version>${project.version}</version>
+            </path>
+            <path>
+              <groupId>org.apache.tika</groupId>
+              <artifactId>tika-core</artifactId>
+              <version>${project.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
