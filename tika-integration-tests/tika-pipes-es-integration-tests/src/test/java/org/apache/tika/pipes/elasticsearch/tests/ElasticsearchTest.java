@@ -722,7 +722,7 @@ public class ElasticsearchTest {
             throws Exception {
         Files.createDirectories(testDocDirectory);
         for (int i = 0; i < numHtmlDocs; ++i) {
-            String html = "<html><body>" + bodyContent +
+            String html = "<html><head><meta charset=\"UTF-8\"></head><body>" + bodyContent +
                     "</body></html>";
             Path p = testDocDirectory.resolve("test-" + i + ".html");
             Files.write(p, html.getBytes(StandardCharsets.UTF_8));
