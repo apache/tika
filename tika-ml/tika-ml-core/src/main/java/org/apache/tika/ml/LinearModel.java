@@ -16,6 +16,7 @@
  */
 package org.apache.tika.ml;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.zip.GZIPInputStream;
 
 /**
  * INT8-quantized multinomial logistic regression model for classification.
@@ -107,7 +109,8 @@ public class LinearModel {
     // ================================================================
 
     /**
-     * Load a model from the classpath.
+     * Load a model from the classpath.  Transparently handles both plain
+     * LDM1 binaries and gzip-compressed LDM1 binaries (detected by magic bytes).
      */
     public static LinearModel loadFromClasspath(String resourcePath) throws IOException {
         try (InputStream is = LinearModel.class.getResourceAsStream(resourcePath)) {
@@ -119,19 +122,40 @@ public class LinearModel {
     }
 
     /**
-     * Load a model from a file on disk.
+     * Load a model from a file on disk.  Transparently handles both plain
+     * and gzip-compressed LDM1 files.
      */
     public static LinearModel loadFromPath(java.nio.file.Path path) throws IOException {
-        try (InputStream is = new java.io.BufferedInputStream(
+        try (InputStream is = new BufferedInputStream(
                 java.nio.file.Files.newInputStream(path))) {
             return load(is);
         }
     }
 
     /**
-     * Load a model from an input stream.
+     * Load a model from an input stream.  Transparently handles both plain
+     * LDM1 binaries and gzip-compressed ones: if the first two bytes are the
+     * gzip magic {@code 0x1F 0x8B} the stream is wrapped in a
+     * {@link GZIPInputStream} before reading.
      */
     public static LinearModel load(InputStream is) throws IOException {
+        // Buffer so we can peek at the magic without consuming it
+        BufferedInputStream buf = is instanceof BufferedInputStream
+                ? (BufferedInputStream) is : new BufferedInputStream(is);
+        buf.mark(2);
+        int b0 = buf.read();
+        int b1 = buf.read();
+        buf.reset();
+        if (b0 == 0x1F && b1 == 0x8B) {
+            is = new GZIPInputStream(buf);
+        } else {
+            is = buf;
+        }
+        return loadRaw(is);
+    }
+
+    /** Read LDM1 from an already-unwrapped (non-gzip) stream. */
+    private static LinearModel loadRaw(InputStream is) throws IOException {
         DataInputStream dis = new DataInputStream(is);
         int magic = dis.readInt();
         if (magic != MAGIC) {

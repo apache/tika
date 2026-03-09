@@ -32,7 +32,7 @@
   <name>Apache Tika Tess4J OCR parser module</name>
 
   <properties>
-    <tess4j.version>5.16.0</tess4j.version>
+    <tess4j.version>5.18.0</tess4j.version>
   </properties>
 
   <dependencies>

@@ -50,6 +50,27 @@ public class TikaEvalCLI {
 
     private void execute(String[] args) throws Exception {
         String tool = args[0];
+        // If the first arg looks like a flag, infer the tool from the args
+        if (tool.startsWith("-")) {
+            String inferred = inferTool(args);
+            if (inferred != null) {
+                tool = inferred;
+                // Don't strip the first arg — all args are flags for the tool
+                switch (tool) {
+                    case "Compare":
+                        handleCompare(args);
+                        return;
+                    case "Profile":
+                        handleProfile(args);
+                        return;
+                    case "Report":
+                        handleReport(args);
+                        return;
+                }
+            }
+            System.err.println(specifyTools());
+            return;
+        }
         String[] subsetArgs = new String[args.length - 1];
         System.arraycopy(args, 1, subsetArgs, 0, args.length - 1);
         switch (tool) {
@@ -70,6 +91,43 @@ public class TikaEvalCLI {
                 System.out.println(specifyTools());
                 break;
         }
+    }
+
+    private static String inferTool(String[] args) {
+        boolean hasA = false;
+        boolean hasB = false;
+        boolean hasE = false;
+        boolean hasDb = false;
+        for (int i = 0; i < args.length; i++) {
+            switch (args[i]) {
+                case "-a":
+                case "--extractsA":
+                    hasA = true;
+                    break;
+                case "-b":
+                case "--extractsB":
+                    hasB = true;
+                    break;
+                case "-e":
+                case "--extracts":
+                    hasE = true;
+                    break;
+                case "-d":
+                case "--db":
+                    hasDb = true;
+                    break;
+            }
+        }
+        if (hasA && hasB) {
+            return "Compare";
+        }
+        if (hasE) {
+            return "Profile";
+        }
+        if (hasDb && !hasA && !hasB && !hasE) {
+            return "Report";
+        }
+        return null;
     }
 
     private void handleStartDB(String[] args) throws SQLException {

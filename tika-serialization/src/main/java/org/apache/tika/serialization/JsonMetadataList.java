@@ -40,7 +40,7 @@ public class JsonMetadataList {
     private static final StreamReadConstraints DEFAULT_CONSTRAINTS = StreamReadConstraints
             .builder()
             .maxNestingDepth(10)
-            .maxStringLength(20_000_000)
+            .maxStringLength(200_000_000)
             .maxNumberLength(500)
             .build();
 

@@ -18,7 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.Charset;
+import java.util.List;
 
 import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.io.TikaInputStream;
@@ -26,37 +26,47 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Character encoding detector. Implementations of this interface use
- * various heuristics to detect the character encoding of a text document
- * based on given input metadata or the first few bytes of the document stream.
+ * Character encoding detector. Implementations use various heuristics to
+ * detect the character encoding of a text document based on given input
+ * metadata or the first few bytes of the document stream.
+ *
+ * <p>Detectors return a ranked list of {@link EncodingResult}s in descending
+ * confidence order. An empty list means no opinion. Results carry a
+ * {@link EncodingResult.ResultType} indicating the nature of the evidence:
+ * {@code DECLARATIVE} (BOM, HTML meta charset), {@code STRUCTURAL} (byte-grammar
+ * proof), or {@code STATISTICAL} (probabilistic model). A
+ * {@link MetaEncodingDetector} uses these types to arbitrate when detectors
+ * disagree.</p>
  *
  * @since Apache Tika 0.4
  */
 public interface EncodingDetector extends Serializable, SelfConfiguring {
 
     /**
-     * Detects the character encoding of the given text document, or
-     * <code>null</code> if the encoding of the document can not be detected.
-     * <p>
-     * If the document input stream is not available, then the first
-     * argument may be <code>null</code>. Otherwise the detector may
-     * read bytes from the start of the stream to help in encoding detection.
+     * Detects the character encoding of the given text document.
+     *
+     * <p>Returns an empty list if the encoding cannot be determined.
+     * Returns a ranked list of candidates in descending confidence order
+     * otherwise. The first entry is always the best guess.</p>
+     *
+     * <p>If the document input stream is not available, then the first
+     * argument may be {@code null}. Otherwise the detector may read bytes
+     * from the start of the stream to help in encoding detection.
      * The given stream is guaranteed to support the
      * {@link TikaInputStream#markSupported() mark feature} and the detector
      * is expected to {@link TikaInputStream#mark(int) mark} the stream before
      * reading any bytes from it, and to {@link TikaInputStream#reset() reset}
      * the stream before returning. The stream must not be closed by the
-     * detector.
-     * <p>
-     * The given input metadata is only read, not modified, by the detector.
+     * detector.</p>
      *
-     * @param tis      text document input stream, or <code>null</code>
-     * @param metadata input metadata for the document
+     * <p>The given input metadata is only read, not modified, by the detector.</p>
+     *
+     * @param tis          text document input stream, or {@code null}
+     * @param metadata     input metadata for the document
      * @param parseContext the parse context
-     * @return detected character encoding, or <code>null</code>
+     * @return ranked list of encoding results, empty if unknown; never {@code null}
      * @throws IOException if the document input stream could not be read
      */
-    Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
-            throws IOException;
-
+    List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
+                                ParseContext parseContext) throws IOException;
 }

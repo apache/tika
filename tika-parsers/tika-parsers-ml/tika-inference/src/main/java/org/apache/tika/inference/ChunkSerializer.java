@@ -30,6 +30,7 @@ import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.SpatialLocator;
 import org.apache.tika.inference.locator.TemporalLocator;
 import org.apache.tika.inference.locator.TextLocator;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Serializes and deserializes a list of {@link Chunk} objects to/from JSON.
@@ -64,12 +65,6 @@ public final class ChunkSerializer {
     }
 
     /**
-     * The canonical metadata field for all chunk data (text chunks,
-     * image embeddings, audio segments, etc.).
-     */
-    public static final String CHUNKS_FIELD = "tika:chunks";
-
-    /**
      * Reads any existing chunks from the metadata field, appends the
      * new chunks, and writes the merged list back. This allows
      * multiple components (text chunker, image embedder, etc.) to
@@ -82,14 +77,14 @@ public final class ChunkSerializer {
             org.apache.tika.metadata.Metadata metadata,
             List<Chunk> newChunks) throws IOException {
         List<Chunk> existing;
-        String current = metadata.get(CHUNKS_FIELD);
+        String current = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
         if (current != null && !current.isEmpty()) {
             existing = fromJson(current);
         } else {
             existing = new ArrayList<>();
         }
         existing.addAll(newChunks);
-        metadata.set(CHUNKS_FIELD, toJson(existing));
+        metadata.set(TikaCoreProperties.TIKA_CHUNKS, toJson(existing));
     }
 
     /**

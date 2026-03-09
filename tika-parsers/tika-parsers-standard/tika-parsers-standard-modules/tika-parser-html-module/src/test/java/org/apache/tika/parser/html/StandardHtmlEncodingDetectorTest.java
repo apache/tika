@@ -25,15 +25,17 @@ import java.io.InputStream;
 import java.io.SequenceInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.detect.html.StandardHtmlEncodingDetector;
-import org.apache.tika.detect.html.charsets.ReplacementCharset;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
+import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
 
 public class StandardHtmlEncodingDetectorTest {
     private Metadata metadata = new Metadata();
@@ -358,7 +360,9 @@ public class StandardHtmlEncodingDetectorTest {
     private Charset detectCharset(InputStream inStream) throws IOException {
         TikaInputStream tis = (inStream instanceof TikaInputStream) ?
                 (TikaInputStream) inStream : TikaInputStream.get(inStream);
-        return new StandardHtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+        List<EncodingResult> results =
+                new StandardHtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+        return results.isEmpty() ? null : results.get(0).getCharset();
     }
 
     private InputStream throwAfter(String html) {

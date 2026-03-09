@@ -22,6 +22,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
 import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
 import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
@@ -41,8 +42,8 @@ class MetadataListAndEmbeddedBytes {
             return metadataList;
         }
 
-        public void filter(MetadataFilter filter) throws TikaException {
-            filter.filter(metadataList);
+        public void filter(MetadataFilter filter, ParseContext parseContext) throws TikaException {
+            filter.filter(metadataList, parseContext);
         }
 
         public UnpackHandler getUnpackHandler() {

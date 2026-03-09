@@ -35,8 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "my-http-fetcher": {
  *       "userName": "user",
  *       "password": "pass",
- *       "connectTimeout": 30000,
- *       "socketTimeout": 120000,
+ *       "connectTimeoutMillis": 30000,
+ *       "socketTimeoutMillis": 120000,
  *       "maxConnections": 200
  *     }
  *   }

@@ -42,6 +42,8 @@
     <module>tika-serialization</module>
     <module>tika-plugins-core</module>
     <module>tika-detectors</module>
+    <module>tika-ml</module>
+    <module>tika-encoding-detectors</module>
     <module>tika-parsers</module>
     <module>tika-bundles</module>
     <module>tika-xmp</module>
@@ -62,6 +64,12 @@
   </modules>
 
   <profiles>
+    <profile>
+      <id>e2e</id>
+      <modules>
+        <module>tika-e2e-tests</module>
+      </modules>
+    </profile>
     <profile>
       <id>apache-release</id>
       <modules>

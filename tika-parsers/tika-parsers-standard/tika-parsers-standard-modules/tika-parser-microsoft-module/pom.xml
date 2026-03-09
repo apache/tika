@@ -51,6 +51,12 @@
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- CharsetDetector/CharsetMatch moved from tika-parser-text-module here -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-xml-module</artifactId>

@@ -18,7 +18,9 @@ package org.apache.tika.eval.app;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
@@ -39,12 +41,16 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.help.HelpFormatter;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +62,7 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.eval.app.reports.ResultsReporter;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -79,10 +86,12 @@ public class ExtractComparerRunner {
                 .addOption(Option.builder("b").longOpt("extractsB").hasArg().desc("required: directory of 'B' extracts").get())
                 .addOption(Option.builder("i").longOpt("inputDir").hasArg().desc("optional: directory for original binary input documents."
                         + " If not specified, -extracts is crawled as is.").get())
-                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path").get())
+                .addOption(Option.builder("d").longOpt("db").hasArg().desc("optional: db path (uses temp file if not specified)").get())
                 .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
                 .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
                 .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
+                .addOption(Option.builder("r").longOpt("report").desc("automatically run Report and tgz after Compare").get())
+                .addOption(Option.builder("rd").longOpt("reportsDir").hasArg().desc("directory for reports (default: 'reports')").get())
                 ;
     }
 
@@ -93,7 +102,16 @@ public class ExtractComparerRunner {
         Path extractsADir = commandLine.hasOption('a') ? Paths.get(commandLine.getOptionValue('a')) : Paths.get(USAGE_FAIL("Must specify extractsA dir: -a"));
         Path extractsBDir = commandLine.hasOption('b') ? Paths.get(commandLine.getOptionValue('b')) : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsADir;
-        String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
+
+        boolean usesTempDb = !commandLine.hasOption('d');
+        Path tempDbDir = null;
+        String dbPath;
+        if (usesTempDb) {
+            tempDbDir = Files.createTempDirectory("tika-eval-");
+            dbPath = tempDbDir.resolve("eval-db").toAbsolutePath().toString();
+        } else {
+            dbPath = commandLine.getOptionValue('d');
+        }
 
         if (commandLine.hasOption('n')) {
             evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
@@ -103,8 +121,27 @@ public class ExtractComparerRunner {
             evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
         }
 
-        String jdbcString = getJdbcConnectionString(dbPath);
-        execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig);
+        try {
+            String jdbcString = getJdbcConnectionString(dbPath);
+            execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig);
+
+            if (commandLine.hasOption('r')) {
+                String reportsDir = commandLine.getOptionValue("rd", "reports");
+                LOG.info("Running Report...");
+                ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
+                Path reportsDirPath = Paths.get(reportsDir);
+                if (Files.isDirectory(reportsDirPath)) {
+                    Path tgzPath = reportsDirPath.resolveSibling(reportsDir + ".tar.gz");
+                    LOG.info("Creating {}", tgzPath);
+                    createTarGz(reportsDirPath, tgzPath);
+                    LOG.info("Reports archived to {}", tgzPath);
+                }
+            }
+        } finally {
+            if (usesTempDb && tempDbDir != null) {
+                deleteDirectory(tempDbDir);
+            }
+        }
     }
 
     private static String getJdbcConnectionString(String dbPath) {
@@ -177,6 +214,11 @@ public class ExtractComparerRunner {
         } finally {
             mimeBuffer.close();
             executorService.shutdownNow();
+            try {
+                jdbcUtil.getConnection().close();
+            } catch (SQLException e) {
+                LOG.warn("failed to close db connection", e);
+            }
         }
 
     }
@@ -203,6 +245,44 @@ public class ExtractComparerRunner {
 
         //step 2. create mime buffer
         return new MimeBuffer(jdbcUtil.getConnection(), builder.getMimeTable(), MimeTypes.getDefaultMimeTypes());
+    }
+
+    private static void deleteDirectory(Path dir) throws IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
+        try (Stream<Path> walk = Files.walk(dir)) {
+            walk.sorted(java.util.Comparator.reverseOrder())
+                    .forEach(p -> {
+                        try {
+                            Files.deleteIfExists(p);
+                        } catch (IOException e) {
+                            LOG.warn("Failed to delete {}", p, e);
+                        }
+                    });
+        }
+    }
+
+    private static void createTarGz(Path sourceDir, Path output) throws IOException {
+        try (OutputStream fos = Files.newOutputStream(output);
+             GzipCompressorOutputStream gzo = new GzipCompressorOutputStream(fos);
+             TarArchiveOutputStream tar = new TarArchiveOutputStream(gzo)) {
+            tar.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+            try (Stream<Path> walk = Files.walk(sourceDir)) {
+                walk.filter(Files::isRegularFile).forEach(file -> {
+                    try {
+                        String entryName = sourceDir.getFileName()
+                                .resolve(sourceDir.relativize(file)).toString();
+                        TarArchiveEntry entry = new TarArchiveEntry(file, entryName);
+                        tar.putArchiveEntry(entry);
+                        Files.copy(file, tar);
+                        tar.closeArchiveEntry();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        }
     }
 
     private static void USAGE() throws IOException {

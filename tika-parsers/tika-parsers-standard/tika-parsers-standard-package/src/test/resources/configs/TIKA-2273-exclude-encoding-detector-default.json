@@ -4,7 +4,7 @@
     {
       "default-encoding-detector": {
         "exclude": [
-          "bom-encoding-detector"
+          "standard-html-encoding-detector"
         ]
       }
     },

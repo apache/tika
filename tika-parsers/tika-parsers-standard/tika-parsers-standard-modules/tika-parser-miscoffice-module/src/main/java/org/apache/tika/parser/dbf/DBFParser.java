@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.detect.encoding.Icu4jEncodingDetector;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,6 +39,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -138,7 +139,9 @@ public class DBFParser implements Parser {
         if (bytes.length > 20) {
             EncodingDetector detector = new Icu4jEncodingDetector();
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-                charset = detector.detect(TikaInputStream.get(bytes), new Metadata(), parseContext);
+                List<EncodingResult> results =
+                        detector.detect(TikaInputStream.get(bytes), new Metadata(), parseContext);
+                charset = results.isEmpty() ? null : results.get(0).getCharset();
             }
         }
         return charset;

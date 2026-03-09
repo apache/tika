@@ -46,14 +46,14 @@ public class HttpFetcherConfig {
     private Integer proxyPort;
     private Integer maxConnectionsPerRoute = 1000;
     private Integer maxConnections = 2000;
-    private Integer requestTimeout = 120000;
-    private Integer connectTimeout = 120000;
-    private Integer socketTimeout = 120000;
+    private Integer requestTimeoutMillis = 120000;
+    private Integer connectTimeoutMillis = 120000;
+    private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
     private List<String> httpHeaders = new ArrayList<>();
     private HttpHeaders httpRequestHeaders = new HttpHeaders();
-    private Long overallTimeout = 120000L;
+    private Long overallTimeoutMillis = 120000L;
     private Integer maxErrMsgSize = 10000000;
     private String userAgent;
     private String jwtIssuer;
@@ -117,30 +117,30 @@ public class HttpFetcherConfig {
         return this;
     }
 
-    public Integer getConnectTimeout() {
-        return connectTimeout;
+    public Integer getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
-    public HttpFetcherConfig setConnectTimeout(Integer connectTimeout) {
-        this.connectTimeout = connectTimeout;
+    public HttpFetcherConfig setConnectTimeoutMillis(Integer connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
         return this;
     }
 
-    public Integer getRequestTimeout() {
-        return requestTimeout;
+    public Integer getRequestTimeoutMillis() {
+        return requestTimeoutMillis;
     }
 
-    public HttpFetcherConfig setRequestTimeout(Integer requestTimeout) {
-        this.requestTimeout = requestTimeout;
+    public HttpFetcherConfig setRequestTimeoutMillis(Integer requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
         return this;
     }
 
-    public Integer getSocketTimeout() {
-        return socketTimeout;
+    public Integer getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
-    public HttpFetcherConfig setSocketTimeout(Integer socketTimeout) {
-        this.socketTimeout = socketTimeout;
+    public HttpFetcherConfig setSocketTimeoutMillis(Integer socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
         return this;
     }
 
@@ -198,12 +198,12 @@ public class HttpFetcherConfig {
         return this;
     }
 
-    public Long getOverallTimeout() {
-        return overallTimeout;
+    public Long getOverallTimeoutMillis() {
+        return overallTimeoutMillis;
     }
 
-    public HttpFetcherConfig setOverallTimeout(Long overallTimeout) {
-        this.overallTimeout = overallTimeout;
+    public HttpFetcherConfig setOverallTimeoutMillis(Long overallTimeoutMillis) {
+        this.overallTimeoutMillis = overallTimeoutMillis;
         return this;
     }
 

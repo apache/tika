@@ -65,8 +65,8 @@ public class ResultsReporter {
                         "directory for the reports. " + "If not specified, will write to 'reports'" + "BEWARE: Will overwrite existing reports without warning!")
                 .addOption("rf", "reportsFile", true,
                         "xml specifying sql to call for the reports." + "If not specified, will use default reports in resources/tika-eval-*-config.xml")
-                .addOption("db", true, "default database (in memory H2). Specify a file name for the H2 database.")
-                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Specify this or use -db <h2db_name>")
+                .addOption("d", "db", true, "default database (in memory H2). Specify a file name for the H2 database.")
+                .addOption("jdbc", true, "EXPERT: full jdbc connection string. Specify this or use -d <h2db_name>")
                 .addOption("jdbcdriver", true, "EXPERT: specify the jdbc driver class if all else fails")
                 .addOption("tablePrefix", true, "EXPERT: if not using the default tables, specify your table name prefix");
 
@@ -78,7 +78,7 @@ public class ResultsReporter {
 
     public static void USAGE() throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
-        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Report -db mydb [-rd myreports] [-rf myreports.xml]", "Tool: Report", ResultsReporter.OPTIONS,
+        helpFormatter.printHelp("java -jar tika-eval-x.y.jar Report -d mydb [-rd myreports] [-rf myreports.xml]", "Tool: Report", ResultsReporter.OPTIONS,
                 "Note: for h2 db, do not include the .mv.db at the end of the db name.", true);
     }
 
@@ -323,6 +323,7 @@ public class ResultsReporter {
             for (Report r : reports) {
                 r.writeReport(c, reportsDirectory);
             }
+            MarkdownSummaryWriter.write(c, reportsDirectory);
             for (String sql : after) {
                 LOG.info("processing 'after': {}", sql);
                 long start = System.currentTimeMillis();

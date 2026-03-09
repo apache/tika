@@ -35,7 +35,6 @@
     "parseMode": "RMETA",
     "onParseException": "EMIT",
     "numClients": 4,
-    "timeoutMillis": 5000,
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
@@ -53,6 +52,9 @@
     },
     "runpack-extractor-factory": {
       "maxEmbeddedBytesForExtraction": 10
+    },
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
     }
   },
   "plugin-roots": "PLUGINS_PATHS"

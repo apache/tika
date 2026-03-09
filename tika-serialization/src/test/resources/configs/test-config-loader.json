@@ -17,7 +17,7 @@
       "prefix": "test-"
     },
 
-    "tika-task-timeout": {
+    "test-timeout-config": {
       "millis": 30000
     },
 

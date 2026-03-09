@@ -1,0 +1,170 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Timeouts
+
+== Overview
+
+Tika Pipes uses a two-tier timeout system to handle both long-running tasks and hung parsers:
+
+* **`progressTimeoutMillis`** -- Maximum time between progress updates.
+  If no progress is reported within this interval, the task is considered stalled and killed.
+  Default: `60000` (1 minute).
+
+* **`totalTaskTimeoutMillis`** -- Maximum wall-clock time for an entire task.
+  Even if the parser is making progress, the task is killed after this time.
+  Default: `3600000` (1 hour).
+
+Parsers that never report progress effectively get `progressTimeoutMillis` as their total timeout.
+Parsers that do report progress (e.g., OCR processing multiple pages) can run up to `totalTaskTimeoutMillis`.
+
+== Configuration
+
+Timeouts are configured via `TimeoutLimits` in the `parse-context` section of your JSON configuration:
+
+[source,json]
+----
+{
+  "parse-context": {
+    "timeout-limits": {
+      "totalTaskTimeoutMillis": 3600000,
+      "progressTimeoutMillis": 60000
+    }
+  }
+}
+----
+
+This can be combined with other parse-context settings:
+
+[source,json]
+----
+{
+  "pipes": {
+    "numClients": 4,
+    "forkedJvmArgs": ["-Xmx1g"]
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "totalTaskTimeoutMillis": 7200000,
+      "progressTimeoutMillis": 120000
+    }
+  }
+}
+----
+
+== Per-Request Overrides
+
+When using Tika Server with `enableUnsecureFeatures: true`, timeouts can be overridden per-request
+by including `TimeoutLimits` in the `ParseContext` of a `FetchEmitTuple`:
+
+[source,java]
+----
+ParseContext parseContext = new ParseContext();
+parseContext.setJsonConfig("timeout-limits",
+    "{\"progressTimeoutMillis\": 300000}");
+
+FetchEmitTuple t = new FetchEmitTuple("id",
+    new FetchKey("my-fetcher", "large-document.pdf"),
+    new EmitKey("my-emitter", "output-key"),
+    parseContext);
+----
+
+== How It Works
+
+=== Progress Tracking
+
+When a task starts, the server creates a `TikaProgressTracker` and places it in the `ParseContext`.
+Parsers that perform long-running external operations (OCR, VLM inference, etc.) call
+`TikaProgressTracker.update(context)` after completing each unit of work:
+
+[source,java]
+----
+// In a parser after completing an external process:
+TikaProgressTracker.update(parseContext);
+----
+
+The server's monitoring loop checks both timeouts on every heartbeat:
+
+1. Has `totalTaskTimeoutMillis` elapsed since the task started? -> TIMEOUT
+2. Has `progressTimeoutMillis` elapsed since the last progress update? -> TIMEOUT
+
+=== Which Parsers Report Progress?
+
+The following parsers call `TikaProgressTracker.update()` after each external operation:
+
+* `TesseractOCRParser` -- after each OCR invocation
+* `ExternalParser` -- after each external process completes
+* `GDALParser` -- after GDAL processing
+* `Tess4JParser` -- after each in-process OCR operation
+* VLM parsers (`OllamaParser`, `ClaudeParser`, etc.) -- after each API call
+* `OpenAIImageEmbeddingParser` -- after each embedding call
+* `StringsParser` -- after the strings command completes
+
+Parsers that don't report progress (most built-in parsers) are bounded by `progressTimeoutMillis` alone.
+
+== Example: OCR Pipeline
+
+For a pipeline processing scanned PDFs with hundreds of pages:
+
+[source,json]
+----
+{
+  "parse-context": {
+    "timeout-limits": {
+      "totalTaskTimeoutMillis": 7200000,
+      "progressTimeoutMillis": 300000
+    }
+  }
+}
+----
+
+This allows up to 2 hours total per document, but kills the task if any single OCR page takes longer
+than 5 minutes. A 200-page document where each page takes 30 seconds of OCR will complete successfully
+(~100 minutes total), while a document stuck on a single page will be killed after 5 minutes.
+
+== Example: Quick Batch Processing
+
+For processing many small documents where you want fast failure:
+
+[source,json]
+----
+{
+  "parse-context": {
+    "timeout-limits": {
+      "totalTaskTimeoutMillis": 30000,
+      "progressTimeoutMillis": 10000
+    }
+  }
+}
+----
+
+== CLI Usage
+
+When using `tika-app` with `--fork`, the `--fork-timeout` flag sets `progressTimeoutMillis`:
+
+[source,bash]
+----
+java -jar tika-app.jar --fork --fork-timeout=120000 -i /input -o /output
+----
+
+== Living Code Reference
+
+* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/config/TimeoutLimits.java[`TimeoutLimits.java`] -- Configuration class with defaults and helper methods
+* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/config/TikaProgressTracker.java[`TikaProgressTracker.java`] -- Progress tracking for parsers
+* link:https://github.com/apache/tika/blob/main/tika-core/src/test/java/org/apache/tika/config/TikaProgressTrackerTest.java[`TikaProgressTrackerTest.java`] -- Unit tests for the progress tracker
+* link:https://github.com/apache/tika/blob/main/tika-serialization/src/test/java/org/apache/tika/config/TimeoutLimitsTest.java[`TimeoutLimitsTest.java`] -- Unit tests for TimeoutLimits serialization
+* link:https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/java/org/apache/tika/pipes/core/PipesClientTest.java[`PipesClientTest.java`] -- Integration tests including timeout behavior

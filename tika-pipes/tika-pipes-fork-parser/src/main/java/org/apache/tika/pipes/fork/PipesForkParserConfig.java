@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -41,6 +42,7 @@ public class PipesForkParserConfig {
     private Path pluginsDir;
     private EmbeddedLimits embeddedLimits;
     private Path userConfigPath;
+    private TimeoutLimits timeoutLimits;
 
     public PipesForkParserConfig() {
         this.pipesConfig = new PipesConfig();
@@ -179,14 +181,26 @@ public class PipesForkParserConfig {
     }
 
     /**
-     * Set the timeout in milliseconds for parsing operations.
+     * Set the timeout limits for parsing operations.
+     * <p>
+     * The progress timeout bounds the time between progress updates (catches
+     * hung parsers). The total task timeout bounds overall wall-clock time.
      *
-     * @param timeoutMillis the timeout in milliseconds
+     * @param timeoutLimits the timeout limits
      * @return this config for chaining
      */
-    public PipesForkParserConfig setTimeoutMillis(long timeoutMillis) {
-        pipesConfig.setTimeoutMillis(timeoutMillis);
+    public PipesForkParserConfig setTimeoutLimits(TimeoutLimits timeoutLimits) {
+        this.timeoutLimits = timeoutLimits;
         return this;
+    }
+
+    /**
+     * Get the timeout limits.
+     *
+     * @return the timeout limits, or null if not set (defaults will be used)
+     */
+    public TimeoutLimits getTimeoutLimits() {
+        return timeoutLimits;
     }
 
     /**

@@ -20,15 +20,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
+import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
-import org.apache.tika.pipes.api.ParseMode;
-import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
@@ -44,8 +43,12 @@ public class PluginsWriter {
     }
 
     void write(Path output) throws IOException {
-        Path baseInput = Paths.get(simpleAsyncConfig.getInputDir());
-        Path baseOutput = Paths.get(simpleAsyncConfig.getOutputDir());
+        Path baseInput = StringUtils.isBlank(simpleAsyncConfig.getInputDir())
+                ? Paths.get(".").toAbsolutePath()
+                : Paths.get(simpleAsyncConfig.getInputDir());
+        Path baseOutput = StringUtils.isBlank(simpleAsyncConfig.getOutputDir())
+                ? null
+                : Paths.get(simpleAsyncConfig.getOutputDir());
         if (Files.isRegularFile(baseInput)) {
             baseInput = baseInput.toAbsolutePath().getParent();
             if (baseInput == null) {
@@ -69,7 +72,7 @@ public class PluginsWriter {
 
             // Set emitter basePath
             ObjectNode emitters = (ObjectNode) root.get("emitters");
-            if (emitters != null && emitters.has("fse")) {
+            if (baseOutput != null && emitters != null && emitters.has("fse")) {
                 ObjectNode fse = (ObjectNode) emitters.get("fse");
                 if (fse != null && fse.has("file-system-emitter")) {
                     ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
@@ -85,29 +88,56 @@ public class PluginsWriter {
             }
 
             // Set plugin-roots
-            String pluginString = StringUtils.isBlank(simpleAsyncConfig.getPluginsDir()) ?
-                    "plugins" : simpleAsyncConfig.getPluginsDir();
-            Path plugins = Paths.get(pluginString);
-            if (Files.isDirectory(plugins)) {
-                pluginString = plugins.toAbsolutePath().toString();
+            String pluginString;
+            if (!StringUtils.isBlank(simpleAsyncConfig.getPluginsDir())) {
+                pluginString = simpleAsyncConfig.getPluginsDir();
+                Path plugins = Paths.get(pluginString);
+                if (Files.isDirectory(plugins)) {
+                    pluginString = plugins.toAbsolutePath().toString();
+                }
+            } else {
+                pluginString = TikaAsyncCLI.resolveDefaultPluginsDir();
             }
             root.put("plugin-roots", pluginString);
 
-            // Set pipes config
-            PipesConfig pipesConfig = new PipesConfig();
-            pipesConfig.setNumClients(simpleAsyncConfig.getNumClients() == null ?
-                    2 : simpleAsyncConfig.getNumClients());
+            // If the user provided a -c config, merge their settings first.
+            // This brings in parsers, parse-context, metadata-filters, and
+            // optionally pipes config (e.g. forkedJvmArgs with log4j settings).
+            if (!StringUtils.isBlank(simpleAsyncConfig.getTikaConfig())) {
+                Path userConfigPath = Paths.get(simpleAsyncConfig.getTikaConfig());
+                JsonNode userRoot = objectMapper.readTree(userConfigPath.toFile());
+                mergeUserConfig(root, (ObjectNode) userRoot);
+            }
+
+            // Now apply CLI overrides on top of whatever pipes config exists.
+            // This lets the user have forkedJvmArgs in their config (e.g. log4j)
+            // while still controlling numClients and Xmx from the command line.
+            ObjectNode pipesNode = root.has("pipes")
+                    ? (ObjectNode) root.get("pipes")
+                    : objectMapper.createObjectNode();
+
+            if (simpleAsyncConfig.getNumClients() != null) {
+                pipesNode.put("numClients", simpleAsyncConfig.getNumClients());
+            } else if (!pipesNode.has("numClients")) {
+                pipesNode.put("numClients", 2);
+            }
+
             if (simpleAsyncConfig.getXmx() != null) {
-                pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of(simpleAsyncConfig.getXmx())));
+                String xmx = simpleAsyncConfig.getXmx();
+                if (!xmx.startsWith("-")) {
+                    xmx = "-Xmx" + xmx;
+                }
+                // Replace or add -Xmx in forkedJvmArgs, preserving other args
+                mergeXmxIntoJvmArgs(pipesNode, xmx, objectMapper);
             }
-            if (simpleAsyncConfig.getTimeoutMs() != null) {
-                pipesConfig.setTimeoutMillis(simpleAsyncConfig.getTimeoutMs());
-            }
+
             if (simpleAsyncConfig.isContentOnly()) {
-                pipesConfig.setParseMode(ParseMode.CONTENT_ONLY);
+                pipesNode.put("parseMode", "CONTENT_ONLY");
             } else if (simpleAsyncConfig.isConcatenate()) {
-                pipesConfig.setParseMode(ParseMode.CONCATENATE);
+                pipesNode.put("parseMode", "CONCATENATE");
             }
+
+            root.set("pipes", pipesNode);
 
             // For content-only mode, change the emitter file extension based on handler type
             if (simpleAsyncConfig.isContentOnly()) {
@@ -121,12 +151,55 @@ public class PluginsWriter {
                 }
             }
 
-            root.set("pipes", objectMapper.valueToTree(pipesConfig));
+            // Write timeout limits to parse-context if configured on CLI
+            if (simpleAsyncConfig.getTimeoutMs() != null) {
+                ObjectNode parseContext = root.has("parse-context")
+                        ? (ObjectNode) root.get("parse-context")
+                        : objectMapper.createObjectNode();
+                ObjectNode timeoutNode = objectMapper.createObjectNode();
+                timeoutNode.put("progressTimeoutMillis", simpleAsyncConfig.getTimeoutMs());
+                parseContext.set("timeout-limits", timeoutNode);
+                root.set("parse-context", parseContext);
+            }
 
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(output.toFile(), root);
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    /**
+     * Merges user config fields into the auto-generated root.
+     * All user fields override the auto-generated template values.
+     */
+    private static void mergeUserConfig(ObjectNode root, ObjectNode userConfig) {
+        Iterator<Map.Entry<String, JsonNode>> fields = userConfig.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> entry = fields.next();
+            root.set(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Merges an -Xmx arg into the forkedJvmArgs array, replacing any existing -Xmx
+     * and preserving all other args (e.g. -Dlog4j2.configurationFile=...).
+     */
+    private static void mergeXmxIntoJvmArgs(ObjectNode pipesNode, String xmx,
+                                              ObjectMapper objectMapper) {
+        com.fasterxml.jackson.databind.node.ArrayNode argsArray =
+                objectMapper.createArrayNode();
+
+        // Preserve existing args, skipping any old -Xmx
+        if (pipesNode.has("forkedJvmArgs") && pipesNode.get("forkedJvmArgs").isArray()) {
+            for (JsonNode arg : pipesNode.get("forkedJvmArgs")) {
+                String val = arg.asText();
+                if (!val.startsWith("-Xmx")) {
+                    argsArray.add(val);
+                }
+            }
+        }
+        argsArray.add(xmx);
+        pipesNode.set("forkedJvmArgs", argsArray);
     }
 
     private static String getFileExtensionForHandlerType(

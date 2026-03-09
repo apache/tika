@@ -64,8 +64,8 @@
         "commitWithin": 1,
         "idField": "id",
         "embeddedFileFieldName": "embedded",
-        "connectionTimeout": 10000,
-        "socketTimeout": 60000
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
       }
     }
   },
@@ -79,8 +79,8 @@
       "failCountField": "fail_count_i",
       "sizeFieldName": "size_i",
       "rows": 100,
-      "connectionTimeout": 10000,
-      "socketTimeout": 60000,
+      "connectionTimeoutMillis": 10000,
+      "socketTimeoutMillis": 60000,
       "fetcherId": "fsf",
       "emitterId": "se"
     }
@@ -101,8 +101,7 @@
       "-XX:ParallelGCThreads=2",
       "-XX:+ExitOnOutOfMemoryError",
       "LOG4J_JVM_ARG"
-    ],
-    "timeoutMillis": 60000
+    ]
   },
   "plugin-roots": "target/plugins"
 }

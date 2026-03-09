@@ -32,8 +32,13 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-charset-detectors-core</artifactId>
-      <version>${revision}</version>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-charsoup</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -45,14 +50,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-charset-detectors-icu4j</artifactId>
-      <version>${revision}</version>
+      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-charset-detectors-universal</artifactId>
-      <version>${revision}</version>
+      <artifactId>tika-encoding-detector-universal</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -87,7 +92,6 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</inputExclude>
             <inputExclude>src/test/resources/test-documents/**</inputExclude>
           </inputExcludes>
         </configuration>

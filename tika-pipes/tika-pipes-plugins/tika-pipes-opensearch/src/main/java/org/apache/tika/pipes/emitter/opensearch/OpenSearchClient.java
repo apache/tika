@@ -23,6 +23,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -310,13 +311,28 @@ public class OpenSearchClient {
         }
     }
 
+    /**
+     * Metadata fields whose values are serialized JSON from the
+     * tika-inference pipeline. These must be written as raw JSON
+     * (arrays/objects) rather than escaped strings so that
+     * OpenSearch can index vectors, locators, etc. natively.
+     */
+    static final Set<String> INFERENCE_JSON_FIELDS = Set.of(
+            "tika:chunks");
+
     private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
         //writes the metadata without the start { or the end }
         //to allow for other fields to be added
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 1) {
-                jsonGenerator.writeStringField(n, vals[0]);
+                if (INFERENCE_JSON_FIELDS.contains(n)
+                        && isValidJson(vals[0])) {
+                    jsonGenerator.writeFieldName(n);
+                    jsonGenerator.writeRawValue(vals[0]);
+                } else {
+                    jsonGenerator.writeStringField(n, vals[0]);
+                }
             } else {
                 jsonGenerator.writeArrayFieldStart(n);
                 for (String v : vals) {
@@ -324,6 +340,31 @@ public class OpenSearchClient {
                 }
                 jsonGenerator.writeEndArray();
             }
+        }
+    }
+
+    private static final ObjectMapper VALIDATION_MAPPER = new ObjectMapper();
+
+    /**
+     * Validates that the value is well-formed JSON (array or object)
+     * before writing it as raw JSON. This prevents injection of
+     * arbitrary content into the bulk request payload.
+     */
+    private static boolean isValidJson(String value) {
+        if (value == null || value.isEmpty()) {
+            return false;
+        }
+        char first = value.charAt(0);
+        if (first != '[' && first != '{') {
+            return false;
+        }
+        try {
+            VALIDATION_MAPPER.readTree(value);
+            return true;
+        } catch (IOException e) {
+            LOG.warn("Field value starts with '{}' but is not valid JSON; "
+                    + "writing as escaped string", first);
+            return false;
         }
     }
 }

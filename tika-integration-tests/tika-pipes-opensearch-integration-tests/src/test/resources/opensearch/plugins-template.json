@@ -26,8 +26,8 @@
           "userName": "USER_NAME",
           "password": "PASSWORD",
           "authScheme": "http",
-          "connectionTimeout": 60,
-          "socketTimeout": 60
+          "connectionTimeoutMillis": 60000,
+          "socketTimeoutMillis": 60000
         }
       }
     }
@@ -49,8 +49,8 @@
         "userName": "USER_NAME",
         "password": "PASSWORD",
         "authScheme": "http",
-        "connectionTimeout": 60,
-        "socketTimeout": 60
+        "connectionTimeoutMillis": 60000,
+        "socketTimeoutMillis": 60000
       }
     }
   },
@@ -69,8 +69,7 @@
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",
       "LOG4J_JVM_ARG"
-    ],
-    "timeoutMillis": 60000
+    ]
   },
   "metadata-filters": [
     {

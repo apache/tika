@@ -1,0 +1,17 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "content": { "type": "text" },
+      "vector": {
+        "type": "dense_vector",
+        "dims": 3,
+        "index": true,
+        "similarity": "cosine",
+        "index_options": { "type": "flat" }
+      }
+    }
+  }
+}

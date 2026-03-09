@@ -19,6 +19,7 @@ package org.apache.tika.detect;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
@@ -82,8 +83,10 @@ public class OverrideEncodingDetector implements EncodingDetector {
     }
 
     @Override
-    public Charset detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
-        return charset;
+    public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
+        return List.of(new EncodingResult(charset, 1.0f, charset.name(),
+                EncodingResult.ResultType.DECLARATIVE));
     }
 
     public Charset getCharset() {

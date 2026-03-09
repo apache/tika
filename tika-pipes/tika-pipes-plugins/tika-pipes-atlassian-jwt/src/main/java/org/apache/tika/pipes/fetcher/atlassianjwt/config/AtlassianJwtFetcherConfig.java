@@ -42,14 +42,14 @@ public class AtlassianJwtFetcherConfig {
 
     private Integer maxConnectionsPerRoute = 1000;
     private Integer maxConnections = 2000;
-    private Integer requestTimeout = 120000;
-    private Integer connectTimeout = 120000;
-    private Integer socketTimeout = 120000;
+    private Integer requestTimeoutMillis = 120000;
+    private Integer connectTimeoutMillis = 120000;
+    private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
     private List<String> httpHeaders = new ArrayList<>();
     private Map<String, List<String>> httpRequestHeaders = new LinkedHashMap<>();
-    private Long overallTimeout = 120000L;
+    private Long overallTimeoutMillis = 120000L;
     private Integer maxErrMsgSize = 10000000;
     private String userAgent;
 
@@ -76,30 +76,30 @@ public class AtlassianJwtFetcherConfig {
         return this;
     }
 
-    public Integer getRequestTimeout() {
-        return requestTimeout;
+    public Integer getRequestTimeoutMillis() {
+        return requestTimeoutMillis;
     }
 
-    public AtlassianJwtFetcherConfig setRequestTimeout(Integer requestTimeout) {
-        this.requestTimeout = requestTimeout;
+    public AtlassianJwtFetcherConfig setRequestTimeoutMillis(Integer requestTimeoutMillis) {
+        this.requestTimeoutMillis = requestTimeoutMillis;
         return this;
     }
 
-    public Integer getConnectTimeout() {
-        return connectTimeout;
+    public Integer getConnectTimeoutMillis() {
+        return connectTimeoutMillis;
     }
 
-    public AtlassianJwtFetcherConfig setConnectTimeout(Integer connectTimeout) {
-        this.connectTimeout = connectTimeout;
+    public AtlassianJwtFetcherConfig setConnectTimeoutMillis(Integer connectTimeoutMillis) {
+        this.connectTimeoutMillis = connectTimeoutMillis;
         return this;
     }
 
-    public Integer getSocketTimeout() {
-        return socketTimeout;
+    public Integer getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
-    public AtlassianJwtFetcherConfig setSocketTimeout(Integer socketTimeout) {
-        this.socketTimeout = socketTimeout;
+    public AtlassianJwtFetcherConfig setSocketTimeoutMillis(Integer socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
         return this;
     }
 
@@ -140,12 +140,12 @@ public class AtlassianJwtFetcherConfig {
         return this;
     }
 
-    public Long getOverallTimeout() {
-        return overallTimeout;
+    public Long getOverallTimeoutMillis() {
+        return overallTimeoutMillis;
     }
 
-    public AtlassianJwtFetcherConfig setOverallTimeout(Long overallTimeout) {
-        this.overallTimeout = overallTimeout;
+    public AtlassianJwtFetcherConfig setOverallTimeoutMillis(Long overallTimeoutMillis) {
+        this.overallTimeoutMillis = overallTimeoutMillis;
         return this;
     }
 

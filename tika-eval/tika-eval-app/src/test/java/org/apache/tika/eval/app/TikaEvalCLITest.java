@@ -206,15 +206,20 @@ public class TikaEvalCLITest extends TikaTest {
         CachingFileVisitor v = new CachingFileVisitor();
         Files.walkFileTree(compareReportsDir, v);
         int cnt = 0;
+        boolean hasSummaryMd = false;
         for (Path report : v.getPaths()) {
-            if (report
-                    .getFileName()
-                    .toString()
-                    .endsWith(".xlsx")) {
+            String name = report.getFileName().toString();
+            if (name.endsWith(".xlsx")) {
                 cnt++;
+            }
+            if ("summary.md".equals(name)) {
+                hasSummaryMd = true;
+                assertTrue(Files.size(report) > 100,
+                        "summary.md should not be empty");
             }
         }
         assertTrue(cnt > 33);
+        assertTrue(hasSummaryMd, "summary.md should be generated for comparison reports");
         // If there is a failure, check for SQL errors in the previous log.
         // If it's is a syntax error, for the position look for "[*]" in the exception message.
         // The "[42001-230]" is [<error number>-<build number].

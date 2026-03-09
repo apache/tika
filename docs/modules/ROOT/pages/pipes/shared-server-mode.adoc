@@ -79,11 +79,17 @@ Enable shared mode by setting `useSharedServer` to `true` in your pipes configur
   "pipes": {
     "numClients": 4,
     "useSharedServer": true,
-    "forkedJvmArgs": ["-Xmx4g"],
-    "timeoutMillis": 60000
+    "forkedJvmArgs": ["-Xmx4g"]
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
   }
 }
 ----
+
+See xref:pipes/timeouts.adoc[Timeouts] for details on configuring timeouts.
 
 == Sizing Guidance
 

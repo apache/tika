@@ -71,7 +71,7 @@ class PipesMessageTest {
         PipesMessage original = PipesMessage.working(42L);
         PipesMessage roundTripped = roundTrip(original);
         assertEquals(PipesMessageType.WORKING, roundTripped.type());
-        assertEquals(42L, roundTripped.progressCounter());
+        assertEquals(42L, roundTripped.lastProgressMillis());
     }
 
     @Test

@@ -28,11 +28,21 @@
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-e2e-tests</artifactId>
         <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tika-grpc-e2e-test</artifactId>
     <name>Apache Tika gRPC End-to-End Tests</name>
     <description>End-to-end tests for Apache Tika gRPC Server using test containers</description>
+
+    <properties>
+        <!-- Use local server mode by default in CI (faster, no Docker required) -->
+        <govdocs1.fromIndex>1</govdocs1.fromIndex>
+        <govdocs1.toIndex>1</govdocs1.toIndex>
+        <tika.e2e.useLocalServer>true</tika.e2e.useLocalServer>
+        <tika.e2e.useGovdocs>false</tika.e2e.useGovdocs>
+        <corpus.numDocs>2</corpus.numDocs>
+    </properties>
 
     <dependencies>
         <!-- Tika gRPC -->
@@ -104,6 +114,14 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
         </dependency>
+        
+        <!-- Awaitility for robust waiting -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>4.3.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -120,9 +138,39 @@
                         <include>**/*Test.java</include>
                     </includes>
                     <systemPropertyVariables>
-                        <govdocs1.fromIndex>1</govdocs1.fromIndex>
-                        <govdocs1.toIndex>1</govdocs1.toIndex>
+                        <govdocs1.fromIndex>${govdocs1.fromIndex}</govdocs1.fromIndex>
+                        <govdocs1.toIndex>${govdocs1.toIndex}</govdocs1.toIndex>
+                        <tika.e2e.useLocalServer>${tika.e2e.useLocalServer}</tika.e2e.useLocalServer>
+                        <tika.e2e.useGovdocs>${tika.e2e.useGovdocs}</tika.e2e.useGovdocs>
+                        <corpus.numDocs>${corpus.numDocs}</corpus.numDocs>
                     </systemPropertyVariables>
+                </configuration>
+            </plugin>
+            <!-- Disable dependency convergence check for e2e tests -->
+            <!-- Ignite 3.x brings many transitive dependencies that conflict -->
+            <!-- but tests work fine in practice -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce-maven</id>
+                        <phase>none</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Configure RAT to exclude files that don't need license headers -->
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
+                <configuration>
+                    <inputExcludes>
+                        <inputExclude>**/README*.md</inputExclude>
+                        <inputExclude>src/test/resources/docker-compose*.yml</inputExclude>
+                        <inputExclude>src/test/resources/log4j2.xml</inputExclude>
+                        <inputExclude>src/test/resources/tika-config*.json</inputExclude>
+                        <inputExclude>src/test/resources/test-fixtures/**</inputExclude>
+                    </inputExcludes>
                 </configuration>
             </plugin>
         </plugins>
