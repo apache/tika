@@ -2,7 +2,8 @@
 
 **Models**: v7 standard (203 languages, 16 384 buckets) + v7 short-text (123 languages, 32 768 buckets).  
 **Training corpus**: Wikipedia + MADLAD supplements for `lus`, `cnh`, `kha`, `div`, `mlg`, `che`.  
-**Evaluation set**: [FLORES-200](https://github.com/facebookresearch/flores) dev split (203 languages × 1 001 sentences = 203 381 sentences).  
+**Evaluation set**: [FLORES-200](https://github.com/facebookresearch/flores) dev split (203 languages × 1 001 sentences = 203 381 sentences).
+Sentence lengths: median 124 chars, 91% under 200 chars — scores flatten from @200 onward because truncating to 200 vs 500 chars affects only the remaining 9% of sentences.  
 **Raw reports**: [`flores-STANDARD.log`](../../../datasets/compare-v7/flores-STANDARD.log),
 [`flores-SHORT_TEXT.log`](../../../datasets/compare-v7/flores-SHORT_TEXT.log),
 [`flores-AUTOMATIC.log`](../../../datasets/compare-v7/flores-AUTOMATIC.log)
@@ -79,17 +80,19 @@ rewards both accuracy and breadth.
 | @50    | 93.73% | 96.04% | 74.33%* | 86.09% | 32.72% | 94.44% |
 | @100   | 96.67% | 97.90% | 75.86%* | 90.25% | 34.32% | 96.51% |
 | @150   | 97.08% | 98.10% | 76.03%* | 90.98% | 34.58% | 96.72% |
-| @200   | 97.14% | 98.12% | 79.53% | 91.11% | 34.61% | 96.75% |
-| @500   | 97.14% | 98.12% | 79.54% | 91.12% | 34.61% | 96.76% |
+| @200   | 97.14% | 98.12% | 79.53%* | 91.11% | 34.61% | 96.75% |
+| @500   | 97.14% | 98.12% | 79.54%* | 91.12% | 34.61% | 96.76% |
 
 \* **CS-auto apples/oranges caveat**: the AUTOMATIC system claims 203-language coverage,
-but at short lengths (under ~200 chars) the routing threshold fires and all input is sent
-to the 123-language short-text model. The 80 languages that exist only in the standard
-model therefore receive wrong predictions at short lengths, depressing the breadth-weighted
-score. This is not directly comparable to the other detectors' scores in the same column:
-those detectors simply return no result for unsupported languages (scoring 0), whereas
-CS-auto actively misclassifies them. The asterisk is removed at @200 and @500 where most
-FLORES sentences exceed the length threshold and route correctly to the standard model.
+but the routing threshold fires whenever `input.length() < 200`, routing those sentences
+to the 123-language short-text model. The FLORES dev set has a **median sentence length
+of 124 chars**, and 91% of sentences are under 200 chars — meaning the short-text model
+handles the vast majority of FLORES sentences at every eval length, including @200 and
+@500 (which truncate to *at most* that many chars, not exactly). The 80 languages that
+exist only in the standard model therefore receive wrong predictions throughout, depressing
+the breadth-weighted score across all lengths. This is not directly comparable to the
+other detectors' scores in the same column: those detectors simply return no result for
+unsupported languages (scoring 0), whereas CS-auto actively misclassifies them.
 
 Other notes:
 - CS-short's breadth-weighted score equals its coverage-adjusted score because its
