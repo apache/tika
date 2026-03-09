@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect.html;
+package org.apache.tika.parser.html.charsetdetector;
 
-import static org.apache.tika.detect.html.PreScanner.getEncodingFromMeta;
+import static org.apache.tika.parser.html.charsetdetector.PreScanner.getEncodingFromMeta;
 
 import java.util.HashSet;
 import java.util.Map;

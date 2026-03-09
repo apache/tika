@@ -12,16 +12,4 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-<<<<<<<< HEAD:tika-charset-detectors/tika-charset-detectors-core/src/main/resources/META-INF/services/org.apache.tika.detect.EncodingDetector
-
-# Default encoding detection chain — order is significant.
-# First non-null result wins among base detectors.
-# MetaEncodingDetectors (e.g. charsoup-encoding-detector) are partitioned
-# out by CompositeEncodingDetector and run after all base detectors.
-org.apache.tika.detect.encoding.HttpHeaderEncodingDetector
-org.apache.tika.detect.encoding.BomEncodingDetector
-org.apache.tika.detect.html.StandardHtmlEncodingDetector
-org.apache.tika.detect.encoding.MlEncodingDetector
-========
 org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector
->>>>>>>> main:tika-encoding-detectors/tika-encoding-detector-html/src/main/resources/META-INF/services/org.apache.tika.detect.EncodingDetector

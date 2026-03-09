@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect.html;
+package org.apache.tika.parser.html.charsetdetector;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -208,12 +208,8 @@ class PreScanner {
         stream.mark(1);
         byte quote = read();
         if (contains(QUOTE, quote)) {
-            try {
-                for (byte b = getLowerCaseChar(); b != quote; b = getLowerCaseChar()) {
-                    value.append((char) b);
-                }
-            } catch (IOException eof) {
-                // Stream ended before closing quote — return whatever was collected
+            for (byte b = getLowerCaseChar(); b != quote; b = getLowerCaseChar()) {
+                value.append((char) b);
             }
         } else {
             stream.reset();
@@ -228,11 +224,6 @@ class PreScanner {
     }
 
     private boolean skipAll(BitSet bitSet) throws IOException {
-        // mark(1) is updated before every read so that reset() always backs up
-        // exactly one byte (the first non-matching one). This is safe because
-        // BoundedInputStream caps total reads at markLimit (8192), which fits
-        // entirely within BufferedInputStream's default buffer, so the mark is
-        // never invalidated by a buffer refill.
         boolean skipped = false;
         stream.mark(1);
         for (byte read = read(); contains(bitSet, read); read = read()) {

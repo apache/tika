@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect.encoding;
+package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,9 +22,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import com.ibm.icu.text.CharsetDetector;
-import com.ibm.icu.text.CharsetMatch;
 
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
@@ -43,11 +40,9 @@ public class Icu4jEncodingDetector implements EncodingDetector {
     /**
      * Configuration class for JSON deserialization.
      */
-    private static final int DEFAULT_MARK_LIMIT = 8192;
-
     public static class Config implements Serializable {
         public boolean stripMarkup = false;
-        public int markLimit = DEFAULT_MARK_LIMIT;
+        public int markLimit = CharsetDetector.DEFAULT_MARK_LIMIT;
         public List<String> ignoreCharsets = new ArrayList<>();
 
         public boolean isStripMarkup() {
@@ -111,8 +106,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         }
         Config config = defaultConfig;
 
-        CharsetDetector detector = new CharsetDetector();
-        tis.mark(config.markLimit);
+        CharsetDetector detector = new CharsetDetector(config.markLimit);
 
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         String incomingType = metadata.get(Metadata.CONTENT_TYPE);
@@ -134,21 +128,6 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         // TIKA-341 without enabling input filtering (stripping of tags)
         // short HTML tests don't work well
         detector.enableInputFilter(true);
-<<<<<<<< HEAD:tika-charset-detectors/tika-charset-detectors-icu4j/src/main/java/org/apache/tika/detect/encoding/Icu4jEncodingDetector.java
-
-        try {
-            detector.setText(tis);
-            for (CharsetMatch match : detector.detectAll()) {
-                try {
-                    String name = match.getName();
-                    if (config.ignoreCharsets.contains(name)) {
-                        continue;
-                    }
-                    return CharsetUtils.forName(name);
-                } catch (IllegalArgumentException e) {
-                    // charset name not recognized — try next
-                }
-========
         detector.setText(tis);
 
         List<EncodingResult> results = new ArrayList<>();
@@ -164,10 +143,7 @@ public class Icu4jEncodingDetector implements EncodingDetector {
                 results.add(new EncodingResult(cs, confidence));
             } catch (IllegalArgumentException e) {
                 // ignore unrecognized charset names
->>>>>>>> main:tika-encoding-detectors/tika-encoding-detector-icu4j/src/main/java/org/apache/tika/parser/txt/Icu4jEncodingDetector.java
             }
-        } finally {
-            tis.reset();
         }
         return results;
     }

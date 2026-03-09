@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect.html.charsets;
+package org.apache.tika.parser.html.charsetdetector.charsets;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;

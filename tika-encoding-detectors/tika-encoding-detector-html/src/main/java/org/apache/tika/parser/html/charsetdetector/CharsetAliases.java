@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect.html;
+package org.apache.tika.parser.html.charsetdetector;
 
 
 import java.nio.charset.Charset;
@@ -25,8 +25,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.apache.tika.detect.html.charsets.ReplacementCharset;
-import org.apache.tika.detect.html.charsets.XUserDefinedCharset;
+import org.apache.tika.parser.html.charsetdetector.charsets.ReplacementCharset;
+import org.apache.tika.parser.html.charsetdetector.charsets.XUserDefinedCharset;
 
 /**
  * Singleton class that associates standard charset names to java charset implementations
@@ -34,12 +34,7 @@ import org.apache.tika.detect.html.charsets.XUserDefinedCharset;
  */
 final class CharsetAliases {
 
-    private static final Map<String, Charset> charsetsByLabel;
-
-    static {
-        charsetsByLabel = new HashMap<>();
-        addAll();
-    }
+    private static final Map<String, Charset> charsetsByLabel = new HashMap<>();
 
     private CharsetAliases() {
     }
@@ -51,6 +46,12 @@ final class CharsetAliases {
     static Charset getCharsetByLabel(String label) {
         if (label == null) {
             return null;
+        }
+        synchronized (charsetsByLabel) {
+            // Lazy initialization
+            if (charsetsByLabel.isEmpty()) {
+                addAll();
+            }
         }
         label = label.trim().toLowerCase(Locale.US);
         return charsetsByLabel.get(label);
