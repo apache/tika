@@ -19,14 +19,16 @@ package org.apache.tika.langdetect.charsoup.tools;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
 
 /**
  * Analyzes bucket saturation for different bucket sizes and extractors.
@@ -54,7 +56,7 @@ public class BucketSaturationAnalyzer {
     public static void main(String[] args) throws IOException {
         if (args.length < 1) {
             System.err.println(
-                    "Usage: BucketSaturationAnalyzer <preprocessedTestFile> [scriptaware]");
+                    "Usage: BucketSaturationAnalyzer <preprocessedTestFile>");
             System.exit(1);
         }
 
@@ -62,23 +64,26 @@ public class BucketSaturationAnalyzer {
 
         System.out.println("Loading test data: " + testFile);
         List<LabeledSentence> allData = TrainLanguageModel.readPreprocessedFile(testFile);
-        // Sample if too large
+        // Shuffle then sample so all languages are represented
+        Collections.shuffle(allData, new Random(42));
         if (allData.size() > MAX_SENTENCES) {
             allData = allData.subList(0, MAX_SENTENCES);
         }
         System.out.printf(Locale.US, "Analyzing %,d sentences%n%n",
                 allData.size());
 
-        // Header
-        System.out.printf(Locale.US,
-                "%-8s  %8s  %8s  %8s  %8s  %8s  %8s%n",
-                "Buckets", "MeanNZ", "MedianNZ", "P95-NZ", "Sat%",
-                "MaxCount", "CorpusNZ");
-        System.out.println("-".repeat(76));
+        for (String config : new String[]{"bigrams-only", "bigrams+skip"}) {
+            boolean skipBigrams = config.equals("bigrams+skip");
+            System.out.println("=== ScriptAware " + config + " ===");
+            System.out.printf(Locale.US,
+                    "%-8s  %8s  %8s  %8s  %8s  %8s  %8s%n",
+                    "Buckets", "MeanNZ", "MedianNZ", "P95-NZ", "Sat%",
+                    "MaxCount", "CorpusNZ");
+            System.out.println("-".repeat(76));
 
         for (int numBuckets : BUCKET_SIZES) {
-            FeatureExtractor extractor =
-                    new ScriptAwareFeatureExtractor(numBuckets);
+            TextFeatureExtractor extractor =
+                    new ScriptAwareFeatureExtractor(numBuckets, false, skipBigrams);
 
             int[] nzPerSentence = new int[allData.size()];
             int[] maxCountPerSentence = new int[allData.size()];
@@ -130,16 +135,13 @@ public class BucketSaturationAnalyzer {
                     "%-8d  %8.1f  %8d  %8d  %7.2f%%  %8d  %8d%n",
                     numBuckets, meanNZ, medianNZ, p95NZ, satPct, maxCount, corpusNZ);
         }
+        System.out.println();
+        } // end config loop
 
-        // Also do per-language breakdown for a few interesting languages at 1k
-        System.out.println("\n\nPer-language saturation at 1024 buckets:");
-        System.out.printf(Locale.US,
-                "%-8s  %6s  %8s  %8s  %7s%n",
-                "Lang", "Count", "MeanNZ", "Sat%", "CorpNZ");
-        System.out.println("-".repeat(46));
-
-        FeatureExtractor ext1k =
-                new ScriptAwareFeatureExtractor(1024);
+        // Per-language breakdown at 8k with production config (skip-bigrams)
+        int perLangBuckets = 8192;
+        TextFeatureExtractor extPerLang =
+                new ScriptAwareFeatureExtractor(perLangBuckets, false, true);
 
         // Group by language
         Map<String, List<LabeledSentence>> byLang = new HashMap<>();
@@ -147,25 +149,19 @@ public class BucketSaturationAnalyzer {
             byLang.computeIfAbsent(s.getLanguage(), k -> new java.util.ArrayList<>()).add(s);
         }
 
-        // Pick representative languages
-        String[] interestingLangs = {
-                "eng", "deu", "fra", "zho", "cmn", "jpn", "kor",
-                "ara", "hin", "rus", "tha", "heb"
-        };
-
         Map<String, double[]> langStats = new TreeMap<>();
-        for (String lang : interestingLangs) {
+        for (String lang : byLang.keySet()) {
             List<LabeledSentence> langData = byLang.get(lang);
             if (langData == null || langData.isEmpty()) {
                 continue;
             }
 
-            boolean[] corpusBuckets = new boolean[1024];
+            boolean[] corpusBuckets = new boolean[perLangBuckets];
             double totalNZ = 0;
             for (LabeledSentence s : langData) {
-                int[] features = ext1k.extractFromPreprocessed(s.getText());
+                int[] features = extPerLang.extractFromPreprocessed(s.getText());
                 int nz = 0;
-                for (int b = 0; b < 1024; b++) {
+                for (int b = 0; b < perLangBuckets; b++) {
                     if (features[b] != 0) {
                         nz++;
                         corpusBuckets[b] = true;
@@ -183,11 +179,16 @@ public class BucketSaturationAnalyzer {
             langStats.put(lang, new double[]{langData.size(), meanNZ, corpNZ});
         }
 
+        System.out.println("Per-language saturation at " + perLangBuckets + " buckets (bigrams+skip):");
+        System.out.printf(Locale.US,
+                "%-8s  %6s  %8s  %8s  %7s%n",
+                "Lang", "Count", "MeanNZ", "Sat%", "CorpNZ");
+        System.out.println("-".repeat(46));
         for (var e : langStats.entrySet()) {
             double[] s = e.getValue();
             System.out.printf(Locale.US,
                     "%-8s  %6.0f  %8.1f  %6.2f%%  %8.0f%n",
-                    e.getKey(), s[0], s[1], 100.0 * s[1] / 1024, s[2]);
+                    e.getKey(), s[0], s[1], 100.0 * s[1] / perLangBuckets, s[2]);
         }
     }
 }
