@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -41,7 +40,6 @@ import org.apache.tika.metadata.XMPMM;
  *
  * @author Tilman Hausherr
  */
-@Disabled //TODO enable with XMPBox 3.0.7
 public class XmpboxExtractorTest extends TikaTest {
 
     private final XMPPacketScanner scanner = new XMPPacketScanner();
