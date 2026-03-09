@@ -118,10 +118,10 @@ CharSoupLanguageDetector ships with two complementary models:
 
 === General Model (`langdetect.bin`)
 
-The general model covers 229 language classes trained on Wikipedia dumps as the
+The general model covers *203 languages* trained on Wikipedia dumps as the
 primary source, supplemented by
 https://research.google/blog/madlad-400-a-multilingual-and-document-level-large-audited-dataset/[MADLAD-400]
-for 16 languages with insufficient Wikipedia coverage. It uses 16,384 hash buckets
+for languages with insufficient Wikipedia coverage. It uses 16,384 hash buckets
 and `ScriptAwareFeatureExtractor`: character bigrams, character trigrams, 3-char
 word suffixes, 3-char word prefixes, whole-word unigrams, and CJK character unigrams.
 
@@ -132,8 +132,8 @@ titles, metadata fields, subject lines, captions, and similar short strings wher
 the general model loses confidence. It covers 123 carefully selected languages
 (those that generalize well at short lengths and are not excessively confusable
 with each other) and uses 32,768 hash buckets with `ResearchFeatureExtractor`
-(bigrams + trigrams + 4-grams + 5-grams + word unigrams). The richer n-gram
-features compensate for the reduced token count at short text lengths.
+(bigrams + trigrams + 4-grams + word unigrams). The richer n-gram features
+compensate for the reduced token count at short text lengths.
 
 === Automatic Model Selection
 
@@ -247,8 +247,8 @@ loads the model via `MappedByteBuffer`. A companion `saveSplit(Path, Path)`
 method writes the raw weights and metadata as separate files for true zero-copy
 loading.
 
-For the default classpath resources (general model ~3.6 MB, short-text model
-~4.3 MB), heap loading is used and the performance difference is negligible.
+For the default classpath resources (general model ~3.2 MB, short-text model
+~3.8 MB), heap loading is used and the performance difference is negligible.
 
 == WordTokenizer (tika-eval integration)
 
