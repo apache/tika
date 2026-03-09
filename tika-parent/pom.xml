@@ -444,7 +444,7 @@
      Http2SolrClient -> HttpJettySolrClient 
      LBHttpSolrClient -> LBHttp2SolrClient -> LBJettySolrClient (doesn't work)
      -->
-    <solrj.version>9.10.1</solrj.version>
+    <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.5</spring.version>
     <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
