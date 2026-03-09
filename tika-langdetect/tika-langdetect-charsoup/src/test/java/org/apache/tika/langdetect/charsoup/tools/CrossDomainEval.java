@@ -244,7 +244,8 @@ public class CrossDomainEval {
 
             bigramResults.put(bucket,
                     CompareDetectors.evaluateBigramParallel(
-                            subset, "bigram-" + bucket, threads, null));
+                            subset, "bigram-" + bucket, threads, null,
+                            CharSoupLanguageDetector.Strategy.STANDARD));
             opennlpResults.put(bucket,
                     CompareDetectors.evaluateOpenNLPParallel(
                             opennlpPool, subset,

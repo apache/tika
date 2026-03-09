@@ -104,11 +104,11 @@ public class CommonTokenGenerator {
         ex.add("arz"); // Egyptian Arabic: F1@500=0.999 Wikipedia, 5.3% FLORES — Lsjbot stubs
         ex.add("bug"); // Buginese: ~95% French municipality stubs
         ex.add("bpy"); // Bishnupriya Manipuri: Brazilian/US/South Asian location stubs
-        ex.add("mlg"); // Malagasy: French commune stubs (~179k sentences of template)
+        // mlg: re-enabled via MADLAD supplement (sentences_madlad.txt has genuine Malagasy prose)
         ex.add("nan-x-rom"); // Min Nan romanized: geographic stubs across 455k sentences
         ex.add("new"); // Newari: Indian village stubs
         ex.add("lld"); // Ladin: all samples are stubs
-        ex.add("che"); // Chechen: 19/20 samples are Russian/Turkish/other village stubs
+        // che: re-enabled via MADLAD supplement (sentences_madlad.txt has genuine Chechen prose)
         ex.add("nav"); // Navajo: species distribution templates ~95% of 47k sentences
         // v5 drops: gate-simplification (length-gating mechanism removed entirely)
         ex.add("nds-nl"); // Low Saxon Dutch: dual confusable complexity (nds + nld)

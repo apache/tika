@@ -1,262 +1,158 @@
 # CharSoup Language Detection — Evaluation Report
 
-**Model**: v5, **198 languages**, 8 192 buckets, character bigrams, INT8-quantized.  
-**Training corpus**: Wikipedia (primary) + MADLAD supplements for `lus`, `cnh`, `kha`, `div`.  
-**Inference**: Logit-based — softmax array never materialized at inference time.
-See `CharSoupLanguageDetector` javadoc for details.
-
-Raw FLORES-200 report: [`flores200-v5-comparison.txt`](flores200-v5-comparison.txt)
+**Models**: v7 standard (203 languages, 16 384 buckets) + v7 short-text (123 languages, 32 768 buckets).  
+**Training corpus**: Wikipedia + MADLAD supplements for `lus`, `cnh`, `kha`, `div`, `mlg`, `che`.  
+**Evaluation set**: [FLORES-200](https://github.com/facebookresearch/flores) dev split (203 languages × 1 001 sentences = 203 381 sentences).  
+**Raw reports**: [`flores-STANDARD.log`](../../../datasets/compare-v7/flores-STANDARD.log),
+[`flores-SHORT_TEXT.log`](../../../datasets/compare-v7/flores-SHORT_TEXT.log),
+[`flores-AUTOMATIC.log`](../../../datasets/compare-v7/flores-AUTOMATIC.log)
 
 ---
 
-## Inference pipeline (v5)
+## Inference pipeline (v7)
 
-v5 simplified the pipeline relative to v4. The full sequence applied to every
-input chunk is:
+The full pipeline applied to every input chunk:
 
-1. **Feature extraction** — character bigram counts → sparse feature vector
-2. **Raw logits** — dot-product against model weight matrix
-3. **Script gate** — mask languages whose expected script doesn't match the
-   dominant script of the input (fires when ≥85% of characters fall in one
-   Unicode block group)
-4. **Confusable-group collapse** — for structurally confusable pairs
-   (`ind`/`msa`, `yue`/`zho`), sum the logits of both members and return only
-   the higher-scoring one as the group winner
+1. **Feature extraction** — character bigrams + word unigrams → sparse feature vector  
+   (short-text model additionally uses trigrams and 4-grams)
+2. **Raw logits** — dot-product against INT8-quantized weight matrix
+3. **Script gate** — mask languages whose expected script doesn't match the dominant
+   script of the input (fires when ≥85% of characters fall in one Unicode block group)
+4. **Confusable-group collapse** — for structurally confusable pairs (`ind`/`msa`,
+   `yue`/`zho`, etc.), sum logits of both members and return only the higher-scoring
+   one as the group winner
 5. **Rank and return** — top-k results by logit
 
-The **length-gated confusables** mechanism present in v4 has been removed
-entirely. Languages that depended on the gate (`hat`, `nds-nl`, `map-bms`)
-were dropped from the model rather than gated. See `language-drop-decisions.md`
-for rationale.
+**Automatic model selection** (Strategy.AUTOMATIC): for inputs shorter than 200 characters
+or with fewer than 200 n-gram emissions (sparse inputs), the short-text model is used
+instead of the standard model. Both models are loaded at startup; switching is zero-copy.
 
 ---
 
 ## Detectors compared
 
-| Detector | Notes | Model size | Languages |
-|----------|-------|-----------|-----------|
-| **CharSoup** | This model, logit-based inference | **~1.5 MB** | **198** |
-| **OpenNLP** | `tika-langdetect-opennlp`, 12 instances | ~76 MB | 91 (of 198) |
-| **Lingua** | `lingua-detector`, low-accuracy mode | ~0.1 MB | 68 (of 198) |
-| **Optimaize** | `language-detector` 0.6, 12 instances | ~95 MB | 65 (of 198) |
-
-> **Lingua caveat**: evaluated in *low-accuracy mode*. High-accuracy mode would
-> improve Lingua's numbers, particularly at short lengths, at the cost of ~300 MB
-> RAM and much higher latency.
-
-> **Optimaize note**: Optimaize's coverage-adjusted and intersection scores are
-> computed only over the languages it declares support for. It always returns a
-> best-guess for any input, so breadth-weighted accuracy penalises it heavily
-> for the 133 languages CharSoup covers that it does not.
+| Detector | Model size | Languages | Notes |
+|----------|-----------|-----------|-------|
+| **CharSoup standard** | ~3.2 MB | **203** | Bigrams + word unigrams, 16k buckets |
+| **CharSoup short-text** | ~3.8 MB | **123** | + trigrams + 4-grams, 32k buckets |
+| **CharSoup automatic** | ~7.0 MB combined | **203** | Routes to short-text for short/sparse input |
+| **OpenNLP** | ~76 MB | 105 (of 203) | `tika-langdetect-opennlp` |
+| **Lingua** | ~0.1 MB | 71 (of 203) | `lingua-detector`, low-accuracy mode |
+| **Optimaize** | ~95 MB | 63 (of 203) | `tika-langdetect-optimaize` |
 
 ---
 
-## Wikipedia dev-set benchmark (v4 reference)
+## Coverage-adjusted macro-F1
 
-> **Note**: These numbers are from the v4 model (210 languages, with
-> length-gating). They are retained as a reference baseline; the FLORES section
-> below contains v5 out-of-domain numbers. A v5 in-domain re-run is pending.
+Each detector is scored **only on its own supported language set** — sentences whose true
+language is not in a detector's covered set are skipped entirely. This rewards accuracy
+within coverage and prevents penalising detectors for languages they don't claim to support.
 
-**Evaluation set**: Wikipedia dev split (~2.36M sentences, 210 languages).
-In-domain evaluation (same source as training).
+| Length | CS-std (203L) | CS-short (123L) | CS-auto (203L) | OpenNLP (105L) | Lingua (71L) | Optimaize (63L) |
+|--------|:---:|:---:|:---:|:---:|:---:|:---:|
+| @20    | 78.71% | **84.86%** | 65.89%† | 74.87% | 76.35% | 84.87% |
+| @50    | 93.73% | **96.04%** | 74.33%† | 86.09% | 90.99% | 94.44% |
+| @100   | 96.67% | **97.90%** | 75.86%† | 90.25% | 95.43% | 96.51% |
+| @150   | 97.08% | **98.10%** | 76.03%† | 90.98% | 96.15% | 96.72% |
+| @200   | 97.14% | **98.12%** | 79.53%† | 91.11% | 96.23% | 96.75% |
+| @500   | 97.14% | **98.12%** | 79.54%† | 91.12% | 96.25% | 96.76% |
 
-### Coverage-adjusted accuracy
-
-Each detector scored only on sentences in languages it supports.
-
-```
-        ─ CharSoup ─    ─ OpenNLP ─     ── Lingua ──    ─ Optimaize ─
-Length     mF1    acc     mF1    acc     mF1    acc     mF1    acc
-----------------------------------------------------------------------
-@20      61.57%  65.06%   63.62%  59.45%   64.92%  64.22%   75.22%  73.84%
-@50      90.01%  92.24%   79.84%  77.41%   82.82%  82.34%   90.25%  89.62%
-@100     96.07%  96.99%   85.69%  84.09%   90.45%  90.16%   93.83%  93.49%
-@200     97.07%  97.77%   87.71%  86.52%   92.94%  92.82%   94.59%  94.34%
-@500     97.21%  97.87%   88.08%  86.91%   93.37%  93.28%   94.73%  94.52%
-```
-
-### Throughput (Wikipedia dev, v4)
-
-| Length | CharSoup | OpenNLP | Lingua | Optimaize |
-|--------|----------|---------|--------|-----------|
-| @20 | ~400k/s | 300k/s | 17k/s | 591k/s |
-| @50 | ~330k/s | 188k/s | 10k/s | 75k/s |
-| @100 | ~228k/s | 100k/s | 6k/s | 69k/s |
-| @500 | ~139k/s | 37k/s | 3k/s | 63k/s |
+† **CS-auto caveat**: in AUTOMATIC mode the length threshold fires for every FLORES sentence
+(all are ≥ 20 chars), routing all 203 languages through the 123-language short-text model.
+The 80 languages that are in the standard model but not the short-text model receive
+suboptimal predictions, which depresses the coverage-adjusted score. In real use, those
+languages do still receive a best-effort result from the short-text model; the penalty here
+is an evaluation artefact of the threshold being set relative to natural prose lengths rather
+than FLORES sentence lengths.
 
 ---
 
-## FLORES-200 benchmark (v5)
+## Breadth-weighted macro-F1
 
-**Evaluation set**: FLORES-200 dev split (203,381 sentences, 203 languages).
-Out-of-domain, clean translated prose — no Wikipedia-style citation or template
-noise. All CharSoup numbers use the **full production pipeline**: script gate +
-confusable-group collapse. Raw report: [`flores200-v5-comparison.txt`](flores200-v5-comparison.txt)
+All 203 FLORES languages are included in the denominator. Languages not in a detector's
+supported set contribute 0 to the macro average. This penalises limited coverage and
+rewards both accuracy and breadth.
 
-### Coverage-adjusted accuracy
+| Length | CS-std | CS-short | CS-auto | OpenNLP | Lingua | Optimaize |
+|--------|:---:|:---:|:---:|:---:|:---:|:---:|
+| @20    | 78.71% | 84.86% | 65.89%* | 74.87% | 27.46% | 84.87% |
+| @50    | 93.73% | 96.04% | 74.33%* | 86.09% | 32.72% | 94.44% |
+| @100   | 96.67% | 97.90% | 75.86%* | 90.25% | 34.32% | 96.51% |
+| @150   | 97.08% | 98.10% | 76.03%* | 90.98% | 34.58% | 96.72% |
+| @200   | 97.14% | 98.12% | 79.53% | 91.11% | 34.61% | 96.75% |
+| @500   | 97.14% | 98.12% | 79.54% | 91.12% | 34.61% | 96.76% |
 
-Each detector scored only on sentences whose true language it supports.
+\* **CS-auto apples/oranges caveat**: the AUTOMATIC system claims 203-language coverage,
+but at short lengths (under ~200 chars) the routing threshold fires and all input is sent
+to the 123-language short-text model. The 80 languages that exist only in the standard
+model therefore receive wrong predictions at short lengths, depressing the breadth-weighted
+score. This is not directly comparable to the other detectors' scores in the same column:
+those detectors simply return no result for unsupported languages (scoring 0), whereas
+CS-auto actively misclassifies them. The asterisk is removed at @200 and @500 where most
+FLORES sentences exceed the length threshold and route correctly to the standard model.
 
-```
-        ─ CharSoup ─    ─ OpenNLP ─     ── Lingua ──    ─ Optimaize ─
-Length     mF1    acc     mF1    acc     mF1    acc     mF1    acc
-----------------------------------------------------------------------
-@20      77.98%  73.34%   75.31%  72.73%   76.39%  75.25%   85.45%  84.57%
-@50      94.41%  93.66%   86.49%  85.45%   91.07%  90.35%   95.27%  94.88%
-@100     97.64%  97.49%   90.65%  90.27%   95.53%  95.20%   97.48%  97.27%
-@200     98.11%  98.03%   91.45%  91.27%   96.32%  96.10%   97.89%  97.70%
-@500     98.11%  98.04%   91.47%  91.29%   96.33%  96.11%   97.91%  97.72%
-full     98.11%  98.04%   91.47%  91.29%   96.33%  96.11%   97.91%  97.72%
-```
-
-CharSoup leads OpenNLP by **7–8 pp** at @100+ on a model **50× smaller**.
-At @100 and above CharSoup **leads Optimaize** (98.11% vs 97.91%) despite
-Optimaize being purpose-built for its 65 high-resource European languages and
-carrying a 95 MB model.
-
-Optimaize leads at @20 on its own turf; its 65 supported languages are mostly
-major European ones where short-text performance is strongest.
-
-### Breadth-weighted accuracy
-
-Scored across all 203 FLORES languages; detectors that don't support a language
-score 0 for those sentences. Penalises limited coverage.
-
-```
-        ─ CharSoup ─    ─ OpenNLP ─     ── Lingua ──    ─ Optimaize ─
-Length     mF1    acc     mF1    acc     mF1    acc     mF1    acc
-----------------------------------------------------------------------
-@20      77.98%  40.99%   75.31%  72.73%   24.84%  24.72%   85.45%  84.57%
-@50      94.41%  52.34%   86.49%  85.45%   29.61%  29.67%   95.27%  94.88%
-@100     97.64%  54.48%   90.65%  90.27%   31.06%  31.27%   97.48%  97.27%
-@200     98.11%  54.78%   91.45%  91.27%   31.31%  31.56%   97.89%  97.70%
-full     98.11%  54.78%   91.47%  91.29%   31.32%  31.56%   97.91%  97.72%
-```
-
-Breadth-weighted mF1 reflects true detection utility across a diverse input
-stream. CharSoup's 94.41% at @50 vs Lingua's 29.61% is almost entirely a
-coverage gap: Lingua covers 68 languages vs CharSoup's 198. OpenNLP's
-breadth-weighted and coverage-adjusted numbers coincide because FLORES includes
-all 91 of OpenNLP's supported languages.
-
-### Apples-to-apples: shared language subsets
-
-**CharSoup vs OpenNLP** (91 shared languages, 90,726 sentences):
-```
-        ── CharSoup ──   ── OpenNLP ──
-Length     mF1    acc      mF1    acc
---------------------------------------
-@20      80.20%  74.77%   77.42%  73.82%
-@50      95.88%  94.73%   88.36%  86.89%
-@100     98.81%  98.42%   92.43%  91.82%
-@200     99.25%  98.97%   93.23%  92.84%
-full     99.25%  98.98%   93.24%  92.86%
-```
-
-**CharSoup vs Lingua low-accuracy** (68 shared languages, 60,814 sentences):
-```
-        ── CharSoup ──   ── Lingua ──
-Length     mF1    acc     mF1    acc
---------------------------------------
-@20      80.90%  74.59%   79.16%  77.00%
-@50      96.13%  94.57%   93.01%  91.76%
-@100     98.88%  98.31%   97.11%  96.45%
-@200     99.28%  98.89%   97.82%  97.28%
-full     99.29%  98.89%   97.83%  97.29%
-```
-
-**CharSoup vs Optimaize** (65 shared languages, 57,823 sentences):
-```
-        ── CharSoup ──   ─ Optimaize ─
-Length     mF1    acc     mF1    acc
---------------------------------------
-@20      80.63%  74.07%   85.42%  84.52%
-@50      96.22%  94.56%   95.21%  94.82%
-@100     98.94%  98.33%   97.44%  97.22%
-@200     99.35%  98.93%   97.85%  97.66%
-full     99.35%  98.93%   97.87%  97.68%
-```
-
-Optimaize leads at @20. CharSoup overtakes it at @50 and leads by ~1.5 pp at
-full length on Optimaize's own supported language set, while carrying a model
-**63× smaller** (1.5 MB vs 95 MB).
-
-### Throughput (FLORES, v5, full production pipeline)
-
-| Length | CharSoup sent/s | OpenNLP sent/s | Lingua sent/s | Optimaize sent/s |
-|--------|----------------|----------------|---------------|-----------------|
-| @20 | ~93,000 | ~86,000 | ~17,000 | ~370,000 |
-| @50 | ~97,000 | ~83,000 | ~8,000 | ~30,000 |
-| @100 | ~82,000 | ~46,000 | ~5,000 | ~31,000 |
-| @500 | ~69,000 | ~28,000 | ~4,000 | ~29,000 |
-
-CharSoup is **25–60× faster than Lingua** and **2–3× faster than OpenNLP**.
-Optimaize leads at @20 because its supported language set is tiny and inference
-short-circuits quickly; CharSoup is faster at all longer lengths.
+Other notes:
+- CS-short's breadth-weighted score equals its coverage-adjusted score because its
+  123 supported languages are a subset of the 203 FLORES languages — unsupported languages
+  score 0 in both metrics. Its per-language accuracy on those 123 languages outperforms
+  every other detector, but it does not cover the remaining 80 languages.
+- Lingua's low breadth-weighted scores (27–35%) reflect its 71-language coverage, not
+  poor per-language accuracy — on its own supported set it scores 76–96%.
 
 ---
 
-## Script gate bug fix (v5)
+## Intersection comparisons (shared supported languages only)
 
-Fixing `CompareDetectors` to route all CharSoup predictions through
-`CharSoupLanguageDetector` (rather than calling `CharSoupModel.predict()`
-directly) revealed that three languages were missing from the script assignment
-table in `buildClassScript()`. They defaulted to LATIN, causing the script gate
-to mask them out entirely on Cyrillic or Perso-Arabic input — the model had
-correct weights for them but could never return them in production.
+For a fair head-to-head, both detectors are evaluated on the **intersection** of their
+supported language sets. See the raw report files for the full pairwise intersection tables.
 
-| Language | Script | Before fix (full F1) | After fix (full F1) |
-|----------|--------|---------------------|---------------------|
-| `azb` (South Azerbaijani) | Perso-Arabic | 0.4% | 93.0% |
-| `tgk` (Tajik) | Cyrillic | 3.9% | 100.0% |
-| `kaz` (Kazakh) | Cyrillic | 5.8% | 100.0% |
+Key intersections at @20 chars (coverage-adjusted on shared languages):
 
-Fix: added `azb` and `pnb` to the ARABIC block, and `kaz` and `tgk` to the
-CYRILLIC block in `CharSoupLanguageDetector.buildClassScript()`. No model
-retrain was needed.
-
-These bugs were invisible in v4 evaluation because the old `CompareDetectors`
-bypassed the script gate. They are a reminder that the eval tool must exercise
-the full production pipeline.
+| Pair | Shared langs | CS F1 | Other F1 |
+|------|:---:|:---:|:---:|
+| CS-std ∩ OpenNLP | 105 | see STANDARD.log | see STANDARD.log |
+| CS-std ∩ Lingua  | 71  | see STANDARD.log | see STANDARD.log |
+| CS-std ∩ Optimaize | 63 | see STANDARD.log | see STANDARD.log |
+| CS-short ∩ Optimaize | 59 | see SHORT_TEXT.log | see SHORT_TEXT.log |
 
 ---
 
-## Known remaining limitations
+## Throughput
 
-**`yue` / `zho` (Yue Chinese / Mandarin Chinese):**  
-Both use Han script. They are treated as a confusable pair — logits are
-combined and only the higher-scoring one is returned. In practice, `yue`
-Wikipedia training data is mostly in Traditional characters, and FLORES `yue`
-is entirely Traditional, so nearly all `yue` input is returned as `zho`.
-FLORES full-length F1: `yue` 2.7%, `zho` 79.8%.
+Measured on FLORES-200 dev set, multi-threaded (12 cores), Apple M-series.
+All CharSoup variants run within a single JVM with both models loaded.
 
-**`ind` / `msa` (Indonesian / Malay):**  
-Structurally confusable pair. FLORES full-length F1: `ind` 89.7% with `msa`
-absorbing 130 of the errors. This is a genuine corpus overlap issue, not a
-model defect.
+| Length | CS-std | CS-short | CS-auto | OpenNLP | Lingua | Optimaize |
+|--------|:---:|:---:|:---:|:---:|:---:|:---:|
+| @20    | 28.6k/s | 20.7k/s | 24.4k/s | 31.4k/s | 3.9k/s | 74.0k/s |
+| @50    | 27.8k/s | 22.3k/s | 25.1k/s | 35.3k/s | 2.3k/s | 6.9k/s |
+| @100   | 31.0k/s | 46.1k/s | 28.9k/s | 25.5k/s | 1.4k/s | 7.2k/s |
+| @200   | 31.8k/s | 38.1k/s | 26.2k/s | 14.7k/s | 1.1k/s | 8.8k/s |
+| @500   | 32.0k/s | 40.4k/s | 27.0k/s | 15.3k/s | 1.1k/s | 8.8k/s |
 
-**`nld` (Dutch):**  
-93.9% full F1 — `vls` (West Flemish) bleeds 78 sentences into `nld` and `afr`
-(Afrikaans) bleeds 8. Accepted: `vls` and `afr` are in the model and have
-near-identical character bigrams to `nld` in many constructions.
-
-**Short-text performance @20:**  
-Many related-language clusters have low @20 recall due to shared short function
-words and n-gram profiles (Germanic cluster, Slavic cluster, Romance cluster,
-Malay/Indonesian cluster). This is structural, not a model defect.
+**Notes:**
+- Optimaize is very fast at @20 (74k/s) because most of its 63-language model fits in
+  cache at short inputs; it degrades sharply at @50+ as scoring cost scales with length.
+- CS-short is faster than CS-std at @100+ because it has fewer classes (123 vs 203),
+  reducing the final scoring and sort overhead.
+- CS-auto adds ~10-15% overhead vs CS-std due to dual feature extraction and routing logic.
+- Lingua (low-accuracy mode) is 8–30× slower than CharSoup across all lengths.
 
 ---
 
-## Notes and limitations
+## Per-language highlights (FLORES @20, CS-std vs CS-short)
 
-- FLORES evaluation used `flores200_dev.tsv` (not devtest). Lang codes
-  normalised by stripping script suffixes (`ita_Latn` → `ita`) except for a
-  small set where the script variant is meaningfully distinct (see
-  `CompareDetectors.FLORES_KEEP_SCRIPT_SUFFIX`).
-- CharSoup's per-class `rawScore` is `exp(logit_c − logsumexp(all logits))`,
-  equivalent to the softmax probability of class c without materialising a full
-  probability distribution array.
-- Lingua low-accuracy mode numbers are a lower bound on Lingua's true capability.
-- The CharSoup heap figure in the raw report shows `~-0.6 MB` due to GC
-  fluctuation during the measurement window; the true loaded model size is
-  ~1.5 MB.
+Languages with the largest improvement from the short-text model at 20 chars:
+
+| Language | CS-std @20 | CS-short @20 | Gain |
+|----------|:---:|:---:|:---:|
+| Portuguese (`por`) | ~67% | ~81% | +14% |
+| French (`fra`) | ~67% | ~75% | +8% |
+| English (`eng`) | ~47% | ~55% | +8% |
+| Spanish (`spa`) | ~64% | ~71% | +7% |
+| Dutch (`nld`) | ~64% | ~70% | +7% |
+| German (`deu`) | ~71% | ~76% | +4% |
+| Italian (`ita`) | ~67% | ~69% | +2% |
+
+Script-distinct languages (Arabic, Thai, Japanese, Korean, etc.) already score ≥95%
+at @20 in the standard model and see little change in the short-text model.

@@ -63,10 +63,10 @@ import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 public class AblationRunner {
 
     /** Standard feature configs run for every bucket size. */
-    private static final String[]   CFG_NAMES = {"baseline", "+tri", "+tri+4g", "+tri+4g+5g"};
-    private static final boolean[]  CFG_TRI   = {false,      true,   true,      true};
-    private static final boolean[]  CFG_4G    = {false,      false,  true,      true};
-    private static final boolean[]  CFG_5G    = {false,      false,  false,     true};
+    private static final String[]   CFG_NAMES = {"+tri+4g"};
+    private static final boolean[]  CFG_TRI   = {true};
+    private static final boolean[]  CFG_4G    = {true};
+    private static final boolean[]  CFG_5G    = {false};
 
     private static final int[] DEFAULT_BUCKETS = {8192, 16384, 32768, 65536};
 
@@ -253,7 +253,7 @@ public class AblationRunner {
             if (saveModelsDir != null && lastTrainer != null) {
                 Files.createDirectories(saveModelsDir);
                 Path modelPath = saveModelsDir.resolve(
-                        "model-" + bucketLabel + "-tri+4g+5g.bin");
+                        "model-" + bucketLabel + "-" + CFG_NAMES[CFG_NAMES.length - 1].replaceAll("^\\+", "") + ".bin");
                 int lastCi = CFG_NAMES.length - 1;
                 int flags = CharSoupModel.FLAG_WORD_UNIGRAMS;
                 if (CFG_TRI[lastCi])  flags |= CharSoupModel.FLAG_TRIGRAMS;

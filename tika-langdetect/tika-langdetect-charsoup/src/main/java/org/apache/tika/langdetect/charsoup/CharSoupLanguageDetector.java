@@ -204,10 +204,9 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         FeatureExtractor shortExtractor = null;
         try {
             shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
-            // Short-text model was trained with ResearchFeatureExtractor +tri+4g+5g.
-            // We construct the extractor explicitly because the model's stored feature
-            // flags reflect ScriptAwareFeatureExtractor (a historical ModelQuantizer
-            // limitation) and createExtractor() would return the wrong extractor.
+            // Short-text model was trained with ResearchFeatureExtractor +tri+4g (no 5-grams).
+            // We construct the extractor explicitly from known training config rather than
+            // relying solely on feature flags, as belt-and-suspenders verification.
             shortExtractor = new ResearchFeatureExtractor(
                     shortModel.getNumBuckets(),
                     /* useTrigrams    */ true,
@@ -218,7 +217,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
                     /* useWordUnigrams */ true,
                     /* useCharUnigrams */ false,
                     /* use4grams      */ true,
-                    /* use5grams      */ true);
+                    /* use5grams      */ false);
             SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
             SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
             LOG.info("Short-text language model loaded ({} languages, {} buckets)",
@@ -503,6 +502,25 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      * </ul>
      */
     private float lastEntropy = Float.NaN;
+
+    /**
+     * Returns the set of ISO 639-3 language codes supported by the given strategy.
+     * <ul>
+     *   <li>{@link Strategy#SHORT_TEXT} — labels of the short-text model (or empty if not loaded)</li>
+     *   <li>{@link Strategy#STANDARD} — labels of the standard model</li>
+     *   <li>{@link Strategy#AUTOMATIC} — union of both models (standard model labels as superset)</li>
+     * </ul>
+     */
+    public static Set<String> getSupportedLanguages(Strategy strategy) {
+        if (strategy == Strategy.SHORT_TEXT) {
+            if (SHORT_TEXT_MODEL == null) {
+                return java.util.Collections.emptySet();
+            }
+            return new java.util.HashSet<>(java.util.Arrays.asList(SHORT_TEXT_MODEL.getLabels()));
+        }
+        // STANDARD and AUTOMATIC both expose the full standard model set
+        return new java.util.HashSet<>(java.util.Arrays.asList(MODEL.getLabels()));
+    }
 
     /** Constructs a detector with default configuration ({@link Strategy#AUTOMATIC}). */
     public CharSoupLanguageDetector() {

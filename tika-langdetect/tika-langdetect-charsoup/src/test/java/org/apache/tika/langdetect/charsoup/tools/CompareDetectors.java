@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.tika.langdetect.charsoup.CharSoupDetectorConfig;
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.ConfusableGroups;
@@ -143,20 +144,48 @@ public class CompareDetectors {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
+        if (args.length < 1) {
             System.err.println(
-                    "Usage: CompareDetectors <testSplitFile> <charSoupModelFile>"
+                    "Usage: CompareDetectors <testSplitFile>"
+                            + " [--strategy STANDARD|SHORT_TEXT|AUTOMATIC]"
+                            + " [outputReport] [threads]");
+            System.err.println("  Legacy: CompareDetectors <testSplitFile> <charSoupModelFile>"
                             + " [outputReport] [threads]");
             System.exit(1);
         }
 
         Path testFile = Paths.get(args[0]);
-        Path modelFile = Paths.get(args[1]);
-        Path reportFile = args.length > 2 && !args[2].matches("\\d+")
-                ? Paths.get(args[2]) : null;
-        int numThreads = args.length > 3 ? Integer.parseInt(args[3])
-                : (args.length > 2 && args[2].matches("\\d+") ? Integer.parseInt(args[2])
-                : Runtime.getRuntime().availableProcessors());
+
+        // Parse --strategy flag (new mode) vs positional model file (legacy mode)
+        CharSoupLanguageDetector.Strategy strategy = CharSoupLanguageDetector.Strategy.STANDARD;
+        Path modelFile = null;
+        Path reportFile = null;
+        int numThreads = Runtime.getRuntime().availableProcessors();
+
+        List<String> remaining = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
+        for (int i = 0; i < remaining.size(); i++) {
+            if ("--strategy".equals(remaining.get(i)) && i + 1 < remaining.size()) {
+                strategy = CharSoupLanguageDetector.Strategy.valueOf(
+                        remaining.get(i + 1).toUpperCase(Locale.ROOT));
+                remaining.remove(i + 1);
+                remaining.remove(i);
+                i--;
+            }
+        }
+        // Remaining positional args: [modelFile] [reportFile] [threads]
+        if (!remaining.isEmpty() && !remaining.get(0).matches("\\d+")
+                && !remaining.get(0).endsWith(".log") && !remaining.get(0).endsWith(".txt")
+                && Paths.get(remaining.get(0)).toFile().exists()) {
+            modelFile = Paths.get(remaining.remove(0));
+        }
+        if (!remaining.isEmpty() && !remaining.get(0).matches("\\d+")) {
+            reportFile = Paths.get(remaining.remove(0));
+        }
+        if (!remaining.isEmpty()) {
+            numThreads = Integer.parseInt(remaining.get(0));
+        }
+
+        System.out.println("CharSoup strategy: " + strategy);
         System.out.println("Evaluation threads: " + numThreads);
 
         // ---- Load test data ----
@@ -183,25 +212,38 @@ public class CompareDetectors {
         }
         System.out.printf(Locale.US, "Test sentences: %,d%n", allData.size());
 
-        // ---- Load CharSoup model (for metadata; evaluation uses CharSoupLanguageDetector) ----
-        System.out.println("\nLoading CharSoup model: " + modelFile);
-        long heapBefore = usedHeap();
-        CharSoupModel bigramModel;
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(modelFile))) {
-            bigramModel = CharSoupModel.load(is);
+        // ---- Resolve CharSoup supported-language set ----
+        // Evaluation always routes through CharSoupLanguageDetector (production pipeline).
+        // The model file, if supplied, is used only to override the supported-language set
+        // (legacy behaviour). When --strategy is used, we query the detector directly.
+        final Set<String> bigramLangs;
+        long bigramHeapBytes;
+        if (modelFile != null) {
+            System.out.println("\nLoading CharSoup model (for language set): " + modelFile);
+            long heapBefore = usedHeap();
+            CharSoupModel bigramModel;
+            try (InputStream is = new BufferedInputStream(Files.newInputStream(modelFile))) {
+                bigramModel = CharSoupModel.load(is);
+            }
+            bigramHeapBytes = usedHeap() - heapBefore;
+            System.out.printf(Locale.US,
+                    "  CharSoup model: %d classes, %d buckets, ~%.1f MB heap%n",
+                    bigramModel.getNumClasses(), bigramModel.getNumBuckets(),
+                    bigramHeapBytes / (1024.0 * 1024.0));
+            bigramLangs = new HashSet<>(Arrays.asList(bigramModel.getLabels()));
+        } else {
+            bigramLangs = CharSoupLanguageDetector.getSupportedLanguages(strategy);
+            System.out.printf(Locale.US,
+                    "%nCharSoup supported languages (%s strategy): %d%n",
+                    strategy, bigramLangs.size());
+            bigramHeapBytes = 0L; // model already loaded in static initializer
         }
-        long bigramHeapBytes = usedHeap() - heapBefore;
-        System.out.printf(Locale.US, "  CharSoup model: %d classes, %d buckets, ~%.1f MB heap%n",
-                bigramModel.getNumClasses(), bigramModel.getNumBuckets(),
-                bigramHeapBytes / (1024.0 * 1024.0));
         System.out.println("  Evaluation routes through CharSoupLanguageDetector"
                 + " (script gate + confusable group collapse).");
-        // extractor not used for evaluation — CharSoupLanguageDetector handles the full pipeline
-        Set<String> bigramLangs = new HashSet<>(Arrays.asList(bigramModel.getLabels()));
 
         // ---- Load OpenNLP detectors (one per thread; stateful) ----
         System.out.println("Loading OpenNLP detector(s)...");
-        heapBefore = usedHeap();
+        long heapBefore = usedHeap();
         List<LanguageDetector> opennlpPool = new ArrayList<>();
         for (int i = 0; i < numThreads; i++) {
             LanguageDetector d = loadDetector(
@@ -247,7 +289,9 @@ public class CompareDetectors {
 
         // ---- Warm up JIT ----
         System.out.println("\nWarming up (" + WARMUP_ITERS + " iterations)...");
-        CharSoupLanguageDetector warmupDetector = new CharSoupLanguageDetector();
+        CharSoupDetectorConfig warmupCfg = CharSoupDetectorConfig.fromMap(
+                java.util.Map.of("strategy", strategy.name()));
+        CharSoupLanguageDetector warmupDetector = new CharSoupLanguageDetector(warmupCfg);
         for (int i = 0; i < WARMUP_ITERS && i < allData.size(); i++) {
             String text = allData.get(i).getText();
             warmupDetector.reset();
@@ -331,7 +375,7 @@ public class CompareDetectors {
 
             LengthEval ae = new LengthEval(maxLen);
             ae.bigram    = evaluateBigramParallel(
-                    tAll, "bigram-" + tag, numThreads, bigramLangs);
+                    tAll, "bigram-" + tag, numThreads, bigramLangs, strategy);
             ae.opennlp   = evaluateOpenNLPParallel(opennlpPool, tAll, "opennlp-" + tag,
                     opennlpAllLangs);
             ae.lingua    = evaluateLingua(lingua, tAll, "lingua-" + tag, linguaLangs);
@@ -340,17 +384,17 @@ public class CompareDetectors {
             allEvals.add(ae);
 
             LengthEval oe = new LengthEval(maxLen);
-            oe.bigram  = evaluateBigramParallel(tOnn, "bigram-onn-" + tag, numThreads, null);
+            oe.bigram  = evaluateBigramParallel(tOnn, "bigram-onn-" + tag, numThreads, null, strategy);
             oe.opennlp = evaluateOpenNLPParallel(opennlpPool, tOnn, "opennlp-onn-" + tag);
             opennlpEvals.add(oe);
 
             LengthEval le = new LengthEval(maxLen);
-            le.bigram  = evaluateBigramParallel(tLin, "bigram-lin-" + tag, numThreads, null);
+            le.bigram  = evaluateBigramParallel(tLin, "bigram-lin-" + tag, numThreads, null, strategy);
             le.lingua  = evaluateLingua(lingua, tLin, "lingua-lin-" + tag);
             linguaEvals.add(le);
 
             LengthEval pe = new LengthEval(maxLen);
-            pe.bigram    = evaluateBigramParallel(tOpt, "bigram-opt-" + tag, numThreads, null);
+            pe.bigram    = evaluateBigramParallel(tOpt, "bigram-opt-" + tag, numThreads, null, strategy);
             pe.optimaize = evaluateOptimaizeParallel(optimaizePool, tOpt, "optimaize-opt-" + tag);
             optimaizeEvals.add(pe);
 
@@ -471,19 +515,23 @@ public class CompareDetectors {
 
     /**
      * Evaluate CharSoup via the full production pipeline in parallel.
-     * Each thread gets its own {@link CharSoupLanguageDetector} instance.
+     * Each thread gets its own {@link CharSoupLanguageDetector} instance configured
+     * with the given strategy.
      *
      * @param supportedLangs if non-null, sentences whose true label is NOT in this set are
      *                       skipped entirely — not counted in accuracy, F1, or confusion.
      */
     static EvalResult evaluateBigramParallel(List<LabeledSentence> data, String name,
-                                             int numThreads, Set<String> supportedLangs)
+                                             int numThreads, Set<String> supportedLangs,
+                                             CharSoupLanguageDetector.Strategy strategy)
             throws Exception {
+        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
+                java.util.Map.of("strategy", strategy.name()));
         if (data.isEmpty()) {
             return new EvalResult(name);
         }
         if (numThreads <= 1) {
-            return evaluateBigramChunk(new CharSoupLanguageDetector(), data, name, supportedLangs);
+            return evaluateBigramChunk(new CharSoupLanguageDetector(cfg), data, name, supportedLangs);
         }
 
         List<List<LabeledSentence>> chunks = partition(data, numThreads);
@@ -494,7 +542,7 @@ public class CompareDetectors {
             for (int i = 0; i < chunks.size(); i++) {
                 final List<LabeledSentence> chunk = chunks.get(i);
                 final String chunkName = name + "-t" + i;
-                final CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
+                final CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
                 futures.add(pool.submit(
                         () -> evaluateBigramChunk(detector, chunk, chunkName, supportedLangs)));
             }
