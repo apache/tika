@@ -176,7 +176,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      */
     private static int[] CLASS_SCRIPT;
 
-    private static final CharSoupModel MODEL;
+    static final CharSoupModel MODEL;
     private static final FeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
 
@@ -204,7 +204,21 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         FeatureExtractor shortExtractor = null;
         try {
             shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
-            shortExtractor = shortModel.createExtractor();
+            // Short-text model was trained with ResearchFeatureExtractor +tri+4g+5g.
+            // We construct the extractor explicitly because the model's stored feature
+            // flags reflect ScriptAwareFeatureExtractor (a historical ModelQuantizer
+            // limitation) and createExtractor() would return the wrong extractor.
+            shortExtractor = new ResearchFeatureExtractor(
+                    shortModel.getNumBuckets(),
+                    /* useTrigrams    */ true,
+                    /* useSkipBigrams */ false,
+                    /* useSuffixes    */ false,
+                    /* useSuffix4     */ false,
+                    /* usePrefix      */ false,
+                    /* useWordUnigrams */ true,
+                    /* useCharUnigrams */ false,
+                    /* use4grams      */ true,
+                    /* use5grams      */ true);
             SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
             SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
             LOG.info("Short-text language model loaded ({} languages, {} buckets)",
@@ -768,6 +782,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         int len = text.length();
         float[] bestLogits = null;
         float bestEntropy = Float.MAX_VALUE;
+        CharSoupModel bestModel = MODEL;
         int[] features = new int[EXTRACTOR.getNumBuckets()];
         int[] shortFeatures = SHORT_TEXT_MODEL != null
                 ? new int[SHORT_TEXT_EXTRACTOR.getNumBuckets()] : null;
@@ -797,24 +812,27 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
             }
 
             float[] logits;
-            float[] scriptGated;
             float[] collapsed;
+            CharSoupModel chunkModel;
             if (useShortText) {
                 SHORT_TEXT_EXTRACTOR.extractAndCount(chunk, shortFeatures);
                 logits = SHORT_TEXT_MODEL.predictLogits(shortFeatures);
-                scriptGated = applyScriptGate(logits, chunk, SHORT_TEXT_CLASS_SCRIPT);
-                collapsed = collapseGroups(scriptGated, SHORT_TEXT_GROUP_INDICES);
+                logits = applyScriptGate(logits, chunk, SHORT_TEXT_CLASS_SCRIPT);
+                collapsed = collapseGroups(logits, SHORT_TEXT_GROUP_INDICES);
+                chunkModel = SHORT_TEXT_MODEL;
             } else {
                 logits = MODEL.predictLogits(features);
-                scriptGated = applyScriptGate(logits, chunk, CLASS_SCRIPT);
-                collapsed = collapseGroups(scriptGated, GROUP_INDICES);
+                logits = applyScriptGate(logits, chunk, CLASS_SCRIPT);
+                collapsed = collapseGroups(logits, GROUP_INDICES);
+                chunkModel = MODEL;
             }
 
             float entropy = entropyFromLogits(collapsed);
 
             if (entropy < bestEntropy) {
                 bestEntropy = entropy;
-                bestLogits = scriptGated;
+                bestLogits = collapsed;
+                bestModel = chunkModel;
             }
 
             if (entropy < ENTROPY_THRESHOLD) {
@@ -822,7 +840,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
             }
         }
 
-        return buildResults(bestLogits, bestEntropy);
+        return buildResults(bestLogits, bestEntropy, bestModel);
     }
 
     /**
@@ -842,22 +860,27 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
-     * Build sorted LanguageResult list from gated logits and pre-computed entropy.
-     * Each class's {@code rawScore} is {@code sigmoid(logit_c − logsumexp(other logits))}
-     * which equals {@code exp(logit_c − logsumexp(all logits))} — the probability of
-     * class c under a stable log-sum-exp normalization. logsumexp is computed once;
-     * each per-class score is a single exp() call. No softmax array is materialized.
+     * Build sorted LanguageResult list from collapsed logits and pre-computed entropy.
+     * Each class's {@code rawScore} is {@code exp(logit_c − logsumexp(all logits))} —
+     * the softmax probability of class c, computed stably without materializing the
+     * full distribution. logsumexp is computed once; each per-class score is one exp().
+     *
+     * @param logits  collapsed (script-gated + group-collapsed) logits from the model
+     *                that produced the winning chunk; length == usedModel.getNumClasses()
+     * @param entropy pre-computed entropy of {@code logits}
+     * @param usedModel the model (general or short-text) that produced {@code logits}
      */
-    private List<LanguageResult> buildResults(float[] logits, float entropy) {
+    private List<LanguageResult> buildResults(float[] logits, float entropy,
+                                              CharSoupModel usedModel) {
         lastEntropy = entropy;
         float confScore = entropyToConfidenceScore(lastEntropy);
         float lse = logSumExp(logits);
 
-        List<LanguageResult> results = new ArrayList<>(MODEL.getNumClasses());
-        for (int c = 0; c < MODEL.getNumClasses(); c++) {
+        List<LanguageResult> results = new ArrayList<>(usedModel.getNumClasses());
+        for (int c = 0; c < usedModel.getNumClasses(); c++) {
             float score = (float) Math.exp(logits[c] - lse);
             results.add(new LanguageResult(
-                    MODEL.getLabel(c), toConfidence(score, lastEntropy),
+                    usedModel.getLabel(c), toConfidence(score, lastEntropy),
                     score, confScore));
         }
         results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));

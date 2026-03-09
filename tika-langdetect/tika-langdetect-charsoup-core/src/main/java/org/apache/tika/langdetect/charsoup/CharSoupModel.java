@@ -83,6 +83,10 @@ public class CharSoupModel {
     public static final int FLAG_WORD_UNIGRAMS = 1 << 5;
     /** Feature flag: enable non-CJK character unigrams. */
     public static final int FLAG_CHAR_UNIGRAMS = 1 << 6;
+    /** Feature flag: enable character 4-grams. */
+    public static final int FLAG_4GRAMS        = 1 << 7;
+    /** Feature flag: enable character 5-grams. */
+    public static final int FLAG_5GRAMS        = 1 << 8;
 
     /** Default flags for v1 models (word unigrams only). */
     public static final int V1_DEFAULT_FLAGS = FLAG_WORD_UNIGRAMS;
@@ -392,6 +396,18 @@ public class CharSoupModel {
 
     public int getFeatureFlags() {
         return featureFlags;
+    }
+
+    /**
+     * Returns a new model with the same weights but a different feature-flags bitmask.
+     * Useful for correcting flags on models saved before this field was properly set.
+     *
+     * @param newFlags bitmask of {@code FLAG_*} constants
+     * @return copy of this model with updated feature flags
+     */
+    public CharSoupModel withFeatureFlags(int newFlags) {
+        return new CharSoupModel(numBuckets, numClasses, labels.clone(),
+                scales.clone(), biases.clone(), flatWeights.clone(), newFlags);
     }
 
     // ================================================================

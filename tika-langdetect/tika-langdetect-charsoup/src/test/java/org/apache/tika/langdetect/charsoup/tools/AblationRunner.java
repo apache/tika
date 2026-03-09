@@ -254,7 +254,17 @@ public class AblationRunner {
                 Files.createDirectories(saveModelsDir);
                 Path modelPath = saveModelsDir.resolve(
                         "model-" + bucketLabel + "-tri+4g+5g.bin");
-                CharSoupModel model = ModelQuantizer.quantize(lastTrainer);
+                int lastCi = CFG_NAMES.length - 1;
+                int flags = CharSoupModel.FLAG_WORD_UNIGRAMS;
+                if (CFG_TRI[lastCi])  flags |= CharSoupModel.FLAG_TRIGRAMS;
+                if (CFG_4G[lastCi])   flags |= CharSoupModel.FLAG_4GRAMS;
+                if (CFG_5G[lastCi])   flags |= CharSoupModel.FLAG_5GRAMS;
+                CharSoupModel model = ModelQuantizer.quantize(
+                        lastTrainer.getLabels(),
+                        lastTrainer.getWeightsClassMajor(),
+                        lastTrainer.getBiases(),
+                        lastTrainer.getNumBuckets(),
+                        flags);
                 try (OutputStream os = new BufferedOutputStream(
                         Files.newOutputStream(modelPath))) {
                     model.save(os);
