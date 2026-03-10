@@ -1,0 +1,192 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+// Regenerate with DumpLabels tool after model training.
+
+= CharSoup Supported Languages
+
+Language codes are ISO 639-3 (with private-use suffixes for romanized variants).
+
+== Standard Model
+
+The standard model (`langdetect.bin`) supports *203 languages* (v7, Wikipedia+MADLAD build).
+
+[cols="2,3,2,3,2,3",options="header"]
+|===
+| Code | Language | Code | Language | Code | Language
+
+| `ace` | Acehnese | `afr` | Afrikaans | `aka` | Akan
+| `sqi` | Albanian | `gsw` | Alsatian | `amh` | Amharic
+| `ami` | Amis | `ara` | Arabic | `arg` | Aragonese
+| `hye` | Armenian | `asm` | Assamese | `ava` | Avar
+| `aze` | Azerbaijani | `ban` | Balinese | `bjn` | Banjar
+| `bak` | Bashkir | `eus` | Basque | `bar` | Bavarian
+| `bel` | Belarusian | `be-x-old` | Belarusian (Taraškievica) | `ben` | Bengali
+| `bre` | Breton | `bul` | Bulgarian | `mya` | Burmese
+| `yue` | Cantonese | `cat` | Catalan | `ceb` | Cebuano
+| `bcl` | Central Bikol | `ckb` | Central Kurdish | `che` | Chechen
+| `zho` | Chinese | `chv` | Chuvash | `ksh` | Colognian
+| `cor` | Cornish | `cos` | Corsican | `hrv` | Croatian
+| `ces` | Czech | `dag` | Dagbani | `dan` | Danish
+| `div` | Dhivehi | `nld` | Dutch | `mhr` | Eastern Mari
+| `ydd` | Eastern Yiddish | `eng` | English | `myv` | Erzya
+| `epo` | Esperanto | `est` | Estonian | `ewe` | Ewe
+| `ext` | Extremaduran | `fao` | Faroese | `fin` | Finnish
+| `fra` | French | `glg` | Galician | `kat` | Georgian
+| `deu` | German | `gom` | Goan Konkani | `grn` | Guaraní
+| `guj` | Gujarati | `cnh` | Hakha Chin (Alternate) | `hak-x-rom` | Hakka Chinese (Romanized)
+| `hau` | Hausa | `heb` | Hebrew | `hil` | Hiligaynon
+| `hin` | Hindi | `hun` | Hungarian | `isl` | Icelandic
+| `ido` | Ido | `ibo` | Igbo | `ilo` | Ilocano
+| `smn` | Inari Sami | `ind` | Indonesian | `ina` | Interlingua
+| `ile` | Interlingue | `gle` | Irish | `ita` | Italian
+| `jpn` | Japanese | `jav` | Javanese | `kab` | Kabyle
+| `kan` | Kannada | `pam` | Kapampangan | `kaa` | Karakalpak
+| `csb` | Kashubian | `kaz` | Kazakh | `kha` | Khasi
+| `khm` | Khmer | `kin` | Kinyarwanda | `kir` | Kirghiz
+| `kpv` | Komi-Zyrian | `kor` | Korean | `avk` | Kotava
+| `kur` | Kurdish | `lao` | Lao | `lat` | Latin
+| `lav` | Latvian | `lez` | Lezgian | `lim` | Limburgish
+| `lfn` | Lingua Franca Nova | `lit` | Lithuanian | `olo` | Livvi-Karelian
+| `jbo` | Lojban | `nds` | Low German | `dsb` | Lower Sorbian
+| `lug` | Luganda | `ltz` | Luxembourgish | `mkd` | Macedonian
+| `mlg` | Malagasy | `msa` | Malay | `mal` | Malayalam
+| `mlt` | Maltese | `glv` | Manx | `mar` | Marathi
+| `mzn` | Mazanderani | `cdo-x-rom` | Min Dong Chinese (Romanized) | `min` | Minangkabau
+| `xmf` | Mingrelian | `mwl` | Mirandese | `lus` | Mizo
+| `ell` | Modern Greek (1453-) | `mon` | Mongolian | `nqo` | N'Ko
+| `nep` | Nepali (macrolanguage) | `frr` | North Frisian | `sme` | Northern Sami
+| `nso` | Northern Sotho | `nob` | Norwegian Bokmål | `nno` | Norwegian Nynorsk
+| `nya` | Nyanja | `ori` | Odia | `orm` | Oromo
+| `oss` | Ossetian | `pfl` | Palatine German | `pan` | Panjabi
+| `pap` | Papiamento | `pus` | Pashto | `fas` | Persian
+| `pol` | Polish | `por` | Portuguese | `ron` | Romanian
+| `roh` | Romansh | `bxr` | Russia Buriat | `rus` | Russian
+| `rue` | Rusyn | `szy` | Sakizaya | `smo` | Samoan
+| `sgs` | Samogitian | `san` | Sanskrit | `sat` | Santali
+| `skr` | Saraiki | `stq` | Saterland Frisian | `gla` | Scottish Gaelic
+| `trv` | Seediq | `srp` | Serbian | `sna` | Shona
+| `szl` | Silesian | `snd` | Sindhi | `sin` | Sinhala
+| `slk` | Slovak | `slv` | Slovenian | `som` | Somali
+| `azb` | South Azerbaijani | `alt` | Southern Altai | `spa` | Spanish
+| `sun` | Sundanese | `swh` | Swahili | `swe` | Swedish
+| `tgl` | Tagalog | `tgk` | Tajik | `tam` | Tamil
+| `tat` | Tatar | `tay` | Tayal | `tel` | Telugu
+| `tet` | Tetum | `tha` | Thai | `tir` | Tigrinya
+| `tso` | Tsonga | `tsn` | Tswana | `tum` | Tumbuka
+| `tur` | Turkish | `tuk` | Turkmen | `tyv` | Tuvinian
+| `udm` | Udmurt | `ukr` | Ukrainian | `hsb` | Upper Sorbian
+| `urd` | Urdu | `uig` | Uyghur | `uzb` | Uzbek
+| `vep` | Veps | `vie` | Vietnamese | `vol` | Volapük
+| `vro` | Võro | `wln` | Walloon | `war` | Waray
+| `cym` | Welsh | `vls` | West Flemish | `hyw` | Western Armenian
+| `fry` | Western Frisian | `mrj` | Western Mari | `pnb` | Western Punjabi
+| `xho` | Xhosa | `sah` | Yakut | `yor` | Yoruba
+| `diq` | Zaza | `zul` | Zulu |  |
+|===
+
+== Short-Text Model
+
+The short-text model (`langdetect-short.bin`) supports *123 languages*.
+These are languages with sufficient short-text distinctiveness for reliable detection
+at fewer than 200 characters.
+For short inputs in languages only in the standard model, the standard model is still used.
+
+[cols="2,3,2,3,2,3",options="header"]
+|===
+| Code | Language | Code | Language | Code | Language
+
+| `afr` | Afrikaans | `aka` | Akan | `sqi` | Albanian
+| `amh` | Amharic | `ara` | Arabic | `hye` | Armenian
+| `asm` | Assamese | `aze` | Azerbaijani | `bak` | Bashkir
+| `eus` | Basque | `bel` | Belarusian | `ben` | Bengali
+| `bul` | Bulgarian | `mya` | Burmese | `cat` | Catalan
+| `ceb` | Cebuano | `ckb` | Central Kurdish | `che` | Chechen
+| `zho` | Chinese | `chv` | Chuvash | `hrv` | Croatian
+| `ces` | Czech | `dag` | Dagbani | `dan` | Danish
+| `div` | Dhivehi | `nld` | Dutch | `ydd` | Eastern Yiddish
+| `eng` | English | `est` | Estonian | `ewe` | Ewe
+| `fin` | Finnish | `fra` | French | `kat` | Georgian
+| `deu` | German | `guj` | Gujarati | `hau` | Hausa
+| `heb` | Hebrew | `hil` | Hiligaynon | `hin` | Hindi
+| `hun` | Hungarian | `isl` | Icelandic | `ibo` | Igbo
+| `ind` | Indonesian | `gle` | Irish | `ita` | Italian
+| `jpn` | Japanese | `jav` | Javanese | `kan` | Kannada
+| `kaz` | Kazakh | `kha` | Khasi | `khm` | Khmer
+| `kin` | Kinyarwanda | `kir` | Kirghiz | `kor` | Korean
+| `kur` | Kurdish | `lao` | Lao | `lav` | Latvian
+| `lit` | Lithuanian | `lug` | Luganda | `mkd` | Macedonian
+| `mlg` | Malagasy | `mal` | Malayalam | `mlt` | Maltese
+| `mar` | Marathi | `cdo-x-rom` | Min Dong Chinese (Romanized) | `lus` | Mizo
+| `ell` | Modern Greek (1453-) | `mon` | Mongolian | `nqo` | N'Ko
+| `nep` | Nepali (macrolanguage) | `nob` | Norwegian Bokmål | `nya` | Nyanja
+| `ori` | Odia | `orm` | Oromo | `oss` | Ossetian
+| `pan` | Panjabi | `pus` | Pashto | `fas` | Persian
+| `pol` | Polish | `por` | Portuguese | `ron` | Romanian
+| `rus` | Russian | `smo` | Samoan | `sat` | Santali
+| `trv` | Seediq | `srp` | Serbian | `sna` | Shona
+| `snd` | Sindhi | `sin` | Sinhala | `slk` | Slovak
+| `slv` | Slovenian | `som` | Somali | `azb` | South Azerbaijani
+| `spa` | Spanish | `sun` | Sundanese | `swh` | Swahili
+| `swe` | Swedish | `tgl` | Tagalog | `tgk` | Tajik
+| `tam` | Tamil | `tat` | Tatar | `tay` | Tayal
+| `tel` | Telugu | `tet` | Tetum | `tha` | Thai
+| `tir` | Tigrinya | `tso` | Tsonga | `tsn` | Tswana
+| `tur` | Turkish | `tuk` | Turkmen | `udm` | Udmurt
+| `ukr` | Ukrainian | `urd` | Urdu | `uig` | Uyghur
+| `uzb` | Uzbek | `vie` | Vietnamese | `cym` | Welsh
+| `hyw` | Western Armenian | `fry` | Western Frisian | `xho` | Xhosa
+| `sah` | Yakut | `yor` | Yoruba | `zul` | Zulu
+|===
+
+== Standard-Model-Only Languages
+
+The following *80 languages* are in the standard model but not the short-text model.
+For short inputs in these languages, the standard model is still used.
+
+[cols="2,3,2,3,2,3",options="header"]
+|===
+| Code | Language | Code | Language | Code | Language
+
+| `ace` | Acehnese | `gsw` | Alsatian | `ami` | Amis
+| `arg` | Aragonese | `ava` | Avar | `ban` | Balinese
+| `bjn` | Banjar | `bar` | Bavarian | `be-x-old` | Belarusian (Taraškievica)
+| `bre` | Breton | `yue` | Cantonese | `bcl` | Central Bikol
+| `ksh` | Colognian | `cor` | Cornish | `cos` | Corsican
+| `mhr` | Eastern Mari | `myv` | Erzya | `epo` | Esperanto
+| `ext` | Extremaduran | `fao` | Faroese | `glg` | Galician
+| `gom` | Goan Konkani | `grn` | Guaraní | `cnh` | Hakha Chin (Alternate)
+| `hak-x-rom` | Hakka Chinese (Romanized) | `ido` | Ido | `ilo` | Ilocano
+| `smn` | Inari Sami | `ina` | Interlingua | `ile` | Interlingue
+| `kab` | Kabyle | `pam` | Kapampangan | `kaa` | Karakalpak
+| `csb` | Kashubian | `kpv` | Komi-Zyrian | `avk` | Kotava
+| `lat` | Latin | `lez` | Lezgian | `lim` | Limburgish
+| `lfn` | Lingua Franca Nova | `olo` | Livvi-Karelian | `jbo` | Lojban
+| `nds` | Low German | `dsb` | Lower Sorbian | `ltz` | Luxembourgish
+| `msa` | Malay | `glv` | Manx | `mzn` | Mazanderani
+| `min` | Minangkabau | `xmf` | Mingrelian | `mwl` | Mirandese
+| `frr` | North Frisian | `sme` | Northern Sami | `nso` | Northern Sotho
+| `nno` | Norwegian Nynorsk | `pfl` | Palatine German | `pap` | Papiamento
+| `roh` | Romansh | `bxr` | Russia Buriat | `rue` | Rusyn
+| `szy` | Sakizaya | `sgs` | Samogitian | `san` | Sanskrit
+| `skr` | Saraiki | `stq` | Saterland Frisian | `gla` | Scottish Gaelic
+| `szl` | Silesian | `alt` | Southern Altai | `tum` | Tumbuka
+| `tyv` | Tuvinian | `hsb` | Upper Sorbian | `vep` | Veps
+| `vol` | Volapük | `vro` | Võro | `wln` | Walloon
+| `war` | Waray | `vls` | West Flemish | `mrj` | Western Mari
+| `pnb` | Western Punjabi | `diq` | Zaza |  |
+|===

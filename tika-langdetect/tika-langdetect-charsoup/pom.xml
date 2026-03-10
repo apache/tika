@@ -60,6 +60,18 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-langdetect-optimaize</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.pemistahl</groupId>
+      <artifactId>lingua</artifactId>
+      <version>1.2.2</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

@@ -17,6 +17,7 @@
 package org.apache.tika.langdetect.charsoup.tools;
 
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
 
 /**
  * Quantizes float32 model weights to INT8 for compact storage.
@@ -33,33 +34,38 @@ public class ModelQuantizer {
 
     /**
      * Quantize a Phase2Trainer's float32 weights to INT8.
-     * Phase2Trainer uses bucket-major layout internally;
-     * {@link Phase2Trainer#getWeightsClassMajor()} transposes
-     * to the class-major layout expected here.
+     * <p>
+     * The feature flags are taken directly from
+     * {@link ScriptAwareFeatureExtractor#FEATURE_FLAGS} because training
+     * always uses {@code ScriptAwareFeatureExtractor} to match the inference
+     * path in {@link CharSoupModel#createExtractor()}.
      *
      * @param trainer the trained Phase2Trainer
-     * @return a CharSoupModel with INT8 quantized weights
+     * @return a CharSoupModel with INT8 quantized weights and correct feature flags
      */
     public static CharSoupModel quantize(Phase2Trainer trainer) {
         return quantize(trainer.getLabels(),
                 trainer.getWeightsClassMajor(),
                 trainer.getBiases(),
-                trainer.getNumBuckets());
+                trainer.getNumBuckets(),
+                ScriptAwareFeatureExtractor.FEATURE_FLAGS);
     }
 
     /**
      * Quantize float32 weights to INT8.
      *
-     * @param labels     class labels
-     * @param weights    float32 weights [numClasses][numBuckets]
-     * @param biases     float32 biases [numClasses]
-     * @param numBuckets number of feature buckets
+     * @param labels       class labels
+     * @param weights      float32 weights [numClasses][numBuckets]
+     * @param biases       float32 biases [numClasses]
+     * @param numBuckets   number of feature buckets
+     * @param featureFlags bitmask of {@link CharSoupModel}{@code .FLAG_*} constants
      * @return a CharSoupModel with INT8 quantized weights
      */
     public static CharSoupModel quantize(String[] labels,
                                        float[][] weights,
                                        float[] biases,
-                                       int numBuckets) {
+                                       int numBuckets,
+                                       int featureFlags) {
         int numClasses = labels.length;
         float[] scales = new float[numClasses];
         byte[][] quantizedWeights =
@@ -89,6 +95,6 @@ public class ModelQuantizer {
 
         return new CharSoupModel(numBuckets, numClasses,
                 labels.clone(), scales, biases.clone(),
-                quantizedWeights);
+                quantizedWeights, featureFlags);
     }
 }

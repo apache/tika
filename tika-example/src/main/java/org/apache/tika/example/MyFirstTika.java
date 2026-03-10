@@ -27,7 +27,6 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
@@ -94,7 +93,7 @@ public class MyFirstTika {
         try (TikaInputStream tis = TikaInputStream.get(Paths.get(filename))) {
             System.out.println("The MIME type (based on the Detector interface) is: [" + detector.detect(tis, metadata, new ParseContext()) + "]");
 
-            LanguageDetector langDetector = new OptimaizeLangDetector().loadModels();
+            LanguageDetector langDetector = LanguageDetector.getDefaultLanguageDetector().loadModels();
             LanguageResult lang = langDetector.detect(FileUtils.readFileToString(new File(filename), UTF_8));
 
             System.out.println("The language of this content is: [" + lang.getLanguage() + "]");

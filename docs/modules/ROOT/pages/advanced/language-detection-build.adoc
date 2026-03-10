@@ -24,37 +24,56 @@ xref:advanced/language-detection.adoc[Language Detection].
 
 == Training Corpus
 
-Training data is downloaded from the
-https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection] using
-`download_corpus.py` (checked into the repository). The script downloads multiple
-corpora per language (preferring 1M, then 300K, 100K sizes), targeting up to
-6 million unique sentences per language. During download, sentences are merged
-across variant language codes and deduplicated in memory so the per-language cap
-applies to unique sentences only.
+The primary training data comes from Wikipedia database dumps
+(https://dumps.wikimedia.org/[dumps.wikimedia.org]). Wikipedia is preferred
+over web-crawl corpora for quality: articles are human-authored, editorial
+standards filter boilerplate and spam, and the sentence distribution reflects
+genuine prose rather than SEO content or duplicated web templates.
 
-[source,bash]
+Sentences are extracted from the Wikipedia XML dumps using the
+`extract_wiki_sentences.py` script, which strips markup, splits into sentences,
+and writes one `lineNum<TAB>sentence` file per language directory:
+
 ----
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
-    ~/datasets/leipzig \
-    --max-per-lang 6000000
+~/datasets/wikipedia-dumps/
+    eng/sentences.txt
+    deu/sentences.txt
+    ara/sentences.txt
+    ...
 ----
 
-The 6 million target provides stable frequency estimates for both the language
-model and the common token lists used by `tika-eval`. High-resource languages
-like English require downloading many archives because news corpora have high
-duplication rates.
+For 16 languages with insufficient Wikipedia coverage, sentences are
+supplemented from
+https://huggingface.co/datasets/allenai/MADLAD-400[MADLAD-400]
+(Magnusson et al., 2023). These languages are written into a parallel
+`sentences_madlad.txt` file alongside the Wikipedia data, and `PrepareCorpus`
+reads all `*.txt` files from each language directory automatically:
+
+----
+~/datasets/wikipedia-dumps/
+    mya/
+        sentences.txt          (Wikipedia)
+        sentences_madlad.txt   (MADLAD supplement)
+    xho/
+        sentences.txt
+        sentences_madlad.txt
+    ...
+----
+
+The MADLAD-supplemented languages are:
+`mya`, `xho`, `nya`, `smo`, `sot`, `tet`, `orm`, `udm`, `tir`, `hil`,
+`ewe`, `tso`, `aka`, `tsn`, `ceb`, `mlg`, `che`.
+
+The `extract_madlad_to_wiki.py` script handles extraction from MADLAD's
+document-per-line format (paragraph boundaries encoded as literal `\n`
+sequences), applies quality filters identical to those used by the main
+download pipeline, and caps output at 500,000 sentences per language.
 
 === Deduplication
 
-Many Leipzig corpora contain a high proportion of exact-duplicate sentences,
-especially news corpora where the same headlines and wire stories appear in
-multiple archives. Deduplication is performed at two stages:
-
-1. **During download** — the download script deduplicates within each canonical
-   language using Python's built-in `hash()`. This ensures the `--max-per-lang`
-   cap applies to unique sentences.
-2. **During data preparation** — the Java training pipeline applies FNV-1a 64-bit
-   hashing for a more robust second-pass deduplication.
+Deduplication is performed at the Java training-pipeline stage using FNV-1a
+64-bit hashing. Web-crawl data has lower duplication rates than Leipzig news
+corpora, so a single deduplication pass is sufficient.
 
 [[_language_code_merging]]
 === Language Code Merging
@@ -83,51 +102,26 @@ download and training:
 
 The same merge map is maintained in three places and must be kept in sync:
 
-* `download_corpus.py` — `LANG_MERGE_MAP`
-* `TrainLanguageModel.java` — `LANG_MERGE_MAP`
+* `download_madlad.py` — `LANG_MERGE_MAP`
+* `PrepareCorpus.java` — `LANG_MERGE_MAP`
 * `CommonTokenGenerator.java` — `LANG_MERGE_MAP`
 
-=== Corpus Cleaning: Pashto
+=== Corpus Cleaning
 
-Leipzig web-crawl data for Pashto (`pus`) was found to contain approximately
-18% contamination from Dari, Persian, and Bosnian. These languages share Arabic
-script, so the contamination only becomes apparent at the word/character level.
+Two data-quality issues were identified during development and addressed in
+`CorpusReader.java`:
 
-A filtering script (`filter_pashto.py`) removes sentences that lack any
-Pashto-specific character. The Pashto-unique characters used as the filter are:
+**Breton (`bre`) noise** — approximately 5% of MADLAD Breton sentences were
+French blog posts, identifiable by lines containing three or more consecutive
+tildes (`~~~`), a Common Crawl redaction marker. A filter discards any sentence
+containing this pattern.
 
-[cols="1,1"]
-|===
-| Character | Name
-
-| ښ | Xe
-| ځ | Dze
-| ږ | Zhe
-| ټ | Te (retroflex)
-| ډ | Dal (retroflex)
-| ړ | Re (retroflex)
-| ڼ | Nun (retroflex)
-| ۍ | Ye (feminine)
-|===
-
-These characters do not appear in Dari, Persian, or Urdu. The filter is
-high-precision: some genuine short Pashto sentences are lost, but the remaining
-data is substantially cleaner.
-
-[source,bash]
-----
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/filter_pashto.py \
-    ~/datasets/leipzig
-----
-
-The script rewrites `pus/sentences.txt` in place and saves a backup as
-`sentences.txt.bak`. The cleaned corpus should be used for both language model
-training and common token generation.
-
-Other languages may benefit from similar cleaning in the future. The general
-approach — identifying script-unique characters that distinguish a language from
-its confusable relatives — can be applied to any language where contamination is
-suspected.
+**Dhivehi (`div`) mixed-script headlines** — MADLAD Dhivehi documents
+consistently begin with a Latin-script headline followed by Thaana-script body
+text, separated by a literal `\n` escape sequence. The pipeline splits on this
+separator and treats each segment as a distinct sentence, preventing the Latin
+headline from polluting the Thaana training signal. This raised 20-character
+accuracy from 32.9% to 95.5%.
 
 === Filtering Low-Resource Languages
 
@@ -137,78 +131,34 @@ even after the mislabel-filtering step.
 
 === Explicit Language Exclusions
 
-Some languages meet the 10,000-sentence minimum but are explicitly excluded
-because they cause one of two problems:
+Some languages meet the 10,000-sentence minimum but are explicitly excluded.
+Exclusion decisions are made after a full training run by evaluating per-language
+F1 on the held-out test set and inspecting confusion patterns. A language is
+excluded if it falls into one or more of these categories:
 
-1. **Collateral damage** — their presence causes a closely related majority
-   language to drop significantly in accuracy, because character n-grams
-   cannot reliably distinguish between them.
-2. **Unacceptable own accuracy** — their own detection accuracy is too low to
-   be useful, typically because their written form is nearly identical to a
-   larger language's.
+**Accuracy interference with a closely related language.**
+When a language's written form is nearly identical to a more widely-used language
+at the character n-gram level, including both causes the model to split
+probability mass between them. This depresses accuracy for the more widely-used
+language by an amount that exceeds any benefit from detecting the variant. The
+exclusion is a deliberate choice to serve the larger user population; it does not
+reflect on the importance or validity of the excluded language.
 
-Exclusion decisions are made by evaluating per-language accuracy on the held-out
-test set after a full training run, then examining both own accuracy and any drop
-in accuracy for related languages. The threshold for "collateral damage" is
-informed by the gap between strict accuracy and group accuracy for the affected
-majority language.
+**Own accuracy below a useful threshold.**
+If the model cannot achieve reliable accuracy for a language — because its
+character profile overlaps too heavily with other included languages — then
+returning a prediction for it does more harm than good. A confidently wrong
+prediction is worse than no prediction.
 
-[cols="1,1,1,3"]
-|===
-| Language | Code | Own Accuracy | Reason for Exclusion
+**Training corpus not representative of natural language use.**
+Some languages have MADLAD corpus entries dominated by boilerplate, Lorem Ipsum
+placeholder text, or other non-natural content. A model trained on such data
+learns the boilerplate rather than the language, producing unreliable results in
+real-world documents.
 
-| Venetian
-| `vec`
-| 72.0%
-| Italian (`ita`) dropped from its expected range to **83.6%** — a 14.5pp gap
-  between strict and group accuracy. Venetian and Italian are indistinguishable
-  at the character n-gram level; the collateral damage to a major language is
-  unacceptable.
-
-| Tosk Albanian
-| `als`
-| 69.7%
-| Standard Albanian (`sqi`) collapsed to **51.6%** strict accuracy. Adding Tosk
-  Albanian effectively broke Albanian detection.
-
-| Madurese
-| `mad`
-| 9.1%
-| Near-random accuracy on 1,003 test sentences. Written in Latin script,
-  Madurese is indistinguishable from Javanese and Indonesian at the character
-  level.
-
-| Anaang
-| `anw`
-| 32.5%
-| 32.5% accuracy on only 3,036 test sentences — below any useful quality bar,
-  with no clear confusable partner to explain the failure.
-
-| Konkani
-| `knn`
-| 46.2%
-| Uses Devanagari script (same as Marathi). The character n-gram profile is
-  too similar to Marathi to distinguish reliably; less than half of Konkani
-  text is correctly identified.
-
-| Gilaki
-| `glk`
-| 88.6%
-| Northwestern Iranian language whose script profile overlaps with Persian and
-  Mazanderani. 88.6% is below the quality bar for included languages.
-
-| Kituba (Monokutuba)
-| `mkw`
-| 80.1%
-| Bantu contact language whose character profile overlaps with Kongo and
-  Lingala. 80.1% accuracy is not high enough to justify inclusion.
-
-|===
-
-These exclusions are enforced in `TrainLanguageModel.EXCLUDED_LANGS` and applied
-during data preparation, before the training pool is written. If future corpus
-growth or model improvements make these languages reliably distinguishable, they
-can be removed from the exclusion set.
+These exclusions are applied by removing the language's pool file before Pass 2
+training. If future corpus improvements make a language reliably distinguishable,
+it can be reintroduced by adding its pool file back and retraining.
 
 == Data Splitting Strategy
 
@@ -246,7 +196,12 @@ makes this trivial.
 
 == Training Configuration
 
-* **Hash buckets:** 8,192
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` with character bigrams,
+  skip-bigrams (pairs `(c[i], c[i+2])`), word unigrams, CJK character unigrams,
+  and script-aware boundary detection. Skip-bigrams are omitted for CJK scripts.
+* **Training sentences per language:** up to 100,000 (sampled from the 500k
+  stored per language)
 * **Target epoch total:** 5,000,000 sentences per epoch. A flat cap C is
   found by binary search such that Σ min(n_i, C) ≈ 5M. Languages below
   C contribute all their data; languages above C are uniformly capped,
@@ -256,7 +211,7 @@ makes this trivial.
 * **Within-epoch early stopping:** checkpoint every 200K sentences; stop if
   F1 range over last 5 checkpoints < 0.005
 * **Across-epoch patience:** stop if no improvement for 2 consecutive epochs
-* **JVM:** `-Xmx10g`
+* **JVM:** `-Xmx8g`
 
 === Epoch-Level Resampling
 
@@ -278,6 +233,44 @@ This balances data exposure across languages:
 * **Low-resource languages** (fewer than C sentences) contribute all their
   data every epoch, ensuring they are not underrepresented
 
+== Corpus Filtering Strategy
+
+Before training, the raw MADLAD pool is filtered to remove cross-language
+contamination. Four strategies were evaluated on the Flores-200 dev set:
+
+[cols="1,1,1"]
+|===
+| Strategy | Description | Result
+
+| **No filtering**
+| Raw MADLAD sentences only, two-pass self-cleaning
+| Baseline
+
+| **Script purity only**
+| Sentences where fewer than 80% of letters belong to the expected Unicode
+  script are removed
+| Worse than fastText alone — script purity is too coarse and removes
+  valid sentences in mixed-script languages
+
+| **fastText only**
+| Sentences confidently identified as one of the top-10 internet languages
+  by fastText `lid.176.bin` but labelled as a different language are removed
+| **Best results** — removes genuine cross-language contamination without
+  over-filtering
+
+| **Script purity + fastText**
+| Both filters applied in sequence
+| No improvement over fastText alone; script purity added noise
+|===
+
+The v3 model uses **fastText-only filtering** (`filter_contamination.py`,
+checking against English, Spanish, French, German, Russian, Portuguese,
+Chinese, Arabic, Japanese, and Korean with confidence ≥ 0.80).
+
+The same fastText-cleaned pool (`preprocessed_clean/pool/`) is used as the
+source for common token generation, ensuring the token lists reflect the same
+data distribution the model was trained on.
+
 == Training Pipeline
 
 === Pass 1: Initial Training
@@ -290,7 +283,7 @@ with epoch-level resampling from the full training pool.
 The Pass 1 model predicts each sentence in the entire training pool. Sentences
 where the prediction does not match the label are removed — unless the
 prediction falls within the same confusable language group (e.g., a sentence
-labeled `nob` predicted as `nno` is kept).
+labeled `msa` predicted as `ind` is kept).
 
 This filtering is applied once to the full pool, producing a `pool_filtered/`
 directory that is used for Pass 2.
@@ -308,58 +301,372 @@ pool. This typically improves accuracy by 0.3–0.5 percentage points.
 
 == Confusable Language Groups
 
-Certain languages are so similar at the character level that distinguishing them
-is inherently difficult. The model defines these groups:
+Confusable groups are defined only for language pairs where the trained model
+demonstrably confuses them at meaningful rates on held-out data. Groups are not
+added speculatively; each entry is backed by observed confusion in evaluation.
 
-.Peer groups (politically/culturally distinct, linguistically near-identical)
-* `nob` / `nno` / `nor` / `dan` — Norwegian Bokmål, Nynorsk, Norwegian (generic), Danish
-* `hrv` / `srp` / `bos` / `hbs` — Croatian, Serbian (Latin), Bosnian, Serbo-Croatian
-* `msa` / `zlm` / `zsm` / `ind` — Malay / Indonesian variants
-* `pes` / `prs` / `fas` — Persian, Dari, Farsi
-* `zho` / `cmn` / `wuu` / `yue` — Chinese macro/regional variants
-* `tat` / `bak` — Tatar, Bashkir (Cyrillic Turkic)
+Groups are defined in
+`tika-langdetect-charsoup-core/src/main/resources/.../confusables.txt`
+and must only contain codes that are actual output classes of the trained model
+(i.e., present in the training corpus). Dead codes add no benefit.
 
-.Code variant groups (same language, different ISO 639-3 codes)
-* `aze` / `azj` — Azerbaijani
-* `ekk` / `est` — Estonian
-* `lvs` / `lav` — Latvian
-* `plt` / `mlg` — Malagasy (Plateau / generic)
-* `khk` / `mon` — Mongolian (Khalkha / generic)
-* `ydd` / `yid` — Yiddish (Eastern / generic)
-* `sme` / `smi` — Sami (Northern / generic)
+Current groups:
+
+* `msa` / `ind` — Malay and Indonesian share vocabulary and script so heavily
+  that in-distribution confusion exceeds 20% in both directions.
+* `xho` / `zul` — Xhosa and Zulu are both Nguni Bantu languages written in the
+  same Latin-based orthography with very similar character n-gram profiles.
 
 These groups are used in:
 
-1. **Training** — group-aware mislabel filtering (prevents removing valid
-   Bokmål labeled as Nynorsk)
-2. **Evaluation** — "group accuracy" metric alongside strict accuracy
+1. **Training** — group-aware mislabel filtering (a sentence labeled `msa`
+   predicted as `ind` is not removed as mislabeled)
+2. **Inference** — probability mass within a group is collapsed to the
+   highest-scoring member before returning a result
+3. **Evaluation** — within-group predictions count as correct in the group
+   accuracy metric
 
 == Common Token Lists (tika-eval)
 
-The same Leipzig corpus is used to generate common token frequency lists for
-`tika-eval`. The `CommonTokenGenerator` in `tika-eval-core` applies:
+The same MADLAD corpus is used to generate common token frequency lists for
+`tika-eval`. The `CommonTokenGenerator` in `tika-eval-core` reads
+`sentences_madlad.txt` files and applies:
 
 * `TikaEvalTokenizer` in `COMMON_TOKENS` mode (NFKD normalization, minimum
   length 3, no numbers, no HTML terms)
 * The same language merge map and FNV-1a deduplication as the training pipeline
 
-This ensures consistency between the language model's training data and the
-common token lists.
+The 500k sentences stored per language provide stable frequency estimates for
+the top-30,000 tokens with a minimum document frequency of 10.
 
 [source,bash]
 ----
 java -cp tika-eval/tika-eval-core/target/test-classes:\
 tika-eval/tika-eval-core/target/classes:\
-tika-langdetect/tika-langdetect-charsoup/target/classes \
+tika-langdetect/tika-langdetect-charsoup/target/classes:\
+tika-langdetect/tika-langdetect-charsoup-core/target/classes \
     org.apache.tika.eval.core.tokens.tools.CommonTokenGenerator \
-    ~/datasets/leipzig \
+    ~/datasets/madlad/data \
     /tmp/common_tokens_new \
-    30000 10
+    30000 10 \
+    --model ~/datasets/madlad/lang-detect/model-16k.bin
 ----
 
-Arguments: `<corpusDir> <outputDir> [topN] [minDocFreq]`
+Arguments: `<corpusDir> <outputDir> [topN] [minDocFreq] [--model <modelFile>]`
 
-== Current Build: v2
+The `--model` flag restricts output to the languages that are actual trained
+output classes of the given CharSoup model. Without it, all non-excluded
+languages in the corpus directory are processed — which may include languages
+that did not survive the mislabel-filtering step and are not in the final model.
+
+NOTE: `CommonTokenGenerator` looks for `sentences_madlad.txt` files inside
+each language subdirectory.
+
+== Current Build: v7 (Wikipedia + MADLAD)
+
+v7 is the current production build. It ships two complementary models:
+
+* **General model** (`langdetect.bin`) — 203 languages, trained on Wikipedia
+  dumps (primary) supplemented by MADLAD for under-resourced languages. Uses
+  16,384 hash buckets and `ScriptAwareFeatureExtractor`. 3.2 MB on disk.
+* **Short-text model** (`langdetect-short.bin`) — 123 languages, trained on the
+  same Wikipedia+MADLAD corpus but using `ResearchFeatureExtractor` (trigrams +
+  4-grams). Optimized for inputs under ~200 characters. 3.8 MB on disk.
+
+Compared to v3 (MADLAD), v7 covers fewer languages (203 vs 229) but is
+substantially more accurate due to higher training data quality.
+
+=== v7 General Model Training Configuration
+
+* **Corpus:** Wikipedia dumps (primary) + MADLAD supplement for 17 languages
+* **Languages:** 203
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
+  trigrams, 3-char suffixes, 3-char prefixes, word unigrams, CJK character unigrams
+* **Target epoch total:** 5,000,000 sentences per epoch
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs with within-epoch early stopping
+* **Two-pass training:** Pass 1 on full pool → mislabel filter (removed 1.5%) → Pass 2
+* **Model size:** 3.2 MB (INT8 quantized)
+* **JVM:** `-Xmx8g`
+
+=== v7 Short-Text Model Training Configuration
+
+The short-text model is trained on the same Wikipedia+MADLAD pool as the general
+model, but with a different feature extractor and bucket count, and restricted to
+a curated set of 123 languages that perform well at short input lengths.
+
+Language selection criteria:
+
+* Languages that confuse too easily with closely-related languages at ≤20 chars
+  are excluded (e.g., Bosnian, Serbian/Croatian variants that are nearly
+  character-identical to Croatian at short lengths).
+* Languages with insufficient Wikipedia training data to generalize at short
+  lengths are excluded.
+* The final set of 123 was chosen to maximize macro-F1 on FLORES-200 @20 chars
+  without degrading performance at longer lengths.
+
+Training configuration:
+
+* **Corpus:** Same Wikipedia+MADLAD pool as the general model
+* **Languages:** 123 (curated subset)
+* **Hash buckets:** 32,768
+* **Feature extractor:** `ResearchFeatureExtractor` — character bigrams, trigrams
+  (boundary-inclusive), 4-grams, and whole-word unigrams. No suffixes or prefixes
+  (fewer tokens per short input means suffixes/prefixes add more noise than signal).
+* **Target epoch total:** 5,000,000 sentences per epoch
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs
+* **Two-pass training:** Pass 1 on full pool → mislabel filter → Pass 2
+* **Model size:** 3.8 MB (INT8 quantized, larger buckets than general model)
+* **JVM:** `-Xmx8g`
+
+==== Ablation Study: Feature Configuration
+
+An ablation study was run on the FLORES-200 dev set to select the best feature
+configuration for the short-text model. Four configurations were evaluated across
+five text lengths:
+
+[cols="1,1,1,1,1,1"]
+|===
+| Configuration | @20 | @50 | @100 | @200 | @500
+
+| baseline (bigrams only) | low | low | low | — | —
+| +trigrams | good | good | good | — | —
+| +trigrams +4-grams | **best** | **best** | good | good | good
+| +trigrams +4-grams +5-grams | good | good | good | good | good
+|===
+
+`+trigrams +4-grams` (without 5-grams) was selected: it provides the best F1
+at the short-text regime (@20–@50 chars) where the model is most needed, while
+5-grams add marginal accuracy at longer lengths but degrade short-text performance
+due to data sparsity. The tool `AblationRunner` automates this grid search and
+saves all candidate models for comparison.
+
+==== Training the Short-Text Model
+
+[source,bash]
+----
+# From the tika-main project root, run AblationRunner with the
+# short-text language list and Wikipedia pool directory:
+mvn -pl tika-langdetect/tika-langdetect-charsoup test-compile
+java -cp tika-langdetect/tika-langdetect-charsoup/target/test-classes:... \
+    org.apache.tika.langdetect.charsoup.tools.AblationRunner \
+    ~/datasets/wikipedia-model-v7/pool_filtered \
+    ~/Desktop/short-text-langs.txt \
+    ~/datasets/short-text-final/models
+----
+
+The `short-text-langs.txt` file contains the 123 ISO 639-3 codes (one per line)
+for the selected short-text languages. `AblationRunner` trains all four
+configurations listed above and saves INT8-quantized binaries to the output
+directory.
+
+Copy the chosen model into the resources directory:
+
+[source,bash]
+----
+cp ~/datasets/short-text-final/models/model-32k-tri+4g.bin \
+   tika-langdetect/tika-langdetect-charsoup-core/src/main/resources/\
+org/apache/tika/langdetect/charsoup/langdetect-short.bin
+----
+
+=== v7 Evaluation: FLORES-200 Dev Set
+
+Results are evaluated on the
+https://github.com/facebookresearch/flores[FLORES-200] dev set
+(203 languages, 997 sentences each), a clean, curated multilingual benchmark
+independent of all training corpora.
+All scores are macro-averaged F1 across supported languages.
+
+==== Coverage-adjusted accuracy (each detector on its own supported languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | Lingua mF1 | Optimaize mF1
+
+| @20 chars  | 74.90% | 74.87% | 76.35% | **84.87%**
+| @50 chars  | 84.14% | 86.09% | 90.99% | **94.44%**
+| @100 chars | 86.01% | 90.25% | 95.43% | **96.51%**
+| @500 chars | 86.30% | 91.12% | 96.25% | **96.76%**
+| full text  | 86.30% | 91.12% | 96.25% | **96.76%**
+| Languages  | **203** | ~105 | 75 | 63
+|===
+
+NOTE: Coverage-adjusted scores reflect each detector's performance on the
+languages it actually supports. CharSoup covers 203 of the 203 FLORES test
+languages; Optimaize covers only 63, Lingua 75, and OpenNLP ~105. A detector
+can achieve a high coverage-adjusted score on a narrow, easy set of languages.
+
+==== Head-to-head: CharSoup vs OpenNLP (105 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
+
+| @20 chars  | **80.60%** | 76.69% |   613 |    376
+| @50 chars  | **90.08%** | 87.27% |   805 |    629
+| @100 chars | **92.00%** | 91.05% |   859 |  1,203
+| @500 chars | **92.30%** | 91.78% |   920 |  2,244
+| full text  | **92.30%** | 91.78% |   889 |  1,495
+|===
+
+CharSoup beats OpenNLP at every length on shared languages, while using a
+3.2 MB model vs OpenNLP's ~80 MB.
+
+==== Head-to-head: CharSoup vs Lingua (71 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
+
+| @20 chars  | **84.38%** | 77.78% |   378 |  3,535
+| @50 chars  | **93.88%** | 92.24% |   414 |  6,754
+| @100 chars | 95.67% | **96.58%** |   516 | 11,428
+| @500 chars | 95.98% | **97.38%** |   689 | 18,506
+| full text  | 95.98% | **97.38%** |   593 | 17,401
+|===
+
+CharSoup wins decisively at short text (@20/@50) — the regime most important for
+Tika's document processing use case. Lingua's advantage at full text is marginal
+(+1.4pp), and comes at a cost of ~30× slower throughput.
+
+==== Head-to-head: CharSoup vs Optimaize (63 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Optimaize mF1 | CharSoup ms | Optimaize ms
+
+| @20 chars  | 86.13% | **86.30%** |   307 |   116
+| @50 chars  | **95.61%** | 95.40% |   436 |   552
+| @100 chars | **97.37%** | 97.23% |   524 |   513
+| @500 chars | **97.68%** | 97.34% |   702 |   548
+| full text  | **97.68%** | 97.34% |   487 |   531
+|===
+
+CharSoup matches Optimaize on its narrow 63-language set while covering 3× more
+languages total.
+
+==== v7 Resource Usage
+
+[cols="1,1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Lingua (low accuracy) | Optimaize
+
+| Languages supported  | **203** | ~105 | 75 | 63
+| Model heap           | **~4.0 MB** | ~80 MB | ~300 MB | —
+| Model file (disk)    | **3.2 MB** | ~22 MB | — | —
+| Throughput (full)    | **~65K sent/s** | ~17K sent/s | ~1K sent/s | ~16K sent/s
+| Runtime dependencies | **None** | OpenNLP + model | Lingua jar + Kotlin | Optimaize jar
+|===
+
+NOTE: All detectors evaluated with 12 threads on the FLORES-200 dev set
+(203,381 sentences). Throughput is wall-clock sentences per second including
+full pipeline overhead (script gating, confusable group collapse for CharSoup).
+
+== Historical Build: v3 (MADLAD)
+
+v3 is the first build trained entirely on MADLAD-400, replacing the
+Leipzig Corpora Collection used in v1 and v2. MADLAD's permissive license
+makes the training pipeline fully reproducible from publicly available data.
+
+The full list of supported languages is at
+xref:advanced/charsoup-supported-languages.adoc[CharSoup Supported Languages].
+
+=== v3 Training Configuration
+
+* **Corpus:** MADLAD-400 (500k sentences per language, first-N sampling)
+* **Languages:** 229
+* **Hash buckets:** 16,384
+* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
+  skip-bigrams, word unigrams, CJK character unigrams, script-aware boundaries
+* **Training sentences per language:** up to 100,000
+* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
+  SGD (lr=0.01→0.001) × 6 max epochs
+* **JVM:** `-Xmx8g`
+
+=== v3 Evaluation: Flores-200 Dev Set
+
+Results are evaluated on the
+https://github.com/facebookresearch/flores[Flores-200] dev set
+(203 languages, 997 sentences each), a clean, curated benchmark independent
+of the training corpus.
+All scores are macro-averaged F1 across languages.
+Each comparison uses only the languages supported by *both* detectors —
+detectors are not penalised for languages outside their training set.
+
+Comparators:
+
+* **OpenNLP** — Apache OpenNLP language detector (103 languages)
+* **Lingua** — Lingua language detector in low-accuracy mode (75 languages)
+* **fastText** — `lid.176.bin` via Python/ctypes, *single-threaded*
+
+NOTE: All Java detectors (CharSoup, OpenNLP, Lingua) were evaluated using
+12 threads. fastText was evaluated single-threaded. Wall-clock times for
+fastText are therefore *not* directly comparable to the Java detectors;
+divide fastText times by 12 to approximate a per-thread equivalent.
+
+==== CharSoup vs OpenNLP (92 shared languages, 91,723 sentences)
+
+[cols="1,1,1,1,1"]
+|===
+| Snippet length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
+
+| @20 chars  | 86.59% | 79.02% |   242 |    238
+| @50 chars  | 97.00% | 89.59% |   308 |    356
+| @100 chars | 99.01% | 93.33% |   447 |    749
+| @200 chars | 99.35% | 94.04% |   489 |  1,136
+| full text  | **99.36%** | **94.05%** | **514** | **1,099**
+|===
+
+==== CharSoup vs Lingua (69 shared languages, 62,808 sentences)
+
+[cols="1,1,1,1,1"]
+|===
+| Snippet length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
+
+| @20 chars  | 87.15% | 78.80% |   134 |  3,079
+| @50 chars  | 97.14% | 92.96% |   176 |  6,257
+| @100 chars | 98.97% | 97.07% |   280 | 10,794
+| @200 chars | 99.29% | 97.79% |   311 | 14,193
+| full text  | **99.29%** | **97.80%** | **279** | **13,922**
+|===
+
+==== CharSoup vs fastText (86 shared languages)
+
+CharSoup uses 12 threads; fastText is *single-threaded* — timing is not
+compared here. See resource table below for throughput context.
+
+[cols="1,1,1"]
+|===
+| Snippet length | CharSoup mF1 (12 threads) | fastText mF1 (1 thread)
+
+| @20 chars  | 81.67% | 70.71%
+| @50 chars  | 94.12% | 82.15%
+| @100 chars | 95.76% | 86.10%
+| @200 chars | 96.03% | 87.15%
+| full text  | **96.08%** | **87.16%**
+|===
+
+==== v3 Resource Usage
+
+[cols="1,1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Lingua (low) | fastText
+
+| Languages supported  | **229** | 103 | 75 | 103
+| Model heap           | **~3.9 MB** | ~81.6 MB | ~0.1 MB | ~900 MB
+| Model file (disk)    | **3.6 MB** | 22 MB | — | 917 MB
+| Throughput           | **~190K sent/s** (12 threads) | ~87K sent/s (12 threads) | ~4K sent/s (12 threads) | ~123K sent/s (*1 thread only*)
+| Runtime dependencies | **None** | OpenNLP + model | Lingua jar | Python + fasttext
+|===
+
+CAUTION: The fastText throughput figure is *single-threaded* (evaluated
+via Python/ctypes with one thread). All Java detectors used 12 threads.
+The fastText figure cannot be directly compared to the Java detector
+figures without accounting for this difference.
+
+== Historical Build: v2 (Leipzig)
 
 === v2 Training Configuration
 

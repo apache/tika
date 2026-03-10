@@ -41,7 +41,7 @@ import org.apache.tika.language.detect.LanguageResult;
 
 /**
  * Quick evaluation tool: compute macro F1, accuracy, and throughput
- * for multiple bigram models and OpenNLP on the same raw test set.
+ * for multiple CharSoup models and OpenNLP on the same raw test set.
  * <p>
  * Usage:
  * <pre>
@@ -91,22 +91,20 @@ public class QuickF1Eval {
         Path reportFile = null;
         Path langFile = null;
         boolean includeOpenNLP = true;
+        boolean includeOptimaize = true;
         boolean doCollapse = true;
         boolean perLang = false;
-        boolean binaryScript = false;
         for (int i = 1; i < args.length; i++) {
             if (args[i].endsWith(".ldm")) {
                 modelFiles.add(Paths.get(args[i]));
             } else if (args[i].endsWith("_langs.txt")) {
                 langFile = Paths.get(args[i]);
                 includeOpenNLP = false;
+                includeOptimaize = false;
             } else if ("--no-collapse".equals(args[i])) {
                 doCollapse = false;
             } else if ("--per-lang".equals(args[i])) {
                 perLang = true;
-            } else if ("--binary-script".equals(args[i])) {
-                binaryScript = true;
-                doCollapse = false;
             } else {
                 reportFile = Paths.get(args[i]);
             }
@@ -222,7 +220,7 @@ public class QuickF1Eval {
 
         boolean warmedUp = false;
 
-        // Evaluate each bigram model
+        // Evaluate each CharSoup model
         for (Path mf : modelFiles) {
             System.out.println("Loading: " + mf);
             CharSoupModel model;
@@ -252,8 +250,8 @@ public class QuickF1Eval {
             System.out.println("Evaluating " + label + "...");
             F1Result r = evalBigramParallel(
                     model, extractor, sharedData,
-                    threads, doCollapse, binaryScript);
-            appendResult(report, "bigram-" + label, r);
+                    threads, doCollapse);
+            appendResult(report, "charsoup-" + label, r);
             printResult(label, r);
             if (perLang) {
                 appendPerLang(report, r);
@@ -277,10 +275,32 @@ public class QuickF1Eval {
                 }
                 System.out.println("Evaluating OpenNLP...");
                 F1Result r = evalOpenNLPParallel(
-                        opennlp, sharedData, threads,
-                        true, binaryScript);
+                        opennlp, sharedData, threads, true);
                 appendResult(report, "opennlp", r);
                 printResult("opennlp", r);
+            }
+        }
+
+        // Evaluate Optimaize (only when not using explicit lang file)
+        if (includeOptimaize) {
+            System.out.println("Loading Optimaize for eval...");
+            LanguageDetector optimaize =
+                    CompareDetectors.loadDetector(
+                            "org.apache.tika.langdetect.optimaize"
+                                    + ".OptimaizeLangDetector");
+            if (optimaize != null) {
+                int w = Math.min(500, sharedData.size());
+                for (int i = 0; i < w; i++) {
+                    optimaize.reset();
+                    optimaize.addText(
+                            sharedData.get(i).getText());
+                    optimaize.detectAll();
+                }
+                System.out.println("Evaluating Optimaize...");
+                F1Result r = evalOptimaizeParallel(
+                        optimaize, sharedData, threads, true);
+                appendResult(report, "optimaize", r);
+                printResult("optimaize", r);
             }
         }
 
@@ -327,22 +347,13 @@ public class QuickF1Eval {
         int correct = 0;
         int total = 0;
         boolean collapse;
-        boolean binaryScript;
 
-        F1Stats(boolean collapse, boolean binaryScript) {
+        F1Stats(boolean collapse) {
             this.collapse = collapse;
-            this.binaryScript = binaryScript;
-        }
-
-        static String scriptLabel(String lang) {
-            return lang.endsWith("-x-ltr") ? "ltr" : "native";
         }
 
         void record(String truth, String predicted) {
-            if (binaryScript) {
-                truth = scriptLabel(truth);
-                predicted = scriptLabel(predicted);
-            } else if (collapse) {
+            if (collapse) {
                 truth = canonicalize(truth);
                 predicted = canonicalize(predicted);
             }
@@ -404,13 +415,12 @@ public class QuickF1Eval {
         Map<String, int[]> counts;
     }
 
-    // ---- Bigram evaluation ----
+    // ---- CharSoup evaluation ----
 
     static F1Result evalBigramParallel(
             CharSoupModel model, FeatureExtractor extractor,
             List<LabeledSentence> data, int threads,
-            boolean collapse,
-            boolean binaryScript) throws Exception {
+            boolean collapse) throws Exception {
         List<List<LabeledSentence>> chunks =
                 CompareDetectors.partition(data, threads);
         ExecutorService pool =
@@ -422,11 +432,9 @@ public class QuickF1Eval {
                 FeatureExtractor te = model.createExtractor();
                 futures.add(pool.submit(
                         () -> evalBigramChunk(
-                                model, te, chunk, collapse,
-                                binaryScript)));
+                                model, te, chunk, collapse)));
             }
-            F1Stats merged = new F1Stats(
-                    collapse, binaryScript);
+            F1Stats merged = new F1Stats(collapse);
             for (Future<F1Stats> f : futures) {
                 merged.merge(f.get());
             }
@@ -446,9 +454,8 @@ public class QuickF1Eval {
 
     static F1Stats evalBigramChunk(
             CharSoupModel model, FeatureExtractor extractor,
-            List<LabeledSentence> data, boolean collapse,
-            boolean binaryScript) {
-        F1Stats stats = new F1Stats(collapse, binaryScript);
+            List<LabeledSentence> data, boolean collapse) {
+        F1Stats stats = new F1Stats(collapse);
         for (LabeledSentence s : data) {
             int[] features = extractor.extract(s.getText());
             float[] probs = model.predict(features);
@@ -469,8 +476,7 @@ public class QuickF1Eval {
     static F1Result evalOpenNLPParallel(
             LanguageDetector detector,
             List<LabeledSentence> data, int threads,
-            boolean collapse,
-            boolean binaryScript) throws Exception {
+            boolean collapse) throws Exception {
         List<List<LabeledSentence>> chunks =
                 CompareDetectors.partition(data, threads);
         ExecutorService pool =
@@ -481,11 +487,9 @@ public class QuickF1Eval {
             for (List<LabeledSentence> chunk : chunks) {
                 futures.add(pool.submit(
                         () -> evalOpenNLPChunk(
-                                detector, chunk, collapse,
-                                binaryScript)));
+                                detector, chunk, collapse)));
             }
-            F1Stats merged = new F1Stats(
-                    collapse, binaryScript);
+            F1Stats merged = new F1Stats(collapse);
             for (Future<F1Stats> f : futures) {
                 merged.merge(f.get());
             }
@@ -505,9 +509,8 @@ public class QuickF1Eval {
 
     static F1Stats evalOpenNLPChunk(
             LanguageDetector detector,
-            List<LabeledSentence> data, boolean collapse,
-            boolean binaryScript) {
-        F1Stats stats = new F1Stats(collapse, binaryScript);
+            List<LabeledSentence> data, boolean collapse) {
+        F1Stats stats = new F1Stats(collapse);
         LanguageDetector local;
         try {
             local = CompareDetectors.loadDetector(
@@ -525,6 +528,57 @@ public class QuickF1Eval {
             List<LanguageResult> results = local.detectAll();
             String predicted = results.isEmpty()
                     ? "unk" : results.get(0).getLanguage();
+            stats.record(s.getLanguage(), predicted);
+        }
+        return stats;
+    }
+
+    static F1Result evalOptimaizeParallel(
+            LanguageDetector optimaize,
+            List<LabeledSentence> data, int threads, boolean collapse)
+            throws Exception {
+        List<List<LabeledSentence>> chunks =
+                CompareDetectors.partition(data, threads);
+        ExecutorService pool =
+                Executors.newFixedThreadPool(chunks.size());
+        try {
+            List<Future<F1Stats>> futures = new ArrayList<>();
+            long wallStart = System.nanoTime();
+            for (List<LabeledSentence> chunk : chunks) {
+                futures.add(pool.submit(() ->
+                        evalOptimaizeChunk(optimaize, chunk, collapse)));
+            }
+            F1Stats merged = new F1Stats(collapse);
+            for (Future<F1Stats> f : futures) {
+                merged.merge(f.get());
+            }
+            long wallEnd = System.nanoTime();
+            F1Result r = new F1Result();
+            r.macroF1 = merged.macroF1();
+            r.correct = merged.correct;
+            r.total = merged.total;
+            r.elapsedMs = (wallEnd - wallStart) / 1_000_000;
+            r.counts = merged.counts;
+            return r;
+        } finally {
+            pool.shutdown();
+        }
+    }
+
+    static F1Stats evalOptimaizeChunk(
+            LanguageDetector detector,
+            List<LabeledSentence> data, boolean collapse) {
+        F1Stats stats = new F1Stats(collapse);
+        if (detector == null) {
+            return stats;
+        }
+        for (LabeledSentence s : data) {
+            detector.reset();
+            detector.addText(s.getText());
+            List<LanguageResult> results = detector.detectAll();
+            String rawPred = results.isEmpty()
+                    ? "unk" : results.get(0).getLanguage();
+            String predicted = CompareDetectors.optimaizePredToIso3(rawPred);
             stats.record(s.getLanguage(), predicted);
         }
         return stats;

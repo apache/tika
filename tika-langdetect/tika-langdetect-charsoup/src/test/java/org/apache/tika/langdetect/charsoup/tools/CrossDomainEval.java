@@ -39,13 +39,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.language.detect.LanguageDetector;
 
 /**
- * Cross-domain evaluation: test bigram model and OpenNLP on external
- * datasets (Tatoeba, WiLI-2018) that were NOT used during training.
+ * Cross-domain evaluation: test CharSoup model and OpenNLP on external
+ * datasets (Tatoeba) that were NOT used during training.
  * <p>
  * Reports accuracy at multiple text-length thresholds to assess
  * short-text performance — the key use case for PDF directionality
@@ -58,13 +59,11 @@ import org.apache.tika.language.detect.LanguageDetector;
  * <p>
  * Usage:
  * <pre>
- *   CrossDomainEval &lt;bigramModelFile&gt; &lt;dataset&gt; &lt;dataPath&gt;
+ *   CrossDomainEval &lt;charSoupModelFile&gt; &lt;dataset&gt; &lt;dataPath&gt;
  *                   [reportFile] [threads]
  *
- *   dataset: "tatoeba" or "wili"
+ *   dataset: "tatoeba"
  *   dataPath: for tatoeba: path to sentences.csv
- *             for wili: directory containing x_test.txt, y_test.txt,
- *                       labels.csv
  * </pre>
  */
 public class CrossDomainEval {
@@ -74,8 +73,8 @@ public class CrossDomainEval {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 3) {
-            System.err.println("Usage: CrossDomainEval <bigramModel>"
-                    + " <tatoeba|wili> <dataPath>"
+            System.err.println("Usage: CrossDomainEval <charSoupModel>"
+                    + " tatoeba <dataPath>"
                     + " [reportFile] [threads]");
             System.exit(1);
         }
@@ -88,8 +87,8 @@ public class CrossDomainEval {
                 ? Integer.parseInt(args[4])
                 : Runtime.getRuntime().availableProcessors();
 
-        // ---- Load bigram model (with heap measurement) ----
-        System.out.println("Loading bigram model: " + modelFile);
+        // ---- Load CharSoup model (with heap measurement) ----
+        System.out.println("Loading CharSoup model: " + modelFile);
         long heapBefore = usedHeap();
         CharSoupModel model;
         try (InputStream is = new BufferedInputStream(
@@ -108,12 +107,11 @@ public class CrossDomainEval {
         // ---- Load OpenNLP detectors (one per thread) ----
         System.out.println("Loading OpenNLP detector(s)...");
         heapBefore = usedHeap();
-        String opennlpClassName =
-                "org.apache.tika.langdetect.opennlp.OpenNLPDetector";
         List<LanguageDetector> opennlpPool = new ArrayList<>();
         for (int i = 0; i < threads; i++) {
             LanguageDetector d =
-                    CompareDetectors.loadDetector(opennlpClassName);
+                    CompareDetectors.loadDetector(
+                            "org.apache.tika.langdetect.opennlp.OpenNLPDetector");
             if (d == null) {
                 break;
             }
@@ -130,16 +128,39 @@ public class CrossDomainEval {
                     opennlpHeapBytes / (1024.0 * 1024.0));
         }
 
+        // ---- Load Optimaize detectors (one per thread) ----
+        System.out.println("Loading Optimaize detector(s)...");
+        heapBefore = usedHeap();
+        List<LanguageDetector> optimaizePool = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            LanguageDetector d =
+                    CompareDetectors.loadDetector(
+                            "org.apache.tika.langdetect.optimaize.OptimaizeLangDetector");
+            if (d == null) {
+                break;
+            }
+            optimaizePool.add(d);
+        }
+        LanguageDetector optimaizeDetector =
+                optimaizePool.isEmpty() ? null : optimaizePool.get(0);
+        long optimaizeHeapBytes = optimaizeDetector != null
+                ? usedHeap() - heapBefore : 0;
+        if (optimaizeDetector != null) {
+            System.out.printf(Locale.US,
+                    "  Optimaize: %d instance(s), ~%.1f MB heap%n",
+                    optimaizePool.size(),
+                    optimaizeHeapBytes / (1024.0 * 1024.0));
+        }
+
         // ---- Load dataset ----
         System.out.println("\nLoading dataset: " + dataset
                 + " from " + dataPath);
         List<LabeledSentence> data;
         if ("tatoeba".equals(dataset)) {
             data = loadTatoeba(dataPath, modelLangs);
-        } else if ("wili".equals(dataset)) {
-            data = loadWiLI(dataPath, modelLangs);
         } else {
-            System.err.println("Unknown dataset: " + dataset);
+            System.err.println("Unknown dataset: " + dataset
+                    + " (only 'tatoeba' is supported)");
             System.exit(1);
             return;
         }
@@ -187,12 +208,21 @@ public class CrossDomainEval {
         // ---- Warmup ----
         System.out.println("\nWarming up...");
         int warmup = Math.min(500, data.size());
+        CharSoupLanguageDetector warmupDet = new CharSoupLanguageDetector();
         for (int i = 0; i < warmup; i++) {
-            model.predict(extractor.extract(data.get(i).getText()));
+            String wt = data.get(i).getText();
+            warmupDet.reset();
+            warmupDet.addText(wt.toCharArray(), 0, wt.length());
+            warmupDet.detectAll();
             if (opennlpDetector != null) {
                 opennlpDetector.reset();
                 opennlpDetector.addText(data.get(i).getText());
                 opennlpDetector.detectAll();
+            }
+            if (optimaizeDetector != null) {
+                optimaizeDetector.reset();
+                optimaizeDetector.addText(data.get(i).getText());
+                optimaizeDetector.detectAll();
             }
         }
 
@@ -204,6 +234,8 @@ public class CrossDomainEval {
                 new LinkedHashMap<>();
         Map<String, CompareDetectors.EvalResult> opennlpResults =
                 new LinkedHashMap<>();
+        Map<String, CompareDetectors.EvalResult> optimaizeResults =
+                new LinkedHashMap<>();
 
         for (Map.Entry<String, List<LabeledSentence>> e
                 : buckets.entrySet()) {
@@ -212,12 +244,16 @@ public class CrossDomainEval {
 
             bigramResults.put(bucket,
                     CompareDetectors.evaluateBigramParallel(
-                            model, extractor, subset,
-                            "bigram-" + bucket, threads));
+                            subset, "bigram-" + bucket, threads, null,
+                            CharSoupLanguageDetector.Strategy.STANDARD));
             opennlpResults.put(bucket,
                     CompareDetectors.evaluateOpenNLPParallel(
                             opennlpPool, subset,
                             "opennlp-" + bucket));
+            optimaizeResults.put(bucket,
+                    CompareDetectors.evaluateOptimaizeParallel(
+                            optimaizePool, subset,
+                            "optimaize-" + bucket));
         }
 
         // ---- Build report ----
@@ -238,31 +274,37 @@ public class CrossDomainEval {
         // Model sizes
         report.append("Model heap (approx):\n");
         report.append(String.format(Locale.US,
-                "  Bigram:  ~%.1f MB%n",
+                "  CharSoup:  ~%.1f MB%n",
                 bigramHeapBytes / (1024.0 * 1024.0)));
         report.append(String.format(Locale.US,
-                "  OpenNLP: ~%.1f MB%n%n",
+                "  OpenNLP:   ~%.1f MB%n",
                 opennlpHeapBytes / (1024.0 * 1024.0)));
+        report.append(String.format(Locale.US,
+                "  Optimaize: ~%.1f MB%n%n",
+                optimaizeHeapBytes / (1024.0 * 1024.0)));
 
         // Strict accuracy summary table
         report.append(
                 "Strict accuracy (exact language match):\n");
         report.append(String.format(Locale.US,
-                "%-14s  %10s  %10s  %12s  %12s%n",
-                "Length bucket", "Bigram", "OpenNLP",
+                "%-14s  %10s  %10s  %10s  %12s  %12s%n",
+                "Length bucket", "CharSoup", "OpenNLP", "Optimaize",
                 "Time(ms)", "Sent/sec"));
-        report.append("-".repeat(66)).append("\n");
+        report.append("-".repeat(80)).append("\n");
 
         for (String bucket : buckets.keySet()) {
             CompareDetectors.EvalResult br =
                     bigramResults.get(bucket);
             CompareDetectors.EvalResult or =
                     opennlpResults.get(bucket);
+            CompareDetectors.EvalResult pr =
+                    optimaizeResults.get(bucket);
             report.append(String.format(Locale.US,
-                    "%-14s  %9s  %9s  %,10d  %,10.0f%n",
+                    "%-14s  %9s  %9s  %9s  %,10d  %,10.0f%n",
                     bucket,
                     fmtAcc(br, false),
                     fmtAcc(or, false),
+                    fmtAcc(pr, false),
                     br.elapsedMs,
                     throughput(br)));
         }
@@ -274,61 +316,42 @@ public class CrossDomainEval {
                         + "counted as correct):\n");
         report.append(formatConfusableGroups());
         report.append(String.format(Locale.US,
-                "%-14s  %10s  %10s%n",
-                "Length bucket", "Bigram", "OpenNLP"));
-        report.append("-".repeat(40)).append("\n");
+                "%-14s  %10s  %10s  %10s%n",
+                "Length bucket", "CharSoup", "OpenNLP", "Optimaize"));
+        report.append("-".repeat(52)).append("\n");
 
         for (String bucket : buckets.keySet()) {
             CompareDetectors.EvalResult br =
                     bigramResults.get(bucket);
             CompareDetectors.EvalResult or =
                     opennlpResults.get(bucket);
+            CompareDetectors.EvalResult pr =
+                    optimaizeResults.get(bucket);
             report.append(String.format(Locale.US,
-                    "%-14s  %9s  %9s%n",
+                    "%-14s  %9s  %9s  %9s%n",
                     bucket,
                     fmtAcc(br, true),
-                    fmtAcc(or, true)));
+                    fmtAcc(or, true),
+                    fmtAcc(pr, true)));
         }
         report.append("\n");
 
-        // Bigram timing breakdown (all sentences)
+        // CharSoup timing (full pipeline: script gate + group collapse)
         CompareDetectors.EvalResult bigramAll =
                 bigramResults.get("all");
         if (bigramAll != null) {
-            long cpuTotal = bigramAll.preprocessMs
-                    + bigramAll.extractMs + bigramAll.predictMs;
-            report.append("Bigram timing breakdown "
-                    + "(all sentences, CPU-time across threads):\n");
+            report.append("CharSoup timing (wall-clock, full pipeline):\n");
             report.append(String.format(Locale.US,
-                    "  Preprocess (NFC/URL/truncate):"
-                            + " %,d ms (%.0f%%)%n",
-                    bigramAll.preprocessMs,
-                    pct(bigramAll.preprocessMs, cpuTotal)));
-            report.append(String.format(Locale.US,
-                    "  Feature extraction:           "
-                            + " %,d ms (%.0f%%)%n",
-                    bigramAll.extractMs,
-                    pct(bigramAll.extractMs, cpuTotal)));
-            report.append(String.format(Locale.US,
-                    "  Model prediction (softmax):   "
-                            + " %,d ms (%.0f%%)%n",
-                    bigramAll.predictMs,
-                    pct(bigramAll.predictMs, cpuTotal)));
-            report.append(String.format(Locale.US,
-                    "  CPU total:                    "
-                            + " %,d ms%n", cpuTotal));
-            report.append(String.format(Locale.US,
-                    "  Wall-clock total:             "
-                            + " %,d ms%n%n", bigramAll.elapsedMs));
+                    "  Wall-clock total: %,d ms%n%n", bigramAll.elapsedMs));
         }
 
         // Per-language detail
-        report.append(perLanguageReport(bigramResults, opennlpResults));
+        report.append(perLanguageReport(bigramResults, opennlpResults, optimaizeResults));
 
-        // Detailed bigram analysis: macro F1, confusion pairs,
+        // Detailed CharSoup analysis: macro F1, confusion pairs,
         // confidence calibration, entropy-threshold accuracy
-        System.out.println("Running detailed bigram analysis...");
-        report.append(detailedBigramAnalysis(
+        System.out.println("Running detailed CharSoup analysis...");
+        report.append(detailedCharSoupAnalysis(
                 model, extractor, data, threads));
 
         String reportStr = report.toString();
@@ -398,80 +421,6 @@ public class CrossDomainEval {
         return sentences;
     }
 
-    /**
-     * Load WiLI-2018 test set (x_test.txt + y_test.txt +
-     * labels.csv), filtering to shared languages.
-     */
-    static List<LabeledSentence> loadWiLI(
-            Path wiliDir, Set<String> modelLangs)
-            throws Exception {
-        // Build label → ISO 639-3 mapping from labels.csv
-        Map<String, String> labelToIso = new HashMap<>();
-        Path labelsFile = wiliDir.resolve("labels.csv");
-        try (BufferedReader r = Files.newBufferedReader(
-                labelsFile, StandardCharsets.UTF_8)) {
-            String line = r.readLine(); // skip header
-            while ((line = r.readLine()) != null) {
-                String[] parts = line.split(";", -1);
-                if (parts.length >= 4) {
-                    String label = parts[0].trim();
-                    String iso = parts[3].trim();
-                    if (!iso.isEmpty()) {
-                        labelToIso.put(label, iso);
-                    } else {
-                        labelToIso.put(label, label);
-                    }
-                }
-            }
-        }
-
-        // Read x_test.txt and y_test.txt
-        List<String> texts = Files.readAllLines(
-                wiliDir.resolve("x_test.txt"),
-                StandardCharsets.UTF_8);
-        List<String> labels = Files.readAllLines(
-                wiliDir.resolve("y_test.txt"),
-                StandardCharsets.UTF_8);
-
-        if (texts.size() != labels.size()) {
-            throw new IllegalStateException(
-                    "WiLI x/y size mismatch: "
-                            + texts.size() + " vs "
-                            + labels.size());
-        }
-
-        List<LabeledSentence> sentences = new ArrayList<>();
-        Map<String, Integer> skippedLangs = new HashMap<>();
-
-        for (int i = 0; i < texts.size(); i++) {
-            String wiliLabel = labels.get(i).trim();
-            String text = texts.get(i).trim();
-            if (text.isEmpty()) {
-                continue;
-            }
-
-            String iso = labelToIso.getOrDefault(
-                    wiliLabel, wiliLabel);
-            String mapped = mapWiLILang(iso);
-            if (mapped != null && modelLangs.contains(mapped)) {
-                sentences.add(new LabeledSentence(mapped, text));
-            } else {
-                skippedLangs.merge(wiliLabel, 1, Integer::sum);
-            }
-        }
-
-        Set<String> foundLangs = new HashSet<>();
-        for (LabeledSentence s : sentences) {
-            foundLangs.add(s.getLanguage());
-        }
-        System.out.printf(Locale.US,
-                "WiLI: %,d/%,d paragraphs in %d shared languages"
-                        + " (skipped %d label codes)%n",
-                sentences.size(), texts.size(), foundLangs.size(),
-                skippedLangs.size());
-        return sentences;
-    }
-
     // ---- Language code mapping ----
 
     /**
@@ -491,16 +440,6 @@ public class CrossDomainEval {
             case "wuu": return "wuu";
             case "por": return "por";
             default: return code;
-        }
-    }
-
-    /**
-     * Map WiLI ISO 639-3 / label codes to our model's codes.
-     */
-    static String mapWiLILang(String iso) {
-        switch (iso) {
-            case "gsw": return "als";
-            default: return iso;
         }
     }
 
@@ -545,29 +484,34 @@ public class CrossDomainEval {
      */
     static String perLanguageReport(
             Map<String, CompareDetectors.EvalResult> bigramResults,
-            Map<String, CompareDetectors.EvalResult> opennlpResults) {
+            Map<String, CompareDetectors.EvalResult> opennlpResults,
+            Map<String, CompareDetectors.EvalResult> optimaizeResults) {
 
         CompareDetectors.EvalResult bigramAll =
                 bigramResults.get("all");
         CompareDetectors.EvalResult opennlpAll =
                 opennlpResults.get("all");
+        CompareDetectors.EvalResult optimaizeAll =
+                optimaizeResults.get("all");
 
         StringBuilder sb = new StringBuilder();
         sb.append("Per-language accuracy (all sentences):\n");
         sb.append(String.format(Locale.US,
-                "%-12s  %8s %8s %8s  %8s %8s %8s%n",
-                "Language", "Bigram", "Bi-Grp%", "Bigram%",
-                "OpenNLP", "ON-Grp%", "ONLP%"));
-        sb.append("-".repeat(82)).append("\n");
+                "%-12s  %8s %8s %8s  %8s %8s %8s  %8s %8s %8s%n",
+                "Language", "CharSoup", "CS-Grp%", "CharSoup%",
+                "OpenNLP", "ON-Grp%", "ONLP%",
+                "Optimaize", "Opt-Grp%", "Opt%"));
+        sb.append("-".repeat(118)).append("\n");
 
         // Merge per-lang:
         // [0]=bigram strict, [1]=bigram total, [2]=bigram group,
-        // [3]=opennlp strict, [4]=opennlp total, [5]=opennlp group
+        // [3]=opennlp strict, [4]=opennlp total, [5]=opennlp group,
+        // [6]=optimaize strict, [7]=optimaize total, [8]=optimaize group
         Map<String, int[]> merged = new TreeMap<>();
         if (bigramAll != null && bigramAll.perLang != null) {
             for (var e : bigramAll.perLang.entrySet()) {
                 int[] row = merged.computeIfAbsent(
-                        e.getKey(), k -> new int[6]);
+                        e.getKey(), k -> new int[9]);
                 row[0] = e.getValue()[0];
                 row[1] = e.getValue()[1];
                 row[2] = e.getValue()[2];
@@ -576,23 +520,30 @@ public class CrossDomainEval {
         if (opennlpAll != null && opennlpAll.perLang != null) {
             for (var e : opennlpAll.perLang.entrySet()) {
                 int[] row = merged.computeIfAbsent(
-                        e.getKey(), k -> new int[6]);
+                        e.getKey(), k -> new int[9]);
                 row[3] = e.getValue()[0];
                 row[4] = e.getValue()[1];
                 row[5] = e.getValue()[2];
             }
         }
+        if (optimaizeAll != null && optimaizeAll.perLang != null) {
+            for (var e : optimaizeAll.perLang.entrySet()) {
+                int[] row = merged.computeIfAbsent(
+                        e.getKey(), k -> new int[9]);
+                row[6] = e.getValue()[0];
+                row[7] = e.getValue()[1];
+                row[8] = e.getValue()[2];
+            }
+        }
 
         int bigramWins = 0;
         int opennlpWins = 0;
+        int optimaizeWins = 0;
         int ties = 0;
         for (var e : merged.entrySet()) {
             int[] c = e.getValue();
             String lang = e.getKey();
-            boolean confusable =
-                    CompareDetectors.isGroupMatch(lang, "")
-                            ? false
-                            : isInConfusableGroup(lang);
+            boolean confusable = isInConfusableGroup(lang);
             String bStrict = c[1] > 0
                     ? String.format(Locale.US, "%6.1f%%",
                     100.0 * c[0] / c[1]) : "   N/A";
@@ -605,36 +556,50 @@ public class CrossDomainEval {
             String oGroup = confusable && c[4] > 0
                     ? String.format(Locale.US, "%6.1f%%",
                     100.0 * c[5] / c[4]) : "      ";
+            String pStrict = c[7] > 0
+                    ? String.format(Locale.US, "%6.1f%%",
+                    100.0 * c[6] / c[7]) : "   N/A";
+            String pGroup = confusable && c[7] > 0
+                    ? String.format(Locale.US, "%6.1f%%",
+                    100.0 * c[8] / c[7]) : "      ";
             String marker = confusable ? " *" : "";
             sb.append(String.format(Locale.US,
                     "%-12s  %4d/%-4d %s %s"
+                            + "  %4d/%-4d %s %s"
                             + "  %4d/%-4d %s %s%s%n",
                     lang, c[0], c[1], bGroup, bStrict,
-                    c[3], c[4], oGroup, oStrict, marker));
+                    c[3], c[4], oGroup, oStrict,
+                    c[6], c[7], pGroup, pStrict, marker));
 
-            if (c[1] > 0 && c[4] > 0) {
-                double bAcc = (double) c[0] / c[1];
-                double oAcc = (double) c[3] / c[4];
-                if (bAcc > oAcc + 0.005) {
-                    bigramWins++;
-                } else if (oAcc > bAcc + 0.005) {
-                    opennlpWins++;
-                } else {
-                    ties++;
-                }
+            double bAcc = c[1] > 0 ? (double) c[0] / c[1] : -1;
+            double oAcc = c[4] > 0 ? (double) c[3] / c[4] : -1;
+            double pAcc = c[7] > 0 ? (double) c[6] / c[7] : -1;
+            double best = Math.max(bAcc, Math.max(oAcc, pAcc));
+            if (best < 0) {
+                continue;
+            }
+            if (bAcc >= best - 0.005 && oAcc >= best - 0.005
+                    && pAcc >= best - 0.005) {
+                ties++;
+            } else if (bAcc >= best - 0.005) {
+                bigramWins++;
+            } else if (oAcc >= best - 0.005) {
+                opennlpWins++;
+            } else {
+                optimaizeWins++;
             }
         }
 
         sb.append("\n* = member of a confusable group; "
                 + "Grp% = group accuracy\n");
         sb.append(String.format(Locale.US,
-                "%nBigram wins: %d  OpenNLP wins: %d  Ties: %d "
+                "%nCharSoup wins: %d  OpenNLP wins: %d  Optimaize wins: %d  Ties: %d "
                         + "(>0.5%% margin)%n",
-                bigramWins, opennlpWins, ties));
+                bigramWins, opennlpWins, optimaizeWins, ties));
         return sb.toString();
     }
 
-    // ---- Detailed bigram analysis ----
+    // ---- Detailed CharSoup analysis ----
 
     /** Number of entropy histogram bins (0.1 resolution, 0.0 to 12.0). */
     private static final int ENTROPY_BINS = 120;
@@ -732,7 +697,7 @@ public class CrossDomainEval {
      * confusion pairs, confidence calibration, and entropy-threshold
      * accuracy.
      */
-    static String detailedBigramAnalysis(
+    static String detailedCharSoupAnalysis(
             CharSoupModel model, FeatureExtractor extractor,
             List<LabeledSentence> data, int threads)
             throws Exception {
@@ -775,7 +740,7 @@ public class CrossDomainEval {
         StringBuilder sb = new StringBuilder();
 
         // 1. Macro F1
-        sb.append("Macro F1 (bigram model):\n");
+        sb.append("Macro F1 (CharSoup model):\n");
         double macroF1Sum = 0;
         int macroF1Count = 0;
         for (var e : merged.langCounts.entrySet()) {

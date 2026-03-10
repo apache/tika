@@ -48,11 +48,14 @@ public class ScriptAwareFeatureExtractorTest {
         ScriptAwareFeatureExtractor ext =
                 new ScriptAwareFeatureExtractor(NUM_BUCKETS);
         int[] counts = ext.extract("hello");
-        // "hello":
-        // bigrams: (_,h) (h,e) (e,l) (l,l) (l,o) (o,_) = 6
+        // "hello" (production config: bigrams + trigrams + suffix + prefix + word):
+        // bigrams:  (_,h) (h,e) (e,l) (l,l) (l,o) (o,_) = 6
+        // trigrams: (_,h,e) (h,e,l) (e,l,l) (l,l,o) (l,o,_) = 5
         // word unigram: "hello" = 1
-        // total = 7
-        assertEquals(7, sum(counts));
+        // suffix "llo" = 1
+        // prefix "hel" = 1
+        // total = 14
+        assertEquals(14, sum(counts));
     }
 
     @Test
@@ -211,21 +214,23 @@ public class ScriptAwareFeatureExtractorTest {
     public void testWordUnigrams() {
         ScriptAwareFeatureExtractor ext =
                 new ScriptAwareFeatureExtractor(NUM_BUCKETS);
-        // "abc":
-        // bigrams: (_,a) (a,b) (b,c) (c,_) = 4
+        // "abc" (production config):
+        // bigrams:  (_,a) (a,b) (b,c) (c,_) = 4
+        // trigrams: (_,a,b) (a,b,c) (b,c,_) = 3
         // word unigram: "abc" = 1
-        // total = 5
+        // suffix "abc" = 1
+        // prefix "abc" = 1
+        // total = 10
         int[] counts = ext.extract("abc");
-        assertEquals(5, sum(counts));
+        assertEquals(10, sum(counts));
     }
 
     @Test
     public void testSingleCharWordNoWordUnigram() {
         ScriptAwareFeatureExtractor ext =
                 new ScriptAwareFeatureExtractor(NUM_BUCKETS);
-        // "a" — single char word, below MIN_WORD_LENGTH
+        // "a" — single char word: bigrams only, no trigram/suffix/prefix/word unigram
         // bigrams: (_,a) (a,_) = 2
-        // word unigram: skipped (len < 2)
         // total = 2
         int[] counts = ext.extract("a");
         assertEquals(2, sum(counts));
@@ -301,6 +306,10 @@ public class ScriptAwareFeatureExtractorTest {
         assertEquals(ScriptCategory.GEORGIAN, ScriptCategory.of('ა'));
         assertEquals(ScriptCategory.ARMENIAN, ScriptCategory.of('ա'));
         assertEquals(ScriptCategory.ETHIOPIC, ScriptCategory.of('ሀ'));
+        assertEquals(ScriptCategory.CANADIAN_ABORIGINAL, ScriptCategory.of('ᐊ'));
+        assertEquals(ScriptCategory.MYANMAR, ScriptCategory.of('က'));
+        assertEquals(ScriptCategory.TIBETAN, ScriptCategory.of('ཀ'));
+        assertEquals(ScriptCategory.KHMER, ScriptCategory.of('ក'));
     }
 
     // ---- Randomized fuzz test ----
@@ -359,7 +368,9 @@ public class ScriptAwareFeatureExtractorTest {
                     "Bucket count must be non-negative");
         }
         int total = sum(counts);
-        assertTrue(total <= len * 4 + 10,
+        // Production config: bigrams + trigrams + suffix + prefix + word + CJK unigrams
+        // Upper bound is generous to account for all feature types per character.
+        assertTrue(total <= len * 8 + 10,
                 "Total features (" + total
                         + ") too high for length " + len);
     }

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.CompareUtils;
 
 // We should use the IANA registry for primary language names...see
@@ -150,9 +151,27 @@ public abstract class LanguageDetector {
     // ============================================================
 
     /**
-     * Reset statistics about the current document being processed
+     * Reset statistics about the current document being processed.
      */
     public abstract void reset();
+
+    /**
+     * Reset statistics about the current document being processed, applying any
+     * per-document configuration present in {@code context}.
+     * <p>
+     * Implementations may override this to read detector-specific configuration
+     * objects from the context (e.g. strategy overrides, threshold adjustments).
+     * The base implementation ignores the context and delegates to {@link #reset()}.
+     * <p>
+     * Parsers that have a {@link ParseContext} available should prefer this overload
+     * so that callers can inject per-document language detection hints without
+     * constructing a specially-configured detector instance.
+     *
+     * @param context parse context for the current document; may be {@code null}
+     */
+    public void reset(ParseContext context) {
+        reset();
+    }
 
     /**
      * Add statistics about this text for the current document. Note

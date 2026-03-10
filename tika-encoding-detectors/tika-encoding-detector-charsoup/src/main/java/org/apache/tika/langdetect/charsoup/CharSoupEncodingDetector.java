@@ -36,6 +36,7 @@ import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -104,6 +105,17 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     private static boolean arePeers(Charset a, Charset b) {
         Set<String> peers = PEER_GROUPS.get(a.name());
         return peers != null && peers.contains(b.name());
+    }
+
+    private static boolean hasPositiveLangSignal(String text) {
+        if (text == null || text.isEmpty()) {
+            return false;
+        }
+        CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
+        char[] chars = text.toCharArray();
+        detector.addText(chars, 0, chars.length);
+        List<LanguageResult> results = detector.detectAll();
+        return !results.isEmpty() && results.get(0).getRawScore() > 0f;
     }
 
     private int readLimit = DEFAULT_READ_LIMIT;
@@ -236,8 +248,8 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
                     // charset that itself produces meaningful text is almost certainly correct.
                     // A lying BOM or wrong meta-tag would produce high junk (replacement chars),
                     // so the declaredJunk guard prevents false positives.
-                    float[] declaredLang = CharSoupLanguageDetector.maxLogitInfo(declaredDecoded);
-                    if (declaredJunk <= winnerJunk && declaredLang[1] > 0) {
+                    boolean hasDeclaredLangSignal = hasPositiveLangSignal(declaredDecoded);
+                    if (declaredJunk <= winnerJunk && hasDeclaredLangSignal) {
                         context.setArbitrationInfo("scored-prefer-declared-positive-lang");
                         return declared;
                     }

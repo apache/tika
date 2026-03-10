@@ -39,7 +39,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Stopwatch;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -178,9 +177,9 @@ public class TikaPipesKafkaTest {
                 "Tika pipes have been started. See if we can pull the response messages from the EMITTER_TOPIC={}",
                 EMITTER_TOPIC);
 
-        Stopwatch stopwatch = Stopwatch.createStarted();
+        long startNanos = System.nanoTime();
         while (!waitingFor.isEmpty()) {
-            assertFalse(stopwatch.elapsed(TimeUnit.MINUTES) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES,
+            assertFalse(TimeUnit.NANOSECONDS.toMinutes(System.nanoTime() - startNanos) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES,
                     "Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES +
                             " minutes waiting for the emitted docs");
             try {

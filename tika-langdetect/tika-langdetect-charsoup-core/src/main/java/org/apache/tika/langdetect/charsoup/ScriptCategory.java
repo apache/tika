@@ -51,14 +51,19 @@ public final class ScriptCategory {
     public static final int ARMENIAN = 13;
     public static final int ETHIOPIC = 14;
     public static final int OTHER = 15;
+    public static final int CANADIAN_ABORIGINAL = 16;
+    public static final int MYANMAR = 17;
+    public static final int TIBETAN = 18;
+    public static final int KHMER = 19;
 
     /** Number of distinct categories. */
-    public static final int COUNT = 16;
+    public static final int COUNT = 20;
 
     private static final String[] NAMES = {
             "LATIN", "CYRILLIC", "ARABIC", "HAN", "HANGUL",
             "HIRAGANA", "KATAKANA", "DEVANAGARI", "THAI", "GREEK",
-            "HEBREW", "BENGALI", "GEORGIAN", "ARMENIAN", "ETHIOPIC", "OTHER"
+            "HEBREW", "BENGALI", "GEORGIAN", "ARMENIAN", "ETHIOPIC", "OTHER",
+            "CANADIAN_ABORIGINAL", "MYANMAR", "TIBETAN", "KHMER"
     };
 
     private ScriptCategory() {
@@ -102,6 +107,10 @@ public final class ScriptCategory {
         if (us == Character.UnicodeScript.GEORGIAN) return GEORGIAN;
         if (us == Character.UnicodeScript.ARMENIAN) return ARMENIAN;
         if (us == Character.UnicodeScript.ETHIOPIC) return ETHIOPIC;
+        if (us == Character.UnicodeScript.CANADIAN_ABORIGINAL) return CANADIAN_ABORIGINAL;
+        if (us == Character.UnicodeScript.MYANMAR) return MYANMAR;
+        if (us == Character.UnicodeScript.TIBETAN) return TIBETAN;
+        if (us == Character.UnicodeScript.KHMER) return KHMER;
         return OTHER;
     }
 

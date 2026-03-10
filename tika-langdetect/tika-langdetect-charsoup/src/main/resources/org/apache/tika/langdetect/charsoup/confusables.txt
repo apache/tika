@@ -1,0 +1,52 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Confusable language groups for CharSoup language detection.
+#
+# Each non-empty, non-comment line is a comma-separated group of ISO 639-3 codes.
+# Languages in the same group are treated as confusable by:
+#   - TrainLanguageModel.filterPool  (keeps sentences mis-predicted within a group)
+#   - CharSoupLanguageDetector       (collapses group probabilities at inference)
+#   - CompareDetectors               (scores group matches as correct during eval)
+#
+# Only include codes that are actual trained output classes (present in the
+# training corpus). Dead codes inflate group membership without benefit.
+#
+# Keep this file in sync with filter_contamination.py (Python uses the same path).
+# Add a comment explaining each group.
+
+# Indonesian (ind) and Malay (msa): distinct national standard languages with a
+# shared historical root. Their written character n-gram profiles overlap heavily
+# enough (~9% cross-prediction at 500 chars) that a confident single-language
+# choice is not reliable. Both are fully supported; the model returns whichever
+# scores higher.
+msa,ind
+
+# Xhosa (xho) and Zulu (zul): both Nguni Bantu languages whose short character
+# n-gram profiles overlap heavily. Both are fully supported.
+xho,zul
+
+# Belarusian (bel) and Taraškievica orthography (be-x-old): two written
+# standards for Belarusian. Both are fully supported; grouped to prevent
+# cross-script contamination filtering during training.
+bel,be-x-old
+
+# Cantonese (yue) and Mandarin (zho): both written in Han script; manual
+# sampling confirmed yue corpus is genuine Cantonese prose (distinctive
+# particles and vocabulary), but the shared script means character n-gram
+# profiles overlap heavily. FLORES F1 for yue is near zero because FLORES
+# contains only Mandarin text for that script. Both are fully supported;
+# the model returns whichever scores higher on the input.
+yue,zho
