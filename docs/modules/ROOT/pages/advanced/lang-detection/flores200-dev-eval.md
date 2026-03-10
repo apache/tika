@@ -63,7 +63,7 @@ within coverage and prevents penalising detectors for languages they don't claim
 | @200   | 97.14% | **98.14%** | 79.21%† | 91.11% | 96.23% | 96.75% |
 | @500   | 97.14% | **98.14%** | 79.22%† | 91.12% | 96.25% | 96.76% |
 
-† **CS-auto caveat**: in AUTOMATIC mode the length threshold fires for every FLORES sentence
+† **CS-auto caveat**: in AUTOMATIC mode the length threshold fires for nearly every FLORES sentence
 (all are ≥ 20 chars), routing all 203 languages through the 122-language short-text model.
 The 81 languages that are in the standard model but not the short-text model receive
 suboptimal predictions, which depresses the coverage-adjusted score. In real use, those
@@ -81,31 +81,24 @@ rewards both accuracy and breadth.
 
 | Length | CS-std | CS-short | CS-auto | OpenNLP | Lingua | Optimaize |
 |--------|:---:|:---:|:---:|:---:|:---:|:---:|
-| @20    | 78.71% | 84.68% | 65.04%* | 74.87% | 27.46% | 84.87% |
-| @50    | 93.73% | 96.06% | 73.72%* | 86.09% | 32.72% | 94.44% |
-| @100   | 96.67% | 97.92% | 75.32%* | 90.25% | 34.32% | 96.51% |
-| @150   | 97.08% | 98.11% | 75.53%* | 90.98% | 34.58% | 96.72% |
-| @200   | 97.14% | 98.14% | 79.21%* | 91.11% | 34.61% | 96.75% |
-| @500   | 97.14% | 98.14% | 79.22%* | 91.12% | 34.61% | 96.76% |
+| @20    | **49.63%** | 43.80% | 41.01% | 42.05% | 27.46% | 26.76% |
+| @50    | **59.10%** | 49.68% | 46.49% | 48.35% | 32.72% | 29.77% |
+| @100   | **60.95%** | 50.65% | 47.49% | 50.68% | 34.32% | 30.43% |
+| @150   | **61.21%** | 50.75% | 47.63% | 51.09% | 34.58% | 30.49% |
+| @200   | **61.25%** | 50.76% | 49.95% | 51.16% | 34.61% | 30.50% |
+| @500   | **61.25%** | 50.76% | 49.95% | 51.17% | 34.61% | 30.51% |
 
-\* **CS-auto apples/oranges caveat**: the AUTOMATIC system claims 203-language coverage,
-but the routing threshold fires whenever `input.length() < 200`, routing those sentences
-to the 122-language short-text model. The FLORES dev set has a **median sentence length
-of 124 chars**, and 91% of sentences are under 200 chars — meaning the short-text model
-handles the vast majority of FLORES sentences at every eval length, including @200 and
-@500 (which truncate to *at most* that many chars, not exactly). The 81 languages that
-exist only in the standard model therefore receive wrong predictions throughout, depressing
-the breadth-weighted score across all lengths. This is not directly comparable to the
-other detectors' scores in the same column: those detectors simply return no result for
-unsupported languages (scoring 0), whereas CS-auto actively misclassifies them.
+**Key takeaway**: every detector drops substantially because none covers all 203 FLORES
+evaluation languages. CS-std leads because its 203-language model covers 128 of the 203
+FLORES codes — the remaining 75 (Arabic dialect codes, regional languages, script variants)
+are not in the model and score 0.  Other detectors cover even fewer FLORES languages:
+OpenNLP 105 → covers ~105 of 203 (42.05%); CS-short 122 → covers ~105 of 203 (43.80%);
+Lingua 71 → covers ~71 of 203 (27.46%); Optimaize 63 → covers ~63 of 203 (26.76%).
 
-Other notes:
-- CS-short's breadth-weighted score equals its coverage-adjusted score because its
-  122 supported languages are a subset of the 203 FLORES languages — unsupported languages
-  score 0 in both metrics. Its per-language accuracy on those 122 languages outperforms
-  every other detector, but it does not cover the remaining 81 languages.
-- Lingua's low breadth-weighted scores (27–35%) reflect its 71-language coverage, not
-  poor per-language accuracy — on its own supported set it scores 76–96%.
+**CS-auto caveat**: the AUTOMATIC routing threshold fires whenever `input.length() < 200`,
+routing those sentences to the 122-language short-text model. The 81 languages in the
+standard model but not the short-text model receive wrong predictions, which depresses
+the score further than a simple 0 would.
 
 ---
 
@@ -131,16 +124,16 @@ Key intersections at @20 chars (macro-F1 on shared languages):
 
 Measured on FLORES-200 dev set, multi-threaded (12 cores), Apple M-series.
 All CharSoup variants run within a single JVM with both models loaded.
-(Measured 2026-03-10; three strategy evals ran in parallel so absolute
-numbers are approximate — relative ordering is the meaningful signal.)
+(Measured 2026-03-10; strategy evals ran sequentially. Absolute numbers
+are approximate — relative ordering is the meaningful signal.)
 
 | Length | CS-std | CS-short | CS-auto | OpenNLP | Lingua | Optimaize |
 |--------|:---:|:---:|:---:|:---:|:---:|:---:|
-| @20    | 58.3k/s | 38.4k/s | 49.5k/s | 49.1k/s | 2.8k/s | 93.8k/s |
-| @50    | 45.7k/s | 33.3k/s | 44.3k/s | 31.3k/s | 1.6k/s | 7.8k/s |
-| @100   | 31.5k/s | 21.9k/s | 45.9k/s | 21.4k/s | 1.0k/s | 8.1k/s |
-| @200   | 40.8k/s | 31.1k/s | 32.6k/s | 23.6k/s | 0.7k/s | 12.3k/s |
-| @500   | 39.2k/s | 31.0k/s | 41.8k/s | 17.1k/s | 0.8k/s | 13.7k/s |
+| @20    | 75.0k/s | 55.4k/s | 68.8k/s | 49.1k/s | 2.8k/s | 93.8k/s |
+| @50    | 75.5k/s | 51.6k/s | 55.9k/s | 31.3k/s | 1.6k/s | 7.8k/s |
+| @100   | 66.1k/s | 41.3k/s | 58.2k/s | 21.4k/s | 1.0k/s | 8.1k/s |
+| @200   | 55.1k/s | 36.1k/s | 40.6k/s | 23.6k/s | 0.7k/s | 12.3k/s |
+| @500   | 55.3k/s | 35.1k/s | 30.1k/s | 17.1k/s | 0.8k/s | 13.7k/s |
 
 **Notes:**
 - Optimaize is very fast at @20 (94k/s) because most of its 63-language model fits in

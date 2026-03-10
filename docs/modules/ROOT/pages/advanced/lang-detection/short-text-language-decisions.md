@@ -16,8 +16,8 @@ longer text is almost entirely explained by two phenomena:
    Italian, Spanish, Dutch) are surrounded by many closely related regional
    varieties — Occitan, Corsican, Lombard, Walloon, Alsatian, Low Saxon, etc.
    At 20 chars the character bigram profiles of these varieties overlap heavily
-   with the major language. The model splits probability mass between them,
-   degrading the major language's score even though those varieties are the
+   with the language. The model splits probability mass between them,
+   degrading the language's score even though those varieties are the
    minority case in real documents.
 
 2. **Low-entropy inputs.** Very short snippets can be genuine function-word
@@ -25,7 +25,7 @@ longer text is almost entirely explained by two phenomena:
    language-specific signal regardless of which languages are in the model.
 
 The short-text model addresses (1) directly: by removing the low-traffic
-regional varieties that cause the most confusion, the major languages reclaim
+regional varieties that cause the most confusion, the included languages reclaim
 the probability mass that was being bled away. Phenomenon (2) is irreducible;
 the model returns low confidence for those inputs regardless.
 
@@ -51,13 +51,13 @@ A language is included if it satisfies **any** of the following:
 3. **Major practical language.** Languages that appear frequently in documents
    Tika processes (large web/enterprise corpus) are included even if their
    current v7 @20 F1 is below 75%, with the expectation that removing their
-   confusers restores performance. This applies primarily to the major European
+   confusers restores performance. This applies primarily to the European
    languages and to Indonesian/Malay.
 
 A language is **excluded** if:
 
 - It is a regional variety whose character n-gram profile closely mirrors a
-  major included language at short lengths, causing the major language to lose
+  another included language at short lengths, causing that language to lose
   probability mass (see cluster exclusions below).
 - It is a classical or constructed language (Sanskrit, Esperanto, Latin).
 - It has fewer than ~10,000 clean Wikipedia sentences or its corpus is known
@@ -144,7 +144,7 @@ the within-family competition intact).
 
 #### Major European (34)
 
-All are included unconditionally as major practical languages. Those currently
+All are included unconditionally. Those currently
 below 75% F1@20 in v7 are expected to recover once their primary confusers
 (listed in the exclusions section) are removed from the model.
 
@@ -292,7 +292,7 @@ language and distinct enough in practice to be worth the minor German bleed.
 ### Slavic cluster (high mutual confusion at 20 chars)
 
 The South Slavic and West Slavic languages are already known to be mutually
-confusable at short text. The short-text model retains only the major national
+confusable at short text. The short-text model retains only the national
 standard languages.
 
 | Code | Language | Primary harm |
@@ -342,7 +342,7 @@ the short-text model. The model returns whichever member scores higher.
 ## Post-training results (v1, 2026-03-10)
 
 Evaluation on FLORES-200 dev split with `--strategy SHORT_TEXT`. Per-language
-F1@20 for the major European languages that motivated the short-text model:
+F1@20 for the European languages that motivated the short-text model:
 
 | Language | v7 std @20 | Short v1 @20 | Target | Status |
 |----------|:---:|:---:|:---:|--------|
@@ -357,7 +357,7 @@ F1@20 for the major European languages that motivated the short-text model:
 **Macro-F1 @20 (coverage-adjusted):** 84.68% over 122 languages, vs 78.71%
 for the v7 standard model over 203 languages.
 
-No major European language met the 85% @20 target. The gains are substantial
+No European language met the 85% @20 target. The gains are substantial
 (+6 to +24 pp) but 20 characters remains fundamentally difficult for
 Latin-script languages. The targets were aspirational; the actual results are
 consistent with the model performing well at 50+ chars. At @50 the short-text

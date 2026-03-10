@@ -466,7 +466,7 @@ public class CompareDetectors {
             return 0.0;
         }
         double sum = 0.0;
-        int count = r.unsupportedLangCount; // unsupported langs all get F1=0
+        int count = r.unsupportedLangsSeen.size(); // unsupported langs all get F1=0
         for (var e : r.perLang.entrySet()) {
             int tp    = e.getValue()[0];
             int total = e.getValue()[1];
@@ -557,6 +557,7 @@ public class CompareDetectors {
                 merged.correctGroup += partial.correctGroup;
                 merged.total += partial.total;
                 merged.unsupportedTotal += partial.unsupportedTotal;
+                merged.unsupportedLangsSeen.addAll(partial.unsupportedLangsSeen);
                 mergePerLang(merged.perLang, partial.perLang);
                 mergePredicted(merged.predictedCounts, partial.predictedCounts);
                 mergeConfusions(merged.confusions, partial.confusions);
@@ -590,7 +591,6 @@ public class CompareDetectors {
         int correct = 0;
         int correctGroup = 0;
         int coveredTotal = 0;
-        Set<String> unsupportedLangsSeen = supportedLangs != null ? new HashSet<>() : null;
 
         long startNs = System.nanoTime();
         for (LabeledSentence s : data) {
@@ -605,7 +605,7 @@ public class CompareDetectors {
 
             if (supportedLangs != null && !supportedLangs.contains(truth)) {
                 result.unsupportedTotal++;
-                if (unsupportedLangsSeen != null) unsupportedLangsSeen.add(truth);
+                result.unsupportedLangsSeen.add(truth);
                 continue;
             }
 
@@ -633,9 +633,6 @@ public class CompareDetectors {
         result.correct = correct;
         result.correctGroup = correctGroup;
         result.total = supportedLangs != null ? coveredTotal : data.size();
-        if (unsupportedLangsSeen != null) {
-            result.unsupportedLangCount = unsupportedLangsSeen.size();
-        }
         result.elapsedMs = (System.nanoTime() - startNs) / 1_000_000;
         result.perLang = perLang;
         result.predictedCounts = predictedCounts;
@@ -690,6 +687,8 @@ public class CompareDetectors {
                 merged.correct += partial.correct;
                 merged.correctGroup += partial.correctGroup;
                 merged.total += partial.total;
+                merged.unsupportedTotal += partial.unsupportedTotal;
+                merged.unsupportedLangsSeen.addAll(partial.unsupportedLangsSeen);
                 mergePerLang(merged.perLang, partial.perLang);
                 mergePredicted(merged.predictedCounts, partial.predictedCounts);
             }
@@ -718,7 +717,6 @@ public class CompareDetectors {
         int correct = 0;
         int correctGroup = 0;
         int coveredTotal = 0;
-        Set<String> unsupportedLangsSeen = supportedLangs != null ? new HashSet<>() : null;
 
         long startNs = System.nanoTime();
         for (LabeledSentence s : data) {
@@ -729,7 +727,7 @@ public class CompareDetectors {
             String truth = s.getLanguage();
             if (supportedLangs != null && !supportedLangs.contains(truth)) {
                 result.unsupportedTotal++;
-                unsupportedLangsSeen.add(truth);
+                result.unsupportedLangsSeen.add(truth);
                 continue;
             }
             coveredTotal++;
@@ -751,9 +749,6 @@ public class CompareDetectors {
         result.correct = correct;
         result.correctGroup = correctGroup;
         result.total = supportedLangs != null ? coveredTotal : data.size();
-        if (unsupportedLangsSeen != null) {
-            result.unsupportedLangCount = unsupportedLangsSeen.size();
-        }
         result.elapsedMs = elapsedNs / 1_000_000;
         result.perLang = perLang;
         result.predictedCounts = predictedCounts;
@@ -843,7 +838,8 @@ public class CompareDetectors {
                 merged.correct += part.correct;
                 merged.correctGroup += part.correctGroup;
                 merged.total += part.total;
-                merged.elapsedMs += part.elapsedMs;
+                merged.unsupportedTotal += part.unsupportedTotal;
+                merged.unsupportedLangsSeen.addAll(part.unsupportedLangsSeen);
                 mergePerLang(merged.perLang, part.perLang);
                 mergePredicted(merged.predictedCounts, part.predictedCounts);
             }
@@ -867,7 +863,6 @@ public class CompareDetectors {
         int correct = 0;
         int correctGroup = 0;
         int coveredTotal = 0;
-        Set<String> unsupportedLangsSeen = supportedLangs != null ? new HashSet<>() : null;
 
         long startNs = System.nanoTime();
         for (LabeledSentence s : data) {
@@ -875,12 +870,11 @@ public class CompareDetectors {
             detector.addText(s.getText());
             List<LanguageResult> results = detector.detectAll();
             String rawPred = results.isEmpty() ? "unk" : results.get(0).getLanguage();
-            // Translate BCP-47 → ISO 639-3 so we can compare against our test labels
             String predicted = optimaizePredToIso3(rawPred);
             String truth = s.getLanguage();
             if (supportedLangs != null && !supportedLangs.contains(truth)) {
                 result.unsupportedTotal++;
-                unsupportedLangsSeen.add(truth);
+                result.unsupportedLangsSeen.add(truth);
                 continue;
             }
             coveredTotal++;
@@ -901,9 +895,6 @@ public class CompareDetectors {
         result.correct = correct;
         result.correctGroup = correctGroup;
         result.total = supportedLangs != null ? coveredTotal : data.size();
-        if (unsupportedLangsSeen != null) {
-            result.unsupportedLangCount = unsupportedLangsSeen.size();
-        }
         result.elapsedMs = elapsedNs / 1_000_000;
         result.perLang = perLang;
         result.predictedCounts = predictedCounts;
@@ -932,7 +923,6 @@ public class CompareDetectors {
         int correct = 0;
         int correctGroup = 0;
         int coveredTotal = 0;
-        Set<String> unsupportedLangsSeen = supportedLangs != null ? new HashSet<>() : null;
 
         Map<String, Integer> predictedCounts = new TreeMap<>();
         long startNs = System.nanoTime();
@@ -941,7 +931,7 @@ public class CompareDetectors {
             String truth = s.getLanguage();
             if (supportedLangs != null && !supportedLangs.contains(truth)) {
                 result.unsupportedTotal++;
-                unsupportedLangsSeen.add(truth);
+                result.unsupportedLangsSeen.add(truth);
                 continue;
             }
             coveredTotal++;
@@ -962,9 +952,6 @@ public class CompareDetectors {
         result.correct = correct;
         result.correctGroup = correctGroup;
         result.total = supportedLangs != null ? coveredTotal : data.size();
-        if (unsupportedLangsSeen != null) {
-            result.unsupportedLangCount = unsupportedLangsSeen.size();
-        }
         result.elapsedMs = (System.nanoTime() - startNs) / 1_000_000;
         result.perLang = perLang;
         result.predictedCounts = predictedCounts;
@@ -1610,8 +1597,8 @@ public class CompareDetectors {
         int total;        // sentences in covered languages only
         /** Sentences whose true language is not in the detector's supported set. */
         int unsupportedTotal;
-        /** Distinct language codes from unsupported-language sentences. */
-        int unsupportedLangCount;
+        /** Distinct language codes seen from unsupported-language sentences. */
+        Set<String> unsupportedLangsSeen = new HashSet<>();
         long elapsedMs;
         /** Per-language counts: [strict correct, total true, group correct]. */
         Map<String, int[]> perLang;

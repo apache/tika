@@ -21,5 +21,3 @@ nb-configuration.xml
 tika-pipes/tika-pipes-plugins/tika-pipes-ignite/ignite
 tika-grpc/ignite
 .flattened-pom.xml
-.m2repo/
-.local_m2_repo/
