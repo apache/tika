@@ -278,7 +278,7 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
                 == Character.SPACE_SEPARATOR;
     }
 
-    static boolean isCjkOrKana(int cp) {
+    public static boolean isCjkOrKana(int cp) {
         if (Character.isIdeographic(cp)) {
             return true;
         }
