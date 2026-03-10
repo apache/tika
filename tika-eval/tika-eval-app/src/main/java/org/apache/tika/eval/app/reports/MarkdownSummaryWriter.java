@@ -465,9 +465,9 @@ public class MarkdownSummaryWriter {
 
     private static void writeOovComparison(Connection c, BufferedWriter w)
             throws IOException, SQLException {
-        w.write("## Out-of-Vocabulary (OOV) Rate Changes\n\n");
-        w.write("Files where OOV rate increased significantly in B " +
-                "(possible mojibake or encoding regression).\n\n");
+        w.write("## Out-of-Vocabulary (OOV) and Languageness Changes\n\n");
+        w.write("Files where OOV rate increased or languageness z-score " +
+                "decreased in B (possible mojibake or encoding regression).\n\n");
 
         w.write("### By Mime Type (aggregate)\n\n");
         writeQueryAsTable(c, w,
@@ -475,7 +475,10 @@ public class MarkdownSummaryWriter {
                 "count(1) as FILES, " +
                 "round(avg(ca.oov), 4) as MEAN_OOV_A, " +
                 "round(avg(cb.oov), 4) as MEAN_OOV_B, " +
-                "round(avg(cb.oov) - avg(ca.oov), 4) as OOV_DELTA " +
+                "round(avg(cb.oov) - avg(ca.oov), 4) as OOV_DELTA, " +
+                "round(avg(ca.languageness), 2) as MEAN_LANG_A, " +
+                "round(avg(cb.languageness), 2) as MEAN_LANG_B, " +
+                "round(avg(cb.languageness) - avg(ca.languageness), 2) as LANG_DELTA " +
                 "from contents_a ca " +
                 "join contents_b cb on ca.id = cb.id " +
                 "join profiles_a pa on ca.id = pa.id " +
@@ -493,8 +496,10 @@ public class MarkdownSummaryWriter {
                 "round(ca.oov, 4) as OOV_A, " +
                 "round(cb.oov, 4) as OOV_B, " +
                 "round(cb.oov - ca.oov, 4) as OOV_DELTA, " +
-                "ca.lang_id_1 as LANG_A, " +
-                "cb.lang_id_1 as LANG_B " +
+                "round(ca.languageness, 2) as LANG_A, " +
+                "round(cb.languageness, 2) as LANG_B, " +
+                "ca.lang_id_1 as LANG_ID_A, " +
+                "cb.lang_id_1 as LANG_ID_B " +
                 "from contents_a ca " +
                 "join contents_b cb on ca.id = cb.id " +
                 "join profiles_a pa on ca.id = pa.id " +
@@ -505,6 +510,31 @@ public class MarkdownSummaryWriter {
                 "and ca.num_tokens > 10 " +
                 "and (cb.oov - ca.oov) > 0.1 " +
                 "order by (cb.oov - ca.oov) desc " +
+                "limit " + TOP_N);
+
+        w.write("\n### Top " + TOP_N + " Languageness Decreases\n\n");
+        w.write("Files where the languageness z-score dropped the most " +
+                "(text became less language-like in B).\n\n");
+        writeQueryAsTable(c, w,
+                "select c.file_path as FILE, " +
+                "ma.mime_string as MIME_A, " +
+                "round(ca.languageness, 2) as LANG_A, " +
+                "round(cb.languageness, 2) as LANG_B, " +
+                "round(cb.languageness - ca.languageness, 2) as LANG_DELTA, " +
+                "round(ca.oov, 4) as OOV_A, " +
+                "round(cb.oov, 4) as OOV_B, " +
+                "ca.lang_id_1 as LANG_ID_A, " +
+                "cb.lang_id_1 as LANG_ID_B " +
+                "from contents_a ca " +
+                "join contents_b cb on ca.id = cb.id " +
+                "join profiles_a pa on ca.id = pa.id " +
+                "join containers c on pa.container_id = c.container_id " +
+                "join mimes ma on ma.mime_id = pa.mime_id " +
+                "where pa.is_embedded = false " +
+                "and ca.languageness > -90 and cb.languageness > -90 " +
+                "and ca.num_tokens > 10 " +
+                "and (cb.languageness - ca.languageness) < -1.0 " +
+                "order by (cb.languageness - ca.languageness) asc " +
                 "limit " + TOP_N);
         w.write("\n");
     }

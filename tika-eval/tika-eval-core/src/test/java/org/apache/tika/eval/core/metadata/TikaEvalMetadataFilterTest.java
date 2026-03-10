@@ -17,6 +17,7 @@
 package org.apache.tika.eval.core.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -62,6 +63,11 @@ public class TikaEvalMetadataFilterTest {
             double langConf = Double.parseDouble(
                     metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE));
             assertEquals(1.0, langConf, 0.1);
+
+            double languageness = Double.parseDouble(
+                    metadata.get(TikaEvalMetadataFilter.LANGUAGENESS));
+            assertTrue(languageness > -5.0,
+                    "Expected reasonable languageness z-score for English text, got " + languageness);
         }
     }
 }

@@ -46,6 +46,7 @@ import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
+import org.apache.tika.eval.core.metadata.TikaEvalMetadataFilter;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
 import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
@@ -64,6 +65,7 @@ import org.apache.tika.eval.core.util.ContentTagParser;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.eval.core.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
@@ -460,8 +462,22 @@ public abstract class ProfilerBase {
         if (content == null || content.isBlank()) {
             content = "";
         }
-        return compositeTextStatsCalculator.calculate(content);
+        Map<Class, Object> results = compositeTextStatsCalculator.calculate(content);
+
+        GenerativeLanguageModel glm = TikaEvalMetadataFilter.getGenerativeModel();
+        if (glm != null && !content.isEmpty()) {
+            List<LanguageResult> langs =
+                    (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+            if (langs != null && !langs.isEmpty()) {
+                float z = glm.zScoreLengthAdjusted(content, langs.get(0).getLanguage());
+                results.put(LanguagenessMarker.class, z);
+            }
+        }
+        return results;
     }
+
+    /** Map-key sentinel so we can stash the z-score in the textStats map. */
+    static final class LanguagenessMarker { }
 
     /**
      * Checks to see if metadata is null or content is empty (null or only whitespace).
@@ -495,6 +511,9 @@ public abstract class ProfilerBase {
             double oov = commonTokenResult.getAlphabeticTokens() > 0 ? commonTokenResult.getOOV() : -1.0;
             data.put(Cols.OOV, Double.toString(oov));
         }
+        Float zScore = (Float) textStats.get(LanguagenessMarker.class);
+        double langness = (zScore != null && !Float.isNaN(zScore)) ? zScore : -99.0;
+        data.put(Cols.LANGUAGENESS, Double.toString(langness));
         TokenCounts tokenCounts = (TokenCounts) textStats.get(BasicTokenCountStatsCalculator.class);
         if (tokenCounts != null) {
 

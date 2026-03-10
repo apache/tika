@@ -81,6 +81,10 @@ public class GenerativeLanguageModel {
     public static final int NONCJK_BIGRAM_BUCKETS  =  8_192;
     public static final int NONCJK_TRIGRAM_BUCKETS = 16_384;
 
+    /** Default classpath resource path for the bundled generative model. */
+    public static final String DEFAULT_MODEL_RESOURCE =
+            "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin";
+
     /**
      * Quantization floor.  Log-probabilities below this value are clamped
      * before quantizing; values stored in the table never go lower.
@@ -504,6 +508,24 @@ public class GenerativeLanguageModel {
     }
 
     // ---- Serialization ----
+
+    /**
+     * Load a model from a classpath resource.
+     *
+     * @param resourcePath absolute classpath path, e.g.
+     *        {@code "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin"}
+     * @return the loaded model
+     * @throws IOException if the resource is missing or malformed
+     */
+    public static GenerativeLanguageModel loadFromClasspath(String resourcePath)
+            throws IOException {
+        try (InputStream is = GenerativeLanguageModel.class.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IOException("Classpath resource not found: " + resourcePath);
+            }
+            return load(is);
+        }
+    }
 
     /**
      * Deserialize a model from the GLM1 binary format.

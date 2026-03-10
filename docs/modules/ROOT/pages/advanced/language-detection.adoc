@@ -204,6 +204,25 @@ CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(Map.of(
 Or via Tika's JSON configuration mechanism if you are using `SelfConfiguring`
 component loading.
 
+== Generative Language Model
+
+In addition to the discriminative models above, Tika ships a
+**generative character n-gram model** (`langdetect-generative-v1.bin`) that
+answers a complementary question: _how language-like is this text?_
+
+The generative model is used for:
+
+* **Charset detection tiebreaking** — when the discriminative model cannot
+  distinguish candidate charsets, the generative model picks the one that
+  produces the most language-like decoded text.
+* **Text quality scoring** — the `tika-eval:languageness` metadata field
+  provides a z-score indicating how normal or garbled the extracted text is.
+* **Training data filtering** — flagging bot-generated or mixed-language
+  sentences in training corpora.
+
+For full details, see
+xref:advanced/generative-language-model.adoc[Generative Language Model].
+
 == Training the Models
 
 Training is fully reproducible from source. For step-by-step instructions,
