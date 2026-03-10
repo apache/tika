@@ -19,6 +19,7 @@ package org.apache.tika.langdetect.charsoup.tools;
 import java.util.Arrays;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptCategory;
 
@@ -437,5 +438,20 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
 
     public int getNumBuckets() {
         return numBuckets;
+    }
+
+    @Override
+    public int getFeatureFlags() {
+        int flags = 0;
+        if (useTrigrams)     flags |= CharSoupModel.FLAG_TRIGRAMS;
+        if (useSkipBigrams)  flags |= CharSoupModel.FLAG_SKIP_BIGRAMS;
+        if (useSuffixes)     flags |= CharSoupModel.FLAG_SUFFIXES;
+        if (useSuffix4)      flags |= CharSoupModel.FLAG_SUFFIX4;
+        if (usePrefix)       flags |= CharSoupModel.FLAG_PREFIX;
+        if (useWordUnigrams) flags |= CharSoupModel.FLAG_WORD_UNIGRAMS;
+        if (useCharUnigrams) flags |= CharSoupModel.FLAG_CHAR_UNIGRAMS;
+        if (use4grams)       flags |= CharSoupModel.FLAG_4GRAMS;
+        if (use5grams)       flags |= CharSoupModel.FLAG_5GRAMS;
+        return flags;
     }
 }

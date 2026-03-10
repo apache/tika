@@ -130,18 +130,21 @@ public class SjisLangSignalTest {
             }
             System.out.println();
 
-            System.out.println("  CharSoup logits (raw max logit, sigmoid, top-lang):");
+            System.out.println("  CharSoup top-lang:");
             for (Map.Entry<Charset, String> e : candidates.entrySet()) {
                 if (computeJunkRatio(e.getValue()) > 0.10f) {
                     System.out.printf(Locale.ROOT, "    %-20s: skipped (junk > 10%%)%n",
                             e.getKey().name());
                     continue;
                 }
-                float[] info = CharSoupLanguageDetector.maxLogitInfo(e.getValue());
-                String topLang = CharSoupLanguageDetector.labelAt((int) info[0]);
+                CharSoupLanguageDetector csd = new CharSoupLanguageDetector();
+                csd.addText(e.getValue().toCharArray(), 0, e.getValue().length());
+                List<LanguageResult> csdResults = csd.detectAll();
+                String topLang = csdResults.isEmpty() ? "?" : csdResults.get(0).getLanguage();
+                float conf = csdResults.isEmpty() ? 0f : csdResults.get(0).getRawScore();
                 System.out.printf(Locale.ROOT,
-                        "    %-20s: maxLogit=%7.3f  sigmoid=%7.4f  topLang=%s%n",
-                        e.getKey().name(), info[1], info[2], topLang);
+                        "    %-20s: conf=%7.4f  topLang=%s%n",
+                        e.getKey().name(), conf, topLang);
             }
             System.out.println();
 
@@ -189,6 +192,52 @@ public class SjisLangSignalTest {
             }
         }
         return total == 0 ? 0f : (float) junk / total;
+    }
+
+    @Test
+    public void debugModelRoutingForShortEnglish() {
+        String text = "the quick brown fox jumped the lazy dog elephant elephant elephant bear bear";
+        System.out.println(String.format(Locale.ROOT,
+                "%ntext length=%d  SHORT_TEXT_LENGTH_THRESHOLD=%d  SHORT_TEXT_MODEL_loaded=%b",
+                text.length(),
+                CharSoupLanguageDetector.SHORT_TEXT_LENGTH_THRESHOLD,
+                CharSoupLanguageDetector.SHORT_TEXT_MODEL != null));
+
+        System.out.println("--- AUTOMATIC (default) ---");
+        printTop5(text, new CharSoupLanguageDetector());
+
+        if (CharSoupLanguageDetector.SHORT_TEXT_MODEL != null) {
+            System.out.println("--- forced SHORT_TEXT ---");
+            CharSoupDetectorConfig shortCfg = CharSoupDetectorConfig.fromMap(
+                    Map.of("strategy", "SHORT_TEXT"));
+            printTop5(text, new CharSoupLanguageDetector(shortCfg));
+        }
+
+        System.out.println("--- forced STANDARD (v7) ---");
+        CharSoupDetectorConfig stdCfg = CharSoupDetectorConfig.fromMap(
+                Map.of("strategy", "STANDARD"));
+        printTop5(text, new CharSoupLanguageDetector(stdCfg));
+    }
+
+    private static void printTop5(String text, CharSoupLanguageDetector d) {
+        d.addText(text);
+        List<LanguageResult> results = d.detectAll();
+        for (int i = 0; i < Math.min(5, results.size()); i++) {
+            LanguageResult r = results.get(i);
+            System.out.println(String.format(Locale.ROOT, "  %d: %-8s raw=%.4f conf=%s",
+                    i + 1, r.getLanguage(), r.getRawScore(), r.getConfidence()));
+        }
+        // find where key languages rank
+        for (String lang : new String[]{"eng", "nld", "afr", "deu", "xho", "sna"}) {
+            for (int i = 0; i < results.size(); i++) {
+                if (lang.equals(results.get(i).getLanguage())) {
+                    LanguageResult r = results.get(i);
+                    System.out.println(String.format(Locale.ROOT,
+                            "  [%s rank=%d raw=%.4f]", lang, i + 1, r.getRawScore()));
+                    break;
+                }
+            }
+        }
     }
 
     private static String hexDump(byte[] bytes) {

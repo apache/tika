@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
  * </p>
  * <p>See {@link #isTransparent(int)} for the full list of skipped codepoints.</p>
  */
-public class CharSoupFeatureExtractor implements FeatureExtractor {
+public class CharSoupFeatureExtractor {
 
     /** Maximum characters to process — prevents DoS, more than enough for detection. */
     static final int MAX_TEXT_LENGTH = 100_000;
@@ -122,7 +122,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param rawText raw input text (may be {@code null})
      * @return int array of size {@code numBuckets} with bigram counts
      */
-    @Override
     public int[] extract(String rawText) {
         int[] counts = new int[numBuckets];
         if (rawText == null || rawText.isEmpty()) {
@@ -143,7 +142,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param rawText raw input text (may be {@code null})
      * @param counts  pre-allocated int array of size {@code numBuckets} (will be zeroed)
      */
-    @Override
     public void extract(String rawText, int[] counts) {
         java.util.Arrays.fill(counts, 0);
         if (rawText == null || rawText.isEmpty()) {
@@ -161,7 +159,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param preprocessedText text that has already been through {@link #preprocess(String)}
      * @return int array of size {@code numBuckets} with bigram counts
      */
-    @Override
     public int[] extractFromPreprocessed(String preprocessedText) {
         int[] counts = new int[numBuckets];
         if (preprocessedText == null || preprocessedText.isEmpty()) {
@@ -199,7 +196,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param clear            if {@code true}, zero the array before extracting;
      *                         if {@code false}, accumulate on top of existing counts
      */
-    @Override
     public void extractFromPreprocessed(String preprocessedText, int[] counts, boolean clear) {
         if (clear) {
             java.util.Arrays.fill(counts, 0);

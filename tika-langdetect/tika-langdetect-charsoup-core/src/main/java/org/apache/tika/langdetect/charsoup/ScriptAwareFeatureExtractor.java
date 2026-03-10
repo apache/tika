@@ -352,4 +352,9 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
     public int getNumBuckets() {
         return numBuckets;
     }
+
+    @Override
+    public int getFeatureFlags() {
+        return FEATURE_FLAGS;
+    }
 }

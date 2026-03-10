@@ -387,11 +387,33 @@ public class CharSoupModel {
     }
 
     /**
-     * Create the {@link ScriptAwareFeatureExtractor} for this model.
-     * Uses the hardcoded production feature configuration.
+     * Create the production {@link FeatureExtractor} for this model by dispatching
+     * on the {@link #featureFlags} embedded in the binary.
+     * <p>
+     * Supported flag sets:
+     * <ul>
+     *   <li>{@link ScriptAwareFeatureExtractor#FEATURE_FLAGS} — general model</li>
+     *   <li>{@link ShortTextFeatureExtractor#FEATURE_FLAGS} — short-text model</li>
+     * </ul>
+     *
+     * @throws IllegalStateException if the flags do not match any known production extractor.
+     *         Experimental configs should use {@code ResearchFeatureExtractor} in the test module.
      */
     public FeatureExtractor createExtractor() {
-        return new ScriptAwareFeatureExtractor(numBuckets);
+        if (featureFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS) {
+            return new ScriptAwareFeatureExtractor(numBuckets);
+        }
+        if (featureFlags == ShortTextFeatureExtractor.FEATURE_FLAGS) {
+            return new ShortTextFeatureExtractor(numBuckets);
+        }
+        throw new IllegalStateException(String.format(
+                Locale.ROOT,
+                "No production FeatureExtractor for featureFlags=0x%03x. "
+                + "Known: ScriptAware=0x%03x, ShortText=0x%03x. "
+                + "Use ResearchFeatureExtractor (test scope) for experimental configs.",
+                featureFlags,
+                ScriptAwareFeatureExtractor.FEATURE_FLAGS,
+                ShortTextFeatureExtractor.FEATURE_FLAGS));
     }
 
     public int getFeatureFlags() {

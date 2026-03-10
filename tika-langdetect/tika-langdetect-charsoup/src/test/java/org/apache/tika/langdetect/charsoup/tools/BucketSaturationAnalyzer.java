@@ -21,14 +21,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+import java.util.function.IntFunction;
 
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.TextFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 
 /**
  * Analyzes bucket saturation for different bucket sizes and extractors.
@@ -72,9 +73,22 @@ public class BucketSaturationAnalyzer {
         System.out.printf(Locale.US, "Analyzing %,d sentences%n%n",
                 allData.size());
 
-        for (String config : new String[]{"bigrams-only", "bigrams+skip"}) {
-            boolean skipBigrams = config.equals("bigrams+skip");
-            System.out.println("=== ScriptAware " + config + " ===");
+        // (numBuckets, useTrigrams, useSkipBigrams, useSuffixes, useSuffix4,
+        //              usePrefix, useWordUnigrams, useCharUnigrams, use4grams, use5grams)
+        Map<String, IntFunction<FeatureExtractor>> configs = new LinkedHashMap<>();
+        configs.put("bigrams-only",
+                n -> new ResearchFeatureExtractor(n, false, false, false, false, false, false, false, false, false));
+        configs.put("bigrams+words",
+                n -> new ResearchFeatureExtractor(n));
+        configs.put("bigrams+tri+suf+pre+words",
+                n -> new ResearchFeatureExtractor(n, true, false, true, false, true, true, false, false, false));
+        configs.put("full",
+                n -> new ResearchFeatureExtractor(n, true, true, true, true, true, true, true, true, true));
+
+        for (Map.Entry<String, IntFunction<FeatureExtractor>> configEntry : configs.entrySet()) {
+            String config = configEntry.getKey();
+            IntFunction<FeatureExtractor> factory = configEntry.getValue();
+            System.out.println("=== Research " + config + " ===");
             System.out.printf(Locale.US,
                     "%-8s  %8s  %8s  %8s  %8s  %8s  %8s%n",
                     "Buckets", "MeanNZ", "MedianNZ", "P95-NZ", "Sat%",
@@ -82,8 +96,7 @@ public class BucketSaturationAnalyzer {
             System.out.println("-".repeat(76));
 
         for (int numBuckets : BUCKET_SIZES) {
-            TextFeatureExtractor extractor =
-                    new ScriptAwareFeatureExtractor(numBuckets, false, skipBigrams);
+            FeatureExtractor extractor = factory.apply(numBuckets);
 
             int[] nzPerSentence = new int[allData.size()];
             int[] maxCountPerSentence = new int[allData.size()];
@@ -138,10 +151,10 @@ public class BucketSaturationAnalyzer {
         System.out.println();
         } // end config loop
 
-        // Per-language breakdown at 8k with production config (skip-bigrams)
+        // Per-language breakdown at 8k (production-like config)
         int perLangBuckets = 8192;
-        TextFeatureExtractor extPerLang =
-                new ScriptAwareFeatureExtractor(perLangBuckets, false, true);
+        FeatureExtractor extPerLang =
+                new ResearchFeatureExtractor(perLangBuckets, true, false, true, false, true, true, false, false, false);
 
         // Group by language
         Map<String, List<LabeledSentence>> byLang = new HashMap<>();
@@ -179,7 +192,7 @@ public class BucketSaturationAnalyzer {
             langStats.put(lang, new double[]{langData.size(), meanNZ, corpNZ});
         }
 
-        System.out.println("Per-language saturation at " + perLangBuckets + " buckets (bigrams+skip):");
+        System.out.println("Per-language saturation at " + perLangBuckets + " buckets (bigrams+tri+suf+pre+words):");
         System.out.printf(Locale.US,
                 "%-8s  %6s  %8s  %8s  %7s%n",
                 "Lang", "Count", "MeanNZ", "Sat%", "CorpNZ");

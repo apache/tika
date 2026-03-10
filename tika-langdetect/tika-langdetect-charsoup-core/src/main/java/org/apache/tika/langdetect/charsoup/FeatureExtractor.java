@@ -91,4 +91,16 @@ public interface FeatureExtractor {
      * @return number of hash buckets (feature vector size)
      */
     int getNumBuckets();
+
+    /**
+     * Returns the bitmask of {@link CharSoupModel} {@code FLAG_*} constants that
+     * describes which feature types this extractor emits.
+     * <p>
+     * This must match the {@code featureFlags} stored in any {@link CharSoupModel}
+     * used with this extractor.  A mismatch means the model was trained with a
+     * different feature set and will produce garbage scores.
+     *
+     * @return bitmask of active feature flags
+     */
+    int getFeatureFlags();
 }

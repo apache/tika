@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -82,18 +83,22 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     private static final Logger LOG =
             LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
+    /**
+     * General language model: v7, trained 2026-03-06.
+     * 203 languages, 16 384 buckets, ScriptAwareFeatureExtractor (flags 0x075).
+     */
     private static final String MODEL_RESOURCE =
-            "/org/apache/tika/langdetect/charsoup/langdetect.bin";
+            "/org/apache/tika/langdetect/charsoup/langdetect-v7-20260306.bin";
 
     /**
-     * Classpath resource for the optional short-text model. When present, inputs
-     * shorter than {@link #SHORT_TEXT_LENGTH_THRESHOLD} characters or with fewer
-     * than {@link #SHORT_TEXT_FEATURE_THRESHOLD} n-gram emissions are routed to
-     * this model instead of the general model. Absent at runtime until the
-     * short-text model binary is committed.
+     * Short-text model: v1, trained 2026-03-10.
+     * 123 languages, 32 768 buckets, ShortTextFeatureExtractor (flags 0x0a1).
+     * Routed to for inputs shorter than {@link #SHORT_TEXT_LENGTH_THRESHOLD}
+     * characters or with fewer than {@link #SHORT_TEXT_FEATURE_THRESHOLD} n-gram
+     * emissions.
      */
     private static final String SHORT_TEXT_MODEL_RESOURCE =
-            "/org/apache/tika/langdetect/charsoup/langdetect-short.bin";
+            "/org/apache/tika/langdetect/charsoup/langdetect-short-v1-20260310.bin";
 
     /**
      * Inputs shorter than this many characters are routed to the short-text model
@@ -190,6 +195,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         try {
             MODEL = CharSoupModel.loadFromClasspath(MODEL_RESOURCE);
             EXTRACTOR = MODEL.createExtractor();
+            verifyFlagsMatch(MODEL, EXTRACTOR, MODEL_RESOURCE);
             Set<String> langs = new HashSet<>();
             Collections.addAll(langs, MODEL.getLabels());
             SUPPORTED_LANGUAGES = Collections.unmodifiableSet(langs);
@@ -204,20 +210,8 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         FeatureExtractor shortExtractor = null;
         try {
             shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
-            // Short-text model was trained with ResearchFeatureExtractor +tri+4g (no 5-grams).
-            // We construct the extractor explicitly from known training config rather than
-            // relying solely on feature flags, as belt-and-suspenders verification.
-            shortExtractor = new ResearchFeatureExtractor(
-                    shortModel.getNumBuckets(),
-                    /* useTrigrams    */ true,
-                    /* useSkipBigrams */ false,
-                    /* useSuffixes    */ false,
-                    /* useSuffix4     */ false,
-                    /* usePrefix      */ false,
-                    /* useWordUnigrams */ true,
-                    /* useCharUnigrams */ false,
-                    /* use4grams      */ true,
-                    /* use5grams      */ false);
+            shortExtractor = new ShortTextFeatureExtractor(shortModel.getNumBuckets());
+            verifyFlagsMatch(shortModel, shortExtractor, SHORT_TEXT_MODEL_RESOURCE);
             SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
             SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
             LOG.info("Short-text language model loaded ({} languages, {} buckets)",
@@ -228,6 +222,30 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         }
         SHORT_TEXT_MODEL = shortModel;
         SHORT_TEXT_EXTRACTOR = shortExtractor;
+    }
+
+    /**
+     * Asserts that the feature flags embedded in {@code model} exactly match the
+     * flags reported by {@code extractor}.  A mismatch means the model was trained
+     * with a different feature set than the one being used for inference, which
+     * produces silently wrong scores.
+     *
+     * @throws IllegalStateException if the flags do not match
+     */
+    private static void verifyFlagsMatch(CharSoupModel model,
+                                         FeatureExtractor extractor,
+                                         String resourcePath) {
+        int modelFlags     = model.getFeatureFlags();
+        int extractorFlags = extractor.getFeatureFlags();
+        if (modelFlags != extractorFlags) {
+            throw new IllegalStateException(String.format(
+                    Locale.ROOT,
+                    "Feature flag mismatch for model '%s': "
+                    + "model has 0x%03x but extractor reports 0x%03x. "
+                    + "The model was trained with a different feature set "
+                    + "than the extractor used for inference.",
+                    resourcePath, modelFlags, extractorFlags));
+        }
     }
 
     /**
@@ -476,6 +494,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         return (float) Math.exp(topLogit - lse);
     }
 
+
     private final StringBuilder buffer = new StringBuilder();
     private int maxLength = CharSoupFeatureExtractor.MAX_TEXT_LENGTH;
 
@@ -555,15 +574,31 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      *   <li>&gt;0.20 — logit margin &gt; -1.4 (weak but present signal)</li>
      * </ul>
      */
-    private static LanguageConfidence toConfidence(float score, float entropy) {
+    /**
+     * Score threshold below which the result is {@link LanguageConfidence#NONE}
+     * for the general model. Sigmoid(margin) &gt; 0.20 ≈ logit margin &gt; −1.4.
+     */
+    private static final float GENERAL_SCORE_FLOOR = 0.20f;
+
+    /**
+     * Score threshold below which the result is {@link LanguageConfidence#NONE}
+     * for the short-text model.  At 20 chars there is inherently less signal,
+     * so we accept a weaker margin before refusing to answer.
+     * Sigmoid(margin) &gt; 0.10 ≈ logit margin &gt; −2.2.
+     */
+    private static final float SHORT_TEXT_SCORE_FLOOR = 0.10f;
+
+    private static LanguageConfidence toConfidence(float score, float entropy,
+                                                   boolean shortText) {
         if (entropy > 4.0f) {
             return LanguageConfidence.NONE;
         }
+        float floor = shortText ? SHORT_TEXT_SCORE_FLOOR : GENERAL_SCORE_FLOOR;
         if (score > 0.9f) {
             return LanguageConfidence.HIGH;
         } else if (score > 0.7f) {
             return entropy < 2.0f ? LanguageConfidence.MEDIUM : LanguageConfidence.LOW;
-        } else if (score > 0.2f) {
+        } else if (score > floor) {
             return LanguageConfidence.LOW;
         }
         return LanguageConfidence.NONE;
@@ -589,15 +624,19 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      * language match in {@link #compareLanguageSignal}. If no candidate exceeds
      * this threshold, the comparison is inconclusive and {@code null} is returned.
      * <p>
-     * 0.60 corresponds to a logit margin of ~0.4 (top logit 0.4 units above second).
+     * 0.30 is intentionally permissive: the underlying linear classifier is
+     * discriminative, not generative, so confidence scores compress toward the
+     * middle and a well-separated winner still sits well above 0.30.  A future
+     * generative model should allow this threshold to be raised.
      * Typical values:
      * <ul>
-     *   <li>Arabic (windows-1256): sigmoid(margin) &gt; 0.99</li>
+     *   <li>Arabic (windows-1256): &gt; 0.99</li>
+     *   <li>Short CJK (2 chars, clear winner): ~0.31</li>
      *   <li>UTF-8 garbled: skipped by junk-ratio filter</li>
-     *   <li>Short/ambiguous text: sigmoid(margin) &lt; 0.60 — below threshold</li>
+     *   <li>Genuinely ambiguous text: &lt; 0.21 — below threshold</li>
      * </ul>
      */
-    private static final float MIN_CONFIDENCE_THRESHOLD = 0.60f;
+    private static final float MIN_CONFIDENCE_THRESHOLD = 0.30f;
 
     /**
      * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
@@ -685,7 +724,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
             total++;
-            if (cp == 0xFFFD || Character.isISOControl(cp)) {
+            if (cp == 0xFFFD || (Character.isISOControl(cp) && !Character.isWhitespace(cp))) {
                 junk++;
             }
         }
@@ -898,7 +937,8 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         for (int c = 0; c < usedModel.getNumClasses(); c++) {
             float score = (float) Math.exp(logits[c] - lse);
             results.add(new LanguageResult(
-                    usedModel.getLabel(c), toConfidence(score, lastEntropy),
+                    usedModel.getLabel(c),
+                    toConfidence(score, lastEntropy, usedModel == SHORT_TEXT_MODEL),
                     score, confScore));
         }
         results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));

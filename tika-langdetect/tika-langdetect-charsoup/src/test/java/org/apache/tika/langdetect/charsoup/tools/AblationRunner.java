@@ -24,6 +24,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -63,10 +65,13 @@ import org.apache.tika.langdetect.charsoup.FeatureExtractor;
 public class AblationRunner {
 
     /** Standard feature configs run for every bucket size. */
-    private static final String[]   CFG_NAMES = {"baseline", "+tri", "+tri+4g", "+tri+4g+5g"};
-    private static final boolean[]  CFG_TRI   = {false,      true,   true,      true};
-    private static final boolean[]  CFG_4G    = {false,      false,  true,      true};
-    private static final boolean[]  CFG_5G    = {false,      false,  false,     true};
+    private static final String[]   CFG_NAMES = {"baseline", "+word", "+tri", "+tri+word", "+tri+word+suf", "+tri+word+suf+pre", "+tri+word+4g", "+tri+word+suf+4g"};
+    private static final boolean[]  CFG_WORD  = {false,      true,   false,  true,        true,              true,                true,            true};
+    private static final boolean[]  CFG_TRI   = {false,      false,  true,   true,        true,              true,                true,            true};
+    private static final boolean[]  CFG_SUF   = {false,      false,  false,  false,       true,              true,                false,           true};
+    private static final boolean[]  CFG_PRE   = {false,      false,  false,  false,       false,             true,                false,           false};
+    private static final boolean[]  CFG_4G    = {false,      false,  false,  false,       false,             false,               true,            true};
+    private static final boolean[]  CFG_5G    = {false,      false,  false,  false,       false,             false,               false,           false};
 
     private static final int[] DEFAULT_BUCKETS = {8192, 16384, 32768, 65536};
 
@@ -199,7 +204,8 @@ public class AblationRunner {
 
                 t0 = System.nanoTime();
                 Phase2Trainer trainer = buildTrainer(nb, threads,
-                        CFG_TRI[ci], CFG_4G[ci], CFG_5G[ci], allowedLangs);
+                        CFG_WORD[ci], CFG_TRI[ci], CFG_SUF[ci], CFG_PRE[ci],
+                        CFG_4G[ci], CFG_5G[ci], allowedLangs);
                 trainer.train(effectiveTrainFile, dev);
                 trainSecs[bi][ci] = elapsed(t0);
 
@@ -246,32 +252,49 @@ public class AblationRunner {
                 System.out.printf(Locale.US, "  Train: %.1f s%n%n", trainSecs[bi][ci]);
                 report.append(String.format(Locale.US, "  Train: %.1f s\n\n", trainSecs[bi][ci]));
 
+                // Save model for every config when --save-models is set
+                if (saveModelsDir != null) {
+                    Files.createDirectories(saveModelsDir);
+                    String cfgSlug = CFG_NAMES[ci].replaceAll("^\\+", "").replace("+", "-");
+                    Path modelPath = saveModelsDir.resolve(
+                            "model-" + bucketLabel + "-" + cfgSlug + ".bin");
+                    int flags = 0;
+                    if (CFG_WORD[ci]) flags |= CharSoupModel.FLAG_WORD_UNIGRAMS;
+                    if (CFG_TRI[ci])  flags |= CharSoupModel.FLAG_TRIGRAMS;
+                    if (CFG_SUF[ci])  flags |= CharSoupModel.FLAG_SUFFIXES;
+                    if (CFG_PRE[ci])  flags |= CharSoupModel.FLAG_PREFIX;
+                    if (CFG_4G[ci])   flags |= CharSoupModel.FLAG_4GRAMS;
+                    if (CFG_5G[ci])   flags |= CharSoupModel.FLAG_5GRAMS;
+                    CharSoupModel model = ModelQuantizer.quantize(
+                            trainer.getLabels(),
+                            trainer.getWeightsClassMajor(),
+                            trainer.getBiases(),
+                            trainer.getNumBuckets(),
+                            flags);
+                    try (OutputStream os = new BufferedOutputStream(
+                            Files.newOutputStream(modelPath))) {
+                        model.save(os);
+                    }
+                    System.out.printf(Locale.US, "Model saved: %s%n%n", modelPath);
+
+                    // Append provenance line to MANIFEST.txt
+                    double flores20 = (floresData != null)
+                            ? floresF1Grid[bi][ci][0] : Double.NaN;
+                    double flores50 = (floresData != null && nLengths > 1)
+                            ? floresF1Grid[bi][ci][1] : Double.NaN;
+                    String manifestLine = String.format(Locale.US,
+                            "%s\tbuckets=%d\tflags=0x%03x\tconfig=%s\tflores@20=%.2f%%\tflores@50=%.2f%%\ttrainSec=%.1f\tsaved=%s%n",
+                            modelPath.getFileName(), nb, flags, CFG_NAMES[ci],
+                            100 * flores20, 100 * flores50, trainSecs[bi][ci],
+                            Instant.now().toString());
+                    Files.write(saveModelsDir.resolve("MANIFEST.txt"),
+                            manifestLine.getBytes(StandardCharsets.UTF_8),
+                            StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+                }
+
                 lastTrainer = trainer;
             }
 
-            // Save best config model for this bucket size (last config = tri+4g+5g)
-            if (saveModelsDir != null && lastTrainer != null) {
-                Files.createDirectories(saveModelsDir);
-                Path modelPath = saveModelsDir.resolve(
-                        "model-" + bucketLabel + "-" + CFG_NAMES[CFG_NAMES.length - 1].replaceAll("^\\+", "") + ".bin");
-                int lastCi = CFG_NAMES.length - 1;
-                int flags = CharSoupModel.FLAG_WORD_UNIGRAMS;
-                if (CFG_TRI[lastCi])  flags |= CharSoupModel.FLAG_TRIGRAMS;
-                if (CFG_4G[lastCi])   flags |= CharSoupModel.FLAG_4GRAMS;
-                if (CFG_5G[lastCi])   flags |= CharSoupModel.FLAG_5GRAMS;
-                CharSoupModel model = ModelQuantizer.quantize(
-                        lastTrainer.getLabels(),
-                        lastTrainer.getWeightsClassMajor(),
-                        lastTrainer.getBiases(),
-                        lastTrainer.getNumBuckets(),
-                        flags);
-                try (OutputStream os = new BufferedOutputStream(
-                        Files.newOutputStream(modelPath))) {
-                    model.save(os);
-                }
-                System.out.printf(Locale.US, "Model saved: %s%n%n", modelPath);
-                report.append(String.format(Locale.US, "Model saved: %s\n\n", modelPath));
-            }
         }
 
         // Summary grid tables
@@ -350,7 +373,9 @@ public class AblationRunner {
 
     private static Phase2Trainer buildTrainer(
             int numBuckets, int threads,
-            boolean useTrigrams, boolean use4grams, boolean use5grams,
+            boolean useWordUnigrams, boolean useTrigrams,
+            boolean useWordSuffixes, boolean useWordPrefix,
+            boolean use4grams, boolean use5grams,
             Set<String> allowedLangs) {
         return new Phase2Trainer(numBuckets)
                 .setAdamLr(0.001f)
@@ -363,10 +388,12 @@ public class AblationRunner {
                 .setNumThreads(threads)
                 .setVerbose(false)
                 .setPreprocessed(true)
+                .setUseWordUnigrams(useWordUnigrams)
                 .setUseTrigrams(useTrigrams)
+                .setUseWordSuffixes(useWordSuffixes)
+                .setUseWordPrefix(useWordPrefix)
                 .setUse4grams(use4grams)
                 .setUse5grams(use5grams)
-                .setUseWordUnigrams(true)
                 .setAllowedLangs(allowedLangs);
     }
 
@@ -436,7 +463,7 @@ public class AblationRunner {
                 "  Sampled %,d / %,d lines to temp file%n", fill, seen);
     }
 
-    private static List<LabeledSentence> readReservoir(
+    static List<LabeledSentence> readReservoir(
             Path file, int maxLines, Set<String> allowedLangs) throws Exception {
         LabeledSentence[] reservoir = new LabeledSentence[maxLines];
         Random rng = new Random(42);
@@ -464,7 +491,7 @@ public class AblationRunner {
         return result;
     }
 
-    private static List<LabeledSentence> loadFlores(Path file) throws Exception {
+    static List<LabeledSentence> loadFlores(Path file) throws Exception {
         if (file == null) return null;
         List<LabeledSentence> result = new ArrayList<>();
         try (BufferedReader br = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
