@@ -40,27 +40,44 @@ from pathlib import Path
 PASHTO_CHARS = set("ښځږټډړڼۍ")
 
 
-def filter_pashto(sentences_file: Path) -> tuple[int, int]:
-    """Filter sentences, keeping only those with Pashto-specific chars.
+def filter_pashto(sentences_file: Path) -> tuple[int, int, int, int]:
+    """Filter at sentence level, keeping only sentences with Pashto-specific chars.
 
-    Returns (kept, total).
+    Each MADLAD document line contains sentences separated by the literal two-character
+    sequence '\\n'. This function splits each document into individual sentences, keeps
+    only those containing at least one Pashto-specific character, then reassembles the
+    surviving sentences back into a document. Documents with no surviving sentences are
+    dropped entirely.
+
+    Returns (docs_kept, docs_total, sents_kept, sents_total).
     """
     backup = sentences_file.with_suffix(".txt.bak")
     sentences_file.rename(backup)
 
-    total = 0
-    kept = 0
+    docs_total = docs_kept = 0
+    sents_total = sents_kept = 0
+
     with open(backup, encoding="utf-8") as fin, \
          open(sentences_file, "w", encoding="utf-8") as fout:
         for line in fin:
-            total += 1
+            docs_total += 1
             tab = line.find("\t")
-            text = line[tab + 1:] if tab >= 0 else line
-            if any(c in PASHTO_CHARS for c in text):
-                fout.write(f"{kept + 1}\t{text}" if tab >= 0 else line)
-                kept += 1
+            if tab < 0:
+                continue
+            doc_text = line[tab + 1:].rstrip("\n")
 
-    return kept, total
+            # Split on the literal two-character sequence \n used by MADLAD
+            parts = doc_text.split("\\n")
+            sents_total += len(parts)
+
+            good = [p for p in parts if any(c in PASHTO_CHARS for c in p)]
+            sents_kept += len(good)
+
+            if good:
+                docs_kept += 1
+                fout.write(f"{docs_kept}\t{'\\n'.join(good)}\n")
+
+    return docs_kept, docs_total, sents_kept, sents_total
 
 
 def main():
@@ -70,19 +87,28 @@ def main():
         sys.exit(1)
 
     corpus_dir = Path(sys.argv[1])
-    pus_file = corpus_dir / "pus" / "sentences.txt"
+    pus_dir = corpus_dir / "pus"
 
-    if not pus_file.is_file():
-        print(f"Error: {pus_file} not found", file=sys.stderr)
+    # Accept sentences_madlad.txt (MADLAD format) or sentences.txt (Leipzig format)
+    pus_file = None
+    for candidate in ("sentences_madlad.txt", "sentences.txt"):
+        if (pus_dir / candidate).is_file():
+            pus_file = pus_dir / candidate
+            break
+
+    if pus_file is None:
+        print(f"Error: no sentence file found in {pus_dir}", file=sys.stderr)
         sys.exit(1)
 
     print(f"Filtering {pus_file} ...")
-    kept, total = filter_pashto(pus_file)
-    removed = total - kept
-    print(f"  Total:   {total:,}")
-    print(f"  Kept:    {kept:,} ({100 * kept / total:.1f}%)")
-    print(f"  Removed: {removed:,} ({100 * removed / total:.1f}%)")
-    print(f"  Backup:  {pus_file.with_suffix('.txt.bak')}")
+    docs_kept, docs_total, sents_kept, sents_total = filter_pashto(pus_file)
+    docs_removed  = docs_total  - docs_kept
+    sents_removed = sents_total - sents_kept
+    print(f"  Documents: {docs_total:,} total  →  kept {docs_kept:,}  "
+          f"removed {docs_removed:,} ({100 * docs_removed / max(docs_total, 1):.1f}%)")
+    print(f"  Sentences: {sents_total:,} total  →  kept {sents_kept:,}  "
+          f"removed {sents_removed:,} ({100 * sents_removed / max(sents_total, 1):.1f}%)")
+    print(f"  Backup:    {pus_file.with_suffix('.txt.bak')}")
 
 
 if __name__ == "__main__":

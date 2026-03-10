@@ -61,12 +61,11 @@ import java.util.regex.Pattern;
  * during n-gram extraction so that base letters on either side form a contiguous pair.
  * This is critical for Arabic and Hebrew where diacritical marks (harakat, niqqud) are
  * Unicode nonspacing marks ({@code Mn}) that would otherwise break words into isolated
- * single-letter fragments, destroying the bigram signal needed to distinguish
- * {@code ara} from {@code ara-x-ltr} (Arabic misrepresented as LTR).
+ * single-letter fragments, destroying the bigram signal.
  * </p>
  * <p>See {@link #isTransparent(int)} for the full list of skipped codepoints.</p>
  */
-public class CharSoupFeatureExtractor implements FeatureExtractor {
+public class CharSoupFeatureExtractor {
 
     /** Maximum characters to process — prevents DoS, more than enough for detection. */
     static final int MAX_TEXT_LENGTH = 100_000;
@@ -123,7 +122,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param rawText raw input text (may be {@code null})
      * @return int array of size {@code numBuckets} with bigram counts
      */
-    @Override
     public int[] extract(String rawText) {
         int[] counts = new int[numBuckets];
         if (rawText == null || rawText.isEmpty()) {
@@ -144,7 +142,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param rawText raw input text (may be {@code null})
      * @param counts  pre-allocated int array of size {@code numBuckets} (will be zeroed)
      */
-    @Override
     public void extract(String rawText, int[] counts) {
         java.util.Arrays.fill(counts, 0);
         if (rawText == null || rawText.isEmpty()) {
@@ -162,7 +159,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param preprocessedText text that has already been through {@link #preprocess(String)}
      * @return int array of size {@code numBuckets} with bigram counts
      */
-    @Override
     public int[] extractFromPreprocessed(String preprocessedText) {
         int[] counts = new int[numBuckets];
         if (preprocessedText == null || preprocessedText.isEmpty()) {
@@ -200,7 +196,6 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      * @param clear            if {@code true}, zero the array before extracting;
      *                         if {@code false}, accumulate on top of existing counts
      */
-    @Override
     public void extractFromPreprocessed(String preprocessedText, int[] counts, boolean clear) {
         if (clear) {
             java.util.Arrays.fill(counts, 0);
@@ -279,8 +274,7 @@ public class CharSoupFeatureExtractor implements FeatureExtractor {
      *       words into isolated single-letter fragments because
      *       {@link Character#isLetter(int)} returns {@code false} for Mn
      *       codepoints. Stripping them yields clean base-letter bigrams, which
-     *       is essential for distinguishing {@code ara} from {@code ara-x-ltr}
-     *       (reversed Arabic) where character <em>order</em> is the signal.</li>
+     *       Stripping them preserves clean base-letter bigrams.</li>
      *   <li><b>Arabic Tatweel / Kashida (U+0640)</b> — a typographic stretching
      *       character that is classified as a letter but carries no linguistic
      *       information. "كتب" and "كـتـب" should produce identical bigrams.</li>

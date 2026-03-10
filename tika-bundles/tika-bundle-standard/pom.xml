@@ -29,7 +29,6 @@
   </parent>
 
   <artifactId>tika-bundle-standard</artifactId>
-  <version>${revision}</version>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi standard bundle</name>
 

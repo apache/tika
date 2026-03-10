@@ -34,21 +34,30 @@ The built-in detector uses a simple but effective architecture based on
 character n-gram language identification (<<cavnar1994>>):
 
 1. **Preprocessing** — truncate, strip URLs/emails, NFC normalize
-2. **Feature extraction** — character bigrams, word unigrams, and CJK unigrams
-   with script-aware boundary detection, hashed via FNV-1a (<<fnv>>) into a
-   fixed-size bucket vector using the feature hashing trick (<<weinberger2009>>)
+2. **Feature extraction** — character n-grams, word unigrams, word suffixes and
+   prefixes, with script-aware boundary detection, hashed via FNV-1a (<<fnv>>) into
+   a fixed-size bucket vector using the feature hashing trick (<<weinberger2009>>).
+   The general model uses bigrams, trigrams, 3-char suffixes, 3-char prefixes, word
+   unigrams, and CJK character unigrams; the short-text model uses bigrams, trigrams,
+   4-grams, 5-grams, and word unigrams (no suffixes/prefixes).
 3. **Classification** — multinomial logistic regression / softmax
    (<<bishop2006>>) with INT8 quantized weights (<<jacob2018>>)
 
 === Feature Extraction
 
-The `ScriptAwareFeatureExtractor` produces the following features from
-preprocessed text:
+The `ScriptAwareFeatureExtractor` (used by the general model) produces the
+following features from preprocessed text:
 
 * **Character bigrams** — adjacent character pairs with word-boundary sentinels
   (`_`). For example, `"hello"` produces `_h`, `he`, `el`, `ll`, `lo`, `o_`.
-* **Word unigrams** — full word tokens hashed as features. This captures
-  function words and short words that are highly discriminative for many
+* **Character trigrams** — overlapping character triples including boundary
+  trigrams at word start (`_ab`) and end (`ab_`).
+* **3-char word suffixes** — the last three characters of each word (words of
+  3+ codepoints). Suffixes are highly discriminative for inflected languages.
+* **3-char word prefixes** — the first three characters of each word (words of
+  3+ codepoints). Complements suffixes for prefix-heavy morphological systems.
+* **Whole-word unigrams** — full word tokens hashed as features (2–30 codepoints).
+  Captures function words and short words that are highly discriminative for many
   languages (e.g., "the", "de", "и").
 * **CJK character unigrams** — individual Han, Hiragana, and Katakana characters
   emitted as features. CJK scripts pack much more information per character than
@@ -63,7 +72,7 @@ preprocessed text:
   family do not create word boundaries.
 
 All features are hashed to bucket indices via FNV-1a. The current model uses
-8,192 buckets.
+16,384 buckets.
 
 === Preprocessing Pipeline
 
@@ -103,178 +112,103 @@ Arabic and Hebrew processing:
 A fast guard (`cp < 0x0300`) short-circuits the check for ASCII and Latin text,
 adding zero overhead to the common case.
 
-== Training the Model
+== Models
 
-Training is fully reproducible from source. All tooling lives in the Tika repository
-under `tika-langdetect/tika-langdetect-charsoup/src/test/`.
+CharSoupLanguageDetector ships with two complementary models:
 
-=== Prerequisites
+=== General Model (`langdetect.bin`)
 
-* Java 17+
-* Python 3.8+ with `requests` package (`pip install requests`)
+The general model covers *203 languages* trained on Wikipedia dumps as the
+primary source, supplemented by
+https://research.google/blog/madlad-400-a-multilingual-and-document-level-large-audited-dataset/[MADLAD-400]
+for languages with insufficient Wikipedia coverage. It uses 16,384 hash buckets
+and `ScriptAwareFeatureExtractor`: character bigrams, character trigrams, 3-char
+word suffixes, 3-char word prefixes, whole-word unigrams, and CJK character unigrams.
 
-=== Step 1: Download Training Data
+=== Short-Text Model (`langdetect-short.bin`)
 
-The training data comes from the https://wortschatz.uni-leipzig.de/en/download[Leipzig Corpora Collection]
-(<<goldhahn2012>>), downloaded via a script in the repository:
+The short-text model is optimized for inputs under ~200 characters — document
+titles, metadata fields, subject lines, captions, and similar short strings where
+the general model loses confidence. It covers 123 carefully selected languages
+(those that generalize well at short lengths and are not excessively confusable
+with each other) and uses 32,768 hash buckets with `ResearchFeatureExtractor`
+(bigrams + trigrams + 4-grams + word unigrams). The richer n-gram features
+compensate for the reduced token count at short text lengths.
 
-[source,bash]
+=== Automatic Model Selection
+
+By default, `CharSoupLanguageDetector` selects the model automatically per chunk
+using two gates (evaluated in `AUTOMATIC` strategy mode):
+
+1. **Length gate** — if the chunk is shorter than 200 characters, use the
+   short-text model.
+2. **Feature-density gate** — if the n-gram emission count from the general
+   extractor is below 200, use the short-text model regardless of character
+   length. This catches degenerate inputs such as a long string of whitespace
+   followed by a single word, where character length alone would incorrectly
+   route to the general model.
+
+If the short-text model binary is absent from the classpath, both gates fall
+back to the general model transparently.
+
+=== Overriding Model Selection
+
+The selection strategy can be overridden at construction time or per-document
+via `ParseContext`:
+
+[source,java]
 ----
-pip install requests
+// Always use the short-text model (e.g. for a title-only pipeline)
+CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
+    Map.of("strategy", "SHORT_TEXT"));
+CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
 
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/download_corpus.py \
-    ~/datasets/leipzig \
-    --max-per-lang 6000000
-----
+// Always use the general model (e.g. for full-document body text)
+CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
+    Map.of("strategy", "STANDARD"));
 
-The script downloads multiple corpora per language (preferring the largest
-available — 1M, 300K, 100K), merges variant language codes to canonical forms
-(e.g., `cmn`→`zho`), and deduplicates sentences during download. This produces
-Leipzig-format directories:
-
-[source]
-----
-~/datasets/leipzig/
-    eng/sentences.txt     (lineNum<TAB>sentence)
-    deu/sentences.txt
-    ara/sentences.txt
-    ...
-----
-
-The target of 6 million unique sentences per language provides stable frequency
-estimates for both the language model and the common token lists used by
-`tika-eval`.
-
-=== Step 1a: Corpus Cleaning (Language-Specific)
-
-Some Leipzig web-crawl corpora contain significant contamination from related
-languages. Pashto (`pus`) is a known case — roughly 18% of its Leipzig sentences
-are actually Dari, Persian, or Bosnian (which share Arabic script). A filtering
-script removes sentences that lack any Pashto-specific character:
-
-[source,bash]
-----
-python tika-langdetect/tika-langdetect-charsoup/src/test/python/filter_pashto.py \
-    ~/datasets/leipzig
-----
-
-This keeps only sentences containing at least one of: ښ ځ ږ ټ ډ ړ ڼ ۍ. The
-original file is preserved as `sentences.txt.bak`. The same cleaned corpus
-should be used for both language model training and common token generation.
-
-=== Step 2: Train the Model
-
-The training pipeline is a Java main class:
-
-[source,bash]
-----
-mvn -pl tika-langdetect/tika-langdetect-charsoup test-compile
-
-java -Xmx10g -cp tika-langdetect/tika-langdetect-charsoup/target/test-classes:\
-tika-langdetect/tika-langdetect-charsoup/target/classes \
-    org.apache.tika.langdetect.charsoup.tools.TrainLanguageModel \
-    ~/datasets/leipzig \
-    tika-langdetect/tika-langdetect-charsoup/src/main/resources/org/apache/tika/langdetect/charsoup/langdetect.bin \
-    8192 \
-    5000000
+// Per-document override via ParseContext
+ParseContext context = new ParseContext();
+context.set(CharSoupDetectorConfig.class, CharSoupDetectorConfig.fromMap(
+    Map.of("strategy", "SHORT_TEXT")));
+detector.reset(context);
 ----
 
-Arguments: `<corpusDir> <outputFile> [numBuckets] [targetEpochTotal]`
+The three strategies are:
 
-The `targetEpochTotal` parameter (default 5,000,000) sets the desired total
-sentence count per training epoch. A flat cap is found by binary search such
-that the sum of per-language samples hits the target: languages with fewer
-sentences than the cap contribute all their data, while larger languages are
-uniformly capped. This produces near-uniform class representation without
-oversampling small corpora.
+[cols="1,3"]
+|===
+| Strategy | Behaviour
 
-=== Training Pipeline Steps
+| `AUTOMATIC` (default)
+| Use length and feature-density gates to choose between models per chunk.
 
-The `TrainLanguageModel` pipeline proceeds as follows:
+| `SHORT_TEXT`
+| Always use the short-text model (no-op if the binary is absent).
 
-1. **Read corpus** — load all `lang/sentences.txt` files from the corpus directory
-2. **Deduplicate** — remove exact-duplicate sentences within each language
-   (FNV-1a 64-bit hashing)
-3. **Merge language codes** — consolidate duplicate ISO 639-3 codes
-   (see <<_language_code_merging>>)
-4. **Filter low-resource languages** — drop languages with fewer than 10,000
-   sentences after deduplication
-5. **Stratified split** — for each language:
-   * **Test**: 10% (max 20,000 sentences), stored **raw** (no preprocessing)
-   * **Dev**: 10% (max 20,000 sentences), stored **preprocessed**
-   * **Training pool**: remainder, stored **preprocessed** in per-language files
-6. **Pass 1: Initial training** with epoch-level resampling — each epoch samples
-   up to `epochMaxPerLang` sentences per language from the pool, shuffles, and
-   trains. AdamW for the first 2 epochs, then Hogwild! SGD.
-7. **Filter mislabeled sentences** — use the Pass 1 model to predict each sentence
-   in the training pool; remove sentences not classified as their labeled language
-   (or a language within the same confusable group)
-8. **Pass 2: Retrain** — same optimizer and resampling on the filtered pool
-9. **INT8 quantization** — convert float32 weights to signed 8-bit integers with
-   per-class scaling factors
-10. **Evaluate** — report quantized model accuracy on the **raw** test set (full
-    end-to-end pipeline: preprocessing + feature extraction + classification)
-11. **Export** — write the binary LDM1 model file
+| `STANDARD`
+| Always use the general model regardless of input length.
+|===
 
-The dev set is preprocessed so that within-epoch and across-epoch F1 checks
-can evaluate against the weight matrix directly without re-running the
-preprocessing pipeline each time. The test set is kept raw to verify the
-full detection path end-to-end.
+The thresholds can also be tuned via `CharSoupDetectorConfig`:
 
-=== Epoch-Level Resampling
-
-Rather than training on a fixed shuffled file each epoch, the pipeline
-resamples from the training pool before each epoch:
-
-* Binary-search for a flat cap C such that the sum of `min(n_i, C)` across
-  all languages equals `targetEpochTotal` (default 5M)
-* For each language, reservoir-sample up to C sentences from its pool file
-* Interleave samples from all languages into a single shuffled epoch file
-* Train one epoch on the result
-
-This ensures that:
-
-* **High-resource languages** (e.g., English with 6M+ sentences) are capped
-  uniformly, preventing them from dominating gradient updates
-* **Low-resource languages** contribute their full data every epoch (they fall
-  below the cap and are never downsampled)
-* **Diversity across epochs** — each epoch draws a fresh random sample, so
-  high-resource languages see their full corpus spread across multiple epochs
-
-=== Optimizer Schedule
-
-Training uses a two-phase optimizer:
-
-1. **AdamW** (<<loshchilov2019>>) — decoupled weight decay Adam optimizer for the
-   first 2 epochs, single-threaded with mini-batch gradient accumulation
-   (batch size 64). This quickly learns good initial weights.
-2. **Hogwild! SGD** (<<niu2011>>) — lock-free parallel stochastic gradient descent
-   for up to 6 more epochs, with linearly decaying learning rate.
-
-Within-epoch early stopping monitors dev-set F1 at regular checkpoints. If the
-F1 range over the last 5 checkpoints is below a threshold, the epoch ends early.
-Across-epoch patience stops training if no improvement is seen for 2 consecutive
-epochs.
-
-=== Step 3: Compare with OpenNLP (optional)
-
-A comparison tool evaluates both detectors on the same test split, broken out
-by text length (short <= 50 chars vs full sentences):
-
-[source,bash]
+[source,java]
 ----
-java -cp <classpath-with-both-detectors> \
-    org.apache.tika.langdetect.charsoup.tools.CompareDetectors \
-    ~/datasets/lang-detect-output/preprocessed/test_raw.txt \
-    ~/datasets/lang-detect-output/langdetect-8k.bin \
-    ~/datasets/lang-detect-output/comparison-report.txt
+CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(Map.of(
+    "strategy",          "AUTOMATIC",
+    "lengthThreshold",   300,   // chars; default 200
+    "featureThreshold",  300    // n-gram emissions; default 200
+));
 ----
 
-Arguments: `<testSplitFile> <modelFile> [outputReport] [threads]`
+Or via Tika's JSON configuration mechanism if you are using `SelfConfiguring`
+component loading.
 
-For a full write-up of the training run, the decisions made, and detailed
-benchmark numbers, see
-xref:advanced/language-detection-build.adoc[Building the Language Detector].
+== Training the Models
+
+Training is fully reproducible from source. For step-by-step instructions,
+corpus download scripts, training commands, and detailed benchmark comparisons,
+see xref:advanced/language-detection-build.adoc[Building the Language Detector].
 
 == Model Format (LDM1)
 
@@ -299,9 +233,11 @@ The weight matrix is stored in **bucket-major** order: for each bucket, all clas
 weights are contiguous. This layout is optimal for sparse inference, where only
 non-zero buckets are visited.
 
-The model file is stored as a classpath resource at
-`org/apache/tika/langdetect/charsoup/langdetect.bin` and loaded statically
-by `CharSoupLanguageDetector`.
+The general model is stored at
+`org/apache/tika/langdetect/charsoup/langdetect.bin` and the short-text model
+at `org/apache/tika/langdetect/charsoup/langdetect-short.bin`. Both are loaded
+statically by `CharSoupLanguageDetector`; the short-text model load is gracefully
+skipped if the resource is absent.
 
 === Memory-Mapped Loading
 
@@ -311,8 +247,8 @@ loads the model via `MappedByteBuffer`. A companion `saveSplit(Path, Path)`
 method writes the raw weights and metadata as separate files for true zero-copy
 loading.
 
-For the default classpath resource (1.6 MB), heap loading is used and the
-performance difference is negligible.
+For the default classpath resources (general model ~3.2 MB, short-text model
+~3.8 MB), heap loading is used and the performance difference is negligible.
 
 == WordTokenizer (tika-eval integration)
 
@@ -385,8 +321,8 @@ The language detector draws on several well-established techniques.
   From 100 to 200 Languages,"
   in _Proceedings of the Eighth International Conference on Language Resources
   and Evaluation (LREC)_, Istanbul, Turkey, 2012, pp. 759–765. +
-  The Leipzig Corpora Collection provides the training data: sentence corpora
-  for 300+ languages drawn from news, web crawls, and Wikipedia. +
+  The Leipzig Corpora Collection was used in early model versions (v1/v2).
+  Current models (v7+) use Wikipedia dumps as the primary corpus. +
   https://aclanthology.org/L12-1154/
 
 - [[[jacob2018]]] B. Jacob, S. Kligys, B. Chen, M. Zhu, M. Tang, A. Howard,

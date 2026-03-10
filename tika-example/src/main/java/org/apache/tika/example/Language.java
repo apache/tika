@@ -19,7 +19,6 @@ package org.apache.tika.example;
 import java.io.IOException;
 
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.language.detect.LanguageResult;
@@ -30,7 +29,7 @@ import org.apache.tika.parser.ParseContext;
 
 public class Language {
     public static void languageDetection() throws IOException {
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        LanguageDetector detector = LanguageDetector.getDefaultLanguageDetector().loadModels();
         LanguageResult result = detector.detect("Alla människor är födda fria och lika i värde och rättigheter.");
 
         System.out.println(result.getLanguage());
@@ -38,7 +37,7 @@ public class Language {
 
     public static void languageDetectionWithWriter() throws IOException {
         // TODO support version of LanguageWriter that doesn't need a detector.
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
+        LanguageDetector detector = LanguageDetector.getDefaultLanguageDetector().loadModels();
         try (LanguageWriter writer = new LanguageWriter(detector)) {
             writer.append("Minden emberi lény");
             writer.append(" szabadon születik és");

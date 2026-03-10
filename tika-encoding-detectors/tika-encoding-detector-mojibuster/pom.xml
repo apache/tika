@@ -28,7 +28,7 @@
   <artifactId>tika-encoding-detector-mojibuster</artifactId>
   <name>Apache Tika ML charset encoding detector</name>
   <description>
-    ML-based charset encoding detector (MlEncodingDetector) backed by a
+    ML-based charset encoding detector (MojibusterEncodingDetector) backed by a
     multinomial logistic regression model trained on byte n-grams.  This
     detector replaces ICU4J and juniversalchardet as the default statistical
     encoding detector in Tika.  Includes structural pre-pass rules and CJK

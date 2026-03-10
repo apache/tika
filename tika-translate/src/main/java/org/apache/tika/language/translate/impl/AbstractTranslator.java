@@ -17,8 +17,8 @@
 package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
+import java.util.Locale;
 
-import org.apache.tika.langdetect.optimaize.OptimaizeLangDetector;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
@@ -27,7 +27,25 @@ import org.apache.tika.language.translate.Translator;
 public abstract class AbstractTranslator implements Translator {
 
     protected LanguageResult detectLanguage(String text) throws IOException {
-        LanguageDetector detector = new OptimaizeLangDetector().loadModels();
-        return detector.detect(text);
+        LanguageDetector detector = LanguageDetector.getDefaultLanguageDetector().loadModels();
+        LanguageResult result = detector.detect(text);
+        // Translation APIs use ISO 639-1 codes; normalize from ISO 639-3 if needed.
+        String lang = result.getLanguage();
+        if (lang != null && lang.length() == 3) {
+            String iso1 = iso3ToIso1(lang);
+            if (iso1 != null) {
+                result = new LanguageResult(iso1, result.getConfidence(), result.getRawScore());
+            }
+        }
+        return result;
+    }
+
+    private static String iso3ToIso1(String iso3) {
+        for (String code : Locale.getISOLanguages()) {
+            if (new Locale(code).getISO3Language().equals(iso3)) {
+                return code;
+            }
+        }
+        return null;
     }
 }
