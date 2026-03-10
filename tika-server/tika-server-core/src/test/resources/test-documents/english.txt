@@ -1,1 +1,1 @@
-The quick brown fox jumps over the lazy dog. Language detection works best with longer text that contains enough character patterns to make a reliable decision about which language is being used.
+This is English!

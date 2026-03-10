@@ -46,37 +46,60 @@ public class ByteNgramFeatureExtractorTest {
     }
 
     @Test
-    public void testSingleByte() {
+    public void testAsciiOnlyProducesStride2Features() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // A single byte produces no bigrams
-        int[] counts = ext.extract(new byte[]{0x41});
-        int total = 0;
-        for (int c : counts) {
-            total += c;
-        }
-        assertEquals(0, total);
-    }
-
-    @Test
-    public void testTwoBytesProduceOneBigram() {
-        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        int[] counts = ext.extract(new byte[]{0x41, 0x42});
-        int total = 0;
-        for (int c : counts) {
-            total += c;
-        }
-        assertEquals(1, total);
-    }
-
-    @Test
-    public void testDifferentInputsProduceDifferentFeatures() {
-        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // UTF-8 "hello" vs ISO-8859-1 high bytes — should produce different feature vectors
+        // Stride-1 skips bytes < 0x80, but stride-2 covers ALL bytes (needed for UTF-16/32
+        // null-byte detection). "hello world" (11 bytes) → 5 stride-2 pairs at positions
+        // 0,2,4,6,8 → 5 features total.
         byte[] ascii = "hello world".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        byte[] highBytes = new byte[]{(byte) 0xE0, (byte) 0xE1, (byte) 0xE2,
-                (byte) 0xE3, (byte) 0xE4, (byte) 0xE5};
-        int[] f1 = ext.extract(ascii);
-        int[] f2 = ext.extract(highBytes);
+        assertEquals(5, sum(ext.extract(ascii)));
+    }
+
+    @Test
+    public void testSingleHighByteProducesOneUnigram() {
+        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
+        // One high byte, no following byte → 1 stride-1 unigram; no stride-2 pair
+        int[] counts = ext.extract(new byte[]{(byte) 0xE0});
+        assertEquals(1, sum(counts));
+    }
+
+    @Test
+    public void testTwoHighBytesProduceUnigramAndBigram() {
+        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
+        // Stride-1: unigram(0xE0) + bigram(0xE0,0xE1) + unigram(0xE1) = 3
+        // Stride-2: pair(0xE0,0xE1) at position 0 = 1
+        // Total = 4
+        int[] counts = ext.extract(new byte[]{(byte) 0xE0, (byte) 0xE1});
+        assertEquals(4, sum(counts));
+    }
+
+    @Test
+    public void testHighByteFollowedByAsciiProducesUnigramBigramAndAnchoredBigram() {
+        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
+        // Stride-1: unigram(0xE0) + bigram(0xE0,0x41) + anchored_bigram(0x41,end) = 3
+        // Stride-2: pair(0xE0,0x41) at position 0 = 1
+        // Total = 4
+        int[] counts = ext.extract(new byte[]{(byte) 0xE0, 0x41});
+        assertEquals(4, sum(counts));
+    }
+
+    @Test
+    public void testAsciiFollowedByHighByteProducesUnigramAndStride2() {
+        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
+        // Stride-1: 0x41 skipped; unigram(0xE0), no following byte = 1
+        // Stride-2: pair(0x41,0xE0) at position 0 = 1
+        // Total = 2
+        int[] counts = ext.extract(new byte[]{0x41, (byte) 0xE0});
+        assertEquals(2, sum(counts));
+    }
+
+    @Test
+    public void testDifferentHighBytesProduceDifferentFeatures() {
+        ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
+        byte[] latin = new byte[]{(byte) 0xE0, (byte) 0xE1, (byte) 0xE2};
+        byte[] cyrillic = new byte[]{(byte) 0xD0, (byte) 0xD1, (byte) 0xD2};
+        int[] f1 = ext.extract(latin);
+        int[] f2 = ext.extract(cyrillic);
         boolean different = false;
         for (int i = 0; i < NUM_BUCKETS; i++) {
             if (f1[i] != f2[i]) {
@@ -84,20 +107,7 @@ public class ByteNgramFeatureExtractorTest {
                 break;
             }
         }
-        assertNotEquals(false, different, "Different byte sequences should produce different features");
-    }
-
-    @Test
-    public void testTrigramExtractor() {
-        ByteNgramFeatureExtractor biOnly = new ByteNgramFeatureExtractor(NUM_BUCKETS, false);
-        ByteNgramFeatureExtractor biTri = new ByteNgramFeatureExtractor(NUM_BUCKETS, true);
-        byte[] input = "hello".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        int biTotal = sum(biOnly.extract(input));
-        int biTriTotal = sum(biTri.extract(input));
-        // bigram-only: n-1 = 4 bigrams
-        // bigram+trigram: 4 bigrams + 3 trigrams = 7
-        assertEquals(4, biTotal);
-        assertEquals(7, biTriTotal);
+        assertNotEquals(false, different, "Different high-byte sequences should produce different features");
     }
 
     @Test

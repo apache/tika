@@ -3,7 +3,7 @@
     {
       "default-encoding-detector":{
         "exclude": [
-          "ml-encoding-detector"
+          "icu4j-encoding-detector"
         ]
       }
     }

@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -492,20 +491,20 @@ public class BuildCharsetTrainingData {
         System.out.println("  madlad-dir:          " + madladDir);
         System.out.println("  zh-yue-file:         " + zhYueFile);
         System.out.println("  output-dir:          " + outputDir);
-        System.out.printf(Locale.ROOT, "  caps (CJK/Unicode):  train=%,d  devtest=%,d  test=%,d%n",
+        System.out.printf ("  caps (CJK/Unicode):  train=%,d  devtest=%,d  test=%,d%n",
                            trainCap, devtestCap, testCap);
-        System.out.printf(Locale.ROOT, "  caps (SBCS/EBCDIC):  train=%,d  devtest=%,d  test=%,d%n",
+        System.out.printf ("  caps (SBCS/EBCDIC):  train=%,d  devtest=%,d  test=%,d%n",
                            sbcsTrainCap, devtestCap, sbcsTestCap);
-        System.out.printf(Locale.ROOT, "  chunk:               %d–%d bytes  seed=%d%n", minChunk, maxChunk, seed);
-        System.out.printf(Locale.ROOT, "  max-source-per-lang: %,d%n", maxSourcePerLang);
-        System.out.printf(Locale.ROOT, "  charsets:            %d%n%n", targetCharsets.size());
+        System.out.printf ("  chunk:               %d–%d bytes  seed=%d%n", minChunk, maxChunk, seed);
+        System.out.printf ("  max-source-per-lang: %,d%n", maxSourcePerLang);
+        System.out.printf ("  charsets:            %d%n%n", targetCharsets.size());
 
         // Ambiguity gate: for each SBCS charset, precompute encoders for all
         // other SBCS charsets. A chunk is dropped if any rival produces
         // byte-for-byte identical output — such chunks carry no discriminative
         // signal and actively confuse the model.
         Map<String, List<CharsetEncoder>> sbcsRivals = buildSbcsRivals(targetCharsets);
-        System.out.printf(Locale.ROOT, "  ambiguity-gate:      %d SBCS charsets compared pairwise%n%n",
+        System.out.printf("  ambiguity-gate:      %d SBCS charsets compared pairwise%n%n",
                 sbcsRivals.size());
 
         // charset label → split name → sample count (for manifest)
@@ -522,7 +521,7 @@ public class BuildCharsetTrainingData {
             int effectiveTestCap  = isSbcs ? sbcsTestCap  : testCap;
             String[] splits    = {"train", "devtest", "test"};
             int[]    splitCaps = {effectiveTrainCap, devtestCap, effectiveTestCap};
-            System.out.printf(Locale.ROOT, "%s  (%s)%s%n", label, javaName,
+            System.out.printf("%s  (%s)%s%n", label, javaName,
                     structOnly ? "  [structural-only: skipping train]" : "");
 
             // Determine contributing languages
@@ -549,7 +548,7 @@ public class BuildCharsetTrainingData {
                     Path langDir = madladDir.resolve(lang);
                     sents = loadMadladSentences(langDir, loadCap);
                 }
-                System.out.printf(Locale.ROOT, "    %s: %,d sentences%n", lang, sents.size());
+                System.out.printf("    %s: %,d sentences%n", lang, sents.size());
                 allSentences.addAll(sents);
             }
 
@@ -594,10 +593,10 @@ public class BuildCharsetTrainingData {
                 int ambiguousDropped = result[1];
                 splitCounts.put(split, written);
                 if (ambiguousDropped > 0) {
-                    System.out.printf(Locale.ROOT, "    %s: %,d samples  (%,d ambiguous-dropped)%n",
+                    System.out.printf("    %s: %,d samples  (%,d ambiguous-dropped)%n",
                             split, written, ambiguousDropped);
                 } else {
-                    System.out.printf(Locale.ROOT, "    %s: %,d samples%n", split, written);
+                    System.out.printf("    %s: %,d samples%n", split, written);
                 }
             }
             manifest.put(label, splitCounts);

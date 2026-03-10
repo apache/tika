@@ -26,25 +26,27 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-ml-chardetect</artifactId>
-  <name>Apache Tika ML charset detector</name>
+  <name>Apache Tika ML charset detector — training and evaluation tools</name>
+  <description>
+    Training, evaluation, and diagnostic tools for the ML charset detector.
+    Runtime detector classes live in tika-encoding-detector-mojibuster.
+    This module contains no production code; it is a tools-only module for
+    developer use (corpus preparation, model training, accuracy evaluation).
+  </description>
 
   <dependencies>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-ml-core</artifactId>
-      <version>${revision}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${revision}</version>
-    </dependency>
-
+    <!-- Runtime deps for the tool classes (in src/main/java) -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-encoding-detector-mojibuster</artifactId>
       <version>${revision}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-text-module</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <!-- Icu4jEncodingDetector and UniversalEncodingDetector for baseline comparison -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-encoding-detector-icu4j</artifactId>
@@ -77,7 +79,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.ml.chardetect</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.ml.chardetect.tools</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
@@ -87,14 +89,73 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>**/*.bin</inputExclude>
-            <inputExclude>**/*.bin.gz</inputExclude>
             <inputExclude>**/manifest.json</inputExclude>
+            <inputExclude>src/test/python/anneal_log.csv</inputExclude>
+            <inputExclude>README.md</inputExclude>
           </inputExcludes>
+        </configuration>
+      </plugin>
+      <!-- Tools use System.out/printf freely — suppress forbidden-apis for this module -->
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <configuration>
+          <skip>true</skip>
         </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!--
+        Build a self-contained fat JAR for model training and evaluation.
+        Usage:
+          ./mvnw package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests \
+              -Dmaven.repo.local=.local_m2_repo
+          java -jar tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
+              [TrainCharsetModel|EvalCharsetDetectors|BenchmarkCharsetDetectors|DiagnoseCharsetDetector] \
+              [args...]
+      -->
+      <id>train</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals><goal>shade</goal></goals>
+                <configuration>
+                  <shadedArtifactAttached>true</shadedArtifactAttached>
+                  <shadedClassifierName>tools</shadedClassifierName>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                      <mainClass>org.apache.tika.ml.chardetect.tools.TrainCharsetModel</mainClass>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                  </transformers>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <scm>
     <tag>3.0.0-rc1</tag>

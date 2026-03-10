@@ -38,14 +38,8 @@ public class LanguageResourceTest extends CXFTestBase {
     private static final String LANG_PATH = "/language";
     private static final String LANG_STREAM_PATH = LANG_PATH + "/stream";
     private static final String LANG_STRING_PATH = LANG_PATH + "/string";
-    private static final String ENGLISH_STRING =
-            "The quick brown fox jumps over the lazy dog. " +
-            "Language detection works best with longer text that contains enough character " +
-            "patterns to make a reliable decision about which language is being used.";
-    private static final String FRENCH_STRING =
-            "Le renard brun rapide saute par-dessus le chien paresseux. " +
-            "La détection de langue fonctionne mieux avec un texte plus long qui contient " +
-            "suffisamment de modèles de caractères pour prendre une décision fiable.";
+    private static final String ENGLISH_STRING = "This is English!";
+    private static final String FRENCH_STRING = "c'est comme ci comme ça";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
