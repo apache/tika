@@ -177,6 +177,89 @@ public class EmbeddedDocumentUtil implements Serializable {
         return ".bin";
     }
 
+    /**
+     * Looks up the file extension for a given media type string.
+     *
+     * @param mediaType the media type string (e.g., "image/png")
+     * @return the extension including the dot (e.g., ".png"), or empty string if unknown
+     */
+    /**
+     * Normalizes internal OCR routing media types (e.g., {@code image/ocr-png})
+     * back to standard media types (e.g., {@code image/png}).
+     * Returns the input unchanged if it is not an OCR routing type.
+     *
+     * @param mediaType the media type string
+     * @return the normalized media type string, or the original if no normalization needed
+     */
+    public static String normalizeMediaType(String mediaType) {
+        if (mediaType != null && mediaType.startsWith("image/ocr-")) {
+            return "image/" + mediaType.substring("image/ocr-".length());
+        }
+        return mediaType;
+    }
+
+    public static String getExtensionForMediaType(String mediaType) {
+        if (mediaType == null) {
+            return "";
+        }
+        mediaType = normalizeMediaType(mediaType);
+        try {
+            MimeType mimeType = MimeTypes.getDefaultMimeTypes().forName(mediaType);
+            return mimeType.getExtension();
+        } catch (MimeTypeException e) {
+            return "";
+        }
+    }
+
+    /**
+     * Type of embedded resource, used for generating canonical resource names.
+     */
+    public enum EmbeddedResourcePrefix {
+        EMBEDDED("embedded"),
+        IMAGE("image"),
+        THUMBNAIL("thumbnail");
+
+        private final String prefix;
+
+        EmbeddedResourcePrefix(String prefix) {
+            this.prefix = prefix;
+        }
+
+        public String getPrefix() {
+            return prefix;
+        }
+    }
+
+    /**
+     * Generates a canonical resource name from a type, counter, and media type.
+     * For example: {@code generateResourceName(EmbeddedResourcePrefix.EMBEDDED, 0, "image/png")}
+     * returns {@code "embedded-0.png"}.
+     *
+     * @param type      the embedded resource type
+     * @param count     the counter value
+     * @param mediaType the media type string, or null if unknown
+     * @return the generated resource name with extension
+     */
+    public static String generateResourceName(EmbeddedResourcePrefix type, int count,
+                                               String mediaType) {
+        return type.getPrefix() + "-" + count + getExtensionForMediaType(mediaType);
+    }
+
+    /**
+     * Sets a generated resource name on the metadata and marks the extension as inferred.
+     *
+     * @param metadata  the metadata to update
+     * @param type      the embedded resource type
+     * @param count     the counter value
+     * @param mediaType the media type string, or null if unknown
+     */
+    public static void setGeneratedResourceName(Metadata metadata, EmbeddedResourcePrefix type,
+                                                 int count, String mediaType) {
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
+                generateResourceName(type, count, mediaType));
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
+    }
+
     public static void recordException(Throwable t, Metadata m) {
         String ex = ExceptionUtils.getFilteredStackTrace(t);
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, ex);

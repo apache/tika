@@ -387,7 +387,8 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         //this is the metadata for this particular image
         Metadata metadata = Metadata.newInstance(parseContext);
         String suffix = getSuffix(pdImage, metadata);
-        String fileName = "image" + imageNumber + "." + suffix;
+        String fileName = EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE.getPrefix()
+                + "-" + imageNumber + "." + suffix;
 
 
         AttributesImpl attr = new AttributesImpl();
@@ -398,6 +399,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
 
 
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         metadata.set(TikaPagedText.PAGE_NUMBER, pageNumber);

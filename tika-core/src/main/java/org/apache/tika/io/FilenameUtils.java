@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
@@ -345,18 +346,11 @@ public class FilenameUtils {
         if (mime == null) {
             return defaultValue;
         }
+        // Normalize OCR routing types (e.g., image/ocr-png -> image/png)
+        mime = EmbeddedDocumentUtil.normalizeMediaType(mime);
         String ext = lookupExtension(mime);
         if (ext != null) {
             return ext;
-        }
-        // Handle OCR media types (e.g., image/ocr-jpeg -> image/jpeg)
-        // These are internal routing types that don't have registered extensions
-        if (mime.startsWith("image/ocr-")) {
-            String normalized = "image/" + mime.substring("image/ocr-".length());
-            ext = lookupExtension(normalized);
-            if (ext != null) {
-                return ext;
-            }
         }
         return ".bin";
     }
