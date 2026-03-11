@@ -177,6 +177,11 @@ public class ExtractComparerRunner {
         } finally {
             mimeBuffer.close();
             executorService.shutdownNow();
+            try {
+                jdbcUtil.getConnection().close();
+            } catch (SQLException e) {
+                LOG.warn("failed to close db connection", e);
+            }
         }
 
     }
