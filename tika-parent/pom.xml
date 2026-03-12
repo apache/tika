@@ -414,8 +414,8 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <micronaut.version>3.10.5</micronaut.version>
     <mime4j.version>0.8.13</mime4j.version>
-    <mockito.version>5.22.0</mockito.version>
-    <mockito-junit-jupiter.version>5.22.0</mockito-junit-jupiter.version>
+    <mockito.version>5.23.0</mockito.version>
+    <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.10.Final</netty.version>
     <oak.jackrabbit.version>1.92.0</oak.jackrabbit.version>
