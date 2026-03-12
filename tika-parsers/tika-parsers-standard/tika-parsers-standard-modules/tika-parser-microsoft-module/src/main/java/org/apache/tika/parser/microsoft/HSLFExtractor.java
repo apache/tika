@@ -60,6 +60,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -220,8 +221,12 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 continue;
             }
             String filename = d.getFileName();
+            boolean inferredExtension = false;
             if (StringUtils.isBlank(filename)) {
-                filename = "UNKNOWN-" + i;
+                filename = EmbeddedDocumentUtil.generateResourceName(
+                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
+                        i, getDetectedMediaType(d));
+                inferredExtension = true;
             }
             try (TikaInputStream tis = TikaInputStream.get(d.getInputStream())) {
                 if (FileMagic.valueOf(tis) == FileMagic.OLE2) {
@@ -231,7 +236,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         if (pfs.getRoot().getEntryNames().size() < 1) {
                             return;
                         }
-                        handleEmbeddedOfficeDoc(pfs.getRoot(), filename, xhtml, outputHtml);
+                        Metadata metadata = Metadata.newInstance(context);
+                        if (inferredExtension) {
+                            metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED,
+                                    true);
+                        }
+                        handleEmbeddedOfficeDoc(pfs.getRoot(), metadata, filename,
+                                xhtml, outputHtml);
                     }
                 } else {
                     boolean shouldProcess = false;
@@ -243,7 +254,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         tis.reset();
                     }
                     if (shouldProcess) {
-                        handleEmbeddedResource(tis, filename, null, null, xhtml, true);
+                        Metadata metadata = Metadata.newInstance(context);
+                        if (inferredExtension) {
+                            metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED,
+                                    true);
+                        }
+                        handleEmbeddedResource(tis, metadata, filename, null,
+                                null, null, xhtml, true);
                     }
                 }
             } catch (IOException | TikaException e) {
@@ -563,7 +580,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 continue;
             }
             try (TikaInputStream picIs = TikaInputStream.get(data)) {
-                handleEmbeddedResource(picIs, null, null, mediaType, xhtml, false);
+                String picName = EmbeddedDocumentUtil.generateResourceName(
+                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE,
+                        pic.getIndex(), mediaType);
+                Metadata picMetadata = Metadata.newInstance(context);
+                picMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
+                handleEmbeddedResource(picIs, picMetadata, picName, null,
+                        null, mediaType, xhtml, false);
             }
         }
     }
@@ -656,4 +679,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+    private String getDetectedMediaType(HSLFObjectData objectData) {
+        try (TikaInputStream tis = TikaInputStream.get(objectData.getInputStream())) {
+            Metadata m = Metadata.newInstance(context);
+            MediaType mt = getDetector().detect(tis, m, context);
+            return mt.toString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

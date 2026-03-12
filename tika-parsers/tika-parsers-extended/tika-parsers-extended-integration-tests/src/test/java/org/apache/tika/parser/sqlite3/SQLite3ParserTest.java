@@ -90,7 +90,7 @@ public class SQLite3ParserTest extends TikaTest {
         //timestamp test
         assertContains("2015-01-03 15:17:03", x);
         //first embedded doc's image tag
-        assertContains("alt=\"image1.png\"", x);
+        assertContains("alt=\"image-1.png\"", x);
         //second embedded doc's image tag
         assertContains("alt=\"A description...\"", x);
         //second table name
@@ -123,7 +123,7 @@ public class SQLite3ParserTest extends TikaTest {
                 xml);
         //but no other content
         assertNotContained("dog", xml);
-        assertNotContained("alt=\"image1.png\"", xml);
+        assertNotContained("alt=\"image-1.png\"", xml);
         //second embedded doc's image tag
         assertNotContained("alt=\"A description...\"", xml);
     }
@@ -158,7 +158,7 @@ public class SQLite3ParserTest extends TikaTest {
                 metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("/BYTES_COL_0.doc/image1.png",
+        assertEquals("/BYTES_COL_0.doc/image-1.png",
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 

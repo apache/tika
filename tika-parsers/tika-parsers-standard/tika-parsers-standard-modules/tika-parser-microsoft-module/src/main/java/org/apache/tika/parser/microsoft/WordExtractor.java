@@ -60,6 +60,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -599,7 +600,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         // Make up a name for the picture
         // There isn't one in the file, but we need to be able to reference
         //  the picture from the img tag and the embedded resource
-        String filename = "image" + pictureNumber + (extension.length() > 0 ? "." + extension : "");
+        String filename = EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE.getPrefix()
+                + "-" + pictureNumber + (extension.length() > 0 ? "." + extension : "");
 
         // Grab the mime type for the picture
         String mimeType = picture.getMimeType();
@@ -615,7 +617,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         // (Only expose each individual image once)
         if (!pictures.hasOutput(picture)) {
             TikaInputStream tis = TikaInputStream.get(picture.getContent());
-            handleEmbeddedResource(tis, filename, null, mimeType, xhtml, false);
+            Metadata picMetadata = Metadata.newInstance(context);
+            picMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
+            handleEmbeddedResource(tis, picMetadata, filename, null,
+                    null, mimeType, xhtml, false);
             pictures.recordOutput(picture);
         }
     }

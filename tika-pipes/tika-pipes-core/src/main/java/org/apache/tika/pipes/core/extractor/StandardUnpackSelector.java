@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -77,7 +78,7 @@ public class StandardUnpackSelector implements UnpackSelector {
         }
 
         // Also compute normalized mime for OCR types (image/ocr-jpeg -> image/jpeg)
-        String normalizedMime = normalizeOcrType(mime);
+        String normalizedMime = EmbeddedDocumentUtil.normalizeMediaType(mime);
 
         if (excludeMimeTypes.contains(mime) || excludeMimeTypes.contains(normalizedMime)) {
             return false;
@@ -136,16 +137,6 @@ public class StandardUnpackSelector implements UnpackSelector {
         this.excludeEmbeddedResourceTypes = new HashSet<>(excludeEmbeddedResourceTypes);
     }
 
-    /**
-     * Normalize OCR media types (e.g., image/ocr-jpeg -> image/jpeg).
-     * These are internal routing types used by AbstractImageParser for tesseract delegation.
-     */
-    private static String normalizeOcrType(String mime) {
-        if (mime != null && mime.startsWith("image/ocr-")) {
-            return "image/" + mime.substring("image/ocr-".length());
-        }
-        return mime;
-    }
 
     @Override
     public String toString() {

@@ -198,9 +198,10 @@ class RTFObjDataParser {
                                 memoryLimitInKb * 1024);
                     }
                     ret = out.toByteArray();
-                    metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            "file_" + unknownFilenameCount.getAndIncrement() + "." +
-                                    type.getExtension());
+                    EmbeddedDocumentUtil.setGeneratedResourceName(metadata,
+                            EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
+                            unknownFilenameCount.getAndIncrement(),
+                            type.getType().toString());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
             }
