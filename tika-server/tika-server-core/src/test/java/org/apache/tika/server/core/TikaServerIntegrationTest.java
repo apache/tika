@@ -24,7 +24,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -98,6 +102,24 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         // Test that pipes-based parsing works for normal documents
         startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
         testBaseline();
+    }
+
+    @Test
+    public void testH2c() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
+        awaitServerStartup();
+        // Using HttpClient in order to check Http2 Version
+        HttpClient httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_2)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(endPoint + STATUS_PATH))
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(200, response.statusCode());
+        assertEquals(HttpClient.Version.HTTP_2, response.version());
     }
 
     @Test
