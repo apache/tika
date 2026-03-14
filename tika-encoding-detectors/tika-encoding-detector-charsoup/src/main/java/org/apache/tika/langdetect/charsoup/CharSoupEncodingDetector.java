@@ -85,13 +85,12 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     private static final GenerativeLanguageModel GLM;
 
     static {
-        GenerativeLanguageModel glm = null;
         try {
-            glm = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
-        } catch (IOException ignore) {
-            // Model not on classpath — generative tiebreaker unavailable
+            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load generative language model: "
+                    + GLM_RESOURCE, e);
         }
-        GLM = glm;
     }
 
     /**
@@ -300,7 +299,7 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
      *         unavailable or no candidate passes the threshold
      */
     private static <K> K generativeTiebreak(Map<K, String> candidates) {
-        if (GLM == null || candidates.isEmpty()) {
+        if (candidates.isEmpty()) {
             return null;
         }
 
