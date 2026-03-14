@@ -1,0 +1,218 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Generative Language Model
+
+The `GenerativeLanguageModel` is a character n-gram model that answers a
+different question from the
+xref:advanced/language-detection.adoc[discriminative language detector]:
+
+[cols="1,1"]
+|===
+| Discriminative model | Generative model
+
+| _Which_ language is this?
+| _How language-like_ is this text for language L?
+|===
+
+The discriminative model chooses the best language among candidates.
+The generative model scores how well text matches a single language's
+character statistics.  Mojibake, encoding errors, and garbage text produce
+very low scores even when the discriminative model confidently picks a
+language.
+
+== Use Cases
+
+=== Charset Detection Arbitration
+
+When the `CharSoupEncodingDetector` must choose between candidate charsets
+and the discriminative model is inconclusive, the generative model breaks
+the tie.  Each candidate charset's decoded text is scored; the charset
+producing the most "language-like" text wins.
+
+=== tika-eval Quality Column
+
+The `TikaEvalMetadataFilter` adds a `tika-eval:languageness` metadata field
+alongside the existing `tika-eval:oov` (out-of-vocabulary) ratio.  The
+languageness value is a length-adjusted z-score: values near zero indicate
+normal text; values below -2 suggest possible encoding problems or garbled
+content.
+
+=== Training Data Filtering
+
+The `CorpusFilterReport` tool uses the generative model to scan training
+corpora and flag sentences that don't match their language label — bot-generated
+stubs, mixed-language content, or templated text.
+
+== How It Works
+
+=== Scoring
+
+For a given `(text, language)` pair, the model computes the average
+log-probability of the text's character n-grams under that language:
+
+----
+score = mean( log P(ngram | language) )   for all n-grams in text
+----
+
+Higher scores (closer to zero) mean the text is more consistent with the
+language's character statistics.
+
+=== Feature Types
+
+[cols="1,2,2"]
+|===
+| Script | N-gram types | Bucket counts
+
+| CJK (Han, Hiragana, Katakana)
+| Character unigrams, character bigrams
+| 8,192 / 32,768
+
+| Non-CJK
+| Character unigrams, bigrams (with word-boundary sentinels), trigrams (with sentinels)
+| 8,192 / 8,192 / 16,384
+|===
+
+Log-probabilities are quantized to unsigned INT8 over the range [-18, 0]
+and stored in dense byte arrays.  Add-k smoothing (k=0.01) prevents
+zero-probability n-grams.
+
+=== Z-Scores
+
+Raw scores vary across languages (CJK languages have higher raw scores due
+to fewer, more information-dense characters).  To enable a universal
+threshold, each language stores calibration statistics (μ, σ) computed from
+the training corpus:
+
+----
+z = (score - μ) / σ
+----
+
+A z-score of 0 means "average for this language."  A z-score of -3 means
+"3 standard deviations worse than average."
+
+=== Length Adjustment
+
+Score variance scales as approximately 1/√(text length): shorter text has
+noisier scores.  The `zScoreLengthAdjusted` method inflates σ for short
+text to prevent spurious low z-scores on snippets:
+
+----
+σ_adjusted = σ × max(1, √(120 / text_length))
+----
+
+where 120 is the approximate character length of a typical training sentence.
+For text at or above 120 characters, the adjustment is a no-op.
+
+== Empirical Z-Score Distribution (FLORES-200)
+
+The table below shows what percentage of legitimate sentences score below
+each z-score threshold, evaluated on the FLORES-200 dev set at different
+text lengths using `zScoreLengthAdjusted`:
+
+[cols="1,1,1,1,1,1"]
+|===
+| Language | Length | z < -2.0 | z < -3.0 | z < -4.0 | z < -5.0
+
+| English | 20 chars | 0.6% | 0.0% | 0.0% | 0.0%
+| English | 50 chars | 0.2% | 0.0% | 0.0% | 0.0%
+| English | full | 0.2% | 0.0% | 0.0% | 0.0%
+| German | full | 0.0% | 0.0% | 0.0% | 0.0%
+| French | full | 0.4% | 0.1% | 0.0% | 0.0%
+| Spanish | full | 1.0% | 0.2% | 0.0% | 0.0%
+| Chinese | full | 0.0% | 0.0% | 0.0% | 0.0%
+| Japanese | full | 0.0% | 0.0% | 0.0% | 0.0%
+| Arabic | full | 2.0% | 0.6% | 0.4% | 0.2%
+| Russian | full | 3.3% | 2.2% | 1.2% | 0.7%
+| ALL (10 langs) | full | **0.7%** | **0.3%** | **0.1%** | **0.1%**
+|===
+
+**Practical guidance:**
+
+* **z < -2** flags <1% of real text overall.  Safe for English, German,
+  French, CJK.  May flag ~2-3% of Arabic/Russian (wider training data variance).
+* **z < -3** is more conservative — <0.5% false positive rate even for
+  Arabic/Russian.
+* **z < -4** is used by the charset detection tiebreaker, where false
+  rejections are costly.
+
+== Model Format (GLM1 v2)
+
+[source]
+----
+4 bytes   magic: 0x474C4D31 ("GLM1")
+4 bytes   version: 2
+4 bytes   numLangs
+4 bytes   cjkUnigramBuckets
+4 bytes   cjkBigramBuckets
+4 bytes   noncjkUnigramBuckets
+4 bytes   noncjkBigramBuckets
+4 bytes   noncjkTrigramBuckets
+
+For each language:
+  2 bytes   langCode length (uint16)
+  N bytes   langCode (UTF-8)
+  1 byte    isCjk (0 or 1)
+  4 bytes   scoreMean (float32, μ)
+  4 bytes   scoreStdDev (float32, σ)
+  B bytes   unigramTable (cjkUnigramBuckets or noncjkUnigramBuckets)
+  B bytes   bigramTable (cjkBigramBuckets or noncjkBigramBuckets)
+  B bytes   trigramTable (noncjkTrigramBuckets; absent for CJK)
+----
+
+The model is stored at
+`org/apache/tika/langdetect/charsoup/langdetect-generative-v1-{date}.bin`
+on the classpath, alongside the discriminative models.
+
+== Training
+
+The model is trained by `TrainGenerativeLanguageModel` (in test scope):
+
+[source,bash]
+----
+mvn -pl tika-langdetect/tika-langdetect-charsoup exec:java \
+  -Dexec.classpathScope=test \
+  -Dexec.mainClass=org.apache.tika.langdetect.charsoup.tools.TrainGenerativeLanguageModel \
+  -Dexec.args="--corpus /path/to/corpus --output langdetect-generative-v1.bin"
+----
+
+Training performs two passes:
+
+1. **Count pass** — accumulates n-gram counts per language, then converts to
+   log-probabilities with add-k smoothing.
+2. **Calibration pass** — re-scores training sentences to compute per-language
+   μ and σ (Welford's online algorithm), which are stored in the model for
+   z-score computation at runtime.
+
+The corpus can be in Leipzig format (`langDir/{code}/sentences.txt` with
+`lineNum\ttext`) or flat format (`corpusDir/{code}` with one sentence per
+line).
+
+== Evaluation Tools
+
+Several tools are provided for evaluating model quality (all in test scope
+under `org.apache.tika.langdetect.charsoup.tools`):
+
+* `EvalGenerativeModel` — self-consistency evaluation against FLORES-200 or
+  any labeled test set (argmax accuracy).
+* `ZScoreDistributionReport` — z-score distribution at various text lengths
+  and thresholds.
+* `FilterBenchmark` — precision/recall curves for using the model as a
+  training data filter.
+* `CorpusFilterReport` — scan a corpus and report how many sentences would be
+  dropped at various z-score thresholds.
+* `LengthCalibrationReport` — analyze how score μ and σ vary with text length.

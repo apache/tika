@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
@@ -63,7 +64,7 @@ import org.apache.tika.ml.chardetect.CharsetConfusables;
  */
 public class TrainCharsetModel {
 
-    private static final int DEFAULT_NUM_BUCKETS = 2048;
+    private static final int DEFAULT_NUM_BUCKETS = 16384;
     private static final int DEFAULT_EPOCHS = 3;
     private static final float DEFAULT_LR = 0.05f;
     private static final int DEFAULT_MAX_SAMPLES = 500_000;
@@ -83,6 +84,7 @@ public class TrainCharsetModel {
         // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
         // one target label at training time (e.g. merge script variants into one class).
         Map<String, String> labelRemap = new HashMap<>();
+        Set<String> excludeLabels = new java.util.HashSet<>();
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -138,6 +140,11 @@ public class TrainCharsetModel {
                 case "--no-stride2":
                     useStride2Bigrams = false;
                     break;
+                case "--exclude":
+                    for (String label : args[++i].split(",")) {
+                        excludeLabels.add(label.trim());
+                    }
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.exit(1);
@@ -157,14 +164,23 @@ public class TrainCharsetModel {
             System.err.println("  --tri / --no-tri         enable/disable trigram features (default: on)");
             System.err.println("  --anchored / --no-anchored  anchored bigrams (default: off)");
             System.err.println("  --stride2 / --no-stride2    stride-2 bigrams at even positions (default: on)");
+            System.err.println("  --exclude cs1,cs2          skip these charset labels (e.g. UTF-32-BE,UTF-32-LE)");
             System.exit(1);
         }
 
         // Discover charset files
         List<Path> charsetFiles = Files.list(dataDir)
                 .filter(p -> p.getFileName().toString().endsWith(".bin.gz"))
+                .filter(p -> {
+                    String cs = p.getFileName().toString().replaceAll("\\.bin\\.gz$", "");
+                    return !excludeLabels.contains(cs);
+                })
                 .sorted()
                 .collect(Collectors.toList());
+
+        if (!excludeLabels.isEmpty()) {
+            System.out.println("Excluded labels: " + excludeLabels);
+        }
 
         if (charsetFiles.isEmpty()) {
             System.err.println("No .bin.gz files found in: " + dataDir);
@@ -265,6 +281,8 @@ public class TrainCharsetModel {
                 // Sparse extraction: O(probeLength), not O(numBuckets)
                 int nActive = extractor.extractSparseInto(sample, denseScratch, touched);
 
+                // L1 normalization: compute sum of feature counts so each sample
+                // contributes equal total mass regardless of encoding density.
                 // Forward pass: only iterate active buckets
                 float[] logits = new float[numClasses];
                 for (int c = 0; c < numClasses; c++) {
@@ -287,15 +305,14 @@ public class TrainCharsetModel {
                 float[] grad = probs.clone();
                 grad[trueClass] -= 1f;
 
-                // Sparse SGD update with lazy L2: only active buckets are touched.
-                // Inactive weights start at 0 and are never pushed away without a
-                // gradient, so skipping their L2 decay is correct.
+                // Sparse SGD update with L2 regularization on both weights and biases.
                 for (int c = 0; c < numClasses; c++) {
                     float g = grad[c];
-                    biases[c] -= lr * g;
+                    biases[c] -= lr * (g + lambda * biases[c]);
                     for (int t = 0; t < nActive; t++) {
                         int b = touched[t];
-                        weights[c][b] -= lr * (g * denseScratch[b] + lambda * weights[c][b]);
+                        weights[c][b] -= lr * (g * denseScratch[b]
+                                + lambda * weights[c][b]);
                     }
                 }
                 count++;
@@ -310,6 +327,31 @@ public class TrainCharsetModel {
                     "Epoch %d/%d  loss=%.4f  strict-acc=%.2f%%%n",
                     epoch + 1, epochs, lossSum / count,
                     100.0 * strictCorrect / count);
+        }
+
+        // Bias summary — helps catch runaway bias drift between training runs
+        float biasMin = Float.MAX_VALUE, biasMax = -Float.MAX_VALUE, biasSum = 0f;
+        for (float b : biases) {
+            biasMin = Math.min(biasMin, b);
+            biasMax = Math.max(biasMax, b);
+            biasSum += b;
+        }
+        float biasMean = biasSum / numClasses;
+        float biasVar = 0f;
+        for (float b : biases) {
+            biasVar += (b - biasMean) * (b - biasMean);
+        }
+        float biasStd = (float) Math.sqrt(biasVar / numClasses);
+        System.out.printf(java.util.Locale.ROOT,
+                "%nBias summary: min=%.3f  max=%.3f  mean=%.3f  std=%.3f  spread=%.3f%n",
+                biasMin, biasMax, biasMean, biasStd, biasMax - biasMin);
+        // Per-class bias listing (sorted by value)
+        Integer[] biasOrder = new Integer[numClasses];
+        for (int i = 0; i < numClasses; i++) biasOrder[i] = i;
+        Arrays.sort(biasOrder, (a, b) -> Float.compare(biases[b], biases[a]));
+        for (int idx : biasOrder) {
+            System.out.printf(java.util.Locale.ROOT, "  %-20s  bias=%9.3f%n",
+                    labels[idx], biases[idx]);
         }
 
         // Quantize and save

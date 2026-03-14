@@ -85,12 +85,13 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     private static final GenerativeLanguageModel GLM;
 
     static {
+        GenerativeLanguageModel glm = null;
         try {
-            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load generative language model: "
-                    + GLM_RESOURCE, e);
+            glm = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
+        } catch (IOException ignore) {
+            // Model not on classpath — generative tiebreaker unavailable
         }
+        GLM = glm;
     }
 
     /**
@@ -290,30 +291,46 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     }
 
     /**
-     * Generative-model tiebreaker: for each candidate charset's decoded text,
-     * detect the most likely language then compute its z-score. The charset
-     * producing the highest z-score (closest to "real language") wins, provided
-     * it exceeds {@link #MIN_GENERATIVE_ZSCORE}.
+     * Number of top languages to retrieve from the short-text discriminative
+     * model for generative confirmation.
+     */
+    private static final int DISC_TOP_N = 5;
+
+    /**
+     * Generative-model tiebreaker guided by the short-text discriminative model.
      *
-     * @return the winning charset, or {@code null} if no candidate passes the
-     *         threshold or all candidates decode to identical text
+     * <p>For each candidate charset's decoded text:</p>
+     * <ol>
+     *   <li>Ask the short-text discriminative model for its top-{@value #DISC_TOP_N}
+     *       language candidates (raw logit ranking, no entropy threshold).</li>
+     *   <li>Score the text against each CJK language in that list using the
+     *       generative model's CJK n-gram tables.  Non-CJK languages (like
+     *       {@code kor}, which uses hangul) are skipped because their n-gram
+     *       tables cannot distinguish different CJK ideograph sequences.</li>
+     * </ol>
+     *
+     * <p>The candidate charset whose best CJK generative score is highest wins.
+     * If no candidate has a CJK language in its discriminative top-N, the
+     * method falls back to {@link GenerativeLanguageModel#avgCjkScore} which
+     * averages raw scores across all CJK language models.</p>
+     *
+     * <p>This two-stage approach works because the discriminative model ranks
+     * {@code jpn} high for real Japanese text (e.g. 文章) but not for
+     * Big5-HKSCS gibberish (e.g. 訜覧), even when the overall entropy is
+     * too high for a confident language ID.  The generative model then
+     * confirms quality within that specific CJK language.</p>
+     *
+     * @return the winning charset, or {@code null} if the generative model is
+     *         unavailable or no candidate produces a scorable result
      */
     private static <K> K generativeTiebreak(Map<K, String> candidates) {
-        if (candidates.isEmpty()) {
+        if (GLM == null || candidates.isEmpty()) {
             return null;
         }
 
-        // If all candidates decode to identical text, the generative model
-        // cannot distinguish them — return null so the DECLARATIVE-preference
-        // logic downstream can handle it (e.g. pure-ASCII where windows-1252
-        // and UTF-8 produce the same bytes).
-        if (allDecodingsIdentical(candidates)) {
-            LOG.debug("generativeTiebreak: all decodings identical, deferring");
-            return null;
-        }
-
-        float bestZ = Float.NEGATIVE_INFINITY;
+        float bestScore = Float.NEGATIVE_INFINITY;
         K bestKey = null;
+        boolean anyCjkLangFound = false;
 
         for (Map.Entry<K, String> entry : candidates.entrySet()) {
             String text = entry.getValue();
@@ -323,37 +340,59 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
             if (CharSoupLanguageDetector.junkRatio(text) > 0.10f) {
                 continue;
             }
-            Map.Entry<String, Float> match = GLM.bestMatch(text);
-            if (match == null) {
-                continue;
+
+            List<String> topLangs =
+                    CharSoupLanguageDetector.topShortTextLanguages(text, DISC_TOP_N);
+
+            float candidateBest = Float.NEGATIVE_INFINITY;
+            String candidateLang = null;
+            for (String lang : topLangs) {
+                if (!GLM.isCjk(lang)) {
+                    continue;
+                }
+                anyCjkLangFound = true;
+                float s = GLM.score(text, lang);
+                if (!Float.isNaN(s) && s > candidateBest) {
+                    candidateBest = s;
+                    candidateLang = lang;
+                }
             }
-            float z = GLM.zScoreLengthAdjusted(text, match.getKey());
-            LOG.debug("generativeTiebreak: {} -> lang={} z={}",
-                    entry.getKey(), match.getKey(), z);
-            if (!Float.isNaN(z) && z > bestZ) {
-                bestZ = z;
+
+            LOG.debug("generativeTiebreak: {} -> lang={} score={}",
+                    entry.getKey(), candidateLang, candidateBest);
+
+            if (candidateBest > bestScore) {
+                bestScore = candidateBest;
                 bestKey = entry.getKey();
             }
         }
 
-        if (bestZ < MIN_GENERATIVE_ZSCORE) {
-            LOG.debug("generativeTiebreak: inconclusive (bestZ={} < {})",
-                    bestZ, MIN_GENERATIVE_ZSCORE);
+        // If no candidate had a CJK language in its discriminative top-N,
+        // fall back to avgCjkScore (averages across all CJK models).
+        if (!anyCjkLangFound) {
+            LOG.debug("generativeTiebreak: no CJK language in any top-{}, "
+                    + "falling back to avgCjkScore", DISC_TOP_N);
+            for (Map.Entry<K, String> entry : candidates.entrySet()) {
+                String text = entry.getValue();
+                if (text == null || text.isEmpty()) {
+                    continue;
+                }
+                if (CharSoupLanguageDetector.junkRatio(text) > 0.10f) {
+                    continue;
+                }
+                float avg = GLM.avgCjkScore(text);
+                if (!Float.isNaN(avg) && avg > bestScore) {
+                    bestScore = avg;
+                    bestKey = entry.getKey();
+                }
+            }
+        }
+
+        if (Float.isInfinite(bestScore)) {
+            LOG.debug("generativeTiebreak: inconclusive (no scorable candidate)");
             return null;
         }
         return bestKey;
-    }
-
-    private static <K> boolean allDecodingsIdentical(Map<K, String> candidates) {
-        String first = null;
-        for (String text : candidates.values()) {
-            if (first == null) {
-                first = text;
-            } else if (!first.equals(text)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     /**

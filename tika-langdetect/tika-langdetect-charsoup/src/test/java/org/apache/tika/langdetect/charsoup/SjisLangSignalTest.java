@@ -194,52 +194,6 @@ public class SjisLangSignalTest {
         return total == 0 ? 0f : (float) junk / total;
     }
 
-    @Test
-    public void debugModelRoutingForShortEnglish() {
-        String text = "the quick brown fox jumped the lazy dog elephant elephant elephant bear bear";
-        System.out.println(String.format(Locale.ROOT,
-                "%ntext length=%d  SHORT_TEXT_LENGTH_THRESHOLD=%d  SHORT_TEXT_MODEL_loaded=%b",
-                text.length(),
-                CharSoupLanguageDetector.SHORT_TEXT_LENGTH_THRESHOLD,
-                CharSoupLanguageDetector.SHORT_TEXT_MODEL != null));
-
-        System.out.println("--- AUTOMATIC (default) ---");
-        printTop5(text, new CharSoupLanguageDetector());
-
-        if (CharSoupLanguageDetector.SHORT_TEXT_MODEL != null) {
-            System.out.println("--- forced SHORT_TEXT ---");
-            CharSoupDetectorConfig shortCfg = CharSoupDetectorConfig.fromMap(
-                    Map.of("strategy", "SHORT_TEXT"));
-            printTop5(text, new CharSoupLanguageDetector(shortCfg));
-        }
-
-        System.out.println("--- forced STANDARD (v7) ---");
-        CharSoupDetectorConfig stdCfg = CharSoupDetectorConfig.fromMap(
-                Map.of("strategy", "STANDARD"));
-        printTop5(text, new CharSoupLanguageDetector(stdCfg));
-    }
-
-    private static void printTop5(String text, CharSoupLanguageDetector d) {
-        d.addText(text);
-        List<LanguageResult> results = d.detectAll();
-        for (int i = 0; i < Math.min(5, results.size()); i++) {
-            LanguageResult r = results.get(i);
-            System.out.println(String.format(Locale.ROOT, "  %d: %-8s raw=%.4f conf=%s",
-                    i + 1, r.getLanguage(), r.getRawScore(), r.getConfidence()));
-        }
-        // find where key languages rank
-        for (String lang : new String[]{"eng", "nld", "afr", "deu", "xho", "sna"}) {
-            for (int i = 0; i < results.size(); i++) {
-                if (lang.equals(results.get(i).getLanguage())) {
-                    LanguageResult r = results.get(i);
-                    System.out.println(String.format(Locale.ROOT,
-                            "  [%s rank=%d raw=%.4f]", lang, i + 1, r.getRawScore()));
-                    break;
-                }
-            }
-        }
-    }
-
     private static String hexDump(byte[] bytes) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < bytes.length; i++) {

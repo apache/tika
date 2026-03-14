@@ -67,6 +67,7 @@ public final class CjkEncodingRules {
             "Shift_JIS", "windows-31j",
             "EUC-JP",
             "EUC-KR",
+            "x-EUC-TW",
             "Big5", "Big5-HKSCS",
             "GB18030", "GBK", "GB2312"
     );
@@ -97,6 +98,8 @@ public final class CjkEncodingRules {
                 return matchEucJp(probe);
             case "EUC-KR":
                 return matchEucKr(probe);
+            case "x-EUC-TW":
+                return matchEucTw(probe);
             case "Big5":
             case "Big5-HKSCS":
                 return matchBig5(probe);
@@ -234,6 +237,64 @@ public final class CjkEncodingRules {
                 }
             } else {
                 bad++; // 0x8E–0x9F or 0xFF
+            }
+
+            if (bail(bad, doubleByte)) break;
+        }
+        return confidence(doubleByte, bad);
+    }
+
+    // -----------------------------------------------------------------------
+    // EUC-TW (CNS 11643)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Grammar walker for EUC-TW (CNS 11643).
+     *
+     * <p>Byte categories:</p>
+     * <ul>
+     *   <li>{@code 0x00–0x7F}: single byte (ASCII)</li>
+     *   <li>{@code 0xA1–0xFE}: lead of a two-byte char; trail {@code 0xA1–0xFE}</li>
+     *   <li>{@code 0x8E}: SS2 prefix for CNS planes 2–16; followed by a plane
+     *       designator ({@code 0xA1–0xB0}), then two bytes in
+     *       {@code 0xA1–0xFE} (4 bytes total)</li>
+     *   <li>{@code 0x80–0x8D}, {@code 0x8F–0xA0}, {@code 0xFF}: invalid</li>
+     * </ul>
+     */
+    private static int matchEucTw(byte[] probe) {
+        int doubleByte = 0;
+        int bad = 0;
+        int i = 0;
+        while (i < probe.length) {
+            int b = probe[i++] & 0xFF;
+
+            if (b <= 0x7F) {
+                continue;
+            }
+
+            if (b >= 0xA1 && b <= 0xFE) {
+                if (i >= probe.length) break;
+                int trail = probe[i++] & 0xFF;
+                if (trail >= 0xA1 && trail <= 0xFE) {
+                    doubleByte++;
+                } else {
+                    bad++;
+                }
+            } else if (b == 0x8E) {
+                // SS2: plane designator + two data bytes (4 bytes total)
+                if (i + 2 >= probe.length) break;
+                int plane = probe[i++] & 0xFF;
+                int b3 = probe[i++] & 0xFF;
+                int b4 = probe[i++] & 0xFF;
+                if (plane >= 0xA1 && plane <= 0xB0
+                        && b3 >= 0xA1 && b3 <= 0xFE
+                        && b4 >= 0xA1 && b4 <= 0xFE) {
+                    doubleByte++;
+                } else {
+                    bad++;
+                }
+            } else {
+                bad++; // 0x80–0x8D, 0x8F–0xA0, 0xFF
             }
 
             if (bail(bad, doubleByte)) break;

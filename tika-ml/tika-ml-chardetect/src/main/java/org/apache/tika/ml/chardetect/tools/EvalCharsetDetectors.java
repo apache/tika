@@ -20,6 +20,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,6 +86,8 @@ public class EvalCharsetDetectors {
     // Index of the "All" detector — used for confusion matrix and score-only output
     private static final int IDX_ALL = 3;
 
+    private static final int TOP_K = 3;
+
     /**
      * Charsets present in the test directory but not as direct model labels —
      * either confusable aliases for a trained label or structural-only charsets
@@ -99,7 +102,7 @@ public class EvalCharsetDetectors {
     public static void main(String[] args) throws Exception {
         Path modelPath = null;
         Path dataDir   = null;
-        int[] probeLengths = {FULL_LENGTH};
+        int[] probeLengths = {8, 16, 32, 64, 128, 256, FULL_LENGTH};
         boolean showConfusion = false;
         boolean scoreOnly = false;
         Set<String> exclude = new HashSet<>(DEFAULT_EXCLUDE);
@@ -174,6 +177,10 @@ public class EvalCharsetDetectors {
             }
         }
 
+        // Length-sweep summary: one line per length showing All-detector accuracy
+        List<String> sweepLabels = new ArrayList<>();
+        List<double[]> sweepResults = new ArrayList<>();
+
         // One pass per probe length
         for (int probeLen : probeLengths) {
             String lenLabel = probeLen == FULL_LENGTH ? "full" : probeLen + "B";
@@ -183,7 +190,8 @@ public class EvalCharsetDetectors {
             }
 
             long totalN = 0;
-            long[][] totals = new long[NUM_DETECTORS][2];
+            // [detector][0=strict, 1=soft, 2=topK, 3=decodeMatch, 4=alphaMatch]
+            long[][] totals = new long[NUM_DETECTORS][5];
             long[] totalNanos = new long[NUM_DETECTORS];
             // confusion[trueIdx][predLabel] = count  (only for IDX_ALL)
             List<Map<String, Integer>> confusion = new ArrayList<>();
@@ -199,20 +207,36 @@ public class EvalCharsetDetectors {
                     continue;
                 }
 
-                int[][] counts = new int[NUM_DETECTORS][2];
+                int[][] counts = new int[NUM_DETECTORS][5];
                 for (byte[] sample : samples) {
                     for (int d = 0; d < NUM_DETECTORS; d++) {
                         long t0 = System.nanoTime();
-                        String pred = predict(detectors[d], sample);
+                        List<String> preds = predictAll(detectors[d], sample);
                         totalNanos[d] += System.nanoTime() - t0;
-                        if (isStrict(charset, pred)) {
+                        String top1 = preds.isEmpty() ? NULL_LABEL : preds.get(0);
+                        boolean strict = isStrict(charset, top1);
+                        if (strict) {
                             counts[d][0]++;
                         }
-                        if (isSoft(charset, pred)) {
+                        if (isSoft(charset, top1)) {
                             counts[d][1]++;
                         }
-                        if (d == IDX_ALL && !isStrict(charset, pred)) {
-                            confusion.get(ci).merge(pred, 1, Integer::sum);
+                        if (isInTopK(charset, preds, TOP_K)) {
+                            counts[d][2]++;
+                        }
+                        if (strict) {
+                            counts[d][3]++;
+                            counts[d][4]++;
+                        } else if (!NULL_LABEL.equals(top1)) {
+                            if (isDecodeMatch(charset, top1, sample)) {
+                                counts[d][3]++;
+                                counts[d][4]++;
+                            } else if (isAlphaMatch(charset, top1, sample)) {
+                                counts[d][4]++;
+                            }
+                        }
+                        if (d == IDX_ALL && !strict) {
+                            confusion.get(ci).merge(top1, 1, Integer::sum);
                         }
                     }
                 }
@@ -222,20 +246,42 @@ public class EvalCharsetDetectors {
                 }
                 totalN += n;
                 for (int d = 0; d < NUM_DETECTORS; d++) {
-                    totals[d][0] += counts[d][0];
-                    totals[d][1] += counts[d][1];
+                    for (int m = 0; m < 5; m++) {
+                        totals[d][m] += counts[d][m];
+                    }
                 }
             }
 
+            double strictPct  = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][0] / totalN;
+            double softPct    = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][1] / totalN;
+            double topKPct    = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][2] / totalN;
+            double decodePct  = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][3] / totalN;
+            double alphaPct   = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][4] / totalN;
+            sweepLabels.add(lenLabel);
+            sweepResults.add(new double[]{strictPct, softPct, topKPct, decodePct, alphaPct});
+
             if (scoreOnly) {
-                // Emit a single machine-readable line: strict accuracy of the All detector
-                double strictPct = totalN == 0 ? 0.0 : 100.0 * totals[IDX_ALL][0] / totalN;
                 System.out.printf(Locale.ROOT, "SCORE %.4f%n", strictPct);
             } else {
                 printFooter(totalN, totals, totalNanos);
                 if (showConfusion) {
                     printConfusion(charsets, allSamplesPerCharset, confusion, probeLen, lenLabel);
                 }
+            }
+        }
+
+        // Print length-sweep summary when multiple lengths were tested
+        if (sweepLabels.size() > 1 && !scoreOnly) {
+            System.out.println("\n=== Accuracy by probe length (All detector) ===");
+            System.out.printf(Locale.ROOT, "  %-8s  %8s  %8s  %8s  %8s  %8s%n",
+                    "Length", "Strict%", "Soft%", "Top" + TOP_K + "%", "Decode%", "Alpha%");
+            System.out.println("  " + "-".repeat(58));
+            for (int i = 0; i < sweepLabels.size(); i++) {
+                System.out.printf(Locale.ROOT, "  %-8s  %8.1f  %8.1f  %8.1f  %8.1f  %8.1f%n",
+                        sweepLabels.get(i),
+                        sweepResults.get(i)[0], sweepResults.get(i)[1],
+                        sweepResults.get(i)[2], sweepResults.get(i)[3],
+                        sweepResults.get(i)[4]);
             }
         }
     }
@@ -293,14 +339,14 @@ public class EvalCharsetDetectors {
     private static void printHeader() {
         StringBuilder sb1 = new StringBuilder();
         sb1.append(String.format(Locale.ROOT, "%-22s  %5s  ", "", "N"));
-        sb1.append("| --- ML ablation --------------------------------- ");
-        sb1.append("| --- Baselines ----------------------- |");
+        sb1.append("| --- ML ablation --------------------------------------------------- ");
+        sb1.append("| --- Baselines --------------------------------- |");
         System.out.println(sb1);
 
         StringBuilder sb2 = new StringBuilder();
         sb2.append(String.format(Locale.ROOT, "%-22s  %5s  ", "Charset", ""));
         for (String name : COL_NAMES) {
-            sb2.append(String.format(Locale.ROOT, "| %-4s R%%   S%%  ", name));
+            sb2.append(String.format(Locale.ROOT, "| %-4s R%%   S%%  T%d%%  D%%   A%%  ", name, TOP_K));
         }
         sb2.append("|");
         System.out.println(sb2);
@@ -311,32 +357,36 @@ public class EvalCharsetDetectors {
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(Locale.ROOT, "%-22s  %5d  ", charset, n));
         for (int d = 0; d < NUM_DETECTORS; d++) {
-            sb.append(String.format(Locale.ROOT, "| %5.1f %5.1f  ",
-                    pct(counts[d][0], n), pct(counts[d][1], n)));
+            sb.append(String.format(Locale.ROOT, "| %5.1f %5.1f %5.1f %5.1f %5.1f  ",
+                    pct(counts[d][0], n), pct(counts[d][1], n), pct(counts[d][2], n),
+                    pct(counts[d][3], n), pct(counts[d][4], n)));
         }
         sb.append("|");
         System.out.println(sb);
     }
 
     private static void printFooter(long totalN, long[][] totals, long[] totalNanos) {
-        System.out.println("-".repeat(120));
+        System.out.println("-".repeat(210));
         StringBuilder sb = new StringBuilder();
         sb.append(String.format(Locale.ROOT, "%-22s  %5d  ", "OVERALL", totalN));
         for (int d = 0; d < NUM_DETECTORS; d++) {
-            sb.append(String.format(Locale.ROOT, "| %5.1f %5.1f  ",
-                    pct(totals[d][0], totalN), pct(totals[d][1], totalN)));
+            sb.append(String.format(Locale.ROOT, "| %5.1f %5.1f %5.1f %5.1f %5.1f  ",
+                    pct(totals[d][0], totalN), pct(totals[d][1], totalN),
+                    pct(totals[d][2], totalN), pct(totals[d][3], totalN),
+                    pct(totals[d][4], totalN)));
         }
         sb.append("|");
         System.out.println(sb);
         System.out.println("  Stat=model only | +ISO=+C1-correction | +CJK=+grammar | "
-                + "All=ML+rules | R%=strict | S%=soft");
+                + "All=ML+rules | R%=strict | S%=soft | T" + TOP_K + "%=top-" + TOP_K
+                + " hit | D%=decode-match | A%=alpha-match");
 
         // Timing row
         StringBuilder timing = new StringBuilder();
         timing.append(String.format(Locale.ROOT, "%-22s  %5s  ", "  µs/sample", ""));
         for (int d = 0; d < NUM_DETECTORS; d++) {
             double usPerSample = totalN == 0 ? 0.0 : (totalNanos[d] / 1000.0) / totalN;
-            timing.append(String.format(Locale.ROOT, "| %11.1f  ", usPerSample));
+            timing.append(String.format(Locale.ROOT, "| %26.1f  ", usPerSample));
         }
         timing.append("|");
         System.out.println(timing);
@@ -368,14 +418,29 @@ public class EvalCharsetDetectors {
         return out;
     }
 
-    private static String predict(EncodingDetector detector, byte[] sample) {
+    private static List<String> predictAll(EncodingDetector detector, byte[] sample) {
         try (TikaInputStream tis = TikaInputStream.get(sample)) {
             List<EncodingResult> results =
                     detector.detect(tis, new Metadata(), new ParseContext());
-            return results.isEmpty() ? NULL_LABEL : results.get(0).getLabel();
+            List<String> labels = new ArrayList<>(results.size());
+            for (EncodingResult er : results) {
+                labels.add(er.getLabel());
+            }
+            return labels;
         } catch (Exception e) {
-            return NULL_LABEL;
+            return List.of();
         }
+    }
+
+    private static boolean isInTopK(String actual, List<String> predicted, int k) {
+        int limit = Math.min(k, predicted.size());
+        for (int i = 0; i < limit; i++) {
+            if (isStrict(actual, predicted.get(i))
+                    || isSoft(actual, predicted.get(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean isStrict(String actual, String predicted) {
@@ -396,6 +461,37 @@ public class EvalCharsetDetectors {
 
     private static String normalize(String name) {
         return name.toLowerCase(Locale.ROOT).replace("-", "").replace("_", "");
+    }
+
+    private static boolean isDecodeMatch(String actualName, String predictedName,
+                                        byte[] sample) {
+        try {
+            Charset actual = Charset.forName(actualName);
+            Charset predicted = Charset.forName(predictedName);
+            return new String(sample, actual).equals(new String(sample, predicted));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static boolean isAlphaMatch(String actualName, String predictedName,
+                                        byte[] sample) {
+        try {
+            Charset actual = Charset.forName(actualName);
+            Charset predicted = Charset.forName(predictedName);
+            return stripNonAlphaNum(new String(sample, actual))
+                    .equals(stripNonAlphaNum(new String(sample, predicted)));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static String stripNonAlphaNum(String s) {
+        StringBuilder sb = new StringBuilder(s.length());
+        s.codePoints()
+                .filter(Character::isLetterOrDigit)
+                .forEach(sb::appendCodePoint);
+        return sb.toString();
     }
 
     private static double pct(long correct, long total) {

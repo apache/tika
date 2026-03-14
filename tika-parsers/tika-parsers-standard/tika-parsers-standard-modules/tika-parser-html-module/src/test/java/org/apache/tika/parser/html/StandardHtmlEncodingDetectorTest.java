@@ -190,11 +190,23 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     @Test
-    public void bom() throws IOException {
-        // A BOM should have precedence over the meta
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE);
+    public void bomStandalone() throws IOException {
+        // When used standalone (skipBOM=false), BOM has precedence over meta per HTML5 spec.
+        // In the default chain, BOMDetector handles BOM separately so this detector
+        // skips it (skipBOM=true) and focuses on <meta charset>.
+        // See TikaEncodingDetectorTest.testStandaloneHtmlBomConfig() for a config-file example.
+        StandardHtmlEncodingDetector standalone = standaloneDetector();
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8, standalone);
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE, standalone);
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE, standalone);
+    }
+
+    @Test
+    public void bomSkippedByDefault() throws IOException {
+        // With default skipBOM=true, BOM is ignored and meta tag wins.
+        // BOMDetector in the chain handles BOM as a separate context entry.
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>",
+                Charset.forName("WINDOWS-1252"));
     }
 
     @Test
@@ -294,10 +306,11 @@ public class StandardHtmlEncodingDetectorTest {
         assertWindows1252("");
         assertWindows1252("<meta charset='UTF-8'>");
         assertWindows1252("<meta http-equiv='content-type' content='charset=utf-8'>");
-        // if a BOM is present, it has precedence over transport layer information
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE);
+        // With skipBOM=false (standalone), BOM has precedence over transport layer info
+        StandardHtmlEncodingDetector standalone = standaloneDetector();
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8, standalone);
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE, standalone);
+        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE, standalone);
     }
 
     @Test
@@ -336,6 +349,12 @@ public class StandardHtmlEncodingDetectorTest {
         assertArrayEquals(inBytes, outBytes);
     }
 
+    private static StandardHtmlEncodingDetector standaloneDetector() {
+        StandardHtmlEncodingDetector d = new StandardHtmlEncodingDetector();
+        d.setSkipBOM(false);
+        return d;
+    }
+
     private void assertWindows1252(String html) throws IOException {
         assertCharset(html, Charset.forName("WINDOWS-1252"));
     }
@@ -345,9 +364,14 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     private void assertCharset(String html, Charset charset) throws IOException {
+        assertCharset(html, charset, new StandardHtmlEncodingDetector());
+    }
+
+    private void assertCharset(String html, Charset charset,
+                                StandardHtmlEncodingDetector detector) throws IOException {
         final Charset contentsCharset = (charset == null) ? StandardCharsets.UTF_8 : charset;
         InputStream inStream = TikaInputStream.get(html.getBytes(contentsCharset));
-        final Charset detected = detectCharset(inStream);
+        final Charset detected = detectCharset(inStream, detector);
         assertEquals(charset, detected,
                 html + " should be detected as " + charset);
     }
@@ -358,10 +382,15 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     private Charset detectCharset(InputStream inStream) throws IOException {
+        return detectCharset(inStream, new StandardHtmlEncodingDetector());
+    }
+
+    private Charset detectCharset(InputStream inStream,
+                                  StandardHtmlEncodingDetector detector) throws IOException {
         TikaInputStream tis = (inStream instanceof TikaInputStream) ?
                 (TikaInputStream) inStream : TikaInputStream.get(inStream);
         List<EncodingResult> results =
-                new StandardHtmlEncodingDetector().detect(tis, metadata, new ParseContext());
+                detector.detect(tis, metadata, new ParseContext());
         return results.isEmpty() ? null : results.get(0).getCharset();
     }
 

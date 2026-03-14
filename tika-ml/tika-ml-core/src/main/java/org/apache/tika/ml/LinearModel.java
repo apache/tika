@@ -219,6 +219,7 @@ public class LinearModel {
                 nnz++;
             }
         }
+
         int[] nzIdx = new int[nnz];
         int pos = 0;
         for (int b = 0; b < numBuckets; b++) {
@@ -227,19 +228,18 @@ public class LinearModel {
             }
         }
 
-        long[] dots = new long[numClasses];
-        for (int i = 0; i < nnz; i++) {
-            int b = nzIdx[i];
-            int fv = features[b];
-            int off = b * numClasses;
-            for (int c = 0; c < numClasses; c++) {
-                dots[c] += (long) flatWeights[off + c] * fv;
-            }
-        }
+        float clip = 1.5f * (float) Math.sqrt(nnz);
 
         float[] logits = new float[numClasses];
         for (int c = 0; c < numClasses; c++) {
-            logits[c] = biases[c] + scales[c] * dots[c];
+            float dot = 0f;
+            float sc = scales[c];
+            for (int i = 0; i < nnz; i++) {
+                int b = nzIdx[i];
+                float w = sc * flatWeights[b * numClasses + c] * features[b];
+                dot += Math.max(-clip, Math.min(clip, w));
+            }
+            logits[c] = biases[c] + dot;
         }
         return logits;
     }
