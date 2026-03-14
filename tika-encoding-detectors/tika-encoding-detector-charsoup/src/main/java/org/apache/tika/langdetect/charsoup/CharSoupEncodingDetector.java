@@ -295,11 +295,20 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
      * producing the highest z-score (closest to "real language") wins, provided
      * it exceeds {@link #MIN_GENERATIVE_ZSCORE}.
      *
-     * @return the winning charset, or {@code null} if the generative model is
-     *         unavailable or no candidate passes the threshold
+     * @return the winning charset, or {@code null} if no candidate passes the
+     *         threshold or all candidates decode to identical text
      */
     private static <K> K generativeTiebreak(Map<K, String> candidates) {
         if (candidates.isEmpty()) {
+            return null;
+        }
+
+        // If all candidates decode to identical text, the generative model
+        // cannot distinguish them — return null so the DECLARATIVE-preference
+        // logic downstream can handle it (e.g. pure-ASCII where windows-1252
+        // and UTF-8 produce the same bytes).
+        if (allDecodingsIdentical(candidates)) {
+            LOG.debug("generativeTiebreak: all decodings identical, deferring");
             return null;
         }
 
@@ -333,6 +342,18 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
             return null;
         }
         return bestKey;
+    }
+
+    private static <K> boolean allDecodingsIdentical(Map<K, String> candidates) {
+        String first = null;
+        for (String text : candidates.values()) {
+            if (first == null) {
+                first = text;
+            } else if (!first.equals(text)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
