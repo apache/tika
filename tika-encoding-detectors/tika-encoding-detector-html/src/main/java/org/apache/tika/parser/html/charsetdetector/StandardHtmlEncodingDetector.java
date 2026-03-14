@@ -37,14 +37,14 @@ import org.apache.tika.parser.ParseContext;
  * (https://html.spec.whatwg.org/multipage/parsing.html#the-input-byte-stream):
  * BOM → HTTP Content-Type header → {@code <meta charset>} / {@code <meta http-equiv>} tag.
  *
- * <p>When used standalone (outside a {@link org.apache.tika.detect.CompositeEncodingDetector}
- * chain) this detector handles the full spec algorithm including BOM detection.
+ * <p>By default, BOM detection is skipped ({@code skipBOM=true}) because
+ * {@code BOMDetector} handles that as a separate step in the chain, producing its own
+ * DECLARATIVE result that {@code CharSoupEncodingDetector} can arbitrate against a
+ * contradicting {@code <meta charset>} declaration.
  *
- * <p>When used inside the default Tika chain (with {@code BOMDetector} and
- * {@code MetadataCharsetDetector} already present), set {@code skipBOM=true} so that
- * this detector focuses exclusively on the HTML {@code <meta>} scan.  That lets
- * {@code CharSoupEncodingDetector} arbitrate between a BOM declaration and a
- * contradicting {@code <meta>} declaration instead of silently suppressing one.
+ * <p>When used standalone (outside a {@link org.apache.tika.detect.CompositeEncodingDetector}
+ * chain without {@code BOMDetector}), set {@code skipBOM=false} to get the full HTML5
+ * spec algorithm including BOM detection.
  *
  * <p>HTTP/MIME Content-Type and Content-Encoding metadata are always read here for
  * standalone compatibility; in the chain they will already have been returned by
@@ -66,14 +66,18 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
 
     /**
      * When {@code true}, the BOM check is skipped and the detector goes directly to
-     * the Content-Type header and {@code <meta>} scan.  Use this when
-     * {@code BOMDetector} is already present in the chain so that
-     * {@code CharSoupEncodingDetector} can arbitrate between a BOM declaration and a
-     * contradicting {@code <meta charset>} rather than having the BOM silently win.
+     * the Content-Type header and {@code <meta>} scan.  This is the default because
+     * {@code BOMDetector} handles BOM detection as a separate step in the chain,
+     * allowing {@code CharSoupEncodingDetector} to arbitrate between a BOM declaration
+     * and a contradicting {@code <meta charset>} rather than having the BOM silently
+     * short-circuit the meta-tag scan.
      *
-     * <p>Default: {@code false} (HTML5 spec-compliant standalone behaviour).</p>
+     * <p>Set to {@code false} only when using this detector standalone (without
+     * {@code BOMDetector} in the chain) to get full HTML5 spec-compliant behaviour.</p>
+     *
+     * <p>Default: {@code true}.</p>
      */
-    private boolean skipBOM = false;
+    private boolean skipBOM = true;
 
     @Override
     public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
@@ -130,7 +134,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
      * When {@code true}, skip the BOM check and rely on {@code BOMDetector} in the
      * chain.  This allows {@code CharSoupEncodingDetector} to arbitrate between a
      * BOM and a contradicting {@code <meta charset>} declaration.
-     * Default is {@code false}.
+     * Default is {@code true}.
      */
     public void setSkipBOM(boolean skipBOM) {
         this.skipBOM = skipBOM;

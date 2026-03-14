@@ -45,7 +45,8 @@ import org.apache.tika.parser.ParseContext;
  * <ol>
  *   <li><strong>Structural gates</strong> ({@link StructuralEncodingRules}) —
  *       cheap deterministic checks before the model: ASCII, ISO-2022 family,
- *       and UTF-8 grammar exclusion.</li>
+ *       UTF-8 grammar exclusion, and wide-Unicode (UTF-16/32) detection via
+ *       {@link WideUnicodeDetector}.</li>
  *   <li><strong>Statistical model</strong> ({@link LinearModel}) — covers all
  *       charsets as direct labels, including EBCDIC variants (IBM420-ltr/rtl,
  *       IBM424-ltr/rtl, IBM500, IBM1047) alongside CJK, Latin, and other
@@ -112,7 +113,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     /** Default model resource path on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/chardetect.bin";
+            "/org/apache/tika/ml/chardetect/chardetect-v6-no-utf32.bin";
 
     /**
      * Maps model label strings (from training-data filenames) to the canonical
@@ -273,45 +274,31 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // An empty probe (e.g. empty file, or a file that was only a BOM) falls
         // through to detectAll where isPureAscii returns true for a zero-length
         // array, yielding windows-1252 as the default.
-        return detectAll(probe, Integer.MAX_VALUE);
+        int topN = probe.length <= SHORT_PROBE_THRESHOLD ? TOP_N_SHORT : TOP_N_LONG;
+        return detectAll(probe, topN);
     }
 
     /**
      * Applies structural encoding rules that produce {@link EncodingResult.ResultType#STRUCTURAL}
      * results. Returns non-null only when a byte-level pattern unambiguously identifies the
-     * charset (ISO-2022 escape sequences, valid UTF-8 grammar).
+     * charset (ISO-2022 escape sequences, valid UTF-8 grammar, wide-Unicode null patterns).
      *
      * <p>Pure ASCII is deliberately excluded — ASCII is compatible with virtually all
      * single-byte encodings and is not structurally definitive.</p>
      */
     private Charset applyStructuralRules(byte[] probe) {
-        // ISO-2022 before ASCII: all three variants are 7-bit so checkAscii fires first.
         Charset iso2022 = StructuralEncodingRules.detectIso2022(probe);
         if (iso2022 != null) {
             return iso2022;
         }
-        // UTF-8 structural check.  DEFINITIVE_UTF8 means every multi-byte sequence is
-        // valid *and* at least 1 % of bytes are high — this is genuine UTF-8 regardless
-        // of whether the high-byte ratio is sparse or dense.  The previous < 5 % threshold
-        // caused dense UTF-8 (e.g. text with many accented Latin characters) to fall through
-        // to the model, where EBCDIC labels could outscore UTF-8 on short probes.
         if (probe.length >= 16) {
             StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
             if (utf8 == StructuralEncodingRules.Utf8Result.DEFINITIVE_UTF8) {
                 return StandardCharsets.UTF_8;
             }
-            // AMBIGUOUS: < 1 % high bytes but all sequences structurally valid.
-            // Even a single valid multi-byte sequence in an otherwise-ASCII probe is
-            // strong evidence of UTF-8; single-byte encodings would produce invalid
-            // sequences at any meaningful high-byte density.
-            if (utf8 == StructuralEncodingRules.Utf8Result.AMBIGUOUS) {
-                for (byte b : probe) {
-                    if ((b & 0xFF) >= 0x80) {
-                        return StandardCharsets.UTF_8;
-                    }
-                }
-            }
         }
+        // Wide-Unicode detection is handled in detectAll, which uses
+        // WideUnicodeDetector.analyze() to also capture invalidity flags.
         return null;
     }
 
@@ -381,6 +368,17 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public List<EncodingResult> detectAll(byte[] probe, int topN) {
         boolean gates = enabledRules.contains(Rule.STRUCTURAL_GATES);
 
+        // Wide-Unicode analysis: positive detection and/or invalidity flags.
+        // Must run BEFORE isPureAscii: scripts like Cyrillic in UTF-16-LE have
+        // all bytes < 0x80 with no nulls, so isPureAscii would misclassify them.
+        WideUnicodeDetector.Result wideResult = gates
+                ? WideUnicodeDetector.analyze(probe)
+                : WideUnicodeDetector.Result.EMPTY;
+        if (wideResult.charset != null) {
+            return singleResult(wideResult.charset.name(), 1.0f,
+                    EncodingResult.ResultType.STRUCTURAL, topN);
+        }
+
         if (gates) {
             // Structural rules: byte-grammar proof (ISO-2022, sparse UTF-8).
             Charset structural = applyStructuralRules(probe);
@@ -406,7 +404,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         boolean excludeUtf8 = gates
                 && StructuralEncodingRules.checkUtf8(probe) == StructuralEncodingRules.Utf8Result.NOT_UTF8;
 
-        List<EncodingResult> results = runModel(probe, excludeUtf8, topN);
+        List<EncodingResult> results = runModel(probe, excludeUtf8,
+                wideResult.invalidUtf16Be, wideResult.invalidUtf16Le, topN);
 
         // If the model had no evidence (probe too short or all tokens filtered), fall back to
         // windows-1252 at very low confidence rather than returning empty and letting
@@ -417,40 +416,47 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return results;
     }
 
-    private List<EncodingResult> runModel(byte[] probe, boolean excludeUtf8, int topN) {
+    private List<EncodingResult> runModel(byte[] probe, boolean excludeUtf8,
+                                          boolean excludeUtf16Be, boolean excludeUtf16Le,
+                                          int topN) {
         int[] features = extractor.extract(probe);
         float[] logits = model.predictLogits(features);
 
-        if (excludeUtf8) {
-            for (int i = 0; i < logits.length; i++) {
-                if ("UTF-8".equalsIgnoreCase(model.getLabel(i))) {
-                    logits[i] = Float.NEGATIVE_INFINITY;
-                }
+        for (int i = 0; i < logits.length; i++) {
+            String lbl = model.getLabel(i);
+            if (excludeUtf8 && "UTF-8".equalsIgnoreCase(lbl)) {
+                logits[i] = Float.NEGATIVE_INFINITY;
+            }
+            if (excludeUtf16Be && lbl.equalsIgnoreCase("UTF-16-BE")) {
+                logits[i] = Float.NEGATIVE_INFINITY;
+            }
+            if (excludeUtf16Le && lbl.equalsIgnoreCase("UTF-16-LE")) {
+                logits[i] = Float.NEGATIVE_INFINITY;
             }
         }
 
         List<EncodingResult> results = selectByLogitGap(model, logits, topN);
-        // On short probes a single spurious candidate can dominate the logit gap window
-        // (e.g. x-EUC-TW scoring 58 on a 9-byte Shift_JIS filename while Shift_JIS scores 17),
-        // leaving the correct charset with no chance to be evaluated by grammar or CharSoup.
-        // For long probes, a single dominant candidate means genuine model confidence — trust it.
+
+        // CJK grammar filtering runs first so that grammar-killed charsets
+        // (e.g. x-EUC-TW on a Shift_JIS probe) don't consume MIN_CANDIDATES
+        // slots that should go to viable alternatives.
+        if (enabledRules.contains(Rule.CJK_GRAMMAR)) {
+            results = refineCjkResults(probe, results);
+        }
+
+        // On short probes, ensure enough candidates survive for CharSoup to
+        // arbitrate. Grammar-killed CJK charsets are skipped so they don't
+        // consume slots meant for viable alternatives.
         if (probe.length < SHORT_PROBE_THRESHOLD && results.size() < MIN_CANDIDATES) {
-            results = selectAtLeast(model, logits, MIN_CANDIDATES);
+            boolean grammar = enabledRules.contains(Rule.CJK_GRAMMAR);
+            results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
         }
 
         if (enabledRules.contains(Rule.ISO_TO_WINDOWS) && StructuralEncodingRules.hasC1Bytes(probe)) {
             results = upgradeIsoToWindows(results);
         }
-        // CRLF_TO_WINDOWS: when C1 bytes were absent (ISO_TO_WINDOWS didn't fire) but
-        // CRLF pairs suggest Windows line endings, apply the same ISO→Windows upgrade as
-        // weak evidence of Windows file origin. If ISO_TO_WINDOWS already fired, the
-        // results are already Windows-12XX and upgradeIsoToWindows is a no-op.
-        // Bare CR (old Mac Classic line endings) does NOT trigger this rule.
         if (enabledRules.contains(Rule.CRLF_TO_WINDOWS) && StructuralEncodingRules.hasCrlfBytes(probe)) {
             results = upgradeIsoToWindows(results);
-        }
-        if (enabledRules.contains(Rule.CJK_GRAMMAR)) {
-            results = refineCjkResults(probe, results);
         }
         if (enabledRules.contains(Rule.GB_FOUR_BYTE_UPGRADE)
                 && StructuralEncodingRules.hasGb18030FourByteSequence(probe)) {
@@ -483,15 +489,24 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final int SHORT_PROBE_THRESHOLD = 50;
 
+    /** Max results returned to CharSoup on short probes (<=SHORT_PROBE_THRESHOLD). */
+    private static final int TOP_N_SHORT = 3;
+
+    /** Max results returned to CharSoup on long probes. */
+    private static final int TOP_N_LONG = 1;
+
     /** Minimum candidates guaranteed to downstream rules on short probes. */
-    private static final int MIN_CANDIDATES = 8;
+    private static final int MIN_CANDIDATES = 3;
 
     /**
      * Same as {@link #selectByLogitGap} but guarantees at least {@code minN} results
      * by extending the window to include the next-best candidates by raw logit rank.
+     * CJK charsets that fail grammar validation are skipped so they don't consume
+     * slots meant for viable alternatives.
      */
-    private static List<EncodingResult> selectAtLeast(LinearModel m, float[] logits, int minN) {
-        // Collect all candidates with a valid charset, sorted by logit descending.
+    private static List<EncodingResult> selectAtLeast(LinearModel m, float[] logits,
+                                                       int minN, byte[] probe,
+                                                       boolean applyGrammar) {
         List<int[]> all = new ArrayList<>();
         for (int i = 0; i < logits.length; i++) {
             if (labelToCharset(m.getLabel(i)) != null) {
@@ -502,11 +517,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         float maxLogit = all.isEmpty() ? 0f : logits[all.get(0)[0]];
         List<EncodingResult> results = new ArrayList<>(minN);
-        for (int rank = 0; rank < Math.min(minN, all.size()); rank++) {
+        for (int rank = 0; rank < all.size() && results.size() < minN; rank++) {
             int i = all.get(rank)[0];
             String lbl = m.getLabel(i);
             Charset cs = labelToCharset(lbl);
-            // Confidence scaled relative to the max logit so ordering is preserved.
+            if (applyGrammar && CjkEncodingRules.isCjk(cs)
+                    && CjkEncodingRules.match(probe, cs) == 0) {
+                continue;
+            }
             float conf = maxLogit > 0
                     ? Math.max(0f, logits[i] / maxLogit) * MAX_STATISTICAL_CONFIDENCE
                     : 0f;

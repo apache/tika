@@ -710,6 +710,47 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
+     * Return the top {@code n} language codes from the short-text
+     * discriminative model, ranked by raw logit (descending).
+     *
+     * <p>Unlike {@link #detectAll()}, this method applies no entropy or
+     * confidence thresholds — it always returns the model's ranking even
+     * when the distribution is flat.  This is useful for downstream
+     * generative-model confirmation on very short text (e.g. zip entry
+     * filenames) where the discriminative model alone is inconclusive
+     * but its top candidates still contain a useful language signal.</p>
+     *
+     * @param text the decoded text to classify
+     * @param n    maximum number of language codes to return
+     * @return top language codes, or empty list if the short-text model
+     *         is not loaded or text is empty
+     */
+    public static List<String> topShortTextLanguages(String text, int n) {
+        if (SHORT_TEXT_MODEL == null || SHORT_TEXT_EXTRACTOR == null
+                || text == null || text.isEmpty()) {
+            return Collections.emptyList();
+        }
+        int[] features = new int[SHORT_TEXT_EXTRACTOR.getNumBuckets()];
+        SHORT_TEXT_EXTRACTOR.extractAndCount(text, features);
+        float[] logits = SHORT_TEXT_MODEL.predictLogits(features);
+        logits = applyScriptGate(logits, text, SHORT_TEXT_CLASS_SCRIPT);
+        float[] collapsed = collapseGroups(logits, SHORT_TEXT_GROUP_INDICES);
+
+        int numClasses = SHORT_TEXT_MODEL.getNumClasses();
+        Integer[] indices = new Integer[numClasses];
+        for (int i = 0; i < numClasses; i++) {
+            indices[i] = i;
+        }
+        Arrays.sort(indices, (a, b) -> Float.compare(collapsed[b], collapsed[a]));
+
+        List<String> result = new ArrayList<>(Math.min(n, numClasses));
+        for (int i = 0; i < Math.min(n, numClasses); i++) {
+            result.add(SHORT_TEXT_MODEL.getLabel(indices[i]));
+        }
+        return result;
+    }
+
+    /**
      * Ratio of junk characters (U+FFFD replacement + ISO control + C1
      * control range U+0080-U+009F) to total characters. High values
      * indicate a wrong-charset decoding.
