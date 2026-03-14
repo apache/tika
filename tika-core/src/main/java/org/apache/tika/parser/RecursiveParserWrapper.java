@@ -29,6 +29,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -192,7 +193,11 @@ public class RecursiveParserWrapper extends ParserDecorator {
         } else if (metadata.get(TikaCoreProperties.VERSION_NUMBER) != null) {
             objectName = "version-number-" + metadata.get(TikaCoreProperties.VERSION_NUMBER);
         } else {
-            objectName = "embedded-" + counter.incrementAndGet();
+            objectName = EmbeddedDocumentUtil.generateResourceName(
+                    EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
+                    counter.incrementAndGet(),
+                    metadata.get(Metadata.CONTENT_TYPE));
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
         //make sure that there isn't any path info in the objectName
         //some parsers can return paths, not just file names

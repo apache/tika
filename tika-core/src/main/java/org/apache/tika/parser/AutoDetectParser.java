@@ -28,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.StandardExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -155,7 +156,10 @@ public class AutoDetectParser extends CompositeParser {
 
         // Automatically detect the MIME type of the document
         MediaType type = detector.detect(tis, metadata, context);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        // Normalize OCR routing types (e.g., image/ocr-png -> image/png) so they
+        // don't leak into CONTENT_TYPE
+        metadata.set(Metadata.CONTENT_TYPE,
+                EmbeddedDocumentUtil.normalizeMediaType(type.toString()));
         //check for zero-byte inputstream
         if (tis.getOpenContainer() == null) {
             if (autoDetectParserConfig.getThrowOnZeroBytes()) {

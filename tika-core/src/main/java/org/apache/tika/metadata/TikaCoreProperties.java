@@ -216,6 +216,14 @@ public interface TikaCoreProperties {
             "detected_language_confidence_raw");
 
     Property RESOURCE_NAME_KEY = Property.internalText(TIKA_META_PREFIX + "resourceName");
+
+    /**
+     * Indicates that the file extension on the resource name was inferred by Tika
+     * (e.g., from content type detection) rather than provided by the original document.
+     */
+    Property RESOURCE_NAME_EXTENSION_INFERRED =
+            Property.externalBoolean(TIKA_META_PREFIX + "resourceNameExtensionInferred");
+
     Property EMBEDDED_RELATIONSHIP_ID = Property.internalText(TIKA_META_PREFIX + "embeddedRelationshipId");
 
     String EMBEDDED_RESOURCE_TYPE_KEY = "embeddedResourceType";

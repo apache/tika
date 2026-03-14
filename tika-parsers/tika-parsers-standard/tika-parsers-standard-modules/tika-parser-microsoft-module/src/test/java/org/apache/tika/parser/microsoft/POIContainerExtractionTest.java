@@ -93,7 +93,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(1, handler.filenames.size());
         assertEquals(1, handler.mediaTypes.size());
 
-        assertEquals("image1.png", handler.filenames.get(0));
+        assertEquals("image-1.png", handler.filenames.get(0));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
 
 
@@ -102,9 +102,9 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(3, handler.filenames.size());
         assertEquals(3, handler.mediaTypes.size());
 
-        assertEquals("image1.png", handler.filenames.get(0));
-        assertEquals("image2.jpg", handler.filenames.get(1));
-        assertEquals("image3.png", handler.filenames.get(2));
+        assertEquals("image-1.png", handler.filenames.get(0));
+        assertEquals("image-2.jpg", handler.filenames.get(1));
+        assertEquals("image-3.png", handler.filenames.get(2));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
         assertEquals(TYPE_JPG, handler.mediaTypes.get(1));
         assertEquals(TYPE_PNG, handler.mediaTypes.get(2));

@@ -84,28 +84,35 @@ public class TNEFParser implements Parser {
         MAPIAttribute attr = msg.getMessageMAPIAttribute(MAPIProperty.RTF_COMPRESSED);
         if (attr != null && attr instanceof MAPIRtfAttribute) {
             MAPIRtfAttribute rtf = (MAPIRtfAttribute) attr;
-            handleEmbedded("message.rtf", "application/rtf", rtf.getData(), embeddedExtractor,
-                    xhtml, context);
+            handleEmbedded("message.rtf", "application/rtf", false,
+                    rtf.getData(), embeddedExtractor, xhtml, context);
         }
 
         // Recurse into each attachment in turn
+        int unknownCount = 0;
         for (Attachment attachment : msg.getAttachments()) {
             String name = attachment.getLongFilename();
+            boolean inferredExtension = false;
             if (name == null || name.isEmpty()) {
                 name = attachment.getFilename();
             }
             if (name == null || name.isEmpty()) {
                 String ext = attachment.getExtension();
-                if (ext != null) {
-                    name = "unknown" + ext;
+                if (ext == null) {
+                    ext = "";
                 }
+                name = EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED.getPrefix()
+                        + "-" + unknownCount++ + ext;
+                inferredExtension = true;
             }
-            handleEmbedded(name, null, attachment.getContents(), embeddedExtractor, xhtml, context);
+            handleEmbedded(name, null, inferredExtension,
+                    attachment.getContents(), embeddedExtractor, xhtml, context);
         }
         xhtml.endDocument();
     }
 
-    private void handleEmbedded(String name, String type, byte[] contents,
+    private void handleEmbedded(String name, String type, boolean inferredExtension,
+                                byte[] contents,
                                 EmbeddedDocumentExtractor embeddedExtractor, ContentHandler handler,
                                 ParseContext context)
             throws IOException, SAXException, TikaException {
@@ -115,6 +122,9 @@ public class TNEFParser implements Parser {
         }
         if (type != null) {
             metadata.set(Metadata.CONTENT_TYPE, type);
+        }
+        if (inferredExtension) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
 
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {
