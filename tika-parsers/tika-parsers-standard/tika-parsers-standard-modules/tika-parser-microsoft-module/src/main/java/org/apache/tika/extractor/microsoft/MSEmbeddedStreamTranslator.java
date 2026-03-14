@@ -77,6 +77,7 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
                 }
             } else {
                 name += '.' + type.getExtension();
+                metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             }
             os.write(data);
             os.flush();

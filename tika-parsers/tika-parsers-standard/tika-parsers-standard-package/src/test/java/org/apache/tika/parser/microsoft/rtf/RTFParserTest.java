@@ -47,8 +47,8 @@ public class RTFParserTest extends TikaTest {
 
         Map<Integer, Pair> expected = new HashMap<>();
         expected.put(3, new Pair("Hw.txt", "text/plain; charset=windows-1252"));
-        expected.put(4, new Pair("file_0.doc", "application/msword"));
-        expected.put(7, new Pair("file_1.xlsx",
+        expected.put(4, new Pair("embedded-0.doc", "application/msword"));
+        expected.put(7, new Pair("embedded-1.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
         expected.put(10, new Pair("text.html", "text/html; charset=windows-1252"));
         expected.put(11, new Pair("html-within-zip.zip", "application/zip"));
@@ -57,17 +57,17 @@ public class RTFParserTest extends TikaTest {
         expected.put(15, new Pair("testHTML_utf8_\u666E\u6797\u65AF\u987F.html",
                 "text/html; charset=UTF-8"));
         expected.put(18, new Pair("testJPEG_\u666E\u6797\u65AF\u987F.jpg", "image/jpeg"));
-        expected.put(21, new Pair("file_2.xls", "application/vnd.ms-excel"));
+        expected.put(21, new Pair("embedded-2.xls", "application/vnd.ms-excel"));
         expected.put(24,
                 new Pair("testMSG_\u666E\u6797\u65AF\u987F.msg", "application/vnd.ms-outlook"));
-        expected.put(27, new Pair("file_3.pdf", "application/pdf"));
-        expected.put(30, new Pair("file_4.ppt", "application/vnd.ms-powerpoint"));
-        expected.put(34, new Pair("file_5.pptx",
+        expected.put(27, new Pair("embedded-3.pdf", "application/pdf"));
+        expected.put(30, new Pair("embedded-4.ppt", "application/vnd.ms-powerpoint"));
+        expected.put(34, new Pair("embedded-5.pptx",
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation"));
         expected.put(33, new Pair("thumbnail.jpeg", "image/jpeg"));
-        expected.put(37, new Pair("file_6.doc", "application/msword"));
-        expected.put(40, new Pair("file_7.doc", "application/msword"));
-        expected.put(43, new Pair("file_8.docx",
+        expected.put(37, new Pair("embedded-6.doc", "application/msword"));
+        expected.put(40, new Pair("embedded-7.doc", "application/msword"));
+        expected.put(43, new Pair("embedded-8.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
         expected.put(46, new Pair("testJPEG_\u666E\u6797\u65AF\u987F.jpg", "image/jpeg"));
 

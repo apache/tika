@@ -224,12 +224,16 @@ class RTFEmbObjHandler {
                     String extension = embeddedDocumentUtil.getExtension(tis, metadata);
                     if (inObject && state == EMB_STATE.PICT) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                                "thumbnail_" + thumbCount++ + extension);
+                                EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL.getPrefix()
+                                        + "-" + thumbCount++ + extension);
                         metadata.set(RTFMetadata.THUMBNAIL, "true");
                     } else {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                                "file_" + unknownFilenameCount.getAndIncrement() + extension);
+                                EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED.getPrefix()
+                                        + "-" + unknownFilenameCount.getAndIncrement()
+                                        + extension);
                     }
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
                 try {
                     embeddedDocumentUtil

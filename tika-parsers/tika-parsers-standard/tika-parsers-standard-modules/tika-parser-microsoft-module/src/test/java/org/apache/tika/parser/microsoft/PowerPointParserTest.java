@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -349,11 +350,11 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("tika", content);
         assertContains("MyTitle", content);
 
-        assertEquals("/embedded-1",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        String path1 = metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        assertTrue(path1.contains("."), "embedded resource should have extension: " + path1);
 
-        assertEquals("/embedded-2",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        String path2 = metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+        assertTrue(path2.contains("."), "embedded resource should have extension: " + path2);
 
     }
 

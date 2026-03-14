@@ -234,6 +234,7 @@ public class JDBCTableReader {
                     //just in case something screwy is going on with the column name
                     FilenameUtils.normalize(
                             FilenameUtils.getName(columnName + "_" + rowNum + extension)));
+            m.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
                 embeddedDocumentUtil.parseEmbedded(tis, handler, m, true);
             }

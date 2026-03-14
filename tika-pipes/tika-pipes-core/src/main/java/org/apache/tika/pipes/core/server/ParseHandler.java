@@ -36,6 +36,7 @@ import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -44,6 +45,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
+import org.apache.tika.parser.ParsingIntent;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
@@ -143,9 +145,13 @@ class ParseHandler {
                 LOG.warn("problem digesting: " + t.getId(), e);
             }
         }
+        // Signal to detectors that parsing will follow, so they can prepare
+        // resources (e.g., ZipSalvager for truncated zips)
+        parseContext.set(ParsingIntent.class, ParsingIntent.WILL_PARSE);
         try {
             MediaType mt = detector.detect(tis, metadata, parseContext);
-            metadata.set(Metadata.CONTENT_TYPE, mt.toString());
+            metadata.set(Metadata.CONTENT_TYPE,
+                    EmbeddedDocumentUtil.normalizeMediaType(mt.toString()));
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
         } catch (IOException e) {
             LOG.warn("problem detecting: " + t.getId(), e);

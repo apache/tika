@@ -58,6 +58,7 @@ import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 
+
 /**
  * Figures out the correct {@link OOXMLExtractor} for the supplied document and
  * returns it.
@@ -93,7 +94,15 @@ public class OOXMLExtractorFactory {
             if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
-                pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
+                // POI 5.x can throw InvalidOperationException (a RuntimeException
+                // extending OpenXML4JRuntimeException) for truncated/corrupt zip files.
+                // The detector should have salvaged if needed, but catch broadly here
+                // as a safety net.
+                try {
+                    pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
+                } catch (RuntimeException e) {
+                    throw new TikaException("Error opening OOXML file", e);
+                }
                 tis.setOpenContainer(new OPCPackageWrapper(pkg));
             }
 

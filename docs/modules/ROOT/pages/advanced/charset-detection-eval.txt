@@ -1,4 +1,3 @@
-
 === Probe length: 20B ===
                             N  | --- ML ablation --------------------------------- | --- Baselines ----------------------- |
 Charset                        | Stat R%   S%  | +ISO R%   S%  | +CJK R%   S%  | All  R%   S%  | ICU4J R%   S%  | juniv R%   S%  |

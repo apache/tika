@@ -214,6 +214,7 @@ abstract class AbstractPOIFSExtractor {
                 } else {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                             name + '.' + type.getExtension());
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
             }
             parseEmbedded(dir, xhtml, metadata, outputHtml);
@@ -225,6 +226,7 @@ abstract class AbstractPOIFSExtractor {
                 } else {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                             rName + '.' + type.getExtension());
+                    metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
             }
             parseEmbedded(dir, xhtml, metadata, outputHtml);
@@ -319,6 +321,7 @@ abstract class AbstractPOIFSExtractor {
             // Record what we can do about it
             metadata.set(Metadata.CONTENT_TYPE, mediaType.getType());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
             parseEmbedded(parentDir, tis, xhtml, metadata, outputHtml);
         } finally {
