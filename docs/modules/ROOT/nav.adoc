@@ -40,6 +40,7 @@
 * xref:advanced/index.adoc[Advanced]
 ** xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]
 ** xref:advanced/language-detection.adoc[Language Detection]
+** xref:advanced/generative-language-model.adoc[Generative Language Model]
 ** xref:advanced/language-detection-build.adoc[Building the Language Detector]
 ** xref:advanced/robustness.adoc[Robustness]
 ** xref:advanced/setting-limits.adoc[Setting Limits]

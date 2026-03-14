@@ -328,8 +328,10 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
                 || Character.getType(cp) == Character.SPACE_SEPARATOR;
     }
 
-    static boolean isCjkOrKana(int cp) {
-        if (Character.isIdeographic(cp)) return true;
+    public static boolean isCjkOrKana(int cp) {
+        if (Character.isIdeographic(cp)) {
+            return true;
+        }
         Character.UnicodeScript us = Character.UnicodeScript.of(cp);
         return us == Character.UnicodeScript.HIRAGANA
                 || us == Character.UnicodeScript.KATAKANA;

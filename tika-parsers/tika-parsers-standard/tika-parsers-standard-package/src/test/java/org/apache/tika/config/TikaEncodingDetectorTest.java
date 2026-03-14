@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +36,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.detect.MetadataCharsetDetector;
 import org.apache.tika.detect.OverrideEncodingDetector;
@@ -46,6 +48,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.ml.chardetect.MojibusterEncodingDetector;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
@@ -291,6 +294,33 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(excludedCharSoupClasses.contains(StandardHtmlEncodingDetector.class));
         for (EncodingDetector d : detectors) {
             assertNotContained("CharSoup", d.getClass().getSimpleName());
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Solr integration-test regression (TIKA-4662)
+    // -----------------------------------------------------------------------
+
+    /**
+     * ASCII HTML with an explicit {@code <meta charset="UTF-8">} must be
+     * detected as UTF-8.  The full detection chain is required: the HTML
+     * detector produces a DECLARATIVE UTF-8 result; CharSoupEncodingDetector
+     * sees that both UTF-8 and the statistical winner (windows-1252) decode
+     * the pure-ASCII bytes identically and therefore defers to the declaration.
+     */
+    @Test
+    public void testAsciiHtmlWithMetaIsDetectedAsUtf8() throws Exception {
+        byte[] bytes =
+                "<html><head><meta charset=\"UTF-8\"></head><body>initial</body></html>"
+                        .getBytes(StandardCharsets.UTF_8);
+        EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> results =
+                    detector.detect(tis, new Metadata(), new ParseContext());
+            assertFalse(results.isEmpty(), "detector returned no result for ASCII HTML with meta");
+            assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset(),
+                    "ASCII HTML with <meta charset=UTF-8> should be detected as UTF-8, got: "
+                            + results.get(0).getCharset().name());
         }
     }
 

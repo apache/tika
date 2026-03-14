@@ -16,6 +16,7 @@
  */
 package org.apache.tika.eval.core.metadata;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 import org.apache.tika.eval.core.tokens.TokenCounts;
+import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -36,6 +38,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilterBase;
 
 public class TikaEvalMetadataFilter extends MetadataFilterBase {
+
+    private static final String GLM_RESOURCE = GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE;
 
     public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
@@ -60,16 +64,33 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
 
     public static Property OUT_OF_VOCABULARY = Property.externalReal(TIKA_EVAL_NS + "oov");
 
+    public static Property LANGUAGENESS = Property.externalReal(TIKA_EVAL_NS + "languageness");
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;
+    private static GenerativeLanguageModel GLM;
 
     static {
         List<TextStatsCalculator> calcs = new ArrayList<>();
         calcs.add(new BasicTokenCountStatsCalculator());
         calcs.add(new CommonTokens());
         TEXT_STATS_CALCULATOR = new CompositeTextStatsCalculator(calcs);
+
+        try {
+            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load generative language model: "
+                    + GLM_RESOURCE, e);
+        }
     }
 
+
+    /**
+     * Returns the shared generative language model, or {@code null} if
+     * the model binary is not on the classpath.
+     */
+    public static GenerativeLanguageModel getGenerativeModel() {
+        return GLM;
+    }
 
     @Override
     public void filter(Metadata metadata) {
@@ -102,9 +123,18 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         //languages
         List<LanguageResult> probabilities =
                 (List<LanguageResult>) results.get(LanguageIDWrapper.class);
+        String detectedLang = null;
         if (probabilities.size() > 0) {
-            metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
+            detectedLang = probabilities.get(0).getLanguage();
+            metadata.set(LANGUAGE, detectedLang);
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());
+        }
+
+        if (detectedLang != null) {
+            float z = GLM.zScoreLengthAdjusted(content, detectedLang);
+            metadata.set(LANGUAGENESS, Float.isNaN(z) ? -99.0f : z);
+        } else {
+            metadata.set(LANGUAGENESS, -99.0f);
         }
     }
 

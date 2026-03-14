@@ -60,6 +60,7 @@ public class ExtractProfiler extends ProfilerBase {
             new ColInfo(Cols.NUM_UNIQUE_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_TOKENS, Types.INTEGER), new ColInfo(Cols.COMMON_TOKENS_LANG, Types.VARCHAR, 12),
             new ColInfo(Cols.NUM_UNIQUE_COMMON_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_COMMON_TOKENS, Types.INTEGER),
             new ColInfo(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_ALPHABETIC_TOKENS, Types.INTEGER), new ColInfo(Cols.OOV, Types.DOUBLE),
+            new ColInfo(Cols.LANGUAGENESS, Types.DOUBLE),
             new ColInfo(Cols.TOP_N_TOKENS, Types.VARCHAR, 1024), new ColInfo(Cols.LANG_ID_1, Types.VARCHAR, 12), new ColInfo(Cols.LANG_ID_PROB_1, Types.FLOAT),
             new ColInfo(Cols.LANG_ID_2, Types.VARCHAR, 12), new ColInfo(Cols.LANG_ID_PROB_2, Types.FLOAT), new ColInfo(Cols.UNICODE_CHAR_BLOCKS, Types.VARCHAR, 1024),
             new ColInfo(Cols.TOKEN_ENTROPY_RATE, Types.FLOAT), new ColInfo(Cols.TOKEN_LENGTH_SUM, Types.INTEGER), new ColInfo(Cols.TOKEN_LENGTH_MEAN, Types.FLOAT),

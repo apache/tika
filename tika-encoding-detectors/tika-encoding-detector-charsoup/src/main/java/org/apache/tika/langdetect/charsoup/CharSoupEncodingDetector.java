@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
@@ -66,7 +69,29 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
 
     private static final long serialVersionUID = 1L;
 
+    private static final Logger LOG = LoggerFactory.getLogger(CharSoupEncodingDetector.class);
+
     private static final int DEFAULT_READ_LIMIT = 16384;
+
+    private static final String GLM_RESOURCE = GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE;
+
+    /**
+     * Minimum z-score for the generative-model tiebreaker to consider a
+     * candidate "language-like enough" to win. Candidates below this are
+     * treated as mojibake.
+     */
+    private static final float MIN_GENERATIVE_ZSCORE = -4.0f;
+
+    private static final GenerativeLanguageModel GLM;
+
+    static {
+        try {
+            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load generative language model: "
+                    + GLM_RESOURCE, e);
+        }
+    }
 
     /**
      * Symmetric confusable peer groups: within each group, encoding variants
@@ -171,14 +196,20 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         CharSoupLanguageDetector langDetector = new CharSoupLanguageDetector();
         Charset bestCharset = langDetector.compareLanguageSignal(candidates);
         if (bestCharset == null) {
-            // Language signal inconclusive. When a DECLARATIVE result (HTML meta charset,
-            // BOM, HTTP Content-Type) exists and decodes the bytes at least as cleanly as
-            // the statistical fallback, trust the declaration. This covers:
-            //  • Pure-ASCII probe (both decodings identical) — prefer the declared charset.
-            //  • Probe with high bytes that are valid in BOTH charsets (e.g. Cyrillic in a
-            //    page that starts with ASCII JavaScript) — the bytes look "clean" in both
-            //    windows-1252 (decoded as Latin Extended) and windows-1251 (decoded as
-            //    Cyrillic), so junkRatio cannot distinguish them; trust the declaration.
+            // Discriminative model inconclusive. Try generative model as tiebreaker.
+            Charset generativeWinner = generativeTiebreak(candidates);
+            if (generativeWinner != null) {
+                context.setArbitrationInfo("scored-inconclusive-generative-tiebreak");
+                return generativeWinner;
+            }
+
+            // Generative model also inconclusive. When a DECLARATIVE result
+            // (HTML meta charset, BOM, HTTP Content-Type) exists and decodes
+            // the bytes at least as cleanly as the statistical fallback,
+            // trust the declaration. This covers:
+            //  • Pure-ASCII probe (both decodings identical) — prefer declared.
+            //  • Probe with high bytes valid in BOTH charsets (e.g. Cyrillic
+            //    in a page starting with ASCII JavaScript).
             Charset fallback = firstResult.getCharset();
             String fallbackDecoded = candidates.get(fallback);
             float fallbackJunk = fallbackDecoded != null
@@ -190,9 +221,6 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
                     String declaredDecoded = candidates.get(r.getCharset());
                     float declaredJunk = declaredDecoded != null
                             ? CharSoupLanguageDetector.junkRatio(declaredDecoded) : 1f;
-                    // Trust the declaration when it decodes at least as cleanly as
-                    // the statistical fallback (≤ junk). A declaration that produces
-                    // MORE junk than the fallback is likely wrong (e.g. a lying BOM).
                     if (declaredJunk <= fallbackJunk) {
                         cleanerDeclared = r.getCharset();
                         break;
@@ -259,6 +287,73 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
 
         context.setArbitrationInfo("scored");
         return bestCharset;
+    }
+
+    /**
+     * Generative-model tiebreaker: for each candidate charset's decoded text,
+     * detect the most likely language then compute its z-score. The charset
+     * producing the highest z-score (closest to "real language") wins, provided
+     * it exceeds {@link #MIN_GENERATIVE_ZSCORE}.
+     *
+     * @return the winning charset, or {@code null} if no candidate passes the
+     *         threshold or all candidates decode to identical text
+     */
+    private static <K> K generativeTiebreak(Map<K, String> candidates) {
+        if (candidates.isEmpty()) {
+            return null;
+        }
+
+        // If all candidates decode to identical text, the generative model
+        // cannot distinguish them — return null so the DECLARATIVE-preference
+        // logic downstream can handle it (e.g. pure-ASCII where windows-1252
+        // and UTF-8 produce the same bytes).
+        if (allDecodingsIdentical(candidates)) {
+            LOG.debug("generativeTiebreak: all decodings identical, deferring");
+            return null;
+        }
+
+        float bestZ = Float.NEGATIVE_INFINITY;
+        K bestKey = null;
+
+        for (Map.Entry<K, String> entry : candidates.entrySet()) {
+            String text = entry.getValue();
+            if (text == null || text.isEmpty()) {
+                continue;
+            }
+            if (CharSoupLanguageDetector.junkRatio(text) > 0.10f) {
+                continue;
+            }
+            Map.Entry<String, Float> match = GLM.bestMatch(text);
+            if (match == null) {
+                continue;
+            }
+            float z = GLM.zScoreLengthAdjusted(text, match.getKey());
+            LOG.debug("generativeTiebreak: {} -> lang={} z={}",
+                    entry.getKey(), match.getKey(), z);
+            if (!Float.isNaN(z) && z > bestZ) {
+                bestZ = z;
+                bestKey = entry.getKey();
+            }
+        }
+
+        if (bestZ < MIN_GENERATIVE_ZSCORE) {
+            LOG.debug("generativeTiebreak: inconclusive (bestZ={} < {})",
+                    bestZ, MIN_GENERATIVE_ZSCORE);
+            return null;
+        }
+        return bestKey;
+    }
+
+    private static <K> boolean allDecodingsIdentical(Map<K, String> candidates) {
+        String first = null;
+        for (String text : candidates.values()) {
+            if (first == null) {
+                first = text;
+            } else if (!first.equals(text)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
