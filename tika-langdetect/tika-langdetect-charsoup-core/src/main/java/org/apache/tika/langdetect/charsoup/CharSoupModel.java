@@ -87,6 +87,8 @@ public class CharSoupModel {
     public static final int FLAG_4GRAMS        = 1 << 7;
     /** Feature flag: enable character 5-grams. */
     public static final int FLAG_5GRAMS        = 1 << 8;
+    /** Feature flag: enable sqrt-weighted script-block presence + transition features. */
+    public static final int FLAG_SCRIPT_BLOCKS = 1 << 9;
 
     /** Default flags for v1 models (word unigrams only). */
     public static final int V1_DEFAULT_FLAGS = FLAG_WORD_UNIGRAMS;
@@ -401,19 +403,28 @@ public class CharSoupModel {
      */
     public FeatureExtractor createExtractor() {
         if (featureFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS) {
-            return new ScriptAwareFeatureExtractor(numBuckets);
+            return new ScriptAwareFeatureExtractor(numBuckets, true);
+        }
+        if (featureFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS_LEGACY) {
+            return new ScriptAwareFeatureExtractor(numBuckets, false);
         }
         if (featureFlags == ShortTextFeatureExtractor.FEATURE_FLAGS) {
-            return new ShortTextFeatureExtractor(numBuckets);
+            return new ShortTextFeatureExtractor(numBuckets, true);
+        }
+        if (featureFlags == ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY) {
+            return new ShortTextFeatureExtractor(numBuckets, false);
         }
         throw new IllegalStateException(String.format(
                 Locale.ROOT,
                 "No production FeatureExtractor for featureFlags=0x%03x. "
-                + "Known: ScriptAware=0x%03x, ShortText=0x%03x. "
+                + "Known: ScriptAware=0x%03x, ScriptAwareLegacy=0x%03x, "
+                + "ShortText=0x%03x, ShortTextLegacy=0x%03x. "
                 + "Use ResearchFeatureExtractor (test scope) for experimental configs.",
                 featureFlags,
                 ScriptAwareFeatureExtractor.FEATURE_FLAGS,
-                ShortTextFeatureExtractor.FEATURE_FLAGS));
+                ScriptAwareFeatureExtractor.FEATURE_FLAGS_LEGACY,
+                ShortTextFeatureExtractor.FEATURE_FLAGS,
+                ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY));
     }
 
     public int getFeatureFlags() {

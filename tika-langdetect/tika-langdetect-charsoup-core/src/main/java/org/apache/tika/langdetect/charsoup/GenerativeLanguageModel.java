@@ -50,16 +50,17 @@ import java.util.Map;
  * <p>Log-probabilities are quantized to unsigned INT8 over the range
  * [{@link #LOGP_MIN}, 0] and stored in dense byte arrays.
  *
- * <h3>Binary format ({@code GLM1} v2)</h3>
+ * <h3>Binary format ({@code GLM1} v3)</h3>
  * <pre>
  *   INT  magic    = 0x474C4D31
- *   INT  version  = 2
+ *   INT  version  = 3
  *   INT  numLangs
  *   INT  cjkUnigramBuckets
  *   INT  cjkBigramBuckets
  *   INT  noncjkUnigramBuckets
  *   INT  noncjkBigramBuckets
  *   INT  noncjkTrigramBuckets
+ *   INT  scriptCategories          (v3+)
  *   For each language:
  *     SHORT  codeLen
  *     BYTES  langCode (UTF-8)
@@ -69,6 +70,7 @@ import java.util.Map;
  *     BYTES  unigramTable  [cjkUnigramBuckets | noncjkUnigramBuckets]
  *     BYTES  bigramTable   [cjkBigramBuckets  | noncjkBigramBuckets]
  *     BYTES  trigramTable  [noncjkTrigramBuckets] (absent for CJK)
+ *     BYTES  scriptTable   [scriptCategories]  (v3+)
  * </pre>
  */
 public class GenerativeLanguageModel {
@@ -81,6 +83,13 @@ public class GenerativeLanguageModel {
     public static final int NONCJK_BIGRAM_BUCKETS  =  8_192;
     public static final int NONCJK_TRIGRAM_BUCKETS = 16_384;
 
+    /**
+     * Number of script categories tracked for script-block features.
+     * Matches {@link ScriptCategory#COUNT} at model-build time; stored in the
+     * binary so older readers can skip it.
+     */
+    public static final int SCRIPT_CATEGORIES = ScriptCategory.COUNT;
+
     /** Default classpath resource path for the bundled generative model. */
     public static final String DEFAULT_MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin";
@@ -92,7 +101,7 @@ public class GenerativeLanguageModel {
     public static final float LOGP_MIN = -18.0f;
 
     private static final int MAGIC   = 0x474C4D31; // "GLM1"
-    private static final int VERSION = 2;
+    private static final int VERSION = 3;
 
     // ---- FNV-1a basis constants ----
 
@@ -124,6 +133,7 @@ public class GenerativeLanguageModel {
     private final byte[][]   unigramTables;   // [langIdx][bucket]
     private final byte[][]   bigramTables;    // [langIdx][bucket]
     private final byte[][]   trigramTables;   // [langIdx][bucket]; null entry for CJK langs
+    private final byte[][]   scriptTables;    // [langIdx][SCRIPT_CATEGORIES]; null if v2 model
     private final float[]    scoreMeans;      // μ per language (from training data)
     private final float[]    scoreStdDevs;    // σ per language (from training data)
 
@@ -133,6 +143,7 @@ public class GenerativeLanguageModel {
             byte[][]     unigramTables,
             byte[][]     bigramTables,
             byte[][]     trigramTables,
+            byte[][]     scriptTables,
             float[]      scoreMeans,
             float[]      scoreStdDevs) {
         this.langIds       = Collections.unmodifiableList(new ArrayList<>(langIds));
@@ -140,6 +151,7 @@ public class GenerativeLanguageModel {
         this.unigramTables = unigramTables;
         this.bigramTables  = bigramTables;
         this.trigramTables = trigramTables;
+        this.scriptTables  = scriptTables;
         this.scoreMeans    = scoreMeans;
         this.scoreStdDevs  = scoreStdDevs;
         Map<String, Integer> idx = new HashMap<>(langIds.size() * 2);
@@ -213,7 +225,52 @@ public class GenerativeLanguageModel {
                 });
         }
 
+        if (scriptTables != null && scriptTables[li] != null) {
+            float scriptScore = scoreScriptDistribution(preprocessed, scriptTables[li]);
+            if (!Float.isNaN(scriptScore)) {
+                sum[0] += scriptScore;
+                cnt[0]++;
+            }
+        }
+
         return cnt[0] == 0 ? Float.NaN : (float) (sum[0] / cnt[0]);
+    }
+
+    /**
+     * Compute a single L1-weighted average of script log-probs for the text.
+     * Returns NaN if the text contains no letter codepoints.
+     */
+    static float scoreScriptDistribution(String preprocessed, byte[] scriptTable) {
+        int[] scriptCounts = new int[SCRIPT_CATEGORIES];
+        int totalLetters = 0;
+
+        int i = 0;
+        int len = preprocessed.length();
+        while (i < len) {
+            int cp = preprocessed.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.isLetter(cp)) {
+                int lower = Character.toLowerCase(cp);
+                int script = ScriptCategory.of(lower);
+                if (script < SCRIPT_CATEGORIES) {
+                    scriptCounts[script]++;
+                    totalLetters++;
+                }
+            }
+        }
+
+        if (totalLetters == 0) {
+            return Float.NaN;
+        }
+
+        double weightedSum = 0.0;
+        for (int s = 0; s < SCRIPT_CATEGORIES; s++) {
+            if (scriptCounts[s] > 0) {
+                double proportion = (double) scriptCounts[s] / totalLetters;
+                weightedSum += proportion * dequantize(scriptTable[s]);
+            }
+        }
+        return (float) weightedSum;
     }
 
     /**
@@ -538,10 +595,11 @@ public class GenerativeLanguageModel {
             throw new IOException("Not a GLM1 file (bad magic)");
         }
         int version = din.readInt();
-        if (version != 1 && version != VERSION) {
+        if (version < 1 || version > VERSION) {
             throw new IOException("Unsupported GLM version: " + version);
         }
-        boolean hasStats = version >= 2;
+        boolean hasStats  = version >= 2;
+        boolean hasScript = version >= 3;
 
         int numLangs        = din.readInt();
         int cjkUni          = din.readInt();
@@ -550,11 +608,14 @@ public class GenerativeLanguageModel {
         int noncjkBi        = din.readInt();
         int noncjkTri       = din.readInt();
 
+        int scriptCats = hasScript ? din.readInt() : 0;
+
         List<String> langIds      = new ArrayList<>(numLangs);
         boolean[]    isCjk        = new boolean[numLangs];
         byte[][]     unigramTables = new byte[numLangs][];
         byte[][]     bigramTables  = new byte[numLangs][];
         byte[][]     trigramTables = new byte[numLangs][];
+        byte[][]     scriptTbls    = hasScript ? new byte[numLangs][] : null;
         float[]      means        = new float[numLangs];
         float[]      stdDevs      = new float[numLangs];
 
@@ -584,10 +645,15 @@ public class GenerativeLanguageModel {
                 trigramTables[i] = new byte[noncjkTri];
                 din.readFully(trigramTables[i]);
             }
+
+            if (hasScript) {
+                scriptTbls[i] = new byte[scriptCats];
+                din.readFully(scriptTbls[i]);
+            }
         }
 
         return new GenerativeLanguageModel(langIds, isCjk,
-                unigramTables, bigramTables, trigramTables,
+                unigramTables, bigramTables, trigramTables, scriptTbls,
                 means, stdDevs);
     }
 
@@ -605,6 +671,7 @@ public class GenerativeLanguageModel {
         dout.writeInt(NONCJK_UNIGRAM_BUCKETS);
         dout.writeInt(NONCJK_BIGRAM_BUCKETS);
         dout.writeInt(NONCJK_TRIGRAM_BUCKETS);
+        dout.writeInt(SCRIPT_CATEGORIES);
 
         for (int i = 0; i < langIds.size(); i++) {
             byte[] codeBytes = langIds.get(i).getBytes(StandardCharsets.UTF_8);
@@ -617,6 +684,11 @@ public class GenerativeLanguageModel {
             dout.write(bigramTables[i]);
             if (!isCjk[i]) {
                 dout.write(trigramTables[i]);
+            }
+            if (scriptTables != null && scriptTables[i] != null) {
+                dout.write(scriptTables[i]);
+            } else {
+                dout.write(new byte[SCRIPT_CATEGORIES]);
             }
         }
         dout.flush();
@@ -638,6 +710,7 @@ public class GenerativeLanguageModel {
         private final Map<String, long[]>  unigramCounts = new HashMap<>();
         private final Map<String, long[]>  bigramCounts  = new HashMap<>();
         private final Map<String, long[]>  trigramCounts = new HashMap<>();
+        private final Map<String, long[]>  scriptCounts  = new HashMap<>();
 
         /**
          * Register a language before feeding it samples.  Must be called
@@ -652,6 +725,7 @@ public class GenerativeLanguageModel {
             if (!isCjk) {
                 trigramCounts.put(langCode, new long[NONCJK_TRIGRAM_BUCKETS]);
             }
+            scriptCounts.put(langCode, new long[SCRIPT_CATEGORIES]);
             return this;
         }
 
@@ -683,6 +757,8 @@ public class GenerativeLanguageModel {
                         h -> bg[h % NONCJK_BIGRAM_BUCKETS]++,
                         h -> tg[h % NONCJK_TRIGRAM_BUCKETS]++);
             }
+
+            accumulateScriptCounts(pp, scriptCounts.get(langCode));
             return this;
         }
 
@@ -695,21 +771,24 @@ public class GenerativeLanguageModel {
             List<String> ids  = new ArrayList<>(cjkFlags.keySet());
             int n = ids.size();
 
-            boolean[] cjkArr    = new boolean[n];
-            byte[][]  uniTables = new byte[n][];
-            byte[][]  biTables  = new byte[n][];
-            byte[][]  triTables = new byte[n][];
+            boolean[] cjkArr      = new boolean[n];
+            byte[][]  uniTables   = new byte[n][];
+            byte[][]  biTables    = new byte[n][];
+            byte[][]  triTables   = new byte[n][];
+            byte[][]  scriptTbls  = new byte[n][];
 
             for (int i = 0; i < n; i++) {
                 String lang = ids.get(i);
-                cjkArr[i]  = cjkFlags.get(lang);
-                uniTables[i] = toLogProbTable(unigramCounts.get(lang), addK);
-                biTables[i]  = toLogProbTable(bigramCounts.get(lang),  addK);
+                cjkArr[i]     = cjkFlags.get(lang);
+                uniTables[i]  = toLogProbTable(unigramCounts.get(lang), addK);
+                biTables[i]   = toLogProbTable(bigramCounts.get(lang),  addK);
                 if (!cjkArr[i]) {
                     triTables[i] = toLogProbTable(trigramCounts.get(lang), addK);
                 }
+                scriptTbls[i] = toLogProbTable(scriptCounts.get(lang), addK);
             }
-            return new GenerativeLanguageModel(ids, cjkArr, uniTables, biTables, triTables,
+            return new GenerativeLanguageModel(ids, cjkArr,
+                    uniTables, biTables, triTables, scriptTbls,
                     new float[n], new float[n]);
         }
 
@@ -725,6 +804,22 @@ public class GenerativeLanguageModel {
                 table[i] = quantize((float) Math.log(p));
             }
             return table;
+        }
+
+        private static void accumulateScriptCounts(String preprocessed, long[] dest) {
+            int i = 0;
+            int len = preprocessed.length();
+            while (i < len) {
+                int cp = preprocessed.codePointAt(i);
+                i += Character.charCount(cp);
+                if (Character.isLetter(cp)) {
+                    int lower = Character.toLowerCase(cp);
+                    int script = ScriptCategory.of(lower);
+                    if (script < dest.length) {
+                        dest[script]++;
+                    }
+                }
+            }
         }
     }
 }

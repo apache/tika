@@ -44,26 +44,40 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
     public static final int FEATURE_FLAGS =
             CharSoupModel.FLAG_TRIGRAMS
             | CharSoupModel.FLAG_WORD_UNIGRAMS
+            | CharSoupModel.FLAG_4GRAMS
+            | CharSoupModel.FLAG_SCRIPT_BLOCKS;
+
+    public static final int FEATURE_FLAGS_LEGACY =
+            CharSoupModel.FLAG_TRIGRAMS
+            | CharSoupModel.FLAG_WORD_UNIGRAMS
             | CharSoupModel.FLAG_4GRAMS;
 
-    static final int BIGRAM_BASIS   = 0x811c9dc5;
-    static final int TRIGRAM_BASIS  = 0x9f4e3c21;
-    static final int FOURGRAM_BASIS = 0xa3d8f215;
-    static final int UNIGRAM_BASIS  = 0x2f4a3c17;
-    static final int WORD_BASIS     = 0x4a1c7b39;
+    static final int BIGRAM_BASIS       = 0x811c9dc5;
+    static final int TRIGRAM_BASIS      = 0x9f4e3c21;
+    static final int FOURGRAM_BASIS     = 0xa3d8f215;
+    static final int UNIGRAM_BASIS      = 0x2f4a3c17;
+    static final int WORD_BASIS         = 0x4a1c7b39;
+    static final int SCRIPT_BASIS       = ScriptAwareFeatureExtractor.SCRIPT_BASIS;
+    static final int SCRIPT_TRANS_BASIS = ScriptAwareFeatureExtractor.SCRIPT_TRANS_BASIS;
 
     static final int MAX_WORD_LENGTH = 30;
     static final int MIN_WORD_LENGTH = 2;
     static final int SENTINEL = '_';
 
     private final int numBuckets;
+    private final boolean useScriptBlocks;
 
     public ShortTextFeatureExtractor(int numBuckets) {
+        this(numBuckets, true);
+    }
+
+    public ShortTextFeatureExtractor(int numBuckets, boolean useScriptBlocks) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException(
                     "numBuckets must be positive: " + numBuckets);
         }
         this.numBuckets = numBuckets;
+        this.useScriptBlocks = useScriptBlocks;
     }
 
     @Override
@@ -127,13 +141,16 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
         int wordHash = WORD_BASIS;
         int wordLen = 0;
         int wordScript = -1;
-        // rolling suffix window for 4-gram boundary emissions
         int suf1 = SENTINEL;
         int suf2 = SENTINEL;
         int suf3 = SENTINEL;
-        // prefix window for boundary 4-gram at word start
         int preA = SENTINEL;
         int preB = SENTINEL;
+
+        int[] scriptCounts = useScriptBlocks ? new int[ScriptCategory.COUNT] : null;
+        int[] transitionCounts = useScriptBlocks
+                ? new int[ScriptCategory.COUNT * ScriptCategory.COUNT] : null;
+        int lastLetterScript = -1;
 
         int i = 0;
         int len = text.length();
@@ -149,6 +166,14 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
                 int lower = Character.toLowerCase(cp);
                 int script = ScriptCategory.of(lower);
                 boolean cjk = isCjkScript(script);
+
+                if (useScriptBlocks) {
+                    scriptCounts[script]++;
+                    if (lastLetterScript >= 0 && lastLetterScript != script) {
+                        transitionCounts[lastLetterScript * ScriptCategory.COUNT + script]++;
+                    }
+                    lastLetterScript = script;
+                }
 
                 if (prevWasLetter) {
                     if (!sameFamily(script, prevScript)) {
@@ -247,6 +272,10 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
             emitBoundaryEnd(counts, prevScript, prevCp, prevWasCjk,
                     wordHash, wordLen, wordScript, suf1, suf2, suf3);
         }
+
+        if (useScriptBlocks) {
+            emitScriptFeatures(counts, scriptCounts, transitionCounts);
+        }
     }
 
     private void emitBoundaryStart(int[] counts, int script, int lower, boolean cjk) {
@@ -302,10 +331,55 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
         counts[(h & 0x7FFFFFFF) % numBuckets]++;
     }
 
+    static final int SCRIPT_SCALE = ScriptAwareFeatureExtractor.SCRIPT_SCALE;
+
+    private void emitScriptFeatures(int[] counts,
+                                     int[] scriptCounts,
+                                     int[] transitionCounts) {
+        int totalLetters = 0;
+        for (int c : scriptCounts) {
+            totalLetters += c;
+        }
+        if (totalLetters == 0) {
+            return;
+        }
+
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            if (scriptCounts[s] > 0) {
+                int weight = (int) Math.round(
+                        (double) SCRIPT_SCALE * scriptCounts[s] / totalLetters);
+                if (weight > 0) {
+                    int h = fnvFeedByte(SCRIPT_BASIS, s);
+                    counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
+                }
+            }
+        }
+
+        int totalTransitions = 0;
+        for (int c : transitionCounts) {
+            totalTransitions += c;
+        }
+        if (totalTransitions == 0) {
+            return;
+        }
+
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            for (int t = 0; t < ScriptCategory.COUNT; t++) {
+                int c = transitionCounts[s * ScriptCategory.COUNT + t];
+                if (c > 0) {
+                    int weight = (int) Math.round(
+                            (double) SCRIPT_SCALE * c / totalTransitions);
+                    if (weight > 0) {
+                        int h = fnvFeedByte(fnvFeedByte(SCRIPT_TRANS_BASIS, s), t);
+                        counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
+                    }
+                }
+            }
+        }
+    }
+
     private static boolean isCjkScript(int script) {
-        return script == ScriptCategory.HAN
-                || script == ScriptCategory.HIRAGANA
-                || script == ScriptCategory.KATAKANA;
+        return ScriptAwareFeatureExtractor.isCjkScript(script);
     }
 
     private static boolean sameFamily(int a, int b) {
@@ -343,6 +417,6 @@ public class ShortTextFeatureExtractor implements FeatureExtractor {
 
     @Override
     public int getFeatureFlags() {
-        return FEATURE_FLAGS;
+        return useScriptBlocks ? FEATURE_FLAGS : FEATURE_FLAGS_LEGACY;
     }
 }

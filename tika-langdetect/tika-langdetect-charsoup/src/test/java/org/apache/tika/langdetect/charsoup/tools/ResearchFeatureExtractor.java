@@ -21,6 +21,7 @@ import java.util.Arrays;
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptCategory;
 
 /**
@@ -47,10 +48,13 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     static final int CHAR_UNIGRAM_BASIS = 0x1d4f8c3a;
     static final int FOURGRAM_BASIS     = 0xa3d8f215;
     static final int FIVEGRAM_BASIS     = 0xc7b46e38;
+    static final int SCRIPT_BASIS       = ScriptAwareFeatureExtractor.SCRIPT_BASIS;
+    static final int SCRIPT_TRANS_BASIS = ScriptAwareFeatureExtractor.SCRIPT_TRANS_BASIS;
 
     static final int MAX_WORD_LENGTH = 30;
     static final int MIN_WORD_LENGTH = 2;
     static final int SENTINEL = '_';
+    static final int SCRIPT_SCALE = ScriptAwareFeatureExtractor.SCRIPT_SCALE;
 
     private final int numBuckets;
     private final boolean useTrigrams;
@@ -62,10 +66,11 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     private final boolean useCharUnigrams;
     private final boolean use4grams;
     private final boolean use5grams;
+    private final boolean useScriptBlocks;
 
     /** Minimal constructor: bigrams + word unigrams + CJK unigrams. */
     public ResearchFeatureExtractor(int numBuckets) {
-        this(numBuckets, false, false, false, false, false, true, false, false, false);
+        this(numBuckets, false, false, false, false, false, true, false, false, false, false);
     }
 
     /** Full-config constructor. All features share the same flat bucket space. */
@@ -79,6 +84,22 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                                     boolean useCharUnigrams,
                                     boolean use4grams,
                                     boolean use5grams) {
+        this(numBuckets, useTrigrams, useSkipBigrams, useSuffixes, useSuffix4,
+                usePrefix, useWordUnigrams, useCharUnigrams, use4grams, use5grams, false);
+    }
+
+    /** Full-config constructor including script block features. */
+    public ResearchFeatureExtractor(int numBuckets,
+                                    boolean useTrigrams,
+                                    boolean useSkipBigrams,
+                                    boolean useSuffixes,
+                                    boolean useSuffix4,
+                                    boolean usePrefix,
+                                    boolean useWordUnigrams,
+                                    boolean useCharUnigrams,
+                                    boolean use4grams,
+                                    boolean use5grams,
+                                    boolean useScriptBlocks) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException(
                     "numBuckets must be positive: " + numBuckets);
@@ -93,6 +114,7 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
         this.useCharUnigrams = useCharUnigrams;
         this.use4grams = use4grams;
         this.use5grams = use5grams;
+        this.useScriptBlocks = useScriptBlocks;
     }
 
     @Override
@@ -155,6 +177,11 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
         int preB = SENTINEL;
         int preC = SENTINEL;
 
+        int[] scriptCounts = useScriptBlocks ? new int[ScriptCategory.COUNT] : null;
+        int[] transitionCounts = useScriptBlocks
+                ? new int[ScriptCategory.COUNT * ScriptCategory.COUNT] : null;
+        int lastLetterScript = -1;
+
         int i = 0;
         int len = text.length();
         while (i < len) {
@@ -169,6 +196,14 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                 int lower = Character.toLowerCase(cp);
                 int script = ScriptCategory.of(lower);
                 boolean cjk = isCjkScript(script);
+
+                if (useScriptBlocks) {
+                    scriptCounts[script]++;
+                    if (lastLetterScript >= 0 && lastLetterScript != script) {
+                        transitionCounts[lastLetterScript * ScriptCategory.COUNT + script]++;
+                    }
+                    lastLetterScript = script;
+                }
 
                 if (prevWasLetter) {
                     if (!sameFamily(script, prevScript)) {
@@ -299,6 +334,55 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
                     wordHash, wordLen, wordScript,
                     suf0, suf1, suf2, suf3, preA, preB, preC);
         }
+
+        if (useScriptBlocks) {
+            emitScriptFeatures(counts, scriptCounts, transitionCounts);
+        }
+    }
+
+    private void emitScriptFeatures(int[] counts,
+                                     int[] scriptCounts,
+                                     int[] transitionCounts) {
+        int totalLetters = 0;
+        for (int c : scriptCounts) {
+            totalLetters += c;
+        }
+        if (totalLetters == 0) {
+            return;
+        }
+
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            if (scriptCounts[s] > 0) {
+                int weight = (int) Math.round(
+                        (double) SCRIPT_SCALE * scriptCounts[s] / totalLetters);
+                if (weight > 0) {
+                    int h = fnvFeedByte(SCRIPT_BASIS, s);
+                    counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
+                }
+            }
+        }
+
+        int totalTransitions = 0;
+        for (int c : transitionCounts) {
+            totalTransitions += c;
+        }
+        if (totalTransitions == 0) {
+            return;
+        }
+
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            for (int t = 0; t < ScriptCategory.COUNT; t++) {
+                int c = transitionCounts[s * ScriptCategory.COUNT + t];
+                if (c > 0) {
+                    int weight = (int) Math.round(
+                            (double) SCRIPT_SCALE * c / totalTransitions);
+                    if (weight > 0) {
+                        int h = fnvFeedByte(fnvFeedByte(SCRIPT_TRANS_BASIS, s), t);
+                        counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
+                    }
+                }
+            }
+        }
     }
 
     private void emitBoundaryStart(int[] counts, int script, int lower, boolean cjk) {
@@ -402,9 +486,7 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     }
 
     private static boolean isCjkScript(int script) {
-        return script == ScriptCategory.HAN
-                || script == ScriptCategory.HIRAGANA
-                || script == ScriptCategory.KATAKANA;
+        return ScriptAwareFeatureExtractor.isCjkScript(script);
     }
 
     private static boolean sameFamily(int a, int b) {
@@ -452,6 +534,7 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
         if (useCharUnigrams) flags |= CharSoupModel.FLAG_CHAR_UNIGRAMS;
         if (use4grams)       flags |= CharSoupModel.FLAG_4GRAMS;
         if (use5grams)       flags |= CharSoupModel.FLAG_5GRAMS;
+        if (useScriptBlocks) flags |= CharSoupModel.FLAG_SCRIPT_BLOCKS;
         return flags;
     }
 }

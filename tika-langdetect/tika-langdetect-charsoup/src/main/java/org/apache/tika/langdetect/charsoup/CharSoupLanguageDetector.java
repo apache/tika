@@ -210,7 +210,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         FeatureExtractor shortExtractor = null;
         try {
             shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
-            shortExtractor = new ShortTextFeatureExtractor(shortModel.getNumBuckets());
+            shortExtractor = shortModel.createExtractor();
             verifyFlagsMatch(shortModel, shortExtractor, SHORT_TEXT_MODEL_RESOURCE);
             SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
             SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
