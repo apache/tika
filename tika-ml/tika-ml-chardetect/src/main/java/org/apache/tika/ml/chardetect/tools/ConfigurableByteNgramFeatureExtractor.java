@@ -44,8 +44,8 @@ import org.apache.tika.ml.FeatureExtractor;
  *   <li><b>useStride2Bigrams</b>: emit one feature per (b[i], b[i+1]) pair at
  *       even positions i = 0, 2, 4, ... covering all bytes (not just high bytes).
  *       A distinct FNV salt prevents hash collision with stride-1 bigrams.
- *       Teaches the model to distinguish UTF-16BE/LE and UTF-32 via their
- *       characteristic 0x00-byte code-unit patterns.</li>
+ *       Helps the model distinguish UTF-16BE/LE via their characteristic
+ *       code-unit patterns.</li>
  * </ul>
  */
 public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
@@ -224,7 +224,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
             }
         }
 
-        // Stride-2: code-unit pairs at positions 0, 2, 4, ...
+        // Stride-2 bigrams (same logic as extractSparseInto).
         if (useStride2Bigrams) {
             for (int i = from; i + 1 < to; i += 2) {
                 int b0 = b[i] & 0xFF;

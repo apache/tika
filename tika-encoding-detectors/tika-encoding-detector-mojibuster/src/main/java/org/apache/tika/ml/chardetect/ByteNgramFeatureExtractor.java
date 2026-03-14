@@ -68,11 +68,11 @@ import org.apache.tika.ml.FeatureExtractor;
  *       at even positions {@code i = 0, 2, 4, ...}, covering all bytes (not just
  *       high bytes). These pairs directly reflect code-unit structure: UTF-16LE
  *       BMP text produces many {@code (XX, 0x00)} pairs; UTF-16BE produces
- *       {@code (0x00, XX)}; UTF-32 produces dense {@code (0x00, 0x00)} pairs.
- *       A distinct FNV salt ({@code FNV_STRIDE2_SALT}) prevents hash collisions
- *       with stride-1 features. The BOM must be stripped upstream before bytes
- *       reach this extractor so that offset 0 always aligns with a real
- *       code unit, matching the BOM-free training data.</li>
+ *       {@code (0x00, XX)}. A distinct FNV salt ({@code FNV_STRIDE2_SALT})
+ *       prevents hash collisions with stride-1 features. The BOM must be
+ *       stripped upstream before bytes reach this extractor so that offset 0
+ *       always aligns with a real code unit, matching the BOM-free training
+ *       data.</li>
  * </ul>
  *
  * <h3>Why the high-byte filter matters for stride-1 features</h3>
@@ -157,7 +157,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
         }
         int n = 0;
 
-        // Stride-1: high-byte-anchored unigrams, bigrams, and anchored bigrams.
+        // Stride-1: high-byte-anchored unigrams and bigrams.
         for (int i = 0; i < input.length; i++) {
             int bi = input[i] & 0xFF;
             if (bi < 0x80) {
@@ -175,7 +175,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             if (i + 1 < input.length) {
                 int bi1 = input[i + 1] & 0xFF;
 
-                // Bigram (high, next)
+                // Bigram
                 h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                 h = (h ^ bi1) * FNV_PRIME;
                 bkt = (h & 0x7fffffff) % numBuckets;
@@ -183,24 +183,11 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
                     touched[n++] = bkt;
                 }
                 dense[bkt]++;
-
-                // Anchored bigram: high lead followed by low trail (Shift-JIS/Big5 boundary)
-                if (bi1 < 0x80) {
-                    h = (FNV_ANCHOR_SALT ^ bi1) * FNV_PRIME;
-                    if (i + 2 < input.length) {
-                        h = (h ^ (input[i + 2] & 0xFF)) * FNV_PRIME;
-                    }
-                    bkt = (h & 0x7fffffff) % numBuckets;
-                    if (dense[bkt] == 0) {
-                        touched[n++] = bkt;
-                    }
-                    dense[bkt]++;
-                }
             }
         }
 
         // Stride-2: code-unit pairs at positions 0, 2, 4, ...
-        // Covers all bytes (not just high bytes) so UTF-16/32 null bytes are visible.
+        // Covers all bytes (not just high bytes) so UTF-16 null bytes are visible.
         for (int i = 0; i + 1 < input.length; i += 2) {
             int b0 = input[i] & 0xFF;
             int b1 = input[i + 1] & 0xFF;
@@ -217,7 +204,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
     }
 
     private void extractInto(byte[] b, int from, int to, int[] counts) {
-        // Stride-1: high-byte-anchored unigrams, bigrams, and anchored bigrams.
+        // Stride-1: high-byte-anchored unigrams and bigrams.
         for (int i = from; i < to; i++) {
             int bi = b[i] & 0xFF;
             if (bi < 0x80) {
@@ -230,23 +217,14 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             if (i + 1 < to) {
                 int bi1 = b[i + 1] & 0xFF;
 
-                // Bigram (high, next)
+                // Bigram
                 int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                 h = (h ^ bi1) * FNV_PRIME;
                 counts[bucket(h)]++;
-
-                // Anchored bigram: high lead followed by low trail (Shift-JIS/Big5 boundary)
-                if (bi1 < 0x80) {
-                    h = (FNV_ANCHOR_SALT ^ bi1) * FNV_PRIME;
-                    if (i + 2 < to) {
-                        h = (h ^ (b[i + 2] & 0xFF)) * FNV_PRIME;
-                    }
-                    counts[bucket(h)]++;
-                }
             }
         }
 
-        // Stride-2: code-unit pairs at positions 0, 2, 4, ...
+        // Stride-2 bigrams (same logic as extractSparseInto).
         for (int i = from; i + 1 < to; i += 2) {
             int b0 = b[i] & 0xFF;
             int b1 = b[i + 1] & 0xFF;

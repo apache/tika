@@ -81,8 +81,7 @@ import org.apache.tika.ml.chardetect.CharsetConfusables;
  * <pre>
  *   java BuildCharsetTrainingData \
  *     --madlad-dir  ~/datasets/madlad/data \
- *     --zh-yue-file ~/datasets/zh_yuewiki/sentences_zh_yue.txt \
- *     --output-dir  ~/datasets/madlad/charset-detect3
+ *     --output-dir  ~/datasets/madlad/charset-detect4
  * </pre>
  */
 public class BuildCharsetTrainingData {
@@ -242,11 +241,13 @@ public class BuildCharsetTrainingData {
         put("kor", "EUC-KR", "ISO-2022-KR");
         // Thai
         put("tha", "windows-874");
-        // Traditional Chinese — sourced from Cantonese Wikipedia (zh_yuewiki).
-        // "yue" is a virtual language key; handled specially in sentence loading.
+        // Traditional Chinese — sourced from Cantonese Wikipedia (yue)
+        // and Chinese Wikipedia (zho-trad, which stores Traditional).
+        // Both are loaded from sentences_wikipedia.txt in their MADLAD dirs.
         // x-ISO-2022-CN-CNS (CNS 11643 plane) is structural-only; included
         // for eval coverage alongside Big5-HKSCS and x-EUC-TW.
         put("yue", "Big5-HKSCS", "x-EUC-TW", "x-ISO-2022-CN-CNS");
+        put("zho-trad", "Big5-HKSCS", "x-EUC-TW");
     }
 
     private static void put(String lang, String... charsets) {
@@ -331,6 +332,10 @@ public class BuildCharsetTrainingData {
             "IBM420-ltr", "IBM420-rtl"
     ));
 
+    private static final Set<String> IBM424_CHARSETS = new HashSet<>(Arrays.asList(
+            "IBM424-ltr", "IBM424-rtl"
+    ));
+
     /**
      * Arabic combining-mark codepoint ranges stripped for IBM420.
      * Each element is {lo, hi} inclusive.
@@ -357,36 +362,39 @@ public class BuildCharsetTrainingData {
 
     /**
      * Max characters that may be dropped (unencodable) or corrupt (U+FFFD on
-     * decode) before a sentence is rejected.  Allows one or two typographic
-     * characters (curly quotes, em-dash) without discarding the whole sentence.
+     * decode) before a chunk is rejected.  Base allowance plus 1 per 200 source
+     * characters so longer concatenated chunks aren't penalised unfairly.
      */
-    private static final int MAX_DROPPED_CHARS = 3;
+    private static final int MAX_DROPPED_BASE = 3;
+    private static final int DROP_SCALE_CHARS = 200;
 
     // -----------------------------------------------------------------------
     // Configuration defaults
     // -----------------------------------------------------------------------
 
     /**
-     * CJK and Unicode charsets saturate quickly — their byte patterns are so
-     * distinctive that a linear model converges with far fewer samples than SBCS.
+     * Safety-valve sample cap per charset per split.  The byte budget is the
+     * real throttle; this just prevents runaway sample counts.
      */
-    private static final int DEFAULT_TRAIN_CAP       = 20_000;
-    private static final int DEFAULT_DEVTEST_CAP     =  2_000;
-    private static final int DEFAULT_TEST_CAP        =  5_000;
+    private static final int DEFAULT_SAMPLE_CAP = 500_000;
 
     /**
-     * SBCS/EBCDIC charsets share linguistic content and differ only in how they
-     * map the 0x80–0xFF range.  The harder confusable pairs (IBM500 vs IBM1047,
-     * windows-1252 vs IBM850 vs x-MacRoman) need more samples for the linear
-     * model to lock onto subtle byte-frequency differences.
+     * Byte budget per charset for the train split.  All charsets get the same
+     * budget so the model sees comparable feature signal regardless of source
+     * sentence length or encoding density.  100 MB is generous — a linear
+     * model converges well before this, but more data means better-calibrated
+     * weights for rare byte patterns (e.g. distinguishing Shift_JIS from
+     * Big5-HKSCS on short probes).
      */
-    private static final int DEFAULT_SBCS_TRAIN_CAP  = 50_000;
-    private static final int DEFAULT_SBCS_TEST_CAP   = 10_000;
+    private static final long DEFAULT_BYTE_BUDGET = 100_000_000L;
 
     private static final int DEFAULT_MIN_CHUNK       =     64;
     private static final int DEFAULT_MAX_CHUNK       =  1_024;
     private static final int DEFAULT_SEED            =     42;
-    private static final int DEFAULT_MAX_SOURCE_LANG = 200_000;
+    private static final int MAX_LOAD_CAP_PER_LANG = 4_000_000;
+    private static final int LEGACY_SENTENCE_BUDGET = 8_000_000;
+    private static final int UNICODE_SENTENCE_BUDGET = 5_000_000;
+    private static final String UNICODE_LANGS_FILE = "unicode_langs.txt";
 
     // -----------------------------------------------------------------------
     // Main
@@ -395,28 +403,18 @@ public class BuildCharsetTrainingData {
     public static void main(String[] args) throws IOException {
         Path madladDir       = Paths.get(System.getProperty("user.home"),
                                          "datasets", "madlad", "data");
-        Path zhYueFile       = Paths.get(System.getProperty("user.home"),
-                                         "datasets", "zh_yuewiki", "sentences_zh_yue.txt");
         Path outputDir       = Paths.get(System.getProperty("user.home"),
-                                         "datasets", "madlad", "charset-detect3");
+                                         "datasets", "madlad", "charset-detect4");
         Set<String> requested = new HashSet<>(CHARSET_JAVA.keySet());
-        int trainCap         = DEFAULT_TRAIN_CAP;
-        int sbcsTrainCap     = DEFAULT_SBCS_TRAIN_CAP;
-        int devtestCap       = DEFAULT_DEVTEST_CAP;
-        int testCap          = DEFAULT_TEST_CAP;
-        int sbcsTestCap      = DEFAULT_SBCS_TEST_CAP;
+        int sampleCap        = DEFAULT_SAMPLE_CAP;
+        long byteBudget      = DEFAULT_BYTE_BUDGET;
         int minChunk         = DEFAULT_MIN_CHUNK;
         int maxChunk         = DEFAULT_MAX_CHUNK;
         int seed             = DEFAULT_SEED;
-        int maxSourcePerLang = DEFAULT_MAX_SOURCE_LANG;
-
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--madlad-dir":
                     madladDir = Paths.get(args[++i]);
-                    break;
-                case "--zh-yue-file":
-                    zhYueFile = Paths.get(args[++i]);
                     break;
                 case "--output-dir":
                     outputDir = Paths.get(args[++i]);
@@ -424,20 +422,11 @@ public class BuildCharsetTrainingData {
                 case "--charsets":
                     requested = new HashSet<>(Arrays.asList(args[++i].split(",")));
                     break;
-                case "--train-cap":
-                    trainCap = Integer.parseInt(args[++i]);
+                case "--sample-cap":
+                    sampleCap = Integer.parseInt(args[++i]);
                     break;
-                case "--sbcs-train-cap":
-                    sbcsTrainCap = Integer.parseInt(args[++i]);
-                    break;
-                case "--devtest-cap":
-                    devtestCap = Integer.parseInt(args[++i]);
-                    break;
-                case "--test-cap":
-                    testCap = Integer.parseInt(args[++i]);
-                    break;
-                case "--sbcs-test-cap":
-                    sbcsTestCap = Integer.parseInt(args[++i]);
+                case "--byte-budget":
+                    byteBudget = Long.parseLong(args[++i]);
                     break;
                 case "--min-chunk":
                     minChunk = Integer.parseInt(args[++i]);
@@ -447,9 +436,6 @@ public class BuildCharsetTrainingData {
                     break;
                 case "--seed":
                     seed = Integer.parseInt(args[++i]);
-                    break;
-                case "--max-source-per-lang":
-                    maxSourcePerLang = Integer.parseInt(args[++i]);
                     break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
@@ -487,16 +473,33 @@ public class BuildCharsetTrainingData {
             }
         }
 
+        // Load unicode_langs.txt for Unicode charset training
+        Path unicodeLangsFile = madladDir.resolve(UNICODE_LANGS_FILE);
+        List<String> unicodeLangs = new ArrayList<>();
+        if (Files.exists(unicodeLangsFile)) {
+            for (String line : Files.readAllLines(unicodeLangsFile,
+                    java.nio.charset.StandardCharsets.UTF_8)) {
+                line = line.strip();
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    unicodeLangs.add(line);
+                }
+            }
+        } else {
+            System.err.println("WARNING: " + unicodeLangsFile + " not found; "
+                    + "Unicode charsets will use LANG_CHARSETS languages only");
+            for (String lang : LANG_CHARSETS.keySet()) {
+                unicodeLangs.add(lang);
+            }
+        }
+
         System.out.println("=== BuildCharsetTrainingData ===");
         System.out.println("  madlad-dir:          " + madladDir);
-        System.out.println("  zh-yue-file:         " + zhYueFile);
         System.out.println("  output-dir:          " + outputDir);
-        System.out.printf ("  caps (CJK/Unicode):  train=%,d  devtest=%,d  test=%,d%n",
-                           trainCap, devtestCap, testCap);
-        System.out.printf ("  caps (SBCS/EBCDIC):  train=%,d  devtest=%,d  test=%,d%n",
-                           sbcsTrainCap, devtestCap, sbcsTestCap);
+        System.out.printf ("  sample cap:          %,d%n", sampleCap);
+        System.out.printf ("  byte budget:         %,d%n", byteBudget);
         System.out.printf ("  chunk:               %d–%d bytes  seed=%d%n", minChunk, maxChunk, seed);
-        System.out.printf ("  max-source-per-lang: %,d%n", maxSourcePerLang);
+        System.out.printf ("  unicode langs:       %d (from %s)%n",
+                unicodeLangs.size(), unicodeLangsFile.getFileName());
         System.out.printf ("  charsets:            %d%n%n", targetCharsets.size());
 
         // Ambiguity gate: for each SBCS charset, precompute encoders for all
@@ -509,46 +512,57 @@ public class BuildCharsetTrainingData {
 
         // charset label → split name → sample count (for manifest)
         Map<String, Map<String, Integer>> manifest = new TreeMap<>();
+        // charset label → split name → total bytes
+        Map<String, Map<String, Long>> byteTotals = new TreeMap<>();
 
         for (String label : targetCharsets) {
             String javaName = CHARSET_JAVA.get(label);
             Charset cs      = Charset.forName(javaName);
             boolean structOnly = STRUCTURAL_ONLY.contains(label);
-            boolean isSbcs = !UNICODE_CHARSETS.contains(label)
-                    && !HIGH_BYTE_CJK.contains(label)
-                    && !structOnly;
-            int effectiveTrainCap = isSbcs ? sbcsTrainCap : trainCap;
-            int effectiveTestCap  = isSbcs ? sbcsTestCap  : testCap;
-            String[] splits    = {"train", "devtest", "test"};
-            int[]    splitCaps = {effectiveTrainCap, devtestCap, effectiveTestCap};
+            String[] splits       = {"train", "devtest", "test"};
+            int[]    splitCaps    = {sampleCap, sampleCap, sampleCap};
+            long[]   splitBudgets = {byteBudget, byteBudget / 5, byteBudget / 5};
             System.out.printf("%s  (%s)%s%n", label, javaName,
                     structOnly ? "  [structural-only: skipping train]" : "");
 
-            // Determine contributing languages
+            // Determine contributing languages.
+            // For Unicode charsets, read from unicode_langs.txt (generated
+            // by select_unicode_langs.py) which covers all major scripts
+            // with a random Latin sample for diversity.
+            // For legacy charsets, use only the explicit LANG_CHARSETS mappings.
             boolean isUnicode = UNICODE_CHARSETS.contains(label);
             List<String> langs = new ArrayList<>();
-            for (Map.Entry<String, List<String>> e : LANG_CHARSETS.entrySet()) {
-                if (isUnicode || e.getValue().contains(label)) {
-                    langs.add(e.getKey());
+            if (isUnicode) {
+                langs.addAll(unicodeLangs);
+            } else {
+                for (Map.Entry<String, List<String>> e :
+                        LANG_CHARSETS.entrySet()) {
+                    if (e.getValue().contains(label)) {
+                        langs.add(e.getKey());
+                    }
                 }
             }
 
-            // Per-language load cap: scale down when many languages contribute
-            int nLangs  = Math.max(1, langs.size());
-            int loadCap = Math.min(maxSourcePerLang,
-                                   Math.max(5_000, (effectiveTrainCap * 10) / nLangs));
-
-            // Load sentences per language, then combine and split 80/10/10
+            // Load sentences per language (capped for memory), then combine
+            // and split 80/10/10.  The byte budget is the real throttle.
+            int nLangs = Math.max(1, langs.size());
+            int perLangCap = isUnicode
+                    ? Math.max(5_000, UNICODE_SENTENCE_BUDGET / nLangs)
+                    : Math.min(MAX_LOAD_CAP_PER_LANG, LEGACY_SENTENCE_BUDGET / nLangs);
             List<String> allSentences = new ArrayList<>();
+            System.out.printf("  Contributing languages (%d), perLangCap=%,d:%n",
+                    nLangs, perLangCap);
             for (String lang : langs) {
-                List<String> sents;
-                if ("yue".equals(lang)) {
-                    sents = loadPlaintextSentences(zhYueFile, loadCap);
+                Path langDir = madladDir.resolve(lang);
+                List<String> sents = loadMadladSentences(langDir, perLangCap);
+                if (sents.isEmpty()) {
+                    System.out.printf("    %-6s: ** 0 sentences — MISSING DATA **%n", lang);
                 } else {
-                    Path langDir = madladDir.resolve(lang);
-                    sents = loadMadladSentences(langDir, loadCap);
+                    long totalChars = 0;
+                    for (String s : sents) totalChars += s.length();
+                    System.out.printf("    %-6s: %,8d sentences  avg_len=%,.0f chars%n",
+                            lang, sents.size(), (double) totalChars / sents.size());
                 }
-                System.out.printf("    %s: %,d sentences%n", lang, sents.size());
                 allSentences.addAll(sents);
             }
 
@@ -568,12 +582,15 @@ public class BuildCharsetTrainingData {
             splitSents.put("test",    allSentences.subList(nTrain + nDevtest, n));
 
             Map<String, Integer> splitCounts = new TreeMap<>();
+            Map<String, Long> splitBytes = new TreeMap<>();
             for (int si = 0; si < splits.length; si++) {
                 String split = splits[si];
                 int cap      = splitCaps[si];
+                long budget  = splitBudgets[si];
 
                 if (structOnly && "train".equals(split)) {
                     splitCounts.put(split, 0);
+                    splitBytes.put(split, 0L);
                     continue;
                 }
 
@@ -586,23 +603,64 @@ public class BuildCharsetTrainingData {
 
                 List<CharsetEncoder> rivals =
                         sbcsRivals.getOrDefault(label, Collections.emptyList());
-                int[] result = writeSamples(sents, cs, label, outFile,
-                                            cap, minChunk, maxChunk,
-                                            new Random(seed + label.hashCode()), rivals);
-                int written          = result[0];
-                int ambiguousDropped = result[1];
+                long[] result = writeSamples(sents, cs, label, outFile,
+                                             cap, budget, minChunk, maxChunk,
+                                             new Random(seed + label.hashCode()),
+                                             rivals);
+                int written          = (int) result[0];
+                int ambiguousDropped = (int) result[1];
+                long totalBytes      = result[2];
                 splitCounts.put(split, written);
+                splitBytes.put(split, totalBytes);
+                double budgetPct = 100.0 * totalBytes / budget;
                 if (ambiguousDropped > 0) {
-                    System.out.printf("    %s: %,d samples  (%,d ambiguous-dropped)%n",
-                            split, written, ambiguousDropped);
+                    System.out.printf("    %s: %,d samples  %,d bytes (%.1f%% of budget)  (%,d ambiguous-dropped)%n",
+                            split, written, totalBytes, budgetPct, ambiguousDropped);
                 } else {
-                    System.out.printf("    %s: %,d samples%n", split, written);
+                    System.out.printf("    %s: %,d samples  %,d bytes (%.1f%% of budget)%n",
+                            split, written, totalBytes, budgetPct);
                 }
             }
             manifest.put(label, splitCounts);
+            byteTotals.put(label, splitBytes);
         }
 
         writeManifest(outputDir, manifest);
+
+        // Summary table
+        System.out.println("\n=== SUMMARY ===");
+        System.out.printf("%-22s %8s %12s %8s %12s %8s %12s%n",
+                "Charset", "Train", "Train MB", "DevTest", "DT MB", "Test", "Test MB");
+        System.out.println("-".repeat(100));
+        for (Map.Entry<String, Map<String, Integer>> e : manifest.entrySet()) {
+            String cs = e.getKey();
+            Map<String, Integer> sc = e.getValue();
+            Map<String, Long> bt = byteTotals.getOrDefault(cs, Collections.emptyMap());
+            System.out.printf("%-22s %,8d %10.1f MB %,8d %10.1f MB %,8d %10.1f MB%n",
+                    cs,
+                    sc.getOrDefault("train", 0),
+                    bt.getOrDefault("train", 0L) / 1_000_000.0,
+                    sc.getOrDefault("devtest", 0),
+                    bt.getOrDefault("devtest", 0L) / 1_000_000.0,
+                    sc.getOrDefault("test", 0),
+                    bt.getOrDefault("test", 0L) / 1_000_000.0);
+        }
+
+        // Flag any charsets with suspiciously low train counts
+        System.out.println();
+        boolean anyWarnings = false;
+        for (Map.Entry<String, Map<String, Integer>> e : manifest.entrySet()) {
+            int train = e.getValue().getOrDefault("train", 0);
+            if (train > 0 && train < 1000) {
+                System.out.printf("WARNING: %s has only %,d train samples — check source data!%n",
+                        e.getKey(), train);
+                anyWarnings = true;
+            }
+        }
+        if (!anyWarnings) {
+            System.out.println("All charsets have >= 1,000 train samples.");
+        }
+
         System.out.println("\nDone.");
     }
 
@@ -661,53 +719,54 @@ public class BuildCharsetTrainingData {
     /**
      * Load sentences from a MADLAD {@code sentences_madlad.txt} file.
      * Format: {@code lineNum TAB text} (tab-separated, or just text).
+     *
+     * <p>Each MADLAD "line" is a full web-scraped document with literal
+     * {@code \n} escape sequences as sub-sentence separators.  This method
+     * splits on those separators so each returned string is an individual
+     * sentence (typically 20–500 characters).  This produces more diverse
+     * training data and equalises sentence length across source corpora
+     * (MADLAD documents vs. Wikipedia single-line sentences).</p>
      */
     private static List<String> loadMadladSentences(Path langDir, int max) {
-        Path txt = langDir.resolve("sentences_madlad.txt");
-        if (!Files.exists(txt)) {
-            return Collections.emptyList();
-        }
         List<String> result = new ArrayList<>();
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(txt),
-                                      java.nio.charset.StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = r.readLine()) != null && result.size() < max) {
-                int tab = line.indexOf('\t');
-                String text = (tab >= 0) ? line.substring(tab + 1) : line;
-                text = cleanMadladText(text);
-                if (!text.isEmpty()) {
-                    result.add(text);
-                }
+        for (String filename : new String[]{"sentences_madlad.txt",
+                                            "sentences_wikipedia.txt"}) {
+            if (result.size() >= max) {
+                break;
             }
-        } catch (IOException e) {
-            System.err.println("WARNING: could not read " + txt + ": " + e.getMessage());
-        }
-        return result;
-    }
-
-    /**
-     * Load sentences from a plain-text file (one sentence per line).
-     * Used for Cantonese Wikipedia (zh_yuewiki).
-     */
-    private static List<String> loadPlaintextSentences(Path file, int max) {
-        if (!Files.exists(file)) {
-            System.err.println("WARNING: not found: " + file);
-            return Collections.emptyList();
-        }
-        List<String> result = new ArrayList<>();
-        try (BufferedReader r = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(file),
-                                      java.nio.charset.StandardCharsets.UTF_8))) {
-            String line;
-            while ((line = r.readLine()) != null && result.size() < max) {
-                line = line.strip();
-                if (!line.isEmpty()) {
-                    result.add(line);
-                }
+            Path txt = langDir.resolve(filename);
+            if (!Files.exists(txt)) {
+                continue;
             }
-        } catch (IOException e) {
-            System.err.println("WARNING: could not read " + file + ": " + e.getMessage());
+            int before = result.size();
+            try (BufferedReader r = new BufferedReader(
+                    new InputStreamReader(Files.newInputStream(txt),
+                                          java.nio.charset.StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null && result.size() < max) {
+                    int tab = line.indexOf('\t');
+                    String text = (tab >= 0) ? line.substring(tab + 1) : line;
+                    text = text.replace("\ufeff", "");
+                    for (String part : text.split("\\\\n")) {
+                        String cleaned = part.replace("\\r", "")
+                                .replace("\\t", " ")
+                                .strip().replaceAll("\\s+", " ");
+                        if (!cleaned.isEmpty()) {
+                            result.add(cleaned);
+                            if (result.size() >= max) {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println("WARNING: could not read " + txt
+                        + ": " + e.getMessage());
+            }
+            int added = result.size() - before;
+            if (added > 0) {
+                System.out.printf("      (loaded %,d from %s)%n", added, filename);
+            }
         }
         return result;
     }
@@ -728,40 +787,80 @@ public class BuildCharsetTrainingData {
     // -----------------------------------------------------------------------
 
     /**
-     * Encode sentences and write up to {@code cap} samples to a gzipped binary
-     * file in {@code [uint16-BE length][raw bytes]} format.
+     * Encode sentences and write samples to a gzipped binary file in
+     * {@code [uint16-BE length][raw bytes]} format.
+     *
+     * <p>Stops when either the sample count cap or byte budget is reached.
+     * When an individual sentence encodes to fewer than {@code minChunk}
+     * bytes, adjacent sentences are concatenated (joined with {@code \n})
+     * until the combined text reaches the target chunk size.  This ensures
+     * all charsets produce full-sized chunks regardless of source sentence
+     * length.</p>
      *
      * @param rivals other SBCS {@link CharsetEncoder}s to check for byte-level
      *               identity (the ambiguity gate); empty for CJK/Unicode charsets
-     * @return {@code int[]}{written, ambiguousDropped}
+     * @return {@code long[]}{written, ambiguousDropped, totalBytes}
      */
-    private static int[] writeSamples(List<String> sentences, Charset cs, String charset,
-                                      Path outFile, int cap, int minChunk, int maxChunk,
-                                      Random rng, List<CharsetEncoder> rivals)
+    private static long[] writeSamples(List<String> sentences, Charset cs, String charset,
+                                       Path outFile, int sampleCap, long byteBudget,
+                                       int minChunk, int maxChunk,
+                                       Random rng, List<CharsetEncoder> rivals)
             throws IOException {
         int written          = 0;
         int ambiguousDropped = 0;
+        int encodeRejected   = 0;
+        long totalBytes      = 0;
+        int sentIdx          = 0;
         try (DataOutputStream out = new DataOutputStream(
                 new GZIPOutputStream(Files.newOutputStream(outFile)))) {
-            for (String sent : sentences) {
-                if (written >= cap) {
-                    break;
-                }
+            while (sentIdx < sentences.size()
+                    && written < sampleCap && totalBytes < byteBudget) {
                 int target = minChunk + rng.nextInt(maxChunk - minChunk + 1);
-                byte[] chunk = encodeChunk(sent, cs, charset, target);
+
+                // Build input text: concatenate sentences until we have
+                // enough characters to plausibly fill the target byte size.
+                // Rough heuristic: 2 bytes per char for CJK, 1 for SBCS.
+                int charTarget = target;
+                StringBuilder combined = new StringBuilder(
+                        sentences.get(sentIdx++));
+                while (combined.length() < charTarget
+                        && sentIdx < sentences.size()) {
+                    combined.append('\n').append(sentences.get(sentIdx++));
+                }
+
+                byte[] chunk = encodeChunk(combined.toString(), cs, charset,
+                        target);
                 if (chunk == null) {
+                    encodeRejected++;
                     continue;
                 }
-                if (!rivals.isEmpty() && isAmbiguous(sent, chunk, rivals)) {
+                if (!rivals.isEmpty()
+                        && isAmbiguous(combined.toString(), chunk, rivals)) {
                     ambiguousDropped++;
                     continue;
                 }
                 out.writeShort(chunk.length);
                 out.write(chunk);
                 written++;
+                totalBytes += chunk.length;
             }
         }
-        return new int[]{written, ambiguousDropped};
+        String stopReason;
+        if (sentIdx >= sentences.size()) {
+            stopReason = "exhausted sentences";
+        } else if (written >= sampleCap) {
+            stopReason = "hit sample cap";
+        } else if (totalBytes >= byteBudget) {
+            stopReason = "hit byte budget";
+        } else {
+            stopReason = "unknown";
+        }
+        if (encodeRejected > 0 || !"hit byte budget".equals(stopReason)) {
+            System.out.printf("      [stop: %s | encode-rejected=%,d | "
+                            + "sentences-consumed=%,d/%,d]%n",
+                    stopReason, encodeRejected, sentIdx, sentences.size());
+        }
+        return new long[]{written, ambiguousDropped, totalBytes};
     }
 
     /**
@@ -812,13 +911,193 @@ public class BuildCharsetTrainingData {
      */
     private static String prepareText(String text, String charset) {
         text = text.replace("\ufeff", "");
+        if (!UNICODE_CHARSETS.contains(charset)) {
+            text = normalizeTypography(text, charset);
+        }
+        if ("windows-1256".equals(charset)) {
+            text = normalizeForWin1256(text);
+        }
         if (RTL_CHARSETS.contains(charset)) {
             text = new StringBuilder(text).reverse().toString();
         }
         if (IBM420_CHARSETS.contains(charset)) {
             text = prepareForIbm420(text);
         }
+        if (IBM424_CHARSETS.contains(charset)) {
+            text = stripHebrewNikkud(text);
+        }
         return text;
+    }
+
+    private static final char[][] TYPO_REPLACEMENTS = {
+        {'\u2018', '\''},  // LEFT SINGLE QUOTATION MARK
+        {'\u2019', '\''},  // RIGHT SINGLE QUOTATION MARK
+        {'\u201A', '\''},  // SINGLE LOW-9 QUOTATION MARK
+        {'\u201C', '"'},   // LEFT DOUBLE QUOTATION MARK
+        {'\u201D', '"'},   // RIGHT DOUBLE QUOTATION MARK
+        {'\u201E', '"'},   // DOUBLE LOW-9 QUOTATION MARK
+        {'\u2013', '-'},   // EN DASH
+        {'\u2014', '-'},   // EM DASH
+        {'\u2011', '-'},   // NON-BREAKING HYPHEN
+        {'\u2026', '.'},   // HORIZONTAL ELLIPSIS
+        {'\u02BC', '\''},  // MODIFIER LETTER APOSTROPHE
+    };
+
+    private static final char[] TYPO_STRIP = {
+        '\u200B',  // ZERO WIDTH SPACE
+    };
+
+    private static final Map<String, Set<Character>> TYPO_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Build the set of typographic chars that need replacing for a charset.
+     * Chars that the charset CAN encode are left alone (they're discriminative).
+     */
+    private static Set<Character> unencodableTypoChars(String charset) {
+        return TYPO_CACHE.computeIfAbsent(charset, cs -> {
+            Charset javaCs = Charset.forName(CHARSET_JAVA.getOrDefault(cs, cs));
+            CharsetEncoder enc = javaCs.newEncoder();
+            Set<Character> result = new HashSet<>();
+            for (char[] pair : TYPO_REPLACEMENTS) {
+                if (!enc.canEncode(pair[0])) {
+                    result.add(pair[0]);
+                }
+            }
+            for (char c : TYPO_STRIP) {
+                if (!enc.canEncode(c)) {
+                    result.add(c);
+                }
+            }
+            return result;
+        });
+    }
+
+    /**
+     * Normalize typographic punctuation to ASCII equivalents, but only for
+     * characters that the target charset cannot encode.  Charsets like
+     * windows-1252 that CAN encode curly quotes keep them as discriminative
+     * features.  Also strips zero-width spaces.
+     */
+    private static String normalizeTypography(String text, String charset) {
+        Set<Character> unencodable = unencodableTypoChars(charset);
+        if (unencodable.isEmpty()) {
+            return text;
+        }
+        StringBuilder sb = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (!unencodable.contains(c)) {
+                if (sb != null) {
+                    sb.append(c);
+                }
+                continue;
+            }
+            if (sb == null) {
+                sb = new StringBuilder(text.length());
+                sb.append(text, 0, i);
+            }
+            char replacement = 0;
+            for (char[] pair : TYPO_REPLACEMENTS) {
+                if (pair[0] == c) {
+                    replacement = pair[1];
+                    break;
+                }
+            }
+            if (replacement != 0) {
+                sb.append(replacement);
+            }
+            // else: it's in TYPO_STRIP — just drop it
+        }
+        return (sb != null) ? sb.toString() : text;
+    }
+
+    /**
+     * Strip Hebrew vowel points (nikkud) for IBM424 EBCDIC Hebrew.
+     * Mainframe Hebrew text was written without vowel points, just like
+     * mainframe Arabic was written without harakat.
+     */
+    private static String stripHebrewNikkud(String text) {
+        StringBuilder sb = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            boolean strip = (c >= '\u05B0' && c <= '\u05BD')
+                    || c == '\u05BF'
+                    || (c >= '\u05C1' && c <= '\u05C2')
+                    || c == '\u05C4' || c == '\u05C5' || c == '\u05C7';
+            if (strip) {
+                if (sb == null) {
+                    sb = new StringBuilder(text.length());
+                    sb.append(text, 0, i);
+                }
+            } else if (sb != null) {
+                sb.append(c);
+            }
+        }
+        return (sb != null) ? sb.toString() : text;
+    }
+
+    /**
+     * Normalize modern Unicode Arabic/Farsi/Urdu text to the windows-1256
+     * repertoire.  Real windows-1256 documents used these mappings because
+     * the charset had no Farsi Yeh, no Extended Arabic-Indic digits, etc.
+     *
+     * <ul>
+     *   <li>Strip invisible bidi controls and zero-width chars.</li>
+     *   <li>Farsi Yeh (U+06CC) → Arabic Yeh (U+064A).</li>
+     *   <li>Extended Arabic-Indic digits (U+06F0–06F9) →
+     *       Arabic-Indic digits (U+0660–0669).</li>
+     *   <li>Arabic Full Stop (U+06D4) → full stop (U+002E).</li>
+     * </ul>
+     */
+    private static String normalizeForWin1256(String text) {
+        StringBuilder sb = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            char replacement = 0;
+            boolean strip = false;
+            switch (c) {
+                // Invisible / bidi controls — strip entirely
+                case '\u200B': case '\u200C': case '\u200D':
+                case '\u200E': case '\u200F':
+                case '\u202A': case '\u202B': case '\u202C':
+                case '\u202D': case '\u202E':
+                case '\u2060':
+                case '\u2066': case '\u2067': case '\u2068':
+                case '\u2069':
+                    strip = true;
+                    break;
+                // Farsi Yeh → Arabic Yeh
+                case '\u06CC':
+                    replacement = '\u064A';
+                    break;
+                // Arabic Full Stop → period
+                case '\u06D4':
+                    replacement = '.';
+                    break;
+                default:
+                    // Extended Arabic-Indic digits → Arabic-Indic digits
+                    if (c >= '\u06F0' && c <= '\u06F9') {
+                        replacement = (char) (c - '\u06F0' + '\u0660');
+                    }
+                    break;
+            }
+            if (strip) {
+                if (sb == null) {
+                    sb = new StringBuilder(text.length());
+                    sb.append(text, 0, i);
+                }
+            } else if (replacement != 0) {
+                if (sb == null) {
+                    sb = new StringBuilder(text.length());
+                    sb.append(text, 0, i);
+                }
+                sb.append(replacement);
+            } else if (sb != null) {
+                sb.append(c);
+            }
+        }
+        return (sb != null) ? sb.toString() : text;
     }
 
     /**
@@ -862,7 +1141,7 @@ public class BuildCharsetTrainingData {
      *   <li>NFD normalize for windows-1258 (Vietnamese).</li>
      *   <li>Encode with IGNORE — unencodable characters are silently dropped.</li>
      *   <li>Decode back with REPLACE — corrupt sequences become U+FFFD.</li>
-     *   <li>Reject if (dropped + corrupt) {@literal >} {@link #MAX_DROPPED_CHARS}.</li>
+     *   <li>Reject if (dropped + corrupt) {@literal >} scaled max.</li>
      *   <li>Trim to {@code targetBytes}.</li>
      *   <li>Reject if high-byte ratio is below threshold for the encoding family.</li>
      * </ol>
@@ -918,7 +1197,8 @@ public class BuildCharsetTrainingData {
 
         int dropped = sourceText.length() - decoded.length();
         int corrupt = countChar(decoded, '\ufffd');
-        if (dropped + corrupt > MAX_DROPPED_CHARS) {
+        int maxDrop = MAX_DROPPED_BASE + sourceText.length() / DROP_SCALE_CHARS;
+        if (dropped + corrupt > maxDrop) {
             return null;
         }
 
@@ -1008,18 +1288,13 @@ public class BuildCharsetTrainingData {
     private static void printUsage() {
         System.err.println("Usage: BuildCharsetTrainingData [options]");
         System.err.println("  --madlad-dir          <path>  MADLAD data dir (default: ~/datasets/madlad/data)");
-        System.err.println("  --zh-yue-file         <path>  Cantonese Wikipedia sentences");
-        System.err.println("  --output-dir          <path>  Output dir (default: ~/datasets/madlad/charset-detect3)");
+        System.err.println("  --output-dir          <path>  Output dir (default: ~/datasets/madlad/charset-detect4)");
         System.err.println("  --charsets            cs1,cs2 Comma-separated charset subset");
-        System.err.println("  --train-cap           N       Max train samples for CJK/Unicode charsets (default: 20000)");
-        System.err.println("  --sbcs-train-cap      N       Max train samples for SBCS/EBCDIC charsets (default: 50000)");
-        System.err.println("  --devtest-cap         N       Max devtest samples, all charsets (default: 2000)");
-        System.err.println("  --test-cap            N       Max test samples for CJK/Unicode charsets (default: 5000)");
-        System.err.println("  --sbcs-test-cap       N       Max test samples for SBCS/EBCDIC charsets (default: 10000)");
+        System.err.println("  --sample-cap          N       Safety-valve sample cap per split (default: 200000)");
+        System.err.println("  --byte-budget         N       Byte budget per charset for train (default: 100000000)");
         System.err.println("  --min-chunk           N       Min encoded bytes per sample (default: 64)");
         System.err.println("  --max-chunk           N       Max encoded bytes per sample (default: 1024)");
         System.err.println("  --seed                N       Random seed (default: 42)");
-        System.err.println("  --max-source-per-lang N       Max source sentences per language (default: 200000)");
         System.err.println();
         System.err.println("Supported charsets (" + CHARSET_JAVA.size() + "):");
         for (String label : CHARSET_JAVA.keySet()) {

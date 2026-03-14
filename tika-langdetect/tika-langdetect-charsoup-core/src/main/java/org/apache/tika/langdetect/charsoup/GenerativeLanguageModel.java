@@ -236,6 +236,36 @@ public class GenerativeLanguageModel {
     }
 
     /**
+     * Average raw score of {@code text} across all CJK languages in the model.
+     *
+     * <p>Unlike {@link #bestMatch}, which picks the single best language
+     * globally (often a non-CJK language when ASCII dominates short CJK
+     * filenames), this method evaluates the text only through CJK-trained
+     * n-gram tables.  Comparing average CJK scores across different charset
+     * decodings of the same raw bytes reveals which decoding produces more
+     * natural CJK characters — a real word like 文章 consistently scores
+     * higher than hash-ghost gibberish like 訜覧 across all CJK models.</p>
+     *
+     * @return the average score across CJK languages, or {@link Float#NaN}
+     *         if no CJK language yields a finite score.
+     */
+    public float avgCjkScore(String text) {
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < langIds.size(); i++) {
+            if (!isCjk[i]) {
+                continue;
+            }
+            float s = score(text, langIds.get(i));
+            if (!Float.isNaN(s)) {
+                sum += s;
+                count++;
+            }
+        }
+        return count == 0 ? Float.NaN : (float) (sum / count);
+    }
+
+    /**
      * Z-score of {@code text} under {@code language}:
      * {@code (score(text, language) - μ) / σ}, where μ and σ were computed
      * from the language's training corpus.
