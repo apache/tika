@@ -158,8 +158,7 @@ public class XMPMetadataExtractor {
             metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
             metadata.set(XMPMM.ORIGINAL_DOCUMENTID, mmSchema.getOriginalDocumentID());
 
-            //ResourceRefType derivedFrom = mmSchema.getDerivedFromProperty(); //TODO after XMPBox 3.0.7
-            ResourceRefType derivedFrom = mmSchema.getResourceRefProperty();
+            ResourceRefType derivedFrom = mmSchema.getDerivedFromProperty();
             
             if (derivedFrom != null) {
                 addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID, derivedFrom.getDocumentID());
