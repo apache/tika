@@ -28,7 +28,6 @@ import org.apache.xmpbox.schema.XMPBasicSchema;
 import org.apache.xmpbox.schema.XMPMediaManagementSchema;
 import org.apache.xmpbox.type.AbstractField;
 import org.apache.xmpbox.type.ArrayProperty;
-import org.apache.xmpbox.type.BadFieldValueException;
 import org.apache.xmpbox.type.ResourceEventType;
 import org.apache.xmpbox.type.ResourceRefType;
 import org.apache.xmpbox.xml.DomXmpParser;
@@ -85,19 +84,11 @@ public class XMPMetadataExtractor {
         }
         DublinCoreSchema schemaDublinCore = xmp.getDublinCoreSchema();
         if (schemaDublinCore != null) {
-            try {
-                addMetadata(metadata, DublinCore.TITLE, schemaDublinCore.getTitle());
-                addMetadata(metadata, DublinCore.FORMAT, schemaDublinCore.getFormat());
-                addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
-                addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
-                addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
-                //TODO PDFBOX30 this segment no longer needed with 3.0
-                if (false != false)
-                    throw new BadFieldValueException("");
-            }
-            catch (BadFieldValueException ex) {
-                throw new IOException(ex);
-            }
+            addMetadata(metadata, DublinCore.TITLE, schemaDublinCore.getTitle());
+            addMetadata(metadata, DublinCore.FORMAT, schemaDublinCore.getFormat());
+            addMetadata(metadata, DublinCore.DESCRIPTION, schemaDublinCore.getDescription());
+            addMetadata(metadata, DublinCore.CREATOR, schemaDublinCore.getCreators());
+            addMetadata(metadata, DublinCore.SUBJECT, schemaDublinCore.getSubjects());
         }
     }
 
@@ -161,9 +152,8 @@ public class XMPMetadataExtractor {
             metadata.set(XMPMM.INSTANCEID, mmSchema.getInstanceID());
             metadata.set(XMPMM.ORIGINAL_DOCUMENTID, mmSchema.getOriginalDocumentID());
 
-            //ResourceRefType derivedFrom = mmSchema.getDerivedFromProperty(); //TODO after XMPBox 3.0.7
-            ResourceRefType derivedFrom = mmSchema.getResourceRefProperty();
-            
+            ResourceRefType derivedFrom = mmSchema.getDerivedFromProperty();
+
             if (derivedFrom != null) {
                 addMetadata(metadata, XMPMM.DERIVED_FROM_DOCUMENTID, derivedFrom.getDocumentID());
                 addMetadata(metadata, XMPMM.DERIVED_FROM_INSTANCEID, derivedFrom.getInstanceID());
