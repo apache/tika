@@ -414,9 +414,20 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         // Try to detect charset of archive entry in case of non-unicode filename is used
         if (detectCharsetsInEntryNames) {
             byte[] entryName = entry.getRawName();
-            if (entryName != null && entryName.length >= MIN_BYTES_FOR_DETECTING_CHARSET) {
+            if (entryName != null && entryName.length > 0) {
+                // Extend short entry name to improve accuracy of charset detection
+                byte[] extendedEntryName = entryName;
+                if (entryName.length < MIN_BYTES_FOR_DETECTING_CHARSET) {
+                    int len = entryName.length * (MIN_BYTES_FOR_DETECTING_CHARSET / entryName.length);
+                    extendedEntryName = new byte[len];
+                    for (int i = 0; i < len; i++) {
+                        extendedEntryName[i] = entryName[i % entryName.length];
+                    }
+                }
                 Charset charset = getEncodingDetector().detect(
-                        new UnsynchronizedByteArrayInputStream(entryName), new Metadata());
+                        UnsynchronizedByteArrayInputStream.builder()
+                                .setByteArray(extendedEntryName).get(),
+                        parentMetadata);
                 if (charset != null) {
                     name = new String(entryName, charset);
                 }
@@ -431,6 +442,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
         if (extractor.shouldParseEmbedded(entryMetadata)) {
             try (InputStream entryStream = zipFile.getInputStream(entry)) {
                 extractor.parseEmbedded(entryStream, xhtml, entryMetadata, true);
+            } catch (UnsupportedZipFeatureException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             }
         }
     }

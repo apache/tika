@@ -4291,7 +4291,7 @@
   <mime-type type="application/x-iso9660-image">
     <acronym>ISO</acronym>
     <_comment>ISO 9660 CD-ROM filesystem data</_comment>
-    <magic priority="50">
+    <magic priority="60">
       <match value="CD001" type="string" offset="32769"/>
       <match value="CD001" type="string" offset="34817"/>
       <match value="CD001" type="string" offset="36865"/>
@@ -5952,7 +5952,9 @@
       <match value="0xffe3" type="string" offset="0"/> <!-- MP3 2.5 from pronom     -->
       <!-- TIKA-417: This is the UTF-16 LE byte order mark! -->
       <!-- match value="0xfffe" type="string" offset="0"/ --> <!-- V1, L1, CRC -->
-      <match value="0xffff" type="string" offset="0"/> <!-- V1, L1      -->
+      <!-- 0xffff has layer bits 00 which is "reserved" in the MPEG spec, not L1.
+           Removed: caused false positives with binary files. -->
+      <!-- match value="0xffff" type="string" offset="0"/ -->
       <!-- TIKA-4582: Require MP3 frame sync after ID3 tag to avoid false positives with other ID3-tagged formats -->
       <match value="ID3" type="string" offset="0">
          <match type="regex" value="\\xFF[\\xE3\\xF2-\\xF7\\xFA-\\xFD\\xFF]" offset="512:8192" />

@@ -304,8 +304,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         metadata.set(Office.HAS_EXTERNAL_PIVOT_DATA, true);
                     }
                 }
-            } catch (IOException | TikaException | SAXException e) {
-                // swallow
+            } catch (IOException | TikaException | SAXException | IllegalArgumentException e) {
+                // swallow -- POI throws IllegalArgumentException when a
+                // relationship references a part missing from the package
+                // (e.g. truncated files)
             }
         }
     }
@@ -364,8 +366,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                             metadata.set(Office.HAS_DDE_LINKS, true);
                         }
                     }
-                } catch (IOException | TikaException e) {
-                    // swallow
+                } catch (IOException | TikaException | IllegalArgumentException e) {
+                    // swallow -- POI can throw IllegalArgumentException
+                    // for malformed relationships
                 }
             }
         }
@@ -395,8 +398,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         metadata.set(Office.HAS_WEB_QUERIES, true);
                     }
                 }
-            } catch (IOException | TikaException e) {
-                // swallow
+            } catch (IOException | TikaException | IllegalArgumentException e) {
+                // swallow -- POI throws IllegalArgumentException when a
+                // relationship references a part missing from the package
+                // (e.g. truncated files)
             }
         }
     }
@@ -418,8 +423,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         XMLReaderUtils.parseSAX(is, new QueryTableHandler(xhtml), parseContext);
                     }
                 }
-            } catch (IOException | TikaException e) {
-                // swallow
+            } catch (IOException | TikaException | IllegalArgumentException e) {
+                // swallow -- POI throws IllegalArgumentException when a
+                // relationship references a part missing from the package
+                // (e.g. truncated files)
             }
         }
     }
