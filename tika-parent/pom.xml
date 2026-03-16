@@ -445,7 +445,7 @@
      LBHttpSolrClient -> LBHttp2SolrClient -> LBJettySolrClient (doesn't work)
      -->
     <solrj.version>9.10.1</solrj.version>
-    <spring.version>7.0.5</spring.version>
+    <spring.version>7.0.6</spring.version>
     <sqlite.version>3.51.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
