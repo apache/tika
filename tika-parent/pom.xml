@@ -374,7 +374,6 @@
     <junrar.version>7.5.8</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.3</log4j2.version>
-    <lombok.version>1.18.20</lombok.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.4</lucene.version>
     <metadata.extractor.version>2.19.0</metadata.extractor.version>
@@ -395,7 +394,7 @@
     <parso.version>2.0.14</parso.version>
     <!-- 4.14.0 needs jdk11 -->
     <pax.exam.version>4.13.5</pax.exam.version>
-    <pdfbox.version>2.0.35</pdfbox.version>
+    <pdfbox.version>2.0.36</pdfbox.version>
     <poi.version>5.5.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.4.1</quartz.version>
