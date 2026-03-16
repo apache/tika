@@ -41,7 +41,6 @@ import org.apache.tika.metadata.XMPMM;
  *
  * @author Tilman Hausherr
  */
-@Disabled //TODO enable with XMPBox 3.0.7
 public class XmpboxExtractorTest extends TikaTest {
 
     private final XMPPacketScanner scanner = new XMPPacketScanner();
@@ -110,6 +109,7 @@ public class XmpboxExtractorTest extends TikaTest {
         }
     }
 
+    @Disabled // not supported in XMPBox 2.0 (PDFBOX-5128): Cannot find a definition for the namespace http://ns.adobe.com/lightroom/1.0/, property: lr:hierarchicalSubject
     @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
