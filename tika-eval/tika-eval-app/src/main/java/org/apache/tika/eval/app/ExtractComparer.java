@@ -490,7 +490,7 @@ public class ExtractComparer extends AbstractProfiler {
             byte[] emptyHash = md.digest(new byte[0]);
             StringBuilder sb = new StringBuilder();
             for (byte b : emptyHash) {
-                sb.append(String.format("%02x", b));
+                sb.append(String.format(Locale.ROOT, "%02x", b));
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
