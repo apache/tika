@@ -1,5 +1,7 @@
 Release 3.3.0 - ???
 
+  * Switch to poi-ooxml-full (TIKA-4563).
+
   * Users need to add "allowAbsolutePaths=true" for the FileSystemFetcher to fetch
     an absolute path (TIKA-4649).
 
