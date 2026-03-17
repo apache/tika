@@ -1,5 +1,7 @@
 Release 3.3.0 - ???
 
+  * Switch to poi-ooxml-full (TIKA-4563).
+
   * Users need to add "allowAbsolutePaths=true" for the FileSystemFetcher to fetch
     an absolute path (TIKA-4649).
 
@@ -19,7 +21,7 @@ Release 3.3.0 - ???
 
   * Improve extraction of Javascript from PDFs (TIKA-4465).
 
-Release 3.2.3 - ???
+Release 3.2.3 - 9/11/2025
 
   * Allow backwards compatibility with versions of commons-compress before 1.28.0 (TIKA-4469).
 

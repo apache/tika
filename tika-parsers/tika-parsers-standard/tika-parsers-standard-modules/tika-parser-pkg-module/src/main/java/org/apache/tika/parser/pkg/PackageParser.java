@@ -444,6 +444,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 extractor.parseEmbedded(entryStream, xhtml, entryMetadata, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                if (name != null && name.length() > 0) {
+                    xhtml.element("p", name);
+                }
             }
         }
     }

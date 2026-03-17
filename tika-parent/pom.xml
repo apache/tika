@@ -904,6 +904,17 @@
         <groupId>org.apache.poi</groupId>
         <artifactId>poi-ooxml</artifactId>
         <version>${poi.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml-lite</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml-full</artifactId>
+        <version>${poi.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.xmlbeans</groupId>
