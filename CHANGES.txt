@@ -1,4 +1,4 @@
-Release 3.3.0 - ???
+Release 3.3.0 - 3/18/2026
 
   * Switch to poi-ooxml-full (TIKA-4563).
 
