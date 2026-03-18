@@ -18,10 +18,13 @@ package org.apache.tika.eval.app;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Types;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -187,6 +190,7 @@ public class ExtractComparer extends ProfilerBase {
         List<Integer> numAttachmentsB = countAttachments(metadataListB);
 
         String sharedDigestKey = findSharedDigestKey(metadataListA, metadataListB);
+        String emptyDigest = computeEmptyDigest(sharedDigestKey);
         Map<Class, Object> tokenStatsA = null;
         Map<Class, Object> tokenStatsB = null;
         //now get that metadata
@@ -204,7 +208,7 @@ public class ExtractComparer extends ProfilerBase {
 
                 writeProfileData(fpsA, i, contentTagsA, metadataA, fileId, containerID, numAttachmentsA, PROFILES_A);
                 writeExceptionData(fileId, metadataA, EXCEPTION_TABLE_A);
-                int matchIndex = getMatch(i, sharedDigestKey, handledB, metadataListA, metadataListB);
+                int matchIndex = getMatch(i, sharedDigestKey, emptyDigest, handledB, metadataListA, metadataListB);
 
                 if (matchIndex > -1 && !handledB.contains(matchIndex)) {
                     metadataB = metadataListB.get(matchIndex);
@@ -357,7 +361,7 @@ public class ExtractComparer extends ProfilerBase {
      * @param metadataListB
      * @return
      */
-    private int getMatch(int aIndex, String sharedDigestKey, Set<Integer> handledB, List<Metadata> metadataListA, List<Metadata> metadataListB) {
+    private int getMatch(int aIndex, String sharedDigestKey, String emptyDigest, Set<Integer> handledB, List<Metadata> metadataListA, List<Metadata> metadataListB) {
         //TODO: could make this more robust
         if (metadataListB == null || metadataListB.size() == 0) {
             return -1;
@@ -367,16 +371,23 @@ public class ExtractComparer extends ProfilerBase {
             return 0;
         }
 
+        Metadata thisMetadata = metadataListA.get(aIndex);
+
         if (sharedDigestKey != null) {
             //first try to find matching digests
-            return findMatchingDigests(sharedDigestKey, handledB, metadataListA.get(aIndex), metadataListB);
+            int digestMatch = findMatchingDigests(sharedDigestKey, emptyDigest, handledB, thisMetadata, metadataListB);
+            if (digestMatch > -1) {
+                return digestMatch;
+            }
         }
 
-        //assume same embedded resource path.  Not always true!
-        Metadata thisMetadata = metadataListA.get(aIndex);
+        //try matching by embedded resource path
         String embeddedPath = thisMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
         if (embeddedPath != null) {
             for (int j = 0; j < metadataListB.size(); j++) {
+                if (handledB.contains(j)) {
+                    continue;
+                }
                 String thatEmbeddedPath = metadataListB
                         .get(j)
                         .get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
@@ -394,9 +405,14 @@ public class ExtractComparer extends ProfilerBase {
         return -1;
     }
 
-    private int findMatchingDigests(String sharedDigestKey, Set<Integer> handledB, Metadata metadata, List<Metadata> metadataListB) {
+    private int findMatchingDigests(String sharedDigestKey, String emptyDigest, Set<Integer> handledB, Metadata metadata, List<Metadata> metadataListB) {
         String digestA = metadata.get(sharedDigestKey);
         if (digestA == null) {
+            return -1;
+        }
+        // Skip matching on the empty-content digest -- it's meaningless
+        // and causes false matches among unrelated zero-byte embedded docs
+        if (digestA.equalsIgnoreCase(emptyDigest)) {
             return -1;
         }
         String resourceName = metadata.get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH);
@@ -416,6 +432,35 @@ public class ExtractComparer extends ProfilerBase {
             }
         }
         return cand;
+    }
+
+    /**
+     * Computes the hex-encoded digest of empty (zero-byte) content for the
+     * algorithm identified by the shared digest key (e.g. "X-TIKA:digest:MD5").
+     * Returns null if the algorithm cannot be resolved.
+     */
+    private static String computeEmptyDigest(String sharedDigestKey) {
+        if (sharedDigestKey == null) {
+            return null;
+        }
+        // key format: "X-TIKA:digest:MD5" or "X-TIKA:digest:SHA256" etc.
+        String algo = sharedDigestKey.substring(DIGEST_KEY_PREFIX.length());
+        // normalize common names to MessageDigest algorithm names
+        // e.g. SHA256 -> SHA-256
+        if (algo.matches("(?i)SHA(\\d+)")) {
+            algo = algo.toUpperCase(Locale.ROOT).replaceFirst("SHA(\\d+)", "SHA-$1");
+        }
+        try {
+            MessageDigest md = MessageDigest.getInstance(algo);
+            byte[] emptyHash = md.digest(new byte[0]);
+            StringBuilder sb = new StringBuilder();
+            for (byte b : emptyHash) {
+                sb.append(String.format(Locale.ROOT, "%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
     }
 
     private void writeContrasts(Map<Cols, String> data, ContrastStatistics contrastStatistics) {
