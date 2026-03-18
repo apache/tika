@@ -17,19 +17,26 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class OOXMLTikaBodyPartHandler
         implements XWPFBodyContentsHandler {
@@ -66,6 +73,9 @@ public class OOXMLTikaBodyPartHandler
     //if we're marking more that the first level <p/> element
     private String paragraphTag = null;
 
+    private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
+    private ParseContext parseContext = null;
+
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
         this(xhtml, null);
     }
@@ -94,6 +104,17 @@ public class OOXMLTikaBodyPartHandler
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.isIncludeDeletedContent();
         this.includeMoveFromText = parserConfig.isIncludeMoveFromContent();
+    }
+
+    /**
+     * Sets pre-parsed inline body part content (footnotes, endnotes, comments)
+     * so that references encountered during main document parsing can be
+     * resolved inline.
+     */
+    public void setInlineBodyPartMap(OOXMLInlineBodyPartMap inlinePartMap,
+            ParseContext parseContext) {
+        this.inlinePartMap = inlinePartMap != null ? inlinePartMap : OOXMLInlineBodyPartMap.EMPTY;
+        this.parseContext = parseContext;
     }
 
     @Override
@@ -304,7 +325,13 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void footnoteReference(String id) throws SAXException {
-        if (id != null) {
+        if (id == null) {
+            return;
+        }
+        byte[] xml = inlinePartMap.getFootnote(id);
+        if (xml != null) {
+            inlineNoteContent(xml, "footnote");
+        } else {
             xhtml.characters("[");
             xhtml.characters(id);
             xhtml.characters("]");
@@ -313,11 +340,35 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endnoteReference(String id) throws SAXException {
-        if (id != null) {
+        if (id == null) {
+            return;
+        }
+        byte[] xml = inlinePartMap.getEndnote(id);
+        if (xml != null) {
+            inlineNoteContent(xml, "endnote");
+        } else {
             xhtml.characters("[");
             xhtml.characters(id);
             xhtml.characters("]");
         }
+    }
+
+    private void inlineNoteContent(byte[] xml, String cssClass) throws SAXException {
+        // Use the inline part map's relationship map which includes relationships
+        // from the footnote/endnote parts (needed for picture resolution)
+        Map<String, String> noteRelationships = inlinePartMap.getLinkedRelationships();
+        xhtml.startElement("div", "class", cssClass);
+        try {
+            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml),
+                    new EmbeddedContentHandler(
+                            new OOXMLWordAndPowerPointTextHandler(
+                                    new OOXMLTikaBodyPartHandler(xhtml),
+                                    noteRelationships)),
+                    parseContext);
+        } catch (TikaException | IOException e) {
+            xhtml.characters("[" + cssClass + " parse error]");
+        }
+        xhtml.endElement("div");
     }
 
     @Override
