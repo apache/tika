@@ -1595,15 +1595,10 @@
     </profile>
 
   </profiles>
-  <!--
-      <connection>scm:git:https://github.com/apache/</connection>
-      <developerConnection>scm:git:https://github.com/apache/</developerConnection>
-      <url>https://github.com/apache/tika</url>
-  -->
   <scm>
     <tag>3.0.0-rc1</tag>
-    <connection>scm:git:https://github.com/apache/</connection>
-    <developerConnection>scm:git:https://github.com/apache/</developerConnection>
+    <connection>scm:git:https://github.com/apache/tika.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>
   </scm>
 </project>
