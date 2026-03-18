@@ -271,17 +271,20 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         // inlined at the point of reference in the main document
         OOXMLInlineBodyPartMap inlinePartMap = collectInlineParts(documentPart);
 
-        //main document
+        //main document — keep reference to body handler for emitted comment tracking
+        java.util.Set<String> emittedCommentIds = java.util.Collections.emptySet();
         try {
-            handlePart(documentPart, styles, listManager, xhtml, inlinePartMap);
+            OOXMLTikaBodyPartHandler mainBodyHandler =
+                    handlePart(documentPart, styles, listManager, xhtml, inlinePartMap);
+            emittedCommentIds = mainBodyHandler.getEmittedCommentIds();
         } catch (ZipException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-        //dump remaining components at end (diagrams, charts, footers, comments)
+        //dump remaining components at end (diagrams, charts, footers)
         for (String rel : new String[]{AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
                 XSSFRelation.CHART.getRelation(),
-                XWPFRelation.COMMENT.getRelation(), XWPFRelation.FOOTER.getRelation()}) {
+                XWPFRelation.FOOTER.getRelation()}) {
             //skip footers if we shouldn't extract them
             if (!config.isIncludeHeadersAndFooters() &&
                     rel.equals(XWPFRelation.FOOTER.getRelation())) {
@@ -302,9 +305,43 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                         ExceptionUtils.getStackTrace(e));
             }
         }
+        //dump any comments that were NOT inlined via commentReference
+        handleUnreferencedComments(documentPart, styles, listManager, xhtml,
+                inlinePartMap, emittedCommentIds);
     }
 
-    private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
+    private void handleUnreferencedComments(PackagePart documentPart,
+            XWPFStylesShim styles, XWPFListManager listManager,
+            XHTMLContentHandler xhtml, OOXMLInlineBodyPartMap inlinePartMap,
+            java.util.Set<String> emittedCommentIds) {
+        if (!inlinePartMap.hasComments()) {
+            return;
+        }
+        Map<String, String> linkedRelationships = inlinePartMap.getLinkedRelationships();
+        for (Map.Entry<String, byte[]> entry :
+                inlinePartMap.getCommentEntries()) {
+            if (emittedCommentIds.contains(entry.getKey())) {
+                continue;
+            }
+            try {
+                xhtml.startElement("div", "class", "comment");
+                XMLReaderUtils.parseSAX(
+                        new java.io.ByteArrayInputStream(entry.getValue()),
+                        new EmbeddedContentHandler(
+                                new OOXMLWordAndPowerPointTextHandler(
+                                        new OOXMLTikaBodyPartHandler(xhtml),
+                                        linkedRelationships)),
+                        context);
+                xhtml.endElement("div");
+            } catch (TikaException | IOException | SAXException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+            }
+        }
+    }
+
+    private OOXMLTikaBodyPartHandler handlePart(PackagePart packagePart,
+                            XWPFStylesShim styles,
                             XWPFListManager listManager, XHTMLContentHandler xhtml,
                             OOXMLInlineBodyPartMap inlinePartMap)
             throws IOException, SAXException {
@@ -325,6 +362,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
+        return bodyHandler;
     }
 
     private OOXMLInlineBodyPartMap collectInlineParts(PackagePart documentPart) {
@@ -336,13 +374,25 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes";
         Map<String, byte[]> endnoteMap = collectPartContent(documentPart,
                 endnoteRel, Set.of("endnote"), allRelationships);
+        String commentsRel =
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+        Map<String, byte[]> commentMap = collectPartContent(documentPart,
+                commentsRel, Set.of("comment"),
+                allRelationships, Collections.emptySet());
         return new OOXMLInlineBodyPartMap(footnoteMap, endnoteMap,
-                Collections.emptyMap(), allRelationships);
+                commentMap, allRelationships);
     }
 
     private Map<String, byte[]> collectPartContent(PackagePart documentPart,
             String relationshipType, Set<String> wrapperElements,
             Map<String, String> allRelationships) {
+        return collectPartContent(documentPart, relationshipType, wrapperElements,
+                allRelationships, Set.of("0", "-1"));
+    }
+
+    private Map<String, byte[]> collectPartContent(PackagePart documentPart,
+            String relationshipType, Set<String> wrapperElements,
+            Map<String, String> allRelationships, Set<String> skipIds) {
         try {
             PackageRelationshipCollection prc =
                     documentPart.getRelationshipsByType(relationshipType);
@@ -350,7 +400,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 return Collections.emptyMap();
             }
             OOXMLPartContentCollector collector =
-                    new OOXMLPartContentCollector(wrapperElements);
+                    new OOXMLPartContentCollector(wrapperElements, skipIds);
             for (int i = 0; i < prc.size(); i++) {
                 PackagePart part = documentPart.getRelatedPart(prc.getRelationship(i));
                 // collect the part's linked relationships (for picture resolution)

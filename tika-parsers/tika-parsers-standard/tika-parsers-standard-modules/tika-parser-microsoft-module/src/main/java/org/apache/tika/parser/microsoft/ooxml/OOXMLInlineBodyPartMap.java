@@ -75,4 +75,8 @@ class OOXMLInlineBodyPartMap {
     boolean hasComments() {
         return !comments.isEmpty();
     }
+
+    Iterable<Map.Entry<String, byte[]>> getCommentEntries() {
+        return comments.entrySet();
+    }
 }

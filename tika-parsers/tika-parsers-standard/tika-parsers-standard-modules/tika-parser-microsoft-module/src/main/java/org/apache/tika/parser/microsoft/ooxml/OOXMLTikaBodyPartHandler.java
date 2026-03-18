@@ -75,6 +75,8 @@ public class OOXMLTikaBodyPartHandler
 
     private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
     private ParseContext parseContext = null;
+    private final java.util.List<String> pendingCommentIds = new java.util.ArrayList<>();
+    private final java.util.Set<String> emittedCommentIds = new java.util.HashSet<>();
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
         this(xhtml, null);
@@ -251,10 +253,36 @@ public class OOXMLTikaBodyPartHandler
             xhtml.characters(NEWLINE, 0, 1);
         }
 
+        // Emit any pending comment content after the paragraph closes
+        // (matching the DOM parser's behavior of appending comments after paragraphs)
+        emitPendingComments();
+
         if (tableCellDepth > 0) {
             pWithinCell++;
         }
         pDepth--;
+    }
+
+    private void emitPendingComments() throws SAXException {
+        if (pendingCommentIds.isEmpty()) {
+            return;
+        }
+        for (String id : pendingCommentIds) {
+            byte[] xml = inlinePartMap.getComment(id);
+            if (xml != null) {
+                inlineNoteContent(xml, "comment");
+                emittedCommentIds.add(id);
+            }
+        }
+        pendingCommentIds.clear();
+    }
+
+    /**
+     * Returns the set of comment IDs that were inlined during parsing.
+     * Used by the decorator to skip these when dumping remaining comments.
+     */
+    public java.util.Set<String> getEmittedCommentIds() {
+        return emittedCommentIds;
     }
 
     @Override
@@ -350,6 +378,13 @@ public class OOXMLTikaBodyPartHandler
             xhtml.characters("[");
             xhtml.characters(id);
             xhtml.characters("]");
+        }
+    }
+
+    @Override
+    public void commentReference(String id) throws SAXException {
+        if (id != null) {
+            pendingCommentIds.add(id);
         }
     }
 

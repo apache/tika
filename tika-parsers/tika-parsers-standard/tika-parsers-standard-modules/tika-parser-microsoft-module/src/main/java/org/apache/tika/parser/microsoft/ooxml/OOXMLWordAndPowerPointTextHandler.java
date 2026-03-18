@@ -108,6 +108,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String MOVE_FROM = "moveFrom";
     private final static String MOVE_TO = "moveTo";
     private final static String ENDNOTE_REFERENCE = "endnoteReference";
+    private final static String COMMENT_REFERENCE = "commentReference";
     private static final String TEXTBOX = "textbox";
     private static final String TXBX = "txbx"; // DrawingML text box (wps:txbx in mc:Choice)
     private final static String FLD_CHAR = "fldChar";
@@ -372,6 +373,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (ENDNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.endnoteReference(id);
+        } else if (COMMENT_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.commentReference(id);
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = true;
         } else if (RT.equals(localName)) {

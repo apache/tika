@@ -355,6 +355,11 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
 
         @Override
+        public void commentReference(String id) {
+
+        }
+
+        @Override
         public boolean isIncludeMoveFromText() {
             return false;
         }

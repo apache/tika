@@ -76,6 +76,13 @@ public interface XWPFBodyContentsHandler {
 
     void endnoteReference(String id) throws SAXException;
 
+    /**
+     * Called when a comment reference is encountered in the document body.
+     *
+     * @param id the comment ID
+     */
+    void commentReference(String id) throws SAXException;
+
     boolean isIncludeMoveFromText() throws SAXException;
 
     void embeddedOLERef(String refId) throws SAXException;

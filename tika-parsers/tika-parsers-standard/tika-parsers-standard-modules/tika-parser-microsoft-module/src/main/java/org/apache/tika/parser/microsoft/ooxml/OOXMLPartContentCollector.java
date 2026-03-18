@@ -47,6 +47,7 @@ class OOXMLPartContentCollector extends DefaultHandler {
             "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
     private final Set<String> wrapperElementNames;
+    private final Set<String> skipIds;
     private final Map<String, byte[]> contentMap = new HashMap<>();
     private final Map<String, String> namespaceMappings = new HashMap<>();
 
@@ -59,7 +60,17 @@ class OOXMLPartContentCollector extends DefaultHandler {
      *                            (e.g., "footnote", "endnote", "comment")
      */
     OOXMLPartContentCollector(Set<String> wrapperElementNames) {
+        this(wrapperElementNames, Set.of("0", "-1"));
+    }
+
+    /**
+     * @param wrapperElementNames local names of wrapper elements to collect
+     * @param skipIds             IDs to skip (e.g., "0", "-1" for footnote
+     *                            separator/continuation elements)
+     */
+    OOXMLPartContentCollector(Set<String> wrapperElementNames, Set<String> skipIds) {
         this.wrapperElementNames = wrapperElementNames;
+        this.skipIds = skipIds;
     }
 
     @Override
@@ -82,7 +93,7 @@ class OOXMLPartContentCollector extends DefaultHandler {
 
         if (wrapperElementNames.contains(localName)) {
             String id = atts.getValue(W_NS, "id");
-            if (id != null && !"0".equals(id) && !"-1".equals(id)) {
+            if (id != null && !skipIds.contains(id)) {
                 currentId = id;
                 buffer = new ByteArrayOutputStream();
                 writeString(buildWrapperOpenTag());
