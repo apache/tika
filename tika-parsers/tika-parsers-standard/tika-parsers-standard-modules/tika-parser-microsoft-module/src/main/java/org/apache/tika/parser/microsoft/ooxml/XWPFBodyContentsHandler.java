@@ -85,7 +85,7 @@ public interface XWPFBodyContentsHandler {
 
     boolean isIncludeMoveFromText() throws SAXException;
 
-    void embeddedOLERef(String refId) throws SAXException;
+    void embeddedOLERef(String refId, String progId, String emfImageRId) throws SAXException;
 
     /**
      * Called when a linked (vs embedded) OLE object is found.

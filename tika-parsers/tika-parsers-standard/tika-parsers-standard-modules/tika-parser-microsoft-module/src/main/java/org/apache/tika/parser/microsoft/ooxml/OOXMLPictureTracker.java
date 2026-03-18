@@ -36,6 +36,7 @@ class OOXMLPictureTracker {
     private boolean inPict = false;
     private String picDescription = null;
     private String picRId = null;
+    private String lastImageDataRId = null;
 
     OOXMLPictureTracker(Map<String, String> linkedRelationships,
             XWPFBodyContentsHandler bodyContentsHandler) {
@@ -69,6 +70,11 @@ class OOXMLPictureTracker {
 
     void setImageDataRId(String rId) {
         picRId = rId;
+        lastImageDataRId = rId;
+    }
+
+    String getImageDataRId() {
+        return lastImageDataRId;
     }
 
     void setImageDataDescription(String description) {

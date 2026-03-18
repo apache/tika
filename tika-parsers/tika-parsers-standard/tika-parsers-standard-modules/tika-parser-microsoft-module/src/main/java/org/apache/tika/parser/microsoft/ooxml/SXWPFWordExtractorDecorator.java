@@ -20,20 +20,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipException;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
-import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.Attributes;
@@ -41,11 +40,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -96,6 +98,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private final OPCPackage opcPackage;
     private final ParseContext context;
     private final Metadata metadata;
+    private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
 
     public SXWPFWordExtractorDecorator(Metadata metadata, ParseContext context,
@@ -106,6 +109,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         this.opcPackage = extractor.getPackage();
     }
 
+    @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new SAXBasedMetadataExtractor(opcPackage, context);
+    }
 
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
@@ -145,6 +152,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      * subdocuments, and framesets.
      */
     private void detectSecurityFeatures(PackagePart documentPart, XHTMLContentHandler xhtml) {
+        // Extract document features (hidden text, track changes, comments, comment persons)
+        new XWPFFeatureExtractor().process(documentPart, metadata, context);
+
         // Check for attached template (external template reference)
         try {
             PackageRelationshipCollection templateRels =
@@ -236,8 +246,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void handleDocumentPart(PackagePart documentPart, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
         //load the numbering/list manager and styles from the main document part
-        XWPFNumbering numbering = loadNumbering(documentPart);
-        XWPFListManager listManager = new XWPFListManager(numbering);
+        XWPFNumberingShim numbering = loadNumbering(documentPart);
+        XWPFListManager listManager = new XWPFListManager(
+                numbering != null ? numbering : XWPFNumberingShim.EMPTY);
         XWPFStylesShim styles = null;
         try {
             styles = loadStyles(documentPart);
@@ -249,6 +260,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         if (config.isIncludeHeadersAndFooters()) {
+            //TODO: the DOM extractor handles per-section headers/footers by detecting
+            // sectPr within paragraphs. We extract all headers/footers at the document level,
+            // which is fine for text extraction since OOXML is flow-based, not page-based.
             //headers
             try {
                 PackageRelationshipCollection headersPRC =
@@ -362,7 +376,42 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
+        Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
+        resolveEmfNames(packagePart, partMetadata);
+        embeddedPartMetadataMap.putAll(partMetadata);
         return bodyHandler;
+    }
+
+    private void resolveEmfNames(PackagePart documentPart,
+                                 Map<String, EmbeddedPartMetadata> metadataMap) {
+        for (EmbeddedPartMetadata epm : metadataMap.values()) {
+            String emfRId = epm.getEmfRelationshipId();
+            if (emfRId == null || emfRId.isEmpty()) {
+                continue;
+            }
+            try {
+                PackagePart emfPart = documentPart.getRelatedPart(
+                        documentPart.getRelationship(emfRId));
+                if (emfPart == null || emfPart.getContentType() == null) {
+                    continue;
+                }
+                if ("image/x-emf".equals(emfPart.getContentType())) {
+                    try (TikaInputStream tis = TikaInputStream.get(emfPart.getInputStream())) {
+                        EMFParser p = new EMFParser();
+                        Metadata m = Metadata.newInstance(context);
+                        p.parse(tis, new org.apache.tika.sax.ToTextContentHandler(), m, context);
+                        epm.setFullName(m.get(EMFParser.EMF_ICON_STRING));
+                    }
+                }
+            } catch (Exception e) {
+                //swallow
+            }
+        }
+    }
+
+    @Override
+    protected Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return embeddedPartMetadataMap;
     }
 
     private OOXMLInlineBodyPartMap collectInlineParts(PackagePart documentPart) {
@@ -440,7 +489,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    private XWPFNumbering loadNumbering(PackagePart packagePart) {
+    private XWPFNumberingShim loadNumbering(PackagePart packagePart) {
         try {
             PackageRelationshipCollection numberingParts =
                     packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
@@ -453,9 +502,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (numberingPart == null) {
                     return null;
                 }
-                return new XWPFNumberingShim(numberingPart);
+                return new XWPFNumberingShim(numberingPart, context);
             }
-        } catch (IOException | OpenXML4JException e) {
+        } catch (IOException | InvalidFormatException | TikaException | SAXException e) {
             //swallow
         }
         return null;

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -42,8 +43,11 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class XWPFFeatureExtractor {
 
     public void process(XWPFDocument xwpfDocument, Metadata metadata, ParseContext parseContext) {
-        try (InputStream is = xwpfDocument.getPackagePart()
-                                          .getInputStream()) {
+        process(xwpfDocument.getPackagePart(), metadata, parseContext);
+    }
+
+    public void process(PackagePart packagePart, Metadata metadata, ParseContext parseContext) {
+        try (InputStream is = packagePart.getInputStream()) {
             FeatureHandler featureHandler = new FeatureHandler();
             XMLReaderUtils.parseSAX(is, featureHandler, parseContext);
             if (featureHandler.hasComments) {

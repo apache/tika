@@ -22,9 +22,9 @@ import org.xml.sax.SAXException;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * Manages XHTML formatting tags (b, i, u, strike) as a state machine,
+ * Manages XHTML formatting tags (b, i, u, s) as a state machine,
  * ensuring proper nesting. Tags are always ordered from outermost to innermost:
- * {@code <b><i><strike><u>text</u></strike></i></b>}.
+ * {@code <b><i><s><u>text</u></s></i></b>}.
  * <p>
  * When a formatting change occurs, all tags that are "inside" the changing tag
  * must be closed first, then the change applied, then inner tags reopened.
@@ -51,7 +51,7 @@ class FormattingTagManager {
         if (runProperties.isBold() != isBold) {
             // Bold is outermost — close everything inside it
             if (isStrikeThrough) {
-                xhtml.endElement("strike");
+                xhtml.endElement("s");
                 isStrikeThrough = false;
             }
             if (isUnderline) {
@@ -72,7 +72,7 @@ class FormattingTagManager {
 
         if (runProperties.isItalics() != isItalics) {
             if (isStrikeThrough) {
-                xhtml.endElement("strike");
+                xhtml.endElement("s");
                 isStrikeThrough = false;
             }
             if (isUnderline) {
@@ -93,9 +93,9 @@ class FormattingTagManager {
                 isUnderline = false;
             }
             if (runProperties.isStrikeThrough()) {
-                xhtml.startElement("strike");
+                xhtml.startElement("s");
             } else {
-                xhtml.endElement("strike");
+                xhtml.endElement("s");
             }
             isStrikeThrough = runProperties.isStrikeThrough();
         }
@@ -113,16 +113,16 @@ class FormattingTagManager {
 
     /**
      * Closes all currently open formatting tags in proper nesting order
-     * (innermost first: u, strike, i, b).
+     * (innermost first: u, s, i, b).
      */
     void closeAll() throws SAXException {
-        if (isStrikeThrough) {
-            xhtml.endElement("strike");
-            isStrikeThrough = false;
-        }
         if (isUnderline) {
             xhtml.endElement("u");
             isUnderline = false;
+        }
+        if (isStrikeThrough) {
+            xhtml.endElement("s");
+            isStrikeThrough = false;
         }
         if (isItalics) {
             xhtml.endElement("i");

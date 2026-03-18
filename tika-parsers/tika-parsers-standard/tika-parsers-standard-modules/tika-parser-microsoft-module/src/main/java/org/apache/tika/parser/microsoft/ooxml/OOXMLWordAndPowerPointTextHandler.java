@@ -352,7 +352,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (OLE_OBJECT.equals(localName)) { //check for O_NS?
             String type = null;
             String refId = null;
-            //TODO: clean this up and ...want to get ProgID?
+            String progId = null;
             for (int i = 0; i < atts.getLength(); i++) {
                 String attLocalName = atts.getLocalName(i);
                 String attValue = atts.getValue(i);
@@ -361,10 +361,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) &&
                         attLocalName.equals("id")) {
                     refId = attValue;
+                } else if ("ProgID".equals(attLocalName)) {
+                    progId = attValue;
                 }
             }
             if ("Embed".equals(type)) {
-                bodyContentsHandler.embeddedOLERef(refId);
+                String emfRId = pictureTracker.getImageDataRId();
+                bodyContentsHandler.embeddedOLERef(refId, progId, emfRId);
             } else if ("Link".equals(type)) {
                 bodyContentsHandler.linkedOLERef(refId);
             }

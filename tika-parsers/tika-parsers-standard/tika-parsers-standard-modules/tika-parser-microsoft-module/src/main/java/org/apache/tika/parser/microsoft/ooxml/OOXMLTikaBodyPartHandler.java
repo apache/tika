@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.xml.sax.SAXException;
@@ -73,6 +74,7 @@ public class OOXMLTikaBodyPartHandler
     private ParseContext parseContext = null;
     private final java.util.List<String> pendingCommentIds = new java.util.ArrayList<>();
     private final java.util.Set<String> emittedCommentIds = new java.util.HashSet<>();
+    private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
         this(xhtml, null);
@@ -347,15 +349,28 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
-    public void embeddedOLERef(String relId) throws SAXException {
+    public void embeddedOLERef(String relId, String progId, String emfImageRId)
+            throws SAXException {
         if (relId == null) {
             return;
+        }
+        if ((progId != null && !progId.isEmpty()) ||
+                (emfImageRId != null && !emfImageRId.isEmpty())) {
+            EmbeddedPartMetadata epm = new EmbeddedPartMetadata(emfImageRId);
+            if (progId != null && !progId.isEmpty()) {
+                epm.setProgId(progId);
+            }
+            embeddedPartMetadataMap.put(relId, epm);
         }
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", relId);
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
+    }
+
+    public Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return embeddedPartMetadataMap;
     }
 
     @Override

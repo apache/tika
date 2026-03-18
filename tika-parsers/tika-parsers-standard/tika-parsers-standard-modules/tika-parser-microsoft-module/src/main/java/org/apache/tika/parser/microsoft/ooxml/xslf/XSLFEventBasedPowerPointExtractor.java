@@ -203,7 +203,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
 
         @Override
-        public void embeddedOLERef(String refId) {
+        public void embeddedOLERef(String refId, String progId, String emfImageRId) {
             //no-op
         }
 

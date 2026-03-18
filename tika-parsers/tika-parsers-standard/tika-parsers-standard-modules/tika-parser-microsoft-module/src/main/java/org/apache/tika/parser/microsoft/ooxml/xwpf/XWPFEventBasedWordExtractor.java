@@ -33,7 +33,6 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
-import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.apache.xmlbeans.XmlException;
 import org.slf4j.Logger;
@@ -67,7 +66,19 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     public XWPFEventBasedWordExtractor(OPCPackage container)
             throws XmlException, OpenXML4JException, IOException {
         this.container = container;
-        this.properties = new POIXMLProperties(container);
+        // Properties are lazily initialized to avoid requiring ooxml-lite
+        // when SAXBasedMetadataExtractor is used instead
+    }
+
+    private POIXMLProperties getOrCreateProperties() {
+        if (properties == null) {
+            try {
+                properties = new POIXMLProperties(container);
+            } catch (Exception e) {
+                LOG.warn("Couldn't load properties", e);
+            }
+        }
+        return properties;
     }
 
     public OPCPackage getPackage() {
@@ -75,15 +86,18 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     }
 
     public POIXMLProperties.CoreProperties getCoreProperties() {
-        return this.properties.getCoreProperties();
+        POIXMLProperties props = getOrCreateProperties();
+        return props != null ? props.getCoreProperties() : null;
     }
 
     public POIXMLProperties.ExtendedProperties getExtendedProperties() {
-        return this.properties.getExtendedProperties();
+        POIXMLProperties props = getOrCreateProperties();
+        return props != null ? props.getExtendedProperties() : null;
     }
 
     public POIXMLProperties.CustomProperties getCustomProperties() {
-        return this.properties.getCustomProperties();
+        POIXMLProperties props = getOrCreateProperties();
+        return props != null ? props.getCustomProperties() : null;
     }
 
     @Override
@@ -160,8 +174,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private void handleDocumentPart(PackagePart documentPart, StringBuilder sb)
             throws IOException, SAXException, TikaException {
         //load the numbering/list manager and styles from the main document part
-        XWPFNumbering numbering = loadNumbering(documentPart);
-        XWPFListManager xwpfListManager = new XWPFListManager(numbering);
+        XWPFNumberingShim numbering = loadNumbering(documentPart);
+        XWPFListManager xwpfListManager = new XWPFListManager(
+                numbering != null ? numbering : XWPFNumberingShim.EMPTY);
         //TODO: XWPFStyles styles = loadStyles(documentPart);
 
         //headers
@@ -234,7 +249,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         return hyperlinks;
     }
 
-    private XWPFNumbering loadNumbering(PackagePart packagePart) throws IOException {
+    private XWPFNumberingShim loadNumbering(PackagePart packagePart) {
         try {
             PackageRelationshipCollection numberingParts =
                     packagePart.getRelationshipsByType(XWPFRelation.NUMBERING.getRelation());
@@ -247,9 +262,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                 if (numberingPart == null) {
                     return null;
                 }
-                return new XWPFNumbering(numberingPart);
+                return new XWPFNumberingShim(numberingPart, new ParseContext());
             }
-        } catch (OpenXML4JException e) {
+        } catch (Exception e) {
             LOG.warn("Couldn't load numbering", e);
         }
         return null;
@@ -365,7 +380,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
         }
 
         @Override
-        public void embeddedOLERef(String refId) {
+        public void embeddedOLERef(String refId, String progId, String emfImageRId) {
             //no-op
         }
 

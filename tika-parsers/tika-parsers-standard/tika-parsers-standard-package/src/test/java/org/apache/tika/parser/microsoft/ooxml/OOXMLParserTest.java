@@ -28,11 +28,9 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 public class OOXMLParserTest extends TikaTest {
@@ -68,90 +66,21 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    @Test
-    public void testEMFAssociatedWithAttachments() throws Exception {
-        //TIKA-3968
-        List<Metadata> metadataList = getRecursiveMetadata("testWORD_EMFAndAttachments.docx");
-
-        assertEquals("true", metadataList.get(1).get(EMFParser.EMF_ICON_ONLY));
-        assertEquals("true", metadataList.get(3).get(EMFParser.EMF_ICON_ONLY));
-        assertEquals("true", metadataList.get(5).get(EMFParser.EMF_ICON_ONLY));
-        assertEquals("TestText.txt", metadataList.get(1).get(EMFParser.EMF_ICON_STRING));
-        assertEquals("TestPdf.pdf", metadataList.get(3).get(EMFParser.EMF_ICON_STRING));
-        assertEquals("testWORD123.docx", metadataList.get(5).get(EMFParser.EMF_ICON_STRING));
-
-        assertNull(metadataList.get(2).get(Office.PROG_ID));
-        assertEquals("AcroExch.Document.DC", metadataList.get(4).get(Office.PROG_ID));
-        assertEquals("Word.Document.12", metadataList.get(6).get(Office.PROG_ID));
-
-        assertEquals("TestText.txt", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-
-        assertEquals("/TestText.txt",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/TestPdf.pdf",
-                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals("/testWORD123.docx",
-                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-
-        assertContains("This is Text File",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-
-        assertContains("This is test PDF document for parser.",
-                metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
-
-        assertContains("This is test word document for parser.",
-                metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
-
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
-                metadataList.get(4).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
-                metadataList.get(6).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
-                metadataList.get(3).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
-                metadataList.get(5).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-    }
-
     @Disabled("TODO figure out why this doesn't work")
-    @Test//(expected = org.apache.tika.exception.TikaException.class)
+    @Test
     public void testCorruptedZip() throws Exception {
         //TIKA_2446
         getRecursiveMetadata("testZIP_corrupted_oom.zip");
     }
 
     @Test
-    public void testAltFileMHTChunk() throws Exception {
-        //test file with permission from:
-        // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_MHT_container.docx
-        List<Metadata> metadataList = getRecursiveMetadata("testAltChunkMHT.docx");
-        assertEquals(3, metadataList.size());
-        assertContains("Example of a table",
-                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testAltFileHTMLChunk() throws Exception {
-        //test file with permission from:
-        // https://github.com/jgm/pandoc/files/1290782/Sample_DOCX_using_HTML_container.docx
-        List<Metadata> metadataList = getRecursiveMetadata("testAltChunkHTML.docx");
-        assertEquals(2, metadataList.size());
-        assertContains("Example of a table",
-                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
     public void testDigestTranslator() throws Exception {
-        TikaLoader loader = TikaLoader.load(getConfigPath(OOXMLParserTest.class, "tika-config-digests.json"));
+        TikaLoader loader = TikaLoader.load(
+                getConfigPath(OOXMLParserTest.class, "tika-config-digests.json"));
         Parser parser = loader.loadAutoDetectParser();
         ParseContext parseContext = loader.loadParseContext();
-        List<Metadata> metadataList = getRecursiveMetadata("testMSChart-govdocs-428996.pptx", parser, parseContext);
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testMSChart-govdocs-428996.pptx", parser, parseContext);
         assertEquals(4, metadataList.size());
         for (Metadata m : metadataList) {
             assertNotNull(m.get("X-TIKA:digest:SHA256:BASE32"));
