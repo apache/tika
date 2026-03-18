@@ -24,13 +24,15 @@ import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class OOXMLTikaBodyPartHandler
-        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+        implements XWPFBodyContentsHandler {
 
     private static final String P = "p";
 
@@ -41,6 +43,7 @@ public class OOXMLTikaBodyPartHandler
     private final boolean includeDeletedText;
     private final boolean includeMoveFromText;
     private final XWPFStylesShim styles;
+    private final Metadata metadata;
 
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
@@ -64,7 +67,12 @@ public class OOXMLTikaBodyPartHandler
     private String paragraphTag = null;
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
+        this(xhtml, null);
+    }
+
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
+        this.metadata = metadata;
         this.styles = XWPFStylesShim.EMPTY_STYLES;
         this.listManager = XWPFListManager.EMPTY_LIST;
         this.includeDeletedText = false;
@@ -72,8 +80,16 @@ public class OOXMLTikaBodyPartHandler
     }
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
-                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
+                                    XWPFListManager listManager,
+                                    OfficeParserConfig parserConfig) {
+        this(xhtml, styles, listManager, parserConfig, null);
+    }
+
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
+                                    XWPFListManager listManager,
+                                    OfficeParserConfig parserConfig, Metadata metadata) {
         this.xhtml = xhtml;
+        this.metadata = metadata;
         this.styles = styles;
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.isIncludeDeletedContent();
@@ -272,7 +288,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startEditedSection(String editor, Date date,
-                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                                   EditType editType) {
         //no-op
     }
 
@@ -326,6 +342,9 @@ public class OOXMLTikaBodyPartHandler
         if (relId == null) {
             return;
         }
+        if (metadata != null) {
+            metadata.set(Office.HAS_LINKED_OLE_OBJECTS, true);
+        }
         // Emit as an external reference anchor - linked OLE objects reference external files
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "external-ref-linkedOle");
@@ -352,9 +371,26 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
+    public void fieldCodeHyperlinkStart(String link) throws SAXException {
+        if (metadata != null) {
+            metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+        }
+        hyperlinkStart(link);
+    }
+
+    @Override
     public void externalRef(String fieldType, String url) throws SAXException {
         if (url == null || url.isEmpty()) {
             return;
+        }
+        if (metadata != null) {
+            if ("hlinkHover".equals(fieldType)) {
+                metadata.set(Office.HAS_HOVER_HYPERLINKS, true);
+            } else if ("vml-shape-href".equals(fieldType)) {
+                metadata.set(Office.HAS_VML_HYPERLINKS, true);
+            } else {
+                metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+            }
         }
         AttributesImpl attr = new AttributesImpl();
         attr.addAttribute("", "class", "class", "CDATA", "external-ref-" + fieldType);

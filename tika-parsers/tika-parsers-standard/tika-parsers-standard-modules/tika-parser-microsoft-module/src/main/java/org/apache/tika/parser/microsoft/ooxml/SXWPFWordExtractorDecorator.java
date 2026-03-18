@@ -306,9 +306,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
-                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
+                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager,
+                                    config, metadata),
                             linkedRelationships, config.isIncludeShapeBasedContent(),
-                            config.isConcatenatePhoneticRuns(), metadata)), context);
+                            config.isConcatenatePhoneticRuns(),
+                            config.isPreferAlternateContentChoice())), context);
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

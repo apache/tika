@@ -35,6 +35,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean useSAXDocxExtractor = false;
     private boolean useSAXPptxExtractor = false;
 
+    private boolean preferAlternateContentChoice = true;
+
     private boolean writeSelectHeadersInBody = false;
 
     private boolean extractAllAlternativesFromMSG = false;
@@ -165,6 +167,32 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
         this.useSAXPptxExtractor = useSAXPptxExtractor;
+    }
+
+    /**
+     * In OOXML, {@code mc:AlternateContent} wraps {@code mc:Choice} (newer/richer
+     * rendering, e.g. DrawingML text boxes) and {@code mc:Fallback} (degraded VML
+     * for older consumers). When {@code true} (default), the SAX parser processes
+     * the Choice branch and skips Fallback. When {@code false}, it processes
+     * Fallback and skips Choice (legacy behavior prior to Tika 4.x).
+     * <p>
+     * For text extraction, Choice typically contains equal or more content than
+     * Fallback.
+     * <p>
+     * Default: {@code true}
+     *
+     * @return whether to prefer mc:Choice over mc:Fallback
+     */
+    public boolean isPreferAlternateContentChoice() {
+        return preferAlternateContentChoice;
+    }
+
+    /**
+     * @param preferAlternateContentChoice whether to prefer mc:Choice over mc:Fallback
+     * @see #isPreferAlternateContentChoice()
+     */
+    public void setPreferAlternateContentChoice(boolean preferAlternateContentChoice) {
+        this.preferAlternateContentChoice = preferAlternateContentChoice;
     }
 
     public boolean isConcatenatePhoneticRuns() {

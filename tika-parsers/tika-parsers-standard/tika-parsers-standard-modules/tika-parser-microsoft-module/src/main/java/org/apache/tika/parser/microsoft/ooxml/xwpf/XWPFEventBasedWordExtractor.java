@@ -44,9 +44,11 @@ import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.ooxml.EditType;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
+import org.apache.tika.parser.microsoft.ooxml.XWPFBodyContentsHandler;
 import org.apache.tika.parser.microsoft.ooxml.XWPFListManager;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -254,7 +256,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     }
 
     private static class XWPFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+            implements XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XWPFToTextContentHandler(StringBuilder buffer) {
@@ -328,7 +330,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
         @Override
         public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                                       EditType editType) {
 
         }
 
