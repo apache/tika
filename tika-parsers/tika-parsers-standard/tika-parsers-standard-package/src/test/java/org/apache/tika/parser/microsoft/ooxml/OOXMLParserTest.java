@@ -31,39 +31,14 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 public class OOXMLParserTest extends TikaTest {
-
-    @Test
-    public void testEmbeddedPDFInPPTX() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
-        Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
-        Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
-    }
 
     @Test
     public void testEmbeddedPDFInXLSX() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testExcel_embeddedPDF.xlsx");
         Metadata pdfMetadata = metadataList.get(1);
         assertContains("Hello World", pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testEmbeddedPDFInStreamingPPTX() throws Exception {
-        ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXPptxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-
-        List<Metadata> metadataList =
-                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", parseContext);
-        Metadata pdfMetadata1 = metadataList.get(4);
-        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
-        Metadata pdfMetadata2 = metadataList.get(5);
-        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Disabled("TODO figure out why this doesn't work")

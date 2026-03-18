@@ -17,12 +17,10 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DecimalFormatSymbols;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +36,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.ContentHandler;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.config.loader.TikaLoader;
@@ -46,7 +43,6 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -59,7 +55,6 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.OfficeParserTest;
-import org.apache.tika.sax.BodyContentHandler;
 
 public class OOXMLParserTest extends MultiThreadedTikaTest {
 
@@ -196,127 +191,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
-     * We have a number of different powerpoint files,
-     * such as presentation, macro-enabled etc
-     */
-    @Test
-    public void testPowerPoint() throws Exception {
-        String[] extensions = new String[]{"pptx", "pptm", "ppsm", "ppsx", "potm"
-                //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
-                //"xps" // TIKA-418: Not yet supported by POI
-        };
-
-        String[] mimeTypes = new String[]{
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "application/vnd.ms-powerpoint.template.macroenabled.12"};
-
-        for (int i = 0; i < extensions.length; i++) {
-            String extension = extensions[i];
-            String filename = "testPPT." + extension;
-
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
-            ParseContext context = new ParseContext();
-            String content = getText(filename, metadata, context);
-
-            assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                    "Mime-type checking for " + filename);
-            assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
-
-            // Theme files don't have the text in them
-            if (extension.equals("thmx")) {
-                assertEquals("", content);
-            } else {
-                assertTrue(content.contains("Attachment Test"),
-                        "Text missing for " + filename + "\n" + content);
-                assertTrue(content.contains("This is a test file data with the same content"),
-                        "Text missing for " + filename + "\n" + content);
-                assertTrue(content.contains("content parsing"),
-                        "Text missing for " + filename + "\n" + content);
-                assertTrue(content.contains("Different words to test against"),
-                        "Text missing for " + filename + "\n" + content);
-                assertTrue(content.contains("Mystery"),
-                        "Text missing for " + filename + "\n" + content);
-            }
-        }
-
-    }
-
-    /**
-     * Test that the metadata is already extracted when the body is processed.
-     * See TIKA-1109
-     */
-    @Test
-    public void testPowerPointMetadataEarly() throws Exception {
-        String[] extensions = new String[]{"pptx", "pptm", "ppsm", "ppsx", "potm"
-                //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2
-                //"xps" // TIKA-418: Not yet supported by POI
-        };
-
-        final String[] mimeTypes = new String[]{
-                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
-                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
-                "application/vnd.ms-powerpoint.template.macroenabled.12"};
-
-        for (int i = 0; i < extensions.length; i++) {
-            String extension = extensions[i];
-            final String filename = "testPPT." + extension;
-            final Metadata metadata = new Metadata();
-
-            // Allow the value to be access from the inner class
-            final int currentI = i;
-            ContentHandler handler = new BodyContentHandler() {
-                @Override
-                public void startDocument() {
-                    assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
-                            "Mime-type checking for " + filename);
-                    assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
-                    assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
-
-                }
-
-            };
-            ParseContext context = new ParseContext();
-
-            try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
-                AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
-            }
-        }
-    }
-
-    /**
-     * For the PowerPoint formats we don't currently support, ensure that
-     * we don't break either
-     */
-    @Test
-    public void testUnsupportedPowerPoint() throws Exception {
-        String[] extensions = new String[]{"xps", "thmx"};
-        String[] mimeTypes = new String[]{"application/vnd.ms-xpsdocument",
-                "application/vnd.openxmlformats-officedocument" // Is this right?
-        };
-
-        for (int i = 0; i < extensions.length; i++) {
-            String extension = extensions[i];
-            String filename = "testPPT." + extension;
-
-            Metadata metadata = new Metadata();
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
-            getXML(filename, metadata);
-            // Should get the metadata
-            assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
-                    "Mime-type checking for " + filename);
-
-
-        }
-    }
-
-    /**
      * Documents with some sheets are protected, but not all.
      * See TIKA-364.
      */
@@ -348,146 +222,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("Office", xmlResult.xml);
     }
 
-    @Test
-    public void testVariousPPTX() throws Exception {
-        Metadata metadata = new Metadata();
-        String xml = getXML("testPPT_various.pptx", metadata).xml;
-        assertContains("<p>Footnote appears here", xml);
-        assertContains("<p>[1] This is a footnote.", xml);
-        assertContains("<p>This is the header text.</p>", xml);
-        assertContains("<p>This is the footer text.</p>", xml);
-        assertContains("<p>Here is a text box</p>", xml);
-        assertContains("<p>Bold", xml);
-        assertContains("italic underline superscript subscript", xml);
-        assertContains("<p>Here is a citation:", xml);
-        assertContains("Figure 1 This is a caption for Figure 1", xml);
-        assertContains("(Kramer)", xml);
-        assertContains("<table><tr>\t<td>Row 1 Col 1</td>", xml);
-        assertContains("<td>Row 2 Col 2</td>\t<td>Row 2 Col 3</td></tr>", xml);
-        assertContains("<p>Row 1 column 1</p>", xml);
-        assertContains("<p>Row 2 column 2</p>", xml);
-        assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
-        assertContains("<p>Here is a list:", xml);
-        for (int row = 1; row <= 3; row++) {
-            //assertContains("·\tBullet " + row, content);
-            //assertContains("\u00b7\tBullet " + row, content);
-            assertContains("<p>Bullet " + row, xml);
-        }
-        assertContains("Here is a numbered list:", xml);
-        for (int row = 1; row <= 3; row++) {
-            //assertContains(row + ")\tNumber bullet " + row, content);
-            //assertContains(row + ") Number bullet " + row, content);
-            // TODO: OOXMLExtractor fails to number the bullets:
-            assertContains("<p>Number bullet " + row, xml);
-        }
-
-        for (int row = 1; row <= 2; row++) {
-            for (int col = 1; col <= 3; col++) {
-                assertContains("Row " + row + " Col " + col, xml);
-            }
-        }
-
-        assertContains("Keyword1 Keyword2", xml);
-        assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
-
-        assertContains("Subject is here", xml);
-        assertEquals("Subject is here", metadata.get(DublinCore.SUBJECT));
-
-        assertContains("Keyword1 Keyword2",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-        assertContains("Subject is here",
-                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
-
-
-        assertContains("Suddenly some Japanese text:", xml);
-        // Special version of (GHQ)
-        assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
-        // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
-                xml);
-
-        assertContains("And then some Gothic text:", xml);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
-                xml);
-    }
-
-    @Test
-    public void testSkipHeaderFooter() throws Exception {
-        //now test turning off header/footer
-        OfficeParserConfig config = new OfficeParserConfig();
-        config.setIncludeHeadersAndFooters(false);
-        ParseContext context = new ParseContext();
-        context.set(OfficeParserConfig.class, config);
-        String xml = getXML("testPPT_various.pptx", context).xml;
-        assertNotContained("This is the header text", xml);
-
-    }
-
-    @Test
-    public void testCommentPPTX() throws Exception {
-        XMLResult r = getXML("testPPT_comment.pptx");
-        assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
-    }
-
-    @Test
-    public void testMasterFooter() throws Exception {
-        String content = getText("testPPT_masterFooter.pptx");
-        assertContains("Master footer is here", content);
-    }
-
-    @Test
-    @Disabled("can't tell why this isn't working")
-    public void testTurningOffMasterContent() throws Exception {
-        //now test turning off master content
-
-        //the underlying xml has "Master footer" in
-        //the actual slide's xml, not just in the master slide.
-        OfficeParserConfig config = new OfficeParserConfig();
-        config.setIncludeSlideMasterContent(false);
-        ParseContext context = new ParseContext();
-        context.set(OfficeParserConfig.class, config);
-        String xml = getXML("testPPT_masterFooter.pptx", context).xml;
-        assertNotContained("Master footer", xml);
-    }
-
-    /**
-     * TIKA-712 Master Slide Text from PPT and PPTX files
-     * should be extracted too
-     */
-    @Test
-    public void testMasterText() throws Exception {
-
-        String content = getText("testPPT_masterText.pptx");
-        assertContains("Text that I added to the master slide", content);
-
-        //now test turning off master content
-        OfficeParserConfig config = new OfficeParserConfig();
-        config.setIncludeSlideMasterContent(false);
-        ParseContext context = new ParseContext();
-        context.set(OfficeParserConfig.class, config);
-        content = getXML("testPPT_masterText.pptx", context).xml;
-        assertNotContained("Text that I added", content);
-    }
-
-    @Test
-    public void testMasterText2() throws Exception {
-        String content = getText("testPPT_masterText2.pptx");
-        assertContains("Text that I added to the master slide", content);
-
-        //now test turning off master content
-        OfficeParserConfig config = new OfficeParserConfig();
-        config.setIncludeSlideMasterContent(false);
-        ParseContext context = new ParseContext();
-        context.set(OfficeParserConfig.class, config);
-        content = getXML("testPPT_masterText2.pptx", context).xml;
-        assertNotContained("Text that I added", content);
-    }
-
-    @Test
-    public void testWordArt() throws Exception {
-        assertContains("Here is some red word Art", getText("testWordArt.pptx"));
-    }
-
     /**
      * Ensures that custom OOXML properties are extracted
      */
@@ -512,58 +246,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 
-    @Test
-    public void testPowerPointCustomProperties() throws Exception {
-        Metadata metadata = new Metadata();
-
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPPT_custom_props.pptx")) {
-            ContentHandler handler = new BodyContentHandler(-1);
-            ParseContext context = new ParseContext();
-            context.set(Locale.class, Locale.US);
-            new OOXMLParser().parse(tis, handler, metadata, context);
-        }
-
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
-        assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
-        assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2011-08-22T13:32:49Z", metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("1", metadata.get(Office.SLIDE_COUNT));
-        assertEquals("3", metadata.get(Office.WORD_COUNT));
-        assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("true", metadata.get("custom:myCustomBoolean"));
-        assertEquals("3", metadata.get("custom:myCustomNumber"));
-        assertEquals("MyStringValue", metadata.get("custom:MyCustomString"));
-        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
-        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
-    }
-
-    // TIKA-997:
-    @Test
-    public void testEmbeddedZipInPPTX() throws Exception {
-        String xml = getXML("test_embedded_zip.pptx").xml;
-        int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
-        int i = xml.indexOf("Send me a note");
-        int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\" />");
-        int k = xml.indexOf("<p>No title</p>");
-        assertTrue(h != -1);
-        assertTrue(i != -1);
-        assertTrue(j != -1);
-        assertTrue(k != -1);
-        assertTrue(h < i);
-        assertTrue(i < j);
-        assertTrue(j < k);
-    }
-
-    // TIKA-1032:
-    @Test
-    public void testEmbeddedPPTXTwoSlides() throws Exception {
-        String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
-        assertContains("<div class=\"embedded\" id=\"slide1_rId7\" />", xml);
-        assertContains("<div class=\"embedded\" id=\"slide2_rId7\" />", xml);
-    }
-
     //TIKA-1100:
     @Test
     public void testExcelTextBox() throws Exception {
@@ -583,34 +265,12 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("autoshape", xml);
     }
 
-    //TIKA-817
-    @Test
-    public void testPPTXAutodate() throws Exception {
-        //Following POI-52368, the stored date is extracted,
-        //not the auto-generated date.
-
-        XMLResult result = getXML("testPPT_autodate.pptx");
-        assertContains("<p>Now</p>\n" + "<p>2011-12-19 10:20:04 AM</p>\n", result.xml);
-
-    }
-
     @Test
     public void testXLSXThumbnail() throws Exception {
         String xml = getXML("testXLSX_Thumbnail.xlsx").xml;
         int a = xml.indexOf("This file contains an embedded thumbnail by default");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.wmf\" />");
 
-        assertTrue(a != -1);
-        assertTrue(b != -1);
-        assertTrue(a < b);
-    }
-
-    @Test
-    public void testPPTXThumbnail() throws Exception {
-        String xml = getXML("testPPTX_Thumbnail.pptx").xml;
-        int a = xml.indexOf(
-                "<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
-        int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
         assertTrue(a != -1);
         assertTrue(b != -1);
         assertTrue(a < b);
@@ -757,38 +417,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         }
     }
 
-
-    @Test
-    public void testMacrosInPptm() throws Exception {
-
-        //test default is "don't extract macros"
-        for (Metadata metadata : getRecursiveMetadata("testPPT_macros.pptm")) {
-            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
-                fail("Shouldn't have extracted macros as default");
-            }
-        }
-
-        //now test that they were extracted
-        ParseContext context = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setExtractMacros(true);
-        context.set(OfficeParserConfig.class, officeParserConfig);
-
-        Metadata minExpected = new Metadata();
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
-        minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", context));
-
-        //test configuring via config file
-        Parser parser = TikaLoader.load(
-                getConfigPath(OOXMLParserTest.class, "tika-config-dom-macros.json"))
-                .loadAutoDetectParser();
-        assertContainsAtLeast(minExpected, getRecursiveMetadata("testPPT_macros.pptm", parser));
-    }
 
     @Test
     public void testMacroinXlsm() throws Exception {
@@ -957,11 +585,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     @Test
-    public void testPPTXDiagramData() throws Exception {
-        assertContains("President", getXML("testPPT_diagramData.pptx").xml);
-    }
-
-    @Test
     public void testXLSXChartData() throws Exception {
         String xml = getXML("testEXCEL_charts.xlsx").xml;
         assertContains("peach", xml);
@@ -975,40 +598,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("peach", xml);
         assertContains("March\tApril", xml);
         assertNotContained("chartSpace", xml);
-    }
-
-    @Test
-    public void testPPTXChartData() throws Exception {
-        String xml = getXML("testPPT_charts.pptx").xml;
-        assertContains("peach", xml);
-        assertContains("March\tApril", xml);
-        assertNotContained("chartSpace", xml);
-    }
-
-    @Test
-    public void testPPTXGroups() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.pptx");
-        assertEquals(3, metadataList.size());
-        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("WordArt1", content);
-        assertContains("WordArt2", content);
-        assertContainsCount("Ungrouped text box", content, 1);//should only be 1
-        assertContains("Text box1", content);
-        assertContains("Text box2", content);
-        assertContains("Text box3", content);
-        assertContains("Text box4", content);
-        assertContains("Text box5", content);
-
-
-        assertContains("href=\"http://tika.apache.org", content);
-        assertContains("smart1", content);
-        assertContains("MyTitle", content);
-
-        assertEquals("/image1.jpg",
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-
-        assertEquals("/thumbnail.jpeg",
-                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
@@ -1035,20 +624,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertNotContained("\u65E5\u672C\u30AA\u30E9\u30AF\u30EB \u30CB\u30DB\u30F3",
                 getXML("testEXCEL_phonetic.xlsx", parser).xml);
 
-    }
-
-    @Test
-    public void testEmbeddedMedia() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata("testPPT_embeddedMP3.pptx");
-        assertEquals(4, metadataList.size());
-        assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
-        // Verify INTERNAL_PATH is set for embedded media
-        assertNotNull(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH));
-        assertTrue(metadataList.get(1).get(TikaCoreProperties.INTERNAL_PATH).contains("/ppt/media/"));
     }
 
     @Test
