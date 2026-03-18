@@ -23,7 +23,6 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.Map;
 
-import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -55,10 +54,7 @@ public class OOXMLTikaBodyPartHandler
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
     private int sdtDepth = 0;//
-    private boolean isItalics = false;
-    private boolean isBold = false;
-    private boolean isUnderline = false;
-    private boolean isStrikeThrough = false;
+    private FormattingTagManager formattingTags;
     private boolean wroteHyperlinkStart = false;
 
     //TODO: fix this
@@ -85,6 +81,7 @@ public class OOXMLTikaBodyPartHandler
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
+        this.formattingTags = new FormattingTagManager(xhtml);
         this.styles = XWPFStylesShim.EMPTY_STYLES;
         this.listManager = XWPFListManager.EMPTY_LIST;
         this.includeDeletedText = false;
@@ -102,6 +99,7 @@ public class OOXMLTikaBodyPartHandler
                                     OfficeParserConfig parserConfig, Metadata metadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
+        this.formattingTags = new FormattingTagManager(xhtml);
         this.styles = styles;
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.isIncludeDeletedContent();
@@ -121,71 +119,8 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
-
-        // True if we are currently in the named style tag:
-        if (runProperties.isBold() != isBold) {
-            if (isStrikeThrough) {
-                xhtml.endElement("strike");
-                isStrikeThrough = false;
-            }
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (isItalics) {
-                xhtml.endElement("i");
-                isItalics = false;
-            }
-            if (runProperties.isBold()) {
-                xhtml.startElement("b");
-            } else {
-                xhtml.endElement("b");
-            }
-            isBold = runProperties.isBold();
-        }
-
-        if (runProperties.isItalics() != isItalics) {
-            if (isStrikeThrough) {
-                xhtml.endElement("strike");
-                isStrikeThrough = false;
-            }
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (runProperties.isItalics()) {
-                xhtml.startElement("i");
-            } else {
-                xhtml.endElement("i");
-            }
-            isItalics = runProperties.isItalics();
-        }
-
-        if (runProperties.isStrikeThrough() != isStrikeThrough) {
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (runProperties.isStrikeThrough()) {
-                xhtml.startElement("strike");
-            } else {
-                xhtml.endElement("strike");
-            }
-            isStrikeThrough = runProperties.isStrikeThrough();
-        }
-
-        boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
-        if (runIsUnderlined != isUnderline) {
-            if (runIsUnderlined) {
-                xhtml.startElement("u");
-            } else {
-                xhtml.endElement("u");
-            }
-            isUnderline = runIsUnderlined;
-        }
-
+        formattingTags.applyFormatting(runProperties);
         xhtml.characters(contents);
-
     }
 
     @Override
@@ -199,7 +134,7 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void hyperlinkEnd() throws SAXException {
         if (wroteHyperlinkStart) {
-            closeStyleTags();
+            formattingTags.closeAll();
             wroteHyperlinkStart = false;
             xhtml.endElement("a");
         }
@@ -244,7 +179,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endParagraph() throws SAXException {
-        closeStyleTags();
+        formattingTags.closeAll();
         if (pDepth == 1 && tableDepth == 0) {
             xhtml.endElement(paragraphTag);
         } else if (tableCellDepth > 0 && pWithinCell > 0) {
@@ -326,7 +261,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startSDT() throws SAXException {
-        closeStyleTags();
+        formattingTags.closeAll();
         sdtDepth++;
     }
 
@@ -497,29 +432,6 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void endBookmark(String id) {
         //no-op
-    }
-
-    private void closeStyleTags() throws SAXException {
-
-        if (isStrikeThrough) {
-            xhtml.endElement("strike");
-            isStrikeThrough = false;
-        }
-
-        if (isUnderline) {
-            xhtml.endElement("u");
-            isUnderline = false;
-        }
-
-        if (isItalics) {
-            xhtml.endElement("i");
-            isItalics = false;
-        }
-
-        if (isBold) {
-            xhtml.endElement("b");
-            isBold = false;
-        }
     }
 
     private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,

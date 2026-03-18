@@ -33,10 +33,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
-import org.xml.sax.Attributes;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -165,7 +162,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
             try (InputStream stream = commentAuthorsPart.getInputStream()) {
                 XMLReaderUtils.parseSAX(stream,
-                        new XSLFCommentAuthorHandler(), context);
+                        new XSLFCommentAuthorHandler(commentAuthors), context);
 
             } catch (TikaException | SAXException | IOException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
@@ -232,7 +229,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         handleGeneralTextContainingPart(XSLFRelation.COMMENTS.getRelation(), null, slidePart,
-                metadata, new XSLFCommentsHandler(xhtml));
+                metadata, new XSLFCommentsHandler(xhtml, commentAuthors));
 
         handleGeneralTextContainingPart(AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
                 "diagram-data", slidePart, metadata,
@@ -339,170 +336,4 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     }
 
-    private static class PlaceHolderSkipper extends DefaultHandler {
-
-        private final ContentHandler wrappedHandler;
-        boolean inPH = false;
-
-        PlaceHolderSkipper(ContentHandler wrappedHandler) {
-            this.wrappedHandler = wrappedHandler;
-        }
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
-            if ("ph".equals(localName)) {
-                inPH = true;
-            }
-            if (!inPH) {
-                wrappedHandler.startElement(uri, localName, qName, atts);
-            }
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-
-            if (!inPH) {
-                wrappedHandler.endElement(uri, localName, qName);
-            }
-            if ("sp".equals(localName)) {
-                inPH = false;
-            }
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            if (!inPH) {
-                wrappedHandler.characters(ch, start, length);
-            }
-        }
-
-        @Override
-        public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
-            if (!inPH) {
-                wrappedHandler.characters(ch, start, length);
-            }
-        }
-
-
-    }
-
-    private class XSLFCommentsHandler extends DefaultHandler {
-
-        private String commentAuthorId = null;
-        private StringBuilder commentBuffer = new StringBuilder();
-        private XHTMLContentHandler xhtml;
-
-        XSLFCommentsHandler(XHTMLContentHandler xhtml) {
-            this.xhtml = xhtml;
-        }
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
-            if ("cm".equals(localName)) {
-                commentAuthorId = atts.getValue("", "authorId");
-                //get date (dt)?
-            }
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length) throws SAXException {
-            //TODO: require that we're in <p:text>?
-            commentBuffer.append(ch, start, length);
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-            if ("cm".equals(localName)) {
-
-                xhtml.startElement("p", "class", "slide-comment");
-
-                String authorString = commentAuthors.getName(commentAuthorId);
-                String authorInitials = commentAuthors.getInitials(commentAuthorId);
-                if (authorString != null || authorInitials != null) {
-                    xhtml.startElement("b");
-                    boolean authorExists = false;
-                    if (authorString != null) {
-                        xhtml.characters(authorString);
-                        authorExists = true;
-                    }
-                    if (authorExists && authorInitials != null) {
-                        xhtml.characters(" (");
-                    }
-                    if (authorInitials != null) {
-                        xhtml.characters(authorInitials);
-                    }
-                    if (authorExists && authorInitials != null) {
-                        xhtml.characters(")");
-                    }
-                    xhtml.endElement("b");
-                }
-                xhtml.characters(commentBuffer.toString());
-                xhtml.endElement("p");
-
-                commentBuffer.setLength(0);
-                commentAuthorId = null;
-            }
-        }
-    }
-
-    private class XSLFCommentAuthorHandler extends DefaultHandler {
-        String id = null;
-        String name = null;
-        String initials = null;
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes atts)
-                throws SAXException {
-            if ("cmAuthor".equals(localName)) {
-                for (int i = 0; i < atts.getLength(); i++) {
-                    if ("id".equals(atts.getLocalName(i))) {
-                        id = atts.getValue(i);
-                    } else if ("name".equals(atts.getLocalName(i))) {
-                        name = atts.getValue(i);
-                    } else if ("initials".equals(atts.getLocalName(i))) {
-                        initials = atts.getValue(i);
-                    }
-                }
-                commentAuthors.add(id, name, initials);
-                //clear out
-                id = null;
-                name = null;
-                initials = null;
-            }
-        }
-
-    }
-
-    private static class CommentAuthors {
-        Map<String, String> nameMap = new HashMap<>();
-        Map<String, String> initialMap = new HashMap<>();
-
-        void add(String id, String name, String initials) {
-            if (id == null) {
-                return;
-            }
-            if (name != null) {
-                nameMap.put(id, name);
-            }
-            if (initials != null) {
-                initialMap.put(id, initials);
-            }
-        }
-
-        String getName(String id) {
-            if (id == null) {
-                return null;
-            }
-            return nameMap.get(id);
-        }
-
-        String getInitials(String id) {
-            if (id == null) {
-                return null;
-            }
-            return initialMap.get(id);
-        }
-    }
 }
