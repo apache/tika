@@ -1407,6 +1407,7 @@
         <artifactId>spotless-maven-plugin</artifactId>
         <version>${spotless.version}</version>
         <configuration>
+          <lineEndings>UNIX</lineEndings>
           <java>
             <includes>
               <include>src/main/java/**/*.java</include>
