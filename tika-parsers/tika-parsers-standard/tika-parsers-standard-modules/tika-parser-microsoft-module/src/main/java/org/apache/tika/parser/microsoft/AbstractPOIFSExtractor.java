@@ -319,7 +319,7 @@ abstract class AbstractPOIFSExtractor {
             }
 
             // Record what we can do about it
-            metadata.set(Metadata.CONTENT_TYPE, mediaType.getType());
+            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));

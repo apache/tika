@@ -475,6 +475,8 @@ public class ZipParser extends AbstractArchiveParser {
             try (InputStream entryStream = zipFile.getInputStream(entry)) {
                 TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+            } catch (UnsupportedZipFeatureException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {
                 tmp.dispose();
             }
@@ -515,6 +517,8 @@ public class ZipParser extends AbstractArchiveParser {
             try {
                 TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata);
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+            } catch (UnsupportedZipFeatureException e) {
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {
                 tmp.dispose();
             }
