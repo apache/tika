@@ -35,6 +35,10 @@ Release 4.0.0-BETA1 - ???
 
 Release 3.3.0 - ???
 
+  * Various fixes based on regression testing (TIKA-4563).
+
+  * Improve zip parsing (TIKA-4650).
+
   * Add detection of compressed bmp (TIKA-4511).
 
   * Allow per file timeouts in tika-pipes (TIKA-4497).

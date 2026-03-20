@@ -315,7 +315,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.64.0</google.cloud.version>
-    <aws2.version>2.42.13</aws2.version>
+    <aws2.version>2.42.14</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -404,6 +404,7 @@
     <junrar.version>7.5.8</junrar.version>
     <jwarc.version>0.35.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
+    <kotlin-stdlib.version>2.3.20</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.3</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
@@ -446,7 +447,7 @@
      -->
     <solrj.version>9.10.1</solrj.version>
     <spring.version>7.0.6</spring.version>
-    <sqlite.version>3.51.2.0</sqlite.version>
+    <sqlite.version>3.51.3.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.3</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -1227,7 +1228,7 @@
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
         <artifactId>kotlin-stdlib</artifactId>
-        <version>2.3.10</version>
+        <version>${kotlin-stdlib.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jetbrains</groupId>
@@ -1761,15 +1762,10 @@
     </profile>
 
   </profiles>
-  <!--
-      <connection>scm:git:https://github.com/apache/</connection>
-      <developerConnection>scm:git:https://github.com/apache/</developerConnection>
-      <url>https://github.com/apache/tika</url>
-  -->
   <scm>
     <tag>3.0.0-rc1</tag>
-    <connection>scm:git:https://github.com/apache/</connection>
-    <developerConnection>scm:git:https://github.com/apache/</developerConnection>
+    <connection>scm:git:https://github.com/apache/tika.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>
   </scm>
 </project>
