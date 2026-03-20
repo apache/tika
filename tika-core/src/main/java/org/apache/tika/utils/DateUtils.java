@@ -148,6 +148,9 @@ public class DateUtils {
      * @return
      */
     public Date tryToParse(String dateString) {
+        if (dateString == null || dateString.length() < 6) {
+            return null;
+        }
         // Java doesn't like timezones in the form ss+hh:mm
         // It only likes the hhmm form, without the colon
         int n = dateString.length();
