@@ -396,7 +396,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-        bodyHandler.closeInlineElements();
+        bodyHandler.closeAllElements();
         Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
         resolveEmfNames(packagePart, partMetadata);
         embeddedPartMetadataMap.putAll(partMetadata);

@@ -144,6 +144,32 @@ public class OOXMLTikaBodyPartHandler
         inlineTags.closeAll();
     }
 
+    /**
+     * Closes ALL open elements — inline elements first, then any open
+     * structural elements (paragraphs, table cells, table rows, tables).
+     * Call after SAX parsing completes for a part to guarantee the XHTML
+     * is well-formed, even if the source XML was truncated or malformed.
+     */
+    void closeAllElements() throws SAXException {
+        closeInlineElements();
+        // Close any open paragraphs
+        while (pDepth > 0) {
+            if (pDepth == 1 && tableDepth == 0 && paragraphTag != null) {
+                xhtml.endElement(paragraphTag);
+            }
+            pDepth--;
+        }
+        // Close any open table structure
+        while (tableCellDepth > 0) {
+            xhtml.endElement("td");
+            tableCellDepth--;
+        }
+        while (tableDepth > 0) {
+            xhtml.endElement("table");
+            tableDepth--;
+        }
+    }
+
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
 
@@ -348,7 +374,7 @@ public class OOXMLTikaBodyPartHandler
         } catch (TikaException | IOException e) {
             xhtml.characters("[" + cssClass + " parse error]");
         } finally {
-            innerHandler.closeInlineElements();
+            innerHandler.closeAllElements();
         }
         xhtml.endElement("div");
     }

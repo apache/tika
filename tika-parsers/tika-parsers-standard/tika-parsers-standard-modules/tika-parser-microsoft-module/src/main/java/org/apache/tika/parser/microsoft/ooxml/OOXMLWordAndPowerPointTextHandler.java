@@ -111,6 +111,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String COMMENT_REFERENCE = "commentReference";
     private static final String TEXTBOX = "textbox";
     private static final String TXBX = "txbx"; // DrawingML text box (wps:txbx in mc:Choice)
+    private static final String SDT = "sdt";
+    private static final String SDT_PR = "sdtPr";
+    private static final String SDT_CONTENT = "sdtContent";
+    private static final String SHOWING_PLCHDR = "showingPlcHdr";
     private final static String FLD_CHAR = "fldChar";
     private final static String INSTR_TEXT = "instrText";
     private final static String FLD_CHAR_TYPE = "fldCharType";
@@ -167,6 +171,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
+    // SDT (structured document tag) placeholder tracking
+    private boolean inSdtPr = false;
+    private boolean sdtIsPlaceholder = false;
+    private int sdtPlaceholderDepth = 0;
     private boolean hasAnimations = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
@@ -332,8 +340,20 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             pictureTracker.setDescription(atts.getValue("", "descr"));
         } else if (PIC.equals(localName)) {
             pictureTracker.startPic(); //check for PIC_NS?
-        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
-        else if (FOOTNOTE_REFERENCE.equals(localName)) {
+        } else if (SDT.equals(localName)) {
+            // SDTs can nest; only track placeholder at outermost level
+            if (sdtPlaceholderDepth == 0) {
+                sdtIsPlaceholder = false;
+            }
+        } else if (SDT_PR.equals(localName)) {
+            inSdtPr = true;
+        } else if (SHOWING_PLCHDR.equals(localName) && inSdtPr) {
+            sdtIsPlaceholder = true;
+        } else if (SDT_CONTENT.equals(localName)) {
+            if (sdtIsPlaceholder) {
+                sdtPlaceholderDepth++;
+            }
+        } else if (FOOTNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.footnoteReference(id);
         } else if (IMAGEDATA.equals(localName)) {
@@ -532,6 +552,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
+        } else if (SDT_PR.equals(localName)) {
+            inSdtPr = false;
+        } else if (SDT_CONTENT.equals(localName)) {
+            if (sdtPlaceholderDepth > 0) {
+                sdtPlaceholderDepth--;
+            }
+        } else if (SDT.equals(localName)) {
+            sdtIsPlaceholder = false;
         } else if (PICT.equals(localName)) {
             pictureTracker.endPicture();
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
@@ -576,6 +604,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             return;
         } else if (!includeTextBox && inTextBox) {
             return;
+        } else if (sdtPlaceholderDepth > 0) {
+            return;
         }
 
         if (editType.equals(EditType.MOVE_FROM) && inT) {
@@ -600,6 +630,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         if (inSkippedAlternateContent()) {
             return;
         } else if (!includeTextBox && inTextBox) {
+            return;
+        } else if (sdtPlaceholderDepth > 0) {
             return;
         }
 
