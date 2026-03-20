@@ -23,6 +23,15 @@ public class ParagraphProperties {
     private int ilvl = -1;
     private int numId = -1;
 
+    public ParagraphProperties() {
+    }
+
+    public ParagraphProperties(ParagraphProperties other) {
+        this.styleId = other.styleId;
+        this.ilvl = other.ilvl;
+        this.numId = other.numId;
+    }
+
     public String getStyleID() {
         return styleId;
     }

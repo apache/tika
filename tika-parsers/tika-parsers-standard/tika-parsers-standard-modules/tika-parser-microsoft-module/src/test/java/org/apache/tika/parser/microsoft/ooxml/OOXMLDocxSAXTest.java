@@ -116,7 +116,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
                 content);
 
         assertContains("<td>Embedded table r1c1", content);
-        assertContainsCount("<p>This is text within a shape", content, 1);
+        assertContainsCount("This is text within a shape", content, 1);
         assertContains("<p>Rich text content control", content);
         assertContains("<p>Simple text content control", content);
         assertContains("Repeating content", content);

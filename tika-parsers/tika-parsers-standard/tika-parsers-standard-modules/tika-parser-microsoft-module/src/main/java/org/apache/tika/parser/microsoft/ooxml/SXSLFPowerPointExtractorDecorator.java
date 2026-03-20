@@ -290,7 +290,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-        bodyHandler.closeAllElements();
+        bodyHandler.closeInlineElements();
         xhtml.endElement("div");
 
         if (config.isIncludeSlideMasterContent()) {
@@ -344,7 +344,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             handleGeneralTextContainingPart(contentType, xhtmlClassLabel, parentPart,
                     metadata, handler);
         } finally {
-            bodyHandler.closeAllElements();
+            bodyHandler.closeInlineElements();
         }
     }
 

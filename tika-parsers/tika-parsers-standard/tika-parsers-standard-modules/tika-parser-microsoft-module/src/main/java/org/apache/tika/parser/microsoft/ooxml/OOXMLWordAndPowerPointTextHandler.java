@@ -141,14 +141,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inRt = false;
-    //mechanism used to determine when to
-    //signal the start of the p, and still
-    //handle p with pPr and those without
-    private boolean lastStartElementWasP = false;
-    //have we signaled the start of a p?
-    //pPr can happen multiple times within a p
-    //<p><pPr/><r><t>text</t></r><pPr></p>
-    private boolean pStarted = false;
+    private boolean inPPr = false;
     //alternate content can be embedded in itself.
     //need to track depth.
     //preferACChoice controls which branch is processed:
@@ -233,12 +226,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
-        if (lastStartElementWasP && !PPR.equals(localName)) {
-            bodyContentsHandler.startParagraph(currPProperties);
-        }
-
-        lastStartElementWasP = false;
-
         if (uri != null && uri.equals(MC_NS)) {
             if (CHOICE.equals(localName)) {
                 inACChoiceDepth++;
@@ -267,7 +254,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (TAB.equals(localName)) {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
-            lastStartElementWasP = true;
+            bodyContentsHandler.startParagraph(currPProperties);
+        } else if (PPR.equals(localName)) {
+            inPPr = true;
         } else if (B.equals(localName)) { //TODO: add bCs
             if (inR && inRPr) {
                 currRunProperties.setBold(true);
@@ -523,10 +512,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (T.equals(localName)) {
             inT = false;
         } else if (PPR.equals(localName)) {
-            if (!pStarted) {
-                bodyContentsHandler.startParagraph(currPProperties);
-                pStarted = true;
-            }
+            inPPr = false;
+            bodyContentsHandler.setParagraphProperties(currPProperties);
             currPProperties.reset();
         } else if (P.equals(localName)) {
             if (runBuffer.length() > 0) {
@@ -535,7 +522,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 runBuffer.setLength(0);
             }
-            pStarted = false;
             bodyContentsHandler.endParagraph();
         } else if (TC.equals(localName)) {
             bodyContentsHandler.endTableCell();

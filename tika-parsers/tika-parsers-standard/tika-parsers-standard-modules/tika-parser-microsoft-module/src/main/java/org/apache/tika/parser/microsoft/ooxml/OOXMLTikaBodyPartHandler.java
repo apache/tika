@@ -68,6 +68,9 @@ public class OOXMLTikaBodyPartHandler
     //will need to replace this with a stack
     //if we're marking more that the first level <p/> element
     private String paragraphTag = null;
+    private boolean pendingParagraph = false;
+    private boolean paragraphTagOpen = false;
+    private ParagraphProperties pendingParagraphProperties = null;
 
     private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
     private ParseContext parseContext = null;
@@ -120,12 +123,14 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
+        ensureParagraphOpen();
         inlineTags.applyFormatting(runProperties);
         xhtml.characters(contents);
     }
 
     @Override
     public void hyperlinkStart(String link) throws SAXException {
+        ensureParagraphOpen();
         inlineTags.openHyperlink(link);
     }
 
@@ -144,47 +149,49 @@ public class OOXMLTikaBodyPartHandler
         inlineTags.closeAll();
     }
 
-    /**
-     * Closes ALL open elements — inline elements first, then any open
-     * structural elements (paragraphs, table cells, table rows, tables).
-     * Call after SAX parsing completes for a part to guarantee the XHTML
-     * is well-formed, even if the source XML was truncated or malformed.
-     */
-    void closeAllElements() throws SAXException {
-        closeInlineElements();
-        // Close any open paragraphs
-        while (pDepth > 0) {
-            if (pDepth == 1 && tableDepth == 0 && paragraphTag != null) {
-                xhtml.endElement(paragraphTag);
-            }
-            pDepth--;
-        }
-        // Close any open table structure
-        while (tableCellDepth > 0) {
-            xhtml.endElement("td");
-            tableCellDepth--;
-        }
-        while (tableDepth > 0) {
-            xhtml.endElement("table");
-            tableDepth--;
-        }
-    }
-
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
-
         //if you're in a table cell and your after the first paragraph
         //make sure to prepend a \n
         if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
+        // Record the paragraph as pending — don't emit <p> yet.
+        // We defer opening until the first content arrives (via ensureParagraphOpen)
+        // so that style info from pPr is available.
+        pendingParagraph = true;
+        pendingParagraphProperties = paragraphProperties;
+        pDepth++;
+    }
 
-        if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
+    @Override
+    public void setParagraphProperties(ParagraphProperties paragraphProperties)
+            throws SAXException {
+        // Copy the properties — the caller may reset the object after this call.
+        // The <p> tag hasn't been emitted yet, so this style will be applied when it opens.
+        if (pendingParagraph) {
+            pendingParagraphProperties = new ParagraphProperties(paragraphProperties);
+        }
+    }
+
+    /**
+     * Ensures the current paragraph's XHTML tag is open.  Called before any
+     * content is written (runs, hyperlinks, etc.) so that the deferred
+     * {@code <p>} tag is emitted with the correct style.
+     */
+    private void ensureParagraphOpen() throws SAXException {
+        if (!pendingParagraph) {
+            return;
+        }
+        pendingParagraph = false;
+
+        if (pDepth == 1 && tableDepth == 0 && sdtDepth == 0) {
             paragraphTag = P;
             String styleClass = null;
+            ParagraphProperties pp = pendingParagraphProperties;
             //TIKA-2144 check that styles is not null
-            if (paragraphProperties.getStyleID() != null && styles != null) {
-                String styleName = styles.getStyleName(paragraphProperties.getStyleID());
+            if (pp != null && pp.getStyleID() != null && styles != null) {
+                String styleName = styles.getStyleName(pp.getStyleID());
                 if (styleName != null) {
                     WordExtractor.TagAndStyle tas =
                             WordExtractor.buildParagraphTagAndStyle(styleName, false);
@@ -193,25 +200,28 @@ public class OOXMLTikaBodyPartHandler
                 }
             }
 
-
             if (styleClass == null) {
                 xhtml.startElement(paragraphTag);
             } else {
                 xhtml.startElement(paragraphTag, "class", styleClass);
             }
+            paragraphTagOpen = true;
         }
 
-        writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
-                listManager, xhtml);
-        pDepth++;
+        if (pendingParagraphProperties != null) {
+            writeParagraphNumber(pendingParagraphProperties.getNumId(),
+                    pendingParagraphProperties.getIlvl(), listManager, xhtml);
+        }
+        pendingParagraphProperties = null;
     }
-
 
     @Override
     public void endParagraph() throws SAXException {
+        ensureParagraphOpen();
         closeInlineElements();
-        if (pDepth == 1 && tableDepth == 0) {
+        if (paragraphTagOpen) {
             xhtml.endElement(paragraphTag);
+            paragraphTagOpen = false;
         } else if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         } else if (tableCellDepth == 0) {
@@ -374,7 +384,7 @@ public class OOXMLTikaBodyPartHandler
         } catch (TikaException | IOException e) {
             xhtml.characters("[" + cssClass + " parse error]");
         } finally {
-            innerHandler.closeAllElements();
+            innerHandler.closeInlineElements();
         }
         xhtml.endElement("div");
     }
