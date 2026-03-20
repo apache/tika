@@ -19,8 +19,10 @@ package org.apache.tika.langdetect.charsoup.tools;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -75,10 +77,10 @@ public class GlmRerankerEval {
 
         System.out.println("Loading FLORES-200 dev: " + floresPath);
         List<String[]> rows = loadFlores(floresPath);  // [lang, text]
-        System.out.printf("Loaded %d sentences, topN=%d%n%n", rows.size(), topN);
+        System.out.printf(Locale.ROOT, "Loaded %d sentences, topN=%d%n%n", rows.size(), topN);
 
         // Header
-        System.out.printf("%-8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %10s%n",
+        System.out.printf(Locale.ROOT, "%-8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %8s  %10s%n",
                 "length", "total", "discAcc%", "glmAcc%", "netLift%",
                 "kept", "broke", "rescued", "missed", "outTopN",
                 "adjRate%", "rescued/broke");
@@ -153,7 +155,10 @@ public class GlmRerankerEval {
             Counters c = perLang.computeIfAbsent(trueLang, k -> new Counters());
             c.total++;
 
-            if (topResults.isEmpty()) { c.outTopN++; continue; }
+            if (topResults.isEmpty()) {
+                c.outTopN++;
+                continue;
+            }
 
             String discPick = topResults.get(0).getLanguage();
             boolean discRight = trueLang.equals(discPick);
@@ -164,15 +169,23 @@ public class GlmRerankerEval {
 
             if (discRight) {
                 c.discRight++;
-                if (glmRight) c.kept++; else c.broke++;
+                if (glmRight) {
+                    c.kept++;
+                } else {
+                    c.broke++;
+                }
             } else if (inTopN) {
-                if (glmRight) c.rescued++; else c.missed++;
+                if (glmRight) {
+                    c.rescued++;
+                } else {
+                    c.missed++;
+                }
             } else {
                 c.outTopN++;
             }
         }
 
-        System.out.printf("%-12s  %8s  %8s  %8s  %8s  %8s  %8s  %8s%n",
+        System.out.printf(Locale.ROOT, "%-12s  %8s  %8s  %8s  %8s  %8s  %8s  %8s%n",
                 "lang", "total", "discAcc%", "glmAcc%", "netLift%",
                 "rescued", "broke", "outTopN");
         System.out.println("-".repeat(90));
@@ -191,7 +204,7 @@ public class GlmRerankerEval {
                 })
                 .forEach(e -> {
                     Counters c = e.getValue();
-                    System.out.printf("%-12s  %8d  %8.2f  %8.2f  %8.2f  %8d  %8d  %8d%n",
+                    System.out.printf(Locale.ROOT, "%-12s  %8d  %8.2f  %8.2f  %8.2f  %8d  %8d  %8d%n",
                             e.getKey(), c.total,
                             100.0 * c.discRight / c.total,
                             100.0 * (c.discRight - c.broke + c.rescued) / c.total,
@@ -245,7 +258,7 @@ public class GlmRerankerEval {
         double rescuedOverBroke = c.broke > 0
                 ? (double) c.rescued / c.broke : Double.POSITIVE_INFINITY;
 
-        System.out.printf("@%-7d  %8d  %8.2f  %8.2f  %+8.2f  %8d  %8d  %8d  %8d  %8d  %8.1f  %10.2f%n",
+        System.out.printf(Locale.ROOT, "@%-7d  %8d  %8.2f  %8.2f  %+8.2f  %8d  %8d  %8d  %8d  %8d  %8.1f  %10.2f%n",
                 len, c.total,
                 100.0 * discAcc / c.total,
                 100.0 * glmAcc  / c.total,
@@ -277,7 +290,7 @@ public class GlmRerankerEval {
 
     private static List<String[]> loadFlores(String path) throws IOException {
         List<String[]> rows = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\t", 2);

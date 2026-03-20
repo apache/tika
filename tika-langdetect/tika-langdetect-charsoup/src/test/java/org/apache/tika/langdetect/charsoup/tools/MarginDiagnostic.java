@@ -16,8 +16,11 @@
  */
 package org.apache.tika.langdetect.charsoup.tools;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -37,7 +40,7 @@ public class MarginDiagnostic {
         CharSoupLanguageDetector det = new CharSoupLanguageDetector();
         det.loadModels();
 
-        System.out.printf("%-22s  %-6s %7s  %-6s %7s  %-6s %7s  %s%n",
+        System.out.printf(Locale.ROOT, "%-22s  %-6s %7s  %-6s %7s  %-6s %7s  %s%n",
                 "SNIPPET", "TOP", "SCORE", "2ND", "SCORE", "CONF", "ENTROPY", "RESULT");
         System.out.println("-".repeat(100));
 
@@ -45,7 +48,7 @@ public class MarginDiagnostic {
         int unkCount = 0;
         int wrongCount = 0;
         int okCount = 0;
-        try (BufferedReader br = new BufferedReader(new FileReader(floresPath))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(floresPath, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\t", 2);
@@ -68,17 +71,24 @@ public class MarginDiagnostic {
                 float secScore = results.size() > 1 ? results.get(1).getRawScore() : 0;
 
                 String mark;
-                if (top.isEmpty()) { mark = "UNK"; unkCount++; }
-                else if (top.equals(filterLang)) { mark = "OK"; okCount++; }
-                else { mark = "WRONG:" + top; wrongCount++; }
+                if (top.isEmpty()) {
+                    mark = "UNK";
+                    unkCount++;
+                } else if (top.equals(filterLang)) {
+                    mark = "OK";
+                    okCount++;
+                } else {
+                    mark = "WRONG:" + top;
+                    wrongCount++;
+                }
 
-                System.out.printf("%-22s  %-6s %7.4f  %-6s %7.4f  %-6s %7.3f  %s%n",
+                System.out.printf(Locale.ROOT, "%-22s  %-6s %7.4f  %-6s %7.4f  %-6s %7.3f  %s%n",
                         text, top, topScore, second, secScore, topConf, entropy, mark);
                 count++;
             }
         }
         System.out.println("-".repeat(100));
-        System.out.printf("Total: %d  OK: %d (%.1f%%)  UNK: %d  WRONG: %d%n",
+        System.out.printf(Locale.ROOT, "Total: %d  OK: %d (%.1f%%)  UNK: %d  WRONG: %d%n",
                 count, okCount, 100.0 * okCount / count, unkCount, wrongCount);
     }
 }

@@ -207,7 +207,7 @@ component loading.
 == Generative Language Model
 
 In addition to the discriminative models above, Tika ships a
-**generative character n-gram model** (`langdetect-generative-v1.bin`) that
+**generative character n-gram model** (`langdetect-generative-v4-20260320.bin`) that
 answers a complementary question: _how language-like is this text?_
 
 The generative model is used for:

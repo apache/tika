@@ -94,15 +94,7 @@ public class CompareDetectors {
      * {@code zho_Hans} and {@code zho_Hant} are both native Chinese character sets and
      * both normalize to {@code zho}.
      */
-    static final Set<String> FLORES_KEEP_SCRIPT_SUFFIX = Set.of(
-            "ace_Arab",
-            "arb_Latn",
-            "bjn_Arab",
-            "kas_Deva",
-            "knc_Latn",
-            "min_Arab",
-            "taq_Tfng"
-    );
+    static final Set<String> FLORES_KEEP_SCRIPT_SUFFIX = FloresNorm.KEEP_SCRIPT_SUFFIX;
 
     /** Warm-up iterations before timing to stabilise JIT. */
     private static final int WARMUP_ITERS = 200;
@@ -1434,38 +1426,12 @@ public class CompareDetectors {
      * Must stay in sync with {@code PrepareCorpus.LANG_MERGE_MAP} and
      * {@code CommonTokenGenerator.LANG_MERGE_MAP}.
      */
-    private static final Map<String, String> FLORES_CODE_REMAP = Map.ofEntries(
-            Map.entry("arb", "ara"),   // Modern Standard Arabic → Arabic
-            Map.entry("pes", "fas"),   // Western Persian → Farsi
-            Map.entry("zsm", "msa"),   // Standard Malay → Malay
-            Map.entry("lvs", "lav"),   // Standard Latvian → Latvian
-            Map.entry("azj", "aze"),   // North Azerbaijani → Azerbaijani
-            Map.entry("ekk", "est"),   // Standard Estonian → Estonian
-            Map.entry("npi", "nep"),   // Nepali (individual) → Nepali
-            Map.entry("als", "sqi"),   // Tosk Albanian → Albanian
-            Map.entry("ory", "ori"),   // Odia (macrolanguage) → Oriya
-            Map.entry("nor", "nob"),   // Norwegian → Bokmål
-            Map.entry("cmn", "zho"),   // Mandarin → Chinese
-            Map.entry("swa", "swh"),   // Swahili (macrolanguage) → Swahili
-            Map.entry("yid", "ydd"),   // Yiddish → Eastern Yiddish
-            Map.entry("gug", "grn"),   // Paraguayan Guaraní → Guaraní
-            Map.entry("quz", "que"),   // Cusco Quechua → Quechua
-            Map.entry("plt", "mlg"),   // Plateau Malagasy → Malagasy (dropped in v5; kept for safety)
-            Map.entry("pbt", "pus"),   // Southern Pashto → Pashto
-            Map.entry("uzn", "uzb"),   // Northern Uzbek → Uzbek
-            Map.entry("kmr", "kur"),   // Kurmanji Kurdish → Kurdish
-            Map.entry("khk", "mon")    // Khalkha Mongolian → Mongolian
-    );
-
     /**
-     * Strip Flores-200 script suffix: {@code zho_Hans} → {@code zho},
-     * {@code ace_Arab} → {@code ace}. Then remap FLORES-specific codes to
-     * the canonical codes used in our model. Plain codes are returned unchanged.
+     * Strip Flores-200 script suffix and remap to canonical model codes.
+     * Delegates to {@link FloresNorm#normalize(String)}.
      */
     static String normalizeLang(String lang) {
-        int underscore = lang.indexOf('_');
-        String base = underscore >= 0 ? lang.substring(0, underscore) : lang;
-        return FLORES_CODE_REMAP.getOrDefault(base, base);
+        return FloresNorm.normalize(lang);
     }
 
     static List<LabeledSentence> filterByLangs(List<LabeledSentence> data,

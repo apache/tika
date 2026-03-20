@@ -36,125 +36,173 @@ import java.util.Map;
  *
  * <p>Computes an approximate per-n-gram average log P(text | language).
  * Higher scores indicate the decoded text is more consistent with the named
- * language.  The score is used to arbitrate between candidate charsets when
- * statistical decoders disagree on script or language.
+ * language.  The score is used to detect charset errors (mojibake), garbled
+ * text, and other corpus-quality issues.
  *
- * <h3>Feature types</h3>
+ * <h3>Feature types (v4 model)</h3>
  * <ul>
- *   <li><b>CJK languages</b> (Han, Hiragana, Katakana): character unigrams
- *       and bigrams extracted from CJK/kana codepoints.</li>
- *   <li><b>Non-CJK languages</b>: character unigrams, bigrams (with
- *       word-boundary sentinels), and trigrams (with sentinels).</li>
+ *   <li><b>CJK languages</b>: character unigrams and bigrams from CJK/kana
+ *       codepoints.</li>
+ *   <li><b>Non-CJK languages</b>: character unigrams (per-letter streaming);
+ *       character bigrams and trigrams with positional salts (BOW/MID/EOW/
+ *       FULL_WORD) applied at the word level; bidirectional word bigrams
+ *       (short-anchor forward and backward).</li>
+ *   <li><b>Script distribution</b>: normalized per-script letter proportions
+ *       using {@link GlmScriptCategory} (34 fine-grained categories, no
+ *       OTHER catch-all).</li>
  * </ul>
  *
- * <p>Log-probabilities are quantized to unsigned INT8 over the range
- * [{@link #LOGP_MIN}, 0] and stored in dense byte arrays.
+ * <h3>Positional salting</h3>
+ * N-grams use a single salt byte (BOW/MID/EOW/FULL_WORD) as the first byte
+ * of the FNV hash rather than sentinel characters.  This means:
+ * <ul>
+ *   <li>N-grams always contain N real characters — no {@code _} padding.</li>
+ *   <li>The same bigram at the start vs. middle of a word maps to a different
+ *       bucket, encoding positional information without polluting codepoint
+ *       space.</li>
+ * </ul>
  *
- * <h3>Binary format ({@code GLM1} v3)</h3>
+ * <h3>Bidirectional word bigrams</h3>
+ * <ul>
+ *   <li><b>Forward</b>: fired when the previous word is short (≤ {@value
+ *       #MAX_SHORT_WORD} chars) — captures function-word-in-context like
+ *       "the X", "de X", "в X".</li>
+ *   <li><b>Backward</b>: fired when the current word is short — captures
+ *       "X the", "X de", "X в" (what precedes a function word).</li>
+ * </ul>
+ *
+ * <h3>Binary format ({@code GLM1})</h3>
  * <pre>
- *   INT  magic    = 0x474C4D31
- *   INT  version  = 3
+ *   INT  magic    = 0x474C4D31  ("GLM1")
+ *   INT  version                (3 = legacy, 4 = current)
  *   INT  numLangs
  *   INT  cjkUnigramBuckets
  *   INT  cjkBigramBuckets
  *   INT  noncjkUnigramBuckets
  *   INT  noncjkBigramBuckets
  *   INT  noncjkTrigramBuckets
- *   INT  scriptCategories          (v3+)
+ *   INT  scriptCategories
+ *   INT  wordBigramBuckets      (v4+ only; 0 absent in v3)
  *   For each language:
  *     SHORT  codeLen
  *     BYTES  langCode (UTF-8)
  *     BYTE   isCjk (0|1)
- *     FLOAT  scoreMean   (μ of score distribution on training data)
- *     FLOAT  scoreStdDev (σ of score distribution on training data)
+ *     FLOAT  scoreMean
+ *     FLOAT  scoreStdDev
  *     BYTES  unigramTable  [cjkUnigramBuckets | noncjkUnigramBuckets]
  *     BYTES  bigramTable   [cjkBigramBuckets  | noncjkBigramBuckets]
  *     BYTES  trigramTable  [noncjkTrigramBuckets] (absent for CJK)
- *     BYTES  scriptTable   [scriptCategories]  (v3+)
+ *     BYTES  wordBigramTable [wordBigramBuckets] (v4+, absent for CJK)
+ *     BYTES  scriptTable   [scriptCategories]
  * </pre>
  */
 public class GenerativeLanguageModel {
 
-    // ---- Bucket counts ----
+    // ---- Bucket counts (v4/v5) ----
 
-    public static final int CJK_UNIGRAM_BUCKETS    =  8_192;
-    public static final int CJK_BIGRAM_BUCKETS     = 32_768;
-    public static final int NONCJK_UNIGRAM_BUCKETS =  8_192;
-    public static final int NONCJK_BIGRAM_BUCKETS  =  8_192;
-    public static final int NONCJK_TRIGRAM_BUCKETS = 16_384;
+    public static final int CJK_UNIGRAM_BUCKETS     =  8_192;
+    public static final int CJK_BIGRAM_BUCKETS      = 16_384;
+    public static final int NONCJK_UNIGRAM_BUCKETS  =  4_096;
+    public static final int NONCJK_BIGRAM_BUCKETS   =  8_192;
+    public static final int NONCJK_TRIGRAM_BUCKETS  = 16_384;
+    public static final int WORD_BIGRAM_BUCKETS      =  8_192;  // v4: new
 
     /**
-     * Number of script categories tracked for script-block features.
-     * Matches {@link ScriptCategory#COUNT} at model-build time; stored in the
-     * binary so older readers can skip it.
+     * Script categories used for the script distribution feature.
+     * Matches {@link GlmScriptCategory#COUNT} at model-build time; the actual
+     * count is stored in the binary so older v3 readers still work.
      */
-    public static final int SCRIPT_CATEGORIES = ScriptCategory.COUNT;
+    public static final int SCRIPT_CATEGORIES = GlmScriptCategory.COUNT;
 
-
-    /** Default classpath resource path for the bundled generative model. */
+    /** Default classpath resource for the bundled generative model. */
     public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin";
+            "/org/apache/tika/langdetect/charsoup/langdetect-generative-v4-20260320.bin";
 
     /**
-     * Quantization floor.  Log-probabilities below this value are clamped
-     * before quantizing; values stored in the table never go lower.
+     * Quantization floor.  Log-probabilities below this are clamped before
+     * quantizing; stored values never go lower.
      */
     public static final float LOGP_MIN = -18.0f;
 
-    private static final int MAGIC   = 0x474C4D31; // "GLM1"
-    private static final int VERSION = 3;
+    private static final int MAGIC   = 0x474C4D31;  // "GLM1"
+    private static final int VERSION = 4;
 
-    // ---- FNV-1a basis constants ----
+    // ---- FNV constants ----
+
+    static final int FNV_BASIS = 0x811c9dc5;
+
+    /** Positional salt bytes — same scheme as {@link SaltedNgramFeatureExtractor}. */
+    static final int SALT_MID            = 0x00;
+    static final int SALT_BOW            = 0x01;
+    static final int SALT_EOW            = 0x02;
+    static final int SALT_FULL_WORD      = 0x03;
+    static final int SALT_CJK_UNIGRAM    = 0x04;
+    static final int SALT_NONCJK_UNIGRAM = 0x05;
+    static final int SALT_WORD_FWD       = 0x06;  // short-prev → any-next
+    static final int SALT_WORD_BWD       = 0x07;  // any-prev → short-next
 
     /**
-     * Bigram basis shared with {@link ScriptAwareFeatureExtractor} so that
-     * identical text produces the same bucket indices for both models.
+     * Maximum anchor-word length for word bigrams.
+     * Words of 1–{@value} characters are treated as anchors.
      */
-    static final int BIGRAM_BASIS         = ScriptAwareFeatureExtractor.BIGRAM_BASIS;
+    static final int MAX_SHORT_WORD = 3;
 
-    /**
-     * CJK unigram basis shared with {@link ScriptAwareFeatureExtractor}.
-     */
-    static final int CJK_UNIGRAM_BASIS    = ScriptAwareFeatureExtractor.UNIGRAM_BASIS;
+    // ---- Legacy v3 constants (kept for backward-compatible loading only) ----
 
-    /** Distinct salt for non-CJK character unigrams (not in discriminative model). */
-    static final int NONCJK_UNIGRAM_BASIS = 0x1a3f7c4e;
-
-    /** Distinct salt for character trigrams (not in discriminative model). */
-    static final int TRIGRAM_BASIS        = 0x7e3d9b21;
-
-    /** Word-boundary sentinel codepoint, matching the discriminative model. */
-    static final int SENTINEL = '_';
+    /** @deprecated Used only when loading v3 models. */
+    @Deprecated
+    static final int BIGRAM_BASIS          = ScriptAwareFeatureExtractor.BIGRAM_BASIS;
+    /** @deprecated Used only when loading v3 models. */
+    @Deprecated
+    static final int CJK_UNIGRAM_BASIS     = ScriptAwareFeatureExtractor.UNIGRAM_BASIS;
+    /** @deprecated Used only when loading v3 models. */
+    @Deprecated
+    static final int NONCJK_UNIGRAM_BASIS  = 0x1a3f7c4e;
+    /** @deprecated Used only when loading v3 models. */
+    @Deprecated
+    static final int TRIGRAM_BASIS         = 0x7e3d9b21;
+    /** @deprecated Sentinel used in v3 n-gram extraction. */
+    @Deprecated
+    static final int SENTINEL              = '_';
 
     // ---- Model state ----
 
-    private final List<String>         langIds;
+    private final int             modelVersion;
+    private final List<String>    langIds;
     private final Map<String, Integer> langIndex;
-    private final boolean[]  isCjk;
-    private final byte[][]   unigramTables;   // [langIdx][bucket]
-    private final byte[][]   bigramTables;    // [langIdx][bucket]
-    private final byte[][]   trigramTables;   // [langIdx][bucket]; null entry for CJK langs
-    private final byte[][]   scriptTables;    // [langIdx][SCRIPT_CATEGORIES]; null if v2 model
-    private final float[]    scoreMeans;      // μ per language (from training data)
-    private final float[]    scoreStdDevs;    // σ per language (from training data)
+    private final boolean[]       isCjk;
+    private final byte[][]        unigramTables;
+    private final byte[][]        bigramTables;
+    private final byte[][]        trigramTables;
+    private final byte[][]        wordBigramTables;   // null for v3 models
+    private final byte[][]        scriptTables;
+    private final int             loadedScriptCats;   // actual count from binary
+    private final float[]         scoreMeans;
+    private final float[]         scoreStdDevs;
 
     private GenerativeLanguageModel(
+            int          modelVersion,
             List<String> langIds,
             boolean[]    isCjk,
             byte[][]     unigramTables,
             byte[][]     bigramTables,
             byte[][]     trigramTables,
+            byte[][]     wordBigramTables,
             byte[][]     scriptTables,
+            int          loadedScriptCats,
             float[]      scoreMeans,
             float[]      scoreStdDevs) {
-        this.langIds       = Collections.unmodifiableList(new ArrayList<>(langIds));
-        this.isCjk         = isCjk;
-        this.unigramTables = unigramTables;
-        this.bigramTables  = bigramTables;
-        this.trigramTables = trigramTables;
-        this.scriptTables  = scriptTables;
-        this.scoreMeans    = scoreMeans;
-        this.scoreStdDevs  = scoreStdDevs;
+        this.modelVersion      = modelVersion;
+        this.langIds           = Collections.unmodifiableList(new ArrayList<>(langIds));
+        this.isCjk             = isCjk;
+        this.unigramTables     = unigramTables;
+        this.bigramTables      = bigramTables;
+        this.trigramTables     = trigramTables;
+        this.wordBigramTables  = wordBigramTables;
+        this.scriptTables      = scriptTables;
+        this.loadedScriptCats  = loadedScriptCats;
+        this.scoreMeans        = scoreMeans;
+        this.scoreStdDevs      = scoreStdDevs;
         Map<String, Integer> idx = new HashMap<>(langIds.size() * 2);
         for (int i = 0; i < langIds.size(); i++) {
             idx.put(langIds.get(i), i);
@@ -180,88 +228,90 @@ public class GenerativeLanguageModel {
      *         language is unknown or the text yields no scorable n-grams.
      */
     public float score(String text, String language) {
-        if (text == null || text.isEmpty()) {
-            return Float.NaN;
-        }
+        if (text == null || text.isEmpty()) return Float.NaN;
         Integer li = langIndex.get(language);
-        if (li == null) {
-            return Float.NaN;
-        }
-        String preprocessed = CharSoupFeatureExtractor.preprocess(text);
-        if (preprocessed.isEmpty()) {
-            return Float.NaN;
-        }
+        if (li == null) return Float.NaN;
+        String pp = CharSoupFeatureExtractor.preprocess(text);
+        if (pp.isEmpty()) return Float.NaN;
 
         double[] sum = {0.0};
         int[]    cnt = {0};
 
-        if (isCjk[li]) {
-            byte[] uniT = unigramTables[li];
-            byte[] biT  = bigramTables[li];
-            extractCjkNgrams(preprocessed,
-                h -> {
-                    sum[0] += dequantize(uniT[h % CJK_UNIGRAM_BUCKETS]);
-                    cnt[0]++;
-                },
-                h -> {
-                    sum[0] += dequantize(biT[h % CJK_BIGRAM_BUCKETS]);
-                    cnt[0]++;
-                });
+        if (modelVersion >= 4) {
+            scoreV4(pp, li, sum, cnt);
         } else {
-            byte[] uniT = unigramTables[li];
-            byte[] biT  = bigramTables[li];
-            byte[] triT = trigramTables[li];
-            extractNonCjkNgrams(preprocessed,
-                h -> {
-                    sum[0] += dequantize(uniT[h % NONCJK_UNIGRAM_BUCKETS]);
-                    cnt[0]++;
-                },
-                h -> {
-                    sum[0] += dequantize(biT[h % NONCJK_BIGRAM_BUCKETS]);
-                    cnt[0]++;
-                },
-                h -> {
-                    sum[0] += dequantize(triT[h % NONCJK_TRIGRAM_BUCKETS]);
-                    cnt[0]++;
-                });
-        }
-
-        if (scriptTables != null && scriptTables[li] != null) {
-            addScriptContributions(preprocessed, scriptTables[li], sum, cnt);
+            scoreV3(pp, li, sum, cnt);
         }
 
         return cnt[0] == 0 ? Float.NaN : (float) (sum[0] / cnt[0]);
     }
 
-    /**
-     * Add per-letter script log-probability contributions to the running
-     * score average.  Each letter codepoint contributes one observation —
-     * its script category's dequantized log-probability — keeping the
-     * ratio of script terms to n-gram terms proportional to text length.
-     */
-    static void addScriptContributions(String preprocessed, byte[] scriptTable,
-                                       double[] sum, int[] cnt) {
-        int i = 0;
-        int len = preprocessed.length();
-        while (i < len) {
-            int cp = preprocessed.codePointAt(i);
-            i += Character.charCount(cp);
-            if (Character.isLetter(cp)) {
-                int lower = Character.toLowerCase(cp);
-                int script = ScriptCategory.of(lower);
-                if (script < scriptTable.length) {
-                    sum[0] += dequantize(scriptTable[script]);
-                    cnt[0]++;
-                }
-            }
+    // ---- Scoring — v4 (salted n-grams + word bigrams + fine-grained script) ----
+
+    private void scoreV4(String pp, int li, double[] sum, int[] cnt) {
+        if (isCjk[li]) {
+            byte[] uniT = unigramTables[li];
+            byte[] biT  = bigramTables[li];
+            extractCjkFeaturesV4(pp,
+                    h -> { sum[0] += dequantize(uniT[h % uniT.length]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(biT[h % biT.length]);
+                           cnt[0]++; });
+        } else {
+            byte[] uniT  = unigramTables[li];
+            byte[] biT   = bigramTables[li];
+            byte[] triT  = trigramTables[li];
+            byte[] wbiT  = wordBigramTables != null ? wordBigramTables[li] : null;
+            HashConsumer wbiSink = wbiT != null
+                    ? h -> { sum[0] += dequantize(wbiT[h % wbiT.length]);
+                             cnt[0]++; }
+                    : null;
+            extractNonCjkFeaturesV4(pp,
+                    h -> { sum[0] += dequantize(uniT[h % uniT.length]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(biT[h % biT.length]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(triT[h % triT.length]);
+                           cnt[0]++; },
+                    wbiSink);
+        }
+
+        if (scriptTables != null && scriptTables[li] != null) {
+            addScriptContributionsV4(pp, scriptTables[li], sum, cnt);
+        }
+    }
+
+    // ---- Scoring — v3 (legacy sentinel n-grams) ----
+
+    private void scoreV3(String pp, int li, double[] sum, int[] cnt) {
+        if (isCjk[li]) {
+            byte[] uniT = unigramTables[li];
+            byte[] biT  = bigramTables[li];
+            extractCjkNgrams(pp,
+                    h -> { sum[0] += dequantize(uniT[h % CJK_UNIGRAM_BUCKETS]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(biT[h % 32_768]);
+                           cnt[0]++; });
+        } else {
+            byte[] uniT = unigramTables[li];
+            byte[] biT  = bigramTables[li];
+            byte[] triT = trigramTables[li];
+            extractNonCjkNgrams(pp,
+                    h -> { sum[0] += dequantize(uniT[h % uniT.length]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(biT[h % biT.length]);
+                           cnt[0]++; },
+                    h -> { sum[0] += dequantize(triT[h % triT.length]);
+                           cnt[0]++; });
+        }
+
+        if (scriptTables != null && scriptTables[li] != null) {
+            addScriptContributionsV3(pp, scriptTables[li], sum, cnt);
         }
     }
 
     /**
      * Score {@code text} against all languages and return the best match.
-     *
-     * @return an entry {@code (languageCode, score)}, or {@code null} if no
-     *         language yields a finite score.
      */
     public Map.Entry<String, Float> bestMatch(String text) {
         String best = null;
@@ -278,25 +328,12 @@ public class GenerativeLanguageModel {
 
     /**
      * Average raw score of {@code text} across all CJK languages in the model.
-     *
-     * <p>Unlike {@link #bestMatch}, which picks the single best language
-     * globally (often a non-CJK language when ASCII dominates short CJK
-     * filenames), this method evaluates the text only through CJK-trained
-     * n-gram tables.  Comparing average CJK scores across different charset
-     * decodings of the same raw bytes reveals which decoding produces more
-     * natural CJK characters — a real word like 文章 consistently scores
-     * higher than hash-ghost gibberish like 訜覧 across all CJK models.</p>
-     *
-     * @return the average score across CJK languages, or {@link Float#NaN}
-     *         if no CJK language yields a finite score.
      */
     public float avgCjkScore(String text) {
         double sum = 0;
         int count = 0;
         for (int i = 0; i < langIds.size(); i++) {
-            if (!isCjk[i]) {
-                continue;
-            }
+            if (!isCjk[i]) continue;
             float s = score(text, langIds.get(i));
             if (!Float.isNaN(s)) {
                 sum += s;
@@ -306,64 +343,24 @@ public class GenerativeLanguageModel {
         return count == 0 ? Float.NaN : (float) (sum / count);
     }
 
-    /**
-     * Z-score of {@code text} under {@code language}:
-     * {@code (score(text, language) - μ) / σ}, where μ and σ were computed
-     * from the language's training corpus.
-     *
-     * <p>Appropriate when the input text is roughly the same length as
-     * training sentences.  For short or variable-length text, prefer
-     * {@link #zScoreLengthAdjusted}.
-     *
-     * @return the z-score, or {@link Float#NaN} if the language is unknown,
-     *         the text yields no scorable n-grams, or σ is zero/uncalibrated.
-     */
+    // ---- Z-score API ----
+
+    static final int CALIBRATION_CHAR_LENGTH  = 120;
+    static final int MIN_ADJUSTED_CHAR_LENGTH = 10;
+
     public float zScore(String text, String language) {
         Integer li = langIndex.get(language);
-        if (li == null || scoreStdDevs[li] <= 0.0f) {
-            return Float.NaN;
-        }
+        if (li == null || scoreStdDevs[li] <= 0.0f) return Float.NaN;
         float s = score(text, language);
-        if (Float.isNaN(s)) {
-            return Float.NaN;
-        }
+        if (Float.isNaN(s)) return Float.NaN;
         return (s - scoreMeans[li]) / scoreStdDevs[li];
     }
 
-    /**
-     * Approximate character length of a typical training sentence.
-     * Used by {@link #zScoreLengthAdjusted} to inflate σ for short text.
-     * Empirically derived from the calibration data: score σ scales as
-     * roughly 1/√(charLen) and stabilises around this length.
-     */
-    static final int CALIBRATION_CHAR_LENGTH = 120;
-
-    /** Floor on text length to avoid extreme σ inflation. */
-    static final int MIN_ADJUSTED_CHAR_LENGTH = 10;
-
-    /**
-     * Length-adjusted z-score of {@code text} under {@code language}.
-     *
-     * <p>Score variance scales as approximately 1/√(textLength).  The
-     * stored σ was calibrated on full training sentences (typically
-     * ~{@value #CALIBRATION_CHAR_LENGTH} characters).  For shorter text
-     * this method inflates σ proportionally, preventing spurious low
-     * z-scores on short snippets.  For text at or above the calibration
-     * length, the result equals {@link #zScore}.
-     *
-     * @return the adjusted z-score, or {@link Float#NaN} if the language
-     *         is unknown, the text yields no scorable n-grams, or σ is
-     *         zero/uncalibrated.
-     */
     public float zScoreLengthAdjusted(String text, String language) {
         Integer li = langIndex.get(language);
-        if (li == null || scoreStdDevs[li] <= 0.0f) {
-            return Float.NaN;
-        }
+        if (li == null || scoreStdDevs[li] <= 0.0f) return Float.NaN;
         float s = score(text, language);
-        if (Float.isNaN(s)) {
-            return Float.NaN;
-        }
+        if (Float.isNaN(s)) return Float.NaN;
         int textLen = text.length();
         float adjustment = (float) Math.sqrt(
                 (double) CALIBRATION_CHAR_LENGTH
@@ -372,24 +369,17 @@ public class GenerativeLanguageModel {
         return (s - scoreMeans[li]) / adjustedSigma;
     }
 
-    /**
-     * Set the calibration statistics for a language. Typically called by
-     * the training tool after a second pass over the training corpus.
-     */
     public void setStats(String language, float mean, float stdDev) {
         Integer li = langIndex.get(language);
-        if (li == null) {
-            throw new IllegalArgumentException("Unknown language: " + language);
-        }
+        if (li == null) throw new IllegalArgumentException("Unknown language: " + language);
         scoreMeans[li]   = mean;
         scoreStdDevs[li] = stdDev;
     }
 
-    // ---- N-gram extraction (shared by scoring and training) ----
+    // ---- N-gram extraction: v4 (salted, word-buffer) ----
 
     /**
-     * Callback receiving a non-negative raw FNV hash for a single n-gram.
-     * The caller is responsible for reducing it modulo a table size.
+     * Callback receiving a non-negative FNV hash for a single feature.
      */
     @FunctionalInterface
     public interface HashConsumer {
@@ -397,16 +387,243 @@ public class GenerativeLanguageModel {
     }
 
     /**
-     * Extract CJK character unigrams and bigrams from preprocessed text,
-     * delivering raw (positive) hashes to the supplied sinks.
+     * Extract CJK character unigrams and bigrams (v4: no script salt).
      */
-    public static void extractCjkNgrams(
+    public static void extractCjkFeaturesV4(
             String text,
             HashConsumer unigramSink,
             HashConsumer bigramSink) {
         int prevCp = -1;
-        int i = 0;
-        int len = text.length();
+        int i = 0, len = text.length();
+        while (i < len) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (!Character.isLetter(cp)) {
+                prevCp = -1;
+                continue;
+            }
+            int lower = Character.toLowerCase(cp);
+            if (!ScriptAwareFeatureExtractor.isCjkOrKana(lower)) {
+                prevCp = -1;
+                continue;
+            }
+            unigramSink.consume(hashV4(SALT_CJK_UNIGRAM, lower));
+            if (prevCp >= 0) {
+                bigramSink.consume(hashV4(SALT_MID, prevCp, lower));
+            }
+            prevCp = lower;
+        }
+    }
+
+    /**
+     * Extract non-CJK features (v4): per-letter unigrams (streaming) plus
+     * word-buffer bigrams/trigrams with positional salt, and bidirectional
+     * word bigrams.
+     *
+     * <p>A word is a maximal run of same-script non-CJK letter codepoints.
+     * Script is determined by {@link GlmScriptCategory#of(int)}; codepoints
+     * returning {@code -1} (unrecognized script) are treated as their own
+     * single-character word so they don't pollute adjacent-word bigrams.
+     *
+     * @param wordBigramSink may be {@code null} to skip word-bigram features
+     */
+    public static void extractNonCjkFeaturesV4(
+            String       text,
+            HashConsumer unigramSink,
+            HashConsumer bigramSink,
+            HashConsumer trigramSink,
+            HashConsumer wordBigramSink) {
+
+        int[] word     = new int[256];
+        int   wordLen  = 0;
+        int   wordScript = -2;  // -2 = no word in progress; -1 = unrecognized script
+
+        int[] prevWord    = new int[256];
+        int   prevWordLen = 0;
+
+        int i = 0, len = text.length();
+        while (i < len) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+
+            if (cp >= 0x0300 && CharSoupFeatureExtractor.isTransparent(cp)) continue;
+
+            if (Character.isLetter(cp)) {
+                int lower  = Character.toLowerCase(cp);
+
+                // CJK breaks non-CJK word stream
+                if (ScriptAwareFeatureExtractor.isCjkOrKana(lower)) {
+                    if (wordLen > 0) {
+                        prevWordLen = flushWordV4(word, wordLen, bigramSink, trigramSink,
+                                wordBigramSink, prevWord, prevWordLen);
+                        wordLen = 0;
+                        wordScript = -2;
+                    }
+                    prevWordLen = 0;  // CJK breaks word-bigram chain
+                    continue;
+                }
+
+                // Unigram: every non-CJK letter
+                unigramSink.consume(hashV4(SALT_NONCJK_UNIGRAM, lower));
+
+                int script = GlmScriptCategory.of(lower);
+
+                // Script change (or unrecognized) = word boundary
+                boolean sameScript = (wordScript != -2)
+                        && (script == wordScript)
+                        && (script != -1);  // unrecognized is always its own word
+                if (wordLen > 0 && !sameScript) {
+                    prevWordLen = flushWordV4(word, wordLen, bigramSink, trigramSink,
+                            wordBigramSink, prevWord, prevWordLen);
+                    wordLen = 0;
+                }
+
+                if (wordLen < word.length) {
+                    word[wordLen++] = lower;
+                    wordScript = script;
+                }
+            } else {
+                // Non-letter: flush word
+                if (wordLen > 0) {
+                    prevWordLen = flushWordV4(word, wordLen, bigramSink, trigramSink,
+                            wordBigramSink, prevWord, prevWordLen);
+                    wordLen = 0;
+                    wordScript = -2;
+                }
+            }
+        }
+
+        if (wordLen > 0) {
+            flushWordV4(word, wordLen, bigramSink, trigramSink,
+                    wordBigramSink, prevWord, prevWordLen);
+        }
+    }
+
+    /**
+     * Emit bigrams/trigrams for a completed word and handle word bigrams.
+     *
+     * @return the new prevWordLen (= wordLen, since this word becomes the new prev)
+     */
+    private static int flushWordV4(
+            int[] word, int wordLen,
+            HashConsumer bigramSink,
+            HashConsumer trigramSink,
+            HashConsumer wordBigramSink,
+            int[] prevWord, int prevWordLen) {
+
+        emitWordNgramsV4(word, wordLen, bigramSink, trigramSink);
+
+        if (wordBigramSink != null) {
+            // Forward: short prev → any current
+            if (prevWordLen >= 1 && prevWordLen <= MAX_SHORT_WORD) {
+                emitWordBigram(wordBigramSink, SALT_WORD_FWD,
+                        prevWord, prevWordLen, word, wordLen);
+            }
+            // Backward: any prev → short current
+            if (wordLen >= 1 && wordLen <= MAX_SHORT_WORD && prevWordLen > 0) {
+                emitWordBigram(wordBigramSink, SALT_WORD_BWD,
+                        prevWord, prevWordLen, word, wordLen);
+            }
+        }
+
+        System.arraycopy(word, 0, prevWord, 0, wordLen);
+        return wordLen;
+    }
+
+    /**
+     * Emit positionally-salted bigrams and trigrams for a completed word.
+     *
+     * <p>For each n-gram order k ∈ {2, 3}:
+     * <ul>
+     *   <li>If wordLen == k: emit once with FULL_WORD salt.</li>
+     *   <li>If wordLen > k: first n-gram gets BOW, last gets EOW, rest get MID.</li>
+     * </ul>
+     */
+    static void emitWordNgramsV4(int[] word, int wordLen,
+                                  HashConsumer bigramSink,
+                                  HashConsumer trigramSink) {
+        // Bigrams
+        if (wordLen == 2) {
+            bigramSink.consume(hashV4(SALT_FULL_WORD, word[0], word[1]));
+        } else if (wordLen > 2) {
+            bigramSink.consume(hashV4(SALT_BOW, word[0], word[1]));
+            for (int j = 1; j < wordLen - 2; j++) {
+                bigramSink.consume(hashV4(SALT_MID, word[j], word[j + 1]));
+            }
+            bigramSink.consume(hashV4(SALT_EOW, word[wordLen - 2], word[wordLen - 1]));
+        }
+
+        // Trigrams
+        if (wordLen == 3) {
+            trigramSink.consume(hashV4(SALT_FULL_WORD, word[0], word[1], word[2]));
+        } else if (wordLen > 3) {
+            trigramSink.consume(hashV4(SALT_BOW, word[0], word[1], word[2]));
+            for (int j = 1; j < wordLen - 3; j++) {
+                trigramSink.consume(hashV4(SALT_MID, word[j], word[j + 1], word[j + 2]));
+            }
+            trigramSink.consume(
+                    hashV4(SALT_EOW, word[wordLen - 3], word[wordLen - 2], word[wordLen - 1]));
+        }
+    }
+
+    /**
+     * Emit a word bigram feature for (w1, w2) with the given directional salt.
+     * A separator byte (0xFF) prevents collisions between, e.g., "ab"+"cd"
+     * and "abc"+"d".
+     */
+    static void emitWordBigram(HashConsumer sink, int salt,
+                                int[] w1, int w1Len,
+                                int[] w2, int w2Len) {
+        int h = fnvByte(FNV_BASIS, salt);
+        for (int j = 0; j < w1Len; j++) h = fnvInt(h, w1[j]);
+        h = fnvByte(h, 0xFF);
+        for (int j = 0; j < w2Len; j++) h = fnvInt(h, w2[j]);
+        sink.consume(h & 0x7FFFFFFF);
+    }
+
+    /**
+     * Add per-letter script log-probability contributions (v4).
+     * Uses {@link GlmScriptCategory}: unrecognized scripts (return value -1)
+     * are silently skipped rather than falling into an OTHER bucket.
+     */
+    static void addScriptContributionsV4(String pp, byte[] scriptTable,
+                                          double[] sum, int[] cnt) {
+        // Count letters per script category
+        int[] scriptCounts = new int[GlmScriptCategory.COUNT];
+        int totalLetters = 0;
+        int i = 0, len = pp.length();
+        while (i < len) {
+            int cp = pp.codePointAt(i);
+            i += Character.charCount(cp);
+            if (!Character.isLetter(cp)) continue;
+            int script = GlmScriptCategory.of(Character.toLowerCase(cp));
+            if (script >= 0 && script < scriptTable.length) {
+                scriptCounts[script]++;
+                totalLetters++;
+            }
+        }
+        if (totalLetters == 0) return;
+        // L1-normalize: one weighted contribution regardless of text length,
+        // so script signal doesn't swamp n-gram signal on long text.
+        double scriptScore = 0.0;
+        for (int s = 0; s < scriptTable.length; s++) {
+            if (scriptCounts[s] > 0) {
+                scriptScore += (double) scriptCounts[s] / totalLetters
+                        * dequantize(scriptTable[s]);
+            }
+        }
+        sum[0] += scriptScore;
+        cnt[0]++;
+    }
+
+    // ---- N-gram extraction: v3 (legacy sentinel-based, for old model loading) ----
+
+    /** @deprecated Use v4 extraction for new models. */
+    @Deprecated
+    public static void extractCjkNgrams(
+            String text, HashConsumer unigramSink, HashConsumer bigramSink) {
+        int prevCp = -1;
+        int i = 0, len = text.length();
         while (i < len) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
@@ -420,47 +637,33 @@ public class GenerativeLanguageModel {
                 continue;
             }
             int script = ScriptCategory.of(lower);
-            unigramSink.consume(cjkUnigramHash(script, lower));
-            if (prevCp >= 0) {
-                bigramSink.consume(bigramHash(script, prevCp, lower));
-            }
+            unigramSink.consume(cjkUnigramHashV3(script, lower));
+            if (prevCp >= 0) bigramSink.consume(bigramHashV3(script, prevCp, lower));
             prevCp = lower;
         }
     }
 
-    /**
-     * Extract non-CJK character unigrams, sentinel-padded bigrams, and
-     * sentinel-padded trigrams from preprocessed text.
-     *
-     * <p>A "word" is a maximal run of non-CJK letter codepoints within the
-     * same script family. Sentinels ({@link #SENTINEL}) pad each word on
-     * both sides, so a word of length L yields L+1 bigrams and L+2 trigrams.
-     */
+    /** @deprecated Use v4 extraction for new models. */
+    @Deprecated
     public static void extractNonCjkNgrams(
             String text,
             HashConsumer unigramSink,
             HashConsumer bigramSink,
             HashConsumer trigramSink) {
-        int  prevPrev  = SENTINEL;
-        int  prev      = SENTINEL;
-        int  prevScript = -1;
+        int prevPrev = SENTINEL, prev = SENTINEL, prevScript = -1;
         boolean inWord = false;
 
-        int i = 0;
-        int len = text.length();
+        int i = 0, len = text.length();
         while (i < len) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-
-            if (cp >= 0x0300 && CharSoupFeatureExtractor.isTransparent(cp)) {
-                continue;
-            }
+            if (cp >= 0x0300 && CharSoupFeatureExtractor.isTransparent(cp)) continue;
 
             if (Character.isLetter(cp)) {
-                int lower  = Character.toLowerCase(cp);
+                int lower = Character.toLowerCase(cp);
                 if (ScriptAwareFeatureExtractor.isCjkOrKana(lower)) {
                     if (inWord) {
-                        emitWordEnd(prevScript, prevPrev, prev, bigramSink, trigramSink);
+                        emitWordEndV3(prevScript, prevPrev, prev, bigramSink, trigramSink);
                         inWord = false;
                         prevPrev = SENTINEL;
                         prev = SENTINEL;
@@ -469,25 +672,20 @@ public class GenerativeLanguageModel {
                     continue;
                 }
                 int script = ScriptCategory.of(lower);
-
                 if (inWord && script != prevScript) {
-                    // Script change is a word boundary
-                    emitWordEnd(prevScript, prevPrev, prev, bigramSink, trigramSink);
+                    emitWordEndV3(prevScript, prevPrev, prev, bigramSink, trigramSink);
                     inWord = false;
                     prevPrev = SENTINEL;
                     prev = SENTINEL;
                 }
-
-                unigramSink.consume(noncjkUnigramHash(script, lower));
-
+                unigramSink.consume(noncjkUnigramHashV3(script, lower));
                 if (!inWord) {
-                    // Leading sentinels
-                    bigramSink.consume(bigramHash(script, SENTINEL, lower));
-                    trigramSink.consume(trigramHash(script, SENTINEL, SENTINEL, lower));
+                    bigramSink.consume(bigramHashV3(script, SENTINEL, lower));
+                    trigramSink.consume(trigramHashV3(script, SENTINEL, SENTINEL, lower));
                     prevPrev = SENTINEL;
                 } else {
-                    bigramSink.consume(bigramHash(script, prev, lower));
-                    trigramSink.consume(trigramHash(script, prevPrev, prev, lower));
+                    bigramSink.consume(bigramHashV3(script, prev, lower));
+                    trigramSink.consume(trigramHashV3(script, prevPrev, prev, lower));
                     prevPrev = prev;
                 }
                 prev = lower;
@@ -495,7 +693,7 @@ public class GenerativeLanguageModel {
                 inWord = true;
             } else {
                 if (inWord) {
-                    emitWordEnd(prevScript, prevPrev, prev, bigramSink, trigramSink);
+                    emitWordEndV3(prevScript, prevPrev, prev, bigramSink, trigramSink);
                     inWord = false;
                     prevPrev = SENTINEL;
                     prev = SENTINEL;
@@ -503,45 +701,80 @@ public class GenerativeLanguageModel {
                 }
             }
         }
+        if (inWord) emitWordEndV3(prevScript, prevPrev, prev, bigramSink, trigramSink);
+    }
 
-        if (inWord) {
-            emitWordEnd(prevScript, prevPrev, prev, bigramSink, trigramSink);
+    private static void emitWordEndV3(int script, int pp, int p,
+                                       HashConsumer biSink, HashConsumer triSink) {
+        biSink.consume(bigramHashV3(script, p, SENTINEL));
+        triSink.consume(trigramHashV3(script, pp, p, SENTINEL));
+        triSink.consume(trigramHashV3(script, p, SENTINEL, SENTINEL));
+    }
+
+    /** v3 script contributions using {@link ScriptCategory} (includes OTHER). */
+    static void addScriptContributionsV3(String pp, byte[] scriptTable,
+                                          double[] sum, int[] cnt) {
+        int i = 0, len = pp.length();
+        while (i < len) {
+            int cp = pp.codePointAt(i);
+            i += Character.charCount(cp);
+            if (!Character.isLetter(cp)) continue;
+            int script = ScriptCategory.of(Character.toLowerCase(cp));
+            if (script < scriptTable.length) {
+                sum[0] += dequantize(scriptTable[script]);
+                cnt[0]++;
+            }
         }
     }
 
-    private static void emitWordEnd(
-            int script, int pp, int p,
-            HashConsumer bigramSink, HashConsumer trigramSink) {
-        bigramSink.consume(bigramHash(script, p, SENTINEL));
-        trigramSink.consume(trigramHash(script, pp, p, SENTINEL));
-        trigramSink.consume(trigramHash(script, p, SENTINEL, SENTINEL));
+    // ---- Hash functions ----
+
+    /** FNV-1a hash: salt byte then one codepoint. */
+    static int hashV4(int salt, int cp1) {
+        int h = fnvByte(FNV_BASIS, salt);
+        h = fnvInt(h, cp1);
+        return h & 0x7FFFFFFF;
     }
 
-    // ---- Hash functions (FNV-1a) ----
+    /** FNV-1a hash: salt byte then two codepoints. */
+    static int hashV4(int salt, int cp1, int cp2) {
+        int h = fnvByte(FNV_BASIS, salt);
+        h = fnvInt(h, cp1);
+        h = fnvInt(h, cp2);
+        return h & 0x7FFFFFFF;
+    }
 
-    static int cjkUnigramHash(int script, int cp) {
+    /** FNV-1a hash: salt byte then three codepoints. */
+    static int hashV4(int salt, int cp1, int cp2, int cp3) {
+        int h = fnvByte(FNV_BASIS, salt);
+        h = fnvInt(h, cp1);
+        h = fnvInt(h, cp2);
+        h = fnvInt(h, cp3);
+        return h & 0x7FFFFFFF;
+    }
+
+    // ---- v3 hash functions (kept for backward-compatible scoring) ----
+
+    @Deprecated static int cjkUnigramHashV3(int script, int cp) {
         int h = CJK_UNIGRAM_BASIS;
         h = fnvByte(h, script);
         h = fnvInt(h, cp);
         return h & 0x7FFFFFFF;
     }
-
-    static int noncjkUnigramHash(int script, int cp) {
+    @Deprecated static int noncjkUnigramHashV3(int script, int cp) {
         int h = NONCJK_UNIGRAM_BASIS;
         h = fnvByte(h, script);
         h = fnvInt(h, cp);
         return h & 0x7FFFFFFF;
     }
-
-    static int bigramHash(int script, int cp1, int cp2) {
+    @Deprecated static int bigramHashV3(int script, int cp1, int cp2) {
         int h = BIGRAM_BASIS;
         h = fnvByte(h, script);
         h = fnvInt(h, cp1);
         h = fnvInt(h, cp2);
         return h & 0x7FFFFFFF;
     }
-
-    static int trigramHash(int script, int cp1, int cp2, int cp3) {
+    @Deprecated static int trigramHashV3(int script, int cp1, int cp2, int cp3) {
         int h = TRIGRAM_BASIS;
         h = fnvByte(h, script);
         h = fnvInt(h, cp1);
@@ -550,11 +783,13 @@ public class GenerativeLanguageModel {
         return h & 0x7FFFFFFF;
     }
 
-    private static int fnvByte(int h, int b) {
+    // ---- FNV-1a primitives ----
+
+    static int fnvByte(int h, int b) {
         return (h ^ (b & 0xFF)) * 0x01000193;
     }
 
-    private static int fnvInt(int h, int v) {
+    static int fnvInt(int h, int v) {
         h = (h ^ (v         & 0xFF)) * 0x01000193;
         h = (h ^ ((v >>>  8) & 0xFF)) * 0x01000193;
         h = (h ^ ((v >>> 16) & 0xFF)) * 0x01000193;
@@ -564,73 +799,55 @@ public class GenerativeLanguageModel {
 
     // ---- Quantization ----
 
-    /**
-     * Quantize a log-probability in [{@link #LOGP_MIN}, 0] to an unsigned byte
-     * value: 0 maps to {@code LOGP_MIN}, 255 maps to 0.
-     */
     static byte quantize(float logP) {
         float clamped = Math.max(LOGP_MIN, Math.min(0.0f, logP));
         return (byte) Math.round((clamped - LOGP_MIN) / (-LOGP_MIN) * 255.0f);
     }
 
-    /** Inverse of {@link #quantize}. */
     static float dequantize(byte b) {
         return (b & 0xFF) / 255.0f * (-LOGP_MIN) + LOGP_MIN;
     }
 
     // ---- Serialization ----
 
-    /**
-     * Load a model from a classpath resource.
-     *
-     * @param resourcePath absolute classpath path, e.g.
-     *        {@code "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin"}
-     * @return the loaded model
-     * @throws IOException if the resource is missing or malformed
-     */
     public static GenerativeLanguageModel loadFromClasspath(String resourcePath)
             throws IOException {
         try (InputStream is = GenerativeLanguageModel.class.getResourceAsStream(resourcePath)) {
-            if (is == null) {
-                throw new IOException("Classpath resource not found: " + resourcePath);
-            }
+            if (is == null) throw new IOException("Classpath resource not found: " + resourcePath);
             return load(is);
         }
     }
 
-    /**
-     * Deserialize a model from the GLM1 binary format.
-     */
     public static GenerativeLanguageModel load(InputStream is) throws IOException {
         DataInputStream din = new DataInputStream(new BufferedInputStream(is));
 
         int magic = din.readInt();
-        if (magic != MAGIC) {
-            throw new IOException("Not a GLM1 file (bad magic)");
-        }
+        if (magic != MAGIC) throw new IOException("Not a GLM1 file (bad magic)");
         int version = din.readInt();
         if (version < 1 || version > VERSION) {
             throw new IOException("Unsupported GLM version: " + version);
         }
-        boolean hasStats  = version >= 2;
-        boolean hasScript = version >= 3;
 
-        int numLangs        = din.readInt();
-        int cjkUni          = din.readInt();
-        int cjkBi           = din.readInt();
-        int noncjkUni       = din.readInt();
-        int noncjkBi        = din.readInt();
-        int noncjkTri       = din.readInt();
+        boolean hasStats      = version >= 2;
+        boolean hasScript     = version >= 3;
+        boolean hasWordBigram = version >= 4;
 
-        int scriptCats = hasScript ? din.readInt() : 0;
-
+        int numLangs    = din.readInt();
+        int cjkUni      = din.readInt();
+        int cjkBi       = din.readInt();
+        int noncjkUni   = din.readInt();
+        int noncjkBi    = din.readInt();
+        int noncjkTri   = din.readInt();
+        int scriptCats  = hasScript     ? din.readInt() : 0;
+        int wordBiBkts  = hasWordBigram ? din.readInt() : 0;
 
         List<String> langIds      = new ArrayList<>(numLangs);
-        boolean[]    isCjk        = new boolean[numLangs];
-        byte[][]     unigramTables = new byte[numLangs][];
-        byte[][]     bigramTables  = new byte[numLangs][];
-        byte[][]     trigramTables = new byte[numLangs][];
-        byte[][]     scriptTbls    = hasScript ? new byte[numLangs][] : null;
+        boolean[]    isCjkArr     = new boolean[numLangs];
+        byte[][]     unigramTbls  = new byte[numLangs][];
+        byte[][]     bigramTbls   = new byte[numLangs][];
+        byte[][]     trigramTbls  = new byte[numLangs][];
+        byte[][]     wordBiTbls   = hasWordBigram ? new byte[numLangs][] : null;
+        byte[][]     scriptTbls   = hasScript     ? new byte[numLangs][] : null;
         float[]      means        = new float[numLangs];
         float[]      stdDevs      = new float[numLangs];
 
@@ -640,25 +857,29 @@ public class GenerativeLanguageModel {
             din.readFully(codeBytes);
             langIds.add(new String(codeBytes, StandardCharsets.UTF_8));
 
-            isCjk[i] = din.readByte() != 0;
+            isCjkArr[i] = din.readByte() != 0;
 
             if (hasStats) {
                 means[i]   = din.readFloat();
                 stdDevs[i] = din.readFloat();
             }
 
-            int uniSize = isCjk[i] ? cjkUni    : noncjkUni;
-            int biSize  = isCjk[i] ? cjkBi     : noncjkBi;
+            int uniSize = isCjkArr[i] ? cjkUni : noncjkUni;
+            int biSize  = isCjkArr[i] ? cjkBi  : noncjkBi;
 
-            unigramTables[i] = new byte[uniSize];
-            din.readFully(unigramTables[i]);
+            unigramTbls[i] = new byte[uniSize];
+            din.readFully(unigramTbls[i]);
+            bigramTbls[i] = new byte[biSize];
+            din.readFully(bigramTbls[i]);
 
-            bigramTables[i] = new byte[biSize];
-            din.readFully(bigramTables[i]);
+            if (!isCjkArr[i]) {
+                trigramTbls[i] = new byte[noncjkTri];
+                din.readFully(trigramTbls[i]);
+            }
 
-            if (!isCjk[i]) {
-                trigramTables[i] = new byte[noncjkTri];
-                din.readFully(trigramTables[i]);
+            if (hasWordBigram && !isCjkArr[i] && wordBiBkts > 0) {
+                wordBiTbls[i] = new byte[wordBiBkts];
+                din.readFully(wordBiTbls[i]);
             }
 
             if (hasScript) {
@@ -667,26 +888,51 @@ public class GenerativeLanguageModel {
             }
         }
 
-        return new GenerativeLanguageModel(langIds, isCjk,
-                unigramTables, bigramTables, trigramTables, scriptTbls,
-                means, stdDevs);
+        return new GenerativeLanguageModel(version, langIds, isCjkArr,
+                unigramTbls, bigramTbls, trigramTbls, wordBiTbls,
+                scriptTbls, scriptCats, means, stdDevs);
     }
 
-    /**
-     * Serialize this model to the GLM1 binary format.
-     */
     public void save(OutputStream os) throws IOException {
         DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(os));
+
+        // Compute actual bucket sizes from the stored tables so that round-tripping
+        // a model loaded from an older binary preserves the original table dimensions.
+        int saveCjkUni = CJK_UNIGRAM_BUCKETS, saveCjkBi = CJK_BIGRAM_BUCKETS;
+        int saveNoncjkUni = NONCJK_UNIGRAM_BUCKETS, saveNoncjkBi = NONCJK_BIGRAM_BUCKETS;
+        int saveNoncjkTri = NONCJK_TRIGRAM_BUCKETS;
+        int saveWordBi  = WORD_BIGRAM_BUCKETS;
+        int saveScript  = SCRIPT_CATEGORIES;
+        boolean foundCjk = false, foundNoncjk = false;
+        for (int i = 0; i < langIds.size(); i++) {
+            if (!foundCjk && isCjk[i] && unigramTables[i] != null) {
+                saveCjkUni = unigramTables[i].length;
+                saveCjkBi  = bigramTables[i].length;
+                foundCjk = true;
+            }
+            if (!foundNoncjk && !isCjk[i] && unigramTables[i] != null) {
+                saveNoncjkUni = unigramTables[i].length;
+                saveNoncjkBi  = bigramTables[i].length;
+                if (trigramTables[i] != null) saveNoncjkTri = trigramTables[i].length;
+                if (wordBigramTables != null && wordBigramTables[i] != null)
+                    saveWordBi = wordBigramTables[i].length;
+                foundNoncjk = true;
+            }
+            if (scriptTables != null && scriptTables[i] != null && (i == 0 || saveScript == SCRIPT_CATEGORIES))
+                saveScript = scriptTables[i].length;
+            if (foundCjk && foundNoncjk) break;
+        }
 
         dout.writeInt(MAGIC);
         dout.writeInt(VERSION);
         dout.writeInt(langIds.size());
-        dout.writeInt(CJK_UNIGRAM_BUCKETS);
-        dout.writeInt(CJK_BIGRAM_BUCKETS);
-        dout.writeInt(NONCJK_UNIGRAM_BUCKETS);
-        dout.writeInt(NONCJK_BIGRAM_BUCKETS);
-        dout.writeInt(NONCJK_TRIGRAM_BUCKETS);
-        dout.writeInt(SCRIPT_CATEGORIES);
+        dout.writeInt(saveCjkUni);
+        dout.writeInt(saveCjkBi);
+        dout.writeInt(saveNoncjkUni);
+        dout.writeInt(saveNoncjkBi);
+        dout.writeInt(saveNoncjkTri);
+        dout.writeInt(saveScript);
+        dout.writeInt(saveWordBi);
 
         for (int i = 0; i < langIds.size(); i++) {
             byte[] codeBytes = langIds.get(i).getBytes(StandardCharsets.UTF_8);
@@ -699,11 +945,17 @@ public class GenerativeLanguageModel {
             dout.write(bigramTables[i]);
             if (!isCjk[i]) {
                 dout.write(trigramTables[i]);
+                // Word bigrams: write table or zeros if absent
+                if (wordBigramTables != null && wordBigramTables[i] != null) {
+                    dout.write(wordBigramTables[i]);
+                } else {
+                    dout.write(new byte[saveWordBi]);
+                }
             }
             if (scriptTables != null && scriptTables[i] != null) {
                 dout.write(scriptTables[i]);
             } else {
-                dout.write(new byte[SCRIPT_CATEGORIES]);
+                dout.write(new byte[saveScript]);
             }
         }
         dout.flush();
@@ -721,16 +973,13 @@ public class GenerativeLanguageModel {
      */
     public static class Builder {
 
-        private final Map<String, Boolean> cjkFlags      = new LinkedHashMap<>();
-        private final Map<String, long[]>  unigramCounts = new HashMap<>();
-        private final Map<String, long[]>  bigramCounts  = new HashMap<>();
-        private final Map<String, long[]>  trigramCounts = new HashMap<>();
-        private final Map<String, long[]>  scriptCounts  = new HashMap<>();
+        private final Map<String, Boolean> cjkFlags         = new LinkedHashMap<>();
+        private final Map<String, long[]>  unigramCounts    = new HashMap<>();
+        private final Map<String, long[]>  bigramCounts     = new HashMap<>();
+        private final Map<String, long[]>  trigramCounts    = new HashMap<>();
+        private final Map<String, long[]>  wordBigramCounts = new HashMap<>();
+        private final Map<String, long[]>  scriptCounts     = new HashMap<>();
 
-        /**
-         * Register a language before feeding it samples.  Must be called
-         * before {@link #addSample(String, String)}.
-         */
         public Builder registerLanguage(String langCode, boolean isCjk) {
             cjkFlags.put(langCode, isCjk);
             unigramCounts.put(langCode,
@@ -739,79 +988,70 @@ public class GenerativeLanguageModel {
                     new long[isCjk ? CJK_BIGRAM_BUCKETS  : NONCJK_BIGRAM_BUCKETS]);
             if (!isCjk) {
                 trigramCounts.put(langCode, new long[NONCJK_TRIGRAM_BUCKETS]);
+                wordBigramCounts.put(langCode, new long[WORD_BIGRAM_BUCKETS]);
             }
             scriptCounts.put(langCode, new long[SCRIPT_CATEGORIES]);
             return this;
         }
 
-        /**
-         * Add a text sample for the named language.  The language must have
-         * been registered via {@link #registerLanguage} first.
-         */
         public Builder addSample(String langCode, String text) {
             Boolean cjk = cjkFlags.get(langCode);
-            if (cjk == null) {
-                throw new IllegalArgumentException("Unknown language: " + langCode);
-            }
+            if (cjk == null) throw new IllegalArgumentException("Unknown language: " + langCode);
             String pp = CharSoupFeatureExtractor.preprocess(text);
-            if (pp.isEmpty()) {
-                return this;
-            }
+            if (pp.isEmpty()) return this;
 
             long[] ug = unigramCounts.get(langCode);
             long[] bg = bigramCounts.get(langCode);
 
             if (cjk) {
-                extractCjkNgrams(pp,
+                extractCjkFeaturesV4(pp,
                         h -> ug[h % CJK_UNIGRAM_BUCKETS]++,
                         h -> bg[h % CJK_BIGRAM_BUCKETS]++);
             } else {
-                long[] tg = trigramCounts.get(langCode);
-                extractNonCjkNgrams(pp,
-                        h -> ug[h % NONCJK_UNIGRAM_BUCKETS]++,
-                        h -> bg[h % NONCJK_BIGRAM_BUCKETS]++,
-                        h -> tg[h % NONCJK_TRIGRAM_BUCKETS]++);
+                long[] tg  = trigramCounts.get(langCode);
+                long[] wbg = wordBigramCounts.get(langCode);
+                extractNonCjkFeaturesV4(pp,
+                        h -> ug[h  % NONCJK_UNIGRAM_BUCKETS]++,
+                        h -> bg[h  % NONCJK_BIGRAM_BUCKETS]++,
+                        h -> tg[h  % NONCJK_TRIGRAM_BUCKETS]++,
+                        h -> wbg[h % WORD_BIGRAM_BUCKETS]++);
             }
 
             accumulateScriptCounts(pp, scriptCounts.get(langCode));
             return this;
         }
 
-        /**
-         * Finalize training with add-{@code k} smoothing and return the model.
-         *
-         * @param addK smoothing constant; 0.01 is a reasonable default
-         */
         public GenerativeLanguageModel build(float addK) {
-            List<String> ids  = new ArrayList<>(cjkFlags.keySet());
+            List<String> ids = new ArrayList<>(cjkFlags.keySet());
             int n = ids.size();
 
-            boolean[] cjkArr      = new boolean[n];
-            byte[][]  uniTables   = new byte[n][];
-            byte[][]  biTables    = new byte[n][];
-            byte[][]  triTables   = new byte[n][];
-            byte[][]  scriptTbls  = new byte[n][];
+            boolean[] cjkArr     = new boolean[n];
+            byte[][]  uniTables  = new byte[n][];
+            byte[][]  biTables   = new byte[n][];
+            byte[][]  triTables  = new byte[n][];
+            byte[][]  wbiTables  = new byte[n][];
+            byte[][]  scriptTbls = new byte[n][];
 
             for (int i = 0; i < n; i++) {
                 String lang = ids.get(i);
                 cjkArr[i]     = cjkFlags.get(lang);
-                uniTables[i]  = toLogProbTable(unigramCounts.get(lang), addK);
-                biTables[i]   = toLogProbTable(bigramCounts.get(lang),  addK);
+                uniTables[i]  = toLogProbTable(unigramCounts.get(lang),   addK);
+                biTables[i]   = toLogProbTable(bigramCounts.get(lang),    addK);
                 if (!cjkArr[i]) {
-                    triTables[i] = toLogProbTable(trigramCounts.get(lang), addK);
+                    triTables[i] = toLogProbTable(trigramCounts.get(lang),    addK);
+                    wbiTables[i] = toLogProbTable(wordBigramCounts.get(lang), addK);
                 }
                 scriptTbls[i] = toLogProbTable(scriptCounts.get(lang), addK);
             }
-            return new GenerativeLanguageModel(ids, cjkArr,
-                    uniTables, biTables, triTables, scriptTbls,
+            return new GenerativeLanguageModel(VERSION, ids, cjkArr,
+                    uniTables, biTables, triTables, wbiTables,
+                    scriptTbls, SCRIPT_CATEGORIES,
                     new float[n], new float[n]);
         }
 
         private static byte[] toLogProbTable(long[] counts, float addK) {
             long total = 0;
-            for (long c : counts) {
-                total += c;
-            }
+            for (long c : counts) total += c;
             double denom = total + (double) addK * counts.length;
             byte[] table = new byte[counts.length];
             for (int i = 0; i < counts.length; i++) {
@@ -821,20 +1061,19 @@ public class GenerativeLanguageModel {
             return table;
         }
 
-        private static void accumulateScriptCounts(String preprocessed, long[] dest) {
-            int i = 0;
-            int len = preprocessed.length();
+        private static void accumulateScriptCounts(String pp, long[] dest) {
+            int i = 0, len = pp.length();
             while (i < len) {
-                int cp = preprocessed.codePointAt(i);
+                int cp = pp.codePointAt(i);
                 i += Character.charCount(cp);
-                if (Character.isLetter(cp)) {
-                    int lower = Character.toLowerCase(cp);
-                    int script = ScriptCategory.of(lower);
-                    if (script < dest.length) {
-                        dest[script]++;
-                    }
+                if (!Character.isLetter(cp)) continue;
+                int script = GlmScriptCategory.of(Character.toLowerCase(cp));
+                if (script >= 0 && script < dest.length) {
+                    dest[script]++;
                 }
+                // script == -1 (unrecognized): silently skipped — no OTHER bucket
             }
         }
+
     }
 }

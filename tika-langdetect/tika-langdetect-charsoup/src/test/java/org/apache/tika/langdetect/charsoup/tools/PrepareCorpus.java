@@ -304,25 +304,10 @@ public class PrepareCorpus {
      * ISO 639-3 aliases to merge into a canonical code before processing.
      * Sentences from the alias are relabeled to the canonical code and pooled
      * together before dedup and splitting.
+     * Defined in {@link CorpusAliases#LANG_MERGE_MAP}; exposed here for
+     * internal use.
      */
-    static final Map<String, String> LANG_MERGE_MAP;
-    static {
-        Map<String, String> m = new HashMap<>();
-        m.put("azj", "aze");
-        m.put("ekk", "est");
-        m.put("pes", "fas");
-        m.put("zsm", "msa");
-        m.put("nor", "nob");
-        m.put("plt", "mlg");
-        m.put("cmn", "zho");
-        m.put("lvs", "lav");
-        m.put("gug", "grn");
-        m.put("quz", "que");
-        m.put("swa", "swh");
-        m.put("yid", "ydd");
-        m.put("zza", "diq");
-        LANG_MERGE_MAP = Collections.unmodifiableMap(m);
-    }
+    static final Map<String, String> LANG_MERGE_MAP = CorpusAliases.LANG_MERGE_MAP;
 
     /**
      * Minimum fraction of letter characters that must belong to the expected

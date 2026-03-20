@@ -16,8 +16,11 @@
  */
 package org.apache.tika.langdetect.charsoup.tools;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
@@ -43,8 +46,10 @@ public class GlmAdjudicateDiagnostic {
         GenerativeLanguageModel glm = GenerativeLanguageModel.loadFromClasspath(
                 GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
 
-        System.out.printf("Adjudicating with GLM when sigmoid(margin) < %.2f, topN=%d%n%n", adjudicateBelow, topN);
-        System.out.printf("%-22s  %-6s %7s  %-6s %7s  %-6s  %-8s  %s%n",
+        System.out.printf(Locale.ROOT,
+                "Adjudicating with GLM when sigmoid(margin) < %.2f, topN=%d%n%n",
+                adjudicateBelow, topN);
+        System.out.printf(Locale.ROOT, "%-22s  %-6s %7s  %-6s %7s  %-6s  %-8s  %s%n",
                 "SNIPPET", "DISC", "SCORE", "GLM", "ZSCORE", "FINAL", "METHOD", "RESULT");
         System.out.println("-".repeat(110));
 
@@ -53,7 +58,8 @@ public class GlmAdjudicateDiagnostic {
         int wrongDisc = 0, wrongGlm = 0, wrongFinal = 0;
         int adjudicated = 0;
 
-        try (BufferedReader br = new BufferedReader(new FileReader(floresPath))) {
+        try (BufferedReader br = new BufferedReader(
+                new FileReader(floresPath, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\t", 2);
@@ -104,8 +110,16 @@ public class GlmAdjudicateDiagnostic {
                 boolean discOk = discTop.equals(filterLang);
                 boolean finalOk = finalLang.equals(filterLang);
 
-                if (discOk) okDisc++; else wrongDisc++;
-                if (finalOk) okFinal++; else wrongFinal++;
+                if (discOk) {
+                    okDisc++;
+                } else {
+                    wrongDisc++;
+                }
+                if (finalOk) {
+                    okFinal++;
+                } else {
+                    wrongFinal++;
+                }
 
                 String result;
                 if (finalOk && !discOk) result = "RESCUED";
@@ -114,16 +128,22 @@ public class GlmAdjudicateDiagnostic {
                 else result = "WRONG:" + finalLang;
 
                 if (!method.equals("DISC")) {
-                    System.out.printf("%-22s  %-6s %7.4f  %-6s %7.2f  %-6s  %-8s  %s%n",
+                    System.out.printf(Locale.ROOT,
+                            "%-22s  %-6s %7.4f  %-6s %7.2f  %-6s  %-8s  %s%n",
                             text, discTop, discScore, glmPick, glmBestZ, finalLang, method, result);
                 }
                 count++;
             }
         }
         System.out.println("-".repeat(110));
-        System.out.printf("Total: %d   Adjudicated: %d (%.1f%%)%n", count, adjudicated, 100.0 * adjudicated / count);
-        System.out.printf("Disc-only:  OK=%d (%.1f%%)  WRONG=%d%n", okDisc, 100.0 * okDisc / count, wrongDisc);
-        System.out.printf("With GLM:   OK=%d (%.1f%%)  WRONG=%d%n", okFinal, 100.0 * okFinal / count, wrongFinal);
-        System.out.printf("Delta: %+d correct (%.2f pp)%n", okFinal - okDisc, 100.0 * (okFinal - okDisc) / count);
+        System.out.printf(Locale.ROOT,
+                "Total: %d   Adjudicated: %d (%.1f%%)%n",
+                count, adjudicated, 100.0 * adjudicated / count);
+        System.out.printf(Locale.ROOT,
+                "Disc-only:  OK=%d (%.1f%%)  WRONG=%d%n", okDisc, 100.0 * okDisc / count, wrongDisc);
+        System.out.printf(Locale.ROOT,
+                "With GLM:   OK=%d (%.1f%%)  WRONG=%d%n", okFinal, 100.0 * okFinal / count, wrongFinal);
+        System.out.printf(Locale.ROOT,
+                "Delta: %+d correct (%.2f pp)%n", okFinal - okDisc, 100.0 * (okFinal - okDisc) / count);
     }
 }

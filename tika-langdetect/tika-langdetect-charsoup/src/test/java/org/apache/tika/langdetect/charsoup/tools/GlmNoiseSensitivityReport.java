@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
@@ -90,22 +91,31 @@ public class GlmNoiseSensitivityReport {
     private static final int NUM_COLS        = 12;
 
     public static void main(String[] args) throws Exception {
-        String floresPath = args.length > 0
-                ? args[0]
-                : System.getProperty("user.home") + "/datasets/flores-200/flores200_dev.tsv";
-        int samplesPerLang = args.length > 1 ? Integer.parseInt(args[1]) : DEFAULT_SAMPLES;
-        long seed = args.length > 2 ? Long.parseLong(args[2]) : 42L;
-        String tsvPath = args.length > 3 ? args[3] : null;
+        if (args.length < 2) {
+            System.err.println("Usage: GlmNoiseSensitivityReport <modelFile> <floresDevTsv>"
+                    + " [samplesPerLang] [seed] [summaryTsv]");
+            System.err.println("  modelFile    -- path to GLM binary (required, no classpath default)");
+            System.err.println("  floresDevTsv -- path to flores200_dev.tsv (required)");
+            System.exit(1);
+        }
+        String modelPath = args[0];
+        String floresPath = args[1];
+        int samplesPerLang = args.length > 2 ? Integer.parseInt(args[2]) : DEFAULT_SAMPLES;
+        long seed = args.length > 3 ? Long.parseLong(args[3]) : 42L;
+        String tsvPath = args.length > 4 ? args[4] : null;
 
-        GenerativeLanguageModel glm = GenerativeLanguageModel.loadFromClasspath(
-                GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
+        System.out.println("Loading GLM model: " + modelPath);
+        GenerativeLanguageModel glm;
+        try (java.io.InputStream is = new java.io.FileInputStream(modelPath)) {
+            glm = GenerativeLanguageModel.load(is);
+        }
 
         System.out.println("Loading FLORES-200 dev: " + floresPath);
         Map<String, List<String>> byLang = loadFloresByLang(floresPath);
-        System.out.printf("Loaded %d languages, %d total sentences%n",
+        System.out.printf(Locale.ROOT, "Loaded %d languages, %d total sentences%n",
                 byLang.size(),
                 byLang.values().stream().mapToInt(List::size).sum());
-        System.out.printf("Samples per language per length: %d  seed: %d%n%n",
+        System.out.printf(Locale.ROOT, "Samples per language per length: %d  seed: %d%n%n",
                 samplesPerLang, seed);
 
         // Build per-language codepoint pools (all sentences concatenated with a space)
@@ -125,7 +135,7 @@ public class GlmNoiseSensitivityReport {
 
         for (int li = 0; li < LENGTHS.length; li++) {
             int targetLen = LENGTHS[li];
-            System.out.printf("=== Length @%d codepoints ===%n%n", targetLen);
+            System.out.printf(Locale.ROOT, "=== Length @%d codepoints ===%n%n", targetLen);
 
             printHeader(noiseLabels);
 
@@ -256,7 +266,9 @@ public class GlmNoiseSensitivityReport {
         int[] out = cps.clone();
         for (int i = out.length - 1; i > 0; i--) {
             int j = rng.nextInt(i + 1);
-            int tmp = out[i]; out[i] = out[j]; out[j] = tmp;
+            int tmp = out[i];
+            out[i] = out[j];
+            out[j] = tmp;
         }
         return fromCodepoints(out);
     }
@@ -290,7 +302,7 @@ public class GlmNoiseSensitivityReport {
     private static String[] buildNoiseLabels() {
         List<String> labels = new ArrayList<>();
         labels.add("clean");
-        for (double r : SUBST_RATES) labels.add(String.format("sub%d%%", (int)(r * 100)));
+        for (double r : SUBST_RATES) labels.add(String.format(Locale.ROOT, "sub%d%%", (int)(r * 100)));
         labels.add("shuffle");
         labels.add("reversed");
         labels.add("wrng-lng");
@@ -303,9 +315,11 @@ public class GlmNoiseSensitivityReport {
     }
 
     private static void printHeader(String[] noiseLabels) {
-        System.out.printf("%-14s", "lang");
-        for (String label : noiseLabels) System.out.printf("  %8s", label);
-        System.out.printf("  %8s  %8s  %8s  %8s%n", "sep-sub", "sep-rev", "sep-spc+", "sep-spc-");
+        System.out.printf(Locale.ROOT, "%-14s", "lang");
+        for (String label : noiseLabels) {
+            System.out.printf(Locale.ROOT, "  %8s", label);
+        }
+        System.out.printf(Locale.ROOT, "  %8s  %8s  %8s  %8s%n", "sep-sub", "sep-rev", "sep-spc+", "sep-spc-");
         printSeparator(noiseLabels);
     }
 
@@ -314,13 +328,15 @@ public class GlmNoiseSensitivityReport {
     }
 
     private static void printLangRow(String lang, int n, double[] means) {
-        System.out.printf("%-14s", n >= 0 ? String.format("%s(%d)", lang, n) : lang);
-        for (double m : means) System.out.printf("  %8.3f", m);
+        System.out.printf(Locale.ROOT, "%-14s", n >= 0 ? String.format(Locale.ROOT, "%s(%d)", lang, n) : lang);
+        for (double m : means) {
+            System.out.printf(Locale.ROOT, "  %8.3f", m);
+        }
         double sepSub = means[COL_CLEAN] - means[COL_SUB10];
         double sepRev = means[COL_CLEAN] - means[COL_REVERSED];
         double sepSpcIns = means[COL_CLEAN] - means[COL_SPC_INS];
         double sepSpcRem = means[COL_CLEAN] - means[COL_SPC_REM];
-        System.out.printf("  %8.3f  %8.3f  %8.3f  %8.3f%n", sepSub, sepRev, sepSpcIns, sepSpcRem);
+        System.out.printf(Locale.ROOT, "  %8.3f  %8.3f  %8.3f  %8.3f%n", sepSub, sepRev, sepSpcIns, sepSpcRem);
     }
 
     // ---- TSV output ----
@@ -363,13 +379,13 @@ public class GlmNoiseSensitivityReport {
                 for (double v : m) {
                     pw.print('\t');
                     if (Double.isNaN(v)) pw.print("NaN");
-                    else pw.printf("%.4f", v);
+                    else pw.printf(Locale.ROOT, "%.4f", v);
                 }
                 // Separation columns
-                pw.printf("\t%.4f", m[COL_CLEAN] - m[COL_SUB10]);
-                pw.printf("\t%.4f", m[COL_CLEAN] - m[COL_REVERSED]);
-                pw.printf("\t%.4f", m[COL_CLEAN] - m[COL_SPC_INS]);
-                pw.printf("\t%.4f", m[COL_CLEAN] - m[COL_SPC_REM]);
+                pw.printf(Locale.ROOT, "\t%.4f", m[COL_CLEAN] - m[COL_SUB10]);
+                pw.printf(Locale.ROOT, "\t%.4f", m[COL_CLEAN] - m[COL_REVERSED]);
+                pw.printf(Locale.ROOT, "\t%.4f", m[COL_CLEAN] - m[COL_SPC_INS]);
+                pw.printf(Locale.ROOT, "\t%.4f", m[COL_CLEAN] - m[COL_SPC_REM]);
                 pw.println();
             }
         }
@@ -439,12 +455,12 @@ public class GlmNoiseSensitivityReport {
 
     private static Map<String, List<String>> loadFloresByLang(String path) throws IOException {
         Map<String, List<String>> map = new LinkedHashMap<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(path))) {
+        try (BufferedReader br = new BufferedReader(new FileReader(path, StandardCharsets.UTF_8))) {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] parts = line.split("\t", 2);
                 if (parts.length < 2) continue;
-                String lang = parts[0].split("_")[0];
+                String lang = FloresNorm.normalize(parts[0]);
                 map.computeIfAbsent(lang, k -> new ArrayList<>()).add(parts[1]);
             }
         }
