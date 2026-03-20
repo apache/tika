@@ -55,8 +55,7 @@ public class OOXMLTikaBodyPartHandler
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
     private int sdtDepth = 0;//
-    private FormattingTagManager formattingTags;
-    private boolean wroteHyperlinkStart = false;
+    private final InlineTagManager inlineTags;
 
     //TODO: fix this
     //pWithinCell should be an array/stack of given cell depths
@@ -83,7 +82,7 @@ public class OOXMLTikaBodyPartHandler
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
-        this.formattingTags = new FormattingTagManager(xhtml);
+        this.inlineTags = new InlineTagManager(xhtml);
         this.styles = XWPFStylesShim.EMPTY_STYLES;
         this.listManager = XWPFListManager.EMPTY_LIST;
         this.includeDeletedText = false;
@@ -101,7 +100,7 @@ public class OOXMLTikaBodyPartHandler
                                     OfficeParserConfig parserConfig, Metadata metadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
-        this.formattingTags = new FormattingTagManager(xhtml);
+        this.inlineTags = new InlineTagManager(xhtml);
         this.styles = styles;
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.isIncludeDeletedContent();
@@ -121,25 +120,28 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
-        formattingTags.applyFormatting(runProperties);
+        inlineTags.applyFormatting(runProperties);
         xhtml.characters(contents);
     }
 
     @Override
     public void hyperlinkStart(String link) throws SAXException {
-        if (link != null) {
-            xhtml.startElement("a", "href", link);
-            wroteHyperlinkStart = true;
-        }
+        inlineTags.openHyperlink(link);
     }
 
     @Override
     public void hyperlinkEnd() throws SAXException {
-        if (wroteHyperlinkStart) {
-            formattingTags.closeAll();
-            wroteHyperlinkStart = false;
-            xhtml.endElement("a");
-        }
+        inlineTags.closeHyperlink();
+    }
+
+    /**
+     * Closes any open inline elements (hyperlinks, formatting tags) in
+     * the correct nesting order.  Called before closing any structural
+     * element (paragraph, table cell, table row, table, etc.) to ensure
+     * well-formed XHTML.
+     */
+    void closeInlineElements() throws SAXException {
+        inlineTags.closeAll();
     }
 
     @Override
@@ -181,7 +183,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endParagraph() throws SAXException {
-        formattingTags.closeAll();
+        closeInlineElements();
         if (pDepth == 1 && tableDepth == 0) {
             xhtml.endElement(paragraphTag);
         } else if (tableCellDepth > 0 && pWithinCell > 0) {
@@ -232,7 +234,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTable() throws SAXException {
-
+        closeInlineElements();
         xhtml.endElement("table");
         tableDepth--;
 
@@ -245,6 +247,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTableRow() throws SAXException {
+        closeInlineElements();
         xhtml.endElement("tr");
     }
 
@@ -256,6 +259,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTableCell() throws SAXException {
+        closeInlineElements();
         xhtml.endElement("td");
         pWithinCell = 0;
         tableCellDepth--;
@@ -263,7 +267,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startSDT() throws SAXException {
-        formattingTags.closeAll();
+        inlineTags.closeAll();
         sdtDepth++;
     }
 
@@ -326,19 +330,25 @@ public class OOXMLTikaBodyPartHandler
     }
 
     private void inlineNoteContent(byte[] xml, String cssClass) throws SAXException {
+        // Close any open inline elements before inlining note content
+        // to ensure the <div> nests correctly
+        closeInlineElements();
         // Use the inline part map's relationship map which includes relationships
         // from the footnote/endnote parts (needed for picture resolution)
         Map<String, String> noteRelationships = inlinePartMap.getLinkedRelationships();
         xhtml.startElement("div", "class", cssClass);
+        OOXMLTikaBodyPartHandler innerHandler = new OOXMLTikaBodyPartHandler(xhtml);
         try {
             XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml),
                     new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml),
+                                    innerHandler,
                                     noteRelationships)),
                     parseContext);
         } catch (TikaException | IOException e) {
             xhtml.characters("[" + cssClass + " parse error]");
+        } finally {
+            innerHandler.closeInlineElements();
         }
         xhtml.endElement("div");
     }
@@ -438,7 +448,7 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startBookmark(String id, String name) throws SAXException {
         //skip bookmarks within hyperlinks
-        if (name != null && !wroteHyperlinkStart) {
+        if (name != null && !inlineTags.isHyperlinkOpen()) {
             xhtml.startElement("a", "name", name);
             xhtml.endElement("a");
         }

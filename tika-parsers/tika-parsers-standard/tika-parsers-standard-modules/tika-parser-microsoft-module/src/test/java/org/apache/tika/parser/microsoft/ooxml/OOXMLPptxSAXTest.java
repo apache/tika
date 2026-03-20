@@ -62,7 +62,7 @@ public class OOXMLPptxSAXTest extends AbstractOOXMLPptxTest {
         List<Metadata> metadataList =
                 getRecursiveMetadata("testPPT_various2.pptx", getParseContext());
 
-        assertEquals(14, metadataList.size(), "right number of attachments");
+        assertEquals(15, metadataList.size(), "right number of attachments");
 
         String mainContent = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
 

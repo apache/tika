@@ -491,6 +491,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
         if (PIC.equals(localName)) { //PIC_NS
             pictureTracker.endPicture();
+            if (inHlinkClick) {
+                bodyContentsHandler.hyperlinkEnd();
+                inHlinkClick = false;
+            }
             return;
         } else if (RPR.equals(localName)) {
             inRPr = false;

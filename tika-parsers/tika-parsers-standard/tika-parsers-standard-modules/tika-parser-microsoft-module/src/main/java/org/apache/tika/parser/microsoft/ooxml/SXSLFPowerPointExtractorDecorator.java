@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipException;
@@ -33,7 +34,9 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -98,25 +101,15 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         loadCommentAuthors();
         addCommentAuthorMetadata();
 
-        PackageRelationshipCollection slidesPRC = null;
-        try {
-            slidesPRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
-        } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
-        }
+        List<PackagePart> orderedSlides = getOrderedSlideParts();
 
         int hiddenSlideCount = 0;
-        if (slidesPRC != null && slidesPRC.size() > 0) {
-            for (int i = 0; i < slidesPRC.size(); i++) {
-                try {
-                    hiddenSlideCount += handleSlidePart(
-                            mainDocument.getRelatedPart(slidesPRC.getRelationship(i)),
-                            xhtml);
-                } catch (InvalidFormatException | ZipException e) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
-                }
+        for (PackagePart slidePart : orderedSlides) {
+            try {
+                hiddenSlideCount += handleSlidePart(slidePart, xhtml);
+            } catch (ZipException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
             }
         }
         if (hiddenSlideCount > 0) {
@@ -124,16 +117,9 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         if (config.isIncludeSlideMasterContent()) {
-            handleGeneralTextContainingPart(XSLFRelation.SLIDE_MASTER.getRelation(), "slide-master",
-                    mainDocument, metadata, new PlaceHolderSkipper(
-                            new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml),
-                                    new HashMap<>())));
-
-            handleGeneralTextContainingPart(HANDOUT_MASTER, "slide-handout-master", mainDocument,
-                    metadata,
-                    new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            new HashMap<>()));
+            // Handout master is presentation-level, not per-slide
+            handleTextPartWithCleanup(HANDOUT_MASTER, "slide-handout-master", mainDocument,
+                    xhtml, new HashMap<>(), false);
         }
     }
 
@@ -181,6 +167,103 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
+     * Returns the first related part for the given relationship type,
+     * or null if none found.
+     */
+    private PackagePart getRelatedPartByType(PackagePart source, String relationType) {
+        try {
+            PackageRelationshipCollection prc = source.getRelationshipsByType(relationType);
+            if (prc != null && prc.size() > 0) {
+                return source.getRelatedPart(prc.getRelationship(0));
+            }
+        } catch (InvalidFormatException | IllegalArgumentException e) {
+            // missing part
+        }
+        return null;
+    }
+
+    /**
+     * Returns slide parts in presentation order by parsing the sldIdLst
+     * from presentation.xml.  Any slides found in .rels but not in
+     * the sldIdLst are appended at the end.
+     */
+    private List<PackagePart> getOrderedSlideParts() {
+        // Step 1: parse presentation.xml to get ordered rIds from sldIdLst
+        List<String> orderedRIds = new ArrayList<>();
+        try (InputStream is = mainDocument.getInputStream()) {
+            XMLReaderUtils.parseSAX(is, new DefaultHandler() {
+                private boolean inSldIdLst = false;
+
+                @Override
+                public void startElement(String uri, String localName, String qName,
+                                         Attributes atts) {
+                    if ("sldIdLst".equals(localName)) {
+                        inSldIdLst = true;
+                    } else if (inSldIdLst && "sldId".equals(localName)) {
+                        String rId = atts.getValue(
+                                "http://schemas.openxmlformats.org/officeDocument/2006/relationships",
+                                "id");
+                        if (rId != null) {
+                            orderedRIds.add(rId);
+                        }
+                    }
+                }
+
+                @Override
+                public void endElement(String uri, String localName, String qName) {
+                    if ("sldIdLst".equals(localName)) {
+                        inSldIdLst = false;
+                    }
+                }
+            }, context);
+        } catch (Exception e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+        }
+
+        // Step 2: build rId -> PackagePart map from relationships
+        Map<String, PackagePart> rIdToSlide = new LinkedHashMap<>();
+        try {
+            PackageRelationshipCollection slidesPRC =
+                    mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
+            if (slidesPRC != null) {
+                for (int i = 0; i < slidesPRC.size(); i++) {
+                    PackageRelationship rel = slidesPRC.getRelationship(i);
+                    try {
+                        PackagePart part = mainDocument.getRelatedPart(rel);
+                        if (part != null) {
+                            rIdToSlide.put(rel.getId(), part);
+                        }
+                    } catch (InvalidFormatException | IllegalArgumentException e) {
+                        // skip missing parts
+                    }
+                }
+            }
+        } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+        }
+
+        // Step 3: assemble in presentation order, then append orphans
+        List<PackagePart> result = new ArrayList<>();
+        for (String rId : orderedRIds) {
+            PackagePart part = rIdToSlide.remove(rId);
+            if (part != null) {
+                result.add(part);
+            }
+        }
+        // append any slides in .rels but not in sldIdLst
+        if (!rIdToSlide.isEmpty()) {
+            metadata.set(Office.NUM_UNLISTED_SLIDES, rIdToSlide.size());
+            for (PackagePart part : rIdToSlide.values()) {
+                metadata.add(Office.UNLISTED_SLIDE_NAMES, part.getPartName().getName());
+            }
+            result.addAll(rIdToSlide.values());
+        }
+        return result;
+    }
+
+    /**
      * @return 1 if the slide is hidden, 0 otherwise
      */
     private int handleSlidePart(PackagePart slidePart, XHTMLContentHandler xhtml)
@@ -190,9 +273,10 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         int hidden = 0;
         xhtml.startElement("div", "class", "slide-content");
+        OOXMLTikaBodyPartHandler bodyHandler = new OOXMLTikaBodyPartHandler(xhtml, metadata);
         try (InputStream stream = slidePart.getInputStream()) {
             OOXMLWordAndPowerPointTextHandler wordAndPPTHandler = new OOXMLWordAndPowerPointTextHandler(
-                    new OOXMLTikaBodyPartHandler(xhtml, metadata), linkedRelationships);
+                    bodyHandler, linkedRelationships);
             XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(wordAndPPTHandler), context);
             if (wordAndPPTHandler.isHiddenSlide()) {
@@ -206,40 +290,62 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-
+        bodyHandler.closeInlineElements();
         xhtml.endElement("div");
 
         if (config.isIncludeSlideMasterContent()) {
-            handleGeneralTextContainingPart(XSLFRelation.SLIDE_LAYOUT.getRelation(),
-                    "slide-master-content", slidePart, metadata, new PlaceHolderSkipper(
-                            new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships)));
+            // Extract the slide layout (per-slide)
+            PackagePart layoutPart = getRelatedPartByType(slidePart,
+                    XSLFRelation.SLIDE_LAYOUT.getRelation());
+            if (layoutPart != null) {
+                handleTextPartWithCleanup(XSLFRelation.SLIDE_LAYOUT.getRelation(),
+                        "slide-master-content", slidePart, xhtml, linkedRelationships, true);
+                // Follow layout → slide master chain
+                handleTextPartWithCleanup(XSLFRelation.SLIDE_MASTER.getRelation(),
+                        "slide-master-content", layoutPart, xhtml, linkedRelationships, true);
+            }
         }
         if (config.isIncludeSlideNotes()) {
-            handleGeneralTextContainingPart(XSLFRelation.NOTES.getRelation(), "slide-notes",
-                    slidePart, metadata,
-                    new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                            linkedRelationships));
+            handleTextPartWithCleanup(XSLFRelation.NOTES.getRelation(), "slide-notes",
+                    slidePart, xhtml, linkedRelationships, false);
             if (config.isIncludeSlideMasterContent()) {
-                handleGeneralTextContainingPart(XSLFRelation.NOTES_MASTER.getRelation(),
-                        "slide-notes-master", slidePart, metadata,
-                        new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                                linkedRelationships));
-
+                handleTextPartWithCleanup(XSLFRelation.NOTES_MASTER.getRelation(),
+                        "slide-notes-master", slidePart, xhtml, linkedRelationships, false);
             }
         }
         handleGeneralTextContainingPart(XSLFRelation.COMMENTS.getRelation(), null, slidePart,
                 metadata, new XSLFCommentsHandler(xhtml, commentAuthors));
 
-        handleGeneralTextContainingPart(AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
-                "diagram-data", slidePart, metadata,
-                new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        linkedRelationships));
+        handleTextPartWithCleanup(AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
+                "diagram-data", slidePart, xhtml, linkedRelationships, false);
 
-        handleGeneralTextContainingPart(XSLFRelation.CHART.getRelation(), "chart", slidePart,
-                metadata, new OOXMLWordAndPowerPointTextHandler(new OOXMLTikaBodyPartHandler(xhtml),
-                        linkedRelationships));
+        handleTextPartWithCleanup(XSLFRelation.CHART.getRelation(), "chart", slidePart,
+                xhtml, linkedRelationships, false);
         return hidden;
+    }
+
+    /**
+     * Handles a text-containing part with guaranteed inline element cleanup.
+     * Creates an OOXMLTikaBodyPartHandler, parses the part, then calls
+     * closeInlineElements() to ensure no unclosed tags leak into subsequent output.
+     *
+     * @param usePlaceholderSkipper if true, wraps the handler in a PlaceHolderSkipper
+     */
+    private void handleTextPartWithCleanup(String contentType, String xhtmlClassLabel,
+                                           PackagePart parentPart, XHTMLContentHandler xhtml,
+                                           Map<String, String> linkedRelationships,
+                                           boolean usePlaceholderSkipper) throws SAXException {
+        OOXMLTikaBodyPartHandler bodyHandler = new OOXMLTikaBodyPartHandler(xhtml);
+        OOXMLWordAndPowerPointTextHandler textHandler =
+                new OOXMLWordAndPowerPointTextHandler(bodyHandler, linkedRelationships);
+        DefaultHandler handler = usePlaceholderSkipper
+                ? new PlaceHolderSkipper(textHandler) : textHandler;
+        try {
+            handleGeneralTextContainingPart(contentType, xhtmlClassLabel, parentPart,
+                    metadata, handler);
+        } finally {
+            bodyHandler.closeInlineElements();
+        }
     }
 
     /**
@@ -305,7 +411,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
                 XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
-                XSLFRelation.NOTES.getRelation()}) {
+                XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
+                XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             PackageRelationshipCollection prc = null;
             try {
                 prc = slidePart.getRelationshipsByType(relation);

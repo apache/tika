@@ -16,8 +16,10 @@
  */
 package org.apache.tika.sax;
 
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +37,15 @@ import org.apache.tika.parser.ParseContext;
  * events for Tika content parsers.
  */
 public class XHTMLContentHandler extends SafeContentHandler {
+
+    /**
+     * When set to {@code true} via {@code -Dtika.xhtml.strict=true},
+     * enables element-stack tracking that logs warnings on mismatched
+     * start/end element calls.  This is for development/testing only
+     * and should not be enabled in production.
+     */
+    private static final boolean STRICT =
+            Boolean.getBoolean("tika.xhtml.strict");
 
     /**
      * The XHTML namespace URI
@@ -94,6 +105,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
+    private final Deque<String> strictStack = STRICT ? new ArrayDeque<>() : null;
 
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         this(handler, metadata, null);
@@ -282,6 +294,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 ignorableWhitespace(TAB, 0, TAB.length);
             }
 
+            if (STRICT) {
+                strictStack.push(name);
+            }
             super.startElement(uri, local, name, attributes);
         }
     }
@@ -293,6 +308,18 @@ public class XHTMLContentHandler extends SafeContentHandler {
     @Override
     public void endElement(String uri, String local, String name) throws SAXException {
         if (!AUTO.contains(name)) {
+            if (STRICT) {
+                if (strictStack.isEmpty()) {
+                    throw new RuntimeException("XHTML STRICT: end element '" + name +
+                            "' with empty stack");
+                } else {
+                    String expected = strictStack.pop();
+                    if (!expected.equals(name)) {
+                        throw new RuntimeException("XHTML STRICT: element mismatch: expected '" +
+                                expected + "' but got '" + name + "'. Stack: " + strictStack);
+                    }
+                }
+            }
             super.endElement(uri, local, name);
             if (XHTML.equals(uri) && ENDLINE.contains(name)) {
                 newline();

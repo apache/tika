@@ -74,7 +74,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             new String[]{XWPFRelation.HEADER.getRelation(), XWPFRelation.FOOTER.getRelation(),
                     XWPFRelation.FOOTNOTE.getRelation(),
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"};
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                    AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA};
 
     // Relationship types for Word settings
     private static final String SETTINGS_RELATION =
@@ -192,7 +193,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             PackageRelationshipCollection settingsRels =
                     documentPart.getRelationshipsByType(SETTINGS_RELATION);
             if (settingsRels != null && settingsRels.size() > 0) {
-                PackagePart settingsPart = documentPart.getRelatedPart(settingsRels.getRelationship(0));
+                PackagePart settingsPart = safeGetRelatedPart(documentPart, settingsRels.getRelationship(0));
                 if (settingsPart != null) {
                     try (InputStream is = settingsPart.getInputStream()) {
                         WordSettingsHandler handler = new WordSettingsHandler(xhtml);
@@ -212,7 +213,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             PackageRelationshipCollection webSettingsRels =
                     documentPart.getRelationshipsByType(WEB_SETTINGS_RELATION);
             if (webSettingsRels != null && webSettingsRels.size() > 0) {
-                PackagePart webSettingsPart = documentPart.getRelatedPart(webSettingsRels.getRelationship(0));
+                PackagePart webSettingsPart = safeGetRelatedPart(documentPart, webSettingsRels.getRelationship(0));
                 if (webSettingsPart != null) {
                     try (InputStream is = webSettingsPart.getInputStream()) {
                         WebSettingsHandler handler = new WebSettingsHandler(xhtml);
@@ -223,8 +224,23 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                 }
             }
-        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
-            // swallow
+        } catch (InvalidFormatException | IOException | TikaException | SAXException |
+                 IllegalArgumentException e) {
+            // swallow -- POI throws IllegalArgumentException when
+            // a relationship references a part missing from the package
+        }
+    }
+
+    /**
+     * Safely resolves a related part from a relationship.  Returns {@code null}
+     * instead of throwing {@link IllegalArgumentException} when the target
+     * part is missing from the package (e.g. truncated / salvaged zips).
+     */
+    private static PackagePart safeGetRelatedPart(PackagePart source, PackageRelationship rel) {
+        try {
+            return source.getRelatedPart(rel);
+        } catch (InvalidFormatException | IllegalArgumentException e) {
+            return null;
         }
     }
 
@@ -270,9 +286,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (headersPRC != null) {
                     for (int i = 0; i < headersPRC.size(); i++) {
                         PackagePart header =
-                                documentPart.getRelatedPart(headersPRC.getRelationship(i));
-                        handlePart(header, styles, listManager, xhtml,
-                                OOXMLInlineBodyPartMap.EMPTY);
+                                safeGetRelatedPart(documentPart, headersPRC.getRelationship(i));
+                        if (header != null) {
+                            handlePart(header, styles, listManager, xhtml,
+                                    OOXMLInlineBodyPartMap.EMPTY);
+                        }
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -309,9 +327,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
-                                documentPart.getRelatedPart(prc.getRelationship(i));
-                        handlePart(packagePart, styles, listManager, xhtml,
-                                OOXMLInlineBodyPartMap.EMPTY);
+                                safeGetRelatedPart(documentPart, prc.getRelationship(i));
+                        if (packagePart != null) {
+                            handlePart(packagePart, styles, listManager, xhtml,
+                                    OOXMLInlineBodyPartMap.EMPTY);
+                        }
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -372,10 +392,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             linkedRelationships, config.isIncludeShapeBasedContent(),
                             config.isConcatenatePhoneticRuns(),
                             config.isPreferAlternateContentChoice())), context);
-        } catch (TikaException | IOException e) {
+        } catch (TikaException | IOException | SAXException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
+        bodyHandler.closeInlineElements();
         Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
         resolveEmfNames(packagePart, partMetadata);
         embeddedPartMetadataMap.putAll(partMetadata);
@@ -478,7 +499,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             if (stylesRelationShip == null) {
                 return null;
             }
-            PackagePart stylesPart = packagePart.getRelatedPart(stylesRelationShip);
+            PackagePart stylesPart = safeGetRelatedPart(packagePart, stylesRelationShip);
             if (stylesPart == null) {
                 return null;
             }
@@ -498,13 +519,13 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (numberingRelationShip == null) {
                     return null;
                 }
-                PackagePart numberingPart = packagePart.getRelatedPart(numberingRelationShip);
+                PackagePart numberingPart = safeGetRelatedPart(packagePart, numberingRelationShip);
                 if (numberingPart == null) {
                     return null;
                 }
                 return new XWPFNumberingShim(numberingPart, context);
             }
-        } catch (IOException | InvalidFormatException | TikaException | SAXException e) {
+        } catch (Exception e) {
             //swallow
         }
         return null;
@@ -539,8 +560,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
-                                documentPart.getRelatedPart(prc.getRelationship(i));
-                        relatedParts.add(packagePart);
+                                safeGetRelatedPart(documentPart, prc.getRelationship(i));
+                        if (packagePart != null) {
+                            relatedParts.add(packagePart);
+                        }
                     }
                 }
             } catch (InvalidFormatException e) {
