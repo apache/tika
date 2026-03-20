@@ -50,12 +50,6 @@ public final class StructuralEncodingRules {
     /** ISO-2022 ESC byte. */
     private static final int ESC = 0x1B;
 
-    /**
-     * Ratio of valid high bytes required to call UTF-8 "definitive".
-     * If the sample has more than {@value #MIN_HIGH_BYTE_RATIO_FOR_UTF8} of its
-     * bytes in multi-byte sequences and they all parse correctly, we trust UTF-8.
-     */
-    private static final double MIN_HIGH_BYTE_RATIO_FOR_UTF8 = 0.01; // at least 1%
 
     // -----------------------------------------------------------------------
     //  Public API
@@ -535,10 +529,10 @@ public final class StructuralEncodingRules {
             }
 
             // Check that the right number of continuation bytes follow
+            boolean truncated = false;
             for (int k = 1; k < seqLen; k++) {
                 if (i + k >= end) {
-                    // Truncated sequence at end of sample — treat as ambiguous
-                    // (the sample just ran out, not necessarily bad data)
+                    truncated = true;
                     break;
                 }
                 int cb = bytes[i + k] & 0xFF;
@@ -547,34 +541,38 @@ public final class StructuralEncodingRules {
                 }
             }
 
-            // Validate scalar value ranges for 3- and 4-byte sequences
-            if (seqLen == 3) {
-                int cp = ((b & 0x0F) << 12)
-                        | ((i + 1 < end ? bytes[i + 1] & 0xFF : 0) & 0x3F) << 6
-                        | ((i + 2 < end ? bytes[i + 2] & 0xFF : 0) & 0x3F);
-                // Overlong encoding (< U+0800) or surrogate pair range
-                if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
-                    return Utf8Result.NOT_UTF8;
-                }
-            } else if (seqLen == 4) {
-                int cp = ((b & 0x07) << 18)
-                        | ((i + 1 < end ? bytes[i + 1] & 0xFF : 0) & 0x3F) << 12
-                        | ((i + 2 < end ? bytes[i + 2] & 0xFF : 0) & 0x3F) << 6
-                        | ((i + 3 < end ? bytes[i + 3] & 0xFF : 0) & 0x3F);
-                // Overlong or above U+10FFFF
-                if (cp < 0x10000 || cp > 0x10FFFF) {
-                    return Utf8Result.NOT_UTF8;
+            // Validate scalar value ranges for 3- and 4-byte sequences,
+            // but only when the full sequence is present. Truncated sequences
+            // at the end of a probe are not evidence of invalid UTF-8.
+            if (!truncated) {
+                if (seqLen == 3) {
+                    int cp = ((b & 0x0F) << 12)
+                            | ((bytes[i + 1] & 0xFF) & 0x3F) << 6
+                            | ((bytes[i + 2] & 0xFF) & 0x3F);
+                    if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
+                        return Utf8Result.NOT_UTF8;
+                    }
+                } else if (seqLen == 4) {
+                    int cp = ((b & 0x07) << 18)
+                            | ((bytes[i + 1] & 0xFF) & 0x3F) << 12
+                            | ((bytes[i + 2] & 0xFF) & 0x3F) << 6
+                            | ((bytes[i + 3] & 0xFF) & 0x3F);
+                    if (cp < 0x10000 || cp > 0x10FFFF) {
+                        return Utf8Result.NOT_UTF8;
+                    }
                 }
             }
 
             i += seqLen;
         }
 
-        // Grammar is valid. Was there enough evidence?
-        double highRatio = length > 0 ? (double) highByteCount / length : 0.0;
-        if (highRatio >= MIN_HIGH_BYTE_RATIO_FOR_UTF8) {
+        // Grammar is valid. Even a single valid multi-byte sequence is
+        // structural proof of UTF-8 — no single-byte encoding produces valid
+        // lead+continuation patterns by coincidence at any meaningful rate.
+        if (highByteCount > 0) {
             return Utf8Result.DEFINITIVE_UTF8;
         }
+        // Zero high bytes = pure ASCII; caller handles this separately.
         return Utf8Result.AMBIGUOUS;
     }
 

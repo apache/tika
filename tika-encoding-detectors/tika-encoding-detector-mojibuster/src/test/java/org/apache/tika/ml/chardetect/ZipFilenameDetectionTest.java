@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -63,7 +62,6 @@ public class ZipFilenameDetectionTest {
      * because the language model gives a higher logit to the Japanese text decoded
      * from the same bytes.
      */
-    @Disabled("Requires generative language model for reliable Shift-JIS vs Big5-HKSCS arbitration")
     @Test
     public void charSoupOverridesModelRankingForShiftJis() throws Exception {
         Charset big5 = Charset.forName("Big5-HKSCS");
@@ -92,7 +90,6 @@ public class ZipFilenameDetectionTest {
      * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
      * what ZipParser does when iterating entries with the same ParseContext.
      */
-    @Disabled("Requires generative language model for reliable Shift-JIS detection on short probes")
     @Test
     public void fullPipelineDetectsBothSjisEntries() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();
@@ -117,7 +114,6 @@ public class ZipFilenameDetectionTest {
      * Re-enable once generative language models are in place (better calibrated
      * confidence will let CharSoup correctly abstain on cross-script ambiguity).
      */
-    @Disabled("Requires generative language model for reliable cross-script arbitration")
     @Test
     public void fullPipelineDetectsGbkEntry() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();

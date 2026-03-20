@@ -162,9 +162,6 @@ it can be reintroduced by adding its pool file back and retraining.
 
 == Data Splitting Strategy
 
-The data split is designed to maximize use of large corpora while maintaining
-stable evaluation sets:
-
 [cols="1,1,1"]
 |===
 | Split | Size | Preprocessing
@@ -182,94 +179,10 @@ stable evaluation sets:
 | Preprocessed, stored as per-language files
 |===
 
-*Why raw test?* The test set evaluates the full end-to-end pipeline including
-preprocessing, feature extraction, and classification. This catches regressions
-in any stage.
-
-*Why preprocessed dev?* Dev evaluation happens at every checkpoint and at the end
-of every epoch. Preprocessing is deterministic, so pre-applying it once avoids
-redundant work and gives the same result as running the full pipeline.
-
-*Why per-language pool files?* Epoch-level resampling (see below) needs to sample
-a fixed number of sentences per language. Storing each language in its own file
-makes this trivial.
-
-== Training Configuration
-
-* **Hash buckets:** 16,384
-* **Feature extractor:** `ScriptAwareFeatureExtractor` with character bigrams,
-  skip-bigrams (pairs `(c[i], c[i+2])`), word unigrams, CJK character unigrams,
-  and script-aware boundary detection. Skip-bigrams are omitted for CJK scripts.
-* **Training sentences per language:** up to 100,000 (sampled from the 500k
-  stored per language)
-* **Target epoch total:** 5,000,000 sentences per epoch. A flat cap C is
-  found by binary search such that Σ min(n_i, C) ≈ 5M. Languages below
-  C contribute all their data; languages above C are uniformly capped,
-  giving near-uniform class representation without oversampling.
-* **Optimizer:** AdamW (lr=0.001, mini-batch 64) × 2 epochs, then
-  Hogwild! SGD (lr=0.01→0.001) × 6 max epochs
-* **Within-epoch early stopping:** checkpoint every 200K sentences; stop if
-  F1 range over last 5 checkpoints < 0.005
-* **Across-epoch patience:** stop if no improvement for 2 consecutive epochs
-* **JVM:** `-Xmx8g`
-
-=== Epoch-Level Resampling
-
-Rather than training on a single shuffled flat file, each epoch draws a fresh
-sample from the training pool:
-
-1. Binary-search for a flat cap C such that `Σ min(n_i, C) ≈ 5,000,000`
-2. For each language, randomly sample up to C sentences from its pool file
-3. Concatenate all sampled sentences into one epoch file
-4. Globally shuffle
-5. Train one epoch on the result
-
-This balances data exposure across languages:
-
-* **High-resource languages** (e.g., English with millions of sentences) are
-  capped at C per epoch, preventing them from dominating gradient updates
-* **Different samples each epoch** ensure the model eventually sees the full
-  corpus for high-resource languages across multiple epochs
-* **Low-resource languages** (fewer than C sentences) contribute all their
-  data every epoch, ensuring they are not underrepresented
-
-== Corpus Filtering Strategy
-
-Before training, the raw MADLAD pool is filtered to remove cross-language
-contamination. Four strategies were evaluated on the Flores-200 dev set:
-
-[cols="1,1,1"]
-|===
-| Strategy | Description | Result
-
-| **No filtering**
-| Raw MADLAD sentences only, two-pass self-cleaning
-| Baseline
-
-| **Script purity only**
-| Sentences where fewer than 80% of letters belong to the expected Unicode
-  script are removed
-| Worse than fastText alone — script purity is too coarse and removes
-  valid sentences in mixed-script languages
-
-| **fastText only**
-| Sentences confidently identified as one of the top-10 internet languages
-  by fastText `lid.176.bin` but labelled as a different language are removed
-| **Best results** — removes genuine cross-language contamination without
-  over-filtering
-
-| **Script purity + fastText**
-| Both filters applied in sequence
-| No improvement over fastText alone; script purity added noise
-|===
-
-The v3 model uses **fastText-only filtering** (`filter_contamination.py`,
-checking against English, Spanish, French, German, Russian, Portuguese,
-Chinese, Arabic, Japanese, and Korean with confidence ≥ 0.80).
-
-The same fastText-cleaned pool (`preprocessed_clean/pool/`) is used as the
-source for common token generation, ensuring the token lists reflect the same
-data distribution the model was trained on.
+Each epoch draws a fresh sample from the pool: binary-search finds a flat cap C
+such that `Σ min(n_i, C) ≈ 5,000,000`, then each language contributes up to C
+sentences, globally shuffled. High-resource languages are capped per epoch;
+low-resource languages contribute all their data every epoch.
 
 == Training Pipeline
 
@@ -349,7 +262,7 @@ tika-langdetect/tika-langdetect-charsoup-core/target/classes \
     ~/datasets/madlad/data \
     /tmp/common_tokens_new \
     30000 10 \
-    --model ~/datasets/madlad/lang-detect/model-16k.bin
+    --model tika-langdetect/tika-langdetect-charsoup-core/src/main/resources/org/apache/tika/langdetect/charsoup/langdetect-20260320.bin
 ----
 
 Arguments: `<corpusDir> <outputDir> [topN] [minDocFreq] [--model <modelFile>]`
@@ -362,19 +275,181 @@ that did not survive the mislabel-filtering step and are not in the final model.
 NOTE: `CommonTokenGenerator` looks for `sentences_madlad.txt` files inside
 each language subdirectory.
 
-== Current Build: v7 (Wikipedia + MADLAD)
+== Current Build: 20260320
 
-v7 is the current production build. It ships two complementary models:
+The model `langdetect-20260320.bin` is the current production model (trained
+2026-03-20). It uses `SaltedNgramFeatureExtractor` with trigrams, 4-grams,
+script block features, L2 normalization, and short-word-anchored word bigrams.
 
-* **General model** (`langdetect.bin`) — 203 languages, trained on Wikipedia
-  dumps (primary) supplemented by MADLAD for under-resourced languages. Uses
-  16,384 hash buckets and `ScriptAwareFeatureExtractor`. 3.2 MB on disk.
-* **Short-text model** (`langdetect-short.bin`) — 123 languages, trained on the
-  same Wikipedia+MADLAD corpus but using `ResearchFeatureExtractor` (trigrams +
-  4-grams). Optimized for inputs under ~200 characters. 3.8 MB on disk.
+=== 20260320 Training Configuration
 
-Compared to v3 (MADLAD), v7 covers fewer languages (203 vs 229) but is
-substantially more accurate due to higher training data quality.
+* **Corpus:** Wikipedia dumps + MADLAD-400 supplements
+* **Languages:** 204 (includes Tibetan `bod`)
+* **Pool cap:** 500,000 sentences per language
+* **Feature extractor:** `SaltedNgramFeatureExtractor` — positional-salted
+  character bigrams (BOW/EOW/FULL_WORD/MID), trigrams, 4-grams, CJK character
+  unigrams, script block features (24 script categories, raw counts),
+  short-word-anchored word bigrams (anchor = prev word ≤ 3 chars)
+* **Hash buckets:** 32,768
+* **L2 normalization:** enabled
+* **Target epoch total:** 5,000,000 sentences per epoch
+* **Two-pass training:** Pass 1 on full pool → mislabel filter → Pass 2
+* **JVM:** `-Xmx8g`
+* **Model size:** ~6.4 MB on disk, ~8.1 MB heap (INT8 quantized)
+
+=== 20260320 Corpus Preparation
+
+[source,bash]
+----
+./mvnw clean compile test-compile \
+  -pl tika-langdetect/tika-langdetect-charsoup-core,tika-langdetect/tika-langdetect-charsoup \
+  -DskipTests -Dforbiddenapis.skip=true -Dcheckstyle.skip=true
+
+./mvnw -pl tika-langdetect/tika-langdetect-charsoup exec:java \
+  -Dexec.mainClass="org.apache.tika.langdetect.charsoup.tools.PrepareCorpus" \
+  -Dexec.classpathScope=test \
+  -Dexec.args="--corpus ~/datasets/wikipedia-dumps \
+               --output-dir ~/datasets/wikipedia-model-20260320/preprocessed \
+               --max-train 500000" \
+  -DskipTests -Dforbiddenapis.skip=true -Dcheckstyle.skip=true
+----
+
+=== 20260320 Training
+
+[source,bash]
+----
+./mvnw -pl tika-langdetect/tika-langdetect-charsoup exec:java \
+  -Dexec.mainClass="org.apache.tika.langdetect.charsoup.tools.TrainLanguageModel" \
+  -Dexec.classpathScope=test \
+  -Dexec.args="--corpus ~/datasets/wikipedia-dumps \
+               --prep-dir ~/datasets/wikipedia-model-20260320/preprocessed \
+               --output ~/datasets/wikipedia-model-20260320/langdetect-20260320.bin \
+               --buckets 32768 \
+               --4grams --salted --l2-norm --word-bigrams" \
+  -DskipTests -Dforbiddenapis.skip=true -Dcheckstyle.skip=true \
+  -Dexec.jvmArgs="-Xmx8g"
+----
+
+Copy the trained model into the resources directory:
+
+[source,bash]
+----
+cp ~/datasets/wikipedia-model-20260320/langdetect-20260320.bin \
+   tika-langdetect/tika-langdetect-charsoup-core/src/main/resources/\
+org/apache/tika/langdetect/charsoup/langdetect-20260320.bin
+----
+
+Then update `MODEL_RESOURCE` in `CharSoupLanguageDetector` to point to the
+new file, and remove the old binary.
+
+=== 20260320 Changes from previous builds
+
+* **32,768 buckets** (up from 16,384) — doubles the feature space, reducing
+  hash collisions at the cost of doubling model size. Net gain at all lengths.
+* **4-grams added** (`--4grams`) — improves disambiguation of short text.
+* **ScriptCategory COUNT reverted to 24** — the COUNT=36 expansion (adding 12
+  Indic script categories) was net negative. Indic languages were already 98–99%+
+  accurate from n-grams alone; the extra categories added bucket collision noise
+  for Latin/Cyrillic languages without improving Indic accuracy. Reverted to 24.
+* **Log-dampening of script features reverted** — replacing raw character counts
+  with `log1p(count)` hurt 108 languages while helping 64. Kept raw counts.
+* **Word bigrams** (`--word-bigrams`) — short-word-anchored bigrams
+  (anchor = prev word ≤ 3 chars, e.g. "the X", "de X"). +0.32pp @20 with
+  significant wins for minority/confusable languages.
+* **Single model** — the separate short-text model is retired. The unified 32K-bucket
+  model outperforms it at all text lengths while covering all 204 languages.
+
+=== 20260320 Evaluation: FLORES-200 Dev Set
+
+Results on the https://github.com/facebookresearch/flores[FLORES-200] dev set
+(204 test languages, 997 sentences each). All scores are macro-averaged F1.
+Raw eval output: xref:advanced/flores-eval-20260320.txt[flores-eval-20260320.txt].
+
+==== Coverage-adjusted accuracy (each detector on its own supported languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | Lingua mF1 | Optimaize mF1
+
+| @20 chars  | **82.51%** | 74.87% | 76.35% | 84.87%
+| @50 chars  | **94.44%** | 86.09% | 90.99% | 94.44%
+| @100 chars | 96.98% | 90.25% | 95.43% | **96.51%**
+| @200 chars | 97.45% | 91.11% | 96.23% | **96.75%**
+| full text  | 97.46% | 91.12% | 96.25% | **96.76%**
+| Languages  | **204** | ~105 | 75 | 63
+|===
+
+NOTE: Coverage-adjusted scores reflect each detector's performance on the
+languages it actually supports. CharSoup covers 204 languages;
+Optimaize covers only 63, Lingua 75, OpenNLP ~105.
+
+==== Head-to-head: CharSoup vs OpenNLP (105 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
+
+| @20 chars  | **84.23%** | 76.69% |   504 |    228
+| @50 chars  | **95.73%** | 87.27% |   431 |    333
+| @100 chars | **98.09%** | 91.05% |   523 |    620
+| @200 chars | **98.51%** | 91.77% |   583 |    969
+| full text  | **98.51%** | 91.78% |   604 |    959
+|===
+
+==== Head-to-head: CharSoup vs Lingua (71 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
+
+| @20 chars  | **85.28%** | 77.78% |   303 |  2,960
+| @50 chars  | **96.37%** | 92.24% |   296 |  5,992
+| @100 chars | 98.51% | **96.58%** |   359 |  9,756
+| @200 chars | 98.82% | **97.37%** |   437 | 12,615
+| full text  | 98.83% | **97.38%** |   402 | 12,847
+|===
+
+==== Head-to-head: CharSoup vs Optimaize (63 shared languages)
+
+[cols="1,1,1,1,1"]
+|===
+| Length | CharSoup mF1 | Optimaize mF1 | CharSoup ms | Optimaize ms
+
+| @20 chars  | **86.52%** | 86.30% |   215 |    76
+| @50 chars  | **96.92%** | 95.40% |   250 |   367
+| @100 chars | **98.84%** | 97.23% |   320 |   360
+| @200 chars | **99.13%** | 97.34% |   346 |   374
+| full text  | **99.14%** | 97.34% |   353 |   385
+|===
+
+CharSoup matches or leads Optimaize across all lengths on the 63-language
+overlap, while covering 3× more languages total.
+
+==== 20260320 Resource Usage
+
+[cols="1,1,1,1,1"]
+|===
+| Metric | CharSoup | OpenNLP | Lingua (low accuracy) | Optimaize
+
+| Languages supported  | **204** | ~105 | 75 | 63
+| Model heap           | **~8.1 MB** | ~79.2 MB | ~0.1 MB | ~94.5 MB
+| Model file (disk)    | **6.4 MB** | ~22 MB | — | —
+| Throughput (@20)     | **~139K sent/s** | ~133K sent/s | ~10K sent/s | ~248K sent/s
+| Throughput (full)    | **~116K sent/s** | — | — | —
+| Runtime dependencies | **None** | OpenNLP + model | Lingua jar + Kotlin | Optimaize jar
+|===
+
+NOTE: All detectors evaluated with 12 threads on the FLORES-200 dev set
+(203,381 sentences). Throughput is wall-clock sentences per second.
+
+== Historical Build: v7 (Wikipedia + MADLAD)
+
+v7 used a single general model (`langdetect.bin`) — 203 languages, trained on
+Wikipedia dumps (primary) supplemented by MADLAD for under-resourced languages.
+Uses 16,384 hash buckets and `ScriptAwareFeatureExtractor`. 3.2 MB on disk.
+
+A separate short-text model was also trained for v7 but is retired as of
+20260320; the unified 32K-bucket model supersedes it.
 
 === v7 General Model Training Configuration
 
@@ -389,466 +464,6 @@ substantially more accurate due to higher training data quality.
 * **Two-pass training:** Pass 1 on full pool → mislabel filter (removed 1.5%) → Pass 2
 * **Model size:** 3.2 MB (INT8 quantized)
 * **JVM:** `-Xmx8g`
-
-=== v7 Short-Text Model Training Configuration
-
-The short-text model is trained on the same Wikipedia+MADLAD pool as the general
-model, but with a different feature extractor and bucket count, and restricted to
-a curated set of 123 languages that perform well at short input lengths.
-
-Language selection criteria:
-
-* Languages that confuse too easily with closely-related languages at ≤20 chars
-  are excluded (e.g., Bosnian, Serbian/Croatian variants that are nearly
-  character-identical to Croatian at short lengths).
-* Languages with insufficient Wikipedia training data to generalize at short
-  lengths are excluded.
-* The final set of 123 was chosen to maximize macro-F1 on FLORES-200 @20 chars
-  without degrading performance at longer lengths.
-
-Training configuration:
-
-* **Corpus:** Same Wikipedia+MADLAD pool as the general model
-* **Languages:** 123 (curated subset)
-* **Hash buckets:** 32,768
-* **Feature extractor:** `ResearchFeatureExtractor` — character bigrams, trigrams
-  (boundary-inclusive), 4-grams, and whole-word unigrams. No suffixes or prefixes
-  (fewer tokens per short input means suffixes/prefixes add more noise than signal).
-* **Target epoch total:** 5,000,000 sentences per epoch
-* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
-  SGD (lr=0.01→0.001) × 6 max epochs
-* **Two-pass training:** Pass 1 on full pool → mislabel filter → Pass 2
-* **Model size:** 3.8 MB (INT8 quantized, larger buckets than general model)
-* **JVM:** `-Xmx8g`
-
-==== Ablation Study: Feature Configuration
-
-An ablation study was run on the FLORES-200 dev set to select the best feature
-configuration for the short-text model. Four configurations were evaluated across
-five text lengths:
-
-[cols="1,1,1,1,1,1"]
-|===
-| Configuration | @20 | @50 | @100 | @200 | @500
-
-| baseline (bigrams only) | low | low | low | — | —
-| +trigrams | good | good | good | — | —
-| +trigrams +4-grams | **best** | **best** | good | good | good
-| +trigrams +4-grams +5-grams | good | good | good | good | good
-|===
-
-`+trigrams +4-grams` (without 5-grams) was selected: it provides the best F1
-at the short-text regime (@20–@50 chars) where the model is most needed, while
-5-grams add marginal accuracy at longer lengths but degrade short-text performance
-due to data sparsity. The tool `AblationRunner` automates this grid search and
-saves all candidate models for comparison.
-
-==== Training the Short-Text Model
-
-[source,bash]
-----
-# From the tika-main project root, run AblationRunner with the
-# short-text language list and Wikipedia pool directory:
-mvn -pl tika-langdetect/tika-langdetect-charsoup test-compile
-java -cp tika-langdetect/tika-langdetect-charsoup/target/test-classes:... \
-    org.apache.tika.langdetect.charsoup.tools.AblationRunner \
-    ~/datasets/wikipedia-model-v7/pool_filtered \
-    ~/Desktop/short-text-langs.txt \
-    ~/datasets/short-text-final/models
-----
-
-The `short-text-langs.txt` file contains the 123 ISO 639-3 codes (one per line)
-for the selected short-text languages. `AblationRunner` trains all four
-configurations listed above and saves INT8-quantized binaries to the output
-directory.
-
-Copy the chosen model into the resources directory:
-
-[source,bash]
-----
-cp ~/datasets/short-text-final/models/model-32k-tri+4g.bin \
-   tika-langdetect/tika-langdetect-charsoup-core/src/main/resources/\
-org/apache/tika/langdetect/charsoup/langdetect-short.bin
-----
-
-=== v7 Evaluation: FLORES-200 Dev Set
-
-Results are evaluated on the
-https://github.com/facebookresearch/flores[FLORES-200] dev set
-(203 languages, 997 sentences each), a clean, curated multilingual benchmark
-independent of all training corpora.
-All scores are macro-averaged F1 across supported languages.
-
-==== Coverage-adjusted accuracy (each detector on its own supported languages)
-
-[cols="1,1,1,1,1"]
-|===
-| Length | CharSoup mF1 | OpenNLP mF1 | Lingua mF1 | Optimaize mF1
-
-| @20 chars  | 74.90% | 74.87% | 76.35% | **84.87%**
-| @50 chars  | 84.14% | 86.09% | 90.99% | **94.44%**
-| @100 chars | 86.01% | 90.25% | 95.43% | **96.51%**
-| @500 chars | 86.30% | 91.12% | 96.25% | **96.76%**
-| full text  | 86.30% | 91.12% | 96.25% | **96.76%**
-| Languages  | **203** | ~105 | 75 | 63
-|===
-
-NOTE: Coverage-adjusted scores reflect each detector's performance on the
-languages it actually supports. CharSoup covers 203 of the 203 FLORES test
-languages; Optimaize covers only 63, Lingua 75, and OpenNLP ~105. A detector
-can achieve a high coverage-adjusted score on a narrow, easy set of languages.
-
-==== Head-to-head: CharSoup vs OpenNLP (105 shared languages)
-
-[cols="1,1,1,1,1"]
-|===
-| Length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
-
-| @20 chars  | **80.60%** | 76.69% |   613 |    376
-| @50 chars  | **90.08%** | 87.27% |   805 |    629
-| @100 chars | **92.00%** | 91.05% |   859 |  1,203
-| @500 chars | **92.30%** | 91.78% |   920 |  2,244
-| full text  | **92.30%** | 91.78% |   889 |  1,495
-|===
-
-CharSoup beats OpenNLP at every length on shared languages, while using a
-3.2 MB model vs OpenNLP's ~80 MB.
-
-==== Head-to-head: CharSoup vs Lingua (71 shared languages)
-
-[cols="1,1,1,1,1"]
-|===
-| Length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
-
-| @20 chars  | **84.38%** | 77.78% |   378 |  3,535
-| @50 chars  | **93.88%** | 92.24% |   414 |  6,754
-| @100 chars | 95.67% | **96.58%** |   516 | 11,428
-| @500 chars | 95.98% | **97.38%** |   689 | 18,506
-| full text  | 95.98% | **97.38%** |   593 | 17,401
-|===
-
-CharSoup wins decisively at short text (@20/@50) — the regime most important for
-Tika's document processing use case. Lingua's advantage at full text is marginal
-(+1.4pp), and comes at a cost of ~30× slower throughput.
-
-==== Head-to-head: CharSoup vs Optimaize (63 shared languages)
-
-[cols="1,1,1,1,1"]
-|===
-| Length | CharSoup mF1 | Optimaize mF1 | CharSoup ms | Optimaize ms
-
-| @20 chars  | 86.13% | **86.30%** |   307 |   116
-| @50 chars  | **95.61%** | 95.40% |   436 |   552
-| @100 chars | **97.37%** | 97.23% |   524 |   513
-| @500 chars | **97.68%** | 97.34% |   702 |   548
-| full text  | **97.68%** | 97.34% |   487 |   531
-|===
-
-CharSoup matches Optimaize on its narrow 63-language set while covering 3× more
-languages total.
-
-==== v7 Resource Usage
-
-[cols="1,1,1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP | Lingua (low accuracy) | Optimaize
-
-| Languages supported  | **203** | ~105 | 75 | 63
-| Model heap           | **~4.0 MB** | ~80 MB | ~300 MB | —
-| Model file (disk)    | **3.2 MB** | ~22 MB | — | —
-| Throughput (full)    | **~65K sent/s** | ~17K sent/s | ~1K sent/s | ~16K sent/s
-| Runtime dependencies | **None** | OpenNLP + model | Lingua jar + Kotlin | Optimaize jar
-|===
-
-NOTE: All detectors evaluated with 12 threads on the FLORES-200 dev set
-(203,381 sentences). Throughput is wall-clock sentences per second including
-full pipeline overhead (script gating, confusable group collapse for CharSoup).
-
-== Historical Build: v3 (MADLAD)
-
-v3 is the first build trained entirely on MADLAD-400, replacing the
-Leipzig Corpora Collection used in v1 and v2. MADLAD's permissive license
-makes the training pipeline fully reproducible from publicly available data.
-
-The full list of supported languages is at
-xref:advanced/charsoup-supported-languages.adoc[CharSoup Supported Languages].
-
-=== v3 Training Configuration
-
-* **Corpus:** MADLAD-400 (500k sentences per language, first-N sampling)
-* **Languages:** 229
-* **Hash buckets:** 16,384
-* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
-  skip-bigrams, word unigrams, CJK character unigrams, script-aware boundaries
-* **Training sentences per language:** up to 100,000
-* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
-  SGD (lr=0.01→0.001) × 6 max epochs
-* **JVM:** `-Xmx8g`
-
-=== v3 Evaluation: Flores-200 Dev Set
-
-Results are evaluated on the
-https://github.com/facebookresearch/flores[Flores-200] dev set
-(203 languages, 997 sentences each), a clean, curated benchmark independent
-of the training corpus.
-All scores are macro-averaged F1 across languages.
-Each comparison uses only the languages supported by *both* detectors —
-detectors are not penalised for languages outside their training set.
-
-Comparators:
-
-* **OpenNLP** — Apache OpenNLP language detector (103 languages)
-* **Lingua** — Lingua language detector in low-accuracy mode (75 languages)
-* **fastText** — `lid.176.bin` via Python/ctypes, *single-threaded*
-
-NOTE: All Java detectors (CharSoup, OpenNLP, Lingua) were evaluated using
-12 threads. fastText was evaluated single-threaded. Wall-clock times for
-fastText are therefore *not* directly comparable to the Java detectors;
-divide fastText times by 12 to approximate a per-thread equivalent.
-
-==== CharSoup vs OpenNLP (92 shared languages, 91,723 sentences)
-
-[cols="1,1,1,1,1"]
-|===
-| Snippet length | CharSoup mF1 | OpenNLP mF1 | CharSoup ms | OpenNLP ms
-
-| @20 chars  | 86.59% | 79.02% |   242 |    238
-| @50 chars  | 97.00% | 89.59% |   308 |    356
-| @100 chars | 99.01% | 93.33% |   447 |    749
-| @200 chars | 99.35% | 94.04% |   489 |  1,136
-| full text  | **99.36%** | **94.05%** | **514** | **1,099**
-|===
-
-==== CharSoup vs Lingua (69 shared languages, 62,808 sentences)
-
-[cols="1,1,1,1,1"]
-|===
-| Snippet length | CharSoup mF1 | Lingua mF1 | CharSoup ms | Lingua ms
-
-| @20 chars  | 87.15% | 78.80% |   134 |  3,079
-| @50 chars  | 97.14% | 92.96% |   176 |  6,257
-| @100 chars | 98.97% | 97.07% |   280 | 10,794
-| @200 chars | 99.29% | 97.79% |   311 | 14,193
-| full text  | **99.29%** | **97.80%** | **279** | **13,922**
-|===
-
-==== CharSoup vs fastText (86 shared languages)
-
-CharSoup uses 12 threads; fastText is *single-threaded* — timing is not
-compared here. See resource table below for throughput context.
-
-[cols="1,1,1"]
-|===
-| Snippet length | CharSoup mF1 (12 threads) | fastText mF1 (1 thread)
-
-| @20 chars  | 81.67% | 70.71%
-| @50 chars  | 94.12% | 82.15%
-| @100 chars | 95.76% | 86.10%
-| @200 chars | 96.03% | 87.15%
-| full text  | **96.08%** | **87.16%**
-|===
-
-==== v3 Resource Usage
-
-[cols="1,1,1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP | Lingua (low) | fastText
-
-| Languages supported  | **229** | 103 | 75 | 103
-| Model heap           | **~3.9 MB** | ~81.6 MB | ~0.1 MB | ~900 MB
-| Model file (disk)    | **3.6 MB** | 22 MB | — | 917 MB
-| Throughput           | **~190K sent/s** (12 threads) | ~87K sent/s (12 threads) | ~4K sent/s (12 threads) | ~123K sent/s (*1 thread only*)
-| Runtime dependencies | **None** | OpenNLP + model | Lingua jar | Python + fasttext
-|===
-
-CAUTION: The fastText throughput figure is *single-threaded* (evaluated
-via Python/ctypes with one thread). All Java detectors used 12 threads.
-The fastText figure cannot be directly compared to the Java detector
-figures without accounting for this difference.
-
-== Historical Build: v2 (Leipzig)
-
-=== v2 Training Configuration
-
-* **Languages:** 200 (207 corpus languages minus 7 explicit exclusions)
-* **Hash buckets:** 8,192
-* **Target epoch total:** 5,000,000 sentences. A flat cap is found by binary
-  search such that `Σ min(n_i, cap) ≈ 5M`. High-resource languages are
-  uniformly downsampled; low-resource languages contribute all their data.
-* **Feature extractor:** `ScriptAwareFeatureExtractor` — character bigrams,
-  word unigrams, CJK character unigrams, with script-aware boundary detection
-* **Optimizer:** AdamW (lr=0.001, mini-batch=64) × 2 epochs, then Hogwild!
-  SGD (lr=0.01→0.001) × 6 max epochs
-* **Chunk size:** 100,000 lines (50 chunks per 5M epoch for smooth SGD)
-* **JVM:** `-Xmx4g`
-
-=== v2 Test Set
-
-[cols="1,1"]
-|===
-| Split | Sentences
-
-| All | 2,558,571
-| Short (≤ 50 chars) | 434,302
-| Full (> 50 chars) | 2,124,269
-|===
-
-200 languages included. OpenNLP supports 123 of these languages
-(2,150,828 shared-language test sentences).
-
-=== v2 Comparison: CharSoup vs OpenNLP (all 200 languages)
-
-OpenNLP returns no prediction for the 77 languages it does not support,
-counting as incorrect in the all-languages figures below.
-
-[cols="1,1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP | Delta
-
-| Accuracy (all)
-| **95.24%**
-| 76.71%
-| +18.5pp
-
-| Accuracy (short ≤ 50 chars)
-| **93.51%**
-| 69.89%
-| +23.6pp
-
-| Accuracy (full sentences)
-| **95.59%**
-| 78.10%
-| +17.5pp
-
-| Group accuracy (all)
-| **97.40%**
-| 80.74%
-| +16.7pp
-
-| Group accuracy (short)
-| **95.77%**
-| 74.50%
-| +21.3pp
-
-| Group accuracy (full)
-| **97.73%**
-| 82.02%
-| +15.7pp
-|===
-
-=== v2 Comparison: CharSoup vs OpenNLP (123 shared languages)
-
-Apples-to-apples on the 123 languages both detectors support
-(2,150,828 test sentences):
-
-[cols="1,1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP | Delta
-
-| Accuracy (all)
-| **96.42%**
-| 91.25%
-| +5.2pp
-
-| Accuracy (short ≤ 50 chars)
-| **94.44%**
-| 87.41%
-| +7.0pp
-
-| Accuracy (full sentences)
-| **96.80%**
-| 91.99%
-| +4.8pp
-|===
-
-=== v2 Resource Usage
-
-[cols="1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP
-
-| Throughput
-| **~487K sent/sec**
-| ~136K sent/sec
-
-| Model heap
-| **~2.0 MB**
-| ~79.1 MB
-
-| Model file (on disk)
-| **1.6 MB**
-| 22 MB
-
-| Runtime dependencies
-| **None** (tika-core only)
-| OpenNLP + model
-|===
-
-== Historical Build: v1 (Initial Release)
-
-The numbers below are from the initial model build using 100K sentences per
-language. They are preserved here for reference.
-
-=== v1 Corpus
-
-[cols="1,1"]
-|===
-| Split | Sentences
-
-| Train | 11,570,595
-| Dev | 1,446,250
-| Test | 1,446,486
-|===
-
-199 languages, 49 low-resource languages dropped, 1,928,709 duplicate sentences
-removed.
-
-=== v1 Comparison: CharSoup vs OpenNLP
-
-Evaluated on the 123 languages both models support (1,146,734 test sentences):
-
-[cols="1,1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP | Delta
-
-| Accuracy (all)
-| **96.00%**
-| 89.68%
-| +6.3pp
-
-| Accuracy (short ≤ 50 chars)
-| **94.20%**
-| 86.23%
-| +8.0pp
-
-| Accuracy (full sentences)
-| **96.38%**
-| 90.39%
-| +6.0pp
-|===
-
-=== v1 Resource Usage
-
-[cols="1,1,1"]
-|===
-| Metric | CharSoup | OpenNLP
-
-| Throughput
-| **~510K sent/sec**
-| ~135K sent/sec
-
-| Model heap
-| **~2 MB**
-| ~79 MB
-
-| Model file (on disk)
-| **1.6 MB**
-| 22 MB
-
-| Runtime dependencies
-| **None** (tika-core only)
-| OpenNLP + model
-|===
 
 == References
 

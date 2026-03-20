@@ -90,6 +90,7 @@ public class GenerativeLanguageModel {
      */
     public static final int SCRIPT_CATEGORIES = ScriptCategory.COUNT;
 
+
     /** Default classpath resource path for the bundled generative model. */
     public static final String DEFAULT_MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect-generative-v1-20260310.bin";
@@ -226,24 +227,20 @@ public class GenerativeLanguageModel {
         }
 
         if (scriptTables != null && scriptTables[li] != null) {
-            float scriptScore = scoreScriptDistribution(preprocessed, scriptTables[li]);
-            if (!Float.isNaN(scriptScore)) {
-                sum[0] += scriptScore;
-                cnt[0]++;
-            }
+            addScriptContributions(preprocessed, scriptTables[li], sum, cnt);
         }
 
         return cnt[0] == 0 ? Float.NaN : (float) (sum[0] / cnt[0]);
     }
 
     /**
-     * Compute a single L1-weighted average of script log-probs for the text.
-     * Returns NaN if the text contains no letter codepoints.
+     * Add per-letter script log-probability contributions to the running
+     * score average.  Each letter codepoint contributes one observation —
+     * its script category's dequantized log-probability — keeping the
+     * ratio of script terms to n-gram terms proportional to text length.
      */
-    static float scoreScriptDistribution(String preprocessed, byte[] scriptTable) {
-        int[] scriptCounts = new int[SCRIPT_CATEGORIES];
-        int totalLetters = 0;
-
+    static void addScriptContributions(String preprocessed, byte[] scriptTable,
+                                       double[] sum, int[] cnt) {
         int i = 0;
         int len = preprocessed.length();
         while (i < len) {
@@ -252,25 +249,12 @@ public class GenerativeLanguageModel {
             if (Character.isLetter(cp)) {
                 int lower = Character.toLowerCase(cp);
                 int script = ScriptCategory.of(lower);
-                if (script < SCRIPT_CATEGORIES) {
-                    scriptCounts[script]++;
-                    totalLetters++;
+                if (script < scriptTable.length) {
+                    sum[0] += dequantize(scriptTable[script]);
+                    cnt[0]++;
                 }
             }
         }
-
-        if (totalLetters == 0) {
-            return Float.NaN;
-        }
-
-        double weightedSum = 0.0;
-        for (int s = 0; s < SCRIPT_CATEGORIES; s++) {
-            if (scriptCounts[s] > 0) {
-                double proportion = (double) scriptCounts[s] / totalLetters;
-                weightedSum += proportion * dequantize(scriptTable[s]);
-            }
-        }
-        return (float) weightedSum;
     }
 
     /**
@@ -290,6 +274,36 @@ public class GenerativeLanguageModel {
             }
         }
         return best == null ? null : Map.entry(best, bestScore);
+    }
+
+    /**
+     * Average raw score of {@code text} across all CJK languages in the model.
+     *
+     * <p>Unlike {@link #bestMatch}, which picks the single best language
+     * globally (often a non-CJK language when ASCII dominates short CJK
+     * filenames), this method evaluates the text only through CJK-trained
+     * n-gram tables.  Comparing average CJK scores across different charset
+     * decodings of the same raw bytes reveals which decoding produces more
+     * natural CJK characters — a real word like 文章 consistently scores
+     * higher than hash-ghost gibberish like 訜覧 across all CJK models.</p>
+     *
+     * @return the average score across CJK languages, or {@link Float#NaN}
+     *         if no CJK language yields a finite score.
+     */
+    public float avgCjkScore(String text) {
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < langIds.size(); i++) {
+            if (!isCjk[i]) {
+                continue;
+            }
+            float s = score(text, langIds.get(i));
+            if (!Float.isNaN(s)) {
+                sum += s;
+                count++;
+            }
+        }
+        return count == 0 ? Float.NaN : (float) (sum / count);
     }
 
     /**
@@ -609,6 +623,7 @@ public class GenerativeLanguageModel {
         int noncjkTri       = din.readInt();
 
         int scriptCats = hasScript ? din.readInt() : 0;
+
 
         List<String> langIds      = new ArrayList<>(numLangs);
         boolean[]    isCjk        = new boolean[numLangs];

@@ -356,6 +356,7 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         return true;
     }
 
+
     /**
      * Strip any leading byte-order mark from {@code bytes}, returning the
      * suffix after the BOM, or the original array if no BOM is found.

@@ -74,13 +74,13 @@ public class ByteNgramFeatureExtractorTest {
     }
 
     @Test
-    public void testHighByteFollowedByAsciiProducesUnigramBigramAndAnchoredBigram() {
+    public void testHighByteFollowedByAsciiProducesUnigramBigramAndStride2() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // Stride-1: unigram(0xE0) + bigram(0xE0,0x41) + anchored_bigram(0x41,end) = 3
+        // Stride-1: unigram(0xE0) + bigram(0xE0,0x41) = 2
         // Stride-2: pair(0xE0,0x41) at position 0 = 1
-        // Total = 4
+        // Total = 3
         int[] counts = ext.extract(new byte[]{(byte) 0xE0, 0x41});
-        assertEquals(4, sum(counts));
+        assertEquals(3, sum(counts));
     }
 
     @Test

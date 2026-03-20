@@ -431,9 +431,9 @@ public class ScriptAwareFeatureExtractorTest {
                 new ScriptAwareFeatureExtractor(NUM_BUCKETS, true);
         int[] counts = withBlocks.extract("hello");
         // n-gram features = 14 (same as testSingleWord)
-        // + script presence: 100% LATIN → weight 100
-        // total = 114
-        assertEquals(114, sum(counts));
+        // + script presence: 5 LATIN letters → raw count 5 (no transitions: all same script)
+        // total = 19
+        assertEquals(19, sum(counts));
     }
 
     @Test
@@ -442,15 +442,14 @@ public class ScriptAwareFeatureExtractorTest {
                 new ScriptAwareFeatureExtractor(NUM_BUCKETS, true);
         int[] withScript = withBlocks.extract("hello世界");
         int[] noScript   = ngramOnly().extract("hello世界");
-        // Script features add presence weights (L1-normalized to 100)
-        // plus at least one transition (LATIN→HAN)
+        // Script features add raw presence counts plus cross-script transitions
         assertTrue(sum(withScript) > sum(noScript),
                 "Script block features should add weight");
         int scriptContribution = sum(withScript) - sum(noScript);
-        // Presence: ~71% LATIN + ~29% HAN = 100 total presence
-        // Transition: 100% LATIN→HAN = 100 total transition
-        // Sum should be 200
-        assertEquals(200, scriptContribution);
+        // Presence: 5 LATIN letters + 2 HAN letters = 7
+        // Transition: 1 LATIN→HAN (only cross-script transitions counted)
+        // Sum should be 8
+        assertEquals(8, scriptContribution);
     }
 
     @Test

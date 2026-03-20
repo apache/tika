@@ -87,8 +87,14 @@ public class CharSoupModel {
     public static final int FLAG_4GRAMS        = 1 << 7;
     /** Feature flag: enable character 5-grams. */
     public static final int FLAG_5GRAMS        = 1 << 8;
-    /** Feature flag: enable sqrt-weighted script-block presence + transition features. */
+    /** Feature flag: enable script-block presence + transition features. */
     public static final int FLAG_SCRIPT_BLOCKS = 1 << 9;
+    /** Feature flag: L2-normalize the feature vector before prediction. */
+    public static final int FLAG_L2_NORM       = 1 << 10;
+    /** Feature flag: short-word-anchored word bigrams (hash pairs where anchor is 1–3 chars). */
+    public static final int FLAG_WORD_BIGRAMS  = 1 << 11;
+    /** Feature flag: non-CJK word length features (exact length, capped). */
+    public static final int FLAG_WORD_LENGTH   = 1 << 12;
 
     /** Default flags for v1 models (word unigrams only). */
     public static final int V1_DEFAULT_FLAGS = FLAG_WORD_UNIGRAMS;
@@ -292,6 +298,16 @@ public class CharSoupModel {
             }
         }
 
+        float invNorm = 1.0f;
+        if ((featureFlags & FLAG_L2_NORM) != 0) {
+            double normSq = 0;
+            for (int i = 0; i < nnz; i++) {
+                long fv = features[nzIdx[i]];
+                normSq += fv * fv;
+            }
+            invNorm = normSq > 0 ? (float) (1.0 / Math.sqrt(normSq)) : 1.0f;
+        }
+
         long[] dots = new long[numClasses];
         for (int i = 0; i < nnz; i++) {
             int b = nzIdx[i];
@@ -304,7 +320,7 @@ public class CharSoupModel {
 
         float[] logits = new float[numClasses];
         for (int c = 0; c < numClasses; c++) {
-            logits[c] = biases[c] + scales[c] * dots[c];
+            logits[c] = biases[c] + scales[c] * dots[c] * invNorm;
         }
         return logits;
     }
@@ -402,29 +418,45 @@ public class CharSoupModel {
      *         Experimental configs should use {@code ResearchFeatureExtractor} in the test module.
      */
     public FeatureExtractor createExtractor() {
-        if (featureFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS) {
+        // L2 norm is handled at prediction time, not in the feature extractor
+        int extractorFlags = featureFlags & ~FLAG_L2_NORM;
+        if (extractorFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS) {
             return new ScriptAwareFeatureExtractor(numBuckets, true);
         }
-        if (featureFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS_LEGACY) {
+        if (extractorFlags == ScriptAwareFeatureExtractor.FEATURE_FLAGS_LEGACY) {
             return new ScriptAwareFeatureExtractor(numBuckets, false);
         }
-        if (featureFlags == ShortTextFeatureExtractor.FEATURE_FLAGS) {
+        if (extractorFlags == ShortTextFeatureExtractor.FEATURE_FLAGS) {
             return new ShortTextFeatureExtractor(numBuckets, true);
         }
-        if (featureFlags == ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY) {
+        if (extractorFlags == ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY) {
             return new ShortTextFeatureExtractor(numBuckets, false);
+        }
+        if (extractorFlags == SaltedNgramFeatureExtractor.FEATURE_FLAGS) {
+            return new SaltedNgramFeatureExtractor(numBuckets);
+        }
+        if (extractorFlags == SaltedNgramFeatureExtractor.FEATURE_FLAGS_WITH_WORD_BIGRAMS) {
+            return new SaltedNgramFeatureExtractor(numBuckets, true);
+        }
+        if (extractorFlags == SaltedNgramFeatureExtractor.FEATURE_FLAGS_V11) {
+            return new SaltedNgramFeatureExtractor(numBuckets, true, true);
         }
         throw new IllegalStateException(String.format(
                 Locale.ROOT,
                 "No production FeatureExtractor for featureFlags=0x%03x. "
                 + "Known: ScriptAware=0x%03x, ScriptAwareLegacy=0x%03x, "
-                + "ShortText=0x%03x, ShortTextLegacy=0x%03x. "
+                + "ShortText=0x%03x, ShortTextLegacy=0x%03x, "
+                + "SaltedNgram=0x%03x, SaltedNgramWordBigrams=0x%03x, "
+                + "SaltedNgramV11=0x%03x. "
                 + "Use ResearchFeatureExtractor (test scope) for experimental configs.",
-                featureFlags,
+                extractorFlags,
                 ScriptAwareFeatureExtractor.FEATURE_FLAGS,
                 ScriptAwareFeatureExtractor.FEATURE_FLAGS_LEGACY,
                 ShortTextFeatureExtractor.FEATURE_FLAGS,
-                ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY));
+                ShortTextFeatureExtractor.FEATURE_FLAGS_LEGACY,
+                SaltedNgramFeatureExtractor.FEATURE_FLAGS,
+                SaltedNgramFeatureExtractor.FEATURE_FLAGS_WITH_WORD_BIGRAMS,
+                SaltedNgramFeatureExtractor.FEATURE_FLAGS_V11));
     }
 
     public int getFeatureFlags() {

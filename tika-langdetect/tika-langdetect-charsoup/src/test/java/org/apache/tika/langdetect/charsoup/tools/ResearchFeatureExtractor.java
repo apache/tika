@@ -54,7 +54,7 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     static final int MAX_WORD_LENGTH = 30;
     static final int MIN_WORD_LENGTH = 2;
     static final int SENTINEL = '_';
-    static final int SCRIPT_SCALE = ScriptAwareFeatureExtractor.SCRIPT_SCALE;
+
 
     private final int numBuckets;
     private final boolean useTrigrams;
@@ -343,43 +343,19 @@ public class ResearchFeatureExtractor implements FeatureExtractor {
     private void emitScriptFeatures(int[] counts,
                                      int[] scriptCounts,
                                      int[] transitionCounts) {
-        int totalLetters = 0;
-        for (int c : scriptCounts) {
-            totalLetters += c;
-        }
-        if (totalLetters == 0) {
-            return;
-        }
-
         for (int s = 0; s < ScriptCategory.COUNT; s++) {
             if (scriptCounts[s] > 0) {
-                int weight = (int) Math.round(
-                        (double) SCRIPT_SCALE * scriptCounts[s] / totalLetters);
-                if (weight > 0) {
-                    int h = fnvFeedByte(SCRIPT_BASIS, s);
-                    counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
-                }
+                int h = fnvFeedByte(SCRIPT_BASIS, s);
+                counts[(h & 0x7FFFFFFF) % numBuckets] += scriptCounts[s];
             }
-        }
-
-        int totalTransitions = 0;
-        for (int c : transitionCounts) {
-            totalTransitions += c;
-        }
-        if (totalTransitions == 0) {
-            return;
         }
 
         for (int s = 0; s < ScriptCategory.COUNT; s++) {
             for (int t = 0; t < ScriptCategory.COUNT; t++) {
                 int c = transitionCounts[s * ScriptCategory.COUNT + t];
                 if (c > 0) {
-                    int weight = (int) Math.round(
-                            (double) SCRIPT_SCALE * c / totalTransitions);
-                    if (weight > 0) {
-                        int h = fnvFeedByte(fnvFeedByte(SCRIPT_TRANS_BASIS, s), t);
-                        counts[(h & 0x7FFFFFFF) % numBuckets] += weight;
-                    }
+                    int h = fnvFeedByte(fnvFeedByte(SCRIPT_TRANS_BASIS, s), t);
+                    counts[(h & 0x7FFFFFFF) % numBuckets] += c;
                 }
             }
         }

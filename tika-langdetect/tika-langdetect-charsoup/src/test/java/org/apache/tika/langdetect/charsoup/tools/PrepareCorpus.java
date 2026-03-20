@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
 
@@ -130,8 +131,9 @@ public class PrepareCorpus {
         ex.add("mkw");
         // Dzongkha (dzo): F1=0.584. Irresolvable collision with Tibetan (bod).
         ex.add("dzo");
-        // Tibetan (bod): F1=0.652. Mutually destructive with Dzongkha (dzo).
-        ex.add("bod");
+        // Tibetan (bod): reinstated for v11. With dzo excluded there is no
+        // collision partner; Tibetan script is unique in the model. 13.8K
+        // Wikipedia sentences (above MIN_SENTENCES_PER_LANG threshold).
         // Sabah Malay (msi): F1=0.611. Indistinguishable from msa/ind.
         ex.add("msi");
         // Meru (meo): F1=0.629. Similar Malay-family confusion to msi.
@@ -148,8 +150,10 @@ public class PrepareCorpus {
         ex.add("ang");
         // Crimean Tatar (crh): F1=0.727. Persistently confused with Turkish (tur).
         ex.add("crh");
-        // Zazaki / Southern Zaza (zza): F1=0.712. Overlaps Turkish/Kurdish.
-        ex.add("zza");
+        // Zazaki / Southern Zaza (zza): merged into diq via LANG_MERGE_MAP.
+        // Previously excluded (F1=0.712) due to Turkish contamination in MADLAD
+        // and overlap with Kurdish. Now filtered by STUB_FILTERS (diq) to remove
+        // commune stubs, and merged with diq for a cleaner combined corpus.
         // Bosnian (bos): near-random with hrv/srp at character level; F1 ~0.
         ex.add("bos");
         // Southern Sotho (sot): F1=0.659. Accuracy interference with tsn/nso.
@@ -316,6 +320,7 @@ public class PrepareCorpus {
         m.put("quz", "que");
         m.put("swa", "swh");
         m.put("yid", "ydd");
+        m.put("zza", "diq");
         LANG_MERGE_MAP = Collections.unmodifiableMap(m);
     }
 
@@ -438,6 +443,50 @@ public class PrepareCorpus {
         m.put("xmf", EnumSet.of(Character.UnicodeScript.GEORGIAN));
 
         SCRIPT_CONSISTENCY_LANGS = Collections.unmodifiableMap(m);
+    }
+
+    /**
+     * Per-language regex filters for removing bot-generated Wikipedia stubs.
+     * A sentence matching any of these patterns is dropped during corpus
+     * preparation. This replaces the previous manual approach of moving
+     * contaminated files to {@code .bak} — the filtering is now reproducible
+     * from the raw corpus.
+     *
+     * <p>Each pattern is applied via {@link java.util.regex.Matcher#find()},
+     * so it matches anywhere in the sentence text.
+     */
+    static final Map<String, Pattern> STUB_FILTERS;
+    static {
+        Map<String, Pattern> sf = new HashMap<>();
+
+        // Zazaki / Dimli (diq): ~50% of diq.wikipedia.org is formulaic
+        // French commune / geographic stubs following templates like
+        //   "X, yew komuna wılayetê Y" or "Grafikê diyagrami sero gorey
+        //    serran ra nıfusê Z". These swamp genuine Zazaki signal and
+        // cause the model to confuse diq with kur (Kurmanji Kurdish).
+        // Also filters Turkish-language contamination from the MADLAD zza
+        // corpus (merged into diq via LANG_MERGE_MAP). ~35% of zza MADLAD
+        // sentences are pure Turkish. The function words below are
+        // unambiguously Turkish and do not appear in genuine Zazaki.
+        sf.put("diq", Pattern.compile(
+                "komuna|Grafikê diyagrami|nıfusê|ca gên[oaeê]|wılayetê"
+                + "|\\biçin\\b|\\bolarak\\b|\\bdeğil\\b|\\bolduğu\\b"
+                + "|\\boluş\\b|\\bbilgi\\b|\\byapıl\\b"
+                + "|\\bnedir\\b|\\bdemek\\b|\\bhakkında\\b"
+                + "|\\byayınlan|\\bedilmiştir\\b|kelime anlamı"));
+
+        // Cebuano (ceb): Lsjbot-generated municipality stubs with highly
+        // repetitive geographic templates. The genuine Cebuano signal comes
+        // from sentences_madlad.txt; this filter cleans the Wikipedia portion.
+        sf.put("ceb", Pattern.compile(
+                "usa ka lungsod|munisipyo sa lalawigan|sa amihanan|sa habagatan"
+                + "|nahimutang ni sa|sa kasadpang bahin"));
+
+        // Malagasy (mlg): French commune stubs dominate the Wikipedia corpus.
+        sf.put("mlg", Pattern.compile(
+                "kaominina ambanivohitra|isa amin'ny fivondronana|ao amin'ny"));
+
+        STUB_FILTERS = Collections.unmodifiableMap(sf);
     }
 
     public static void main(String[] args) throws IOException {
@@ -601,8 +650,9 @@ public class PrepareCorpus {
 
                 List<LabeledSentence> sentences = new ArrayList<>();
                 if (maxTrainPerLang > 0) {
+                    int reservoirSize = (int) (maxTrainPerLang * 1.5);
                     CorpusReader.readLanguageDirSampled(
-                            langDir, dirName, maxTrainPerLang, sentences);
+                            langDir, dirName, reservoirSize, sentences);
                 } else {
                     CorpusReader.readLanguageDir(
                             langDir, dirName, sentences);
@@ -657,6 +707,7 @@ public class PrepareCorpus {
                     continue;
                 }
 
+                sentences = filterStubSentences(sentences, canonLang);
                 if (!noScriptFilter) {
                     sentences = filterByScriptConsistency(sentences, canonLang);
                     sentences = filterByLatinRatio(sentences, canonLang);
@@ -671,6 +722,13 @@ public class PrepareCorpus {
                         sampleIntoUnk(sentences, unkPerLang, unkAccum);
                     }
                     continue;
+                }
+
+                if (maxTrainPerLang > 0
+                        && sentences.size() > maxTrainPerLang) {
+                    Collections.shuffle(sentences,
+                            new Random(canonLang.hashCode() + 7L));
+                    sentences = sentences.subList(0, maxTrainPerLang);
                 }
 
                 int[] written = writeLanguageSplit(
@@ -693,10 +751,6 @@ public class PrepareCorpus {
                     : mergeAccum.entrySet()) {
                 String lang = e.getKey();
                 List<LabeledSentence> sentences = dedup(e.getValue());
-                if (maxTrainPerLang > 0
-                        && sentences.size() > maxTrainPerLang) {
-                    sentences = sentences.subList(0, maxTrainPerLang);
-                }
                 if (EXCLUDED_LANGS.contains(lang)) {
                     dropped.add(lang + "(excluded)");
                     droppedCount++;
@@ -705,6 +759,7 @@ public class PrepareCorpus {
                     }
                     continue;
                 }
+                sentences = filterStubSentences(sentences, lang);
                 if (!noScriptFilter) {
                     sentences = filterByScriptConsistency(sentences, lang);
                     sentences = filterByLatinRatio(sentences, lang);
@@ -718,6 +773,12 @@ public class PrepareCorpus {
                         sampleIntoUnk(sentences, unkPerLang, unkAccum);
                     }
                     continue;
+                }
+                if (maxTrainPerLang > 0
+                        && sentences.size() > maxTrainPerLang) {
+                    Collections.shuffle(sentences,
+                            new Random(lang.hashCode() + 7L));
+                    sentences = sentences.subList(0, maxTrainPerLang);
                 }
                 int[] written = writeLanguageSplit(
                         sentences, lang, poolDir,
@@ -969,6 +1030,35 @@ public class PrepareCorpus {
         if (dropped > 0) {
             System.out.printf(Locale.US,
                     "  %s: latin-ratio filter removed %,d/%,d sentences (%.1f%%)%n",
+                    lang, dropped, sentences.size(),
+                    100.0 * dropped / sentences.size());
+        }
+        return filtered;
+    }
+
+    /**
+     * Removes sentences that match a known bot-generated stub pattern for this
+     * language. Languages not present in {@link #STUB_FILTERS} are returned
+     * unchanged. This filter runs on raw text before preprocessing.
+     */
+    static List<LabeledSentence> filterStubSentences(
+            List<LabeledSentence> sentences, String lang) {
+        Pattern stubPattern = STUB_FILTERS.get(lang);
+        if (stubPattern == null) {
+            return sentences;
+        }
+        List<LabeledSentence> filtered = new ArrayList<>(sentences.size());
+        int dropped = 0;
+        for (LabeledSentence s : sentences) {
+            if (stubPattern.matcher(s.getText()).find()) {
+                dropped++;
+            } else {
+                filtered.add(s);
+            }
+        }
+        if (dropped > 0) {
+            System.out.printf(Locale.US,
+                    "  %s: stub filter removed %,d/%,d sentences (%.1f%%)%n",
                     lang, dropped, sentences.size(),
                     100.0 * dropped / sentences.size());
         }
