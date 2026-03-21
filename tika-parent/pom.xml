@@ -1573,6 +1573,7 @@
         <artifactId>spotless-maven-plugin</artifactId>
         <version>3.3.0</version>
         <configuration>
+          <lineEndings>UNIX</lineEndings>
           <java>
             <includes>
               <include>src/main/java/**/*.java</include>
