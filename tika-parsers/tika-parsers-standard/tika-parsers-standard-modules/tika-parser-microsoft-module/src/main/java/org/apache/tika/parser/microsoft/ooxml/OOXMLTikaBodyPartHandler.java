@@ -71,6 +71,7 @@ public class OOXMLTikaBodyPartHandler
     private boolean pendingParagraph = false;
     private boolean paragraphTagOpen = false;
     private ParagraphProperties pendingParagraphProperties = null;
+    private String pendingHyperlinkHref = null;
 
     private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
     private ParseContext parseContext = null;
@@ -124,19 +125,37 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
         ensureParagraphOpen();
+        flushPendingHyperlink();
         inlineTags.applyFormatting(runProperties);
         xhtml.characters(contents);
     }
 
+    private void flushPendingHyperlink() throws SAXException {
+        if (pendingHyperlinkHref != null) {
+            inlineTags.openHyperlink(pendingHyperlinkHref);
+            pendingHyperlinkHref = null;
+        }
+    }
+
     @Override
     public void hyperlinkStart(String link) throws SAXException {
-        ensureParagraphOpen();
-        inlineTags.openHyperlink(link);
+        // Defer hyperlink opening if no paragraph is open yet.
+        // Shape-level hyperlinks (cNvPr/hlinkClick) fire before any <p>,
+        // so we store the link and open it when the paragraph opens.
+        if (pendingParagraph || pDepth == 0) {
+            pendingHyperlinkHref = link;
+        } else {
+            inlineTags.openHyperlink(link);
+        }
     }
 
     @Override
     public void hyperlinkEnd() throws SAXException {
-        inlineTags.closeHyperlink();
+        if (pendingHyperlinkHref != null) {
+            pendingHyperlinkHref = null;
+        } else {
+            inlineTags.closeHyperlink();
+        }
     }
 
     /**
@@ -262,7 +281,12 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startTable() throws SAXException {
-
+        // Close any open paragraph — <table> can't nest inside <p> in XHTML
+        closeInlineElements();
+        if (paragraphTagOpen) {
+            xhtml.endElement(paragraphTag);
+            paragraphTagOpen = false;
+        }
         xhtml.startElement("table");
         tableDepth++;
 
