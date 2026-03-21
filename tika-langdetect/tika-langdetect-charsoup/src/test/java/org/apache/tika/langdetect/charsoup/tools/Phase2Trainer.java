@@ -44,6 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.DoubleAdder;
 
 import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.SaltedNgramFeatureExtractor;
 import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
 
 /**
@@ -903,15 +904,16 @@ public class Phase2Trainer {
 
             for (int i = 0; i < count; i++) {
                 extractInto(ext, texts[i], featureBuf);
+                int nnz = sparseIndex(featureBuf, nzBuf);
+                float invNorm = computeInvNorm(featureBuf, nzBuf, nnz);
                 double loss = forwardGrad(featureBuf,
-                        batchLabels[i], logitBuf, nzBuf);
+                        batchLabels[i], logitBuf, nzBuf,
+                        invNorm);
                 totalLoss.add(loss);
 
-                // Accumulate: gradW[b][c] += grad[c]*feat[b]
-                int nnz = sparseIndex(featureBuf, nzBuf);
                 for (int j = 0; j < nnz; j++) {
                     int b = nzBuf[j];
-                    float fv = featureBuf[b];
+                    float fv = featureBuf[b] * invNorm;
                     float[] ab = gradAccumW[b];
                     for (int c = 0; c < numClasses; c++) {
                         ab[c] += logitBuf[c] * fv;
@@ -936,12 +938,14 @@ public class Phase2Trainer {
             // Online SGD (Hogwild-safe with multi-thread)
             for (int i = 0; i < count; i++) {
                 extractInto(ext, texts[i], featureBuf);
-                double loss = forwardGrad(featureBuf,
-                        batchLabels[i], logitBuf, nzBuf);
-                totalLoss.add(loss);
                 int nnz = sparseIndex(featureBuf, nzBuf);
+                float invNorm = computeInvNorm(featureBuf, nzBuf, nnz);
+                double loss = forwardGrad(featureBuf,
+                        batchLabels[i], logitBuf, nzBuf,
+                        invNorm);
+                totalLoss.add(loss);
                 sgdUpdate(featureBuf, logitBuf, nnz,
-                        nzBuf, sgdLr);
+                        nzBuf, sgdLr, invNorm);
             }
         }
     }
@@ -979,16 +983,20 @@ public class Phase2Trainer {
                     for (int i = from; i < to; i++) {
                         extractInto(ext, texts[i],
                                 featureBuf);
+                        int nnz = sparseIndex(
+                                featureBuf, nzBuf);
+                        float invNorm = computeInvNorm(
+                                featureBuf, nzBuf, nnz);
                         threadLoss += forwardGrad(
                                 featureBuf,
                                 batchLabels[i],
-                                logitBuf, nzBuf);
+                                logitBuf, nzBuf,
+                                invNorm);
 
-                        int nnz = sparseIndex(
-                                featureBuf, nzBuf);
                         for (int j = 0; j < nnz; j++) {
                             int b = nzBuf[j];
-                            float fv = featureBuf[b];
+                            float fv = featureBuf[b]
+                                    * invNorm;
                             float[] ab = gradAccumW[b];
                             for (int c = 0;
                                  c < numClasses; c++) {
@@ -1020,14 +1028,18 @@ public class Phase2Trainer {
                     for (int i = from; i < to; i++) {
                         extractInto(ext, texts[i],
                                 featureBuf);
+                        int nnz = sparseIndex(
+                                featureBuf, nzBuf);
+                        float invNorm = computeInvNorm(
+                                featureBuf, nzBuf, nnz);
                         threadLoss += forwardGrad(
                                 featureBuf,
                                 batchLabels[i],
-                                logitBuf, nzBuf);
-                        int nnz = sparseIndex(
-                                featureBuf, nzBuf);
+                                logitBuf, nzBuf,
+                                invNorm);
                         sgdUpdate(featureBuf, logitBuf,
-                                nnz, nzBuf, sgdLr);
+                                nnz, nzBuf, sgdLr,
+                                invNorm);
                     }
                 }
                 totalLoss.add(threadLoss);
@@ -1057,7 +1069,8 @@ public class Phase2Trainer {
     private double forwardGrad(int[] features,
                                int trueClass,
                                float[] logitBuf,
-                               int[] nzBuf) {
+                               int[] nzBuf,
+                               float invNorm) {
         int nnz = sparseIndex(features, nzBuf);
 
         for (int c = 0; c < numClasses; c++) {
@@ -1065,7 +1078,7 @@ public class Phase2Trainer {
         }
         for (int i = 0; i < nnz; i++) {
             int b = nzBuf[i];
-            float fv = features[b];
+            float fv = features[b] * invNorm;
             float[] wb = weights[b];
             for (int c = 0; c < numClasses; c++) {
                 logitBuf[c] += getO(wb, c) * fv;
@@ -1094,6 +1107,18 @@ public class Phase2Trainer {
             }
         }
         return nnz;
+    }
+
+    private float computeInvNorm(int[] features, int[] nzBuf, int nnz) {
+        if (!useL2Norm) {
+            return 1.0f;
+        }
+        double normSq = 0;
+        for (int i = 0; i < nnz; i++) {
+            long fv = features[nzBuf[i]];
+            normSq += fv * fv;
+        }
+        return normSq > 0 ? (float) (1.0 / Math.sqrt(normSq)) : 1.0f;
     }
 
     // ================================================================
@@ -1205,10 +1230,10 @@ public class Phase2Trainer {
      */
     private void sgdUpdate(int[] features, float[] grad,
                            int nnz, int[] nzIdx,
-                           float lr) {
+                           float lr, float invNorm) {
         for (int i = 0; i < nnz; i++) {
             int b = nzIdx[i];
-            float fv = features[b];
+            float fv = features[b] * invNorm;
             float[] wb = weights[b];
             for (int c = 0; c < numClasses; c++) {
                 float w = getO(wb, c);
@@ -1301,12 +1326,23 @@ public class Phase2Trainer {
 
     private int predictFromBuf(int[] features,
                                float[] logitBuf) {
+        float invNorm = 1.0f;
+        if (useL2Norm) {
+            double normSq = 0;
+            for (int b = 0; b < numBuckets; b++) {
+                if (features[b] != 0) {
+                    long fv = features[b];
+                    normSq += fv * fv;
+                }
+            }
+            invNorm = normSq > 0 ? (float) (1.0 / Math.sqrt(normSq)) : 1.0f;
+        }
         for (int c = 0; c < numClasses; c++) {
             logitBuf[c] = getO(biases, c);
         }
         for (int b = 0; b < numBuckets; b++) {
             if (features[b] != 0) {
-                float fv = features[b];
+                float fv = features[b] * invNorm;
                 float[] wb = weights[b];
                 for (int c = 0; c < numClasses; c++) {
                     logitBuf[c] += getO(wb, c) * fv;
@@ -1408,6 +1444,10 @@ public class Phase2Trainer {
     private boolean useCharUnigrams = false;
     private boolean use4grams       = false;
     private boolean use5grams       = false;
+    private boolean useL2Norm       = false;
+    private boolean useSaltedNgrams = false;
+    private boolean useWordBigrams  = false;
+    private boolean useWordLength   = false;
 
     public Phase2Trainer setUseTrigrams(boolean v) {
         this.useTrigrams = v;
@@ -1454,6 +1494,26 @@ public class Phase2Trainer {
         return this;
     }
 
+    public Phase2Trainer setUseL2Norm(boolean v) {
+        this.useL2Norm = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseSaltedNgrams(boolean v) {
+        this.useSaltedNgrams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordBigrams(boolean v) {
+        this.useWordBigrams = v;
+        return this;
+    }
+
+    public Phase2Trainer setUseWordLength(boolean v) {
+        this.useWordLength = v;
+        return this;
+    }
+
     public boolean isUseTrigrams()     { return useTrigrams; }
     public boolean isUseSkipBigrams()  { return useSkipBigrams; }
     public boolean isUseWordSuffixes() { return useWordSuffixes; }
@@ -1463,8 +1523,16 @@ public class Phase2Trainer {
     public boolean isUseCharUnigrams() { return useCharUnigrams; }
     public boolean isUse4grams()       { return use4grams; }
     public boolean isUse5grams()       { return use5grams; }
+    public boolean isUseL2Norm()       { return useL2Norm; }
+    public boolean isUseSaltedNgrams() { return useSaltedNgrams; }
+    public boolean isUseWordBigrams()  { return useWordBigrams; }
+    public boolean isUseWordLength()   { return useWordLength; }
 
     private FeatureExtractor createExtractor() {
+        if (useSaltedNgrams) {
+            return new SaltedNgramFeatureExtractor(numBuckets,
+                    useWordBigrams, useWordLength);
+        }
         boolean research = useTrigrams || useSkipBigrams
                 || useWordSuffixes || useWordSuffix4
                 || useWordPrefix || useCharUnigrams
@@ -1474,7 +1542,7 @@ public class Phase2Trainer {
                     useTrigrams, useSkipBigrams,
                     useWordSuffixes, useWordSuffix4,
                     useWordPrefix, useWordUnigrams,
-                    useCharUnigrams, use4grams, use5grams);
+                    useCharUnigrams, use4grams, use5grams, true);
         }
         return new ScriptAwareFeatureExtractor(numBuckets);
     }

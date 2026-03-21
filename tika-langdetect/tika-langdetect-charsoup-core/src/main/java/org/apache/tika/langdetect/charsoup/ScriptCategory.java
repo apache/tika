@@ -56,14 +56,22 @@ public final class ScriptCategory {
     public static final int TIBETAN = 18;
     public static final int KHMER = 19;
 
+    // CJK sub-blocks — finer-grained Han categories for distinguishing
+    // Simplified Chinese, Traditional Chinese, Japanese kanji, and Korean hanja.
+    public static final int HAN_EXT_A  = 20;  // U+3400–U+4DBF
+    public static final int HAN_EXT_B  = 21;  // U+20000–U+2A6DF (and later extensions)
+    public static final int HAN_COMPAT = 22;  // U+F900–U+FAFF
+    public static final int BOPOMOFO   = 23;  // U+3100–U+312F, U+31A0–U+31BF
+
     /** Number of distinct categories. */
-    public static final int COUNT = 20;
+    public static final int COUNT = 24;
 
     private static final String[] NAMES = {
             "LATIN", "CYRILLIC", "ARABIC", "HAN", "HANGUL",
             "HIRAGANA", "KATAKANA", "DEVANAGARI", "THAI", "GREEK",
             "HEBREW", "BENGALI", "GEORGIAN", "ARMENIAN", "ETHIOPIC", "OTHER",
-            "CANADIAN_ABORIGINAL", "MYANMAR", "TIBETAN", "KHMER"
+            "CANADIAN_ABORIGINAL", "MYANMAR", "TIBETAN", "KHMER",
+            "HAN_EXT_A", "HAN_EXT_B", "HAN_COMPAT", "BOPOMOFO"
     };
 
     private ScriptCategory() {
@@ -84,8 +92,40 @@ public final class ScriptCategory {
         if (cp < 0x0080) {
             return LATIN;
         }
+
+        // Bopomofo (Traditional Chinese phonetic) — check before UnicodeScript
+        // because Java maps these to BOPOMOFO script, not HAN.
+        if ((cp >= 0x3100 && cp <= 0x312F) || (cp >= 0x31A0 && cp <= 0x31BF)) {
+            return BOPOMOFO;
+        }
+
         Character.UnicodeScript us = Character.UnicodeScript.of(cp);
+
+        // Sub-block routing for HAN codepoints
+        if (us == Character.UnicodeScript.HAN) {
+            return hanSubBlock(cp);
+        }
+
         return fromUnicodeScript(us);
+    }
+
+    /**
+     * Route a HAN codepoint to a sub-block category.
+     * The common CJK Unified Ideographs block (U+4E00–U+9FFF) maps to {@link #HAN}.
+     * Rarer blocks that correlate with Traditional Chinese or variant forms
+     * get their own category for finer-grained language discrimination.
+     */
+    static int hanSubBlock(int cp) {
+        if (cp >= 0x3400 && cp <= 0x4DBF) {
+            return HAN_EXT_A;
+        }
+        if (cp >= 0xF900 && cp <= 0xFAFF) {
+            return HAN_COMPAT;
+        }
+        if (cp >= 0x20000) {
+            return HAN_EXT_B;
+        }
+        return HAN;
     }
 
     /**
