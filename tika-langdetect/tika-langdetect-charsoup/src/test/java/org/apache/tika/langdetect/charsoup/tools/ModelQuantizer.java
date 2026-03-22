@@ -17,7 +17,6 @@
 package org.apache.tika.langdetect.charsoup.tools;
 
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
 
 /**
  * Quantizes float32 model weights to INT8 for compact storage.
@@ -35,20 +34,22 @@ public class ModelQuantizer {
     /**
      * Quantize a Phase2Trainer's float32 weights to INT8.
      * <p>
-     * The feature flags are taken directly from
-     * {@link ScriptAwareFeatureExtractor#FEATURE_FLAGS} because training
-     * always uses {@code ScriptAwareFeatureExtractor} to match the inference
-     * path in {@link CharSoupModel#createExtractor()}.
+     * Feature flags are derived from the trainer's configured extractor
+     * so the model binary always matches the feature set used during training.
      *
      * @param trainer the trained Phase2Trainer
      * @return a CharSoupModel with INT8 quantized weights and correct feature flags
      */
     public static CharSoupModel quantize(Phase2Trainer trainer) {
+        int flags = trainer.getExtractor().getFeatureFlags();
+        if (trainer.isUseL2Norm()) {
+            flags |= CharSoupModel.FLAG_L2_NORM;
+        }
         return quantize(trainer.getLabels(),
                 trainer.getWeightsClassMajor(),
                 trainer.getBiases(),
                 trainer.getNumBuckets(),
-                ScriptAwareFeatureExtractor.FEATURE_FLAGS);
+                flags);
     }
 
     /**

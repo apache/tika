@@ -29,12 +29,15 @@ public class ScriptAwareFeatureExtractorTest {
 
     private static final int NUM_BUCKETS = 8192;
 
+    private static ScriptAwareFeatureExtractor ngramOnly() {
+        return new ScriptAwareFeatureExtractor(NUM_BUCKETS, false);
+    }
+
     // ---- Basic sanity ----
 
     @Test
     public void testEmptyAndNull() {
-        ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+        ScriptAwareFeatureExtractor ext = ngramOnly();
         int[] counts = ext.extract(null);
         assertEquals(NUM_BUCKETS, counts.length);
         assertEquals(0, sum(counts));
@@ -45,8 +48,7 @@ public class ScriptAwareFeatureExtractorTest {
 
     @Test
     public void testSingleWord() {
-        ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+        ScriptAwareFeatureExtractor ext = ngramOnly();
         int[] counts = ext.extract("hello");
         // "hello" (production config: bigrams + trigrams + suffix + prefix + word):
         // bigrams:  (_,h) (h,e) (e,l) (l,l) (l,o) (o,_) = 6
@@ -61,7 +63,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testCjkUnigrams() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "中文": no sentinels for CJK
         // bigrams: (中,文) = 1
         // unigrams: 中, 文 = 2
@@ -73,7 +75,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testHiraganaUnigrams() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "あい": no sentinels for kana
         // bigrams: (あ,い) = 1
         // unigrams: あ, い = 2
@@ -85,7 +87,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testKatakanaUnigrams() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "アイ": same as hiragana
         int[] counts = ext.extract("アイ");
         assertEquals(3, sum(counts));
@@ -96,7 +98,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testCjkSpaceBridging() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "中 文" with space should produce same features as "中文"
         // The space is bridged for CJK
         int[] withSpace = ext.extract("中 文");
@@ -110,7 +112,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testCjkPunctuationBreaks() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "中。文" — punctuation IS a real break
         int[] withPunct = ext.extract("中。文");
         int[] noSpace = ext.extract("中文");
@@ -131,7 +133,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testLatinAndCyrillicDontCollide() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         int[] latin = ext.extract("ab");
         int[] cyrillic = ext.extract("аб");
         assertNotEquals(0, sum(latin));
@@ -152,7 +154,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testJapaneseScriptFamilyNoBoundary() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "漢あア" — Han + Hiragana + Katakana
         // All are CJK family, so no boundary between them.
         // bigrams: (漢,あ) (あ,ア) = 2
@@ -165,7 +167,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testJapaneseVsLatinCreatesBoundary() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "漢a" — Han then Latin: different family → boundary
         // Han part: (漢) = 1 unigram (no sentinels for CJK)
         // Latin part: (_,a) (a,_) = 2 bigrams (sentinels)
@@ -177,7 +179,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testHanHiraganaBigramChain() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "食べる" — Han(食) Hiragana(べ) Hiragana(る)
         // bigrams: (食,べ) (べ,る) = 2
         // unigrams: 食, べ, る = 3
@@ -191,7 +193,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testScriptChangeCreatesBoundary() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "abаб" — Latin "ab" followed by Cyrillic "аб"
         int[] mixed = ext.extract("abаб");
 
@@ -213,7 +215,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testWordUnigrams() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "abc" (production config):
         // bigrams:  (_,a) (a,b) (b,c) (c,_) = 4
         // trigrams: (_,a,b) (a,b,c) (b,c,_) = 3
@@ -228,7 +230,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testSingleCharWordNoWordUnigram() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         // "a" — single char word: bigrams only, no trigram/suffix/prefix/word unigram
         // bigrams: (_,a) (a,_) = 2
         // total = 2
@@ -241,7 +243,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testArabicDiacriticsTransparent() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         int[] plain = ext.extract("كتب");
         int[] diacritics = ext.extract("كَتَبَ");
         for (int i = 0; i < NUM_BUCKETS; i++) {
@@ -255,7 +257,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testExtractFromPreprocessed() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         String raw = "Hello https://example.com world";
         String preprocessed =
                 CharSoupFeatureExtractor.preprocess(raw);
@@ -270,7 +272,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testExtractFromPreprocessedAccumulate() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         int[] counts = ext.extract("hello");
         int sum1 = sum(counts);
         String preprocessed =
@@ -378,7 +380,7 @@ public class ScriptAwareFeatureExtractorTest {
     @RepeatedTest(10)
     public void testRandomSurrogatePairsAndEdgeCases() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
 
         String[] pathological = {
                 new String(new char[]{0xD800, 0xD801, 0xD802}),
@@ -410,7 +412,7 @@ public class ScriptAwareFeatureExtractorTest {
     @Test
     public void testDeterministic() {
         ScriptAwareFeatureExtractor ext =
-                new ScriptAwareFeatureExtractor(NUM_BUCKETS);
+                ngramOnly();
         String text =
                 "The quick brown fox 快速的棕色狐狸 прыгнул через";
         int[] first = ext.extract(text);
@@ -419,6 +421,44 @@ public class ScriptAwareFeatureExtractorTest {
             assertEquals(first[i], second[i],
                     "Must be deterministic");
         }
+    }
+
+    // ---- Script block features ----
+
+    @Test
+    public void testScriptBlocksAddWeight() {
+        ScriptAwareFeatureExtractor withBlocks =
+                new ScriptAwareFeatureExtractor(NUM_BUCKETS, true);
+        int[] counts = withBlocks.extract("hello");
+        // n-gram features = 14 (same as testSingleWord)
+        // + script presence: 5 LATIN letters → raw count 5 (no transitions: all same script)
+        // total = 19
+        assertEquals(19, sum(counts));
+    }
+
+    @Test
+    public void testScriptBlocksMixedScript() {
+        ScriptAwareFeatureExtractor withBlocks =
+                new ScriptAwareFeatureExtractor(NUM_BUCKETS, true);
+        int[] withScript = withBlocks.extract("hello世界");
+        int[] noScript   = ngramOnly().extract("hello世界");
+        // Script features add raw presence counts plus cross-script transitions
+        assertTrue(sum(withScript) > sum(noScript),
+                "Script block features should add weight");
+        int scriptContribution = sum(withScript) - sum(noScript);
+        // Presence: 5 LATIN letters + 2 HAN letters = 7
+        // Transition: 1 LATIN→HAN (only cross-script transitions counted)
+        // Sum should be 8
+        assertEquals(8, scriptContribution);
+    }
+
+    @Test
+    public void testScriptBlocksDisabled() {
+        int[] withBlocks = new ScriptAwareFeatureExtractor(NUM_BUCKETS, true)
+                .extract("hello");
+        int[] withoutBlocks = ngramOnly().extract("hello");
+        assertTrue(sum(withBlocks) > sum(withoutBlocks));
+        assertEquals(14, sum(withoutBlocks));
     }
 
     // ---- Helpers ----

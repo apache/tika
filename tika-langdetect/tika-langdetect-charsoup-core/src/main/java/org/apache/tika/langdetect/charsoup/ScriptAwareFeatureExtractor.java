@@ -49,27 +49,44 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
             | CharSoupModel.FLAG_SUFFIXES
             | CharSoupModel.FLAG_PREFIX
             | CharSoupModel.FLAG_WORD_UNIGRAMS
+            | CharSoupModel.FLAG_CHAR_UNIGRAMS
+            | CharSoupModel.FLAG_SCRIPT_BLOCKS;
+
+    /** Flags used by models trained before script block features were added. */
+    public static final int FEATURE_FLAGS_LEGACY =
+            CharSoupModel.FLAG_TRIGRAMS
+            | CharSoupModel.FLAG_SUFFIXES
+            | CharSoupModel.FLAG_PREFIX
+            | CharSoupModel.FLAG_WORD_UNIGRAMS
             | CharSoupModel.FLAG_CHAR_UNIGRAMS;
 
-    static final int BIGRAM_BASIS  = 0x811c9dc5;
-    static final int TRIGRAM_BASIS = 0x9f4e3c21;
-    static final int UNIGRAM_BASIS = 0x2f4a3c17;
-    static final int WORD_BASIS    = 0x4a1c7b39;
-    static final int SUFFIX_BASIS  = 0x7e2b1a8f;
-    static final int PREFIX_BASIS  = 0x3b7e9f12;
+    static final int BIGRAM_BASIS       = 0x811c9dc5;
+    static final int TRIGRAM_BASIS      = 0x9f4e3c21;
+    static final int UNIGRAM_BASIS      = 0x2f4a3c17;
+    static final int WORD_BASIS         = 0x4a1c7b39;
+    static final int SUFFIX_BASIS       = 0x7e2b1a8f;
+    static final int PREFIX_BASIS       = 0x3b7e9f12;
+    public static final int SCRIPT_BASIS       = 0x5d8c2e71;
+    public static final int SCRIPT_TRANS_BASIS = 0x6f1a4b93;
 
     static final int MAX_WORD_LENGTH = 30;
     static final int MIN_WORD_LENGTH = 2;
     static final int SENTINEL = '_';
 
     private final int numBuckets;
+    private final boolean useScriptBlocks;
 
     public ScriptAwareFeatureExtractor(int numBuckets) {
+        this(numBuckets, true);
+    }
+
+    public ScriptAwareFeatureExtractor(int numBuckets, boolean useScriptBlocks) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException(
                     "numBuckets must be positive: " + numBuckets);
         }
         this.numBuckets = numBuckets;
+        this.useScriptBlocks = useScriptBlocks;
     }
 
     @Override
@@ -135,6 +152,11 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
         int suf0 = SENTINEL, suf1 = SENTINEL, suf2 = SENTINEL, suf3 = SENTINEL;
         int preA = SENTINEL, preB = SENTINEL, preC = SENTINEL;
 
+        int[] scriptCounts = useScriptBlocks ? new int[ScriptCategory.COUNT] : null;
+        int[] transitionCounts = useScriptBlocks
+                ? new int[ScriptCategory.COUNT * ScriptCategory.COUNT] : null;
+        int lastLetterScript = -1;
+
         int i = 0;
         int len = text.length();
         while (i < len) {
@@ -149,6 +171,14 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
                 int lower = Character.toLowerCase(cp);
                 int script = ScriptCategory.of(lower);
                 boolean cjk = isCjkScript(script);
+
+                if (useScriptBlocks) {
+                    scriptCounts[script]++;
+                    if (lastLetterScript >= 0 && lastLetterScript != script) {
+                        transitionCounts[lastLetterScript * ScriptCategory.COUNT + script]++;
+                    }
+                    lastLetterScript = script;
+                }
 
                 if (prevWasLetter) {
                     if (!sameFamily(script, prevScript)) {
@@ -249,6 +279,10 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
                     wordHash, wordLen, wordScript,
                     suf0, suf1, suf2, suf3, preA, preB, preC);
         }
+
+        if (useScriptBlocks) {
+            emitScriptFeatures(counts, scriptCounts, transitionCounts);
+        }
     }
 
     private void emitBoundaryStart(int[] counts, int script, int lower, boolean cjk) {
@@ -310,10 +344,39 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
         }
     }
 
+    private void emitScriptFeatures(int[] counts,
+                                     int[] scriptCounts,
+                                     int[] transitionCounts) {
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            if (scriptCounts[s] > 0) {
+                int h = fnvFeedByte(SCRIPT_BASIS, s);
+                counts[(h & 0x7FFFFFFF) % numBuckets] += scriptCounts[s];
+            }
+        }
+
+        for (int s = 0; s < ScriptCategory.COUNT; s++) {
+            for (int t = 0; t < ScriptCategory.COUNT; t++) {
+                int c = transitionCounts[s * ScriptCategory.COUNT + t];
+                if (c > 0) {
+                    int h = fnvFeedByte(fnvFeedByte(SCRIPT_TRANS_BASIS, s), t);
+                    counts[(h & 0x7FFFFFFF) % numBuckets] += c;
+                }
+            }
+        }
+    }
+
+    static int logDampen(int count) {
+        return (int) Math.round(Math.log1p(count));
+    }
+
     // ---- Script helpers ----
 
-    private static boolean isCjkScript(int script) {
+    public static boolean isCjkScript(int script) {
         return script == ScriptCategory.HAN
+                || script == ScriptCategory.HAN_EXT_A
+                || script == ScriptCategory.HAN_EXT_B
+                || script == ScriptCategory.HAN_COMPAT
+                || script == ScriptCategory.BOPOMOFO
                 || script == ScriptCategory.HIRAGANA
                 || script == ScriptCategory.KATAKANA;
     }
@@ -357,6 +420,6 @@ public class ScriptAwareFeatureExtractor implements FeatureExtractor {
 
     @Override
     public int getFeatureFlags() {
-        return FEATURE_FLAGS;
+        return useScriptBlocks ? FEATURE_FLAGS : FEATURE_FLAGS_LEGACY;
     }
 }

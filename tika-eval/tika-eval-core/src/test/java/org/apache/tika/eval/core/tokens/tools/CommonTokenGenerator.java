@@ -118,8 +118,10 @@ public class CommonTokenGenerator {
     }
 
     /**
-     * Merge map for duplicate ISO 639-3 codes. Must match the mappings used
-     * in {@code TrainLanguageModel} and {@code download_corpus.py}.
+     * Merge map for duplicate ISO 639-3 codes. Must stay in sync with
+     * {@code org.apache.tika.langdetect.charsoup.tools.CorpusAliases#LANG_MERGE_MAP}
+     * in tika-langdetect-charsoup (the canonical definition). The two modules
+     * cannot share test-scope classes directly, so this is a maintained copy.
      */
     private static final Map<String, String> LANG_MERGE_MAP;
     static {
@@ -136,6 +138,7 @@ public class CommonTokenGenerator {
         m.put("quz", "que");
         m.put("swa", "swh");
         m.put("yid", "ydd");
+        m.put("zza", "diq");
         LANG_MERGE_MAP = Collections.unmodifiableMap(m);
     }
 

@@ -30,7 +30,7 @@ import org.apache.tika.language.detect.LanguageResult;
  * End-to-end regression test for {@link CharSoupLanguageDetector}.
  * <p>
  * Each case runs a representative sentence through the full pipeline
- * (preprocessing → bigram extraction → softmax → group collapsing) and checks:
+ * (preprocessing → bigram extraction → sigmoid(margin) → group collapsing) and checks:
  * <ol>
  *   <li>The top-ranked language is the expected ISO 639-3 code.</li>
  *   <li>The raw score exceeds {@link #MIN_SCORE}, confirming the model is
@@ -48,10 +48,9 @@ import org.apache.tika.language.detect.LanguageResult;
 public class LangIdRegressionTest {
 
     /**
-     * Minimum raw softmax score the correct language must achieve.
-     * Unambiguous sentences in supported languages should comfortably exceed 0.5.
-     * Lowering this threshold to make a failing test pass is a sign that the
-     * model or the feature pipeline has regressed.
+     * Minimum sigmoid(margin) score the correct language must achieve.
+     * Unambiguous sentences in supported languages should comfortably exceed 0.5
+     * (i.e. the winner leads the runner-up by a positive margin).
      */
     private static final float MIN_SCORE = 0.50f;
 
@@ -73,11 +72,8 @@ public class LangIdRegressionTest {
         assertDetects("por",
                 "A língua portuguesa é uma língua indo-europeia românica falada "
                         + "principalmente em Portugal e no Brasil.");
-        // TODO: Italian (ita) is systematically predicted as Corsican (cos)
-        // in the current 220-lang model due to MADLAD data contamination in
-        // the cos pool.  Remove cos from the training pool and retrain.
-        // assertDetects("ita", "La lingua italiana è una lingua romanza parlata principalmente "
-        //         + "in Italia e in alcune regioni limitrofe.");
+        assertDetects("ita", "La lingua italiana è una lingua romanza parlata principalmente "
+                + "in Italia e in alcune regioni limitrofe.");
         assertDetects("nld",
                 "Het Nederlands is een West-Germaanse taal die in Nederland, "
                         + "België en Suriname als officiële taal wordt gebruikt.");
@@ -98,11 +94,8 @@ public class LangIdRegressionTest {
         assertDetects("rus",
                 "Российская Федерация — государство в Восточной Европе и Северной "
                         + "Азии, занимающее первое место в мире по территории.");
-        // TODO: Ukrainian (ukr) is systematically predicted as Erzya (myv)
-        // in the current 220-lang model due to MADLAD data contamination.
-        // Remove myv from the training pool and retrain.
-        // assertDetects("ukr", "Українська мова є слов'янською мовою і є офіційною мовою України, "
-        //         + "однією з найпоширеніших мов в Європі.");
+        assertDetects("ukr", "Українська мова є слов'янською мовою і є офіційною мовою України, "
+                + "однією з найпоширеніших мов в Європі.");
         assertDetects("bul",
                 "Българският език е индоевропейски език от групата на южнославянските "
                         + "езици и е официален език на Република България.");
@@ -138,7 +131,8 @@ public class LangIdRegressionTest {
     }
 
     private static void assertDetects(String expectedLang, String text) {
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
+        CharSoupLanguageDetector detector = new CharSoupLanguageDetector(
+                CharSoupDetectorConfig.fromMap(java.util.Map.of("strategy", "STANDARD")));
         detector.addText(text);
         List<LanguageResult> results = detector.detectAll();
 

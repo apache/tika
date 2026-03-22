@@ -75,13 +75,12 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         calcs.add(new CommonTokens());
         TEXT_STATS_CALCULATOR = new CompositeTextStatsCalculator(calcs);
 
-        GenerativeLanguageModel glm = null;
         try {
-            glm = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
+            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
         } catch (IOException e) {
-            // Model not on classpath — languageness scores will be -99
+            throw new RuntimeException("Failed to load generative language model: "
+                    + GLM_RESOURCE, e);
         }
-        GLM = glm;
     }
 
 
@@ -131,8 +130,7 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());
         }
 
-        //languageness z-score from generative model
-        if (GLM != null && detectedLang != null) {
+        if (detectedLang != null) {
             float z = GLM.zScoreLengthAdjusted(content, detectedLang);
             metadata.set(LANGUAGENESS, Float.isNaN(z) ? -99.0f : z);
         } else {
