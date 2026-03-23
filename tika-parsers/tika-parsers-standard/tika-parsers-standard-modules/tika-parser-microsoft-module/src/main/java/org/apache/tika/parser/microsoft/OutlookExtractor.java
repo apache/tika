@@ -85,6 +85,7 @@ import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
+import org.apache.tika.parser.microsoft.msg.RTFEncapsulatedHTMLExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
@@ -373,6 +374,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         }
     }
 
+    private static final Set<String> INLINEABLE_MIME_TYPES = Set.of(
+            "application/x-ms-wmz",
+            "application/x-ms-emz",
+            "application/x-msmetafile",
+            "image/x-wmf",
+            "image/x-emf",
+            "image/wmf",
+            "image/emf"
+    );
+
     /**
      * Returns true for MIME types that are safe to label as INLINE.
      * We gate on this to avoid marking PDFs, DOCX, etc. as inline — downstream
@@ -383,7 +394,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             return false;
         }
         String lower = mimeType.toLowerCase(Locale.ROOT).trim();
-        return lower.startsWith("image/");
+        return lower.startsWith("image/") || INLINEABLE_MIME_TYPES.contains(lower);
     }
 
     // PidTagAttachFlags (0x3714) — bit flags indicating which body formats reference this
@@ -644,8 +655,13 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     }
 
     private void extractContentIdNamesFromRtf(byte[] data, Metadata metadata, Set<String> contentIdNames) {
-        //for now, hope that there's encapsulated html
-        //TODO: check for encapsulated html. If it doesn't exist, handle RTF specifically
+        // Try to de-encapsulate the HTML from the RTF first
+        String html = RTFEncapsulatedHTMLExtractor.extract(data);
+        if (html != null) {
+            extractContentIdNamesFromHtml(html.getBytes(UTF_8), metadata, contentIdNames);
+            return;
+        }
+        // Fall back to scanning the raw RTF bytes for cid: references
         extractContentIdNamesFromHtml(data, metadata, contentIdNames);
     }
 
