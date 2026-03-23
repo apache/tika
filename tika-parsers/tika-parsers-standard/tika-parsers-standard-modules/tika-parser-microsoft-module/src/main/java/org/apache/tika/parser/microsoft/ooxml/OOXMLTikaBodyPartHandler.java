@@ -75,6 +75,7 @@ public class OOXMLTikaBodyPartHandler
 
     private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
     private ParseContext parseContext = null;
+    private final java.util.List<String[]> pendingNoteIds = new java.util.ArrayList<>();
     private final java.util.List<String> pendingCommentIds = new java.util.ArrayList<>();
     private final java.util.Set<String> emittedCommentIds = new java.util.HashSet<>();
     private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
@@ -253,14 +254,38 @@ public class OOXMLTikaBodyPartHandler
             xhtml.characters(NEWLINE, 0, 1);
         }
 
-        // Emit any pending comment content after the paragraph closes
-        // (matching the DOM parser's behavior of appending comments after paragraphs)
+        // Emit any pending footnote/endnote and comment content after the
+        // paragraph closes.  Inlining mid-paragraph would create <div> inside
+        // <p>, and the inner handler's endParagraph() would close the outer
+        // <p> tag, corrupting state.
+        emitPendingNotes();
         emitPendingComments();
 
         if (tableCellDepth > 0) {
             pWithinCell++;
         }
         pDepth--;
+    }
+
+    private void emitPendingNotes() throws SAXException {
+        if (pendingNoteIds.isEmpty()) {
+            return;
+        }
+        for (String[] noteTypeAndId : pendingNoteIds) {
+            String noteType = noteTypeAndId[0];
+            String id = noteTypeAndId[1];
+            byte[] xml = "footnote".equals(noteType)
+                    ? inlinePartMap.getFootnote(id)
+                    : inlinePartMap.getEndnote(id);
+            if (xml != null) {
+                inlineNoteContent(xml, noteType);
+            } else {
+                xhtml.characters("[");
+                xhtml.characters(id);
+                xhtml.characters("]");
+            }
+        }
+        pendingNoteIds.clear();
     }
 
     private void emitPendingComments() throws SAXException {
@@ -363,14 +388,10 @@ public class OOXMLTikaBodyPartHandler
         if (id == null) {
             return;
         }
-        byte[] xml = inlinePartMap.getFootnote(id);
-        if (xml != null) {
-            inlineNoteContent(xml, "footnote");
-        } else {
-            xhtml.characters("[");
-            xhtml.characters(id);
-            xhtml.characters("]");
-        }
+        // Defer footnote emission to after the paragraph closes.
+        // Inlining mid-paragraph creates <div> inside <p>, and the inner
+        // handler's endParagraph() closes the outer <p> tag, corrupting state.
+        pendingNoteIds.add(new String[]{"footnote", id});
     }
 
     @Override
@@ -378,14 +399,7 @@ public class OOXMLTikaBodyPartHandler
         if (id == null) {
             return;
         }
-        byte[] xml = inlinePartMap.getEndnote(id);
-        if (xml != null) {
-            inlineNoteContent(xml, "endnote");
-        } else {
-            xhtml.characters("[");
-            xhtml.characters(id);
-            xhtml.characters("]");
-        }
+        pendingNoteIds.add(new String[]{"endnote", id});
     }
 
     @Override

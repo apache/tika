@@ -472,17 +472,23 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             OOXMLPartContentCollector collector =
                     new OOXMLPartContentCollector(wrapperElements, skipIds);
             for (int i = 0; i < prc.size(); i++) {
-                PackagePart part = documentPart.getRelatedPart(prc.getRelationship(i));
-                // collect the part's linked relationships (for picture resolution)
-                Map<String, String> partRels =
-                        loadLinkedRelationships(part, true, metadata);
-                allRelationships.putAll(partRels);
-                try (InputStream stream = part.getInputStream()) {
-                    XMLReaderUtils.parseSAX(stream, collector, context);
+                try {
+                    PackagePart part = documentPart.getRelatedPart(prc.getRelationship(i));
+                    // collect the part's linked relationships (for picture resolution)
+                    Map<String, String> partRels =
+                            loadLinkedRelationships(part, true, metadata);
+                    allRelationships.putAll(partRels);
+                    try (InputStream stream = part.getInputStream()) {
+                        XMLReaderUtils.parseSAX(stream, collector, context);
+                    }
+                } catch (InvalidFormatException | IOException | TikaException |
+                         SAXException e) {
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
                 }
             }
             return collector.getContentMap();
-        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+        } catch (InvalidFormatException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
             return Collections.emptyMap();
