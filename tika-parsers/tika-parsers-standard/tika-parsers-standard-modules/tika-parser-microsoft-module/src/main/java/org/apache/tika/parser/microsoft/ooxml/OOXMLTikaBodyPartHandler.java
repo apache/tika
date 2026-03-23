@@ -175,6 +175,12 @@ public class OOXMLTikaBodyPartHandler
         if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
+        // If we're about to nest a paragraph (e.g. inside a text box / shape),
+        // force-open the outer paragraph first so that inner content ends up
+        // inside the outer <p> tag rather than floating as raw text.
+        if (pendingParagraph && pDepth > 0) {
+            ensureParagraphOpen();
+        }
         // Record the paragraph as pending — don't emit <p> yet.
         // We defer opening until the first content arrives (via ensureParagraphOpen)
         // so that style info from pPr is available.
