@@ -407,4 +407,47 @@ public class OutlookParserTest extends TikaTest {
         assertContains("annuaires\t \n" + " Synchronisation", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Test
+    public void testAttachFlagsExtracted() throws Exception {
+        // test-outlook2003.msg has 11 JPEG attachments with PidTagAttachFlags=4
+        // (ATT_RENDERED_IN_BODY) but no Content-ID
+        List<Metadata> metadataList = getRecursiveMetadata("test-outlook2003.msg");
+        // first entry is the message itself, rest are attachments
+        assertTrue(metadataList.size() > 1, "expected attachments");
+        for (int i = 1; i < metadataList.size(); i++) {
+            Metadata m = metadataList.get(i);
+            assertEquals("4", m.get(MAPI.ATTACH_FLAGS),
+                    "attachment " + i + " should have flags=4");
+        }
+    }
+
+    @Test
+    public void testRegularAttachmentsNotMarkedInline() throws Exception {
+        // testMSG_att_doc.msg has regular document attachments with flags=0
+        // and no Content-ID — they must NOT be marked INLINE
+        List<Metadata> metadataList = getRecursiveMetadata("testMSG_att_doc.msg");
+        assertTrue(metadataList.size() > 1, "expected attachments");
+        for (int i = 1; i < metadataList.size(); i++) {
+            Metadata m = metadataList.get(i);
+            String resourceType = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY);
+            assertFalse(
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.name().equals(resourceType),
+                    "regular attachment " + i + " should not be INLINE");
+        }
+    }
+
+    @Test
+    public void testImageWithFlagsButNoCidNotInline() throws Exception {
+        // test-outlook2003.msg has image attachments with ATT_RENDERED_IN_BODY
+        // but NO Content-ID. Layer 2 requires CID, so these should NOT be INLINE.
+        List<Metadata> metadataList = getRecursiveMetadata("test-outlook2003.msg");
+        for (int i = 1; i < metadataList.size(); i++) {
+            Metadata m = metadataList.get(i);
+            String resourceType = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY);
+            assertFalse(
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.name().equals(resourceType),
+                    "image attachment " + i + " without CID should not be INLINE");
+        }
+    }
+
 }

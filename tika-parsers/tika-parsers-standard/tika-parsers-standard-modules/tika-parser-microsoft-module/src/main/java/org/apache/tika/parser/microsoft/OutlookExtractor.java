@@ -20,8 +20,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
@@ -56,7 +59,10 @@ import org.apache.poi.hsmf.datatypes.RecipientChunks;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.util.CodePageUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,6 +179,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private static Pattern HEADER_KEY_PAT =
             Pattern.compile("\\A([\\x21-\\x39\\x3B-\\x7E]+):(.*?)\\Z");
 
+    private final DirectoryNode root;
     private final MAPIMessage msg;
     private final ParseContext parseContext;
     private final boolean extractAllAlternatives;
@@ -181,6 +188,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     public OutlookExtractor(DirectoryNode root, Metadata metadata, ParseContext context) throws TikaException {
         super(context, metadata);
+        this.root = root;
         this.parseContext = context;
         this.extractAllAlternatives =
                 context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
@@ -317,18 +325,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     private void updateAttachmentMetadata(AttachmentChunks attachment, Metadata metadata,
                                           Set<String> contentIdNames) {
-        StringChunk contentIdChunk = attachment.getAttachContentId();
-        if (contentIdChunk != null) {
-            String contentId = contentIdChunk.getValue();
-            if (! StringUtils.isBlank(contentId)) {
-                contentId = contentId.trim();
-                if (contentIdNames.contains(contentId)) {
-                    metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
-                            TikaCoreProperties.EmbeddedResourceType.INLINE.name());
-                }
-                metadata.set(MAPI.ATTACH_CONTENT_ID, contentId);
-            }
-        }
+        // Extract string-based metadata from POI's named chunk getters
         addStringChunkToMetadata(MAPI.ATTACH_LONG_PATH_NAME, attachment.getAttachLongPathName(), metadata);
         addStringChunkToMetadata(MAPI.ATTACH_LONG_FILE_NAME, attachment.getAttachLongFileName(), metadata);
         addStringChunkToMetadata(MAPI.ATTACH_FILE_NAME, attachment.getAttachFileName(), metadata);
@@ -337,6 +334,119 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         addStringChunkToMetadata(MAPI.ATTACH_EXTENSION, attachment.getAttachExtension(), metadata);
         addStringChunkToMetadata(MAPI.ATTACH_MIME, attachment.getAttachMimeTag(), metadata);
         addStringChunkToMetadata(MAPI.ATTACH_LANGUAGE, attachment.getAttachLanguage(), metadata);
+
+        // Extract fixed properties from the attachment's __properties_version1.0 stream
+        // POI's AttachmentChunks doesn't parse this stream, so we read it directly.
+        Map<Integer, Long> attachProps = readAttachmentProperties(attachment.getPOIFSName());
+        Long attachFlags = attachProps.get(PID_TAG_ATTACH_FLAGS);
+        if (attachFlags != null) {
+            metadata.set(MAPI.ATTACH_FLAGS, attachFlags.intValue());
+        }
+        Long attachHidden = attachProps.get(PID_TAG_ATTACHMENT_HIDDEN);
+        if (attachHidden != null) {
+            metadata.set(MAPI.ATTACH_HIDDEN, attachHidden.intValue() != 0);
+        }
+
+        // Determine inline vs attachment
+        String contentId = null;
+        StringChunk contentIdChunk = attachment.getAttachContentId();
+        if (contentIdChunk != null) {
+            String rawCid = contentIdChunk.getValue();
+            if (!StringUtils.isBlank(rawCid)) {
+                contentId = rawCid.trim();
+                metadata.set(MAPI.ATTACH_CONTENT_ID, contentId);
+            }
+        }
+
+        if (contentId != null && contentIdNames.contains(contentId)) {
+            // Layer 1: CID referenced in the message body — high confidence inline
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        } else if (contentId != null
+                && attachFlags != null
+                && (attachFlags & ATT_RENDERED_IN_BODY) != 0
+                && isInlineableMimeType(metadata.get(MAPI.ATTACH_MIME))) {
+            // Layer 2: MAPI says rendered in body + image MIME type — the CID regex
+            // missed it (e.g. encapsulated RTF with stripped img tags)
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        }
+    }
+
+    /**
+     * Returns true for MIME types that are safe to label as INLINE.
+     * We gate on this to avoid marking PDFs, DOCX, etc. as inline — downstream
+     * consumers use INLINE to decide what to index separately.
+     */
+    private static boolean isInlineableMimeType(String mimeType) {
+        if (StringUtils.isBlank(mimeType)) {
+            return false;
+        }
+        String lower = mimeType.toLowerCase(Locale.ROOT).trim();
+        return lower.startsWith("image/");
+    }
+
+    // PidTagAttachFlags (0x3714) — bit flags indicating which body formats reference this
+    private static final int PID_TAG_ATTACH_FLAGS = 0x3714;
+    // Bit 2 = ATT_RENDERED_IN_BODY: this attachment is referenced by the body
+    private static final int ATT_RENDERED_IN_BODY = 0x4;
+    // PidTagAttachmentHidden (0x7FFE) — boolean, true if hidden from end user (inline images)
+    private static final int PID_TAG_ATTACHMENT_HIDDEN = 0x7FFE;
+
+    /**
+     * Read fixed MAPI properties from the __properties_version1.0 stream inside an
+     * attachment storage.  POI's {@link AttachmentChunks} does not parse this stream.
+     *
+     * <p>The stream format is: 8-byte header, followed by 16-byte property entries.
+     * Each entry: 2 bytes property type, 2 bytes property ID, 4 bytes flags,
+     * 8 bytes value (inline for fixed-size types).</p>
+     *
+     * @param poifsName the OLE2 directory name for this attachment
+     *                  (e.g. "__attach_version1.0_#00000000")
+     * @return map of property ID to value for fixed-size integer/boolean properties
+     */
+    private Map<Integer, Long> readAttachmentProperties(String poifsName) {
+        Map<Integer, Long> result = new HashMap<>();
+        try {
+            DirectoryEntry attachDir = (DirectoryEntry) root.getEntry(poifsName);
+            DocumentEntry propsEntry =
+                    (DocumentEntry) attachDir.getEntry("__properties_version1.0");
+            byte[] data;
+            try (InputStream dis = new DocumentInputStream(propsEntry)) {
+                data = dis.readAllBytes();
+            }
+            if (data.length < 8) {
+                return result;
+            }
+            ByteBuffer buf = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+            int offset = 8; // skip 8-byte header
+            while (offset + 16 <= data.length) {
+                int propType = buf.getShort(offset) & 0xFFFF;
+                int propId = buf.getShort(offset + 2) & 0xFFFF;
+                long value;
+                switch (propType) {
+                    case 0x0003: // PtypInteger32
+                        value = buf.getInt(offset + 8) & 0xFFFFFFFFL;
+                        result.put(propId, value);
+                        break;
+                    case 0x000B: // PtypBoolean
+                        value = buf.getShort(offset + 8) & 0xFFFF;
+                        result.put(propId, value);
+                        break;
+                    case 0x0014: // PtypInteger64
+                        value = buf.getLong(offset + 8);
+                        result.put(propId, value);
+                        break;
+                    default:
+                        // skip variable-length, binary, time and other types
+                        break;
+                }
+                offset += 16;
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Could not read attachment properties for {}", poifsName, e);
+        }
+        return result;
     }
 
     private void addStringChunkToMetadata(Property property, StringChunk stringChunk, Metadata metadata) {
