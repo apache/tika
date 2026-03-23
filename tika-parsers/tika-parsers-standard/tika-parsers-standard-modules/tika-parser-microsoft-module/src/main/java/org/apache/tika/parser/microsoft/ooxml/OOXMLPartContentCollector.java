@@ -54,6 +54,9 @@ class OOXMLPartContentCollector extends DefaultHandler {
     private String currentId = null;
     private ByteArrayOutputStream buffer = null;
     private int depth = 0;
+    // Prefix mappings that fired since the last startElement — need to be
+    // emitted as xmlns declarations on the next element inside a collected fragment.
+    private final java.util.List<String[]> pendingPrefixMappings = new java.util.ArrayList<>();
 
     /**
      * @param wrapperElementNames local names of wrapper elements to collect
@@ -76,6 +79,12 @@ class OOXMLPartContentCollector extends DefaultHandler {
     @Override
     public void startPrefixMapping(String prefix, String uri) {
         namespaceMappings.put(prefix, uri);
+        // Track prefix mappings that fire within a collected fragment —
+        // these need to be emitted as xmlns declarations on the next
+        // startElement so that re-parsed fragments have valid namespace bindings.
+        if (currentId != null) {
+            pendingPrefixMappings.add(new String[]{prefix, uri});
+        }
     }
 
     Map<String, byte[]> getContentMap() {
@@ -157,6 +166,23 @@ class OOXMLPartContentCollector extends DefaultHandler {
         String tagName = (qName != null && !qName.isEmpty()) ? qName : localName;
         StringBuilder sb = new StringBuilder();
         sb.append('<').append(tagName);
+        // Emit any namespace declarations that fired since the last element.
+        // In namespace-aware SAX, xmlns:prefix attributes are reported as
+        // startPrefixMapping events, NOT as attributes — so they must be
+        // re-serialized explicitly for the fragment to be re-parseable.
+        if (!pendingPrefixMappings.isEmpty()) {
+            for (String[] mapping : pendingPrefixMappings) {
+                String prefix = mapping[0];
+                String nsUri = mapping[1];
+                if (prefix == null || prefix.isEmpty()) {
+                    sb.append(" xmlns=\"").append(escape(nsUri)).append("\"");
+                } else {
+                    sb.append(" xmlns:").append(prefix).append("=\"")
+                            .append(escape(nsUri)).append("\"");
+                }
+            }
+            pendingPrefixMappings.clear();
+        }
         for (int i = 0; i < atts.getLength(); i++) {
             String attName = atts.getQName(i);
             if (attName == null || attName.isEmpty()) {

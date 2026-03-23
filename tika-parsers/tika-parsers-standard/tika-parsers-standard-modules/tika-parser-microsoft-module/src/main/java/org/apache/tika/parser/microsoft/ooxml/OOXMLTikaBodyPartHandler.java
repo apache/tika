@@ -169,6 +169,7 @@ public class OOXMLTikaBodyPartHandler
         inlineTags.closeAll();
     }
 
+
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
         //if you're in a table cell and your after the first paragraph
