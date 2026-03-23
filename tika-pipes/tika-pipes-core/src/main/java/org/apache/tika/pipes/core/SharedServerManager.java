@@ -255,7 +255,7 @@ public class SharedServerManager implements ServerManager {
         new SecureRandom().nextBytes(token);
         currentToken = token;
 
-        LOG.warn("\n\n" +
+        LOG.info("\n\n" +
                 "    __   __   ___    _        ___  \n" +
                 "    \\ \\ / /  / _ \\  | |      / _ \\ \n" +
                 "     \\ V /  | | | | | |     | | | |\n" +
@@ -446,7 +446,7 @@ public class SharedServerManager implements ServerManager {
             commandLine.add("-Djava.awt.headless=true");
         }
         if (hasExitOnOOM) {
-            LOG.warn("ExitOnOutOfMemoryError/CrashOnOutOfMemoryError is set. In shared mode, " +
+            LOG.info("ExitOnOutOfMemoryError/CrashOnOutOfMemoryError is set. In shared mode, " +
                     "an OOM will kill the shared server, affecting all clients.");
         }
         if (!hasLog4j) {

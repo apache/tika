@@ -560,7 +560,7 @@ class PipesWorker implements Callable<PipesResult> {
         try {
             localContext = setupParseContext();
         } catch (IOException e) {
-            LOG.warn("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
+            LOG.info("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
         }
@@ -587,7 +587,7 @@ class PipesWorker implements Callable<PipesResult> {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
             throw e;
         } catch (TikaException | IOException e) {
-            LOG.warn("fetch exception id={}", fetchEmitTuple.getId(), e);
+            LOG.info("fetch exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
                     new PipesResult(PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH, ExceptionUtils.getStackTrace(e)));
         }
