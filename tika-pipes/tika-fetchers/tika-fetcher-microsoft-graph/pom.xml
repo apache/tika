@@ -33,7 +33,7 @@
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.23.1</msal4j.version>
     <kotlin-stdlib.version>2.3.20</kotlin-stdlib.version>
-    <microsoft-kiota.version>1.9.1</microsoft-kiota.version>
+    <microsoft-kiota.version>1.9.2</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
