@@ -116,7 +116,11 @@ public class PerClientServerManager implements ServerManager {
                 process.waitFor(1, TimeUnit.SECONDS);
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
-                    LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
+                    if (exitValue == 0) {
+                        LOG.info("clientId={}: process exited cleanly", clientId);
+                    } else {
+                        LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
+                    }
                     return exitValue;
                 } else {
                     LOG.warn("clientId={}: process still running after crash", clientId);
@@ -193,7 +197,7 @@ public class PerClientServerManager implements ServerManager {
         serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 50);
         port = serverSocket.getLocalPort();
 
-        LOG.info("clientId={}: starting server on port={}", clientId, port);
+        LOG.trace("clientId={}: starting server on port={}", clientId, port);
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
@@ -341,7 +345,7 @@ public class PerClientServerManager implements ServerManager {
             commandLine.add("-Djava.awt.headless=true");
         }
         if (hasExitOnOOM) {
-            LOG.warn("I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
+            LOG.info("I notice that you have a jdk setting to exit/crash on OOM. If you run heavy external processes " +
                     "like tesseract, this setting may result in orphaned processes which could be disastrous for performance.");
         }
         if (!hasLog4j) {
@@ -355,7 +359,7 @@ public class PerClientServerManager implements ServerManager {
         commandLine.add(Integer.toString(port));
         commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
-        LOG.info("clientId={}: commandline: {}", clientId, commandLine);
+        LOG.debug("clientId={}: commandline: {}", clientId, commandLine);
         return commandLine.toArray(new String[0]);
     }
 
@@ -365,7 +369,7 @@ public class PerClientServerManager implements ServerManager {
         String normalizedClasspath = classpath.replace("\\", "/");
         String content = "-cp\n\"" + normalizedClasspath + "\"\n";
         Files.writeString(argFile, content, StandardCharsets.UTF_8);
-        LOG.info("clientId={}: wrote argfile with classpath ({} chars) to {}, content starts with: {}",
+        LOG.debug("clientId={}: wrote argfile with classpath ({} chars) to {}, content starts with: {}",
                 clientId, classpath.length(), argFile, content.substring(0, Math.min(100, content.length())));
         return argFile;
     }

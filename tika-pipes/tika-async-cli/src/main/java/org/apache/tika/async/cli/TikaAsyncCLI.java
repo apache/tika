@@ -95,10 +95,10 @@ public class TikaAsyncCLI {
     }
 
     private static void processCommandLine(String[] args) throws Exception {
-        LOG.warn("processing args " + args.length);
+        LOG.debug("processing args " + args.length);
         if (args.length == 1) {
             if (args[0].endsWith(".json")) {
-                LOG.warn("processing args");
+                LOG.debug("processing args");
                 TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(Paths.get(args[0]));
                 Optional<PipesIterator> pipesIteratorOpt = PipesIteratorManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
                 if (pipesIteratorOpt.isEmpty()) {

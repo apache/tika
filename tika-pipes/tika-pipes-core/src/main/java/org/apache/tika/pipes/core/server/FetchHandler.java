@@ -60,10 +60,10 @@ class FetchHandler {
             return new FetcherOrResult(fetcherManager.getFetcher(t.getFetchKey().getFetcherId()), null);
         } catch (IllegalArgumentException e) {
             String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
-            LOG.warn(noFetcherMsg);
+            LOG.info(noFetcherMsg);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));
         } catch (IOException | TikaException e) {
-            LOG.warn("Couldn't initialize fetcher for fetch id={}", t.getId(), e);
+            LOG.info("Couldn't initialize fetcher for fetch id={}", t.getId(), e);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION,
                     ExceptionUtils.getStackTrace(e)));
         }

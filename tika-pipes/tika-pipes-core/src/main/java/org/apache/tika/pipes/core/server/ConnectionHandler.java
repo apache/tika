@@ -24,6 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
@@ -133,7 +134,15 @@ public class ConnectionHandler implements Runnable, Closeable {
 
         while (running) {
             try {
-                PipesMessage msg = PipesMessage.read(input);
+                PipesMessage msg;
+                try {
+                    msg = PipesMessage.read(input);
+                } catch (SocketTimeoutException e) {
+                    // Socket timeout while idle is the normal inactivity shutdown path.
+                    LOG.info("handlerId={}: socket timeout while waiting for task, closing connection",
+                            handlerId);
+                    return;
+                }
                 LOG.trace("handlerId={}: received message type={}", handlerId, msg.type());
 
                 switch (msg.type()) {

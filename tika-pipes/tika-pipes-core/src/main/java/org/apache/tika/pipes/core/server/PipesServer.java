@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -319,7 +320,22 @@ public class PipesServer implements AutoCloseable {
         //main loop
         try {
             while (true) {
-                PipesMessage msg = PipesMessage.read(input);
+                PipesMessage msg;
+                try {
+                    msg = PipesMessage.read(input);
+                } catch (SocketTimeoutException e) {
+                    // Socket timeout while idle is the normal inactivity shutdown path.
+                    // Exit cleanly — PipesClient will restart the server if needed.
+                    LOG.info("pipesClientId={}: socket timeout while waiting for task, shutting down",
+                            pipesClientId);
+                    try {
+                        close();
+                    } catch (Exception ex) {
+                        //swallow
+                    }
+                    System.exit(0);
+                    return; // unreachable, but needed for compilation
+                }
                 LOG.trace("pipesClientId={}: received message type={}", pipesClientId, msg.type());
 
                 switch (msg.type()) {
