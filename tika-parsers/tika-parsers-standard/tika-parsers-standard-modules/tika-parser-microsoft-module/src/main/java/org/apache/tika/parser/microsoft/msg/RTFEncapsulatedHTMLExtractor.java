@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft.msg;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -92,8 +94,11 @@ public class RTFEncapsulatedHTMLExtractor {
 
         Charset defaultCodePage = detectCodePage(rtf);
         Map<Integer, Charset> fontCharsets = parseFontTable(rtf);
-        // Track the current font's charset for inter-tag text decoding
+        // Track the current font's charset for inter-tag text decoding.
+        // The stack mirrors RTF brace nesting so that font switches inside
+        // groups (e.g. {\f3 ...}) are automatically unwound on '}'.
         Charset currentFontCharset = defaultCodePage;
+        Deque<Charset> charsetStack = new ArrayDeque<>();
 
         // Find the start of the document body (after the RTF header).
         int bodyStart = rtf.indexOf(HTMLTAG_PREFIX);
@@ -159,19 +164,26 @@ public class RTFEncapsulatedHTMLExtractor {
                 continue;
             }
 
-            // Inside \htmlrtf skip blocks: don't emit text, but DO track \fN font switches
+            // Inside \htmlrtf skip blocks: don't emit text, but track brace
+            // nesting so that font switches inside groups are properly scoped
+            // (pushed on '{', popped on '}') — just like the full RTF parser.
             if (inHtmlRtfSkip) {
-                if (rtf.charAt(pos) == '\\' && pos + 1 < len && rtf.charAt(pos + 1) == 'f'
+                char sc = rtf.charAt(pos);
+                if (sc == '{') {
+                    charsetStack.push(currentFontCharset);
+                } else if (sc == '}') {
+                    if (!charsetStack.isEmpty()) {
+                        currentFontCharset = charsetStack.pop();
+                    }
+                } else if (sc == '\\' && pos + 1 < len && rtf.charAt(pos + 1) == 'f'
                         && pos + 2 < len && Character.isDigit(rtf.charAt(pos + 2))) {
-                    // Parse \fN control word
+                    // Track \fN font switches within the current group
                     int numStart = pos + 2;
                     int numEnd = numStart;
                     while (numEnd < len && Character.isDigit(rtf.charAt(numEnd))) {
                         numEnd++;
                     }
-                    // Make sure this is \f<digits> and not \fcharset, \fi, etc.
-                    if (numEnd == numStart + (numEnd - numStart) &&
-                            (numEnd >= len || !Character.isLetter(rtf.charAt(numEnd)))) {
+                    if (numEnd >= len || !Character.isLetter(rtf.charAt(numEnd))) {
                         int fontId = Integer.parseInt(rtf.substring(numStart, numEnd));
                         Charset fontCs = fontCharsets.get(fontId);
                         if (fontCs != null) {

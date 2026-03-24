@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.msg;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -303,6 +304,36 @@ public class RTFEncapsulatedHTMLExtractorTest {
         assertNotNull(html);
         assertEquals("café", html,
                 "htmltag content should use default code page, not font charset");
+    }
+
+    @Test
+    public void testFontSwitchInBracedSkipBlockDoesNotPersist() {
+        // Reproduces the Hebrew/Chinese bug: a skip block contains {\f3\'a0}
+        // where \f3 is a Latin font (charset 0). The braces should scope the
+        // font switch so it doesn't affect subsequent inter-tag text.
+        // \u05d0\u05d2 = אג, windows-1255 bytes: E0 E2
+        String rtf = "{\\rtf1\\ansi\\ansicpg1255\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset177 David;}\n" +
+                "{\\f3\\fmodern\\fcharset0 Courier New;}\n" +
+                "}\n" +
+                "{\\*\\htmltag64 <p>}\n" +
+                "\\htmlrtf {\\htmlrtf0\n" +
+                "\\'e0\\'e2\n" +                         // Hebrew: אג
+                "{\\*\\htmltag84 &nbsp;}" +
+                "\\htmlrtf {\\f3\\'a0}\\htmlrtf0\n" +   // skip block with braced \f3
+                "\\'e8\\'e5\\'e1\n" +                    // Hebrew: חוב
+                "\\htmlrtf }\\htmlrtf0\n" +
+                "{\\*\\htmltag72 </p>}\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertTrue(html.contains("\u05d0\u05d2"),
+                "First Hebrew text should decode correctly, got: " + html);
+        // \xe8\xe5\xe1 in windows-1255 = טוב; in windows-1252 = èåá
+        assertTrue(html.contains("\u05d8\u05d5\u05d1"),
+                "Hebrew text after braced skip block should still use windows-1255, got: " + html);
+        assertFalse(html.contains("\u00e8\u00e5\u00e1"),
+                "Should NOT decode as windows-1252 (mojibake), got: " + html);
     }
 
     @Test
