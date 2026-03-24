@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft.msg;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,14 +36,10 @@ import org.slf4j.LoggerFactory;
  *       wrapped in {@code \htmlrtf ... \htmlrtf0} (which marks RTF-only rendering hints)</li>
  * </ol>
  *
- * <p>Within both htmltag groups and inter-tag text, the following RTF escapes are decoded:</p>
- * <ul>
- *   <li>{@code \par} → newline</li>
- *   <li>{@code \tab} → tab character</li>
- *   <li>{@code \line} → {@code <br>}</li>
- *   <li>{@code \'xx} → single byte (decoded using the document's ANSI code page)</li>
- *   <li>{@code \\}, {@code \{}, {@code \}} → literal characters</li>
- * </ul>
+ * <p>Per the MS-OXRTFEX specification, {@code \'xx} hex escapes in inter-tag text are decoded
+ * using the code page of the currently selected font ({@code \fN}).  The font-to-charset mapping
+ * is built from the RTF font table's {@code \fcharsetN} declarations.  Inside
+ * {@code {\*\htmltag}} groups, the document's default code page ({@code \ansicpgN}) is used.</p>
  */
 public class RTFEncapsulatedHTMLExtractor {
 
@@ -50,6 +48,29 @@ public class RTFEncapsulatedHTMLExtractor {
     private static final String HTMLTAG_PREFIX = "{\\*\\htmltag";
     private static final String FROM_HTML_MARKER = "\\fromhtml";
     private static final String ANSICPG_PREFIX = "\\ansicpg";
+
+    // Maps RTF \fcharset values to Java Charset objects.
+    // Based on the Windows CharacterSet enumeration and Tika's TextExtractor.FCHARSET_MAP.
+    private static final Map<Integer, Charset> FCHARSET_MAP = new HashMap<>();
+
+    static {
+        FCHARSET_MAP.put(0, Charset.forName("windows-1252"));   // ANSI
+        FCHARSET_MAP.put(77, Charset.forName("MacRoman"));      // Mac Roman
+        FCHARSET_MAP.put(128, Charset.forName("MS932"));         // Shift_JIS (Japanese)
+        FCHARSET_MAP.put(129, Charset.forName("ms949"));         // Hangul (Korean)
+        FCHARSET_MAP.put(130, charsetOrNull("x-Johab"));         // Johab (Korean)
+        FCHARSET_MAP.put(134, Charset.forName("GBK"));           // GB2312 (Simplified Chinese)
+        FCHARSET_MAP.put(136, Charset.forName("Big5"));          // Big5 (Traditional Chinese)
+        FCHARSET_MAP.put(161, Charset.forName("windows-1253"));  // Greek
+        FCHARSET_MAP.put(162, Charset.forName("windows-1254"));  // Turkish
+        FCHARSET_MAP.put(163, Charset.forName("windows-1258"));  // Vietnamese
+        FCHARSET_MAP.put(177, Charset.forName("windows-1255"));  // Hebrew
+        FCHARSET_MAP.put(178, Charset.forName("windows-1256"));  // Arabic
+        FCHARSET_MAP.put(186, Charset.forName("windows-1257"));  // Baltic
+        FCHARSET_MAP.put(204, Charset.forName("windows-1251"));  // Russian
+        FCHARSET_MAP.put(222, Charset.forName("ms874"));         // Thai
+        FCHARSET_MAP.put(238, Charset.forName("windows-1250"));  // Eastern Europe
+    }
 
     /**
      * Extracts the HTML content from an encapsulated-HTML RTF document.
@@ -69,11 +90,12 @@ public class RTFEncapsulatedHTMLExtractor {
             return null;
         }
 
-        Charset codePage = detectCodePage(rtf);
+        Charset defaultCodePage = detectCodePage(rtf);
+        Map<Integer, Charset> fontCharsets = parseFontTable(rtf);
+        // Track the current font's charset for inter-tag text decoding
+        Charset currentFontCharset = defaultCodePage;
 
         // Find the start of the document body (after the RTF header).
-        // We skip past the initial {\rtf1... header by finding the first
-        // htmltag group or \htmlrtf marker — everything before that is RTF preamble.
         int bodyStart = rtf.indexOf(HTMLTAG_PREFIX);
         if (bodyStart < 0) {
             return null;
@@ -88,7 +110,7 @@ public class RTFEncapsulatedHTMLExtractor {
         while (pos < len) {
             // Check if we're at an htmltag group
             if (rtf.startsWith(HTMLTAG_PREFIX, pos)) {
-                flushPendingBytes(pendingBytes, html, codePage);
+                flushPendingBytes(pendingBytes, html, currentFontCharset);
 
                 // Find matching close brace
                 int groupEnd = findMatchingBrace(rtf, pos);
@@ -106,9 +128,9 @@ public class RTFEncapsulatedHTMLExtractor {
                     contentStart++;
                 }
 
-                // Decode the htmltag content
+                // Decode the htmltag content using default code page per MS-OXRTFEX spec
                 String inner = rtf.substring(contentStart, groupEnd);
-                decodeRtfEscapes(inner, html, codePage);
+                decodeRtfEscapes(inner, html, defaultCodePage);
 
                 pos = groupEnd + 1;
                 continue;
@@ -116,7 +138,7 @@ public class RTFEncapsulatedHTMLExtractor {
 
             // Check for \htmlrtf control word (start or end of RTF-only block)
             if (rtf.startsWith("\\htmlrtf", pos)) {
-                flushPendingBytes(pendingBytes, html, codePage);
+                flushPendingBytes(pendingBytes, html, currentFontCharset);
                 int afterWord = pos + "\\htmlrtf".length();
 
                 if (afterWord < len && rtf.charAt(afterWord) == '0') {
@@ -137,16 +159,33 @@ public class RTFEncapsulatedHTMLExtractor {
                 continue;
             }
 
-            // If we're inside an \htmlrtf skip block, just advance past this character.
-            // We don't skip nested groups wholesale because \htmlrtf0 may appear inside them.
+            // Inside \htmlrtf skip blocks: don't emit text, but DO track \fN font switches
             if (inHtmlRtfSkip) {
+                if (rtf.charAt(pos) == '\\' && pos + 1 < len && rtf.charAt(pos + 1) == 'f'
+                        && pos + 2 < len && Character.isDigit(rtf.charAt(pos + 2))) {
+                    // Parse \fN control word
+                    int numStart = pos + 2;
+                    int numEnd = numStart;
+                    while (numEnd < len && Character.isDigit(rtf.charAt(numEnd))) {
+                        numEnd++;
+                    }
+                    // Make sure this is \f<digits> and not \fcharset, \fi, etc.
+                    if (numEnd == numStart + (numEnd - numStart) &&
+                            (numEnd >= len || !Character.isLetter(rtf.charAt(numEnd)))) {
+                        int fontId = Integer.parseInt(rtf.substring(numStart, numEnd));
+                        Charset fontCs = fontCharsets.get(fontId);
+                        if (fontCs != null) {
+                            currentFontCharset = fontCs;
+                        }
+                    }
+                }
                 pos++;
                 continue;
             }
 
             // Check for other { groups (nested RTF groups that aren't htmltag)
             if (rtf.charAt(pos) == '{') {
-                flushPendingBytes(pendingBytes, html, codePage);
+                flushPendingBytes(pendingBytes, html, currentFontCharset);
                 int end = findMatchingBrace(rtf, pos);
                 if (end > 0) {
                     pos = end + 1;
@@ -158,7 +197,7 @@ public class RTFEncapsulatedHTMLExtractor {
 
             // Skip closing braces
             if (rtf.charAt(pos) == '}') {
-                flushPendingBytes(pendingBytes, html, codePage);
+                flushPendingBytes(pendingBytes, html, currentFontCharset);
                 pos++;
                 continue;
             }
@@ -167,7 +206,7 @@ public class RTFEncapsulatedHTMLExtractor {
             if (rtf.charAt(pos) == '\\' && pos + 1 < len) {
                 char next = rtf.charAt(pos + 1);
 
-                // \'xx hex escape
+                // \'xx hex escape — decode using current font's charset
                 if (next == '\'' && pos + 3 < len) {
                     int hi = Character.digit(rtf.charAt(pos + 2), 16);
                     int lo = Character.digit(rtf.charAt(pos + 3), 16);
@@ -178,7 +217,7 @@ public class RTFEncapsulatedHTMLExtractor {
                     continue;
                 }
 
-                flushPendingBytes(pendingBytes, html, codePage);
+                flushPendingBytes(pendingBytes, html, currentFontCharset);
 
                 // Escaped literals
                 if (next == '\\' || next == '{' || next == '}') {
@@ -196,7 +235,8 @@ public class RTFEncapsulatedHTMLExtractor {
                     }
                     String word = rtf.substring(wordStart, wordEnd);
 
-                    // Skip optional numeric parameter
+                    // Parse optional numeric parameter
+                    int paramStart = wordEnd;
                     int paramEnd = wordEnd;
                     if (paramEnd < len && (rtf.charAt(paramEnd) == '-'
                             || Character.isDigit(rtf.charAt(paramEnd)))) {
@@ -222,6 +262,17 @@ public class RTFEncapsulatedHTMLExtractor {
                         case "line":
                             html.append("<br>");
                             break;
+                        case "f":
+                            // Font switch in inter-tag text — update current charset
+                            if (paramEnd > paramStart) {
+                                int fontId = Integer.parseInt(
+                                        rtf.substring(paramStart, paramEnd));
+                                Charset fontCs = fontCharsets.get(fontId);
+                                if (fontCs != null) {
+                                    currentFontCharset = fontCs;
+                                }
+                            }
+                            break;
                         default:
                             // Skip unknown control words
                             break;
@@ -242,17 +293,75 @@ public class RTFEncapsulatedHTMLExtractor {
             }
 
             // Regular text character between htmltag groups — this is HTML content
-            flushPendingBytes(pendingBytes, html, codePage);
+            flushPendingBytes(pendingBytes, html, currentFontCharset);
             html.append(rtf.charAt(pos));
             pos++;
         }
 
-        flushPendingBytes(pendingBytes, html, codePage);
+        flushPendingBytes(pendingBytes, html, currentFontCharset);
 
         if (html.length() == 0) {
             return null;
         }
         return html.toString();
+    }
+
+    /**
+     * Parse the RTF font table to build a mapping from font ID to charset.
+     */
+    static Map<Integer, Charset> parseFontTable(String rtf) {
+        Map<Integer, Charset> result = new HashMap<>();
+        int fontTblStart = rtf.indexOf("{\\fonttbl");
+        if (fontTblStart < 0) {
+            return result;
+        }
+        int fontTblEnd = findMatchingBrace(rtf, fontTblStart);
+        if (fontTblEnd < 0) {
+            return result;
+        }
+        String fontTable = rtf.substring(fontTblStart, fontTblEnd + 1);
+
+        int currentFontId = -1;
+        int pos = 0;
+        int ftLen = fontTable.length();
+
+        while (pos < ftLen) {
+            if (fontTable.charAt(pos) == '\\' && pos + 1 < ftLen
+                    && Character.isLetter(fontTable.charAt(pos + 1))) {
+                int wordStart = pos + 1;
+                int wordEnd = wordStart;
+                while (wordEnd < ftLen && Character.isLetter(fontTable.charAt(wordEnd))) {
+                    wordEnd++;
+                }
+                String word = fontTable.substring(wordStart, wordEnd);
+
+                // Parse numeric parameter
+                int paramStart = wordEnd;
+                int paramEnd = wordEnd;
+                if (paramEnd < ftLen && (fontTable.charAt(paramEnd) == '-'
+                        || Character.isDigit(fontTable.charAt(paramEnd)))) {
+                    paramEnd++;
+                    while (paramEnd < ftLen && Character.isDigit(fontTable.charAt(paramEnd))) {
+                        paramEnd++;
+                    }
+                }
+
+                if ("f".equals(word) && paramEnd > paramStart) {
+                    currentFontId = Integer.parseInt(fontTable.substring(paramStart, paramEnd));
+                } else if ("fcharset".equals(word) && paramEnd > paramStart
+                        && currentFontId >= 0) {
+                    int fcharset = Integer.parseInt(fontTable.substring(paramStart, paramEnd));
+                    Charset cs = FCHARSET_MAP.get(fcharset);
+                    if (cs != null) {
+                        result.put(currentFontId, cs);
+                    }
+                }
+                pos = paramEnd;
+            } else {
+                pos++;
+            }
+        }
+        return result;
     }
 
     /**
@@ -440,6 +549,14 @@ public class RTFEncapsulatedHTMLExtractor {
                 LOGGER.debug("Unknown code page {}, falling back to windows-1252", cpNum);
                 return Charset.forName("windows-1252");
             }
+        }
+    }
+
+    private static Charset charsetOrNull(String name) {
+        try {
+            return Charset.forName(name);
+        } catch (Exception e) {
+            return null;
         }
     }
 
