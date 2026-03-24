@@ -56,7 +56,7 @@ class ImagePreprocessor implements Serializable {
 
         double angle = config.isApplyRotation() ? getAngle(sourceFile, metadata) : 0d;
 
-        if (config.isEnableImagePreprocessing() || config.isApplyRotation() && angle != 0) {
+        if (config.isEnableImagePreprocessing() || (config.isApplyRotation() && angle != 0)) {
             // process the image - parameter values can be set in TesseractOCRConfig.properties
             CommandLine commandLine = new CommandLine(fullImageMagickPath);
             if (SystemUtils.IS_OS_WINDOWS) {
@@ -98,12 +98,12 @@ class ImagePreprocessor implements Serializable {
             DefaultExecutor executor = DefaultExecutor.builder().get();
             try {
                 executor.execute(commandLine);
+                metadata.add(TesseractOCRParser.IMAGE_MAGICK, "true");
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
                 LOG.warn("ImageMagick failed (commandline: " + commandLine + ")", e);
             }
-            metadata.add(TesseractOCRParser.IMAGE_MAGICK, "true");
         }
     }
 

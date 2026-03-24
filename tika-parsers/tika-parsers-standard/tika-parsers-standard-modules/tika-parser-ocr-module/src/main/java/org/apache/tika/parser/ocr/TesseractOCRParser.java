@@ -231,8 +231,8 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = {fullImageMagickPath};
-        boolean hasImageMagick = ExternalParser.check(checkCmd);
-        if (!hasImageMagick) {
+        this.hasImageMagick = ExternalParser.check(checkCmd);
+        if (!this.hasImageMagick) {
             LOG.debug("ImageMagick does not appear to be installed " + "(commandline: " +
                     fullImageMagickPath + ")");
         }
@@ -260,6 +260,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
+        normalizeOCRMimeMetadata(metadata);
 
         TesseractOCRConfig config = getConfig(parseContext);
 
@@ -272,8 +273,12 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         //if you haven't checked yet, and a per file config requests imagemagick
         //and if the default is not to use image processing
-        if (!hasCheckedForImageMagick && config.isEnableImagePreprocessing()) {
+        if (!hasCheckedForImageMagick && (config.isEnableImagePreprocessing() || config.isApplyRotation())) {
             hasImageMagick = hasImageMagick();
+        }
+
+        if (hasImageMagick && imagePreprocessor == null) {
+            imagePreprocessor = new ImagePreprocessor(defaultConfig.getImageMagickPath() + getImageMagickProg());
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
@@ -323,6 +328,25 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             return userConfig;
         }
         return defaultConfig;
+    }
+
+    private void normalizeOCRMimeMetadata(Metadata metadata) {
+        String parserOverride = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
+        if (parserOverride != null) {
+            MediaType overrideType = MediaType.parse(parserOverride);
+            if (overrideType != null && overrideType.getSubtype().startsWith(OCR)) {
+                metadata.remove(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
+            }
+        }
+        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        if (contentType != null) {
+            MediaType parsedType = MediaType.parse(contentType);
+            if (parsedType != null && parsedType.getSubtype().startsWith(OCR)) {
+                metadata.set(Metadata.CONTENT_TYPE,
+                        new MediaType(parsedType.getType(),
+                                parsedType.getSubtype().substring(OCR.length())).toString());
+            }
+        }
     }
 
     private ContentHandler getContentHandler(boolean isInlineContent,
@@ -407,23 +431,24 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     }
 
     private void extractOSD(InputStream is, Metadata metadata) throws IOException {
-        Matcher matcher = Pattern.compile("^([^:]+):\\s+(.*)").matcher("");
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is,
-                UTF_8))) {
+        Matcher matcher = Pattern.compile("^([^:]+):\\s*(.*)").matcher("");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, UTF_8))) {
             String line = reader.readLine();
             while (line != null) {
                 if (matcher.reset(line).find()) {
                     String k = matcher.group(1);
-                    String v = matcher.group(2);
+                    String v = matcher.group(2).trim();
+
                     switch (k) {
                         case "Page number":
                             metadata.set(PSM0_PAGE_NUMBER, Integer.parseInt(v));
                             break;
                         case "Orientation in degrees":
-                            metadata.set(PSM0_ORIENTATION, Integer.parseInt(v));
-                            break;
-                        case "Rotate":
-                            metadata.set(PSM0_ROTATE, Integer.parseInt(v));
+                        case "Rotate": // Handle Tesseract 5.x+
+                            int rotationValue = Integer.parseInt(v);
+                            metadata.set(PSM0_ORIENTATION, rotationValue);
+                            metadata.set(PSM0_ROTATE, rotationValue);
+                            metadata.add(IMAGE_ROTATION, String.valueOf((double) rotationValue));
                             break;
                         case "Orientation confidence":
                             metadata.set(PSM0_ORIENTATION_CONFIDENCE, Double.parseDouble(v));
@@ -434,8 +459,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                         case "Script confidence":
                             metadata.set(PSM0_SCRIPT_CONFIDENCE, Double.parseDouble(v));
                             break;
-                        default:
-                            LOG.warn("I regret I don't know how to parse {} with value {}", k, v);
                     }
                 }
                 line = reader.readLine();
