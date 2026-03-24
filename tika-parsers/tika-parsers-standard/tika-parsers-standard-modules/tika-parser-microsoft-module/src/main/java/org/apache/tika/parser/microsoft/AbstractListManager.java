@@ -248,7 +248,7 @@ public abstract class AbstractListManager {
         }
     }
 
-    protected static class LevelTuple {
+    public static class LevelTuple {
         private final int start;
         private final int restart;
         private final String lvlText;

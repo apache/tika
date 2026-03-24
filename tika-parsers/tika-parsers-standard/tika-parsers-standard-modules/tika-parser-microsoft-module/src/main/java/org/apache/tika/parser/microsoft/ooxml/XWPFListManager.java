@@ -18,17 +18,10 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.math.BigInteger;
 
-import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
-import org.apache.poi.xwpf.usermodel.XWPFNum;
-import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
 
 import org.apache.tika.parser.microsoft.AbstractListManager;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 
 
 public class XWPFListManager extends AbstractListManager {
@@ -38,26 +31,10 @@ public class XWPFListManager extends AbstractListManager {
      * Always returns empty string.
      */
     public final static XWPFListManager EMPTY_LIST = new EmptyListManager();
-    private final static boolean OVERRIDE_AVAILABLE;
-    private final static String SKIP_FORMAT = Character.toString((char) 61623);
-//if this shows up as the lvlText, don't show a number
 
-    static {
-        boolean b = false;
-        try {
-            Class.forName("org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl");
-            b = true;
-        } catch (ClassNotFoundException e) {
-            //swallow
-        }
-        b = OVERRIDE_AVAILABLE = false;
+    private final XWPFNumberingShim numbering;
 
-    }
-
-    private final XWPFNumbering numbering;
-
-    //map of numId (which paragraph series is this a member of?), levelcounts
-    public XWPFListManager(XWPFNumbering numbering) {
+    public XWPFListManager(XWPFNumberingShim numbering) {
         this.numbering = numbering;
     }
 
@@ -76,23 +53,21 @@ public class XWPFListManager extends AbstractListManager {
         }
 
         int currNumId = numId.intValue();
-
-        XWPFNum xwpfNum = numbering.getNum(numId);
-
-        if (xwpfNum == null) {
+        int currAbNumId = numbering.getAbstractNumId(currNumId);
+        if (currAbNumId < 0) {
             return "";
         }
-        CTNum ctNum = xwpfNum.getCTNum();
-        CTDecimalNumber abNum = ctNum.getAbstractNumId();
-        int currAbNumId = abNum.getVal().intValue();
 
         ParagraphLevelCounter lc = listLevelMap.get(currAbNumId);
         LevelTuple[] overrideTuples = overrideTupleMap.get(currNumId);
         if (lc == null) {
-            lc = loadLevelTuples(abNum);
+            lc = loadLevelTuples(currAbNumId);
+            if (lc == null) {
+                return "";
+            }
         }
         if (overrideTuples == null) {
-            overrideTuples = loadOverrideTuples(ctNum, lc.getNumberOfLevels());
+            overrideTuples = numbering.getOverrideLevels(currNumId, lc.getNumberOfLevels());
         }
 
         String formattedString = lc.incrementLevel(iLvl, overrideTuples);
@@ -104,84 +79,13 @@ public class XWPFListManager extends AbstractListManager {
 
     }
 
-    private LevelTuple[] loadOverrideTuples(CTNum ctNum, int length) {
-        LevelTuple[] levelTuples = new LevelTuple[length];
-        int overrideLength = ctNum.sizeOfLvlOverrideArray();
-        if (overrideLength == 0) {
+    private ParagraphLevelCounter loadLevelTuples(int abstractNumId) {
+        LevelTuple[] levels = numbering.getAbstractNumLevels(abstractNumId);
+        if (levels == null) {
             return null;
-        }
-        for (int i = 0; i < length; i++) {
-            LevelTuple tuple;
-            if (i >= overrideLength) {
-                tuple = new LevelTuple("%" + i + ".");
-            } else {
-                CTNumLvl ctNumLvl = ctNum.getLvlOverrideArray(i);
-                if (ctNumLvl != null) {
-                    tuple = buildTuple(i, ctNumLvl.getLvl());
-                } else {
-                    tuple = new LevelTuple("%" + i + ".");
-                }
-            }
-            levelTuples[i] = tuple;
-        }
-        return levelTuples;
-    }
-
-
-    private ParagraphLevelCounter loadLevelTuples(CTDecimalNumber abNum) {
-        //Unfortunately, we need to go this far into the underlying structure
-        //to get the abstract num information for the edge case where
-        //someone skips a level and the format is not context-free, e.g. "1.B.i".
-        XWPFAbstractNum abstractNum = numbering.getAbstractNum(abNum.getVal());
-        CTAbstractNum ctAbstractNum = abstractNum.getCTAbstractNum();
-
-        LevelTuple[] levels = new LevelTuple[ctAbstractNum.sizeOfLvlArray()];
-        for (int i = 0; i < levels.length; i++) {
-            levels[i] = buildTuple(i, ctAbstractNum.getLvlArray(i));
         }
         return new ParagraphLevelCounter(levels);
     }
-
-    private LevelTuple buildTuple(int level, CTLvl ctLvl) {
-        boolean isLegal = false;
-        int start = 1;
-        int restart = -1;
-        String lvlText = "%" + level + ".";
-        String numFmt = "decimal";
-
-
-        if (ctLvl != null && ctLvl.getIsLgl() != null) {
-            isLegal = true;
-        }
-
-        if (ctLvl != null && ctLvl.getNumFmt() != null && ctLvl.getNumFmt().getVal() != null) {
-            numFmt = ctLvl.getNumFmt().getVal().toString();
-        }
-        if (ctLvl != null && ctLvl.getLvlRestart() != null &&
-                ctLvl.getLvlRestart().getVal() != null) {
-            restart = ctLvl.getLvlRestart().getVal().intValue();
-        }
-        if (ctLvl != null && ctLvl.getStart() != null && ctLvl.getStart().getVal() != null) {
-            start = ctLvl.getStart().getVal().intValue();
-        } else {
-
-            //this is a hack. Currently, this gets the lowest possible
-            //start for a given numFmt.  We should probably try to grab the
-            //restartNumberingAfterBreak value in
-            //e.g. <w:abstractNum w:abstractNumId="12" w15:restartNumberingAfterBreak="0">???
-            if ("decimal".equals(numFmt) || "ordinal".equals(numFmt) ||
-                    "decimalZero".equals(numFmt)) {
-                start = 0;
-            } else {
-                start = 1;
-            }
-        }
-        if (ctLvl != null && ctLvl.getLvlText() != null && ctLvl.getLvlText().getVal() != null) {
-            lvlText = ctLvl.getLvlText().getVal();
-        }
-        return new LevelTuple(start, restart, lvlText, numFmt, isLegal);
-    }
-
 
     private static class EmptyListManager extends XWPFListManager {
         EmptyListManager() {

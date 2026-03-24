@@ -29,6 +29,7 @@ import com.microsoft.schemas.vml.impl.CTShapeImpl;
 import org.apache.poi.ooxml.POIXMLDocumentPart;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -81,6 +82,7 @@ import org.apache.tika.parser.microsoft.FormattingUtils;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -124,7 +126,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
-        XWPFListManager listManager = new XWPFListManager(document.getNumbering());
+        XWPFListManager listManager = new XWPFListManager(loadNumbering());
         // headers
         if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractHeaders(xhtml, hfPolicy, listManager);
@@ -151,6 +153,26 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         if (hfPolicy != null && config.isIncludeHeadersAndFooters()) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
+    }
+
+    private XWPFNumberingShim loadNumbering() {
+        try {
+            PackageRelationshipCollection numberingParts =
+                    document.getPackagePart().getRelationshipsByType(
+                            XWPFRelation.NUMBERING.getRelation());
+            if (numberingParts.size() > 0) {
+                PackageRelationship rel = numberingParts.getRelationship(0);
+                if (rel != null) {
+                    PackagePart numberingPart = document.getPackagePart().getRelatedPart(rel);
+                    if (numberingPart != null) {
+                        return new XWPFNumberingShim(numberingPart, getParseContext());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            //swallow
+        }
+        return XWPFNumberingShim.EMPTY;
     }
 
     private void extractFeatures(XWPFDocument document, Metadata metadata) {

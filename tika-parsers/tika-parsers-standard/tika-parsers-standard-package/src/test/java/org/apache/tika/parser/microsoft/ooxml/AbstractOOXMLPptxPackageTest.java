@@ -16,49 +16,26 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.List;
 
-public class ParagraphProperties {
+import org.junit.jupiter.api.Test;
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
-    public ParagraphProperties() {
-    }
+public abstract class AbstractOOXMLPptxPackageTest extends TikaTest {
 
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
-    }
+    abstract ParseContext getParseContext();
 
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", getParseContext());
+        Metadata pdfMetadata1 = metadataList.get(4);
+        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
+        Metadata pdfMetadata2 = metadataList.get(5);
+        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

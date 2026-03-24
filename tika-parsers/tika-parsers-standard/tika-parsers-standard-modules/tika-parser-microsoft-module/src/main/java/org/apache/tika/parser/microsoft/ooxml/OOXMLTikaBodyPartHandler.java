@@ -17,20 +17,29 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class OOXMLTikaBodyPartHandler
-        implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+        implements XWPFBodyContentsHandler {
 
     private static final String P = "p";
 
@@ -41,15 +50,12 @@ public class OOXMLTikaBodyPartHandler
     private final boolean includeDeletedText;
     private final boolean includeMoveFromText;
     private final XWPFStylesShim styles;
+    private final Metadata metadata;
 
     private int pDepth = 0; //paragraph depth
     private int tableDepth = 0;//table depth
     private int sdtDepth = 0;//
-    private boolean isItalics = false;
-    private boolean isBold = false;
-    private boolean isUnderline = false;
-    private boolean isStrikeThrough = false;
-    private boolean wroteHyperlinkStart = false;
+    private final InlineTagManager inlineTags;
 
     //TODO: fix this
     //pWithinCell should be an array/stack of given cell depths
@@ -62,9 +68,26 @@ public class OOXMLTikaBodyPartHandler
     //will need to replace this with a stack
     //if we're marking more that the first level <p/> element
     private String paragraphTag = null;
+    private boolean pendingParagraph = false;
+    private boolean paragraphTagOpen = false;
+    private ParagraphProperties pendingParagraphProperties = null;
+    private String pendingHyperlinkHref = null;
+
+    private OOXMLInlineBodyPartMap inlinePartMap = OOXMLInlineBodyPartMap.EMPTY;
+    private ParseContext parseContext = null;
+    private final java.util.List<String[]> pendingNoteIds = new java.util.ArrayList<>();
+    private final java.util.List<String> pendingCommentIds = new java.util.ArrayList<>();
+    private final java.util.Set<String> emittedCommentIds = new java.util.HashSet<>();
+    private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml) {
+        this(xhtml, null);
+    }
+
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         this.xhtml = xhtml;
+        this.metadata = metadata;
+        this.inlineTags = new InlineTagManager(xhtml);
         this.styles = XWPFStylesShim.EMPTY_STYLES;
         this.listManager = XWPFListManager.EMPTY_LIST;
         this.includeDeletedText = false;
@@ -72,115 +95,130 @@ public class OOXMLTikaBodyPartHandler
     }
 
     public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
-                                    XWPFListManager listManager, OfficeParserConfig parserConfig) {
+                                    XWPFListManager listManager,
+                                    OfficeParserConfig parserConfig) {
+        this(xhtml, styles, listManager, parserConfig, null);
+    }
+
+    public OOXMLTikaBodyPartHandler(XHTMLContentHandler xhtml, XWPFStylesShim styles,
+                                    XWPFListManager listManager,
+                                    OfficeParserConfig parserConfig, Metadata metadata) {
         this.xhtml = xhtml;
+        this.metadata = metadata;
+        this.inlineTags = new InlineTagManager(xhtml);
         this.styles = styles;
         this.listManager = listManager;
         this.includeDeletedText = parserConfig.isIncludeDeletedContent();
         this.includeMoveFromText = parserConfig.isIncludeMoveFromContent();
     }
 
+    /**
+     * Sets pre-parsed inline body part content (footnotes, endnotes, comments)
+     * so that references encountered during main document parsing can be
+     * resolved inline.
+     */
+    public void setInlineBodyPartMap(OOXMLInlineBodyPartMap inlinePartMap,
+            ParseContext parseContext) {
+        this.inlinePartMap = inlinePartMap != null ? inlinePartMap : OOXMLInlineBodyPartMap.EMPTY;
+        this.parseContext = parseContext;
+    }
+
     @Override
     public void run(RunProperties runProperties, String contents) throws SAXException {
-
-        // True if we are currently in the named style tag:
-        if (runProperties.isBold() != isBold) {
-            if (isStrikeThrough) {
-                xhtml.endElement("strike");
-                isStrikeThrough = false;
-            }
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (isItalics) {
-                xhtml.endElement("i");
-                isItalics = false;
-            }
-            if (runProperties.isBold()) {
-                xhtml.startElement("b");
-            } else {
-                xhtml.endElement("b");
-            }
-            isBold = runProperties.isBold();
-        }
-
-        if (runProperties.isItalics() != isItalics) {
-            if (isStrikeThrough) {
-                xhtml.endElement("strike");
-                isStrikeThrough = false;
-            }
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (runProperties.isItalics()) {
-                xhtml.startElement("i");
-            } else {
-                xhtml.endElement("i");
-            }
-            isItalics = runProperties.isItalics();
-        }
-
-        if (runProperties.isStrikeThrough() != isStrikeThrough) {
-            if (isUnderline) {
-                xhtml.endElement("u");
-                isUnderline = false;
-            }
-            if (runProperties.isStrikeThrough()) {
-                xhtml.startElement("strike");
-            } else {
-                xhtml.endElement("strike");
-            }
-            isStrikeThrough = runProperties.isStrikeThrough();
-        }
-
-        boolean runIsUnderlined = runProperties.getUnderline() != UnderlinePatterns.NONE;
-        if (runIsUnderlined != isUnderline) {
-            if (runIsUnderlined) {
-                xhtml.startElement("u");
-            } else {
-                xhtml.endElement("u");
-            }
-            isUnderline = runIsUnderlined;
-        }
-
+        ensureParagraphOpen();
+        flushPendingHyperlink();
+        inlineTags.applyFormatting(runProperties);
         xhtml.characters(contents);
+    }
 
+    private void flushPendingHyperlink() throws SAXException {
+        if (pendingHyperlinkHref != null) {
+            inlineTags.openHyperlink(pendingHyperlinkHref);
+            pendingHyperlinkHref = null;
+        }
     }
 
     @Override
     public void hyperlinkStart(String link) throws SAXException {
-        if (link != null) {
-            xhtml.startElement("a", "href", link);
-            wroteHyperlinkStart = true;
+        // Defer hyperlink opening if no paragraph is open yet.
+        // Shape-level hyperlinks (cNvPr/hlinkClick) fire before any <p>,
+        // so we store the link and open it when the paragraph opens.
+        if (pendingParagraph || pDepth == 0) {
+            pendingHyperlinkHref = link;
+        } else {
+            inlineTags.openHyperlink(link);
         }
     }
 
     @Override
     public void hyperlinkEnd() throws SAXException {
-        if (wroteHyperlinkStart) {
-            closeStyleTags();
-            wroteHyperlinkStart = false;
-            xhtml.endElement("a");
+        if (pendingHyperlinkHref != null) {
+            pendingHyperlinkHref = null;
+        } else {
+            inlineTags.closeHyperlink();
         }
     }
 
+    /**
+     * Closes any open inline elements (hyperlinks, formatting tags) in
+     * the correct nesting order.  Called before closing any structural
+     * element (paragraph, table cell, table row, table, etc.) to ensure
+     * well-formed XHTML.
+     */
+    void closeInlineElements() throws SAXException {
+        inlineTags.closeAll();
+    }
+
+
     @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
-
         //if you're in a table cell and your after the first paragraph
         //make sure to prepend a \n
         if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
+        // If we're about to nest a paragraph (e.g. inside a text box / shape),
+        // force-open the outer paragraph first so that inner content ends up
+        // inside the outer <p> tag rather than floating as raw text.
+        if (pendingParagraph && pDepth > 0) {
+            ensureParagraphOpen();
+        }
+        // Record the paragraph as pending — don't emit <p> yet.
+        // We defer opening until the first content arrives (via ensureParagraphOpen)
+        // so that style info from pPr is available.
+        pendingParagraph = true;
+        pendingParagraphProperties = paragraphProperties;
+        pDepth++;
+    }
 
-        if (pDepth == 0 && tableDepth == 0 && sdtDepth == 0) {
+    @Override
+    public void setParagraphProperties(ParagraphProperties paragraphProperties)
+            throws SAXException {
+        // Copy the properties — the caller may reset the object after this call.
+        // The <p> tag hasn't been emitted yet, so this style will be applied when it opens.
+        if (pendingParagraph) {
+            pendingParagraphProperties = new ParagraphProperties(paragraphProperties);
+        }
+    }
+
+    /**
+     * Ensures the current paragraph's XHTML tag is open.  Called before any
+     * content is written (runs, hyperlinks, etc.) so that the deferred
+     * {@code <p>} tag is emitted with the correct style.
+     */
+    private void ensureParagraphOpen() throws SAXException {
+        if (!pendingParagraph) {
+            return;
+        }
+        pendingParagraph = false;
+
+        if (pDepth == 1 && tableDepth == 0 && sdtDepth == 0) {
             paragraphTag = P;
             String styleClass = null;
+            ParagraphProperties pp = pendingParagraphProperties;
             //TIKA-2144 check that styles is not null
-            if (paragraphProperties.getStyleID() != null && styles != null) {
-                String styleName = styles.getStyleName(paragraphProperties.getStyleID());
+            if (pp != null && pp.getStyleID() != null && styles != null) {
+                String styleName = styles.getStyleName(pp.getStyleID());
                 if (styleName != null) {
                     WordExtractor.TagAndStyle tas =
                             WordExtractor.buildParagraphTagAndStyle(styleName, false);
@@ -189,30 +227,40 @@ public class OOXMLTikaBodyPartHandler
                 }
             }
 
-
             if (styleClass == null) {
                 xhtml.startElement(paragraphTag);
             } else {
                 xhtml.startElement(paragraphTag, "class", styleClass);
             }
+            paragraphTagOpen = true;
         }
 
-        writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
-                listManager, xhtml);
-        pDepth++;
+        if (pendingParagraphProperties != null) {
+            writeParagraphNumber(pendingParagraphProperties.getNumId(),
+                    pendingParagraphProperties.getIlvl(), listManager, xhtml);
+        }
+        pendingParagraphProperties = null;
     }
-
 
     @Override
     public void endParagraph() throws SAXException {
-        closeStyleTags();
-        if (pDepth == 1 && tableDepth == 0) {
+        ensureParagraphOpen();
+        closeInlineElements();
+        if (paragraphTagOpen) {
             xhtml.endElement(paragraphTag);
+            paragraphTagOpen = false;
         } else if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         } else if (tableCellDepth == 0) {
             xhtml.characters(NEWLINE, 0, 1);
         }
+
+        // Emit any pending footnote/endnote and comment content after the
+        // paragraph closes.  Inlining mid-paragraph would create <div> inside
+        // <p>, and the inner handler's endParagraph() would close the outer
+        // <p> tag, corrupting state.
+        emitPendingNotes();
+        emitPendingComments();
 
         if (tableCellDepth > 0) {
             pWithinCell++;
@@ -220,9 +268,57 @@ public class OOXMLTikaBodyPartHandler
         pDepth--;
     }
 
+    private void emitPendingNotes() throws SAXException {
+        if (pendingNoteIds.isEmpty()) {
+            return;
+        }
+        for (String[] noteTypeAndId : pendingNoteIds) {
+            String noteType = noteTypeAndId[0];
+            String id = noteTypeAndId[1];
+            byte[] xml = "footnote".equals(noteType)
+                    ? inlinePartMap.getFootnote(id)
+                    : inlinePartMap.getEndnote(id);
+            if (xml != null) {
+                inlineNoteContent(xml, noteType);
+            } else {
+                xhtml.characters("[");
+                xhtml.characters(id);
+                xhtml.characters("]");
+            }
+        }
+        pendingNoteIds.clear();
+    }
+
+    private void emitPendingComments() throws SAXException {
+        if (pendingCommentIds.isEmpty()) {
+            return;
+        }
+        for (String id : pendingCommentIds) {
+            byte[] xml = inlinePartMap.getComment(id);
+            if (xml != null) {
+                inlineNoteContent(xml, "comment");
+                emittedCommentIds.add(id);
+            }
+        }
+        pendingCommentIds.clear();
+    }
+
+    /**
+     * Returns the set of comment IDs that were inlined during parsing.
+     * Used by the decorator to skip these when dumping remaining comments.
+     */
+    public java.util.Set<String> getEmittedCommentIds() {
+        return emittedCommentIds;
+    }
+
     @Override
     public void startTable() throws SAXException {
-
+        // Close any open paragraph — <table> can't nest inside <p> in XHTML
+        closeInlineElements();
+        if (paragraphTagOpen) {
+            xhtml.endElement(paragraphTag);
+            paragraphTagOpen = false;
+        }
         xhtml.startElement("table");
         tableDepth++;
 
@@ -230,7 +326,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTable() throws SAXException {
-
+        closeInlineElements();
         xhtml.endElement("table");
         tableDepth--;
 
@@ -243,6 +339,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTableRow() throws SAXException {
+        closeInlineElements();
         xhtml.endElement("tr");
     }
 
@@ -254,6 +351,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void endTableCell() throws SAXException {
+        closeInlineElements();
         xhtml.endElement("td");
         pWithinCell = 0;
         tableCellDepth--;
@@ -261,7 +359,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startSDT() throws SAXException {
-        closeStyleTags();
+        inlineTags.closeAll();
         sdtDepth++;
     }
 
@@ -272,7 +370,7 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startEditedSection(String editor, Date date,
-                                   OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                                   EditType editType) {
         //no-op
     }
 
@@ -288,20 +386,52 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void footnoteReference(String id) throws SAXException {
-        if (id != null) {
-            xhtml.characters("[");
-            xhtml.characters(id);
-            xhtml.characters("]");
+        if (id == null) {
+            return;
         }
+        // Defer footnote emission to after the paragraph closes.
+        // Inlining mid-paragraph creates <div> inside <p>, and the inner
+        // handler's endParagraph() closes the outer <p> tag, corrupting state.
+        pendingNoteIds.add(new String[]{"footnote", id});
     }
 
     @Override
     public void endnoteReference(String id) throws SAXException {
-        if (id != null) {
-            xhtml.characters("[");
-            xhtml.characters(id);
-            xhtml.characters("]");
+        if (id == null) {
+            return;
         }
+        pendingNoteIds.add(new String[]{"endnote", id});
+    }
+
+    @Override
+    public void commentReference(String id) throws SAXException {
+        if (id != null) {
+            pendingCommentIds.add(id);
+        }
+    }
+
+    private void inlineNoteContent(byte[] xml, String cssClass) throws SAXException {
+        // Close any open inline elements before inlining note content
+        // to ensure the <div> nests correctly
+        closeInlineElements();
+        // Use the inline part map's relationship map which includes relationships
+        // from the footnote/endnote parts (needed for picture resolution)
+        Map<String, String> noteRelationships = inlinePartMap.getLinkedRelationships();
+        xhtml.startElement("div", "class", cssClass);
+        OOXMLTikaBodyPartHandler innerHandler = new OOXMLTikaBodyPartHandler(xhtml);
+        try {
+            XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml),
+                    new EmbeddedContentHandler(
+                            new OOXMLWordAndPowerPointTextHandler(
+                                    innerHandler,
+                                    noteRelationships)),
+                    parseContext);
+        } catch (TikaException | IOException e) {
+            xhtml.characters("[" + cssClass + " parse error]");
+        } finally {
+            innerHandler.closeInlineElements();
+        }
+        xhtml.endElement("div");
     }
 
     @Override
@@ -310,9 +440,18 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
-    public void embeddedOLERef(String relId) throws SAXException {
+    public void embeddedOLERef(String relId, String progId, String emfImageRId)
+            throws SAXException {
         if (relId == null) {
             return;
+        }
+        if ((progId != null && !progId.isEmpty()) ||
+                (emfImageRId != null && !emfImageRId.isEmpty())) {
+            EmbeddedPartMetadata epm = new EmbeddedPartMetadata(emfImageRId);
+            if (progId != null && !progId.isEmpty()) {
+                epm.setProgId(progId);
+            }
+            embeddedPartMetadataMap.put(relId, epm);
         }
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
@@ -321,10 +460,17 @@ public class OOXMLTikaBodyPartHandler
         xhtml.endElement("div");
     }
 
+    public Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return embeddedPartMetadataMap;
+    }
+
     @Override
     public void linkedOLERef(String relId) throws SAXException {
         if (relId == null) {
             return;
+        }
+        if (metadata != null) {
+            metadata.set(Office.HAS_LINKED_OLE_OBJECTS, true);
         }
         // Emit as an external reference anchor - linked OLE objects reference external files
         AttributesImpl attributes = new AttributesImpl();
@@ -352,9 +498,26 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
+    public void fieldCodeHyperlinkStart(String link) throws SAXException {
+        if (metadata != null) {
+            metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+        }
+        hyperlinkStart(link);
+    }
+
+    @Override
     public void externalRef(String fieldType, String url) throws SAXException {
         if (url == null || url.isEmpty()) {
             return;
+        }
+        if (metadata != null) {
+            if ("hlinkHover".equals(fieldType)) {
+                metadata.set(Office.HAS_HOVER_HYPERLINKS, true);
+            } else if ("vml-shape-href".equals(fieldType)) {
+                metadata.set(Office.HAS_VML_HYPERLINKS, true);
+            } else {
+                metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
+            }
         }
         AttributesImpl attr = new AttributesImpl();
         attr.addAttribute("", "class", "class", "CDATA", "external-ref-" + fieldType);
@@ -366,7 +529,7 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startBookmark(String id, String name) throws SAXException {
         //skip bookmarks within hyperlinks
-        if (name != null && !wroteHyperlinkStart) {
+        if (name != null && !inlineTags.isHyperlinkOpen()) {
             xhtml.startElement("a", "name", name);
             xhtml.endElement("a");
         }
@@ -375,29 +538,6 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void endBookmark(String id) {
         //no-op
-    }
-
-    private void closeStyleTags() throws SAXException {
-
-        if (isStrikeThrough) {
-            xhtml.endElement("strike");
-            isStrikeThrough = false;
-        }
-
-        if (isUnderline) {
-            xhtml.endElement("u");
-            isUnderline = false;
-        }
-
-        if (isItalics) {
-            xhtml.endElement("i");
-            isItalics = false;
-        }
-
-        if (isBold) {
-            xhtml.endElement("b");
-            isBold = false;
-        }
     }
 
     private void writeParagraphNumber(int numId, int ilvl, XWPFListManager listManager,

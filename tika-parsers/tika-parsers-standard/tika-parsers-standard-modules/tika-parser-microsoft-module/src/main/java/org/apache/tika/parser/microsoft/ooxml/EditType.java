@@ -16,49 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-
-public class ParagraphProperties {
-
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
-
-    public ParagraphProperties() {
-    }
-
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
-    }
-
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
-    }
+public enum EditType {
+    NONE, INSERT, DELETE, MOVE_TO, MOVE_FROM
 }

@@ -21,11 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -33,24 +30,25 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
-public class SXWPFExtractorTest extends TikaTest {
+/**
+ * SAX-specific docx package tests.
+ */
+public class OOXMLDocxSAXPackageTest extends AbstractOOXMLDocxPackageTest {
 
-    private ParseContext parseContext;
-
-    @BeforeEach
-    public void setUp() {
-        parseContext = new ParseContext();
+    @Override
+    ParseContext getParseContext() {
+        ParseContext parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setUseSAXDocxExtractor(true);
-        officeParserConfig.setUseSAXPptxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
-
+        return parseContext;
     }
+
     @Test
-    @Disabled("TODO -- implement TIKA-3968 for SXWPFExtractor")
     public void testEMFAssociatedWithAttachments() throws Exception {
         //TIKA-3968
-        List<Metadata> metadataList = getRecursiveMetadata("testWORD_EMFAndAttachments.docx", parseContext);
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testWORD_EMFAndAttachments.docx", getParseContext());
 
         assertEquals("true", metadataList.get(1).get(EMFParser.EMF_ICON_ONLY));
         assertEquals("true", metadataList.get(3).get(EMFParser.EMF_ICON_ONLY));
@@ -63,9 +61,12 @@ public class SXWPFExtractorTest extends TikaTest {
         assertEquals("AcroExch.Document.DC", metadataList.get(4).get(Office.PROG_ID));
         assertEquals("Word.Document.12", metadataList.get(6).get(Office.PROG_ID));
 
-        assertEquals("TestText.txt", metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("TestPdf.pdf", metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("testWORD123.docx", metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("TestText.txt",
+                metadataList.get(2).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("TestPdf.pdf",
+                metadataList.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("testWORD123.docx",
+                metadataList.get(6).get(TikaCoreProperties.RESOURCE_NAME_KEY));
 
         assertEquals("/TestText.txt",
                 metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
@@ -76,10 +77,8 @@ public class SXWPFExtractorTest extends TikaTest {
 
         assertContains("This is Text File",
                 metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
-
         assertContains("This is test PDF document for parser.",
                 metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));
-
         assertContains("This is test word document for parser.",
                 metadataList.get(6).get(TikaCoreProperties.TIKA_CONTENT));
 

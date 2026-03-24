@@ -16,49 +16,39 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.HashMap;
+import java.util.Map;
 
-public class ParagraphProperties {
+/**
+ * Stores comment author names and initials by ID for PPTX comment handling.
+ */
+class CommentAuthors {
+    final Map<String, String> nameMap = new HashMap<>();
+    final Map<String, String> initialMap = new HashMap<>();
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
-
-    public ParagraphProperties() {
+    void add(String id, String name, String initials) {
+        if (id == null) {
+            return;
+        }
+        if (name != null) {
+            nameMap.put(id, name);
+        }
+        if (initials != null) {
+            initialMap.put(id, initials);
+        }
     }
 
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
+    String getName(String id) {
+        if (id == null) {
+            return null;
+        }
+        return nameMap.get(id);
     }
 
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
+    String getInitials(String id) {
+        if (id == null) {
+            return null;
+        }
+        return initialMap.get(id);
     }
 }

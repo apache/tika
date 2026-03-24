@@ -19,16 +19,12 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -90,6 +86,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private static final String VAL = "val";
     private static final String SLIDE = "sld";
     private static final String SHOW = "show";
+    private static final String TIMING = "timing"; // p:timing — slide animations
     private final static String MC_NS =
             "http://schemas.openxmlformats.org/markup-compatibility/2006";
     private final static String O_NS = "urn:schemas-microsoft-com:office:office";
@@ -111,7 +108,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String MOVE_FROM = "moveFrom";
     private final static String MOVE_TO = "moveTo";
     private final static String ENDNOTE_REFERENCE = "endnoteReference";
+    private final static String COMMENT_REFERENCE = "commentReference";
     private static final String TEXTBOX = "textbox";
+    private static final String TXBX = "txbx"; // DrawingML text box (wps:txbx in mc:Choice)
+    private static final String SDT = "sdt";
+    private static final String SDT_PR = "sdtPr";
+    private static final String SDT_CONTENT = "sdtContent";
+    private static final String SHOWING_PLCHDR = "showingPlcHdr";
     private final static String FLD_CHAR = "fldChar";
     private final static String INSTR_TEXT = "instrText";
     private final static String FLD_CHAR_TYPE = "fldCharType";
@@ -122,24 +125,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String SHAPE = "shape";
     private final static String HREF = "href";
 
-    // Patterns for extracting URLs from field codes
-    private static final Pattern HYPERLINK_PATTERN =
-            Pattern.compile("HYPERLINK\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern INCLUDEPICTURE_PATTERN =
-            Pattern.compile("INCLUDEPICTURE\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern INCLUDETEXT_PATTERN =
-            Pattern.compile("INCLUDETEXT\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern IMPORT_PATTERN =
-            Pattern.compile("IMPORT\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
-    private static final Pattern LINK_PATTERN =
-            Pattern.compile("LINK\\s{1,100}[\\w.]{1,50}\\s{1,100}\"([^\"]{1,10000})\"", Pattern.CASE_INSENSITIVE);
     private final XWPFBodyContentsHandler bodyContentsHandler;
     private final Map<String, String> linkedRelationships;
+    private final OOXMLPictureTracker pictureTracker;
     private final RunProperties currRunProperties = new RunProperties();
     private final ParagraphProperties currPProperties = new ParagraphProperties();
     private final boolean includeTextBox;
     private final boolean concatenatePhoneticRuns;
-    private final Metadata metadata;
+    private final boolean preferACChoice;
     private final StringBuilder runBuffer = new StringBuilder();
     private final StringBuilder rubyBuffer = new StringBuilder();
     private boolean inR = false;
@@ -148,22 +141,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inRt = false;
-    private boolean inPic = false;
-    private boolean inPict = false;
-    private String picDescription = null;
-    private String picRId = null;
-    private String picFilename = null;
-    //mechanism used to determine when to
-    //signal the start of the p, and still
-    //handle p with pPr and those without
-    private boolean lastStartElementWasP = false;
-    //have we signaled the start of a p?
-    //pPr can happen multiple times within a p
-    //<p><pPr/><r><t>text</t></r><pPr></p>
-    private boolean pStarted = false;
+    private boolean inPPr = false;
     //alternate content can be embedded in itself.
     //need to track depth.
-    //if in alternate, choose fallback, maybe make this configurable?
+    //preferACChoice controls which branch is processed:
+    //  true  -> process Choice, skip Fallback (richer content)
+    //  false -> process Fallback, skip Choice (legacy behavior)
     private int inACChoiceDepth = 0;
     private int inACFallbackDepth = 0;
     private boolean inDelText = false;
@@ -176,31 +159,38 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inInstrText = false;
     private boolean inFieldHyperlink = false;
     private final StringBuilder instrTextBuffer = new StringBuilder();
-    private OOXMLWordAndPowerPointTextHandler.EditType editType =
-            OOXMLWordAndPowerPointTextHandler.EditType.NONE;
+    private EditType editType =
+            EditType.NONE;
     private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
+    // SDT (structured document tag) placeholder tracking
+    private boolean inSdtPr = false;
+    private boolean sdtIsPlaceholder = false;
+    private int sdtPlaceholderDepth = 0;
+    private boolean hasAnimations = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks) {
-        this(bodyContentsHandler, hyperlinks, true, true, null);
+        this(bodyContentsHandler, hyperlinks, true, true, true);
     }
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks, boolean includeTextBox,
                                              boolean concatenatePhoneticRuns) {
-        this(bodyContentsHandler, hyperlinks, includeTextBox, concatenatePhoneticRuns, null);
+        this(bodyContentsHandler, hyperlinks, includeTextBox, concatenatePhoneticRuns, true);
     }
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
                                              Map<String, String> hyperlinks, boolean includeTextBox,
-                                             boolean concatenatePhoneticRuns, Metadata metadata) {
+                                             boolean concatenatePhoneticRuns,
+                                             boolean preferACChoice) {
         this.bodyContentsHandler = bodyContentsHandler;
         this.linkedRelationships = hyperlinks;
+        this.pictureTracker = new OOXMLPictureTracker(hyperlinks, bodyContentsHandler);
         this.includeTextBox = includeTextBox;
         this.concatenatePhoneticRuns = concatenatePhoneticRuns;
-        this.metadata = metadata;
+        this.preferACChoice = preferACChoice;
     }
 
     @Override
@@ -219,16 +209,22 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     public void endPrefixMapping(String prefix) throws SAXException {
     }
 
+    /**
+     * Returns true if content should be skipped due to AlternateContent handling.
+     * When preferACChoice is true, skip Fallback; when false, skip Choice.
+     */
+    private boolean inSkippedAlternateContent() {
+        if (preferACChoice) {
+            return inACFallbackDepth > 0;
+        } else {
+            return inACChoiceDepth > 0;
+        }
+    }
+
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts)
             throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
-
-        if (lastStartElementWasP && !PPR.equals(localName)) {
-            bodyContentsHandler.startParagraph(currPProperties);
-        }
-
-        lastStartElementWasP = false;
 
         if (uri != null && uri.equals(MC_NS)) {
             if (CHOICE.equals(localName)) {
@@ -238,11 +234,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         }
 
-        if (inACChoiceDepth > 0) {
+        if (inSkippedAlternateContent()) {
             return;
         }
 
-        if (!includeTextBox && localName.equals(TEXTBOX)) {
+        if (!includeTextBox && (localName.equals(TEXTBOX) || localName.equals(TXBX))) {
             inTextBox = true;
             return;
         }
@@ -258,7 +254,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (TAB.equals(localName)) {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
-            lastStartElementWasP = true;
+            bodyContentsHandler.startParagraph(currPProperties);
+        } else if (PPR.equals(localName)) {
+            inPPr = true;
         } else if (B.equals(localName)) { //TODO: add bCs
             if (inR && inRPr) {
                 currRunProperties.setBold(true);
@@ -326,18 +324,30 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (TBL.equals(localName)) {
             bodyContentsHandler.startTable();
         } else if (BLIP.equals(localName)) { //check for DRAWING_NS
-            picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed");
+            pictureTracker.setBlipRId(atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "embed"));
         } else if ("cNvPr".equals(localName)) { //check for PIC_NS?
-            picDescription = atts.getValue("", "descr");
+            pictureTracker.setDescription(atts.getValue("", "descr"));
         } else if (PIC.equals(localName)) {
-            inPic = true; //check for PIC_NS?
-        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
-        else if (FOOTNOTE_REFERENCE.equals(localName)) {
+            pictureTracker.startPic(); //check for PIC_NS?
+        } else if (SDT.equals(localName)) {
+            // SDTs can nest; only track placeholder at outermost level
+            if (sdtPlaceholderDepth == 0) {
+                sdtIsPlaceholder = false;
+            }
+        } else if (SDT_PR.equals(localName)) {
+            inSdtPr = true;
+        } else if (SHOWING_PLCHDR.equals(localName) && inSdtPr) {
+            sdtIsPlaceholder = true;
+        } else if (SDT_CONTENT.equals(localName)) {
+            if (sdtIsPlaceholder) {
+                sdtPlaceholderDepth++;
+            }
+        } else if (FOOTNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.footnoteReference(id);
         } else if (IMAGEDATA.equals(localName)) {
-            picRId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
-            picDescription = atts.getValue(O_NS, "title");
+            pictureTracker.setImageDataRId(atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id"));
+            pictureTracker.setImageDataDescription(atts.getValue(O_NS, "title"));
         } else if (INS.equals(localName)) {
             startEditedSection(editType.INSERT, atts);
         } else if (DEL_TEXT.equals(localName)) {
@@ -351,7 +361,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (OLE_OBJECT.equals(localName)) { //check for O_NS?
             String type = null;
             String refId = null;
-            //TODO: clean this up and ...want to get ProgID?
+            String progId = null;
             for (int i = 0; i < atts.getLength(); i++) {
                 String attLocalName = atts.getLocalName(i);
                 String attValue = atts.getValue(i);
@@ -360,22 +370,24 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 } else if (OFFICE_DOC_RELATIONSHIP_NS.equals(atts.getURI(i)) &&
                         attLocalName.equals("id")) {
                     refId = attValue;
+                } else if ("ProgID".equals(attLocalName)) {
+                    progId = attValue;
                 }
             }
             if ("Embed".equals(type)) {
-                bodyContentsHandler.embeddedOLERef(refId);
+                String emfRId = pictureTracker.getImageDataRId();
+                bodyContentsHandler.embeddedOLERef(refId, progId, emfRId);
             } else if ("Link".equals(type)) {
-                // Linked OLE object - references external file
                 bodyContentsHandler.linkedOLERef(refId);
-                if (metadata != null) {
-                    metadata.set(Office.HAS_LINKED_OLE_OBJECTS, true);
-                }
             }
         } else if (CR.equals(localName)) {
             runBuffer.append(NEWLINE);
         } else if (ENDNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.endnoteReference(id);
+        } else if (COMMENT_REFERENCE.equals(localName)) {
+            String id = atts.getValue(W_NS, "id");
+            bodyContentsHandler.commentReference(id);
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = true;
         } else if (RT.equals(localName)) {
@@ -385,6 +397,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             if ("0".equals(val) || "false".equals(val)) {
                 hiddenSlide = true;
             }
+        } else if (TIMING.equals(localName)) {
+            hasAnimations = true;
         } else if (FLD_CHAR.equals(localName)) {
             String fldCharType = atts.getValue(W_NS, FLD_CHAR_TYPE);
             if ("begin".equals(fldCharType)) {
@@ -392,22 +406,17 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 instrTextBuffer.setLength(0);
             } else if ("separate".equals(fldCharType)) {
                 // Parse instrText for HYPERLINK
-                String url = parseHyperlinkFromInstrText(instrTextBuffer.toString());
+                String url = FieldCodeParser.parseHyperlinkFromInstrText(instrTextBuffer.toString());
                 if (url != null) {
-                    bodyContentsHandler.hyperlinkStart(url);
+                    bodyContentsHandler.fieldCodeHyperlinkStart(url);
                     inFieldHyperlink = true;
-                    if (metadata != null) {
-                        metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
-                    }
                 } else {
                     // Check for external reference fields (INCLUDEPICTURE, INCLUDETEXT, etc.)
                     StringBuilder fieldType = new StringBuilder();
-                    String extUrl = parseExternalRefFromInstrText(instrTextBuffer.toString(), fieldType);
+                    String extUrl = FieldCodeParser.parseExternalRefFromInstrText(
+                            instrTextBuffer.toString(), fieldType);
                     if (extUrl != null) {
                         bodyContentsHandler.externalRef(fieldType.toString(), extUrl);
-                        if (metadata != null) {
-                            metadata.set(Office.HAS_FIELD_HYPERLINKS, true);
-                        }
                     }
                 }
             } else if ("end".equals(fldCharType)) {
@@ -427,9 +436,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 String hyperlink = linkedRelationships.get(hyperlinkId);
                 if (hyperlink != null) {
                     bodyContentsHandler.externalRef("hlinkHover", hyperlink);
-                    if (metadata != null) {
-                        metadata.set(Office.HAS_HOVER_HYPERLINKS, true);
-                    }
                 }
             }
         } else if (SHAPE.equals(localName) && V_NS.equals(uri)) {
@@ -440,9 +446,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
             if (href != null && !href.isEmpty()) {
                 bodyContentsHandler.externalRef("vml-shape-href", href);
-                if (metadata != null) {
-                    metadata.set(Office.HAS_VML_HYPERLINKS, true);
-                }
             }
         }
 
@@ -479,65 +482,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         return -1;
     }
 
-    /**
-     * Parses a HYPERLINK URL from instrText field code content.
-     * Field codes like: HYPERLINK "https://example.com"
-     *
-     * @param instrText the accumulated instrText content
-     * @return the URL if found, or null
-     */
-    private String parseHyperlinkFromInstrText(String instrText) {
-        if (instrText == null || instrText.isEmpty()) {
-            return null;
-        }
-        Matcher m = HYPERLINK_PATTERN.matcher(instrText.trim());
-        if (m.find()) {
-            return m.group(1);
-        }
-        return null;
-    }
-
-    /**
-     * Parses URLs from instrText field codes that reference external resources.
-     * This includes INCLUDEPICTURE, INCLUDETEXT, IMPORT, and LINK fields.
-     *
-     * @param instrText the accumulated instrText content
-     * @param fieldType output parameter - will contain the field type if found
-     * @return the URL if found, or null
-     */
-    private String parseExternalRefFromInstrText(String instrText, StringBuilder fieldType) {
-        if (instrText == null || instrText.isEmpty()) {
-            return null;
-        }
-        String trimmed = instrText.trim();
-
-        Matcher m = INCLUDEPICTURE_PATTERN.matcher(trimmed);
-        if (m.find()) {
-            fieldType.append("INCLUDEPICTURE");
-            return m.group(1);
-        }
-
-        m = INCLUDETEXT_PATTERN.matcher(trimmed);
-        if (m.find()) {
-            fieldType.append("INCLUDETEXT");
-            return m.group(1);
-        }
-
-        m = IMPORT_PATTERN.matcher(trimmed);
-        if (m.find()) {
-            fieldType.append("IMPORT");
-            return m.group(1);
-        }
-
-        m = LINK_PATTERN.matcher(trimmed);
-        if (m.find()) {
-            fieldType.append("LINK");
-            return m.group(1);
-        }
-
-        return null;
-    }
-
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
 
@@ -546,17 +490,20 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (FALLBACK.equals(localName)) {
             inACFallbackDepth--;
         }
-        if (inACChoiceDepth > 0) {
+        if (inSkippedAlternateContent()) {
             return;
         }
 
-        if (!includeTextBox && localName.equals(TEXTBOX)) {
+        if (!includeTextBox && (localName.equals(TEXTBOX) || localName.equals(TXBX))) {
             inTextBox = false;
             return;
         }
         if (PIC.equals(localName)) { //PIC_NS
-            handlePict();
-            inPic = false;
+            pictureTracker.endPicture();
+            if (inHlinkClick) {
+                bodyContentsHandler.hyperlinkEnd();
+                inHlinkClick = false;
+            }
             return;
         } else if (RPR.equals(localName)) {
             inRPr = false;
@@ -565,10 +512,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (T.equals(localName)) {
             inT = false;
         } else if (PPR.equals(localName)) {
-            if (!pStarted) {
-                bodyContentsHandler.startParagraph(currPProperties);
-                pStarted = true;
-            }
+            inPPr = false;
+            bodyContentsHandler.setParagraphProperties(currPProperties);
             currPProperties.reset();
         } else if (P.equals(localName)) {
             if (runBuffer.length() > 0) {
@@ -577,7 +522,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 runBuffer.setLength(0);
             }
-            pStarted = false;
             bodyContentsHandler.endParagraph();
         } else if (TC.equals(localName)) {
             bodyContentsHandler.endTableCell();
@@ -594,8 +538,16 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
+        } else if (SDT_PR.equals(localName)) {
+            inSdtPr = false;
+        } else if (SDT_CONTENT.equals(localName)) {
+            if (sdtPlaceholderDepth > 0) {
+                sdtPlaceholderDepth--;
+            }
+        } else if (SDT.equals(localName)) {
+            sdtIsPlaceholder = false;
         } else if (PICT.equals(localName)) {
-            handlePict();
+            pictureTracker.endPicture();
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
             inV = false;
             handleEndOfRun();
@@ -631,23 +583,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
     }
 
-    private void handlePict() throws SAXException {
-        String picFileName = null;
-        if (picRId != null) {
-            picFileName = linkedRelationships.get(picRId);
-        }
-        bodyContentsHandler.embeddedPicRef(picFileName, picDescription);
-        picDescription = null;
-        picRId = null;
-        inPic = false;
-    }
-
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
 
-        if (inACChoiceDepth > 0) {
+        if (inSkippedAlternateContent()) {
             return;
         } else if (!includeTextBox && inTextBox) {
+            return;
+        } else if (sdtPlaceholderDepth > 0) {
             return;
         }
 
@@ -670,9 +613,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
-        if (inACChoiceDepth > 0) {
+        if (inSkippedAlternateContent()) {
             return;
         } else if (!includeTextBox && inTextBox) {
+            return;
+        } else if (sdtPlaceholderDepth > 0) {
             return;
         }
 
@@ -691,81 +636,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
     }
 
-    public enum EditType {
-        NONE, INSERT, DELETE, MOVE_TO, MOVE_FROM
-    }
-
-    public interface XWPFBodyContentsHandler {
-
-        void run(RunProperties runProperties, String contents) throws SAXException;
-
-        /**
-         * @param link the link; can be null
-         */
-        void hyperlinkStart(String link) throws SAXException;
-
-        void hyperlinkEnd() throws SAXException;
-
-        void startParagraph(ParagraphProperties paragraphProperties) throws SAXException;
-
-        void endParagraph() throws SAXException;
-
-        void startTable() throws SAXException;
-
-        void endTable() throws SAXException;
-
-        void startTableRow() throws SAXException;
-
-        void endTableRow() throws SAXException;
-
-        void startTableCell() throws SAXException;
-
-        void endTableCell() throws SAXException;
-
-        void startSDT() throws SAXException;
-
-        void endSDT() throws SAXException;
-
-        void startEditedSection(String editor, Date date, EditType editType) throws SAXException;
-
-        void endEditedSection() throws SAXException;
-
-        boolean isIncludeDeletedText() throws SAXException;
-
-        void footnoteReference(String id) throws SAXException;
-
-        void endnoteReference(String id) throws SAXException;
-
-        boolean isIncludeMoveFromText() throws SAXException;
-
-        void embeddedOLERef(String refId) throws SAXException;
-
-        /**
-         * Called when a linked (vs embedded) OLE object is found.
-         * These reference external files and are a security concern.
-         */
-        void linkedOLERef(String refId) throws SAXException;
-
-        void embeddedPicRef(String picFileName, String picDescription) throws SAXException;
-
-        void startBookmark(String id, String name) throws SAXException;
-
-        void endBookmark(String id) throws SAXException;
-
-        /**
-         * Called when an external reference URL is found in a field code.
-         * This includes INCLUDEPICTURE, INCLUDETEXT, IMPORT, LINK fields,
-         * and DrawingML/VML hyperlinks on shapes.
-         *
-         * @param fieldType the type of field (e.g., "INCLUDEPICTURE", "hlinkHover", "vml-href")
-         * @param url the external URL
-         */
-        default void externalRef(String fieldType, String url) throws SAXException {
-            // Default no-op implementation for backward compatibility
-        }
-    }
-
     public boolean isHiddenSlide() {
         return hiddenSlide;
+    }
+
+    public boolean hasAnimations() {
+        return hasAnimations;
     }
 }

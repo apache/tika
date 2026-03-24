@@ -16,49 +16,17 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
-public class ParagraphProperties {
+public class OOXMLPptxSAXPackageTest extends AbstractOOXMLPptxPackageTest {
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
-
-    public ParagraphProperties() {
-    }
-
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
-    }
-
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
+    @Override
+    ParseContext getParseContext() {
+        ParseContext parseContext = new ParseContext();
+        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
+        officeParserConfig.setUseSAXPptxExtractor(true);
+        parseContext.set(OfficeParserConfig.class, officeParserConfig);
+        return parseContext;
     }
 }
