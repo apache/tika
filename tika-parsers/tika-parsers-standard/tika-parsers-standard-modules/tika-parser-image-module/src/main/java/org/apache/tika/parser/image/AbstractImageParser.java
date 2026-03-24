@@ -99,13 +99,30 @@ public abstract class AbstractImageParser implements Parser {
 
             try (InputStream pathStream = Files.newInputStream(path)) {
                 //specify ocr content type
+                String originalParserOverride =
+                        metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
+                String originalContentType = metadata.get(Metadata.CONTENT_TYPE);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                         ocrMediaType.toString());
                 //need to use bodycontenthandler to filter out re-dumping of metadata
                 //in xhtmlhandler
-                ocrParser.parse(pathStream,
-                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
-                        context);
+                try {
+                    ocrParser.parse(pathStream,
+                            new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
+                            context);
+                } finally {
+                    if (originalParserOverride == null) {
+                        metadata.remove(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
+                    } else {
+                        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
+                                originalParserOverride);
+                    }
+                    if (originalContentType == null) {
+                        metadata.remove(Metadata.CONTENT_TYPE);
+                    } else {
+                        metadata.set(Metadata.CONTENT_TYPE, originalContentType);
+                    }
+                }
             }
             xhtml.endDocument();
         } finally {
