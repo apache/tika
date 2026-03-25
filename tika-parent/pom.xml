@@ -283,6 +283,7 @@
 
   <properties>
     <revision>4.0.0-SNAPSHOT</revision>
+    <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
@@ -322,7 +323,7 @@
     -->
     <asm.version>9.9.1</asm.version>
     <azure.version>1.3.5</azure.version>
-    <biz.aqute.version>7.2.1</biz.aqute.version>
+    <biz.aqute.version>7.2.3</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
     <bouncycastle.version>1.83</bouncycastle.version>
@@ -1456,6 +1457,20 @@
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <version>${maven.bundle.version}</version>
+        <configuration>
+            <instructions>
+              <!-- https://bnd.bndtools.org/instructions/metainf_services.html -->
+              <_metainf-services>auto</_metainf-services>
+            </instructions>
+        </configuration>
+        <dependencies>
+            <!-- upgrade to a newer version of Bnd to leverage https://bnd.bndtools.org/chapters/230-manifest-annotations.html#meta-infservices-annotations -->
+            <dependency>
+                <groupId>biz.aQute.bnd</groupId>
+                <artifactId>biz.aQute.bndlib</artifactId>
+                <version>${biz.aqute.version}</version>
+            </dependency>
+        </dependencies>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
