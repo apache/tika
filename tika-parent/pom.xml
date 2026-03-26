@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.64.0</google.cloud.version>
+    <google.cloud.version>2.64.1</google.cloud.version>
     <azure.version>1.3.5</azure.version>
     <aws.version>1.12.797</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
