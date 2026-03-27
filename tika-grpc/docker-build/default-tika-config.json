@@ -1,0 +1,20 @@
+{
+  "fetchers": [
+    {
+      "fs": {
+        "defaultFetcher": {
+          "basePath": "/data/input"
+        }
+      }
+    }
+  ],
+  "emitters": [
+    {
+      "fs": {
+        "defaultEmitter": {
+          "basePath": "/data/output"
+        }
+      }
+    }
+  ]
+}

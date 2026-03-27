@@ -10,7 +10,7 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-# Snapshot variant: copies the JAR from the Maven build output rather than
+# Snapshot variant: copies the assembly from the Maven build output rather than
 # downloading from Apache mirrors. Used for nightly/snapshot Docker builds.
 
 ARG UID_GID="35002:35002"
@@ -26,9 +26,9 @@ RUN set -eux \
         ca-certificates \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ENV TIKA_VERSION=$TIKA_VERSION
-COPY tika-server-standard-${TIKA_VERSION}.jar /tika-server-standard-${TIKA_VERSION}.jar
+COPY tika-server/ /tika-server/
 USER $UID_GID
 EXPOSE 9998
-ENTRYPOINT [ "/bin/sh", "-c", "exec java -cp \"/tika-server-standard-${TIKA_VERSION}.jar:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $0 $@"]
+ENTRYPOINT [ "/bin/sh", "-c", "exec java -cp \"/tika-server/tika-server.jar:/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $0 $@"]
 
 LABEL maintainer="Apache Tika Developers dev@tika.apache.org"

@@ -81,6 +81,7 @@ for parser_package in "${parser_packages[@]}"; do
 done
 
 cp -v -r "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin"
+cp -v "tika-grpc/docker-build/default-tika-config.json" "${OUT_DIR}/config"
 cp -v "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
 
 cd "${OUT_DIR}" || exit

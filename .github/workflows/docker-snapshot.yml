@@ -65,8 +65,8 @@ jobs:
         run: |
           TIKA_VERSION="${{ steps.version.outputs.tika_version }}"
           OUT_DIR=target/tika-server-minimal-docker
-          mkdir -p "${OUT_DIR}"
-          cp "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}.jar" "${OUT_DIR}/"
+          mkdir -p "${OUT_DIR}/tika-server"
+          tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/minimal/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build and push tika-server minimal snapshot
@@ -85,8 +85,8 @@ jobs:
         run: |
           TIKA_VERSION="${{ steps.version.outputs.tika_version }}"
           OUT_DIR=target/tika-server-full-docker
-          mkdir -p "${OUT_DIR}"
-          cp "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}.jar" "${OUT_DIR}/"
+          mkdir -p "${OUT_DIR}/tika-server"
+          tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/full/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build and push tika-server full snapshot
@@ -133,6 +133,7 @@ jobs:
           done
 
           cp "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin/"
+          cp "tika-grpc/docker-build/default-tika-config.json" "${OUT_DIR}/config/"
           cp "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
 
       - name: Build and push tika-grpc snapshot
