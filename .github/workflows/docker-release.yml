@@ -139,7 +139,6 @@ jobs:
           done
 
           cp "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin/"
-          cp "tika-grpc/docker-build/default-tika-config.json" "${OUT_DIR}/config/"
           cp "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
 
       - name: Build and push tika-grpc

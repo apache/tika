@@ -12,17 +12,18 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-# Use user-provided config or fall back to the bundled default
-TIKA_CONFIG="${TIKA_CONFIG:-/tika/config/default-tika-config.json}"
+TIKA_GRPC_PORT="${TIKA_GRPC_PORT:-9090}"
 
 echo "Tika Version: ${TIKA_VERSION}"
-echo "Tika Config: ${TIKA_CONFIG}"
 echo "Tika Plugins:"
 ls "/tika/plugins"
-echo "Tika gRPC Max Inbound Message Size: ${TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE}"
-echo "Tika gRPC Max Outbound Message Size: ${TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE}"
-echo "Tika gRPC Num Threads: ${TIKA_GRPC_NUM_THREADS}"
-TIKA_GRPC_PORT="${TIKA_GRPC_PORT:-9090}"
+echo "Tika gRPC Port: ${TIKA_GRPC_PORT}"
+
+CONFIG_ARGS=()
+if [ -n "${TIKA_CONFIG:-}" ]; then
+  echo "Tika Config: ${TIKA_CONFIG}"
+  CONFIG_ARGS+=("-c" "${TIKA_CONFIG}")
+fi
 
 exec java \
   --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED \
@@ -37,7 +38,7 @@ exec java \
   --add-opens=java.base/java.lang=ALL-UNNAMED \
   -Djava.net.preferIPv4Stack=true \
   -jar "/tika/libs/tika-grpc-${TIKA_VERSION}.jar" \
-  -c "${TIKA_CONFIG}" \
+  "${CONFIG_ARGS[@]}" \
   -p "${TIKA_GRPC_PORT}" \
   --plugin-roots "/tika/plugins" \
   "$@"
