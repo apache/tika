@@ -315,7 +315,7 @@
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.64.1</google.cloud.version>
     <azure.version>1.3.5</azure.version>
-    <aws2.version>2.42.22</aws2.version>
+    <aws2.version>2.42.23</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -396,7 +396,7 @@
     <jwarc.version>0.35.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.25.3</log4j2.version>
+    <log4j2.version>2.25.4</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
@@ -421,7 +421,7 @@
     <pax.exam.version>4.14.0</pax.exam.version>
     <pdfbox.version>3.0.7</pdfbox.version>
     <poi.version>5.5.1</poi.version>
-    <protobuf.version>3.25.8</protobuf.version>
+    <protobuf.version>3.25.9</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
     <reactor.core.version>3.8.4</reactor.core.version>
     <reactor.netty.version>1.3.4</reactor.netty.version>
