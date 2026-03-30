@@ -323,7 +323,9 @@ class ForkClient {
             }
         }
         if (jar != null) {
-            jar.delete();
+            if (!jar.delete()) {
+                jar.deleteOnExit();
+            }
         }
     }
 
