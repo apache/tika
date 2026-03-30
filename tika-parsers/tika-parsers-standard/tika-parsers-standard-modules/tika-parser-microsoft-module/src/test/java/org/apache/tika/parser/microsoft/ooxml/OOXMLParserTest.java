@@ -817,6 +817,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             context.set(Locale.class, Locale.US);
             new OOXMLParser().parse(input, handler, metadata, context);
         }
+        //TODO temp file leak
 
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -851,6 +852,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             context.set(Locale.class, Locale.US);
             new OOXMLParser().parse(input, handler, metadata, context);
         }
+        //TODO temp file leak
 
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 metadata.get(Metadata.CONTENT_TYPE));
@@ -883,6 +885,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
                 "/test-documents/testWORD_embedded_pdf.docx")) {
             new OOXMLParser().parse(input, handler, metadata, new ParseContext());
         }
+        //TODO tmp file leak
         String xml = sw.toString();
         int i = xml.indexOf("Here is the pdf file:");
         int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\"/>");
@@ -936,6 +939,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         try (InputStream stream = getResourceAsStream("/test-documents/testWORD_no_format.docx")) {
             new OOXMLParser().parse(stream, handler, metadata, new ParseContext());
         }
+        //TODO temp file leak
 
         String content = handler.toString();
         assertContains("This is a piece of text that causes an exception", content);
