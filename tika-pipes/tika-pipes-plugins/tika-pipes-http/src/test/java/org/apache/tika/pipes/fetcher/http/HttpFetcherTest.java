@@ -214,7 +214,6 @@ class HttpFetcherTest extends TikaTest {
         httpFetcher.getHttpFetcherConfig().getHttpRequestHeaders().setMap(headersMapFromConfig);
 
         try (InputStream ignored = httpFetcher.fetch("http://localhost", metadata, parseContext)) {
-            // resource is automatically closed after this block
         }
         HttpGet httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("fromFetchRequestValue1", httpGet.getHeaders("fromFetchRequestHeader1")[0].getValue());
@@ -236,7 +235,8 @@ class HttpFetcherTest extends TikaTest {
         Assertions.assertEquals("fromFetchConfigValue3", fromFetchConfig2s.get(1));
 
         metadata.set(Property.externalText("httpRequestHeaders"), new String[] {" nick1 :   val1", "nick2:   val2"});
-        httpFetcher.fetch("http://localhost", metadata, parseContext).close();
+        try (InputStream ignored = httpFetcher.fetch("http://localhost", metadata, parseContext)) {
+        }
         httpGet = httpGetArgumentCaptor.getValue();
         Assertions.assertEquals("val1", httpGet.getHeaders("nick1")[0].getValue());
         Assertions.assertEquals("val2", httpGet.getHeaders("nick2")[0].getValue());
