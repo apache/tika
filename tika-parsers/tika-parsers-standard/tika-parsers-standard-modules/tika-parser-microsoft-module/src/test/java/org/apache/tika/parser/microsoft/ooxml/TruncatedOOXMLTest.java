@@ -42,9 +42,11 @@ public class TruncatedOOXMLTest extends TikaTest {
 
     @Test
     public void testWordTrunc14435() throws Exception {
+        List<Metadata> metadataList;
         //this is only very slightly truncated
-        List<Metadata> metadataList =
-                getRecursiveMetadata(truncate("testWORD_various.docx", 14435), true);
+        try (InputStream is = truncate("testWORD_various.docx", 14435)) {
+            metadataList = getRecursiveMetadata(is, true);
+        }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
@@ -54,7 +56,6 @@ public class TruncatedOOXMLTest extends TikaTest {
         assertContains("This is the footer text", content);
         assertContains("Suddenly some Japanese", content);
     }
-
 
     @Test
     public void testTruncation() throws Exception {
