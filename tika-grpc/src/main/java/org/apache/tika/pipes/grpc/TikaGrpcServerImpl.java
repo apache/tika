@@ -19,6 +19,7 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -153,12 +154,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             fetchersElement.appendChild(fetcher);
         }
         DOMSource source = new DOMSource(tikaConfigDoc);
-        FileWriter writer = new FileWriter(tikaConfigPath, StandardCharsets.UTF_8);
-        StreamResult result = new StreamResult(writer);
+        try (Writer writer = new FileWriter(tikaConfigPath, StandardCharsets.UTF_8))
+        {
+            StreamResult result = new StreamResult(writer);
 
-        TransformerFactory transformerFactory = XMLReaderUtils.getTransformerFactory();
-        Transformer transformer = transformerFactory.newTransformer();
-        transformer.transform(source, result);
+            TransformerFactory transformerFactory = XMLReaderUtils.getTransformerFactory();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.transform(source, result);
+        }
     }
 
     private void populateFetcherConfigs(Map<String, Object> fetcherConfigParams,
