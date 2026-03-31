@@ -81,7 +81,8 @@ public class ZipDetectionTest extends TikaTest {
         detector = new DefaultZipContainerDetector();
         //try on a file that isn't a TikaInputStream
         try (TemporaryResources tmp = new TemporaryResources();
-            InputStream is = new BufferedInputStream(Files.newInputStream(TikaInputStream.get(getStream("testJAR.jar"), tmp, new Metadata()).getPath()))) {
+             TikaInputStream tis = TikaInputStream.get(getStream("testJAR.jar"), tmp, new Metadata());
+             InputStream is = new BufferedInputStream(Files.newInputStream(tis.getPath()))) {
             assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
