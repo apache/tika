@@ -132,8 +132,7 @@ public class OpenDocumentParser implements Parser {
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
         TikaInputStream tmpTis = null;
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             if (stream instanceof TikaInputStream) {
                 TikaInputStream tis = (TikaInputStream) stream;
                 Object container = ((TikaInputStream) stream).getOpenContainer();
@@ -176,8 +175,6 @@ public class OpenDocumentParser implements Parser {
             if (handler.isEndDocumentWasCalled()) {
                 handler.reallyEndDocument();
             }
-        } finally {
-            tmp.dispose();
         }
     }
 
