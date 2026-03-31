@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -944,7 +944,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     // TIKA-1005:
     @Test
-    public void testTextsideTextBox() throws Exception {
+    public void testTextInsideTextBox() throws Exception {
         String xml = getXML("testWORD_text_box.docx").xml;
         assertContains("This text is directly in the body of the document.", xml);
         assertContains("This text is inside of a text box in the body of the document.", xml);
