@@ -389,7 +389,6 @@ public class ODFParserTest extends TikaTest {
             assertThrows(IOException.class, () -> {
                 parser.parse(is, handler, metadata, new ParseContext());
             });
-            //TODO temp file leak
         }
     }
 
