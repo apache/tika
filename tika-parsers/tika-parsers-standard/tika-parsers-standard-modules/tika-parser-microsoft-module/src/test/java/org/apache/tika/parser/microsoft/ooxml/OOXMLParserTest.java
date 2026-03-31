@@ -817,7 +817,6 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
             context.set(Locale.class, Locale.US);
             new OOXMLParser().parse(input, handler, metadata, context);
         }
-        //TODO temp file leak
 
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 metadata.get(Metadata.CONTENT_TYPE));
