@@ -272,7 +272,7 @@ public abstract class CXFTestBase {
      * Merges the tika-server-fetcher configuration into the pipes config.
      * The fetcher is configured with basePath pointing to the input temp directory.
      * 
-     * @return new (different) JSON configPath in the temp director
+     * @return new (different) JSON configPath in the temp directory.
      */
     private Path mergeFetcherConfig(Path configPath, Path inputTempDirectory) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
