@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -79,7 +80,8 @@ public class ZipDetectionTest extends TikaTest {
 
         detector = new DefaultZipContainerDetector();
         //try on a file that isn't a TikaInputStream
-        try (InputStream is = new BufferedInputStream(Files.newInputStream(TikaInputStream.get(getStream("testJAR.jar")).getPath()))) {
+        try (TemporaryResources tmp = new TemporaryResources();
+            InputStream is = new BufferedInputStream(Files.newInputStream(TikaInputStream.get(getStream("testJAR.jar"), tmp, new Metadata()).getPath()))) {
             assertExpected(detector, is, "application/java-archive", expectedDigest);
         }
 
