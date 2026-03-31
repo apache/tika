@@ -38,6 +38,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -131,47 +132,52 @@ public class OpenDocumentParser implements Parser {
         // Use a File if we can, and an already open zip is even better
         ZipFile zipFile = null;
         TikaInputStream tmpTis = null;
-        if (stream instanceof TikaInputStream) {
-            TikaInputStream tis = (TikaInputStream) stream;
-            Object container = ((TikaInputStream) stream).getOpenContainer();
-            if (container instanceof ZipFile) {
-                zipFile = (ZipFile) container;
-            } else {
-                zipFile = new ZipFile(tis.getFile());
-                tis.setOpenContainer(zipFile);
-            }
-        } else {
-            tmpTis = TikaInputStream.get(stream);
-            tmpTis.setOpenContainer(new ZipFile(tmpTis.getFile()));
-            zipFile = (ZipFile) tmpTis.getOpenContainer();
-        }
-        // Prepare to handle the content
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
-        xhtml.startDocument();
-        // As we don't know which of the metadata or the content
-        //  we'll hit first, catch the endDocument call initially
-        EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
-
+        TemporaryResources tmp = new TemporaryResources();
         try {
-            try {
-                handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
-            } finally {
-                //Do we want to close silently == catch an exception here?
-                if (tmpTis != null) {
-                    //tmpTis handles closing of the open zip container
-                    tmpTis.close();
+            if (stream instanceof TikaInputStream) {
+                TikaInputStream tis = (TikaInputStream) stream;
+                Object container = ((TikaInputStream) stream).getOpenContainer();
+                if (container instanceof ZipFile) {
+                    zipFile = (ZipFile) container;
+                } else {
+                    zipFile = new ZipFile(tis.getFile());
+                    tis.setOpenContainer(zipFile);
                 }
+            } else {
+                tmpTis = TikaInputStream.get(stream, tmp, metadata);
+                tmpTis.setOpenContainer(new ZipFile(tmpTis.getFile()));
+                zipFile = (ZipFile) tmpTis.getOpenContainer();
             }
-        } catch (SAXException e) {
-            if (e.getCause() instanceof EncryptedDocumentException) {
-                throw (EncryptedDocumentException)e.getCause();
-            }
-            throw e;
-        }
+            // Prepare to handle the content
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+            xhtml.startDocument();
+            // As we don't know which of the metadata or the content
+            //  we'll hit first, catch the endDocument call initially
+            EndDocumentShieldingContentHandler handler = new EndDocumentShieldingContentHandler(xhtml);
 
-        // Only now call the end document
-        if (handler.isEndDocumentWasCalled()) {
-            handler.reallyEndDocument();
+            try {
+                try {
+                    handleZipFile(zipFile, metadata, context, handler, embeddedDocumentUtil);
+                } finally {
+                    //Do we want to close silently == catch an exception here?
+                    if (tmpTis != null) {
+                        //tmpTis handles closing of the open zip container
+                        tmpTis.close();
+                    }
+                }
+            } catch (SAXException e) {
+                if (e.getCause() instanceof EncryptedDocumentException) {
+                    throw (EncryptedDocumentException)e.getCause();
+                }
+                throw e;
+            }
+
+            // Only now call the end document
+            if (handler.isEndDocumentWasCalled()) {
+                handler.reallyEndDocument();
+            }
+        } finally {
+            tmp.dispose();
         }
     }
 
