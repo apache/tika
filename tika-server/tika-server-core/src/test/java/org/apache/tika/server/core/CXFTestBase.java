@@ -422,7 +422,6 @@ public abstract class CXFTestBase {
         if (pipesConfigPath != null) {
             try {
                 Files.deleteIfExists(pipesConfigPath);
-                LOG.info("Config file {} deleted", pipesConfigPath);
             } catch (Exception e) {
                 LOG.warn("Error deleting config file", e);
             }
@@ -438,7 +437,7 @@ public abstract class CXFTestBase {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    try (InputStream zis = zip.getInputStream(entry))  {
+                    try (InputStream zis = zip.getInputStream(entry)) {
                         byte[] bytes = zis.readAllBytes();
                         data.put(entry.getName(), DigestUtils.md5Hex(bytes));
                     }
@@ -458,8 +457,7 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())  {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
@@ -467,7 +465,6 @@ public abstract class CXFTestBase {
                         byte[] bytes = zis.readAllBytes();
                         data.put(entry.getName(), bytes);
                     }
-                    
                 }
             }
         } finally {
