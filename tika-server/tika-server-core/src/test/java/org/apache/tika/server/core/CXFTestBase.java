@@ -101,6 +101,7 @@ public abstract class CXFTestBase {
     protected TikaLoader tika;
     private PipesParser pipesParser;
     private Path pipesConfigPath;
+    private Path inputTempDirectory = null;
 
     public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir, Long timeoutMillis) throws IOException {
 
@@ -199,7 +200,7 @@ public abstract class CXFTestBase {
             this.tika = TikaLoader.load(tmp);
 
             // Create input temp directory for pipes-based parsing
-            Path inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
+            inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
 
             // Initialize PipesParsingHelper for pipes-based parsing
             // Merge the fetcher config with basePath pointing to the temp directory
@@ -425,6 +426,9 @@ public abstract class CXFTestBase {
             } catch (Exception e) {
                 LOG.warn("Error deleting config file", e);
             }
+        }
+        if (inputTempDirectory != null) {
+            Files.deleteIfExists(inputTempDirectory);
         }
     }
 
