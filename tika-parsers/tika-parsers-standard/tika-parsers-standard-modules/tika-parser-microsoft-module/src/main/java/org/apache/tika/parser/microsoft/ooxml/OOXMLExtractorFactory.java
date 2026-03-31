@@ -98,8 +98,7 @@ public class OOXMLExtractorFactory {
         //if the pkg is in the opencontainer of a TikaInputStream, it will get closed.
         //However, if a regular inputstream has been sent in, we need to revert the pkg.
         boolean mustRevertPackage = false;
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             OOXMLExtractor extractor = null;
 
             // Locate or Open the OPCPackage for the file
@@ -228,7 +227,6 @@ public class OOXMLExtractorFactory {
                             tmpRepairedCopy.getAbsolutePath());
                 }
             }
-            tmp.dispose();
         }
     }
 
