@@ -50,6 +50,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -97,11 +98,12 @@ public class OOXMLExtractorFactory {
         //if the pkg is in the opencontainer of a TikaInputStream, it will get closed.
         //However, if a regular inputstream has been sent in, we need to revert the pkg.
         boolean mustRevertPackage = false;
+        TemporaryResources tmp = new TemporaryResources();
         try {
             OOXMLExtractor extractor = null;
 
             // Locate or Open the OPCPackage for the file
-            TikaInputStream tis = TikaInputStream.get(stream);
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
@@ -226,6 +228,7 @@ public class OOXMLExtractorFactory {
                             tmpRepairedCopy.getAbsolutePath());
                 }
             }
+            tmp.dispose();
         }
     }
 
