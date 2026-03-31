@@ -152,7 +152,7 @@ public abstract class CXFTestBase {
     public static InputStream gzip(InputStream is) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         OutputStream gz = new GzipCompressorOutputStream(bos);
-        IOUtils.copy(is, gz);
+        is.transferTo(gz);
         gz.flush();
         gz.close();
         return new ByteArrayInputStream(bos.toByteArray());
@@ -186,12 +186,13 @@ public abstract class CXFTestBase {
             Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
 
             InputStream pipesConfigInputStream = getPipesConfigInputStream();
+            Path tmpPipesConfigPath;
             if (pipesConfigInputStream != null) {
                 // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
-                this.pipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
+                tmpPipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
             } else {
                 // Create a default pipes config, merging metadata-filters from tika config
-                this.pipesConfigPath = createDefaultTestConfig(tmp);
+                tmpPipesConfigPath = createDefaultTestConfig(tmp);
             }
 
             this.tika = TikaLoader.load(tmp);
@@ -201,7 +202,7 @@ public abstract class CXFTestBase {
 
             // Initialize PipesParsingHelper for pipes-based parsing
             // Merge the fetcher config with basePath pointing to the temp directory
-            this.pipesConfigPath = mergeFetcherConfig(this.pipesConfigPath, inputTempDirectory);
+            this.pipesConfigPath = mergeFetcherConfig(tmpPipesConfigPath, inputTempDirectory);
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(this.pipesConfigPath);
             PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
             if (pipesConfig == null) {
@@ -243,6 +244,8 @@ public abstract class CXFTestBase {
     /**
      * Merges PASSBACK_ALL emit strategy into a pipes config.
      * This ensures the child process uses PASSBACK_ALL regardless of what's in the config file.
+     * 
+     * @return JSON config file in the temp directory.
      */
     private Path mergePassbackAllStrategy(InputStream pipesConfigInputStream) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -268,6 +271,8 @@ public abstract class CXFTestBase {
     /**
      * Merges the tika-server-fetcher configuration into the pipes config.
      * The fetcher is configured with basePath pointing to the input temp directory.
+     * 
+     * @return new (different) JSON configPath in the temp director
      */
     private Path mergeFetcherConfig(Path configPath, Path inputTempDirectory) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -301,6 +306,8 @@ public abstract class CXFTestBase {
      * If the tika config contains metadata-filters, they are merged into the pipes config.
      *
      * @param tikaConfigPath path to the tika config (may contain metadata-filters)
+     * 
+     * @return JSON config file in the temp directory.
      */
     private Path createDefaultTestConfig(Path tikaConfigPath) throws IOException {
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
@@ -413,6 +420,7 @@ public abstract class CXFTestBase {
         if (pipesConfigPath != null) {
             try {
                 Files.deleteIfExists(pipesConfigPath);
+                LOG.info("Config file {} deleted", pipesConfigPath);
             } catch (Exception e) {
                 LOG.warn("Error deleting config file", e);
             }
@@ -429,9 +437,8 @@ public abstract class CXFTestBase {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    IOUtils.copy(zip.getInputStream(entry), bos);
-                    data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+                    byte[] bytes = zip.getInputStream(entry).readAllBytes();
+                    data.put(entry.getName(), DigestUtils.md5Hex(bytes));
                 }
             }
         } finally {
@@ -452,9 +459,8 @@ public abstract class CXFTestBase {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    IOUtils.copy(zip.getInputStream(entry), bos);
-                    data.put(entry.getName(), bos.toByteArray());
+                    byte[] bytes = zip.getInputStream(entry).readAllBytes();
+                    data.put(entry.getName(), bytes);
                 }
             }
         } finally {
@@ -472,10 +478,7 @@ public abstract class CXFTestBase {
             if (entry == null) {
                 break;
             }
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(zip, bos);
-            data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+            data.put(entry.getName(), DigestUtils.md5Hex(zip.readAllBytes()));
         }
 
         return data;
