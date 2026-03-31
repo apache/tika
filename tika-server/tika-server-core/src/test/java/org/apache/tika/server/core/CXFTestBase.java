@@ -151,10 +151,10 @@ public abstract class CXFTestBase {
 
     public static InputStream gzip(InputStream is) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        OutputStream gz = new GzipCompressorOutputStream(bos);
-        is.transferTo(gz);
-        gz.flush();
-        gz.close();
+        try (OutputStream gz = new GzipCompressorOutputStream(bos)) {
+            is.transferTo(gz);
+            gz.flush();
+        }
         return new ByteArrayInputStream(bos.toByteArray());
     }
 
@@ -185,14 +185,15 @@ public abstract class CXFTestBase {
             // Copy tika config to temp file first
             Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
 
-            InputStream pipesConfigInputStream = getPipesConfigInputStream();
             Path tmpPipesConfigPath;
-            if (pipesConfigInputStream != null) {
-                // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
-                tmpPipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
-            } else {
-                // Create a default pipes config, merging metadata-filters from tika config
-                tmpPipesConfigPath = createDefaultTestConfig(tmp);
+            try (InputStream pipesConfigInputStream = getPipesConfigInputStream()) {
+                if (pipesConfigInputStream != null) {
+                    // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
+                    tmpPipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
+                } else {
+                    // Create a default pipes config, merging metadata-filters from tika config
+                    tmpPipesConfigPath = createDefaultTestConfig(tmp);
+                }
             }
 
             this.tika = TikaLoader.load(tmp);
@@ -203,6 +204,7 @@ public abstract class CXFTestBase {
             // Initialize PipesParsingHelper for pipes-based parsing
             // Merge the fetcher config with basePath pointing to the temp directory
             this.pipesConfigPath = mergeFetcherConfig(tmpPipesConfigPath, inputTempDirectory);
+            Files.delete(tmpPipesConfigPath);
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(this.pipesConfigPath);
             PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
             if (pipesConfig == null) {
@@ -432,13 +434,15 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    byte[] bytes = zip.getInputStream(entry).readAllBytes();
-                    data.put(entry.getName(), DigestUtils.md5Hex(bytes));
+                    try (InputStream zis = zip.getInputStream(entry))  {
+                        byte[] bytes = zis.readAllBytes();
+                        data.put(entry.getName(), DigestUtils.md5Hex(bytes));
+                    }
+                    
                 }
             }
         } finally {
@@ -459,8 +463,11 @@ public abstract class CXFTestBase {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    byte[] bytes = zip.getInputStream(entry).readAllBytes();
-                    data.put(entry.getName(), bytes);
+                    try (InputStream zis = zip.getInputStream(entry)) {
+                        byte[] bytes = zis.readAllBytes();
+                        data.put(entry.getName(), bytes);
+                    }
+                    
                 }
             }
         } finally {
