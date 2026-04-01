@@ -66,7 +66,7 @@ public class StackTraceTest extends CXFTestBase {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @TempDir
-    static Path unpackTempDir;
+    private static Path unpackTempDir;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
