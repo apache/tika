@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -41,6 +40,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.server.core.resource.DetectorResource;
@@ -65,7 +65,8 @@ public class StackTraceTest extends CXFTestBase {
     private static final String UNPACK_CONFIG_TEMPLATE = "/configs/cxf-unpack-test-template.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    private Path unpackTempDir;
+    @TempDir
+    private static Path unpackTempDir;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -92,9 +93,6 @@ public class StackTraceTest extends CXFTestBase {
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        // Create temp directory for unpack emitter
-        unpackTempDir = Files.createTempDirectory("tika-stacktrace-test-");
-
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
 
         Map<String, Object> replacements = new HashMap<>();
