@@ -175,6 +175,30 @@ public class RecursiveParserWrapperTest extends TikaTest {
     }
 
     @Test
+    public void testNestedTarball() throws Exception {
+        List<Metadata> list = getRecursiveMetadata("test-nested-tarball.tar");
+        List<String> actualInternalPaths =
+            list.stream()
+                .map(m -> m.get(TikaCoreProperties.RESOURCE_NAME_KEY))
+                .collect(Collectors.toList());
+
+        List<String> expectedInternalPaths = Arrays.asList("test-nested-tarball.tar",
+            "folderWithinTgz/testTXT.txt",
+            "nested.tar",
+            "folderContainingTgz/inner/nested.tgz");
+        assertEquals(expectedInternalPaths, actualInternalPaths);
+
+        List<String> actualEmbeddedPaths =
+            list.stream()
+                .map(m -> m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH))
+                .collect(Collectors.toList());
+        assertEquals(Arrays.asList(null,
+            "/nested.tgz/nested.tar/testTXT.txt",
+            "/nested.tgz/nested.tar",
+            "/nested.tgz"), actualEmbeddedPaths);
+    }
+
+    @Test
     public void testCharLimitNoThrowOnWriteLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();

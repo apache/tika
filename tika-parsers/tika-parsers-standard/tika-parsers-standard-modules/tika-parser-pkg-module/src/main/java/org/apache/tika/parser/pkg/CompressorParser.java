@@ -254,6 +254,12 @@ public class CompressorParser implements Parser {
         if (StringUtils.isBlank(name)) {
             return;
         }
+
+        int indexOfLastSlash = name.lastIndexOf('/');
+        if (indexOfLastSlash > -1 && indexOfLastSlash < name.length() - 1) {
+            name = name.substring(indexOfLastSlash+1);
+        }
+
         if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
             name = name.substring(0, name.lastIndexOf(".")) + ".tar";
         } else if (name.endsWith(".bz") || name.endsWith("gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
