@@ -62,6 +62,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
     private OPCPackage container;
     private POIXMLProperties properties;
+    private boolean includeGlossary = true;
 
     public XWPFEventBasedWordExtractor(OPCPackage container)
             throws XmlException, OpenXML4JException, IOException {
@@ -83,6 +84,10 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
 
     public OPCPackage getPackage() {
         return this.container;
+    }
+
+    public void setIncludeGlossary(boolean includeGlossary) {
+        this.includeGlossary = includeGlossary;
     }
 
     public POIXMLProperties.CoreProperties getCoreProperties() {
@@ -131,23 +136,26 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
             }
         }
         //handle glossary document
-        pps = container.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
+        if (includeGlossary) {
+            pps = container.getPartsByContentType(
+                    XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
 
-        if (pps != null) {
-            for (PackagePart pp : pps) {
-                //likely only one, but why not...
-                try {
-                    handleDocumentPart(pp, sb);
-                } catch (IOException e) {
-                    LOG.warn("IOException handling glossary document part", e);
-                } catch (SAXException e) {
-                    if (WriteLimitReachedException.isWriteLimitReached(e)) {
-                        throw new RuntimeSAXException(e);
+            if (pps != null) {
+                for (PackagePart pp : pps) {
+                    //likely only one, but why not...
+                    try {
+                        handleDocumentPart(pp, sb);
+                    } catch (IOException e) {
+                        LOG.warn("IOException handling glossary document part", e);
+                    } catch (SAXException e) {
+                        if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                            throw new RuntimeSAXException(e);
+                        }
+                        //swallow this because we don't actually call it
+                        LOG.warn("SAXException handling glossary document part", e);
+                    } catch (TikaException e) {
+                        LOG.warn("ParseException handling document part", e);
                     }
-                    //swallow this because we don't actually call it
-                    LOG.warn("SAXException handling glossary document part", e);
-                } catch (TikaException e) {
-                    LOG.warn("ParseException handling document part", e);
                 }
             }
         }

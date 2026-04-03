@@ -46,6 +46,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
@@ -126,16 +127,21 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         //handle glossary document
-        pps = opcPackage.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
-        if (pps != null) {
-            if (pps.size() > 0) {
-                xhtml.startElement("div", "class", "glossary");
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class,
+                new OfficeParserConfig());
+        if (officeParserConfig.isIncludeGlossary()) {
+            pps = opcPackage.getPartsByContentType(
+                    XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
+            if (pps != null) {
+                if (pps.size() > 0) {
+                    xhtml.startElement("div", "class", "glossary");
 
-                for (PackagePart pp : pps) {
-                    //likely only one, but why not...
-                    handleDocumentPart(pp, xhtml);
+                    for (PackagePart pp : pps) {
+                        //likely only one, but why not...
+                        handleDocumentPart(pp, xhtml);
+                    }
+                    xhtml.endElement("div");
                 }
-                xhtml.endElement("div");
             }
         }
 

@@ -40,6 +40,7 @@ public class OfficeParserConfig implements Serializable {
     private boolean writeSelectHeadersInBody = false;
 
     private boolean extractAllAlternativesFromMSG = false;
+    private boolean includeGlossary = true;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 
@@ -229,6 +230,23 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setExtractAllAlternativesFromMSG(boolean extractAllAlternativesFromMSG) {
         this.extractAllAlternativesFromMSG = extractAllAlternativesFromMSG;
+    }
+
+    public boolean isIncludeGlossary() {
+        return includeGlossary;
+    }
+
+    /**
+     * Whether or not to include the glossary (building blocks / AutoText) document
+     * from docx files.  The glossary can contain template content such as form field
+     * placeholders that may duplicate content already present in the main body.
+     * <p/>
+     * Default: <code>true</code>
+     *
+     * @param includeGlossary whether or not to include glossary content
+     */
+    public void setIncludeGlossary(boolean includeGlossary) {
+        this.includeGlossary = includeGlossary;
     }
 
     public boolean isIncludeMissingRows() {
