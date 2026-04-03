@@ -37,7 +37,6 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -202,7 +201,7 @@ public class OOXMLExtractorFactory {
             } else {
                 throw new TikaException("Error creating OOXML extractor", e);
             }
-        } catch (OpenXML4JException | XmlException e) {
+        } catch (OpenXML4JException e) {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
@@ -210,7 +209,7 @@ public class OOXMLExtractorFactory {
     }
 
     private static POIXMLTextExtractor trySXWPF(OPCPackage pkg)
-            throws TikaException, XmlException, OpenXML4JException, IOException {
+            throws TikaException, OpenXML4JException, IOException {
         PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType(
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
         if (packageRelationshipCollection.size() == 0) {
@@ -235,7 +234,7 @@ public class OOXMLExtractorFactory {
     }
 
     private static POIXMLTextExtractor tryXSLF(OPCPackage pkg, boolean eventBased)
-            throws TikaException, XmlException, OpenXML4JException, IOException {
+            throws TikaException, OpenXML4JException, IOException {
 
         PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType(
                 "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");

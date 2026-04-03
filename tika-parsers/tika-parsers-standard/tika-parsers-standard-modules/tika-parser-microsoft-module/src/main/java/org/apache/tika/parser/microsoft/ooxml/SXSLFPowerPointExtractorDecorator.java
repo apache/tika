@@ -93,6 +93,11 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         //if mainDocument == null, throw exception
     }
 
+    @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new SAXBasedMetadataExtractor(opcPackage, context);
+    }
+
     /**
      * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
      */

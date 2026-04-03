@@ -34,7 +34,6 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -64,7 +63,7 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
     private POIXMLProperties properties;
 
     public XWPFEventBasedWordExtractor(OPCPackage container)
-            throws XmlException, OpenXML4JException, IOException {
+            throws OpenXML4JException, IOException {
         this.container = container;
         // Properties are lazily initialized to avoid requiring ooxml-lite
         // when SAXBasedMetadataExtractor is used instead
