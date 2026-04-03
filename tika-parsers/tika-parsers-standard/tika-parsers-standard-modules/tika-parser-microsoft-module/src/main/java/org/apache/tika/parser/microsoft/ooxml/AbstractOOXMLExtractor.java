@@ -46,7 +46,6 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -140,7 +139,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * ParseContext)
      */
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
-            throws SAXException, XmlException, IOException, TikaException {
+            throws SAXException, IOException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
@@ -527,7 +526,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * Populates the {@link XHTMLContentHandler} object received as parameter.
      */
     protected abstract void buildXHTML(XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException;
+            throws SAXException, IOException;
 
     /**
      * Return a list of the main parts of the document, used

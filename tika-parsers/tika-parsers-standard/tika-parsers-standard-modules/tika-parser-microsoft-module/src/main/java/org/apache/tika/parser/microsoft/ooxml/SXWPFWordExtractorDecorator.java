@@ -34,7 +34,6 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.apache.xmlbeans.XmlException;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -117,7 +116,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         //handle main document
         List<PackagePart> pps = getStoryDocumentParts();
         if (pps != null) {

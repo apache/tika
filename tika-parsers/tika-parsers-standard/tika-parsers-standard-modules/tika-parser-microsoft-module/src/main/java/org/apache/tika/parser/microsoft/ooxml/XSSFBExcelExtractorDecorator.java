@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
@@ -32,8 +31,6 @@ import org.apache.poi.xssf.binary.XSSFBStylesTable;
 import org.apache.poi.xssf.eventusermodel.XSSFBReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
-import org.apache.poi.xssf.usermodel.XSSFShape;
-import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -61,7 +58,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
     @Override
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
-            throws SAXException, XmlException, IOException, TikaException {
+            throws SAXException, IOException, TikaException {
 
         this.metadata = metadata;
         this.parseContext = context;
@@ -75,7 +72,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
      */
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         OPCPackage container = extractor.getPackage();
 
         XSSFBSharedStringsTable strings;
@@ -92,7 +89,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             iter = (XSSFBReader.SheetIterator) xssfReader.getSheetsData();
             strings = new XSSFBSharedStringsTable(container);
         } catch (OpenXML4JException e) {
-            throw new XmlException(e);
+            throw new IOException(e);
         }
 
         while (iter.hasNext()) {
@@ -126,9 +123,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             for (String footer : sheetExtractor.footers) {
                 extractHeaderFooter(footer, xhtml);
             }
-            List<XSSFShape> shapes = iter.getShapes();
-
-            processShapes(shapes, xhtml);
+            processDrawings(sheetPart, xhtml);
 
             //for now dump sheet hyperlinks at bottom of page
             //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes

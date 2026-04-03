@@ -60,7 +60,6 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFldChar;
@@ -124,7 +123,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      */
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
         XWPFListManager listManager = new XWPFListManager(loadNumbering());
         // headers
@@ -187,7 +186,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractIBodyText(IBody bodyElement, XWPFListManager listManager,
                                   XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         for (IBodyElement element : bodyElement.getBodyElements()) {
             if (element instanceof XWPFParagraph) {
                 XWPFParagraph paragraph = (XWPFParagraph) element;
@@ -205,7 +204,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void extractSDT(XWPFSDT element, XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         ISDTContent content = element.getContent();
         String tag = "p";
         xhtml.startElement(tag);
@@ -215,7 +214,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractParagraph(XWPFParagraph paragraph, XWPFListManager listManager,
                                   XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         // If this paragraph is actually a whole new section, then
         //  it could have its own headers and footers
         // Check and handle if so
@@ -375,10 +374,14 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         //Note "w:txbxContent//"...must look for all descendant paragraphs
         //not just the immediate children of txbxContent -- TIKA-2807
         if (config.isIncludeShapeBasedContent()) {
-            for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath(
-                    "declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent//w:p")) {
-                extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()),
-                        paragraph.getBody()), listManager, xhtml);
+            try {
+                for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath(
+                        "declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent//w:p")) {
+                    extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()),
+                            paragraph.getBody()), listManager, xhtml);
+                }
+            } catch (Exception e) {
+                // XmlException from CTP.Factory.parse — swallow for shape content
             }
         }
 
@@ -397,7 +400,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void extractFootnoteEndnoteContent(XWPFParagraph paragraph,
                                                   XWPFListManager listManager,
                                                   XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         String nsW = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
         QName footnoteRefQName = new QName(nsW, "footnoteReference");
         QName endnoteRefQName = new QName(nsW, "endnoteReference");
@@ -553,7 +556,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void processRun(XWPFRun run, XWPFParagraph paragraph, XHTMLContentHandler xhtml,
                             Deque<FormattingUtils.Tag> formattingState)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         // open/close required tags if run changes formatting
         FormattingUtils.ensureFormattingState(xhtml, FormattingUtils.toTags(run), formattingState);
 
@@ -581,7 +584,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         xhtml.characters(run.getContent().getText());
     }
 
@@ -627,7 +630,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractTable(XWPFTable table, XWPFListManager listManager,
                               XHTMLContentHandler xhtml)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         xhtml.startElement("table");
         xhtml.startElement("tbody");
         for (XWPFTableRow row : table.getRows()) {
@@ -649,7 +652,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractFooters(XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy,
                                 XWPFListManager listManager)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         // footers
         if (hfPolicy.getFirstPageFooter() != null) {
             extractHeaderText(xhtml, hfPolicy.getFirstPageFooter(), listManager);
@@ -664,7 +667,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractHeaders(XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy,
                                 XWPFListManager listManager)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
         if (hfPolicy == null) {
             return;
         }
@@ -684,7 +687,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header,
                                    XWPFListManager listManager)
-            throws SAXException, XmlException, IOException {
+            throws SAXException, IOException {
 
         for (IBodyElement e : header.getBodyElements()) {
             if (e instanceof XWPFParagraph) {

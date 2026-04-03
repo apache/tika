@@ -19,7 +19,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 
 import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -53,5 +52,5 @@ public interface OOXMLExtractor {
      * given content handler.
      */
     void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
-            throws SAXException, XmlException, IOException, TikaException;
+            throws SAXException, IOException, TikaException;
 }

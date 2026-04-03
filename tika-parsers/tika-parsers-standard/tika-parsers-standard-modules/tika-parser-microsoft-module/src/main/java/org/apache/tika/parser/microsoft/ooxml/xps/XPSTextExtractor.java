@@ -25,7 +25,6 @@ import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.xmlbeans.XmlException;
 
 /**
  * Currently, mostly a pass-through class to hold pkg and properties
@@ -37,10 +36,13 @@ public class XPSTextExtractor implements POIXMLTextExtractor {
     private final OPCPackage pkg;
     private final POIXMLProperties properties;
 
-    public XPSTextExtractor(OPCPackage pkg) throws OpenXML4JException, XmlException, IOException {
+    public XPSTextExtractor(OPCPackage pkg) throws OpenXML4JException, IOException {
         this.pkg = pkg;
-        this.properties = new POIXMLProperties(pkg);
-
+        try {
+            this.properties = new POIXMLProperties(pkg);
+        } catch (Exception e) {
+            throw new IOException("Failed to read OOXML properties", e);
+        }
     }
 
     @Override

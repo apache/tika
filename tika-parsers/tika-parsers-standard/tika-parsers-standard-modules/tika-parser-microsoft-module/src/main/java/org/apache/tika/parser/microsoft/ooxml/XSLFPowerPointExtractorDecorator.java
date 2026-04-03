@@ -56,7 +56,6 @@ import org.apache.poi.xslf.usermodel.XSLFTableRow;
 import org.apache.poi.xslf.usermodel.XSLFTextParagraph;
 import org.apache.poi.xslf.usermodel.XSLFTextRun;
 import org.apache.poi.xslf.usermodel.XSLFTextShape;
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthor;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentAuthorList;
@@ -356,7 +355,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 PackagePart slidePart;
                 try {
                     slidePart = document.getSlidePart(ctSlide);
-                } catch (IOException | XmlException e) {
+                } catch (Exception e) {
                     throw new TikaException("Broken OOXML file", e);
                 }
                 addSlideParts(slidePart, parts);
