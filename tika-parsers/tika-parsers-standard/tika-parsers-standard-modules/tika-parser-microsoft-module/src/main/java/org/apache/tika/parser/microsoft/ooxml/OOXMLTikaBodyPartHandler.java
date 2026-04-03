@@ -56,7 +56,6 @@ public class OOXMLTikaBodyPartHandler
     private int tableDepth = 0;//table depth
     private int sdtDepth = 0;//
     private FormattingTagManager formattingTags;
-    private boolean wroteHyperlinkStart = false;
 
     //TODO: fix this
     //pWithinCell should be an array/stack of given cell depths
@@ -127,19 +126,12 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void hyperlinkStart(String link) throws SAXException {
-        if (link != null) {
-            xhtml.startElement("a", "href", link);
-            wroteHyperlinkStart = true;
-        }
+        formattingTags.openHyperlink(link);
     }
 
     @Override
     public void hyperlinkEnd() throws SAXException {
-        if (wroteHyperlinkStart) {
-            formattingTags.closeAll();
-            wroteHyperlinkStart = false;
-            xhtml.endElement("a");
-        }
+        formattingTags.closeHyperlink();
     }
 
     @Override
@@ -438,7 +430,7 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startBookmark(String id, String name) throws SAXException {
         //skip bookmarks within hyperlinks
-        if (name != null && !wroteHyperlinkStart) {
+        if (name != null && !formattingTags.isHyperlinkActive()) {
             xhtml.startElement("a", "name", name);
             xhtml.endElement("a");
         }

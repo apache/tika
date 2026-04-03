@@ -96,7 +96,9 @@ class OOXMLPartContentCollector extends DefaultHandler {
             if (id != null && !skipIds.contains(id)) {
                 currentId = id;
                 buffer = new ByteArrayOutputStream();
-                writeString(buildWrapperOpenTag());
+                // Don't write wrapper open tag yet — inline xmlns declarations
+                // (e.g., xmlns:a on nested elements) haven't been captured via
+                // startPrefixMapping. Defer to endElement when all are known.
                 depth = 0;
             }
         }
@@ -110,8 +112,16 @@ class OOXMLPartContentCollector extends DefaultHandler {
         }
 
         if (depth == 0) {
-            writeString("</w:body>");
-            contentMap.put(currentId, buffer.toByteArray());
+            // Build the wrapper now — all startPrefixMapping calls from nested
+            // elements have been captured, so inline xmlns declarations are included.
+            byte[] wrapperOpen = buildWrapperOpenTag().getBytes(StandardCharsets.UTF_8);
+            byte[] content = buffer.toByteArray();
+            ByteArrayOutputStream combined =
+                    new ByteArrayOutputStream(wrapperOpen.length + content.length + 16);
+            combined.write(wrapperOpen, 0, wrapperOpen.length);
+            combined.write(content, 0, content.length);
+            writeString(combined, "</w:body>");
+            contentMap.put(currentId, combined.toByteArray());
             currentId = null;
             buffer = null;
             return;
@@ -171,8 +181,12 @@ class OOXMLPartContentCollector extends DefaultHandler {
     }
 
     private void writeString(String s) {
+        writeString(buffer, s);
+    }
+
+    private static void writeString(ByteArrayOutputStream target, String s) {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        buffer.write(bytes, 0, bytes.length);
+        target.write(bytes, 0, bytes.length);
     }
 
     static String escape(String s) {

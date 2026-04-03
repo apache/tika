@@ -154,9 +154,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private int inACFallbackDepth = 0;
     private boolean inDelText = false;
     //buffers rt in ruby sections (see 17.3.3.25)
-    private boolean inHlinkClick = false;
     private boolean inTextBox = false;
     private boolean inV = false; //in c:v in chart file
+    // True when we're inside a <pPr> that was a direct child of <p> (the first child).
+    // Only those pPr elements should trigger startParagraph on close.
+    // pPr elements nested inside other elements (e.g., <a:pPr> inside <a:fld>)
+    // must not be treated as paragraph-level properties.
+    private boolean inParagraphLevelPPr = false;
     // Field code tracking for instrText-based hyperlinks
     private boolean inField = false;
     private boolean inInstrText = false;
@@ -225,7 +229,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
-        if (lastStartElementWasP && !PPR.equals(localName)) {
+        if (lastStartElementWasP && PPR.equals(localName)) {
+            // pPr is the first child of <p> — this is a paragraph-level pPr.
+            // Defer startParagraph until </pPr> so properties (style, numbering) are set first.
+            inParagraphLevelPPr = true;
+        } else if (lastStartElementWasP) {
+            // First child of <p> is not pPr — start paragraph immediately with defaults.
             bodyContentsHandler.startParagraph(currPProperties);
         }
 
@@ -321,8 +330,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             String hyperlink = null;
             if (hyperlinkId != null) {
                 hyperlink = linkedRelationships.get(hyperlinkId);
-                bodyContentsHandler.hyperlinkStart(hyperlink);
-                inHlinkClick = true;
+                if (inR) {
+                    // hlinkClick inside a run — treat as run property.
+                    // FormattingTagManager opens/closes <a> with the run lifecycle.
+                    currRunProperties.setHlinkClickUrl(hyperlink);
+                } else if (hyperlink != null) {
+                    // hlinkClick on a shape/picture (not in a run) — emit as self-closing ref
+                    bodyContentsHandler.externalRef("hlinkClick", hyperlink);
+                }
             }
         } else if (TBL.equals(localName)) {
             bodyContentsHandler.startTable();
@@ -498,12 +513,15 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handleEndOfRun();
         } else if (T.equals(localName)) {
             inT = false;
-        } else if (PPR.equals(localName)) {
+        } else if (PPR.equals(localName) && inParagraphLevelPPr) {
+            // Only process as paragraph properties if this pPr was a direct child of <p>.
+            // pPr inside other elements (e.g., <a:fld> fields) must be ignored.
             if (!pStarted) {
                 bodyContentsHandler.startParagraph(currPProperties);
                 pStarted = true;
             }
             currPProperties.reset();
+            inParagraphLevelPPr = false;
         } else if (P.equals(localName)) {
             if (runBuffer.length() > 0) {
                 //<p><tab></p>...this will treat that as if it were
@@ -553,16 +571,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     private void handleEndOfRun() throws SAXException {
         bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-        if (inHlinkClick) {
-            bodyContentsHandler.hyperlinkEnd();
-            inHlinkClick = false;
-        }
         inR = false;
         runBuffer.setLength(0);
         currRunProperties.setBold(false);
         currRunProperties.setItalics(false);
         currRunProperties.setStrike(false);
         currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
+        currRunProperties.setHlinkClickUrl(null);
     }
 
     @Override

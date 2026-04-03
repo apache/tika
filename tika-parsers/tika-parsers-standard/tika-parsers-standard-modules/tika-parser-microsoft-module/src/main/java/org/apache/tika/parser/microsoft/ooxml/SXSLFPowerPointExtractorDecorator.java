@@ -110,9 +110,12 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         if (slidesPRC != null && slidesPRC.size() > 0) {
             for (int i = 0; i < slidesPRC.size(); i++) {
                 try {
-                    hiddenSlideCount += handleSlidePart(
-                            mainDocument.getRelatedPart(slidesPRC.getRelationship(i)),
-                            xhtml);
+                    PackagePart slidePart =
+                            safeGetRelatedPart(mainDocument, slidesPRC.getRelationship(i));
+                    if (slidePart == null) {
+                        continue;
+                    }
+                    hiddenSlideCount += handleSlidePart(slidePart, xhtml);
                 } catch (InvalidFormatException | ZipException e) {
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
@@ -152,7 +155,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         for (int i = 0; i < prc.size(); i++) {
             PackagePart commentAuthorsPart = null;
             try {
-                commentAuthorsPart = mainDocument.getRelatedPart(prc.getRelationship(i));
+                commentAuthorsPart = safeGetRelatedPart(mainDocument, prc.getRelationship(i));
             } catch (InvalidFormatException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
@@ -263,7 +266,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             for (int i = 0; i < slidePRC.size(); i++) {
                 PackagePart slidePart = null;
                 try {
-                    slidePart = mainDocument.getRelatedPart(slidePRC.getRelationship(i));
+                    slidePart = safeGetRelatedPart(mainDocument, slidePRC.getRelationship(i));
                 } catch (InvalidFormatException e) {
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
@@ -286,7 +289,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 for (int i = 0; i < prc.size(); i++) {
                     PackagePart pp = null;
                     try {
-                        pp = mainDocument.getRelatedPart(prc.getRelationship(i));
+                        pp = safeGetRelatedPart(mainDocument, prc.getRelationship(i));
                     } catch (InvalidFormatException e) {
                         metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
@@ -305,7 +308,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
                 XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
-                XSLFRelation.NOTES.getRelation()}) {
+                XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
+                XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             PackageRelationshipCollection prc = null;
             try {
                 prc = slidePart.getRelationshipsByType(relation);

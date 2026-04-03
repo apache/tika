@@ -43,6 +43,7 @@ import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.ooxml.AbstractOOXMLExtractor;
 import org.apache.tika.parser.microsoft.ooxml.EditType;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
@@ -193,7 +194,11 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     documentPart.getRelationshipsByType(XWPFRelation.HEADER.getRelation());
             if (headersPRC != null) {
                 for (int i = 0; i < headersPRC.size(); i++) {
-                    PackagePart header = documentPart.getRelatedPart(headersPRC.getRelationship(i));
+                    PackagePart header = AbstractOOXMLExtractor.safeGetRelatedPart(
+                            documentPart, headersPRC.getRelationship(i));
+                    if (header == null) {
+                        continue;
+                    }
                     handlePart(header, xwpfListManager, sb);
                 }
             }
@@ -213,7 +218,11 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                 if (prc != null) {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
-                                documentPart.getRelatedPart(prc.getRelationship(i));
+                                AbstractOOXMLExtractor.safeGetRelatedPart(
+                                        documentPart, prc.getRelationship(i));
+                        if (packagePart == null) {
+                            continue;
+                        }
                         handlePart(packagePart, xwpfListManager, sb);
                     }
                 }

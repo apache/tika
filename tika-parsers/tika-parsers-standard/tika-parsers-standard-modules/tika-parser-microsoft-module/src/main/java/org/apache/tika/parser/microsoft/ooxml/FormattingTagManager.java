@@ -16,24 +16,37 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.Objects;
+
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * Manages XHTML formatting tags (b, i, u, s) as a state machine,
- * ensuring proper nesting. Tags are always ordered from outermost to innermost:
- * {@code <b><i><s><u>text</u></s></i></b>}.
+ * Single owner of all run-scoped XHTML wrapper tags, ensuring proper nesting.
+ * Nesting order from outermost to innermost:
+ * {@code <a href="..."><b><i><s><u>text</u></s></i></b></a>}.
  * <p>
- * When a formatting change occurs, all tags that are "inside" the changing tag
- * must be closed first, then the change applied, then inner tags reopened.
- * This avoids generating malformed XHTML with overlapping tags.
+ * Hyperlinks come from two OOXML sources with different lifecycles:
+ * <ul>
+ *   <li><b>Wrapper hyperlinks</b> (DOCX {@code <w:hyperlink>}, field-code HYPERLINK):
+ *       opened/closed explicitly via {@link #openHyperlink}/{@link #closeHyperlink},
+ *       span multiple runs.</li>
+ *   <li><b>Run-property hyperlinks</b> (PPTX {@code <a:hlinkClick>}):
+ *       set on {@link RunProperties#setHlinkClickUrl}, managed automatically
+ *       by {@link #applyFormatting} per-run.</li>
+ * </ul>
+ * Both emit the same {@code <a href="...">} XHTML. Wrapper hyperlinks take
+ * precedence — run properties cannot override an active wrapper.
  */
 class FormattingTagManager {
 
     private final XHTMLContentHandler xhtml;
 
+    // Outermost to innermost: hyperlink > bold > italic > strike > underline
+    private String currentHyperlink = null;
+    private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
     private boolean isItalics = false;
     private boolean isStrikeThrough = false;
@@ -44,12 +57,63 @@ class FormattingTagManager {
     }
 
     /**
+     * Opens a wrapper-style hyperlink (DOCX {@code <w:hyperlink>} or field-code).
+     * Closes any open formatting tags first to maintain nesting.
+     * No-op if url is null.
+     */
+    void openHyperlink(String url) throws SAXException {
+        if (url == null) {
+            return;
+        }
+        closeFormattingTags();
+        if (currentHyperlink != null) {
+            xhtml.endElement("a");
+        }
+        xhtml.startElement("a", "href", url);
+        currentHyperlink = url;
+        wrapperHyperlinkActive = true;
+    }
+
+    /**
+     * Closes the active wrapper-style hyperlink. No-op if none was opened.
+     */
+    void closeHyperlink() throws SAXException {
+        if (currentHyperlink != null && wrapperHyperlinkActive) {
+            closeFormattingTags();
+            xhtml.endElement("a");
+            currentHyperlink = null;
+            wrapperHyperlinkActive = false;
+        }
+    }
+
+    /**
+     * Returns true if any hyperlink (wrapper or run-property) is currently open.
+     */
+    boolean isHyperlinkActive() {
+        return currentHyperlink != null;
+    }
+
+    /**
      * Reconciles the current formatting state with the given run properties,
      * opening and closing XHTML tags as needed to maintain proper nesting.
      */
     void applyFormatting(RunProperties runProperties) throws SAXException {
+        // Run-property hyperlinks only when no wrapper is active
+        if (!wrapperHyperlinkActive) {
+            String newHyperlink = runProperties.getHlinkClickUrl();
+            if (!Objects.equals(newHyperlink, currentHyperlink)) {
+                closeFormattingTags();
+                if (currentHyperlink != null) {
+                    xhtml.endElement("a");
+                }
+                if (newHyperlink != null) {
+                    xhtml.startElement("a", "href", newHyperlink);
+                }
+                currentHyperlink = newHyperlink;
+            }
+        }
+
         if (runProperties.isBold() != isBold) {
-            // Bold is outermost — close everything inside it
             if (isStrikeThrough) {
                 xhtml.endElement("s");
                 isStrikeThrough = false;
@@ -112,10 +176,18 @@ class FormattingTagManager {
     }
 
     /**
-     * Closes all currently open formatting tags in proper nesting order
-     * (innermost first: u, s, i, b).
+     * Closes all currently open tags in proper nesting order.
      */
     void closeAll() throws SAXException {
+        closeFormattingTags();
+        if (currentHyperlink != null) {
+            xhtml.endElement("a");
+            currentHyperlink = null;
+            wrapperHyperlinkActive = false;
+        }
+    }
+
+    private void closeFormattingTags() throws SAXException {
         if (isUnderline) {
             xhtml.endElement("u");
             isUnderline = false;
