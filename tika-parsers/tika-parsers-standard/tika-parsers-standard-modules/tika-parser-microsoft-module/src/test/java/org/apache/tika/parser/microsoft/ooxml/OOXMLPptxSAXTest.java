@@ -40,7 +40,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Runs the shared PPTX tests using the SAX-based streaming parser,
@@ -233,42 +232,6 @@ public class OOXMLPptxSAXTest extends AbstractOOXMLPptxTest {
         metadataList = getRecursiveMetadata("testPPT_macros.pptm", parser);
         assertContainsAtLeast(minExpected, metadataList);
         assertContainsAtLeast(parsedBy, metadataList);
-    }
-
-    @Test
-    public void testStrictTagBalancePptx() throws Exception {
-        XHTMLContentHandler.setStrictTagBalanceChecking(true);
-        try {
-            // Test with the standard test file first — should not throw
-            getRecursiveMetadata("testPPT_various2.pptx", getParseContext());
-        } finally {
-            XHTMLContentHandler.setStrictTagBalanceChecking(false);
-        }
-    }
-
-    /**
-     * Test with external PPTX files known to trigger "suspected zip bomb"
-     * from unbalanced SAX tags. Enable by setting system property
-     * "tika.test.pptx.zipbomb" to a file path.
-     */
-    @Test
-    public void testStrictTagBalanceExternalPptx() throws Exception {
-        String filePath = System.getProperty("tika.test.pptx.zipbomb");
-        if (filePath == null) {
-            return;
-        }
-        java.io.File f = new java.io.File(filePath);
-        if (!f.isFile()) {
-            return;
-        }
-        XHTMLContentHandler.setStrictTagBalanceChecking(true);
-        try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
-            Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler(-1);
-            AUTO_DETECT_PARSER.parse(tis, handler, metadata, getParseContext());
-        } finally {
-            XHTMLContentHandler.setStrictTagBalanceChecking(false);
-        }
     }
 
     @Test

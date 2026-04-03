@@ -16,10 +16,8 @@
  */
 package org.apache.tika.sax;
 
-import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -97,14 +95,6 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headEnded = false;
     private boolean useFrameset = false;
 
-    /**
-     * When true, tracks a stack of opened element names and throws
-     * a RuntimeException on mismatched endElement calls. This is a
-     * debugging aid for finding unbalanced SAX events in parsers.
-     * Enable via {@link #setStrictTagBalanceChecking(boolean)}.
-     */
-    private static boolean strictTagBalanceChecking = false;
-    private final Deque<String> tagStack = new ArrayDeque<>();
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         this(handler, metadata, null);
     }
@@ -133,17 +123,6 @@ public class XHTMLContentHandler extends SafeContentHandler {
             this.writeMetadataToHead = true;
             this.includeTitle = true;
         }
-    }
-
-    /**
-     * Enables or disables strict tag balance checking. When enabled,
-     * every startElement pushes onto a stack and every endElement
-     * verifies the tag matches, throwing a RuntimeException with the
-     * full stack trace on mismatch. This is a debugging tool, not for
-     * production use.
-     */
-    public static void setStrictTagBalanceChecking(boolean strict) {
-        strictTagBalanceChecking = strict;
     }
 
     private static Set<String> unmodifiableSet(String... elements) {
@@ -304,9 +283,6 @@ public class XHTMLContentHandler extends SafeContentHandler {
             }
 
             super.startElement(uri, local, name, attributes);
-            if (strictTagBalanceChecking) {
-                tagStack.push(name);
-            }
         }
     }
 
@@ -317,21 +293,6 @@ public class XHTMLContentHandler extends SafeContentHandler {
     @Override
     public void endElement(String uri, String local, String name) throws SAXException {
         if (!AUTO.contains(name)) {
-            if (strictTagBalanceChecking) {
-                if (tagStack.isEmpty()) {
-                    throw new RuntimeException(
-                            "STRICT TAG CHECK: endElement('" + name +
-                                    "') but tag stack is empty! No matching startElement.");
-                }
-                String expected = tagStack.peek();
-                if (!name.equals(expected)) {
-                    throw new RuntimeException(
-                            "STRICT TAG CHECK: endElement('" + name +
-                                    "') but expected '" + expected +
-                                    "'. Tag stack (top to bottom): " + tagStack);
-                }
-                tagStack.pop();
-            }
             super.endElement(uri, local, name);
             if (XHTML.equals(uri) && ENDLINE.contains(name)) {
                 newline();
