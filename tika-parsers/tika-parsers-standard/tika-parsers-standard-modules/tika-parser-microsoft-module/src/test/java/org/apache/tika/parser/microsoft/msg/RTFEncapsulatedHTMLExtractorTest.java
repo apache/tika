@@ -18,9 +18,13 @@ package org.apache.tika.parser.microsoft.msg;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.Charset;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -213,5 +217,140 @@ public class RTFEncapsulatedHTMLExtractorTest {
         String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("line1<br>line2", html);
+    }
+
+    @Test
+    public void testParseFontTable() {
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset0 Arial;}\n" +
+                "{\\f1\\fmodern\\fcharset0 Courier New;}\n" +
+                "{\\f4\\fswiss\\fcharset134 Simsun;}\n" +
+                "{\\f5\\fswiss\\fcharset128 MS PGothic;}\n" +
+                "{\\f6\\fswiss\\fcharset162 Arial Tur;}\n" +
+                "}\n}";
+        Map<Integer, Charset> fonts = RTFEncapsulatedHTMLExtractor.parseFontTable(rtf);
+        assertEquals(Charset.forName("windows-1252"), fonts.get(0));
+        assertEquals(Charset.forName("GBK"), fonts.get(4));
+        assertEquals(Charset.forName("MS932"), fonts.get(5));
+        assertEquals(Charset.forName("windows-1254"), fonts.get(6));
+    }
+
+    @Test
+    public void testParseFontTableEmpty() {
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0 no font table}";
+        Map<Integer, Charset> fonts = RTFEncapsulatedHTMLExtractor.parseFontTable(rtf);
+        assertTrue(fonts.isEmpty());
+    }
+
+    @Test
+    public void testCjkFontCharsetTracking() {
+        // Simulates the real-world case: \ansicpg1252 but \fcharset134 (GBK) font
+        // used for inter-tag CJK text. The \htmlrtf block switches to \f1 (GBK font)
+        // and the \'xx bytes after \htmlrtf0 should be decoded as GBK.
+        // \u53ef\u4ee5 = 可以, GBK bytes: BF C9 D2 D4
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset0 Arial;}\n" +
+                "{\\f1\\fswiss\\fcharset134 Simsun;}\n" +
+                "}\n" +
+                "{\\*\\htmltag64 <p>}\n" +
+                "\\htmlrtf {\\f1 \\htmlrtf0\n" +
+                "\\'bf\\'c9\\'d2\\'d4\n" +
+                "\\htmlrtf }\\htmlrtf0\n" +
+                "{\\*\\htmltag72 </p>}\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertTrue(html.contains("\u53ef\u4ee5"),
+                "GBK bytes should be decoded as Chinese characters, got: " + html);
+    }
+
+    @Test
+    public void testCjkFontSwitchBackToLatin() {
+        // After CJK text, font switches back to Latin font for ASCII content
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset0 Arial;}\n" +
+                "{\\f1\\fswiss\\fcharset134 Simsun;}\n" +
+                "}\n" +
+                "{\\*\\htmltag64 <p>}\n" +
+                "\\htmlrtf {\\f1 \\htmlrtf0\n" +
+                "\\'bf\\'c9\\'d2\\'d4\n" +
+                "\\htmlrtf\\f0 \\htmlrtf0\n" +
+                "Hello\n" +
+                "\\htmlrtf }\\htmlrtf0\n" +
+                "{\\*\\htmltag72 </p>}\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertTrue(html.contains("\u53ef\u4ee5"),
+                "CJK should be decoded correctly, got: " + html);
+        assertTrue(html.contains("Hello"),
+                "Latin text after font switch should be preserved");
+    }
+
+    @Test
+    public void testHtmltagUsesDefaultCodePage() {
+        // Per MS-OXRTFEX spec, \'xx inside htmltag groups should use the
+        // default code page (\ansicpg), not the current font's charset.
+        // \'e9 in windows-1252 = é
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset0 Arial;}\n" +
+                "{\\f1\\fswiss\\fcharset134 Simsun;}\n" +
+                "}\n" +
+                "\\htmlrtf {\\f1 \\htmlrtf0\n" +
+                "{\\*\\htmltag84 caf\\'e9}\n" +
+                "\\htmlrtf }\\htmlrtf0\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertEquals("café", html,
+                "htmltag content should use default code page, not font charset");
+    }
+
+    @Test
+    public void testFontSwitchInBracedSkipBlockDoesNotPersist() {
+        // Reproduces the Hebrew/Chinese bug: a skip block contains {\f3\'a0}
+        // where \f3 is a Latin font (charset 0). The braces should scope the
+        // font switch so it doesn't affect subsequent inter-tag text.
+        // \u05d0\u05d2 = אג, windows-1255 bytes: E0 E2
+        String rtf = "{\\rtf1\\ansi\\ansicpg1255\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset177 David;}\n" +
+                "{\\f3\\fmodern\\fcharset0 Courier New;}\n" +
+                "}\n" +
+                "{\\*\\htmltag64 <p>}\n" +
+                "\\htmlrtf {\\htmlrtf0\n" +
+                "\\'e0\\'e2\n" +                         // Hebrew: אג
+                "{\\*\\htmltag84 &nbsp;}" +
+                "\\htmlrtf {\\f3\\'a0}\\htmlrtf0\n" +   // skip block with braced \f3
+                "\\'e8\\'e5\\'e1\n" +                    // Hebrew: חוב
+                "\\htmlrtf }\\htmlrtf0\n" +
+                "{\\*\\htmltag72 </p>}\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertTrue(html.contains("\u05d0\u05d2"),
+                "First Hebrew text should decode correctly, got: " + html);
+        // \xe8\xe5\xe1 in windows-1255 = טוב; in windows-1252 = èåá
+        assertTrue(html.contains("\u05d8\u05d5\u05d1"),
+                "Hebrew text after braced skip block should still use windows-1255, got: " + html);
+        assertFalse(html.contains("\u00e8\u00e5\u00e1"),
+                "Should NOT decode as windows-1252 (mojibake), got: " + html);
+    }
+
+    @Test
+    public void testFontSwitchInInterTagText() {
+        // \f control word directly in inter-tag text (outside \htmlrtf blocks)
+        // should also update the current charset
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\fonttbl\n" +
+                "{\\f0\\fswiss\\fcharset0 Arial;}\n" +
+                "{\\f1\\fswiss\\fcharset134 Simsun;}\n" +
+                "}\n" +
+                "{\\*\\htmltag64 <p>}\n" +
+                "\\f1 \\'bf\\'c9\n" +
+                "{\\*\\htmltag72 </p>}\n" +
+                "}";
+        String html = RTFEncapsulatedHTMLExtractor.extract(rtf.getBytes(US_ASCII));
+        assertNotNull(html);
+        assertTrue(html.contains("\u53ef"),
+                "Font switch in inter-tag text should affect charset, got: " + html);
     }
 }

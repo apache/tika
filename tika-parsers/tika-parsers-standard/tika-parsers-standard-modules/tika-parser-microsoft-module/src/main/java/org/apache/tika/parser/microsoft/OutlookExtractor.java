@@ -78,7 +78,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlEncodingDetector;
@@ -183,7 +182,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final DirectoryNode root;
     private final MAPIMessage msg;
     private final ParseContext parseContext;
-    private final boolean extractAllAlternatives;
     HtmlEncodingDetector detector = new HtmlEncodingDetector();
 
 
@@ -191,8 +189,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         super(context, metadata);
         this.root = root;
         this.parseContext = context;
-        this.extractAllAlternatives =
-                context.get(OfficeParserConfig.class).isExtractAllAlternativesFromMSG();
         try {
             this.msg = new MAPIMessage(root);
         } catch (IOException e) {
@@ -296,6 +292,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         Set<String> contentIdNames = new HashSet<>();
         handleBodyChunks(htmlChunk, rtfChunk, textChunk, xhtml, contentIdNames);
+
         // Process the attachments
         for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
             Metadata attachMetadata = Metadata.newInstance(context);
@@ -586,36 +583,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private void handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
                                   XHTMLContentHandler xhtml, Set<String> contentIdNames)
             throws SAXException, IOException, TikaException {
-
-        if (extractAllAlternatives) {
-            extractAllAlternatives(htmlChunk, rtfChunk, textChunk, xhtml, contentIdNames);
-            return;
-        }
-        _handleBestBodyChunk(htmlChunk, rtfChunk, textChunk, xhtml, contentIdNames);
-
-    }
-    private void _handleBestBodyChunk(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
-                                      XHTMLContentHandler xhtml, Set<String> contentIdNames)
-            throws SAXException, IOException, TikaException {
-        //try html, then rtf, then text
+        // Priority: a) HTML chunk, b) HTML extracted from RTF, c) raw RTF, d) text
         if (htmlChunk != null) {
-            byte[] data = null;
-            if (htmlChunk instanceof ByteChunk) {
-                data = ((ByteChunk) htmlChunk).getValue();
-            } else if (htmlChunk instanceof StringChunk) {
-                data = ((StringChunk) htmlChunk).getRawValue();
-            }
+            byte[] data = getValue(htmlChunk);
             if (data != null) {
-                Parser htmlParser = EmbeddedDocumentUtil
-                        .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
-                if (htmlParser == null) {
-                    htmlParser = new JSoupParser();
-                }
-                Metadata htmlMetadata = Metadata.newInstance(context);
-                try (TikaInputStream tis = TikaInputStream.get(data)) {
-                    htmlParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)), htmlMetadata, parseContext);
-                }
-                extractContentIdNamesFromHtml(data, htmlMetadata, contentIdNames);
+                parseHtmlBody(data, xhtml, contentIdNames);
                 parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.HTML.name());
                 return;
             }
@@ -623,25 +595,34 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         if (rtfChunk != null) {
             ByteChunk chunk = (ByteChunk) rtfChunk;
             //avoid buffer underflow TIKA-2530
-            //TODO -- would be good to find an example triggering file and
-            //figure out if this is a bug in POI or a genuine 0 length chunk
             if (chunk.getValue() != null && chunk.getValue().length > 0) {
                 MAPIRtfAttribute rtf =
                         new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
                                 chunk.getValue());
+                byte[] rtfData = rtf.getData();
+                // Try to extract encapsulated HTML — returns null if not present
+                String html = RTFEncapsulatedHTMLExtractor.extract(rtfData);
+                if (html != null) {
+                    parseHtmlString(html, xhtml, contentIdNames);
+                    parentMetadata.add(MAPI.BODY_TYPES_PROCESSED,
+                            BODY_TYPES_PROCESSED.RTF.name());
+                    parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "true");
+                    return;
+                }
+                // Fall back to parsing as raw RTF
                 RTFParser rtfParser = (RTFParser) EmbeddedDocumentUtil
                         .tryToFindExistingLeafParser(RTFParser.class, parseContext);
                 if (rtfParser == null) {
                     rtfParser = new RTFParser();
                 }
                 Metadata rtfMetadata = Metadata.newInstance(context);
-                try (TikaInputStream tis = TikaInputStream.get(rtf.getData())) {
+                try (TikaInputStream tis = TikaInputStream.get(rtfData)) {
                     rtfParser.parseInline(tis, xhtml, rtfMetadata, parseContext);
                 }
-                extractContentIdNamesFromRtf(rtf.getData(), rtfMetadata, contentIdNames);
+                // Scan raw RTF bytes for cid: references
+                extractContentIdNames(rtfData, contentIdNames);
                 parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.RTF.name());
-                parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML,
-                        rtfMetadata.get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
+                parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML, "false");
                 return;
             }
         }
@@ -651,21 +632,46 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             extractContentIdNamesFromText(s, contentIdNames);
             parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.TEXT.name());
         }
-
     }
 
-    private void extractContentIdNamesFromRtf(byte[] data, Metadata metadata, Set<String> contentIdNames) {
-        // Try to de-encapsulate the HTML from the RTF first
-        String html = RTFEncapsulatedHTMLExtractor.extract(data);
-        if (html != null) {
-            extractContentIdNamesFromHtml(html.getBytes(UTF_8), metadata, contentIdNames);
-            return;
+    private void parseHtmlBody(byte[] htmlData, XHTMLContentHandler xhtml,
+                               Set<String> contentIdNames)
+            throws SAXException, IOException, TikaException {
+        Parser htmlParser = EmbeddedDocumentUtil
+                .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
+        if (htmlParser == null) {
+            htmlParser = new JSoupParser();
         }
-        // Fall back to scanning the raw RTF bytes for cid: references
-        extractContentIdNamesFromHtml(data, metadata, contentIdNames);
+        Metadata htmlMetadata = Metadata.newInstance(context);
+        try (TikaInputStream tis = TikaInputStream.get(htmlData)) {
+            htmlParser.parse(tis,
+                    new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    htmlMetadata, parseContext);
+        }
+        extractContentIdNames(htmlData, contentIdNames);
     }
 
-    private void extractContentIdNamesFromHtml(byte[] data, Metadata metadata, Set<String> contentIdNames) {
+    /**
+     * Parse an already-decoded HTML string using JSoupParser.parseString(),
+     * bypassing encoding detection entirely.  Used for HTML de-encapsulated
+     * from RTF where the charset has already been handled.
+     */
+    private void parseHtmlString(String html, XHTMLContentHandler xhtml,
+                                 Set<String> contentIdNames)
+            throws SAXException, IOException, TikaException {
+        JSoupParser htmlParser = (JSoupParser) EmbeddedDocumentUtil
+                .tryToFindExistingLeafParser(JSoupParser.class, parseContext);
+        if (htmlParser == null) {
+            htmlParser = new JSoupParser();
+        }
+        Metadata htmlMetadata = Metadata.newInstance(context);
+        htmlParser.parseString(html,
+                new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                htmlMetadata, parseContext);
+        extractContentIdNames(html.getBytes(UTF_8), contentIdNames);
+    }
+
+    private void extractContentIdNames(byte[] data, Set<String> contentIdNames) {
         String html = new String(data, UTF_8);
         Matcher imageMatcher = IMG_TAG_PATTERN.matcher(html);
         Matcher cidSrcMatcher = SRC_ATTR_PATTERN.matcher("");
@@ -685,55 +691,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         while (m.find()) {
             contentIdNames.add(m.group(1));
         }
-    }
-
-    private void extractAllAlternatives(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
-                                        XHTMLContentHandler xhtml, Set<String> contentIdNames)
-            throws TikaException, SAXException, IOException {
-        if (htmlChunk != null) {
-            byte[] data = getValue(htmlChunk);
-            if (data != null) {
-                handleEmbeddedResource(TikaInputStream.get(data), "html-body", null,
-                        MediaType.TEXT_HTML.toString(), xhtml, true);
-                extractContentIdNamesFromHtml(data, Metadata.newInstance(context), contentIdNames);
-                parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.HTML.name());
-            }
-        }
-        if (rtfChunk != null) {
-            ByteChunk chunk = (ByteChunk) rtfChunk;
-            MAPIRtfAttribute rtf =
-                    new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
-                            chunk.getValue());
-
-            byte[] data = rtf.getData();
-            if (data != null) {
-                Metadata rtfMetadata = Metadata.newInstance(context);
-                handleEmbeddedResource(TikaInputStream.get(data), rtfMetadata,
-                        "rtf-body", null, null,
-                        "application/rtf", xhtml, true);
-                extractContentIdNamesFromRtf(data, rtfMetadata, contentIdNames);
-                //copy this info into the parent...what else should we copy?
-                parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.RTF.name());
-                parentMetadata.set(RTFMetadata.CONTAINS_ENCAPSULATED_HTML,
-                        rtfMetadata.get(RTFMetadata.CONTAINS_ENCAPSULATED_HTML));
-
-            }
-        }
-        if (textChunk != null) {
-            byte[] data = getValue(textChunk);
-            if (data != null) {
-                Metadata chunkMetadata = Metadata.newInstance(context);
-                chunkMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                        MediaType.TEXT_PLAIN.toString());
-                handleEmbeddedResource(TikaInputStream.get(data), chunkMetadata, null, "text-body",
-                        null, MediaType.TEXT_PLAIN.toString(), xhtml, true);
-                if (textChunk instanceof StringChunk) {
-                    extractContentIdNamesFromText(((StringChunk) textChunk).getValue(), contentIdNames);
-                }
-                parentMetadata.add(MAPI.BODY_TYPES_PROCESSED, BODY_TYPES_PROCESSED.TEXT.name());
-            }
-        }
-
     }
 
     //can return null!
