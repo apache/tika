@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -116,7 +117,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
                 content);
 
         assertContains("<td>Embedded table r1c1", content);
-        assertContainsCount("This is text within a shape", content, 1);
+        assertContainsCount("<p>This is text within a shape", content, 1);
         assertContains("<p>Rich text content control", content);
         assertContains("<p>Simple text content control", content);
         assertContains("Repeating content", content);
@@ -362,5 +363,33 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
                 getRecursiveMetadata("testFrameset.docx", getParseContext());
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_FRAMESETS));
+    }
+
+    /**
+     * Test with external DOCX files known to trigger "prefix not bound"
+     * from missing namespace declarations in footnote/endnote fragments.
+     * Enable by setting system property "tika.test.docx.namespace" to a file path.
+     */
+    @Test
+    public void testNamespaceInFragments() throws Exception {
+        String filePath = System.getProperty("tika.test.docx.namespace");
+        if (filePath == null) {
+            return;
+        }
+        java.io.File f = new java.io.File(filePath);
+        if (!f.isFile()) {
+            return;
+        }
+        AutoDetectParser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        org.xml.sax.ContentHandler handler =
+                new org.apache.tika.sax.BodyContentHandler(-1);
+        try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
+            parser.parse(tis, handler, metadata, getParseContext());
+        }
+        String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        for (String w : warnings) {
+            assertNotContained("not bound", w);
+        }
     }
 }

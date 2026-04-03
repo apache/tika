@@ -48,17 +48,6 @@ public interface XWPFBodyContentsHandler {
 
     void startParagraph(ParagraphProperties paragraphProperties) throws SAXException;
 
-    /**
-     * Updates the properties (style, numbering) for the current pending paragraph.
-     * Called when {@code </pPr>} is encountered, after {@link #startParagraph} but
-     * before any content.  The body handler defers opening the XHTML {@code <p>}
-     * tag until the first content arrives, so this style info will be available.
-     */
-    default void setParagraphProperties(ParagraphProperties paragraphProperties)
-            throws SAXException {
-        // Default no-op for backward compatibility
-    }
-
     void endParagraph() throws SAXException;
 
     void startTable() throws SAXException;

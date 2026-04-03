@@ -94,6 +94,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private boolean headStarted = false;
     private boolean headEnded = false;
     private boolean useFrameset = false;
+
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         this(handler, metadata, null);
     }

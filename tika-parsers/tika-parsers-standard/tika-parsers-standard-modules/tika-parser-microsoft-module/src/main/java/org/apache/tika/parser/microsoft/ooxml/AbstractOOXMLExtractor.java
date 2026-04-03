@@ -623,6 +623,27 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @param parentPart
      * @param contentHandler
      */
+    /**
+     * Safely resolves a related part, returning null if the part cannot be found
+     * instead of throwing {@link IllegalArgumentException}.
+     */
+    public static PackagePart safeGetRelatedPart(PackagePart source,
+                                           PackageRelationship relationship)
+            throws InvalidFormatException {
+        if (source == null || relationship == null) {
+            return null;
+        }
+        if (!source.isRelationshipExists(relationship)) {
+            return null;
+        }
+        try {
+            return source.getRelatedPart(relationship);
+        } catch (IllegalArgumentException e) {
+            // Relationship exists but target part is missing from the package
+            return null;
+        }
+    }
+
     void handleGeneralTextContainingPart(String contentType, String xhtmlClassLabel,
                                          PackagePart parentPart, Metadata parentMetadata,
                                          ContentHandler contentHandler) throws SAXException {
@@ -646,7 +667,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         relatedPartPRC.getRelationship(i);
                 try {
                     PackagePart relatedPartPart =
-                            parentPart.getRelatedPart(relatedPartPackageRelationship);
+                            safeGetRelatedPart(parentPart, relatedPartPackageRelationship);
+                    if (relatedPartPart == null) {
+                        continue;
+                    }
                     try (InputStream stream = relatedPartPart.getInputStream()) {
                         XMLReaderUtils.parseSAX(stream,
                                 new EmbeddedContentHandler(contentHandler), context);

@@ -54,9 +54,6 @@ class OOXMLPartContentCollector extends DefaultHandler {
     private String currentId = null;
     private ByteArrayOutputStream buffer = null;
     private int depth = 0;
-    // Prefix mappings that fired since the last startElement — need to be
-    // emitted as xmlns declarations on the next element inside a collected fragment.
-    private final java.util.List<String[]> pendingPrefixMappings = new java.util.ArrayList<>();
 
     /**
      * @param wrapperElementNames local names of wrapper elements to collect
@@ -79,12 +76,6 @@ class OOXMLPartContentCollector extends DefaultHandler {
     @Override
     public void startPrefixMapping(String prefix, String uri) {
         namespaceMappings.put(prefix, uri);
-        // Track prefix mappings that fire within a collected fragment —
-        // these need to be emitted as xmlns declarations on the next
-        // startElement so that re-parsed fragments have valid namespace bindings.
-        if (currentId != null) {
-            pendingPrefixMappings.add(new String[]{prefix, uri});
-        }
     }
 
     Map<String, byte[]> getContentMap() {
@@ -105,7 +96,9 @@ class OOXMLPartContentCollector extends DefaultHandler {
             if (id != null && !skipIds.contains(id)) {
                 currentId = id;
                 buffer = new ByteArrayOutputStream();
-                writeString(buildWrapperOpenTag());
+                // Don't write wrapper open tag yet — inline xmlns declarations
+                // (e.g., xmlns:a on nested elements) haven't been captured via
+                // startPrefixMapping. Defer to endElement when all are known.
                 depth = 0;
             }
         }
@@ -119,8 +112,16 @@ class OOXMLPartContentCollector extends DefaultHandler {
         }
 
         if (depth == 0) {
-            writeString("</w:body>");
-            contentMap.put(currentId, buffer.toByteArray());
+            // Build the wrapper now — all startPrefixMapping calls from nested
+            // elements have been captured, so inline xmlns declarations are included.
+            byte[] wrapperOpen = buildWrapperOpenTag().getBytes(StandardCharsets.UTF_8);
+            byte[] content = buffer.toByteArray();
+            ByteArrayOutputStream combined =
+                    new ByteArrayOutputStream(wrapperOpen.length + content.length + 16);
+            combined.write(wrapperOpen, 0, wrapperOpen.length);
+            combined.write(content, 0, content.length);
+            writeString(combined, "</w:body>");
+            contentMap.put(currentId, combined.toByteArray());
             currentId = null;
             buffer = null;
             return;
@@ -166,23 +167,6 @@ class OOXMLPartContentCollector extends DefaultHandler {
         String tagName = (qName != null && !qName.isEmpty()) ? qName : localName;
         StringBuilder sb = new StringBuilder();
         sb.append('<').append(tagName);
-        // Emit any namespace declarations that fired since the last element.
-        // In namespace-aware SAX, xmlns:prefix attributes are reported as
-        // startPrefixMapping events, NOT as attributes — so they must be
-        // re-serialized explicitly for the fragment to be re-parseable.
-        if (!pendingPrefixMappings.isEmpty()) {
-            for (String[] mapping : pendingPrefixMappings) {
-                String prefix = mapping[0];
-                String nsUri = mapping[1];
-                if (prefix == null || prefix.isEmpty()) {
-                    sb.append(" xmlns=\"").append(escape(nsUri)).append("\"");
-                } else {
-                    sb.append(" xmlns:").append(prefix).append("=\"")
-                            .append(escape(nsUri)).append("\"");
-                }
-            }
-            pendingPrefixMappings.clear();
-        }
         for (int i = 0; i < atts.getLength(); i++) {
             String attName = atts.getQName(i);
             if (attName == null || attName.isEmpty()) {
@@ -197,8 +181,12 @@ class OOXMLPartContentCollector extends DefaultHandler {
     }
 
     private void writeString(String s) {
+        writeString(buffer, s);
+    }
+
+    private static void writeString(ByteArrayOutputStream target, String s) {
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        buffer.write(bytes, 0, bytes.length);
+        target.write(bytes, 0, bytes.length);
     }
 
     static String escape(String s) {

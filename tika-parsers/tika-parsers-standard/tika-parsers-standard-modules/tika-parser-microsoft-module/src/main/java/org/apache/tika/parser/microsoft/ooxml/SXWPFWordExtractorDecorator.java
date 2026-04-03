@@ -45,6 +45,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
+import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
@@ -126,16 +127,21 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
         //handle glossary document
-        pps = opcPackage.getPartsByContentType(XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
-        if (pps != null) {
-            if (pps.size() > 0) {
-                xhtml.startElement("div", "class", "glossary");
+        OfficeParserConfig officeParserConfig = context.get(OfficeParserConfig.class,
+                new OfficeParserConfig());
+        if (officeParserConfig.isIncludeGlossary()) {
+            pps = opcPackage.getPartsByContentType(
+                    XWPFRelation.GLOSSARY_DOCUMENT.getContentType());
+            if (pps != null) {
+                if (pps.size() > 0) {
+                    xhtml.startElement("div", "class", "glossary");
 
-                for (PackagePart pp : pps) {
-                    //likely only one, but why not...
-                    handleDocumentPart(pp, xhtml);
+                    for (PackagePart pp : pps) {
+                        //likely only one, but why not...
+                        handleDocumentPart(pp, xhtml);
+                    }
+                    xhtml.endElement("div");
                 }
-                xhtml.endElement("div");
             }
         }
 
@@ -223,23 +229,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                 }
             }
-        } catch (InvalidFormatException | IOException | TikaException | SAXException |
-                 IllegalArgumentException e) {
-            // swallow -- POI throws IllegalArgumentException when
-            // a relationship references a part missing from the package
-        }
-    }
-
-    /**
-     * Safely resolves a related part from a relationship.  Returns {@code null}
-     * instead of throwing {@link IllegalArgumentException} when the target
-     * part is missing from the package (e.g. truncated / salvaged zips).
-     */
-    private static PackagePart safeGetRelatedPart(PackagePart source, PackageRelationship rel) {
-        try {
-            return source.getRelatedPart(rel);
-        } catch (InvalidFormatException | IllegalArgumentException e) {
-            return null;
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+            // swallow
         }
     }
 
@@ -286,10 +277,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     for (int i = 0; i < headersPRC.size(); i++) {
                         PackagePart header =
                                 safeGetRelatedPart(documentPart, headersPRC.getRelationship(i));
-                        if (header != null) {
-                            handlePart(header, styles, listManager, xhtml,
-                                    OOXMLInlineBodyPartMap.EMPTY);
+                        if (header == null) {
+                            continue;
                         }
+                        handlePart(header, styles, listManager, xhtml,
+                                OOXMLInlineBodyPartMap.EMPTY);
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -327,10 +319,11 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
                                 safeGetRelatedPart(documentPart, prc.getRelationship(i));
-                        if (packagePart != null) {
-                            handlePart(packagePart, styles, listManager, xhtml,
-                                    OOXMLInlineBodyPartMap.EMPTY);
+                        if (packagePart == null) {
+                            continue;
                         }
+                        handlePart(packagePart, styles, listManager, xhtml,
+                                OOXMLInlineBodyPartMap.EMPTY);
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -391,11 +384,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             linkedRelationships, config.isIncludeShapeBasedContent(),
                             config.isConcatenatePhoneticRuns(),
                             config.isPreferAlternateContentChoice())), context);
-        } catch (TikaException | IOException | SAXException e) {
+        } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-        bodyHandler.closeInlineElements();
         Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
         resolveEmfNames(packagePart, partMetadata);
         embeddedPartMetadataMap.putAll(partMetadata);
@@ -410,7 +402,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 continue;
             }
             try {
-                PackagePart emfPart = documentPart.getRelatedPart(
+                PackagePart emfPart = safeGetRelatedPart(documentPart,
                         documentPart.getRelationship(emfRId));
                 if (emfPart == null || emfPart.getContentType() == null) {
                     continue;
@@ -471,23 +463,20 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             OOXMLPartContentCollector collector =
                     new OOXMLPartContentCollector(wrapperElements, skipIds);
             for (int i = 0; i < prc.size(); i++) {
-                try {
-                    PackagePart part = documentPart.getRelatedPart(prc.getRelationship(i));
-                    // collect the part's linked relationships (for picture resolution)
-                    Map<String, String> partRels =
-                            loadLinkedRelationships(part, true, metadata);
-                    allRelationships.putAll(partRels);
-                    try (InputStream stream = part.getInputStream()) {
-                        XMLReaderUtils.parseSAX(stream, collector, context);
-                    }
-                } catch (InvalidFormatException | IOException | TikaException |
-                         SAXException e) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
+                PackagePart part = safeGetRelatedPart(documentPart, prc.getRelationship(i));
+                if (part == null) {
+                    continue;
+                }
+                // collect the part's linked relationships (for picture resolution)
+                Map<String, String> partRels =
+                        loadLinkedRelationships(part, true, metadata);
+                allRelationships.putAll(partRels);
+                try (InputStream stream = part.getInputStream()) {
+                    XMLReaderUtils.parseSAX(stream, collector, context);
                 }
             }
             return collector.getContentMap();
-        } catch (InvalidFormatException e) {
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
             return Collections.emptyMap();
@@ -530,7 +519,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 }
                 return new XWPFNumberingShim(numberingPart, context);
             }
-        } catch (Exception e) {
+        } catch (IOException | InvalidFormatException | TikaException | SAXException e) {
             //swallow
         }
         return null;

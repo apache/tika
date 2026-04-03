@@ -111,10 +111,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String COMMENT_REFERENCE = "commentReference";
     private static final String TEXTBOX = "textbox";
     private static final String TXBX = "txbx"; // DrawingML text box (wps:txbx in mc:Choice)
-    private static final String SDT = "sdt";
-    private static final String SDT_PR = "sdtPr";
-    private static final String SDT_CONTENT = "sdtContent";
-    private static final String SHOWING_PLCHDR = "showingPlcHdr";
     private final static String FLD_CHAR = "fldChar";
     private final static String INSTR_TEXT = "instrText";
     private final static String FLD_CHAR_TYPE = "fldCharType";
@@ -141,7 +137,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inRPr = false;
     private boolean inNumPr = false;
     private boolean inRt = false;
-    private boolean inPPr = false;
+    //mechanism used to determine when to
+    //signal the start of the p, and still
+    //handle p with pPr and those without
+    private boolean lastStartElementWasP = false;
+    //have we signaled the start of a p?
+    //pPr can happen multiple times within a p
+    //<p><pPr/><r><t>text</t></r><pPr></p>
+    private boolean pStarted = false;
     //alternate content can be embedded in itself.
     //need to track depth.
     //preferACChoice controls which branch is processed:
@@ -151,9 +154,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private int inACFallbackDepth = 0;
     private boolean inDelText = false;
     //buffers rt in ruby sections (see 17.3.3.25)
-    private boolean inHlinkClick = false;
     private boolean inTextBox = false;
     private boolean inV = false; //in c:v in chart file
+    // True when we're inside a <pPr> that was a direct child of <p> (the first child).
+    // Only those pPr elements should trigger startParagraph on close.
+    // pPr elements nested inside other elements (e.g., <a:pPr> inside <a:fld>)
+    // must not be treated as paragraph-level properties.
+    private boolean inParagraphLevelPPr = false;
     // Field code tracking for instrText-based hyperlinks
     private boolean inField = false;
     private boolean inInstrText = false;
@@ -164,10 +171,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
-    // SDT (structured document tag) placeholder tracking
-    private boolean inSdtPr = false;
-    private boolean sdtIsPlaceholder = false;
-    private int sdtPlaceholderDepth = 0;
     private boolean hasAnimations = false;
 
     public OOXMLWordAndPowerPointTextHandler(XWPFBodyContentsHandler bodyContentsHandler,
@@ -226,6 +229,17 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             throws SAXException {
         //TODO: checkBox, textBox, sym, headerReference, footerReference, commentRangeEnd
 
+        if (lastStartElementWasP && PPR.equals(localName)) {
+            // pPr is the first child of <p> — this is a paragraph-level pPr.
+            // Defer startParagraph until </pPr> so properties (style, numbering) are set first.
+            inParagraphLevelPPr = true;
+        } else if (lastStartElementWasP) {
+            // First child of <p> is not pPr — start paragraph immediately with defaults.
+            bodyContentsHandler.startParagraph(currPProperties);
+        }
+
+        lastStartElementWasP = false;
+
         if (uri != null && uri.equals(MC_NS)) {
             if (CHOICE.equals(localName)) {
                 inACChoiceDepth++;
@@ -254,9 +268,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (TAB.equals(localName)) {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
-            bodyContentsHandler.startParagraph(currPProperties);
-        } else if (PPR.equals(localName)) {
-            inPPr = true;
+            lastStartElementWasP = true;
         } else if (B.equals(localName)) { //TODO: add bCs
             if (inR && inRPr) {
                 currRunProperties.setBold(true);
@@ -318,8 +330,14 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             String hyperlink = null;
             if (hyperlinkId != null) {
                 hyperlink = linkedRelationships.get(hyperlinkId);
-                bodyContentsHandler.hyperlinkStart(hyperlink);
-                inHlinkClick = true;
+                if (inR) {
+                    // hlinkClick inside a run — treat as run property.
+                    // FormattingTagManager opens/closes <a> with the run lifecycle.
+                    currRunProperties.setHlinkClickUrl(hyperlink);
+                } else if (hyperlink != null) {
+                    // hlinkClick on a shape/picture (not in a run) — emit as self-closing ref
+                    bodyContentsHandler.externalRef("hlinkClick", hyperlink);
+                }
             }
         } else if (TBL.equals(localName)) {
             bodyContentsHandler.startTable();
@@ -329,20 +347,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             pictureTracker.setDescription(atts.getValue("", "descr"));
         } else if (PIC.equals(localName)) {
             pictureTracker.startPic(); //check for PIC_NS?
-        } else if (SDT.equals(localName)) {
-            // SDTs can nest; only track placeholder at outermost level
-            if (sdtPlaceholderDepth == 0) {
-                sdtIsPlaceholder = false;
-            }
-        } else if (SDT_PR.equals(localName)) {
-            inSdtPr = true;
-        } else if (SHOWING_PLCHDR.equals(localName) && inSdtPr) {
-            sdtIsPlaceholder = true;
-        } else if (SDT_CONTENT.equals(localName)) {
-            if (sdtIsPlaceholder) {
-                sdtPlaceholderDepth++;
-            }
-        } else if (FOOTNOTE_REFERENCE.equals(localName)) {
+        } //TODO: add sdt, sdtPr, sdtContent goes here statistically
+        else if (FOOTNOTE_REFERENCE.equals(localName)) {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.footnoteReference(id);
         } else if (IMAGEDATA.equals(localName)) {
@@ -500,10 +506,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         }
         if (PIC.equals(localName)) { //PIC_NS
             pictureTracker.endPicture();
-            if (inHlinkClick) {
-                bodyContentsHandler.hyperlinkEnd();
-                inHlinkClick = false;
-            }
             return;
         } else if (RPR.equals(localName)) {
             inRPr = false;
@@ -511,10 +513,15 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             handleEndOfRun();
         } else if (T.equals(localName)) {
             inT = false;
-        } else if (PPR.equals(localName)) {
-            inPPr = false;
-            bodyContentsHandler.setParagraphProperties(currPProperties);
+        } else if (PPR.equals(localName) && inParagraphLevelPPr) {
+            // Only process as paragraph properties if this pPr was a direct child of <p>.
+            // pPr inside other elements (e.g., <a:fld> fields) must be ignored.
+            if (!pStarted) {
+                bodyContentsHandler.startParagraph(currPProperties);
+                pStarted = true;
+            }
             currPProperties.reset();
+            inParagraphLevelPPr = false;
         } else if (P.equals(localName)) {
             if (runBuffer.length() > 0) {
                 //<p><tab></p>...this will treat that as if it were
@@ -522,6 +529,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 runBuffer.setLength(0);
             }
+            pStarted = false;
             bodyContentsHandler.endParagraph();
         } else if (TC.equals(localName)) {
             bodyContentsHandler.endTableCell();
@@ -538,14 +546,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
             bodyContentsHandler.hyperlinkEnd();
-        } else if (SDT_PR.equals(localName)) {
-            inSdtPr = false;
-        } else if (SDT_CONTENT.equals(localName)) {
-            if (sdtPlaceholderDepth > 0) {
-                sdtPlaceholderDepth--;
-            }
-        } else if (SDT.equals(localName)) {
-            sdtIsPlaceholder = false;
         } else if (PICT.equals(localName)) {
             pictureTracker.endPicture();
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
@@ -571,16 +571,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
 
     private void handleEndOfRun() throws SAXException {
         bodyContentsHandler.run(currRunProperties, runBuffer.toString());
-        if (inHlinkClick) {
-            bodyContentsHandler.hyperlinkEnd();
-            inHlinkClick = false;
-        }
         inR = false;
         runBuffer.setLength(0);
         currRunProperties.setBold(false);
         currRunProperties.setItalics(false);
         currRunProperties.setStrike(false);
         currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
+        currRunProperties.setHlinkClickUrl(null);
     }
 
     @Override
@@ -589,8 +586,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         if (inSkippedAlternateContent()) {
             return;
         } else if (!includeTextBox && inTextBox) {
-            return;
-        } else if (sdtPlaceholderDepth > 0) {
             return;
         }
 
@@ -616,8 +611,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         if (inSkippedAlternateContent()) {
             return;
         } else if (!includeTextBox && inTextBox) {
-            return;
-        } else if (sdtPlaceholderDepth > 0) {
             return;
         }
 
