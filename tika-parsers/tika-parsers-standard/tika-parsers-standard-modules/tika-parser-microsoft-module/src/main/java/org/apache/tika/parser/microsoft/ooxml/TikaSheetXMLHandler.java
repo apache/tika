@@ -23,9 +23,6 @@ import java.util.Queue;
 import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.util.CellAddress;
-import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
-import org.apache.poi.xssf.model.Comments;
-import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
@@ -34,11 +31,10 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Sheet XML handler for XLSX event-based parsing that uses {@link XSSFStylesShim}
- * instead of POI's XMLBeans-dependent {@code StylesTable}.
+ * and {@link XSSFCommentsShim} instead of POI's XMLBeans-dependent
+ * {@code StylesTable} and {@code CommentsTable}.
  * <p>
  * Adapted from Apache POI's {@code XSSFSheetXMLHandler} (Apache 2.0 license).
- * The only structural change is replacing the {@code Styles}/{@code XSSFCellStyle}
- * lookup with a direct call to our SAX-based styles shim for format resolution.
  */
 class TikaSheetXMLHandler extends DefaultHandler {
 
@@ -57,9 +53,9 @@ class TikaSheetXMLHandler extends DefaultHandler {
     }
 
     private final XSSFStylesShim stylesShim;
-    private final Comments comments;
+    private final XSSFCommentsShim commentsShim;
     private final XSSFSharedStringsShim sharedStringsShim;
-    private final SheetContentsHandler output;
+    private final TikaSheetContentsHandler output;
     private final DataFormatter formatter;
     private final boolean formulasNotResults;
 
@@ -83,34 +79,34 @@ class TikaSheetXMLHandler extends DefaultHandler {
     private Queue<CellAddress> commentCellRefs;
 
     TikaSheetXMLHandler(XSSFStylesShim stylesShim,
-                         Comments comments,
+                         XSSFCommentsShim commentsShim,
                          XSSFSharedStringsShim sharedStringsShim,
-                         SheetContentsHandler sheetContentsHandler,
+                         TikaSheetContentsHandler sheetContentsHandler,
                          DataFormatter dataFormatter,
                          boolean formulasNotResults) {
         this.stylesShim = stylesShim;
-        this.comments = comments;
+        this.commentsShim = commentsShim;
         this.sharedStringsShim = sharedStringsShim;
         this.output = sheetContentsHandler;
         this.formatter = dataFormatter;
         this.formulasNotResults = formulasNotResults;
         this.nextDataType = XssfDataType.NUMBER;
-        initComments(comments);
+        initComments(commentsShim);
     }
 
     TikaSheetXMLHandler(XSSFStylesShim stylesShim,
                          XSSFSharedStringsShim sharedStringsShim,
-                         SheetContentsHandler sheetContentsHandler,
+                         TikaSheetContentsHandler sheetContentsHandler,
                          DataFormatter dataFormatter,
                          boolean formulasNotResults) {
         this(stylesShim, null, sharedStringsShim, sheetContentsHandler, dataFormatter,
                 formulasNotResults);
     }
 
-    private void initComments(Comments commentsTable) {
-        if (commentsTable != null) {
+    private void initComments(XSSFCommentsShim commentsShim) {
+        if (commentsShim != null) {
             commentCellRefs = new LinkedList<>();
-            for (Iterator<CellAddress> iter = commentsTable.getCellAddresses();
+            for (Iterator<CellAddress> iter = commentsShim.getCellAddresses();
                  iter.hasNext(); ) {
                 commentCellRefs.add(iter.next());
             }
@@ -333,8 +329,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
         }
 
         checkForEmptyCellComments(EmptyCellCommentsCheckType.CELL);
-        XSSFComment comment = comments != null ?
-                comments.findCellComment(new CellAddress(cellRef)) : null;
+        XSSFCommentsShim.CommentData comment = commentsShim != null ?
+                commentsShim.findCellComment(new CellAddress(cellRef)) : null;
         output.cell(cellRef, thisStr, comment);
     }
 
@@ -393,7 +389,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
     }
 
     private void outputEmptyCellComment(CellAddress cellRef) {
-        XSSFComment comment = comments.findCellComment(cellRef);
+        XSSFCommentsShim.CommentData comment = commentsShim.findCellComment(cellRef);
         output.cell(cellRef.formatAsString(), null, comment);
     }
 

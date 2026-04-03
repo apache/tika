@@ -43,7 +43,6 @@ import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
-import org.apache.poi.xssf.model.Comments;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.apache.poi.xssf.usermodel.helpers.HeaderFooterHelper;
 import org.xml.sax.Attributes;
@@ -90,6 +89,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private static final String RELATION_VML_DRAWING =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing";
+    private static final String RELATION_COMMENTS =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
 
     /**
      * Allows access to headers/footers from raw xml strings
@@ -173,8 +174,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 addDrawingHyperLinks(sheetPart);
                 sheetParts.add(sheetPart);
 
-                Comments comments = iter.getSheetComments();
-                if (comments != null && comments.getNumberOfComments() > 0) {
+                XSSFCommentsShim commentsShim = parseSheetComments(sheetPart);
+                if (commentsShim != null && commentsShim.getNumberOfComments() > 0) {
                     metadata.set(Office.HAS_COMMENTS, true);
                 }
 
@@ -186,7 +187,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.startElement("table");
                 xhtml.startElement("tbody");
 
-                processSheet(sheetExtractor, comments, stylesShim, stringsShim, stream);
+                processSheet(sheetExtractor, commentsShim, stylesShim, stringsShim, stream);
                 try {
                     getThreadedComments(container, sheetPart, xhtml);
                 } catch (InvalidFormatException | TikaException | IOException e) {
@@ -822,12 +823,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    public void processSheet(SheetContentsHandler sheetContentsHandler, Comments comments,
+    public void processSheet(TikaSheetContentsHandler sheetContentsHandler,
+                             XSSFCommentsShim commentsShim,
                              XSSFStylesShim stylesShim, XSSFSharedStringsShim stringsShim,
                              InputStream sheetInputStream) throws IOException, SAXException {
         try {
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
-                    new TikaSheetXMLHandler(stylesShim, comments, stringsShim,
+                    new TikaSheetXMLHandler(stylesShim, commentsShim, stringsShim,
                             sheetContentsHandler, formatter, false));
             XMLReaderUtils.parseSAX(sheetInputStream, handler, parseContext);
             sheetInputStream.close();
@@ -843,6 +845,32 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         } catch (TikaException e) {
             throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
+        }
+    }
+
+    /**
+     * Parse the comments XML for a sheet part via SAX, avoiding XMLBeans.
+     */
+    private XSSFCommentsShim parseSheetComments(PackagePart sheetPart) {
+        try {
+            PackageRelationshipCollection rels =
+                    sheetPart.getRelationshipsByType(RELATION_COMMENTS);
+            if (rels.isEmpty()) {
+                return null;
+            }
+            PackageRelationship rel = rels.getRelationship(0);
+            PackagePartName partName =
+                    PackagingURIHelper.createPartName(rel.getTargetURI());
+            PackagePart commentsPart = rel.getPackage().getPart(partName);
+            if (commentsPart == null) {
+                return null;
+            }
+            try (InputStream is = commentsPart.getInputStream()) {
+                return new XSSFCommentsShim(is, parseContext);
+            }
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+            //swallow — comments are not critical
+            return null;
         }
     }
 
@@ -892,7 +920,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Turns formatted sheet events into HTML
      */
-    protected static class SheetTextAsHTML implements SheetContentsHandler {
+    protected static class SheetTextAsHTML
+            implements TikaSheetContentsHandler, SheetContentsHandler {
         private final boolean includeHeadersFooters;
         private final boolean includeMissingRows;
         protected List<String> headers;
@@ -939,7 +968,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        public void cell(String cellRef, String formattedValue, XSSFComment comment) {
+        public void cell(String cellRef, String formattedValue,
+                          XSSFCommentsShim.CommentData comment) {
             try {
                 // Handle any missing cells
                 int colNum =
@@ -964,13 +994,28 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.endElement("br");
                     xhtml.characters(comment.getAuthor());
                     xhtml.characters(": ");
-                    xhtml.characters(comment.getString().getString());
+                    xhtml.characters(comment.getText());
                 }
 
                 xhtml.endElement("td");
             } catch (SAXException e) {
                 throw new RuntimeSAXException(e);
             }
+        }
+
+        /**
+         * Bridge for POI's {@link SheetContentsHandler} interface, used by the
+         * XLSB (binary) path via {@link org.apache.poi.xssf.binary.XSSFBSheetHandler}.
+         */
+        public void cell(String cellRef, String formattedValue, XSSFComment comment) {
+            XSSFCommentsShim.CommentData commentData = null;
+            if (comment != null) {
+                String text = comment.getString() != null ?
+                        comment.getString().getString() : "";
+                commentData = new XSSFCommentsShim.CommentData(
+                        comment.getAuthor(), text);
+            }
+            cell(cellRef, formattedValue, commentData);
         }
 
         public void headerFooter(String text, boolean isHeader, String tagName) {
@@ -982,6 +1027,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             } else {
                 footers.add(text);
             }
+        }
+
+        @Override
+        public void endSheet() {
+            // no-op — satisfies both TikaSheetContentsHandler and SheetContentsHandler
         }
     }
 
