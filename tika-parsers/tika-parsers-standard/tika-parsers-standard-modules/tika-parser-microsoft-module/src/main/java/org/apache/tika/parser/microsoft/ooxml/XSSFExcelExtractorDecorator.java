@@ -133,6 +133,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new SAXBasedMetadataExtractor(extractor.getPackage(), parseContext);
+    }
+
+    @Override
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
 
