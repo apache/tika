@@ -77,4 +77,18 @@ public interface MAPI {
     Property ATTACH_MIME = Property.internalText(PREFIX_MAPI_ATTACH_META + "mime");
     Property ATTACH_LANGUAGE = Property.internalText(PREFIX_MAPI_ATTACH_META + "language");
 
+    /**
+     * PidTagAttachFlags (0x3714) — indicates which body formats might reference this attachment.
+     * Bit 1 (0x1) = ATT_INVISIBLE_IN_HTML
+     * Bit 2 (0x2) = ATT_INVISIBLE_IN_RTF
+     * Bit 3 (0x4) = ATT_RENDERED_IN_BODY
+     */
+    Property ATTACH_FLAGS = Property.internalInteger(PREFIX_MAPI_ATTACH_META + "flags");
+
+    /**
+     * PidTagAttachmentHidden (0x7FFE) — indicates whether this attachment is hidden from the end
+     * user. Inline images typically have this set to true.
+     */
+    Property ATTACH_HIDDEN = Property.internalBoolean(PREFIX_MAPI_ATTACH_META + "hidden");
+
 }

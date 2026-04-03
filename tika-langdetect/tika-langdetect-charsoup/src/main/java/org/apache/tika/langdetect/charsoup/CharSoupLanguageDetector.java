@@ -52,81 +52,54 @@ import org.apache.tika.parser.ParseContext;
  * keeping the implementation simple and predictable.
  * </p>
  * <p>
- * Inference uses raw logits throughout — the softmax array is never materialized.
- * The reported {@code rawScore} for each class is
- * {@code sigmoid(logit_c − logsumexp(other logits)) = exp(logit_c − logsumexp(all))},
- * computed by a single logsumexp pass followed by one {@code exp()} per class.
- * This is numerically equivalent to the softmax probability of class c but avoids
- * allocating or mutating a full probability distribution array.
+ * Inference uses raw logits throughout — no softmax distribution is ever computed.
+     * Confidence is based on the <em>margin</em> between the top two logits after
+     * confusable-group collapsing: {@code sigmoid(top_logit − second_logit)}.
+     * This is invariant to the number of classes and provides a stable confidence
+     * signal from short snippets up to full documents. Per-class {@code rawScore}
+     * is {@code sigmoid(logit_c − best_competitor_logit)}: the winner gets a value
+     * above 0.5, all others below.
  * </p>
  */
 @TikaComponent(name = "charsoup-language-detector")
 public class CharSoupLanguageDetector extends LanguageDetector implements SelfConfiguring {
 
     /**
-     * Model selection strategy.
+     * Detection strategy.
      * <ul>
-     *   <li>{@link #AUTOMATIC} — use length and feature-density gates to choose
-     *       between the short-text model and the general model (default)</li>
-     *   <li>{@link #SHORT_TEXT} — always use the short-text model regardless of
-     *       input length or feature count (no-op if the short-text model is absent)</li>
-     *   <li>{@link #STANDARD} — always use the general model regardless of input
-     *       length or feature count</li>
+     *   <li>{@link #STANDARD} — discriminative model only, no GLM adjudication</li>
+     *   <li>{@link #AUTOMATIC} — discriminative model, with GLM adjudication
+     *       when sigmoid(margin) is below {@link #GLM_ADJUDICATE_THRESHOLD}</li>
+     *   <li>{@link #GLM} — discriminative model + GLM adjudication on every input</li>
      * </ul>
      */
     public enum Strategy {
+        STANDARD,
         AUTOMATIC,
-        SHORT_TEXT,
-        STANDARD
+        GLM
     }
 
     private static final Logger LOG =
             LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
     /**
-     * General language model: v7, trained 2026-03-06.
-     * 203 languages, 16 384 buckets, ScriptAwareFeatureExtractor (flags 0x075).
+     * Language model: 204 languages, 32 768 buckets, SaltedNgramFeatureExtractor.
+     * Features: TRIGRAMS | 4GRAMS | SCRIPT_BLOCKS | L2_NORM | WORD_BIGRAMS | SALTED.
      */
     private static final String MODEL_RESOURCE =
-            "/org/apache/tika/langdetect/charsoup/langdetect-v7-20260306.bin";
+            "/org/apache/tika/langdetect/charsoup/langdetect-20260320.bin";
 
     /**
-     * Short-text model: v1, trained 2026-03-10.
-     * 123 languages, 32 768 buckets, ShortTextFeatureExtractor (flags 0x0a1).
-     * Routed to for inputs shorter than {@link #SHORT_TEXT_LENGTH_THRESHOLD}
-     * characters or with fewer than {@link #SHORT_TEXT_FEATURE_THRESHOLD} n-gram
-     * emissions.
+     * Sigmoid(margin) threshold below which the GLM adjudicator is invoked
+     * in {@link Strategy#AUTOMATIC} mode.  0.70 ≈ margin 0.85 — the
+     * discriminative model has a moderate but not decisive lead.
      */
-    private static final String SHORT_TEXT_MODEL_RESOURCE =
-            "/org/apache/tika/langdetect/charsoup/langdetect-short-v1-20260310.bin";
+    static final float GLM_ADJUDICATE_THRESHOLD = 0.70f;
 
     /**
-     * Inputs shorter than this many characters are routed to the short-text model
-     * (when loaded). Calibrated from the FLORES per-length crossover point where
-     * the short-text model outperforms the general model.
-     * TODO: tune after ablation results are available.
+     * Number of top discriminative candidates to score with the GLM.
      */
-    static final int SHORT_TEXT_LENGTH_THRESHOLD = 200;
-
-    /**
-     * Inputs whose n-gram emission count is below this threshold are routed to
-     * the short-text model (when loaded), regardless of character length. This
-     * catches degenerate inputs such as a kilobyte of whitespace followed by a
-     * single word, where raw character length would incorrectly trigger the
-     * general-model path.
-     * <p>
-     * Calibration reference (from {@link FeatureExtractor} Javadoc):
-     * ~200 chars of typical Latin prose ≈ 400 emissions, so ~2 emissions/char.
-     * A threshold of 200 means "effective content below ~100 chars of prose
-     * → short-text model", regardless of how much padding surrounds it.
-     * <ul>
-     *   <li>1 KB whitespace + "the" → ~5 emissions → short-text ✓</li>
-     *   <li>1 KB whitespace + 20-char sentence → ~40 emissions → short-text ✓</li>
-     *   <li>200-char dense Latin text → ~400 emissions → general model ✓</li>
-     * </ul>
-     * TODO: tune on real document metadata samples.
-     */
-    static final int SHORT_TEXT_FEATURE_THRESHOLD = 200;
+    static final int GLM_TOP_N = 5;
 
     /**
      * Size (in chars) of each independent chunk evaluated during detection.
@@ -185,11 +158,8 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     private static final FeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
 
-    /** Short-text model — {@code null} if the resource is not on the classpath. */
-    static final CharSoupModel SHORT_TEXT_MODEL;
-    static final FeatureExtractor SHORT_TEXT_EXTRACTOR;
-    private static int[][] SHORT_TEXT_GROUP_INDICES;
-    private static int[] SHORT_TEXT_CLASS_SCRIPT;
+    /** Generative language model for adjudication — {@code null} if not on classpath. */
+    static final GenerativeLanguageModel GLM_MODEL;
 
     static {
         try {
@@ -206,22 +176,17 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
                     e);
         }
 
-        CharSoupModel shortModel = null;
-        FeatureExtractor shortExtractor = null;
+        GenerativeLanguageModel glm = null;
         try {
-            shortModel = CharSoupModel.loadFromClasspath(SHORT_TEXT_MODEL_RESOURCE);
-            shortExtractor = new ShortTextFeatureExtractor(shortModel.getNumBuckets());
-            verifyFlagsMatch(shortModel, shortExtractor, SHORT_TEXT_MODEL_RESOURCE);
-            SHORT_TEXT_GROUP_INDICES = buildGroupIndices(shortModel);
-            SHORT_TEXT_CLASS_SCRIPT = buildClassScript(shortModel);
-            LOG.info("Short-text language model loaded ({} languages, {} buckets)",
-                    shortModel.getNumClasses(), shortModel.getNumBuckets());
+            glm = GenerativeLanguageModel.loadFromClasspath(
+                    GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
+            LOG.info("Generative language model loaded ({} languages)",
+                    glm.getLanguages().size());
         } catch (IOException e) {
-            LOG.debug("Short-text language model not found ({}); using general model only",
-                    SHORT_TEXT_MODEL_RESOURCE);
+            LOG.debug("Generative language model not found ({}); GLM adjudication disabled",
+                    GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
         }
-        SHORT_TEXT_MODEL = shortModel;
-        SHORT_TEXT_EXTRACTOR = shortExtractor;
+        GLM_MODEL = glm;
     }
 
     /**
@@ -235,7 +200,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     private static void verifyFlagsMatch(CharSoupModel model,
                                          FeatureExtractor extractor,
                                          String resourcePath) {
-        int modelFlags     = model.getFeatureFlags();
+        int modelFlags     = model.getFeatureFlags() & ~CharSoupModel.FLAG_L2_NORM;
         int extractorFlags = extractor.getFeatureFlags();
         if (modelFlags != extractorFlags) {
             throw new IllegalStateException(String.format(
@@ -357,61 +322,18 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
-     * Returns the dominant ScriptCategory of the input text by letter count,
-     * or -1 if fewer than 5 letters or no script reaches the 85% threshold.
-     */
-    private static int dominantScript(String text) {
-        int[] counts = new int[ScriptCategory.COUNT];
-        int totalLetters = 0;
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
-            if (Character.isLetter(cp)) {
-                counts[ScriptCategory.of((char) cp)]++;
-                totalLetters++;
-            }
-        }
-        if (totalLetters < 5) {
-            return -1;
-        }
-        int best = 0;
-        for (int s = 1; s < counts.length; s++) {
-            if (counts[s] > counts[best]) {
-                best = s;
-            }
-        }
-        return ((double) counts[best] / totalLetters >= 0.85) ? best : -1;
-    }
-
-    /**
-     * Logit value used to mask out classes that are incompatible with the
-     * detected script. Effectively -infinity: exp(-1e30) ≈ 0.
+     * Logit value used to mask out members of a confusable group that lost
+     * to the group leader in {@link #collapseGroups}.
      */
     private static final float MASKED_LOGIT = -1e30f;
 
     /**
-     * Masks logits whose expected script does not match the dominant script of
-     * {@code inputText} by setting them to {@link #MASKED_LOGIT}. No renormalization
-     * is needed — logit-space operations (argmax, logsumexp) handle masked values
-     * naturally. Returns {@code logits} unchanged if no dominant script is detected
-     * or it is {@link ScriptCategory#OTHER}.
+     * No-op: script gating is now handled entirely by the model's
+     * script-salted n-gram features and explicit script-block counts.
+     * Kept as a pass-through so call sites don't need to change.
      */
     private static float[] applyScriptGate(float[] logits, String inputText, int[] classScript) {
-        int domScript = dominantScript(inputText);
-        if (domScript < 0 || domScript == ScriptCategory.OTHER) {
-            return logits;
-        }
-        float[] gated = Arrays.copyOf(logits, logits.length);
-        for (int i = 0; i < gated.length; i++) {
-            boolean compatible = (classScript[i] == domScript)
-                    || (domScript == ScriptCategory.HAN
-                        && (classScript[i] == ScriptCategory.HIRAGANA
-                            || classScript[i] == ScriptCategory.KATAKANA));
-            if (!compatible) {
-                gated[i] = MASKED_LOGIT;
-            }
-        }
-        return gated;
+        return logits;
     }
 
     /**
@@ -481,17 +403,27 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
-     * Score of the top class via sigmoid(top_logit − logsumexp(other logits)),
-     * which equals exp(top_logit − logsumexp(all logits)) — the softmax probability
-     * of the top class, computed stably without materializing a probability distribution.
+     * Sigmoid of the margin between the top two logits.
+     * Invariant to the number of classes — only the gap between winner and
+     * runner-up matters.  Returns 0.5 when they are tied, 1.0 when the
+     * winner is infinitely far ahead.
      */
     private static float topClassScore(float[] logits) {
-        float lse = logSumExp(logits);
-        float topLogit = Float.NEGATIVE_INFINITY;
+        float top = Float.NEGATIVE_INFINITY;
+        float second = Float.NEGATIVE_INFINITY;
         for (float v : logits) {
-            if (v > topLogit) topLogit = v;
+            if (v > top) {
+                second = top;
+                top = v;
+            } else if (v > second) {
+                second = v;
+            }
         }
-        return (float) Math.exp(topLogit - lse);
+        return sigmoid(top - second);
+    }
+
+    private static float sigmoid(float x) {
+        return (float) (1.0 / (1.0 + Math.exp(-x)));
     }
 
 
@@ -500,6 +432,18 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
 
     /** Constructed (default) config — never null. */
     private final CharSoupDetectorConfig config;
+
+    /**
+     * Instance-level model fields.  When constructed via the default constructor
+     * these point to the static classpath-loaded singletons.  When constructed
+     * via {@link #CharSoupLanguageDetector(CharSoupDetectorConfig, CharSoupModel)}
+     * they point to the caller-supplied model, ensuring evaluations always use
+     * the intended model.
+     */
+    private final CharSoupModel model;
+    private final FeatureExtractor extractor;
+    private final int[][] groupIndices;
+    private final int[] classScript;
 
     /**
      * Per-document effective config, set in {@link #reset(ParseContext)}.
@@ -524,20 +468,10 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
 
     /**
      * Returns the set of ISO 639-3 language codes supported by the given strategy.
-     * <ul>
-     *   <li>{@link Strategy#SHORT_TEXT} — labels of the short-text model (or empty if not loaded)</li>
-     *   <li>{@link Strategy#STANDARD} — labels of the standard model</li>
-     *   <li>{@link Strategy#AUTOMATIC} — union of both models (standard model labels as superset)</li>
-     * </ul>
+     * All strategies use the same discriminative model; the GLM adjudicator
+     * re-ranks but does not add new languages.
      */
     public static Set<String> getSupportedLanguages(Strategy strategy) {
-        if (strategy == Strategy.SHORT_TEXT) {
-            if (SHORT_TEXT_MODEL == null) {
-                return java.util.Collections.emptySet();
-            }
-            return new java.util.HashSet<>(java.util.Arrays.asList(SHORT_TEXT_MODEL.getLabels()));
-        }
-        // STANDARD and AUTOMATIC both expose the full standard model set
         return new java.util.HashSet<>(java.util.Arrays.asList(MODEL.getLabels()));
     }
 
@@ -559,46 +493,64 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         }
         this.config = config;
         this.activeConfig = config;
+        this.model = MODEL;
+        this.extractor = EXTRACTOR;
+        this.groupIndices = GROUP_INDICES;
+        this.classScript = CLASS_SCRIPT;
     }
 
     /**
-     * Compute the confidence level from the sigmoid-of-margin score and distribution
-     * entropy. High entropy (uncertain distribution) downgrades confidence even
-     * if the top score looks reasonable — this catches junk text that happens to
-     * activate one class slightly more than others.
-     * <p>
-     * {@code score} is {@code sigmoid(logit_margin)}, so the thresholds map to:
-     * <ul>
-     *   <li>&gt;0.90 — logit margin &gt; 2.2 (strong discrimination)</li>
-     *   <li>&gt;0.70 — logit margin &gt; 0.85 (moderate discrimination)</li>
-     *   <li>&gt;0.20 — logit margin &gt; -1.4 (weak but present signal)</li>
-     * </ul>
+     * Constructs a detector that uses a caller-supplied model instead of the
+     * classpath default.  This ensures evaluations and comparisons always run
+     * against the intended model binary — not whatever happens to be on the
+     * classpath.
+     *
+     * @param config immutable configuration; must not be null
+     * @param customModel the model to use for all predictions
      */
-    /**
-     * Score threshold below which the result is {@link LanguageConfidence#NONE}
-     * for the general model. Sigmoid(margin) &gt; 0.20 ≈ logit margin &gt; −1.4.
-     */
-    private static final float GENERAL_SCORE_FLOOR = 0.20f;
+    public CharSoupLanguageDetector(CharSoupDetectorConfig config, CharSoupModel customModel) {
+        if (config == null) {
+            throw new IllegalArgumentException("config must not be null");
+        }
+        if (customModel == null) {
+            throw new IllegalArgumentException("customModel must not be null");
+        }
+        this.config = config;
+        this.activeConfig = config;
+        this.model = customModel;
+        this.extractor = customModel.createExtractor();
+        verifyFlagsMatch(customModel, this.extractor, "custom-model");
+        this.groupIndices = buildGroupIndices(customModel);
+        this.classScript = buildClassScript(customModel);
+    }
 
     /**
-     * Score threshold below which the result is {@link LanguageConfidence#NONE}
-     * for the short-text model.  At 20 chars there is inherently less signal,
-     * so we accept a weaker margin before refusing to answer.
-     * Sigmoid(margin) &gt; 0.10 ≈ logit margin &gt; −2.2.
+     * Compute the confidence level from the sigmoid-of-margin score and
+     * distribution entropy.  {@code score} is {@code sigmoid(top − second)},
+     * so 0.5 = tied, 1.0 = infinitely separated.
+     * <ul>
+     *   <li>&gt; 0.90 — margin &gt; 2.2 (strong discrimination)</li>
+     *   <li>&gt; 0.70 — margin &gt; 0.85 (moderate discrimination)</li>
+     *   <li>&gt; floor — margin &gt; 0.2 / 0.08 (weak but present signal)</li>
+     * </ul>
+     * High entropy (&gt; 4.0 bits) forces {@link LanguageConfidence#NONE}
+     * regardless of margin — the model has no real signal.
      */
-    private static final float SHORT_TEXT_SCORE_FLOOR = 0.10f;
+
+    /**
+     * Score threshold below which the result is {@link LanguageConfidence#NONE}.
+     * Sigmoid(margin) &gt; 0.50 means the top class leads the runner-up by any
+     * positive margin at all.  The GLM adjudicator handles uncertain cases.
+     */
+    private static final float SCORE_FLOOR = 0.50f;
 
     private static LanguageConfidence toConfidence(float score, float entropy,
-                                                   boolean shortText) {
-        if (entropy > 4.0f) {
-            return LanguageConfidence.NONE;
-        }
-        float floor = shortText ? SHORT_TEXT_SCORE_FLOOR : GENERAL_SCORE_FLOOR;
+                                                   boolean unused) {
         if (score > 0.9f) {
             return LanguageConfidence.HIGH;
         } else if (score > 0.7f) {
             return entropy < 2.0f ? LanguageConfidence.MEDIUM : LanguageConfidence.LOW;
-        } else if (score > floor) {
+        } else if (score > SCORE_FLOOR) {
             return LanguageConfidence.LOW;
         }
         return LanguageConfidence.NONE;
@@ -620,23 +572,20 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
-     * Minimum sigmoid-of-margin score for a candidate to be considered a genuine
+     * Minimum sigmoid(margin) for a candidate to be considered a genuine
      * language match in {@link #compareLanguageSignal}. If no candidate exceeds
      * this threshold, the comparison is inconclusive and {@code null} is returned.
      * <p>
-     * 0.30 is intentionally permissive: the underlying linear classifier is
-     * discriminative, not generative, so confidence scores compress toward the
-     * middle and a well-separated winner still sits well above 0.30.  A future
-     * generative model should allow this threshold to be raised.
-     * Typical values:
+     * 0.60 requires the top class to lead the runner-up by margin &gt; 0.4.
+     * Typical values with sigmoid(margin):
      * <ul>
      *   <li>Arabic (windows-1256): &gt; 0.99</li>
-     *   <li>Short CJK (2 chars, clear winner): ~0.31</li>
+     *   <li>Short CJK (2 chars, clear winner): ~0.62</li>
      *   <li>UTF-8 garbled: skipped by junk-ratio filter</li>
-     *   <li>Genuinely ambiguous text: &lt; 0.21 — below threshold</li>
+     *   <li>Genuinely ambiguous text: &lt; 0.55 — below threshold</li>
      * </ul>
      */
-    private static final float MIN_CONFIDENCE_THRESHOLD = 0.30f;
+    private static final float MIN_CONFIDENCE_THRESHOLD = 0.60f;
 
     /**
      * Maximum ratio of junk characters (U+FFFD replacement chars + C0/C1
@@ -657,9 +606,9 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      * Compare multiple candidate texts and return the key of the one with
      * the strongest language signal. Candidates with a high ratio of
      * replacement or control characters are discarded first. Remaining
-     * candidates are scored using {@code sigmoid(top_logit − logsumexp(other logits))}
-     * — the log-normalized probability of the top class, computed without materializing
-     * a full softmax distribution.
+     * candidates are scored using {@code sigmoid(top_logit − second_logit)}
+     * — the margin between the top two classes, invariant to the number of
+     * classes in the model.
      * <p>
      * Returns {@code null} if no candidate exceeds the minimum confidence
      * threshold, indicating the comparison is inconclusive.
@@ -686,9 +635,9 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
                 continue;
             }
 
-            int[] features = EXTRACTOR.extract(entry.getValue());
-            float[] logits = MODEL.predictLogits(features);
-            logits = applyScriptGate(logits, entry.getValue(), CLASS_SCRIPT);
+            int[] features = extractor.extract(entry.getValue());
+            float[] logits = model.predictLogits(features);
+            logits = applyScriptGate(logits, entry.getValue(), classScript);
             float confidence = topClassScore(logits);
 
             LOG.debug("compareLanguageSignal: {} -> confidence={}",
@@ -726,17 +675,16 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      *         is not loaded or text is empty
      */
     public static List<String> topShortTextLanguages(String text, int n) {
-        if (SHORT_TEXT_MODEL == null || SHORT_TEXT_EXTRACTOR == null
-                || text == null || text.isEmpty()) {
+        if (text == null || text.isEmpty()) {
             return Collections.emptyList();
         }
-        int[] features = new int[SHORT_TEXT_EXTRACTOR.getNumBuckets()];
-        SHORT_TEXT_EXTRACTOR.extractAndCount(text, features);
-        float[] logits = SHORT_TEXT_MODEL.predictLogits(features);
-        logits = applyScriptGate(logits, text, SHORT_TEXT_CLASS_SCRIPT);
-        float[] collapsed = collapseGroups(logits, SHORT_TEXT_GROUP_INDICES);
+        int[] features = new int[EXTRACTOR.getNumBuckets()];
+        EXTRACTOR.extractAndCount(text, features);
+        float[] logits = MODEL.predictLogits(features);
+        logits = applyScriptGate(logits, text, CLASS_SCRIPT);
+        float[] collapsed = collapseGroups(logits, GROUP_INDICES);
 
-        int numClasses = SHORT_TEXT_MODEL.getNumClasses();
+        int numClasses = MODEL.getNumClasses();
         Integer[] indices = new Integer[numClasses];
         for (int i = 0; i < numClasses; i++) {
             indices[i] = i;
@@ -745,7 +693,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
 
         List<String> result = new ArrayList<>(Math.min(n, numClasses));
         for (int i = 0; i < Math.min(n, numClasses); i++) {
-            result.add(SHORT_TEXT_MODEL.getLabel(indices[i]));
+            result.add(MODEL.getLabel(indices[i]));
         }
         return result;
     }
@@ -786,6 +734,14 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
 
     @Override
     public boolean hasModel(String language) {
+        if (model != MODEL) {
+            for (String label : model.getLabels()) {
+                if (label.equals(language)) {
+                    return true;
+                }
+            }
+            return false;
+        }
         return SUPPORTED_LANGUAGES.contains(language);
     }
 
@@ -796,6 +752,14 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      */
     public static Set<String> getSupportedLanguages() {
         return SUPPORTED_LANGUAGES;
+    }
+
+    /**
+     * Returns the model this detector instance is using for predictions.
+     * Useful for verification in evaluation tools.
+     */
+    public CharSoupModel getModel() {
+        return model;
     }
 
     /**
@@ -831,7 +795,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      * {@link #reset(ParseContext)} call restores the baseline.
      * <p>
      * Also bridges the legacy {@link #shortText} boolean: if no context config is
-     * present but {@code shortText == true}, {@link Strategy#SHORT_TEXT} is applied.
+     * present but {@code shortText == true}, {@link Strategy#GLM} is applied.
      *
      * @param context parse context for the current document; may be {@code null}
      */
@@ -848,9 +812,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         // Bridge legacy shortText hint when no explicit context config is present
         if (shortText && activeConfig.getStrategy() == Strategy.AUTOMATIC) {
             activeConfig = CharSoupDetectorConfig.fromMap(
-                    Map.of("strategy", Strategy.SHORT_TEXT.name(),
-                           "lengthThreshold", activeConfig.getLengthThreshold(),
-                           "featureThreshold", activeConfig.getFeatureThreshold()));
+                    Map.of("strategy", Strategy.GLM.name()));
         }
     }
 
@@ -880,65 +842,44 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         int len = text.length();
         float[] bestLogits = null;
         float bestEntropy = Float.MAX_VALUE;
-        CharSoupModel bestModel = MODEL;
-        int[] features = new int[EXTRACTOR.getNumBuckets()];
-        int[] shortFeatures = SHORT_TEXT_MODEL != null
-                ? new int[SHORT_TEXT_EXTRACTOR.getNumBuckets()] : null;
+        String bestChunk = null;
+        int[] features = new int[extractor.getNumBuckets()];
 
         for (int start = 0; start < len; start += CHUNK_SIZE) {
             int end = Math.min(start + CHUNK_SIZE, len);
             String chunk = text.substring(start, end);
 
-            // Determine model routing via strategy + gates.
-            // Gate 1 (length) and Gate 2 (feature density) only apply in AUTOMATIC mode.
-            // Gate 2 catches degenerate inputs (e.g. 1 KB of spaces + "the") where
-            // character length alone would incorrectly select the general-model path.
-            int emissionCount = EXTRACTOR.extractAndCount(chunk, features);
-            boolean useShortText;
-            switch (activeConfig.getStrategy()) {
-                case SHORT_TEXT:
-                    useShortText = SHORT_TEXT_MODEL != null;
-                    break;
-                case STANDARD:
-                    useShortText = false;
-                    break;
-                default: // AUTOMATIC
-                    useShortText = SHORT_TEXT_MODEL != null
-                            && (chunk.length() < activeConfig.getLengthThreshold()
-                                || emissionCount < activeConfig.getFeatureThreshold());
-                    break;
-            }
-
-            float[] logits;
-            float[] collapsed;
-            CharSoupModel chunkModel;
-            if (useShortText) {
-                SHORT_TEXT_EXTRACTOR.extractAndCount(chunk, shortFeatures);
-                logits = SHORT_TEXT_MODEL.predictLogits(shortFeatures);
-                logits = applyScriptGate(logits, chunk, SHORT_TEXT_CLASS_SCRIPT);
-                collapsed = collapseGroups(logits, SHORT_TEXT_GROUP_INDICES);
-                chunkModel = SHORT_TEXT_MODEL;
-            } else {
-                logits = MODEL.predictLogits(features);
-                logits = applyScriptGate(logits, chunk, CLASS_SCRIPT);
-                collapsed = collapseGroups(logits, GROUP_INDICES);
-                chunkModel = MODEL;
-            }
+            extractor.extractAndCount(chunk, features);
+            float[] logits = model.predictLogits(features);
+            logits = applyScriptGate(logits, chunk, classScript);
+            float[] collapsed = collapseGroups(logits, groupIndices);
 
             float entropy = entropyFromLogits(collapsed);
 
             if (entropy < bestEntropy) {
                 bestEntropy = entropy;
                 bestLogits = collapsed;
-                bestModel = chunkModel;
+                bestChunk = chunk;
             }
 
             if (entropy < ENTROPY_THRESHOLD) {
-                break; // confident enough
+                break;
             }
         }
 
-        return buildResults(bestLogits, bestEntropy, bestModel);
+        List<LanguageResult> results = buildResults(bestLogits, bestEntropy);
+
+        Strategy strategy = activeConfig.getStrategy();
+        if (strategy != Strategy.STANDARD && GLM_MODEL != null
+                && !results.isEmpty() && !results.get(0).getLanguage().isEmpty()) {
+            boolean shouldAdjudicate = strategy == Strategy.GLM
+                    || results.get(0).getRawScore() < GLM_ADJUDICATE_THRESHOLD;
+            if (shouldAdjudicate) {
+                results = adjudicateWithGlm(bestChunk, results);
+            }
+        }
+
+        return results;
     }
 
     /**
@@ -958,37 +899,117 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     }
 
     /**
-     * Build sorted LanguageResult list from collapsed logits and pre-computed entropy.
-     * Each class's {@code rawScore} is {@code exp(logit_c − logsumexp(all logits))} —
-     * the softmax probability of class c, computed stably without materializing the
-     * full distribution. logsumexp is computed once; each per-class score is one exp().
+     * Build sorted LanguageResult list from collapsed logits and pre-computed
+     * entropy.  Scoring uses sigmoid(margin):
+     * <ul>
+     *   <li>Winner: {@code sigmoid(top_logit − second_logit)}</li>
+     *   <li>Others: {@code sigmoid(logit_c − top_logit)} — always &lt; 0.5</li>
+     * </ul>
      *
-     * @param logits  collapsed (script-gated + group-collapsed) logits from the model
-     *                that produced the winning chunk; length == usedModel.getNumClasses()
+     * @param logits  collapsed (script-gated + group-collapsed) logits;
+     *                length == MODEL.getNumClasses()
      * @param entropy pre-computed entropy of {@code logits}
-     * @param usedModel the model (general or short-text) that produced {@code logits}
      */
-    private List<LanguageResult> buildResults(float[] logits, float entropy,
-                                              CharSoupModel usedModel) {
+    private List<LanguageResult> buildResults(float[] logits, float entropy) {
         lastEntropy = entropy;
         float confScore = entropyToConfidenceScore(lastEntropy);
-        float lse = logSumExp(logits);
 
-        List<LanguageResult> results = new ArrayList<>(usedModel.getNumClasses());
-        for (int c = 0; c < usedModel.getNumClasses(); c++) {
-            float score = (float) Math.exp(logits[c] - lse);
-            results.add(new LanguageResult(
-                    usedModel.getLabel(c),
-                    toConfidence(score, lastEntropy, usedModel == SHORT_TEXT_MODEL),
-                    score, confScore));
+        int topIdx = 0;
+        float topLogit = logits[0];
+        float secondLogit = Float.NEGATIVE_INFINITY;
+        for (int i = 1; i < logits.length; i++) {
+            if (logits[i] > topLogit) {
+                secondLogit = topLogit;
+                topIdx = i;
+                topLogit = logits[i];
+            } else if (logits[i] > secondLogit) {
+                secondLogit = logits[i];
+            }
         }
-        results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
 
-        if (results.get(0).getConfidence() == LanguageConfidence.NONE) {
+        float topScore = sigmoid(topLogit - secondLogit);
+        LanguageConfidence topConf = toConfidence(topScore, entropy, false);
+
+        if (topConf == LanguageConfidence.NONE) {
             return Collections.singletonList(
                     new LanguageResult("", LanguageConfidence.NONE, 0.0f, confScore));
         }
 
+        List<LanguageResult> results = new ArrayList<>(model.getNumClasses());
+        for (int c = 0; c < model.getNumClasses(); c++) {
+            float score;
+            LanguageConfidence conf;
+            if (c == topIdx) {
+                score = topScore;
+                conf = topConf;
+            } else {
+                score = sigmoid(logits[c] - topLogit);
+                conf = toConfidence(score, entropy, false);
+            }
+            results.add(new LanguageResult(
+                    model.getLabel(c), conf, score, confScore));
+        }
+        results.sort((a, b) -> Float.compare(b.getRawScore(), a.getRawScore()));
+
         return results;
+    }
+
+    /**
+     * Minimum z-score advantage the GLM candidate must have over the
+     * discriminative winner before we switch.  Prevents the GLM from
+     * flipping between closely-related varieties (e.g. nld/lim) where
+     * both have similar generative plausibility.
+     */
+    static final float GLM_MIN_Z_GAP = 0.5f;
+
+    /**
+     * Minimum discriminative rawScore a GLM candidate must have to be
+     * considered for promotion.  Candidates with very low disc scores
+     * (e.g. 0.13) should not be promoted even if the GLM likes them.
+     */
+    static final float GLM_MIN_DISC_SCORE = 0.30f;
+
+    /**
+     * Re-rank the top discriminative candidates using the generative language
+     * model.  Scores each of the top {@link #GLM_TOP_N} candidates via
+     * {@link GenerativeLanguageModel#zScoreLengthAdjusted} and promotes the
+     * best-scoring candidate to the front — but only if it beats the
+     * discriminative winner's z-score by at least {@link #GLM_MIN_Z_GAP}
+     * and has a disc rawScore above {@link #GLM_MIN_DISC_SCORE}.
+     */
+    private List<LanguageResult> adjudicateWithGlm(String text,
+                                                    List<LanguageResult> discResults) {
+        int n = Math.min(GLM_TOP_N, discResults.size());
+        float[] zScores = new float[n];
+        float bestZ = Float.NEGATIVE_INFINITY;
+        int bestIdx = 0;
+
+        for (int i = 0; i < n; i++) {
+            String lang = discResults.get(i).getLanguage();
+            if (lang.isEmpty() || discResults.get(i).getRawScore() < GLM_MIN_DISC_SCORE) {
+                zScores[i] = Float.NaN;
+                continue;
+            }
+            float z = GLM_MODEL.zScoreLengthAdjusted(text, lang);
+            zScores[i] = z;
+            if (!Float.isNaN(z) && z > bestZ) {
+                bestZ = z;
+                bestIdx = i;
+            }
+        }
+
+        if (bestIdx == 0) {
+            return discResults;
+        }
+
+        float discWinnerZ = zScores[0];
+        if (Float.isNaN(discWinnerZ) || bestZ - discWinnerZ >= GLM_MIN_Z_GAP) {
+            List<LanguageResult> reranked = new ArrayList<>(discResults);
+            LanguageResult glmWinner = reranked.remove(bestIdx);
+            reranked.add(0, glmWinner);
+            return reranked;
+        }
+
+        return discResults;
     }
 }

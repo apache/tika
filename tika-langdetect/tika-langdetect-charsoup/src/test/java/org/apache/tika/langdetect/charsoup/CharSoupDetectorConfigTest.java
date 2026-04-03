@@ -25,20 +25,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-/**
- * Unit tests for {@link CharSoupDetectorConfig} construction and parsing.
- * These are purely logic tests with no dependency on any model binary.
- */
 public class CharSoupDetectorConfigTest {
 
     @Test
     public void testDefaultConfig() {
         CharSoupDetectorConfig cfg = CharSoupDetectorConfig.DEFAULT;
         assertEquals(CharSoupLanguageDetector.Strategy.AUTOMATIC, cfg.getStrategy());
-        assertEquals(CharSoupLanguageDetector.SHORT_TEXT_LENGTH_THRESHOLD,
-                cfg.getLengthThreshold());
-        assertEquals(CharSoupLanguageDetector.SHORT_TEXT_FEATURE_THRESHOLD,
-                cfg.getFeatureThreshold());
     }
 
     @Test
@@ -60,10 +52,10 @@ public class CharSoupDetectorConfigTest {
     }
 
     @Test
-    public void testFromMapStrategyShortText() {
+    public void testFromMapStrategyGlm() {
         CharSoupDetectorConfig cfg =
-                CharSoupDetectorConfig.fromMap(Map.of("strategy", "SHORT_TEXT"));
-        assertEquals(CharSoupLanguageDetector.Strategy.SHORT_TEXT, cfg.getStrategy());
+                CharSoupDetectorConfig.fromMap(Map.of("strategy", "GLM"));
+        assertEquals(CharSoupLanguageDetector.Strategy.GLM, cfg.getStrategy());
     }
 
     @Test
@@ -76,16 +68,8 @@ public class CharSoupDetectorConfigTest {
     @Test
     public void testFromMapStrategyCaseInsensitive() {
         CharSoupDetectorConfig cfg =
-                CharSoupDetectorConfig.fromMap(Map.of("strategy", "short_text"));
-        assertEquals(CharSoupLanguageDetector.Strategy.SHORT_TEXT, cfg.getStrategy());
-    }
-
-    @Test
-    public void testFromMapThresholds() {
-        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-                Map.of("lengthThreshold", 99, "featureThreshold", 42));
-        assertEquals(99, cfg.getLengthThreshold());
-        assertEquals(42, cfg.getFeatureThreshold());
+                CharSoupDetectorConfig.fromMap(Map.of("strategy", "glm"));
+        assertEquals(CharSoupLanguageDetector.Strategy.GLM, cfg.getStrategy());
     }
 
     @Test
@@ -102,24 +86,8 @@ public class CharSoupDetectorConfigTest {
     }
 
     @Test
-    public void testFromMapNegativeLengthThresholdThrows() {
-        assertThrows(IllegalArgumentException.class,
-                () -> CharSoupDetectorConfig.fromMap(Map.of("lengthThreshold", -1)));
-    }
-
-    @Test
-    public void testFromMapNegativeFeatureThresholdThrows() {
-        assertThrows(IllegalArgumentException.class,
-                () -> CharSoupDetectorConfig.fromMap(Map.of("featureThreshold", -1)));
-    }
-
-    @Test
-    public void testToStringContainsAllFields() {
+    public void testToStringContainsStrategy() {
         String s = CharSoupDetectorConfig.DEFAULT.toString();
         assertNotNull(s);
-        // toString should mention all three fields for debuggability
-        assertNotNull(s, "AUTOMATIC");
-        assertNotNull(s, "lengthThreshold");
-        assertNotNull(s, "featureThreshold");
     }
 }

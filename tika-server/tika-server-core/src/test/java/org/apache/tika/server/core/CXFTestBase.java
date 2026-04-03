@@ -101,6 +101,7 @@ public abstract class CXFTestBase {
     protected TikaLoader tika;
     private PipesParser pipesParser;
     private Path pipesConfigPath;
+    private Path inputTempDirectory = null;
 
     public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir, Long timeoutMillis) throws IOException {
 
@@ -151,10 +152,10 @@ public abstract class CXFTestBase {
 
     public static InputStream gzip(InputStream is) throws IOException {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        OutputStream gz = new GzipCompressorOutputStream(bos);
-        IOUtils.copy(is, gz);
-        gz.flush();
-        gz.close();
+        try (OutputStream gz = new GzipCompressorOutputStream(bos)) {
+            is.transferTo(gz);
+            gz.flush();
+        }
         return new ByteArrayInputStream(bos.toByteArray());
     }
 
@@ -185,23 +186,26 @@ public abstract class CXFTestBase {
             // Copy tika config to temp file first
             Files.copy(getTikaConfigInputStream(), tmp, StandardCopyOption.REPLACE_EXISTING);
 
-            InputStream pipesConfigInputStream = getPipesConfigInputStream();
-            if (pipesConfigInputStream != null) {
-                // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
-                this.pipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
-            } else {
-                // Create a default pipes config, merging metadata-filters from tika config
-                this.pipesConfigPath = createDefaultTestConfig(tmp);
+            Path tmpPipesConfigPath;
+            try (InputStream pipesConfigInputStream = getPipesConfigInputStream()) {
+                if (pipesConfigInputStream != null) {
+                    // Test provided its own pipes config - merge in PASSBACK_ALL emit strategy
+                    tmpPipesConfigPath = mergePassbackAllStrategy(pipesConfigInputStream);
+                } else {
+                    // Create a default pipes config, merging metadata-filters from tika config
+                    tmpPipesConfigPath = createDefaultTestConfig(tmp);
+                }
             }
 
             this.tika = TikaLoader.load(tmp);
 
             // Create input temp directory for pipes-based parsing
-            Path inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
+            inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
 
             // Initialize PipesParsingHelper for pipes-based parsing
             // Merge the fetcher config with basePath pointing to the temp directory
-            this.pipesConfigPath = mergeFetcherConfig(this.pipesConfigPath, inputTempDirectory);
+            this.pipesConfigPath = mergeFetcherConfig(tmpPipesConfigPath, inputTempDirectory);
+            Files.delete(tmpPipesConfigPath);
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(this.pipesConfigPath);
             PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
             if (pipesConfig == null) {
@@ -243,6 +247,8 @@ public abstract class CXFTestBase {
     /**
      * Merges PASSBACK_ALL emit strategy into a pipes config.
      * This ensures the child process uses PASSBACK_ALL regardless of what's in the config file.
+     * 
+     * @return JSON config file in the temp directory.
      */
     private Path mergePassbackAllStrategy(InputStream pipesConfigInputStream) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -268,6 +274,8 @@ public abstract class CXFTestBase {
     /**
      * Merges the tika-server-fetcher configuration into the pipes config.
      * The fetcher is configured with basePath pointing to the input temp directory.
+     * 
+     * @return new (different) JSON configPath in the temp directory.
      */
     private Path mergeFetcherConfig(Path configPath, Path inputTempDirectory) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
@@ -301,6 +309,8 @@ public abstract class CXFTestBase {
      * If the tika config contains metadata-filters, they are merged into the pipes config.
      *
      * @param tikaConfigPath path to the tika config (may contain metadata-filters)
+     * 
+     * @return JSON config file in the temp directory.
      */
     private Path createDefaultTestConfig(Path tikaConfigPath) throws IOException {
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
@@ -417,6 +427,9 @@ public abstract class CXFTestBase {
                 LOG.warn("Error deleting config file", e);
             }
         }
+        if (inputTempDirectory != null) {
+            Files.deleteIfExists(inputTempDirectory);
+        }
     }
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
@@ -424,14 +437,15 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get()) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    IOUtils.copy(zip.getInputStream(entry), bos);
-                    data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+                    try (InputStream zis = zip.getInputStream(entry)) {
+                        byte[] bytes = zis.readAllBytes();
+                        data.put(entry.getName(), DigestUtils.md5Hex(bytes));
+                    }
+                    
                 }
             }
         } finally {
@@ -447,14 +461,14 @@ public abstract class CXFTestBase {
         Path tempFile = null;
         try {
             tempFile = writeTemporaryArchiveFile(inputStream, "zip");
-            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())
-            {
+            try (ZipFile zip = ZipFile.builder().setPath(tempFile).get())  {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                    IOUtils.copy(zip.getInputStream(entry), bos);
-                    data.put(entry.getName(), bos.toByteArray());
+                    try (InputStream zis = zip.getInputStream(entry)) {
+                        byte[] bytes = zis.readAllBytes();
+                        data.put(entry.getName(), bytes);
+                    }
                 }
             }
         } finally {
@@ -472,10 +486,7 @@ public abstract class CXFTestBase {
             if (entry == null) {
                 break;
             }
-
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(zip, bos);
-            data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+            data.put(entry.getName(), DigestUtils.md5Hex(zip.readAllBytes()));
         }
 
         return data;

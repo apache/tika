@@ -1,0 +1,580 @@
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+=== Probe length: 8B ===
+[INFO] Maveniverse Nisse 0.7.0 loaded
+[INFO] Nisse injecting 27 properties into User Properties
+[INFO] Scanning for projects...
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for org.apache.tika:tika-parent:pom:4.0.0-SNAPSHOT
+[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, /Users/tallison/Intellij/tika-main-chardet/tika-parent/pom.xml, line 35, column 12
+[WARNING] 
+[WARNING] Some problems were encountered while building the effective model for org.apache.tika:tika:pom:4.0.0-SNAPSHOT
+[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, /Users/tallison/Intellij/tika-main-chardet/tika-parent/pom.xml, line 35, column 12
+[WARNING] 
+[WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
+[WARNING] 
+[WARNING] For this reason, future Maven versions might no longer support building such malformed projects.
+[WARNING] 
+[INFO] No need for inlining
+[INFO] 
+[INFO] --------------< org.apache.tika:tika-langdetect-charsoup >--------------
+[INFO] Building Apache Tika langdetect (built-in charsoup) 4.0.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- exec:3.6.3:java (default-cli) @ tika-langdetect-charsoup ---
+CharSoup strategy: STANDARD
+Evaluation threads: 12
+Loading test data: /Users/tallison/datasets/flores-200/flores200_dev.tsv
+  Flores-200 mode: normalizing xxx_Yyyy → xxx codes
+  (multi-script variants kept as xxx_Yyyy separate classes)
+Test sentences: 203,381
+
+Loading CharSoup model: /Users/tallison/datasets/wikipedia-model-v14/langdetect-v14.bin
+  CharSoup model: 204 classes, 32768 buckets, flags=0xE81, ~8.1 MB heap
+  Evaluation routes through CharSoupLanguageDetector (script gate + confusable group collapse).
+Loading OpenNLP detector(s)...
+SLF4J(W): No SLF4J providers were found.
+SLF4J(W): Defaulting to no-operation (NOP) logger implementation
+SLF4J(W): See https://www.slf4j.org/codes.html#noProviders for further details.
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  Loaded: org.apache.tika.langdetect.opennlp.OpenNLPDetector
+  OpenNLP: 12 instance(s), ~79.2 MB heap
+Loading Lingua detector (low accuracy mode)...
+  Loaded Lingua (low accuracy mode, 75 languages), ~0.0 MB heap
+Loading Optimaize detector(s)...
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Loaded: org.apache.tika.langdetect.optimaize.OptimaizeLangDetector
+  Optimaize: 12 instance(s), ~94.5 MB heap
+
+Warming up (200 iterations)...
+  VERIFY: predictions use 204 classes, 32,768 buckets, flags=0xE81 (from file)
+
+CharSoup ∩ OpenNLP:   105 languages, 104,684 sentences
+CharSoup ∩ Lingua:    71 languages, 70,784 sentences (Lingua covers 75)
+CharSoup ∩ Optimaize: 63 languages, 61,811 sentences
+
+Evaluating @20    ...  charsoup= 80.51%  opennlp= 72.85%  lingua= 75.88%  optimaize= 84.38%
+Evaluating @50    ...  charsoup= 94.09%  opennlp= 85.43%  lingua= 90.63%  optimaize= 94.29%
+Evaluating @100   ...  charsoup= 97.00%  opennlp= 90.12%  lingua= 95.33%  optimaize= 96.50%
+Evaluating @150   ...  charsoup= 97.47%  opennlp= 90.97%  lingua= 96.11%  optimaize= 96.76%
+Evaluating @200   ...  charsoup= 97.51%  opennlp= 91.11%  lingua= 96.20%  optimaize= 96.79%
+Evaluating @500   ...  charsoup= 97.52%  opennlp= 91.12%  lingua= 96.22%  optimaize= 96.81%
+Evaluating full   ...  charsoup= 97.52%  opennlp= 91.12%  lingua= 96.22%  optimaize= 96.81%
+
+=== Language Detection Comparison Report ===
+
+Test sentences:   203,381
+CharSoup ∩ OpenNLP:   105 languages, 104,684 sentences
+CharSoup ∩ Lingua:    71 languages, 70,784 sentences
+CharSoup ∩ Optimaize: 63 languages, 61,811 sentences
+
+Model heap (approx):
+  CharSoup:  ~8.1 MB
+  OpenNLP:   ~79.2 MB
+  Lingua:    ~0.1 MB  (low accuracy mode)
+  Optimaize: ~94.5 MB
+
+Coverage-adjusted accuracy — each detector scored on its own supported languages only
+  (test sentences whose true language is not in a detector's covered set are skipped)
+        ─ CharSoup ─    ─ OpenNLP ─     ── Lingua ──    ─ Optimaize ─     CS(ms)    ON(ms)    Li(ms)   Opt(ms)   CS sent/s
+Length     mF1    acc     mF1    acc     mF1    acc     mF1    acc                                                    
+----------------------------------------------------------------------------------------------------------------------
+@20      82.51%  80.51%   74.87%  72.85%   76.35%  75.88%   84.87%  84.38%       932       769    10,122       400     139,061
+@50      94.44%  94.09%   86.09%  85.43%   90.99%  90.63%   94.44%  94.29%     1,000       657    18,646     2,048     129,605
+@100     96.98%  97.00%   90.25%  90.12%   95.43%  95.33%   96.51%  96.50%     1,015     1,200    30,831     2,051     127,690
+@150     97.41%  97.47%   90.98%  90.97%   96.15%  96.11%   96.72%  96.76%     1,087     1,592    37,481     2,119     119,232
+@200     97.45%  97.51%   91.11%  91.11%   96.23%  96.20%   96.75%  96.79%     1,115     1,820    39,759     2,127     116,238
+@500     97.46%  97.52%   91.12%  91.12%   96.25%  96.22%   96.76%  96.81%     1,118     2,033    40,426     2,221     115,926
+full     97.46%  97.52%   91.12%  91.12%   96.25%  96.22%   96.76%  96.81%     1,121     1,820    40,505     2,139     115,616
+
+Breadth-weighted accuracy — all 203 FLORES languages, unsupported languages score 0
+  (penalises limited coverage; use this to compare total useful output across all inputs)
+        ─ CharSoup ─    ─ OpenNLP ─     ── Lingua ──    ─ Optimaize ─ 
+Length     mF1    acc     mF1    acc     mF1    acc     mF1    acc
+----------------------------------------------------------------------
+@20      52.43%  51.31%   42.05%  40.71%   27.46%  27.53%   26.76%  26.89%
+@50      60.01%  59.96%   48.35%  47.74%   32.72%  32.88%   29.77%  30.04%
+@100     61.63%  61.81%   50.68%  50.36%   34.32%  34.58%   30.43%  30.75%
+@150     61.90%  62.11%   51.09%  50.84%   34.58%  34.86%   30.49%  30.83%
+@200     61.93%  62.14%   51.16%  50.91%   34.61%  34.90%   30.50%  30.84%
+@500     61.93%  62.15%   51.17%  50.92%   34.61%  34.90%   30.51%  30.84%
+full     61.93%  62.15%   51.17%  50.92%   34.61%  34.90%   30.51%  30.84%
+
+Strict accuracy — CharSoup ∩ OpenNLP (105 languages, 104,684 sentences)
+        ── CharSoup ──  ── OpenNLP ──     CS(ms)  OpenNLP(ms)   CS sent/s
+Length     mF1    acc     mF1    acc                                
+------------------------------------------------------------------------
+@20      84.23%  81.44%   76.69%  74.07%       504       228     207,706
+@50      95.73%  95.12%   87.27%  86.37%       431       333     242,886
+@100     98.09%  97.93%   91.05%  90.79%       523       620     200,161
+@150     98.47%  98.36%   91.68%  91.55%       578       852     181,114
+@200     98.51%  98.40%   91.77%  91.65%       583       969     179,561
+@500     98.51%  98.41%   91.78%  91.67%       593       956     176,533
+full     98.51%  98.41%   91.78%  91.67%       604       959     173,318
+
+Strict accuracy — CharSoup ∩ Lingua (71 languages, 70,784 sentences)
+        ── CharSoup ──  ── Lingua ──      CS(ms)  Lingua(ms)   CS sent/s
+Length     mF1    acc     mF1    acc                                
+------------------------------------------------------------------------
+@20      85.28%  81.44%   77.78%  76.80%       303     2,960     233,611
+@50      96.37%  95.65%   92.24%  91.51%       296     5,992     239,135
+@100     98.51%  98.37%   96.58%  96.20%       359     9,756     197,170
+@150     98.80%  98.70%   97.27%  96.96%       395    11,847     179,200
+@200     98.82%  98.73%   97.37%  97.07%       437    12,615     161,977
+@500     98.83%  98.75%   97.38%  97.09%       409    12,840     173,066
+full     98.83%  98.75%   97.38%  97.09%       402    12,847     176,080
+
+Strict accuracy — CharSoup ∩ Optimaize (63 languages, 61,811 sentences)
+        ── CharSoup ──  ── Optimaize ──    CS(ms)  Optimaize(ms)   CS sent/s
+Length     mF1    acc     mF1    acc                                
+------------------------------------------------------------------------
+@20      86.52%  82.78%   86.30%  85.54%       215        76     287,493
+@50      96.92%  96.15%   95.40%  95.14%       250       367     247,244
+@100     98.84%  98.66%   97.23%  97.17%       320       360     193,159
+@150     99.12%  98.98%   97.33%  97.34%       342       374     180,734
+@200     99.13%  99.01%   97.34%  97.35%       346       374     178,645
+@500     99.14%  99.02%   97.34%  97.35%       354       377     174,607
+full     99.14%  99.02%   97.34%  97.35%       353       385     175,102
+
+CharSoup timing (wall-clock, full pipeline including script gate + group collapse):
+Length    Wall(ms)    Sent/sec
+--------------------------------
+@20            932     139,061
+@50          1,000     129,605
+@100         1,015     127,690
+@150         1,087     119,232
+@200         1,115     116,238
+@500         1,118     115,926
+full         1,121     115,616
+
+Per-language CharSoup F1 by length:
+Language           @20     @50    @100    @150    @200    @500    full
+----------------------------------------------------------------------
+ace              75.76%   90.52%   95.50%   96.15%   96.31%   96.31%   96.31%
+afr              79.05%   96.87%   99.40%   99.55%   99.55%   99.55%   99.55%
+aka              86.13%   96.00%   98.73%   99.19%   99.24%   99.24%   99.24%
+amh              96.55%   99.75%   99.95%   99.95%   99.95%   99.95%   99.95%
+ara              96.97%   99.95%   99.95%   99.95%   99.95%   99.95%   99.95%
+asm              94.88%   99.65%  100.00%  100.00%  100.00%  100.00%  100.00%
+azb              61.48%   78.64%   88.32%   90.51%   90.93%   90.93%   90.93%
+aze              86.02%   98.27%   99.70%   99.80%   99.80%   99.80%   99.80%
+bak              86.65%   98.33%   99.70%   99.85%   99.80%   99.80%   99.80%
+ban              66.78%   90.21%   95.67%   96.37%   96.43%   96.48%   96.48%
+bel              79.61%   89.31%   93.72%   95.27%   95.77%   96.04%   96.04%
+ben              95.04%   99.65%  100.00%  100.00%  100.00%  100.00%  100.00%
+bjn              63.37%   87.76%   95.56%   96.64%   96.69%   96.69%   96.69%
+bod              99.85%   99.85%  100.00%  100.00%  100.00%  100.00%  100.00%
+bul              79.49%   97.29%   99.65%   99.65%   99.70%   99.70%   99.70%
+cat              76.97%   97.07%   99.85%   99.90%   99.90%   99.90%   99.90%
+ceb              69.18%   85.41%   89.13%   90.07%   90.13%   89.68%   89.68%
+ces              80.35%   97.56%   99.70%   99.80%   99.80%   99.80%   99.80%
+ckb              98.79%   99.95%  100.00%  100.00%  100.00%  100.00%  100.00%
+cym              92.49%   99.45%  100.00%  100.00%  100.00%  100.00%  100.00%
+dan              64.55%   88.74%   95.20%   97.03%   97.23%   97.28%   97.28%
+deu              76.67%   96.48%   99.50%   99.65%   99.65%   99.65%   99.65%
+ell              99.19%   99.90%  100.00%  100.00%  100.00%  100.00%  100.00%
+eng              71.32%   89.32%   96.83%   98.76%   98.96%   98.96%   98.96%
+epo              79.13%   97.22%   99.80%   99.75%   99.75%   99.75%   99.75%
+est              84.39%   98.85%   99.80%   99.70%   99.70%   99.70%   99.70%
+eus              85.02%   98.94%   99.95%  100.00%  100.00%  100.00%  100.00%
+ewe              89.63%   98.21%   99.24%   99.55%   99.55%   99.55%   99.55%
+fao              83.36%   97.32%   99.60%   99.70%   99.70%   99.70%   99.70%
+fas              82.05%   90.25%   93.38%   94.05%   94.22%   94.27%   94.27%
+fin              85.52%   99.40%   99.90%  100.00%  100.00%  100.00%  100.00%
+fra              80.60%   97.94%   99.75%   99.90%   99.90%   99.90%   99.90%
+gla              91.03%   99.30%   99.95%  100.00%  100.00%  100.00%  100.00%
+gle              91.04%   99.20%   99.95%  100.00%  100.00%  100.00%  100.00%
+glg              66.96%   92.77%   98.54%   99.25%   99.30%   99.25%   99.25%
+grn              87.45%   98.32%   99.75%   99.75%   99.80%   99.75%   99.75%
+guj              99.90%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%
+hau              87.08%   98.02%   99.90%   99.95%   99.95%   99.95%   99.95%
+heb              99.09%   99.85%  100.00%  100.00%  100.00%  100.00%  100.00%
+hin              67.83%   84.81%   94.29%   96.31%   96.45%   96.50%   96.50%
+hrv              79.00%   96.91%   99.45%   99.60%   99.60%   99.60%   99.60%
+hun              89.96%   99.14%   99.95%  100.00%  100.00%  100.00%  100.00%
+hye              88.85%   97.74%   99.50%   99.80%   99.80%   99.80%   99.80%
+ibo              92.52%   99.20%   99.90%   99.95%   99.95%   99.95%   99.95%
+ilo              83.73%   98.35%   99.65%   99.90%   99.90%   99.90%   99.90%
+ind              48.96%   64.99%   74.69%   78.30%   78.34%   78.42%   78.42%
+isl              87.26%   97.65%   99.65%   99.70%   99.70%   99.70%   99.70%
+ita              72.86%   96.39%   99.20%   99.55%   99.60%   99.60%   99.60%
+jav              65.42%   90.74%   97.48%   98.17%   98.32%   98.36%   98.36%
+jpn              99.75%   99.85%  100.00%  100.00%  100.00%  100.00%  100.00%
+kab              92.64%   99.70%   99.90%   99.95%   99.95%   99.95%   99.95%
+kan              99.70%   99.95%  100.00%  100.00%  100.00%  100.00%  100.00%
+kat              96.47%   99.60%  100.00%  100.00%  100.00%  100.00%  100.00%
+kaz              88.65%   98.99%   99.85%   99.90%   99.90%   99.90%   99.90%
+khm              98.68%   99.85%   99.90%   99.95%   99.95%   99.95%   99.95%
+kin              87.16%   98.94%   99.90%   99.95%   99.95%   99.95%   99.95%
+kir              84.53%   98.54%   99.75%   99.80%   99.80%   99.80%   99.80%
+kor              99.70%   99.95%  100.00%  100.00%  100.00%  100.00%  100.00%
+kur              86.71%   98.13%   99.70%   99.90%   99.90%   99.90%   99.90%
+lao              96.47%   99.19%   99.85%   99.95%   99.95%   99.95%   99.95%
+lav              89.57%   99.45%  100.00%  100.00%  100.00%  100.00%  100.00%
+lim              72.83%   94.37%   98.23%   98.48%   98.48%   98.48%   98.48%
+lit              84.98%   99.14%   99.95%  100.00%  100.00%  100.00%  100.00%
+ltz              72.99%   95.15%   99.30%   99.75%   99.80%   99.80%   99.80%
+lug              88.63%   98.33%   99.80%   99.70%   99.70%   99.70%   99.70%
+lus              78.91%   96.19%   99.19%   99.70%   99.70%   99.70%   99.70%
+mal              99.70%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%
+mar              68.58%   89.27%   96.75%   97.71%   97.76%   97.76%   97.76%
+min              71.18%   92.77%   97.66%   98.17%   98.17%   98.17%   98.17%
+mkd              81.88%   96.57%   98.96%   99.35%   99.40%   99.40%   99.40%
+mlg              93.11%   99.09%   99.90%   99.90%   99.90%   99.90%   99.90%
+mlt              89.52%   99.40%   99.95%   99.95%   99.95%   99.95%   99.95%
+mon              93.76%   99.65%  100.00%  100.00%  100.00%  100.00%  100.00%
+msa              53.19%   70.58%   79.67%   82.07%   82.07%   82.28%   82.28%
+mya              98.63%   99.60%   99.90%  100.00%  100.00%  100.00%  100.00%
+nep              69.72%   87.89%   96.84%   98.23%   98.38%   98.43%   98.43%
+nld              70.17%   91.92%   98.33%   98.69%   98.74%   98.80%   98.80%
+nno              62.16%   86.99%   95.10%   95.78%   95.89%   95.89%   95.89%
+nob              55.16%   80.25%   91.22%   93.49%   93.67%   93.73%   93.73%
+nso              59.08%   78.00%   83.14%   86.45%   86.96%   87.47%   87.47%
+nya              75.76%   93.55%   97.48%   98.26%   98.07%   98.17%   98.17%
+ori              99.65%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%
+pan              99.75%   99.75%   99.90%   99.95%   99.95%   99.95%   99.95%
+pap              75.85%   96.37%   99.34%   99.50%   99.55%   99.55%   99.55%
+pol              77.95%   88.59%   91.76%   93.31%   93.66%   93.53%   93.53%
+por              71.57%   94.71%   99.00%   99.60%   99.60%   99.60%   99.60%
+pus              90.86%   98.14%   99.65%   99.80%   99.80%   99.80%   99.80%
+ron              85.11%   98.89%   99.80%   99.90%   99.85%   99.85%   99.85%
+rus              81.44%   98.12%   99.75%   99.80%   99.80%   99.80%   99.80%
+san              66.37%   85.60%   94.81%   96.17%   96.33%   96.33%   96.33%
+sat             100.00%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%
+sin              99.70%   99.90%   99.95%   99.95%   99.95%   99.95%   99.95%
+slk              78.03%   97.69%   99.70%   99.75%   99.75%   99.75%   99.75%
+slv              77.88%   96.86%   99.55%   99.65%   99.65%   99.65%   99.65%
+smo              90.06%   99.25%   99.75%   99.90%   99.95%   99.95%   99.95%
+sna              81.50%   98.84%   99.25%   99.50%   99.55%   99.55%   99.55%
+snd              96.94%  100.00%  100.00%  100.00%  100.00%  100.00%  100.00%
+som              91.49%   99.30%   99.90%   99.90%   99.90%   99.90%   99.90%
+spa              67.16%   92.46%   98.56%   99.55%   99.55%   99.55%   99.55%
+sqi              90.69%   99.50%   99.95%  100.00%  100.00%  100.00%  100.00%
+srp              81.62%   96.99%   99.04%   99.45%   99.45%   99.45%   99.45%
+sun              62.71%   86.69%   94.68%   95.94%   96.09%   96.09%   96.09%
+swe              68.70%   93.19%   98.64%   98.69%   98.74%   98.74%   98.74%
+swh              83.89%   98.25%   99.60%   99.65%   99.65%   99.65%   99.65%
+szl              71.08%   85.39%   90.02%   92.16%   92.68%   92.51%   92.51%
+tam              99.75%   99.85%   99.95%  100.00%  100.00%  100.00%  100.00%
+tat              81.83%   97.91%   99.55%   99.80%   99.80%   99.80%   99.80%
+tel              98.16%   99.19%   99.55%   99.70%   99.75%   99.75%   99.75%
+tgk              92.72%   99.75%  100.00%  100.00%  100.00%  100.00%  100.00%
+tgl              76.57%   95.52%   99.10%   99.40%   99.45%   99.45%   99.45%
+tha              98.78%   99.80%  100.00%  100.00%  100.00%  100.00%  100.00%
+tir              97.01%   99.90%   99.95%   99.95%   99.95%   99.95%   99.95%
+tsn              72.74%   84.73%   87.50%   89.45%   89.77%   90.09%   90.09%
+tso              87.72%   98.12%   99.55%   99.65%   99.65%   99.65%   99.65%
+tuk              86.99%   98.84%  100.00%  100.00%  100.00%  100.00%  100.00%
+tum              76.64%   94.25%   97.70%   98.32%   98.17%   98.27%   98.27%
+tur              74.03%   95.70%   99.55%   99.60%   99.60%   99.60%   99.60%
+uig              98.63%   99.95%  100.00%  100.00%  100.00%  100.00%  100.00%
+ukr              88.63%   99.45%   99.90%   99.90%   99.90%   99.90%   99.90%
+urd              87.93%   97.53%   99.70%   99.95%   99.95%   99.95%   99.95%
+uzb              78.39%   97.63%   99.65%   99.85%   99.85%   99.85%   99.85%
+vie              95.37%   99.80%  100.00%  100.00%  100.00%  100.00%  100.00%
+war              55.01%   70.51%   77.89%   81.10%   81.45%   81.10%   81.10%
+xho              68.76%   83.11%   89.89%   90.87%   91.00%   91.00%   91.00%
+ydd              99.25%   99.95%  100.00%  100.00%  100.00%  100.00%  100.00%
+yor              88.40%   98.75%   99.70%   99.85%   99.85%   99.85%   99.85%
+yue               2.34%    0.99%    0.99%    0.99%    0.99%    0.99%    0.99%
+zho              79.04%   79.84%   79.92%   79.92%   79.92%   79.92%   79.92%
+zul              63.46%   78.70%   87.89%   89.29%   89.52%   89.52%   89.52%
+
+Per-language macro F1 (full):
+Language      CharSoup  OpenNLP   Lingua  Optimaize
+----------------------------------------------------------
+ace            96.31%      N/A      N/A      N/A
+afr            99.55%   96.34%   96.40%   98.61%
+aka            99.24%      N/A      N/A      N/A
+amh            99.95%   99.95%      N/A      N/A
+ara            99.95%  100.00%  100.00%  100.00%
+asm           100.00%   99.90%      N/A      N/A
+azb            90.93%      N/A      N/A      N/A
+aze            99.80%   99.25%   98.99%      N/A
+bak            99.80%   97.85%      N/A      N/A
+ban            96.48%   43.66%      N/A      N/A
+bel            96.04%  100.00%  100.00%  100.00%
+ben           100.00%   99.85%  100.00%  100.00%
+bjn            96.69%      N/A      N/A      N/A
+bod           100.00%      N/A      N/A      N/A
+bul            99.70%   98.33%   98.11%   99.14%
+cat            99.90%   98.03%   98.43%   86.74%
+ceb            89.68%   32.41%      N/A      N/A
+ces            99.80%   99.50%   98.79%   99.90%
+ckb           100.00%    0.00%      N/A      N/A
+cym           100.00%   99.95%   98.66%   99.85%
+dan            97.28%   95.45%   95.01%   98.06%
+deu            99.65%   99.30%   99.65%   99.40%
+ell           100.00%   99.95%  100.00%  100.00%
+eng            98.96%   97.22%   97.85%   98.13%
+epo            99.75%   98.75%   98.34%      N/A
+est            99.70%   78.32%   99.50%   99.80%
+eus           100.00%   98.90%   99.15%   99.85%
+ewe            99.55%      N/A      N/A      N/A
+fao            99.70%   97.72%      N/A      N/A
+fas            94.27%    0.59%   99.30%   99.95%
+fin           100.00%   99.39%   99.60%   99.65%
+fra            99.90%   99.25%   99.40%   99.55%
+gla           100.00%   99.55%      N/A      N/A
+gle           100.00%   99.50%   99.65%   99.95%
+glg            99.25%   95.11%      N/A   97.22%
+grn            99.75%      N/A      N/A      N/A
+guj           100.00%  100.00%  100.00%  100.00%
+hau            99.95%   97.59%      N/A      N/A
+heb           100.00%   99.85%  100.00%   99.95%
+hin            96.50%   89.24%   88.27%   99.90%
+hrv            99.60%   66.67%   68.24%   98.65%
+hun           100.00%   99.75%   99.80%  100.00%
+hye            99.80%  100.00%  100.00%      N/A
+ibo            99.95%   99.55%      N/A      N/A
+ilo            99.90%      N/A      N/A      N/A
+ind            78.42%   36.55%   78.31%   69.10%
+isl            99.70%   97.91%   99.70%  100.00%
+ita            99.60%   97.93%   98.30%   99.25%
+jav            98.36%   73.06%      N/A      N/A
+jpn           100.00%   99.65%  100.00%   68.12%
+kab            99.95%      N/A      N/A      N/A
+kan           100.00%  100.00%      N/A  100.00%
+kat           100.00%  100.00%  100.00%      N/A
+kaz            99.90%   99.40%   97.61%      N/A
+khm            99.95%   99.95%      N/A  100.00%
+kin            99.95%   99.04%      N/A      N/A
+kir            99.80%   98.78%      N/A      N/A
+kor           100.00%   99.55%  100.00%   99.80%
+kur            99.90%   96.79%      N/A      N/A
+lao            99.95%   99.95%      N/A      N/A
+lav           100.00%   67.86%   99.30%  100.00%
+lim            98.48%   86.96%      N/A      N/A
+lit           100.00%   99.24%   99.50%   99.90%
+ltz            99.80%   98.99%      N/A      N/A
+lug            99.70%   97.64%   98.84%      N/A
+lus            99.70%      N/A      N/A      N/A
+mal           100.00%  100.00%      N/A  100.00%
+mar            97.76%   97.97%   89.67%  100.00%
+min            98.17%   80.27%      N/A      N/A
+mkd            99.40%   97.59%   97.23%   96.98%
+mlg            99.90%   98.13%      N/A      N/A
+mlt            99.95%   99.34%      N/A   99.90%
+mon           100.00%   99.90%   99.15%      N/A
+msa            82.28%   67.94%   80.78%   40.12%
+mya           100.00%  100.00%      N/A      N/A
+nep            98.43%   97.56%      N/A   99.90%
+nld            98.80%   90.66%   96.43%   98.53%
+nno            95.89%   88.95%   89.86%      N/A
+nob            93.73%   87.81%   87.90%      N/A
+nso            87.47%   95.91%      N/A      N/A
+nya            98.17%      N/A      N/A      N/A
+ori           100.00%  100.00%      N/A      N/A
+pan            99.95%   99.95%  100.00%  100.00%
+pap            99.55%      N/A      N/A      N/A
+pol            93.53%   99.70%   99.65%   99.95%
+por            99.60%   98.03%   98.40%   98.19%
+pus            99.80%   95.25%      N/A      N/A
+ron            99.85%   98.95%   97.34%  100.00%
+rus            99.80%   98.22%   98.51%   99.65%
+san            96.33%   84.87%      N/A      N/A
+sat           100.00%      N/A      N/A      N/A
+sin            99.95%  100.00%      N/A      N/A
+slk            99.75%   99.14%   98.55%   99.70%
+slv            99.65%   97.72%   98.03%   98.60%
+smo            99.95%      N/A      N/A      N/A
+sna            99.55%      N/A   99.00%      N/A
+snd           100.00%   99.95%      N/A      N/A
+som            99.90%   99.60%   99.80%   99.95%
+spa            99.55%   84.02%   98.05%   92.82%
+sqi           100.00%   99.70%   99.70%  100.00%
+srp            99.45%   99.14%   97.61%   97.28%
+sun            96.09%      N/A      N/A      N/A
+swe            98.74%   98.42%   98.45%   99.50%
+swh            99.65%      N/A      N/A      N/A
+szl            92.51%      N/A      N/A      N/A
+tam           100.00%  100.00%  100.00%  100.00%
+tat            99.80%   97.72%      N/A      N/A
+tel            99.75%   99.55%   99.95%  100.00%
+tgk           100.00%  100.00%      N/A      N/A
+tgl            99.45%   54.09%   96.87%   99.65%
+tha           100.00%   99.55%   97.90%  100.00%
+tir            99.95%      N/A      N/A      N/A
+tsn            90.09%   95.18%   92.46%      N/A
+tso            99.65%      N/A   98.90%      N/A
+tuk           100.00%   99.75%      N/A      N/A
+tum            98.27%      N/A      N/A      N/A
+tur            99.60%   98.53%   98.85%   99.95%
+uig           100.00%   91.88%      N/A      N/A
+ukr            99.90%   99.60%   97.86%   99.85%
+urd            99.95%   96.75%   99.30%  100.00%
+uzb            99.85%   98.21%      N/A      N/A
+vie           100.00%   99.90%   99.05%  100.00%
+war            81.10%   11.58%      N/A      N/A
+xho            91.00%   84.42%   90.94%      N/A
+ydd           100.00%      N/A      N/A      N/A
+yor            99.85%   98.58%   97.38%      N/A
+yue             0.99%      N/A      N/A      N/A
+zho            79.92%      N/A  100.00%   87.76%
+zul            89.52%   81.80%   91.63%      N/A
+
+CharSoup top confusions (languages with F1 < 95%, @20):
+TrueLabel         F1  Top misclassifications (predicted → count)
+------------------------------------------------------------------------
+yue             2.3%  zho→967, eng→4, ilo→2, spa→1, tay→1, tur→1, bar→1
+ind            49.0%  msa→267, jav→27, bjn→25, sun→20, ban→19, min→17, tet→11
+msa            53.2%  ind→239, jav→24, ban→14, sun→14, bjn→13, min→9, pam→7
+war            55.0%  bcl→183, ceb→122, hil→102, som→14, bre→10, ilo→10, diq→9
+nob            55.2%  dan→129, nno→125, swe→14, vls→10, diq→9, fry→9, spa→6
+nso            59.1%  tsn→312, diq→20, smo→19, kur→9, bre→8, kha→8, cym→8
+azb            61.5%  fas→217, mzn→115, pnb→85, pus→62, urd→41, ara→8, snd→6
+nno            62.2%  nob→154, dan→37, swe→19, diq→15, bre→7, eus→7, lav→6
+sun            62.7%  jav→50, msa→46, ban→29, ind→26, bjn→17, min→13, diq→9
+bjn            63.4%  msa→64, min→60, sun→54, ind→41, jav→32, szy→17, ban→16
+zul            63.5%  xho→368, kin→10, nya→10, hrv→8, nob→4, ibo→4, lug→4
+dan            64.6%  nob→136, nno→65, swe→21, diq→10, deu→7, afr→7, ltz→7
+jav            65.4%  sun→43, msa→42, ind→28, ban→27, diq→16, bjn→11, min→11
+san            66.4%  hin→183, mar→106, nep→92, gom→6, ltz→3, bre→3, tur→1
+ban            66.8%  jav→68, ind→58, msa→54, sun→20, bjn→15, est→10, pam→10
+glg            67.0%  por→89, arg→60, spa→32, cat→26, lfn→23, ina→20, mwl→14
+spa            67.2%  cat→55, lfn→49, glg→37, mwl→23, arg→23, ina→15, roh→14
+hin            67.8%  nep→89, mar→66, san→41, gom→6, spa→1
+mar            68.6%  hin→187, san→85, nep→72, gom→9
+swe            68.7%  nno→70, nob→64, dan→39, diq→14, fao→12, isl→8, cat→8
+xho            68.8%  zul→96, kin→13, nya→9, tso→7, smo→5, eng→5, hrv→4
+ceb            69.2%  tgl→139, hil→88, bcl→33, ilo→6, szy→5, war→4, lus→3
+nep            69.7%  hin→180, san→79, mar→65, gom→2, por→1, trv→1
+nld            70.2%  vls→66, afr→64, lim→47, nds→37, gsw→20, deu→17, ltz→17
+szl            71.1%  pol→276, hsb→17, ces→11, slk→10, hrv→8, diq→5, slv→5
+min            71.2%  bjn→46, ind→28, jav→26, sun→24, msa→20, ban→13, tgl→13
+eng            71.3%  diq→14, tsn→14, ile→13, frr→11, ina→11, fra→10, lat→9
+por            71.6%  glg→81, ina→24, cat→23, arg→21, spa→19, mwl→16, lfn→9
+tsn            72.7%  nso→50, smo→16, diq→9, bre→5, yor→5, ltz→5, kha→4
+lim            72.8%  vls→35, afr→33, nld→28, fry→18, ron→17, nds→14, frr→12
+ita            72.9%  cos→57, ina→38, roh→33, lfn→24, cat→19, ido→13, mwl→11
+ltz            73.0%  gsw→41, deu→25, nds→24, nob→13, lim→10, fry→10, swe→9
+tur            74.0%  diq→113, aze→22, tuk→15, slv→7, bar→5, bre→5, uzb→5
+ace            75.8%  sun→116, ind→26, min→18, msa→18, ban→12, avk→11, jav→9
+nya            75.8%  tum→59, swh→16, diq→16, zul→7, lug→4, gom→3, lus→3
+pap            75.8%  ido→32, jav→16, diq→15, bre→15, lfn→15, tet→13, spa→11
+tgl            76.6%  ceb→67, bcl→38, hil→30, lus→6, ban→6, pam→6, jav→5
+tum            76.6%  nya→143, swh→31, sna→12, kin→10, xho→8, lug→8, diq→6
+deu            76.7%  gsw→50, afr→46, bar→21, ltz→18, dan→13, nds→10, pfl→9
+cat            77.0%  lfn→20, arg→15, spa→10, fra→9, wln→9, roh→9, diq→8
+slv            77.9%  hrv→66, ces→15, slk→12, hsb→8, yor→7, diq→5, epo→4
+pol            78.0%  szl→16, hsb→13, slv→11, ces→8, slk→6, yor→5, diq→4
+slk            78.0%  ces→76, slv→12, hrv→8, lav→6, diq→5, hun→4, gom→4
+uzb            78.4%  diq→42, aze→15, kaa→13, tuk→12, hau→10, som→7, mlt→7
+lus            78.9%  cnh→51, eng→26, ltz→9, diq→8, cat→8, cor→7, lat→7
+hrv            79.0%  slv→104, slk→17, ces→8, hsb→7, diq→5, cos→4, est→3
+zho            79.0%  yue→17, szy→7, eng→5, spa→3, frr→3, tay→3, ilo→3
+afr            79.1%  nld→35, vls→23, lim→17, nds→17, gsw→14, deu→10, frr→8
+epo            79.1%  ido→52, lfn→16, diq→11, por→10, bre→9, slv→8, spa→7
+bul            79.5%  mkd→87, rus→26, srp→21, mhr→7, tgk→7, ukr→7, bel→5
+bel            79.6%  be-x-old→276, ukr→11, kir→3, tgk→3, rus→2, srp→1, tat→1
+ces            80.4%  slk→67, hrv→10, slv→9, hsb→8, diq→5, yor→5, epo→5
+fra            80.6%  wln→47, cat→38, bre→15, ina→14, ltz→9, lfn→8, ron→6
+rus            81.4%  bul→64, srp→28, ukr→26, mkd→21, bel→11, rue→10, be-x-old→9
+sna            81.5%  nya→29, tum→18, kin→17, xho→15, swh→13, diq→9, jav→7
+srp            81.6%  mkd→108, bul→44, ukr→15, rus→14, tgk→8, che→5, bel→3
+tat            81.8%  bak→45, kir→36, rus→19, bul→12, srp→11, sah→10, che→10
+mkd            81.9%  bul→54, srp→46, rus→8, ukr→5, tat→3, mon→2, ava→2
+fas            82.1%  mzn→67, pnb→19, pus→18, urd→8, azb→5, spa→2, tur→1
+fao            83.4%  isl→71, nno→29, diq→5, est→4, bre→4, lat→4, mlt→4
+ilo            83.7%  szy→15, sun→13, hil→10, diq→8, tgl→8, hau→7, bcl→7
+swh            83.9%  tum→12, diq→9, kin→8, sna→8, nya→8, hau→6, jav→5
+est            84.4%  vro→13, vep→11, fin→8, gsw→7, diq→6, frr→6, ban→3
+kir            84.5%  kaz→22, tyv→19, rus→17, mon→10, tat→10, tgk→9, alt→8
+lit            85.0%  lav→37, ido→16, sgs→11, epo→8, hrv→8, vep→7, slv→6
+eus            85.0%  diq→11, hau→7, tet→7, epo→7, slv→7, min→7, avk→7
+ron            85.1%  cat→16, lfn→10, lat→9, bre→8, ina→8, por→6, arg→5
+fin            85.5%  est→24, olo→16, vro→9, vep→5, frr→5, smn→5, ltz→5
+aze            86.0%  tur→60, diq→37, kaa→11, kur→7, ido→4, fin→3, bre→3
+aka            86.1%  diq→8, eng→8, ltz→8, lat→7, cor→5, nds→5, bre→4
+bak            86.6%  tat→40, kir→17, rus→14, tyv→12, kaz→11, che→10, tgk→9
+kur            86.7%  diq→64, ido→5, msa→5, ita→4, frr→4, mlg→3, slk→3
+tuk            87.0%  tur→20, diq→18, jav→6, avk→5, bre→4, fao→4, yor→4
+hau            87.1%  diq→6, trv→5, som→4, ltz→4, swh→3, bre→3, kha→3
+kin            87.2%  swh→12, sna→9, xho→9, diq→7, yor→6, nya→5, lug→5
+isl            87.3%  fao→52, nno→11, bar→5, nob→3, bre→3, lat→3, hun→2
+grn            87.4%  spa→13, glg→12, por→11, diq→7, tet→7, epo→7, cat→6
+tso            87.7%  nya→15, diq→12, swh→11, cos→5, fra→5, sna→5, ltz→5
+urd            87.9%  pnb→118, fas→17, skr→13, mzn→6, snd→4, azb→3, pus→3
+yor            88.4%  diq→5, swh→3, jav→3, ilo→3, slk→3, ron→3, cos→2
+ukr            88.6%  bul→29, srp→19, rus→15, mkd→12, tgk→12, bel→11, be-x-old→5
+lug            88.6%  kin→17, xho→16, swh→9, diq→9, nya→9, jav→5, szy→5
+kaz            88.7%  kir→27, tgk→15, bul→13, tat→12, bak→9, tyv→9, rus→9
+hye            88.9%  hyw→195, spa→2, tur→1, bre→1, eng→1
+mlt            89.5%  jav→7, diq→6, ltz→5, cos→4, sun→4, avk→4, cat→4
+lav            89.6%  lit→5, slv→5, nob→5, diq→4, mlt→4, cos→3, slk→3
+ewe            89.6%  diq→10, eng→8, aka→7, gsw→5, yor→5, ces→5, ibo→5
+hun            90.0%  slk→8, ltz→7, vep→5, epo→5, eng→5, diq→4, tur→4
+smo            90.1%  arg→6, ina→6, por→3, glg→3, diq→2, tsn→2, ron→2
+sqi            90.7%  epo→6, hrv→5, cos→4, est→4, diq→4, mlt→4, slv→4
+pus            90.9%  pnb→32, fas→11, azb→10, mzn→5, urd→4, ara→1, cor→1
+gla            91.0%  gle→39, lus→6, bre→3, bar→2, arg→2, eng→2, lav→2
+gle            91.0%  gla→46, lus→3, nno→3, yor→2, fry→2, trv→2, mwl→1
+som            91.5%  orm→10, ltz→5, est→4, uzb→4, frr→4, avk→3, ceb→2
+cym            92.5%  lat→6, gle→6, gsw→4, cor→3, vie→3, smo→3, spa→3
+ibo            92.5%  swh→6, yor→4, diq→3, hsb→3, tur→2, vie→2, fao→2
+kab            92.6%  diq→20, ind→4, hun→3, est→3, bre→3, frr→3, cos→2
+tgk            92.7%  rus→10, che→6, srp→6, lez→5, bel→4, bul→4, mkd→3
+mlg            93.1%  hrv→4, bre→3, smo→3, tet→3, lus→2, diq→2, tso→2
+mon            93.8%  bxr→22, tgk→8, kir→7, rus→6, che→6, mkd→4, be-x-old→4
+asm            94.9%  ben→61, sun→1
+
+CharSoup top confusions (languages with F1 < 95%, full):
+TrueLabel         F1  Top misclassifications (predicted → count)
+------------------------------------------------------------------------
+yue             1.0%  zho→987, eng→3, nno→1
+ind            78.4%  msa→212
+zho            79.9%  yue→5, szy→1, spa→1, ita→1, tay→1
+war            81.1%  ceb→214, hil→76, bcl→25, kin→1, uzb→1
+msa            82.3%  ind→123, bjn→1
+nso            87.5%  tsn→218, som→1, epo→1, avk→1, sun→1
+zul            89.5%  xho→179, cat→1, sna→1
+ceb            89.7%  tgl→6, hil→4, bcl→1
+tsn            90.1%  avk→1
+azb            90.9%  fas→119, mzn→32, pnb→10, pus→2, ara→1, urd→1
+xho            91.0%  zul→10, sna→1
+szl            92.5%  pol→138, eng→1
+pol            93.5%    (no misses recorded)
+nob            93.7%  dan→20, nno→20, swe→1
+fas            94.3%  mzn→1, eng→1
+
+Report written to: /Users/tallison/datasets/wikipedia-model-v14/flores-v14-eval.log
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  05:36 min
+[INFO] Finished at: 2026-03-19T17:50:53-04:00
+[INFO] ------------------------------------------------------------------------

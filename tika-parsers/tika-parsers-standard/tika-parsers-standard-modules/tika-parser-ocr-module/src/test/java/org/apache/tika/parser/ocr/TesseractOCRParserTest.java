@@ -133,7 +133,7 @@ public class TesseractOCRParserTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(TesseractOCRConfig.class, config);
         Metadata metadata = getMetadata(MediaType.image("png"));
-        String ocr = getText("testRotated+10.png", metadata, parseContext);
+        String ocr = getText("testRotated+10.png", p, metadata, parseContext);
         assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
         assertEquals(10.0, Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)),
                 0.01);
@@ -151,7 +151,7 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(TesseractOCRConfig.class, config);
         assumeTrue(canRun());
         Metadata metadata = getMetadata(MediaType.image("png"));
-        String ocr = getText("testRotated-10.png", metadata, parseContext);
+        String ocr = getText("testRotated-10.png", p, metadata, parseContext);
         assertEquals("true", metadata.get(TesseractOCRParser.IMAGE_MAGICK));
         assertEquals(-10.0, Double.parseDouble(metadata.get(TesseractOCRParser.IMAGE_ROTATION)),
                 0.01);

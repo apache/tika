@@ -17,8 +17,10 @@
 package org.apache.tika.langdetect.charsoup.tools;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -26,10 +28,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
+import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
 import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
 
@@ -59,12 +65,18 @@ import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
  * <h3>Usage</h3>
  * <pre>
  *   java TrainGenerativeLanguageModel \
- *       --corpus  /path/to/Leipzig-corpus \
- *       --output  generative.bin \
+ *       --corpus      /path/to/Leipzig-corpus \
+ *       --output      generative.bin \
+ *       --disc-model  langdetect-20260320.bin \
  *       [--max-per-lang 500000] \
  *       [--add-k 0.01] \
  *       [--cjk zho,jpn,cmn]
  * </pre>
+ *
+ * <p>{@code --disc-model} is required. Only languages present in the
+ * discriminative model are trained; all others in the corpus are skipped.
+ * This ensures the GLM covers exactly the same language set as the
+ * discriminative model — no more, no less.
  */
 public class TrainGenerativeLanguageModel {
 
@@ -75,9 +87,11 @@ public class TrainGenerativeLanguageModel {
     /** Number of sentences used to probe the script of an unknown language. */
     private static final int   CJK_PROBE_SENTENCES   = 500;
 
+
     public static void main(String[] args) throws Exception {
         Path   corpus     = null;
         Path   output     = null;
+        Path   discModel  = null;
         int    maxPerLang = DEFAULT_MAX_PER_LANG;
         float  addK       = DEFAULT_ADD_K;
         List<String> forceCjk = new ArrayList<>();
@@ -89,6 +103,9 @@ public class TrainGenerativeLanguageModel {
                     break;
                 case "--output":
                     output = Paths.get(args[++i]);
+                    break;
+                case "--disc-model":
+                    discModel = Paths.get(args[++i]);
                     break;
                 case "--max-per-lang":
                     maxPerLang = Integer.parseInt(args[++i]);
@@ -109,31 +126,39 @@ public class TrainGenerativeLanguageModel {
             }
         }
 
-        if (corpus == null || output == null) {
+        if (corpus == null || output == null || discModel == null) {
             printUsage();
             System.exit(1);
         }
 
-        new TrainGenerativeLanguageModel().run(corpus, output, maxPerLang, addK, forceCjk);
+        // Load the discriminative model's language list
+        Set<String> allowedLangs;
+        try (InputStream is = new FileInputStream(discModel.toFile())) {
+            CharSoupModel model = CharSoupModel.load(is);
+            allowedLangs = new HashSet<String>(Arrays.asList(model.getLabels()));
+        }
+        System.out.printf(Locale.US, "Discriminative model languages: %d%n", allowedLangs.size());
+
+        new TrainGenerativeLanguageModel().run(corpus, output, maxPerLang, addK,
+                forceCjk, allowedLangs);
     }
 
     private void run(Path corpusDir, Path outputPath,
                      int maxPerLang, float addK,
-                     List<String> forceCjkList) throws IOException {
+                     List<String> forceCjkList,
+                     Set<String> allowedLangs) throws IOException {
 
-        // Support two corpus layouts:
-        //   flat:  corpusDir/{langCode}          (one sentence per line, no tab prefix)
-        //   Leipzig: corpusDir/{langCode}/*.txt  (lineNum TAB sentence)
         boolean flatLayout = isFlatLayout(corpusDir);
         System.out.printf(Locale.US, "Corpus layout: %s%n", flatLayout ? "flat" : "Leipzig");
 
-        List<Path> langPaths = listLangPaths(corpusDir, flatLayout);
-        System.out.printf(Locale.US, "Found %d languages in %s%n", langPaths.size(), corpusDir);
+        List<Path> langPaths = listLangPaths(corpusDir, flatLayout, allowedLangs);
+        System.out.printf(Locale.US, "Found %d matching languages in %s%n",
+                langPaths.size(), corpusDir);
 
         GenerativeLanguageModel.Builder builder = GenerativeLanguageModel.builder();
 
         for (Path langPath : langPaths) {
-            String lang = langPath.getFileName().toString();
+            String lang = canonicalLang(langPath.getFileName().toString());
             boolean cjk = forceCjkList.contains(lang)
                     || probeCjk(langPath, flatLayout, CJK_PROBE_SENTENCES);
 
@@ -145,7 +170,7 @@ public class TrainGenerativeLanguageModel {
         long totalSentences = 0;
 
         for (Path langPath : langPaths) {
-            String lang    = langPath.getFileName().toString();
+            String lang    = canonicalLang(langPath.getFileName().toString());
             long   counted = feedLanguage(builder, lang, langPath, flatLayout, maxPerLang);
             totalSentences += counted;
             System.out.printf(Locale.US, "  %-12s  %,d sentences%n", lang, counted);
@@ -159,7 +184,7 @@ public class TrainGenerativeLanguageModel {
         // Second pass: score training data to compute per-language μ and σ
         System.out.println("Calibrating z-scores (second pass) …");
         for (Path langPath : langPaths) {
-            String lang = langPath.getFileName().toString();
+            String lang = canonicalLang(langPath.getFileName().toString());
             double[] stats = calibrateLanguage(model, lang, langPath, flatLayout, maxPerLang);
             model.setStats(lang, (float) stats[0], (float) stats[1]);
             System.out.printf(Locale.US,
@@ -197,12 +222,16 @@ public class TrainGenerativeLanguageModel {
      * For flat layout: regular files. For Leipzig layout: subdirectories.
      */
     private static List<Path> listLangPaths(Path corpusDir,
-                                             boolean flat) throws IOException {
+                                             boolean flat,
+                                             Set<String> allowedLangs) throws IOException {
         List<Path> paths = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(corpusDir,
                 p -> flat ? Files.isRegularFile(p) : Files.isDirectory(p))) {
             for (Path p : stream) {
-                paths.add(p);
+                String lang = canonicalLang(p.getFileName().toString());
+                if (allowedLangs.contains(lang)) {
+                    paths.add(p);
+                }
             }
         }
         Collections.sort(paths);
@@ -385,6 +414,11 @@ public class TrainGenerativeLanguageModel {
         return (double) cjkLetters / totalLetters >= CJK_LETTER_THRESHOLD;
     }
 
+    /** Resolve corpus dir alias to canonical disc-model language code. */
+    private static String canonicalLang(String dirName) {
+        return CorpusAliases.canonical(dirName);
+    }
+
     private static List<Path> listTxtFiles(Path dir) throws IOException {
         List<Path> files = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "*.txt")) {
@@ -398,10 +432,11 @@ public class TrainGenerativeLanguageModel {
 
     private static void printUsage() {
         System.err.println("Usage: TrainGenerativeLanguageModel");
-        System.err.println("         --corpus <corpusDir>");
-        System.err.println("         --output <outputFile>");
-        System.err.println("         [--max-per-lang <N>]   (default 500000)");
-        System.err.println("         [--add-k <k>]           (default 0.01)");
-        System.err.println("         [--cjk lang1,lang2,...] (override auto-detection)");
+        System.err.println("         --corpus     <corpusDir>");
+        System.err.println("         --output     <outputFile>");
+        System.err.println("         --disc-model <discModelFile>  (required: filters to these languages)");
+        System.err.println("         [--max-per-lang <N>]          (default 500000)");
+        System.err.println("         [--add-k <k>]                 (default 0.01)");
+        System.err.println("         [--cjk lang1,lang2,...]       (override CJK auto-detection)");
     }
 }

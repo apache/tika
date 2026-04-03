@@ -99,6 +99,11 @@ public class TrainLanguageModel {
         int  maxTestPerLang   = DEFAULT_MAX_TEST_PER_LANG;
         boolean useTrigrams    = false;
         boolean useSkipBigrams = false;
+        boolean useL2Norm      = false;
+        boolean use4grams      = false;
+        boolean useSaltedNgrams = false;
+        boolean useWordBigrams = false;
+        boolean useWordLength  = false;
         boolean singlePass     = false;
         Path    evalOnlyModel  = null;
         Path    prepDirOverride = null;
@@ -131,6 +136,22 @@ public class TrainLanguageModel {
                     break;
                 case "--skip-bigrams":
                     useSkipBigrams = true;
+                    break;
+                case "--l2-norm":
+                    useL2Norm = true;
+                    break;
+                case "--4grams":
+                    use4grams = true;
+                    useTrigrams = true;
+                    break;
+                case "--salted":
+                    useSaltedNgrams = true;
+                    break;
+                case "--word-bigrams":
+                    useWordBigrams = true;
+                    break;
+                case "--word-length":
+                    useWordLength = true;
                     break;
                 case "--single-pass":
                     singlePass = true;
@@ -237,7 +258,12 @@ public class TrainLanguageModel {
         Phase2Trainer pass1 = new Phase2Trainer(numBuckets)
                 .setPreprocessed(true)
                 .setUseSkipBigrams(useSkipBigrams)
-                .setUseTrigrams(useTrigrams);
+                .setUseTrigrams(useTrigrams)
+                .setUse4grams(use4grams)
+                .setUseL2Norm(useL2Norm)
+                .setUseSaltedNgrams(useSaltedNgrams)
+                .setUseWordBigrams(useWordBigrams)
+                .setUseWordLength(useWordLength);
         pass1.trainWithResampling(allLabels,
                 epochNum -> createEpochFile(
                         poolDir, epochFile,
@@ -282,7 +308,12 @@ public class TrainLanguageModel {
             Phase2Trainer pass2 = new Phase2Trainer(numBuckets)
                     .setPreprocessed(true)
                     .setUseSkipBigrams(useSkipBigrams)
-                    .setUseTrigrams(useTrigrams);
+                    .setUseTrigrams(useTrigrams)
+                    .setUse4grams(use4grams)
+                    .setUseL2Norm(useL2Norm)
+                    .setUseSaltedNgrams(useSaltedNgrams)
+                    .setUseWordBigrams(useWordBigrams)
+                    .setUseWordLength(useWordLength);
             pass2.trainWithResampling(filteredLabels,
                     epochNum -> createEpochFile(
                             filteredPoolDir, epochFile,
@@ -431,9 +462,12 @@ public class TrainLanguageModel {
         System.err.println("Usage: TrainLanguageModel"
                 + " --corpus <dir> --output <file>"
                 + " [--prep-dir <dir>] [--buckets N] [--max-train N]"
-                + " [--skip-bigrams] [--trigrams] [--single-pass]"
-                + " [--eval-only <model>]");
-        System.err.println("  --single-pass  skip filterPool + Pass 2 (Pass 1 only)");
+                + " [--skip-bigrams] [--trigrams] [--4grams] [--l2-norm]"
+                + " [--salted] [--word-bigrams] [--word-length] [--single-pass] [--eval-only <model>]");
+        System.err.println("  --salted        use SaltedNgramFeatureExtractor (v10+)");
+        System.err.println("  --word-bigrams  add short-word-anchored word bigrams (v11+)");
+        System.err.println("  --word-length   add non-CJK word length features (v11+)");
+        System.err.println("  --single-pass   skip filterPool + Pass 2 (Pass 1 only)");
         System.err.println("  Data preparation is handled by PrepareCorpus."
                 + " Run PrepareCorpus first, or provide --corpus so this"
                 + " trainer can call PrepareCorpus.prepareData automatically.");

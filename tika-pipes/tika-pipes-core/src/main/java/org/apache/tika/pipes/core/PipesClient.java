@@ -382,7 +382,7 @@ public class PipesClient implements Closeable {
                         throw new IOException("Unexpected message type from server: " + msg.type());
                 }
             } catch (SocketTimeoutException e) {
-                LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
+                LOG.info("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
                 // Mark for restart - server is stuck on current request and needs to be restarted
                 serverManager.markServerForRestart();
                 closeConnection();
@@ -431,7 +431,7 @@ public class PipesClient implements Closeable {
     private void waitForStartup() throws IOException {
         PipesMessage msg = PipesMessage.read(connectionTuple.input);
         if (msg.type() == PipesMessageType.READY) {
-            LOG.debug("clientId={}: server ready", pipesClientId);
+            LOG.info("clientId={}: server successfully started", pipesClientId);
         } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {
             // Send ACK for startup failure
             PipesMessage.ack().write(connectionTuple.output);
