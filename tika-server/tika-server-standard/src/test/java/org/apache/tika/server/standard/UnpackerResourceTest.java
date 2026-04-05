@@ -40,12 +40,14 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.JsonConfigHelper;
@@ -601,5 +603,13 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         assertEquals(200, response.getStatus());
         // Just verify it succeeds - actual depth limiting behavior depends on document structure
+    }
+    @Override
+    @AfterAll
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
+            FileUtils.deleteDirectory(unpackTempDir.toFile());
+        }
     }
 }

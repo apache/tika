@@ -38,12 +38,14 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.JsonConfigHelper;
@@ -258,6 +260,15 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
             assertTrue(averageColor.getRed() < 100 && averageColor.getRed() > 90);
             assertTrue(averageColor.getGreen() < 100 && averageColor.getGreen() > 90);
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);
+        }
+    }
+
+    @AfterAll
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
+            FileUtils.deleteDirectory(unpackTempDir.toFile());
         }
     }
 }
