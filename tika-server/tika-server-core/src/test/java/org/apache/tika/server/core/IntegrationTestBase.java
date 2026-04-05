@@ -80,7 +80,7 @@ public class IntegrationTestBase extends TikaTest {
             // Try graceful shutdown first (SIGTERM) to allow shutdown hooks to run
             process.destroy();
             boolean exited = process.waitFor(5, TimeUnit.SECONDS);
-            LOG.info("Trying graceful shutdown successful? {}", exited);
+            LOG.info("Graceful shutdown succeeded: {}", exited);
             if (!exited) {
                 // Fall back to forceful shutdown (SIGKILL)
                 LOG.warn("Fall back to forceful shutdown");
