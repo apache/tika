@@ -262,8 +262,9 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);
         }
     }
-    
+
     @AfterAll
+    @Override
     public void tearDown() throws Exception {
         super.tearDown();
         if (unpackTempDir != null && Files.exists(unpackTempDir)) {
