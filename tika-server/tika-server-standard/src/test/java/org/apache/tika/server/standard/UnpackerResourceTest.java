@@ -604,7 +604,6 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
         // Just verify it succeeds - actual depth limiting behavior depends on document structure
     }
-    
     @Override
     @AfterAll
     public void tearDown() throws Exception {
