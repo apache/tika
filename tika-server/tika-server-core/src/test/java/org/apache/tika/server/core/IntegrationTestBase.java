@@ -75,7 +75,8 @@ public class IntegrationTestBase extends TikaTest {
     @AfterEach
     public void tearDown() throws Exception {
         if (process != null) {
-            LOG.info("Trying graceful shutdown; supported? {}", process.supportsNormalTermination());
+            LOG.info("Trying graceful shutdown; supported? {}",
+                    process.toHandle().supportsNormalTermination());
             // Try graceful shutdown first (SIGTERM) to allow shutdown hooks to run
             process.destroy();
             boolean exited = process.waitFor(5, TimeUnit.SECONDS);
