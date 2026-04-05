@@ -75,11 +75,14 @@ public class IntegrationTestBase extends TikaTest {
     @AfterEach
     public void tearDown() throws Exception {
         if (process != null) {
+            LOG.info("Trying graceful shutdown; supported? {}", process.supportsNormalTermination());
             // Try graceful shutdown first (SIGTERM) to allow shutdown hooks to run
             process.destroy();
             boolean exited = process.waitFor(5, TimeUnit.SECONDS);
+            LOG.info("Trying graceful shutdown successful? {}", exited);
             if (!exited) {
                 // Fall back to forceful shutdown (SIGKILL)
+                LOG.warn("Fall back to forceful shutdown");
                 process.destroyForcibly();
                 process.waitFor(30, TimeUnit.SECONDS);
             }
@@ -90,7 +93,9 @@ public class IntegrationTestBase extends TikaTest {
     }
 
     public void startProcess(String[] extraArgs) throws IOException {
-        String[] base = new String[]{"java", "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",
+        String[] base = new String[]{"java", 
+                "-Djava.io.tmpdir=" + TEMP_WORKING_DIR.toAbsolutePath(), // make sure we're using subdir cleaned up by JUnit
+                "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",
                 "-p", INTEGRATION_TEST_PORT};
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
