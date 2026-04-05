@@ -38,6 +38,7 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -264,6 +265,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     
     @AfterAll
     public void tearDown() throws IOException {
-        Files.delete(unpackTempDir);
+        super.tearDown();
+        FileUtils.deleteDirectory(unpackTempDir.toFile());
     }
 }
