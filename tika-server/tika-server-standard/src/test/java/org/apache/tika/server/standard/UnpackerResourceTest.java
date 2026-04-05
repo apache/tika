@@ -604,8 +604,10 @@ public class UnpackerResourceTest extends CXFTestBase {
         // Just verify it succeeds - actual depth limiting behavior depends on document structure
     }
     
+    @Override
     @AfterAll
-    public void tearDown() throws IOException {
+    public void tearDown() throws Exception {
+        super.tearDown();
         Files.delete(unpackTempDir);
     }
 }
