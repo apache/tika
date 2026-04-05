@@ -252,17 +252,6 @@ public class PipesParsingHelper {
     }
 
     /**
-     * Creates a temp file for input in the configured temp directory.
-     */
-    private Path createInputTempFile() throws IOException {
-        if (inputTempDirectory != null) {
-            return Files.createTempFile(inputTempDirectory, "tika-server-input-", ".tmp");
-        } else {
-            return Files.createTempFile("tika-server-input-", ".tmp");
-        }
-    }
-
-    /**
      * Gets the PipesParser instance.
      */
     public PipesParser getPipesParser() {
