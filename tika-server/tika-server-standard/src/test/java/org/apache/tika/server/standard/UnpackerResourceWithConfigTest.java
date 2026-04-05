@@ -44,6 +44,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.JsonConfigHelper;
@@ -259,5 +260,10 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
             assertTrue(averageColor.getGreen() < 100 && averageColor.getGreen() > 90);
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);
         }
+    }
+    
+    @AfterAll
+    public void tearDown() throws IOException {
+        Files.delete(unpackTempDir);
     }
 }
