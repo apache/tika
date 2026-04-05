@@ -609,6 +609,8 @@ public class UnpackerResourceTest extends CXFTestBase {
     @AfterAll
     public void tearDown() throws Exception {
         super.tearDown();
-        FileUtils.deleteDirectory(unpackTempDir.toFile());
+        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
+            FileUtils.deleteDirectory(unpackTempDir.toFile());
+        }
     }
 }
