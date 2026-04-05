@@ -46,6 +46,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.JsonConfigHelper;
@@ -601,5 +602,10 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         assertEquals(200, response.getStatus());
         // Just verify it succeeds - actual depth limiting behavior depends on document structure
+    }
+    
+    @AfterAll
+    public void tearDown() throws IOException {
+        Files.delete(unpackTempDir);
     }
 }
