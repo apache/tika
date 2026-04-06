@@ -118,8 +118,7 @@ public class UnpackModeTest {
     }
 
     @Test
-    public void testUnpackModeRequiresEmitter(@TempDir Path tmp) throws Exception
-    {
+    public void testUnpackModeRequiresEmitter(@TempDir Path tmp) throws Exception {
         // Test that UNPACK mode fails gracefully when no emitter is specified
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
