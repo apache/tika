@@ -462,7 +462,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <zstd.version>1.5.7-7</zstd.version>
-    <nimbus-jose-jwt.version>10.8</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
 
