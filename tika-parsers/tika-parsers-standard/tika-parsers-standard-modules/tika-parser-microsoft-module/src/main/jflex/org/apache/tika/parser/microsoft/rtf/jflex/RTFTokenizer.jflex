@@ -36,45 +36,49 @@ package org.apache.tika.parser.microsoft.rtf.jflex;
         return token;
     }
 
-    private RTFToken controlWord(String text) {
-        // text is the full match including leading backslash and optional trailing
-        // delimiter space, e.g. "\\fonttbl", "\\f123 ", "\\ansi "
-        // strip leading backslash
-        String body = text.substring(1);
-        // strip trailing delimiter space if present
-        if (body.endsWith(" ")) {
-            body = body.substring(0, body.length() - 1);
+    /** Control word with parameter: \ letters [-] digits [space] */
+    private RTFToken controlWordWithParam() {
+        int len = yylength();
+        if (yycharat(len - 1) == ' ') {
+            len--;
         }
-
-        // split into name and optional numeric parameter
-        int i = 0;
-        while (i < body.length() && Character.isLetter(body.charAt(i))) {
-            i++;
+        // find where letters end
+        int nameEnd = 1;
+        while (nameEnd < len && Character.isLetter(yycharat(nameEnd))) {
+            nameEnd++;
         }
-        String name = body.substring(0, i);
-        if (i < body.length()) {
-            // there is a numeric parameter (possibly negative)
-            String paramStr = body.substring(i);
-            int param = Integer.parseInt(paramStr);
-            token.set(RTFTokenType.CONTROL_WORD, name, param, true);
-        } else {
-            token.set(RTFTokenType.CONTROL_WORD, name, -1, false);
-        }
+        String name = new String(zzBuffer, zzStartRead + 1, nameEnd - 1);
+        int param = parseIntFromBuffer(nameEnd, len);
+        token.set(RTFTokenType.CONTROL_WORD, name, param, true);
         return token;
     }
 
-    private RTFToken hexEscape(String text) {
-        // text is e.g. "\\'ab"
-        int hi = Character.digit(text.charAt(2), 16);
-        int lo = Character.digit(text.charAt(3), 16);
+    /** Control word without parameter: \ letters [space] */
+    private RTFToken controlWord() {
+        int len = yylength();
+        if (yycharat(len - 1) == ' ') {
+            len--;
+        }
+        String name = new String(zzBuffer, zzStartRead + 1, len - 1);
+        token.set(RTFTokenType.CONTROL_WORD, name, -1, false);
+        return token;
+    }
+
+    private RTFToken hexEscape() {
+        // layout: \' hex hex  (4 chars)
+        int hi = Character.digit(yycharat(2), 16);
+        int lo = Character.digit(yycharat(3), 16);
         token.set(RTFTokenType.HEX_ESCAPE, null, (hi << 4) | lo, true);
         return token;
     }
 
-    private RTFToken unicodeEscape(String text) {
-        // text is e.g. "\\u12345" or "\\u-4321 " (may have trailing delimiter space)
-        String numStr = text.substring(2).trim();
-        int codePoint = Integer.parseInt(numStr);
+    private RTFToken unicodeEscape() {
+        // layout: backslash u [-] digits [space]
+        int len = yylength();
+        if (yycharat(len - 1) == ' ') {
+            len--;
+        }
+        int codePoint = parseIntFromBuffer(2, len);
         // RTF uses signed 16-bit: negative values map to 65536 + value
         if (codePoint < 0) {
             codePoint = 65536 + codePoint;
@@ -83,12 +87,35 @@ package org.apache.tika.parser.microsoft.rtf.jflex;
         return token;
     }
 
-    private RTFToken binToken(String text) {
-        // text is e.g. "\\bin12345 " (may have trailing delimiter space)
-        String numStr = text.substring(4).trim();
-        int count = Integer.parseInt(numStr);
+    private RTFToken binToken() {
+        // layout: \bin digits [space]
+        int len = yylength();
+        if (yycharat(len - 1) == ' ') {
+            len--;
+        }
+        int count = parseIntFromBuffer(4, len);
         token.set(RTFTokenType.BIN, null, count, true);
         return token;
+    }
+
+    /**
+     * Parse an integer from JFlex's internal char buffer between positions
+     * start (inclusive) and end (exclusive), relative to the current match.
+     * Handles optional leading '-'.
+     */
+    private int parseIntFromBuffer(int start, int end) {
+        boolean neg = false;
+        int pos = start;
+        if (yycharat(pos) == '-') {
+            neg = true;
+            pos++;
+        }
+        int result = 0;
+        while (pos < end) {
+            result = result * 10 + (yycharat(pos) - '0');
+            pos++;
+        }
+        return neg ? -result : result;
     }
 %}
 
@@ -110,11 +137,11 @@ CrLf = \r\n | \r | \n
 
 /* Order matters: more specific rules first */
 
-{BinControl}             { return binToken(yytext()); }
-{UnicodeEscape}          { return unicodeEscape(yytext()); }
-{HexEscape}              { return hexEscape(yytext()); }
-{ControlWordWithParam}   { return controlWord(yytext()); }
-{ControlWord}            { return controlWord(yytext()); }
+{BinControl}             { return binToken(); }
+{UnicodeEscape}          { return unicodeEscape(); }
+{HexEscape}              { return hexEscape(); }
+{ControlWordWithParam}   { return controlWordWithParam(); }
+{ControlWord}            { return controlWord(); }
 {ControlSymbol}          { token.setChar(RTFTokenType.CONTROL_SYMBOL, yycharat(1)); return token; }
 {GroupOpen}              { token.reset(RTFTokenType.GROUP_OPEN); return token; }
 {GroupClose}             { token.reset(RTFTokenType.GROUP_CLOSE); return token; }
