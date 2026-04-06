@@ -105,7 +105,7 @@ public class RTFStateTest {
             }
             state.processToken(tok);
             // Capture charset when we see the first body text char
-            if (tok.getType() == RTFTokenType.TEXT && "t".equals(tok.getName())
+            if (tok.getType() == RTFTokenType.TEXT && tok.getChar() == 't'
                     && charsetAtText == null) {
                 charsetAtText = state.getCurrentCharset();
             }
@@ -165,7 +165,7 @@ public class RTFStateTest {
             }
             state.processToken(tok);
             // Check ucSkip when we see the first char of "inner"
-            if (tok.getType() == RTFTokenType.TEXT && "i".equals(tok.getName()) && !seenInnerText) {
+            if (tok.getType() == RTFTokenType.TEXT && tok.getChar() == 'i' && !seenInnerText) {
                 ucSkipInInnerGroup = state.getCurrentGroup().ucSkip;
                 seenInnerText = true;
             }
@@ -192,7 +192,7 @@ public class RTFStateTest {
             boolean consumed = state.processToken(tok);
             if (!consumed && !state.getCurrentGroup().ignore) {
                 if (tok.getType() == RTFTokenType.TEXT) {
-                    textOutput.append(tok.getName());
+                    textOutput.append(tok.getChar());
                 } else if (tok.getType() == RTFTokenType.UNICODE_ESCAPE) {
                     int cp = tok.getParameter();
                     if (Character.isValidCodePoint(cp)) {
@@ -230,13 +230,11 @@ public class RTFStateTest {
             state.processToken(tok);
 
             if (tok.getType() == RTFTokenType.TEXT) {
-                String text = tok.getName();
-                if ("g".equals(text) && !seenGreekGroup) {
-                    // First char of "greek"
+                char ch = tok.getChar();
+                if (ch == 'g' && !seenGreekGroup) {
                     charsetInsideGroup = state.getCurrentCharset();
                     seenGreekGroup = true;
-                } else if ("b".equals(text)) {
-                    // First char of "back to times"
+                } else if (ch == 'b') {
                     charsetAfterGroup = state.getCurrentCharset();
                 }
             }

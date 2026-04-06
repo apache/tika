@@ -25,18 +25,22 @@ import java.nio.file.Path;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Streams decoded bytes from an RTF {@code \pict} group to a temp file.
  *
  * <p>Pict data is raw image bytes (after hex-pair decoding). There is no
- * header to parse — bytes are written directly to a temp file. On
- * {@link #onComplete()}, the caller retrieves the temp file path and
- * hands it to the embedded document extractor.</p>
+ * header to parse -- bytes are written directly to a temp file. On
+ * {@link #onComplete(Metadata)}, a {@link TikaInputStream} is returned
+ * whose close will clean up the temp file via {@link TemporaryResources}.</p>
  */
 public class RTFPictStreamParser implements Closeable {
 
     private final long maxBytes;
+    private final TemporaryResources tmp = new TemporaryResources();
     private Path tempFile;
     private OutputStream out;
     private long bytesWritten;
@@ -46,7 +50,7 @@ public class RTFPictStreamParser implements Closeable {
      */
     public RTFPictStreamParser(long maxBytes) throws IOException {
         this.maxBytes = maxBytes;
-        this.tempFile = Files.createTempFile("tika-rtf-pict-", ".bin");
+        this.tempFile = tmp.createTempFile(".bin");
         this.out = new BufferedOutputStream(Files.newOutputStream(tempFile));
     }
 
@@ -62,19 +66,23 @@ public class RTFPictStreamParser implements Closeable {
     }
 
     /**
-     * Called when the pict group closes. Flushes and closes the output stream.
+     * Called when the pict group closes. Returns a TikaInputStream backed
+     * by the temp file. The caller owns the TikaInputStream -- closing it
+     * will delete the temp file.
      *
-     * @return the path to the temp file containing the image data,
-     *         or null if no bytes were written
+     * @return a TikaInputStream, or null if no bytes were written
      */
-    public Path onComplete() throws IOException {
+    public TikaInputStream onComplete(Metadata metadata) throws IOException {
         out.close();
         out = null;
         if (bytesWritten == 0) {
-            cleanup();
+            tmp.close();
             return null;
         }
-        return tempFile;
+        // Hand ownership of the temp file to the TikaInputStream.
+        // TikaInputStream.close() will close the TemporaryResources,
+        // which deletes the temp file.
+        return TikaInputStream.get(tempFile, metadata, tmp);
     }
 
     /** Returns the number of bytes written so far. */
@@ -88,17 +96,6 @@ public class RTFPictStreamParser implements Closeable {
             out.close();
             out = null;
         }
-        cleanup();
-    }
-
-    private void cleanup() {
-        if (tempFile != null) {
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (IOException ignored) {
-                // best effort
-            }
-            tempFile = null;
-        }
+        tmp.close();
     }
 }

@@ -21,17 +21,22 @@ package org.apache.tika.parser.microsoft.rtf.jflex;
  * <p>
  * Mutable and reused by the tokenizer to avoid allocation in the hot loop.
  * Consumers must copy any data they need before requesting the next token.
+ * <p>
+ * For TEXT and CONTROL_SYMBOL tokens (single character), use {@link #getChar()}
+ * to avoid String allocation. For CONTROL_WORD tokens, use {@link #getName()}.
  */
 public class RTFToken {
 
     private RTFTokenType type;
     private String name;
+    private char ch;
     private int parameter;
     private boolean hasParameter;
 
     public void reset(RTFTokenType type) {
         this.type = type;
         this.name = null;
+        this.ch = 0;
         this.parameter = -1;
         this.hasParameter = false;
     }
@@ -39,16 +44,34 @@ public class RTFToken {
     public void set(RTFTokenType type, String name, int parameter, boolean hasParameter) {
         this.type = type;
         this.name = name;
+        this.ch = 0;
         this.parameter = parameter;
         this.hasParameter = hasParameter;
+    }
+
+    public void setChar(RTFTokenType type, char ch) {
+        this.type = type;
+        this.name = null;
+        this.ch = ch;
+        this.parameter = -1;
+        this.hasParameter = false;
     }
 
     public RTFTokenType getType() {
         return type;
     }
 
+    /** For CONTROL_WORD tokens: the control word name. */
     public String getName() {
         return name;
+    }
+
+    /**
+     * For TEXT and CONTROL_SYMBOL tokens: the single character, without
+     * allocating a String.
+     */
+    public char getChar() {
+        return ch;
     }
 
     public int getParameter() {
@@ -59,9 +82,6 @@ public class RTFToken {
         return hasParameter;
     }
 
-    /**
-     * For HEX_ESCAPE tokens, returns the decoded byte value (0-255).
-     */
     public int getHexValue() {
         return parameter;
     }
@@ -76,13 +96,13 @@ public class RTFToken {
             case CONTROL_WORD:
                 return "\\" + name + (hasParameter ? String.valueOf(parameter) : "");
             case CONTROL_SYMBOL:
-                return "\\" + name;
+                return "\\" + ch;
             case HEX_ESCAPE:
                 return String.format(java.util.Locale.ROOT, "\\'%02x", parameter);
             case UNICODE_ESCAPE:
                 return "\\u" + parameter;
             case TEXT:
-                return "TEXT[" + name + "]";
+                return "TEXT[" + ch + "]";
             case BIN:
                 return "\\bin" + parameter;
             case CRLF:

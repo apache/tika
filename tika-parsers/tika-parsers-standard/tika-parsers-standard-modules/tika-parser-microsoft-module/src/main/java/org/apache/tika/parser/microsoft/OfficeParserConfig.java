@@ -39,6 +39,13 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean writeSelectHeadersInBody = false;
 
+    /**
+     * Maximum bytes per embedded object/pict when extracting from RTF within
+     * MSG files.  Since embedded data is streamed to disk (not held in memory),
+     * the default is 2 GB.  Set to -1 for unlimited.
+     */
+    private int rtfEmbeddedMaxBytesInKb = 2 * 1024 * 1024; // 2 GB
+
     private boolean includeGlossary = true;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
@@ -318,5 +325,18 @@ public class OfficeParserConfig implements Serializable {
 
     public void setWriteSelectHeadersInBody(boolean writeSelectHeadersInBody) {
         this.writeSelectHeadersInBody = writeSelectHeadersInBody;
+    }
+
+    /**
+     * Maximum bytes (in KB) per embedded object/pict when extracting from RTF
+     * within MSG files.  Data is streamed to disk, so the default is 2 GB.
+     * Set to -1 for unlimited.
+     */
+    public int getRtfEmbeddedMaxBytesInKb() {
+        return rtfEmbeddedMaxBytesInKb;
+    }
+
+    public void setRtfEmbeddedMaxBytesInKb(int rtfEmbeddedMaxBytesInKb) {
+        this.rtfEmbeddedMaxBytesInKb = rtfEmbeddedMaxBytesInKb;
     }
 }

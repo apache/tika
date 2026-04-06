@@ -115,15 +115,12 @@ CrLf = \r\n | \r | \n
 {HexEscape}              { return hexEscape(yytext()); }
 {ControlWordWithParam}   { return controlWord(yytext()); }
 {ControlWord}            { return controlWord(yytext()); }
-{ControlSymbol}          { token.set(RTFTokenType.CONTROL_SYMBOL, yytext().substring(1), -1, false); return token; }
+{ControlSymbol}          { token.setChar(RTFTokenType.CONTROL_SYMBOL, yycharat(1)); return token; }
 {GroupOpen}              { token.reset(RTFTokenType.GROUP_OPEN); return token; }
 {GroupClose}             { token.reset(RTFTokenType.GROUP_CLOSE); return token; }
 {CrLf}                   { token.reset(RTFTokenType.CRLF); return token; }
 
-/* Text: any character that isn't part of an RTF structure.
-   Match one char at a time to keep things simple. The consumer
-   can accumulate runs. Matching longer runs would be an optimization
-   for later. */
-[^\\\{\}\r\n]            { token.set(RTFTokenType.TEXT, yytext(), -1, false); return token; }
+/* Text: one char at a time. Uses yycharat(0) to avoid String allocation. */
+[^\\\{\}\r\n]            { token.setChar(RTFTokenType.TEXT, yycharat(0)); return token; }
 
 <<EOF>>                  { token.reset(RTFTokenType.EOF); return token; }

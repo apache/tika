@@ -22,7 +22,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+
 import org.junit.jupiter.api.Test;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Tests for {@link RTFHtmlDecapsulator}, mirroring the original
@@ -30,16 +37,22 @@ import org.junit.jupiter.api.Test;
  */
 public class RTFHtmlDecapsulatorTest {
 
+    private static String extract(byte[] rtfBytes)
+            throws IOException, SAXException, TikaException {
+        return new RTFHtmlDecapsulator(new DefaultHandler(), new ParseContext())
+                .extract(rtfBytes);
+    }
+
     @Test
     public void testNullAndEmpty() throws Exception {
-        assertNull(new RTFHtmlDecapsulator().extract(null));
-        assertNull(new RTFHtmlDecapsulator().extract(new byte[0]));
+        assertNull(extract(null));
+        assertNull(extract(new byte[0]));
     }
 
     @Test
     public void testNonEncapsulatedRtf() throws Exception {
         String rtf = "{\\rtf1\\ansi\\deff0 Hello world}";
-        assertNull(new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII)));
+        assertNull(extract(rtf.getBytes(US_ASCII)));
     }
 
     @Test
@@ -57,7 +70,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag58 </body>}\n" +
                 "{\\*\\htmltag27 </html>}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertTrue(html.contains("<html>"));
         assertTrue(html.contains("<p>"));
@@ -74,7 +87,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag58 </body>}\n" +
                 "{\\*\\htmltag27 </html>}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertTrue(html.contains("cid:image001.png@01DC5A2C.E674FE00"),
                 "CID reference should be preserved in extracted HTML");
@@ -87,7 +100,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag241 body \\{\\par \\tab color: red;\\par \\}}\n" +
                 "{\\*\\htmltag249 </style>}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertTrue(html.contains("<style>"));
         assertTrue(html.contains("body {"));
@@ -101,7 +114,7 @@ public class RTFHtmlDecapsulatorTest {
         String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0\n" +
                 "{\\*\\htmltag84 caf\\'e9}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("caf\u00e9", html);
     }
@@ -112,7 +125,7 @@ public class RTFHtmlDecapsulatorTest {
         String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0\n" +
                 "{\\*\\htmltag84 gr\\'fc\\'dfe}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("gr\u00fc\u00dfe", html);
     }
@@ -123,7 +136,7 @@ public class RTFHtmlDecapsulatorTest {
         String rtf = "{\\rtf1\\ansi\\ansicpg1254\\fromhtml1 \\deff0\n" +
                 "{\\*\\htmltag84 Say\\'fdn}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         // Verify the byte 0xFD is decoded through windows-1254
         byte[] expected = new byte[] { 'S', 'a', 'y', (byte) 0xFD, 'n' };
@@ -137,7 +150,7 @@ public class RTFHtmlDecapsulatorTest {
                 "\\htmlrtf {\\b bold rtf only}\\htmlrtf0\n" +
                 "{\\*\\htmltag84  World}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("Hello World", html);
     }
@@ -147,7 +160,7 @@ public class RTFHtmlDecapsulatorTest {
         String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0\n" +
                 "{\\*\\htmltag241 a \\{ b \\} c \\\\d}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("a { b } c \\d", html);
     }
@@ -158,7 +171,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag72}\n" +
                 "{\\*\\htmltag84 text}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("text", html);
     }
@@ -181,7 +194,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag58 </body>}\n" +
                 "{\\*\\htmltag27 </html>}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertTrue(html.contains("<p>"), "should contain HTML tags");
         assertTrue(html.contains("Hello from the message body"),
@@ -200,7 +213,7 @@ public class RTFHtmlDecapsulatorTest {
                 "\\htmlrtf }\\htmlrtf0\n" +
                 "{\\*\\htmltag72 </p>}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertTrue(html.contains("caf\u00e9"), "hex escapes in inter-tag text should be decoded");
     }
@@ -210,7 +223,7 @@ public class RTFHtmlDecapsulatorTest {
         String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0\n" +
                 "{\\*\\htmltag84 line1\\line line2}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("line1<br>line2", html);
     }
@@ -225,7 +238,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\*\\htmltag84 \\f0 caf\\'e9}\n" +
                 "{\\*\\htmltag84 \\f1 \\'e1}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         // f0: \'e9 in windows-1252 = e with acute
         assertTrue(html.contains("caf\u00e9"), "f0 should decode as windows-1252");
@@ -240,7 +253,7 @@ public class RTFHtmlDecapsulatorTest {
                 "{\\fonttbl{\\f0\\fcharset0 Times;}}\n" +
                 "{\\*\\htmltag84 A\\u8212\\'97B}\n" +
                 "}";
-        String html = new RTFHtmlDecapsulator().extract(rtf.getBytes(US_ASCII));
+        String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("A\u2014B", html);
     }

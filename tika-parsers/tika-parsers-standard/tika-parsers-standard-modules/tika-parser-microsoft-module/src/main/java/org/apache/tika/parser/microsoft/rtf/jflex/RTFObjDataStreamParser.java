@@ -43,6 +43,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
@@ -62,17 +63,19 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
  * </pre>
  * The small header fields are parsed byte-by-byte via a state machine.
  * Once the header is complete and {@code dataSz} is known, the payload
- * bytes stream directly to a temp file — never buffered in memory.</p>
+ * bytes stream directly to a temp file -- never buffered in memory.</p>
  *
  * <p>On {@link #onComplete(Metadata, AtomicInteger)}, the payload is
  * interpreted based on {@code className} (Package, PBrush, POIFS, etc.)
- * and the extracted content is returned as a {@link TikaInputStream}.</p>
+ * and the extracted content is returned as a {@link TikaInputStream} whose
+ * close will clean up all temp files via {@link TemporaryResources}.</p>
  */
 public class RTFObjDataStreamParser implements Closeable {
 
     private static final String WIN_ASCII = "WINDOWS-1252";
 
     private final long maxBytes;
+    private final TemporaryResources tmp = new TemporaryResources();
 
     // State machine
     private Field currentField = Field.VERSION;
@@ -186,7 +189,7 @@ public class RTFObjDataStreamParser implements Closeable {
                         currentField = Field.DONE;
                     } else {
                         currentField = Field.DATA;
-                        tempFile = Files.createTempFile("tika-rtf-obj-", ".bin");
+                        tempFile = tmp.createTempFile(".bin");
                         dataOut = new BufferedOutputStream(Files.newOutputStream(tempFile));
                     }
                 }
@@ -216,8 +219,8 @@ public class RTFObjDataStreamParser implements Closeable {
      * a TikaInputStream with the extracted embedded content, or null if
      * the object couldn't be parsed.
      *
-     * <p>The caller is responsible for closing the returned TikaInputStream
-     * (which will clean up the underlying temp file).</p>
+     * <p>The caller owns the returned TikaInputStream -- closing it will
+     * clean up all temp files via TemporaryResources.</p>
      */
     public TikaInputStream onComplete(Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
@@ -241,24 +244,10 @@ public class RTFObjDataStreamParser implements Closeable {
         if ("package".equals(cn)) {
             return handlePackage(metadata);
         } else if ("pbrush".equals(cn)) {
-            // Raw bitmap — the temp file IS the content
-            return TikaInputStream.get(tempFile);
+            return TikaInputStream.get(tempFile, metadata, tmp);
         } else {
             return handleGenericOrPOIFS(metadata, unknownFilenameCount);
         }
-    }
-
-    /**
-     * Returns true if the header has been fully parsed (regardless of whether
-     * all data bytes have arrived).
-     */
-    public boolean isHeaderParsed() {
-        return currentField == Field.DATA || currentField == Field.DONE;
-    }
-
-    /** Returns the parsed className, or null if header isn't complete yet. */
-    public String getClassName() {
-        return className;
     }
 
     @Override
@@ -267,14 +256,14 @@ public class RTFObjDataStreamParser implements Closeable {
             dataOut.close();
             dataOut = null;
         }
-        cleanup();
+        tmp.close();
     }
 
     // --- Package handling ---
 
     private TikaInputStream handlePackage(Metadata metadata) throws IOException, TikaException {
         try (InputStream is = new BufferedInputStream(Files.newInputStream(tempFile))) {
-            int type1 = readUShortLE(is);
+            readUShortLE(is); // type
 
             String displayName = readNullTerminatedString(is);
             readNullTerminatedString(is); // iconFilePath
@@ -282,7 +271,6 @@ public class RTFObjDataStreamParser implements Closeable {
             int type2 = readUShortLE(is);
 
             if (type2 != 3) {
-                // type 1 = link, only handle type 3 = embedded
                 return null;
             }
 
@@ -290,12 +278,11 @@ public class RTFObjDataStreamParser implements Closeable {
             String ansiFilePath = readNullTerminatedString(is);
             long bytesLen = readUIntLE(is);
 
-            // The remaining bytes in the stream are the actual file content.
-            // Create a temp file for them.
-            Path contentFile = Files.createTempFile("tika-rtf-pkg-", ".bin");
+            // Write the embedded file content to a new temp file
+            Path contentFile = tmp.createTempFile(".bin");
             try (OutputStream contentOut = new BufferedOutputStream(
                     Files.newOutputStream(contentFile))) {
-                long copied = copyBounded(is, contentOut, bytesLen);
+                copyBounded(is, contentOut, bytesLen);
             }
 
             // Try to read unicode file path (optional)
@@ -329,9 +316,9 @@ public class RTFObjDataStreamParser implements Closeable {
                     FilenameUtils.getName(fileNameToUse));
             metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, pathToUse);
 
-            return TikaInputStream.get(contentFile);
-        } finally {
-            cleanup();
+            // Return TikaInputStream backed by contentFile; closing it cleans up
+            // both contentFile and the original tempFile via TemporaryResources
+            return TikaInputStream.get(contentFile, metadata, tmp);
         }
     }
 
@@ -343,12 +330,11 @@ public class RTFObjDataStreamParser implements Closeable {
         try (InputStream probe = new BufferedInputStream(Files.newInputStream(tempFile))) {
             boolean isOLE2 = FileMagic.valueOf(probe) == FileMagic.OLE2;
             if (!isOLE2) {
-                // Not POIFS — return raw bytes from temp file
-                return TikaInputStream.get(tempFile);
+                return TikaInputStream.get(tempFile, metadata, tmp);
             }
         }
 
-        // It's POIFS — parse it
+        // It's POIFS -- parse it
         try (InputStream poifsIn = new BufferedInputStream(Files.newInputStream(tempFile));
              POIFSFileSystem fs = new POIFSFileSystem(poifsIn)) {
             DirectoryNode root = fs.getRoot();
@@ -389,20 +375,17 @@ public class RTFObjDataStreamParser implements Closeable {
                         inp.readFully(content);
                     }
                 } else {
-                    // Unknown POIFS type — return the whole thing
+                    // Unknown POIFS type -- return the whole thing
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-                    return TikaInputStream.get(tempFile);
+                    return TikaInputStream.get(tempFile, metadata, tmp);
                 }
             }
 
             if (content != null) {
-                // Write extracted content to a new temp file
-                Path contentFile = Files.createTempFile("tika-rtf-poifs-", ".bin");
+                Path contentFile = tmp.createTempFile(".bin");
                 Files.write(contentFile, content);
-                return TikaInputStream.get(contentFile);
+                return TikaInputStream.get(contentFile, metadata, tmp);
             }
-        } finally {
-            cleanup();
         }
         return null;
     }
@@ -415,10 +398,16 @@ public class RTFObjDataStreamParser implements Closeable {
         fieldTarget = 4;
     }
 
+    private static final int MAX_HEADER_STRING_LENGTH = 4096;
+
     private void initStringField(Field next, int len) {
         currentField = next;
+        if (len > MAX_HEADER_STRING_LENGTH) {
+            // Corrupt or crafted header — bail out
+            currentField = Field.SKIP;
+            return;
+        }
         if (len <= 0) {
-            // Empty string — advance immediately
             switch (next) {
                 case CLASS_NAME:
                     className = "";
@@ -458,21 +447,19 @@ public class RTFObjDataStreamParser implements Closeable {
     }
 
     private static int readUShortLE(InputStream is) throws IOException {
-        int lo = is.read();
-        int hi = is.read();
-        if (lo == -1 || hi == -1) {
-            throw new IOException("unexpected end of stream");
+        try {
+            return EndianUtils.readUShortLE(is);
+        } catch (EndianUtils.BufferUnderrunException e) {
+            throw new IOException(e);
         }
-        return lo | (hi << 8);
     }
 
     private static int readUShortBE(InputStream is) throws IOException {
-        int hi = is.read();
-        int lo = is.read();
-        if (lo == -1 || hi == -1) {
-            throw new IOException("unexpected end of stream");
+        try {
+            return EndianUtils.readUShortBE(is);
+        } catch (EndianUtils.BufferUnderrunException e) {
+            throw new IOException(e);
         }
-        return (hi << 8) | lo;
     }
 
     private static long readUIntLE(InputStream is) throws IOException {
@@ -510,17 +497,6 @@ public class RTFObjDataStreamParser implements Closeable {
             total += read;
         }
         return total;
-    }
-
-    private void cleanup() {
-        if (tempFile != null) {
-            try {
-                Files.deleteIfExists(tempFile);
-            } catch (IOException ignored) {
-                // best effort
-            }
-            tempFile = null;
-        }
     }
 
     private enum Field {

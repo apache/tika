@@ -43,6 +43,8 @@ public class RTFState {
     /** Font table: maps font number ({@code \fN}) to charset ({@code \fcharsetN}). */
     private final Map<Integer, Charset> fontToCharset = new HashMap<>();
 
+    private static final int MAX_GROUP_DEPTH = 10_000;
+
     /** Group state stack. */
     private final Deque<RTFGroupState> stack = new ArrayDeque<>();
 
@@ -89,7 +91,7 @@ public class RTFState {
                 return false;
 
             case CONTROL_SYMBOL:
-                if ("*".equals(tok.getName())) {
+                if (tok.getChar() == '*') {
                     current.ignore = true;
                 }
                 return false;
@@ -261,6 +263,10 @@ public class RTFState {
 
     /** Open a new group: push current state and create a child. */
     public void pushGroup() {
+        if (stack.size() >= MAX_GROUP_DEPTH) {
+            // Silently ignore — treat further { as flat content
+            return;
+        }
         stack.push(current);
         current = new RTFGroupState(current);
     }

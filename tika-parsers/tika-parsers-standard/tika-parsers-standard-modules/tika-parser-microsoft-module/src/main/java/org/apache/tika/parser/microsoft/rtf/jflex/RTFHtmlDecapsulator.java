@@ -16,9 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.rtf.jflex;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.StringReader;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -38,63 +40,36 @@ import org.apache.tika.parser.ParseContext;
  */
 public class RTFHtmlDecapsulator {
 
-    private static final int DEFAULT_MEMORY_LIMIT_KB = 20 * 1024; // 20 MB
+    private static final int DEFAULT_MAX_BYTES_KB = 2 * 1024 * 1024; // 2 GB
 
-    private final ContentHandler handler;
-    private final ParseContext context;
-    private final int memoryLimitInKb;
+    private final RTFEmbeddedHandler embHandler;
 
-    /**
-     * Creates a decapsulator that extracts embedded objects through the given handler.
-     *
-     * @param handler the content handler for embedded document extraction
-     * @param context the parse context (provides EmbeddedDocumentExtractor, etc.)
-     * @param memoryLimitInKb max bytes per embedded object (in KB), or -1 for unlimited
-     */
     public RTFHtmlDecapsulator(ContentHandler handler, ParseContext context,
-                               int memoryLimitInKb) {
-        this.handler = handler;
-        this.context = context;
-        this.memoryLimitInKb = memoryLimitInKb;
+                               int maxBytesInKb) {
+        this.embHandler = new RTFEmbeddedHandler(handler, context, maxBytesInKb);
     }
 
-    /**
-     * Creates a decapsulator with default memory limit and no embedded extraction.
-     */
-    public RTFHtmlDecapsulator() {
-        this(null, null, DEFAULT_MEMORY_LIMIT_KB);
+    public RTFHtmlDecapsulator(ContentHandler handler, ParseContext context) {
+        this(handler, context, DEFAULT_MAX_BYTES_KB);
     }
 
-    /**
-     * Extracts the HTML content from an encapsulated-HTML RTF document.
-     * Embedded objects and pictures are extracted as a side effect through
-     * the {@link ContentHandler} provided at construction time.
-     *
-     * @param rtfBytes the decompressed RTF bytes
-     * @return the extracted HTML string, or {@code null} if the RTF does not contain
-     *         encapsulated HTML
-     * @throws IOException if the tokenizer encounters an I/O error
-     */
     public String extract(byte[] rtfBytes) throws IOException, SAXException, TikaException {
         if (rtfBytes == null || rtfBytes.length == 0) {
             return null;
         }
-
-        String rtf = new String(rtfBytes, StandardCharsets.US_ASCII);
-
-        RTFTokenizer tokenizer = new RTFTokenizer(new StringReader(rtf));
+        // Wrap byte[] in a Reader directly — RTF is 7-bit ASCII, so
+        // US_ASCII decoding is a 1:1 byte-to-char mapping with no
+        // intermediate String allocation.
+        Reader reader = new InputStreamReader(
+                new ByteArrayInputStream(rtfBytes), StandardCharsets.US_ASCII);
+        RTFTokenizer tokenizer = new RTFTokenizer(reader);
         RTFState state = new RTFState();
-        RTFEmbeddedHandler embHandler = (handler != null && context != null)
-                ? new RTFEmbeddedHandler(handler, context, memoryLimitInKb)
-                : null;
-
-        StringBuilder html = new StringBuilder(rtf.length() / 2);
+        StringBuilder html = new StringBuilder(rtfBytes.length / 2);
         ByteArrayOutputStream pendingBytes = new ByteArrayOutputStream();
 
         boolean foundFromHtml = false;
         boolean foundHtmlTag = false;
         boolean inHtmlRtfSkip = false;
-
         boolean sawIgnorable = false;
         int htmlTagDepth = -1;
         boolean inHtmlTag = false;
@@ -102,7 +77,6 @@ public class RTFHtmlDecapsulator {
         RTFToken tok;
         while ((tok = tokenizer.yylex()) != null) {
             RTFTokenType type = tok.getType();
-
             if (type == RTFTokenType.EOF) {
                 break;
             }
@@ -114,17 +88,16 @@ public class RTFHtmlDecapsulator {
                 flushPendingBytes(pendingBytes, html, state);
             }
 
-            // Let RTFState handle group stack, font table, codepage, unicode skip
             boolean consumed = state.processToken(tok);
 
-            // Let embedded handler process objdata/pict/sp in the same pass
-            if (embHandler != null && !consumed) {
+            // Embedded handler processes objdata/pict/sp in the same pass
+            if (!consumed) {
                 RTFGroupState closingGroup =
                         (type == RTFTokenType.GROUP_CLOSE) ? state.getLastClosedGroup() : null;
                 try {
                     embHandler.processToken(tok, state, closingGroup);
                 } catch (TikaException | IOException e) {
-                    // record and continue — don't let a bad embedded object kill decapsulation
+                    // don't let a bad embedded object kill decapsulation
                 }
             }
 
@@ -132,7 +105,6 @@ public class RTFHtmlDecapsulator {
 
             // Skip tokens that are part of objdata/pict hex streams
             if (!consumed && (group.objdata || group.pictDepth > 0)) {
-                // Embedded handler already consumed these
                 continue;
             }
 
@@ -150,15 +122,15 @@ public class RTFHtmlDecapsulator {
                     break;
 
                 case CONTROL_SYMBOL:
-                    if ("*".equals(tok.getName())) {
+                    if (tok.getChar() == '*') {
                         sawIgnorable = true;
                     }
                     if (!foundHtmlTag || inHtmlRtfSkip) {
                         break;
                     }
-                    if (inHtmlTag || isContentArea(htmlTagDepth)) {
-                        String sym = tok.getName();
-                        if ("{".equals(sym) || "}".equals(sym) || "\\".equals(sym)) {
+                    if (inHtmlTag || htmlTagDepth == -1) {
+                        char sym = tok.getChar();
+                        if (sym == '{' || sym == '}' || sym == '\\') {
                             flushPendingBytes(pendingBytes, html, state);
                             html.append(sym);
                         }
@@ -175,7 +147,6 @@ public class RTFHtmlDecapsulator {
                         foundFromHtml = true;
                         break;
                     }
-
                     if ("htmltag".equals(name) && sawIgnorable) {
                         if (!foundFromHtml) {
                             break;
@@ -186,18 +157,15 @@ public class RTFHtmlDecapsulator {
                         htmlTagDepth = state.getDepth();
                         break;
                     }
-
                     if ("htmlrtf".equals(name)) {
                         flushPendingBytes(pendingBytes, html, state);
                         inHtmlRtfSkip = !(tok.hasParameter() && tok.getParameter() == 0);
                         break;
                     }
-
                     if (!foundHtmlTag || inHtmlRtfSkip) {
                         break;
                     }
-
-                    if (inHtmlTag || isContentArea(htmlTagDepth)) {
+                    if (inHtmlTag || htmlTagDepth == -1) {
                         flushPendingBytes(pendingBytes, html, state);
                         switch (name) {
                             case "par":
@@ -217,13 +185,10 @@ public class RTFHtmlDecapsulator {
                     break;
 
                 case HEX_ESCAPE:
-                    if (consumed) {
+                    if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
                         break;
                     }
-                    if (!foundHtmlTag || inHtmlRtfSkip) {
-                        break;
-                    }
-                    if (inHtmlTag || isContentArea(htmlTagDepth)) {
+                    if (inHtmlTag || htmlTagDepth == -1) {
                         pendingBytes.write(tok.getHexValue());
                     }
                     break;
@@ -232,7 +197,7 @@ public class RTFHtmlDecapsulator {
                     if (!foundHtmlTag || inHtmlRtfSkip) {
                         break;
                     }
-                    if (inHtmlTag || isContentArea(htmlTagDepth)) {
+                    if (inHtmlTag || htmlTagDepth == -1) {
                         flushPendingBytes(pendingBytes, html, state);
                         int cp = tok.getParameter();
                         if (Character.isValidCodePoint(cp)) {
@@ -242,35 +207,25 @@ public class RTFHtmlDecapsulator {
                     break;
 
                 case TEXT:
-                    if (consumed) {
+                    if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
                         break;
                     }
-                    if (!foundHtmlTag || inHtmlRtfSkip) {
-                        break;
-                    }
-                    if (inHtmlTag || isContentArea(htmlTagDepth)) {
+                    if (inHtmlTag || htmlTagDepth == -1) {
                         flushPendingBytes(pendingBytes, html, state);
-                        html.append(tok.getName());
+                        html.append(tok.getChar());
                     }
                     break;
 
-                case CRLF:
-                case BIN:
                 default:
                     break;
             }
         }
 
         flushPendingBytes(pendingBytes, html, state);
-
         if (!foundFromHtml || html.length() == 0) {
             return null;
         }
         return html.toString();
-    }
-
-    private static boolean isContentArea(int htmlTagDepth) {
-        return htmlTagDepth == -1;
     }
 
     private static void flushPendingBytes(ByteArrayOutputStream pending, StringBuilder out,

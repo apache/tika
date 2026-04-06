@@ -38,7 +38,11 @@ public class RTFTokenizerTest {
             }
             // copy token since it's reused
             RTFToken copy = new RTFToken();
-            copy.set(tok.getType(), tok.getName(), tok.getParameter(), tok.hasParameter());
+            if (tok.getType() == RTFTokenType.TEXT || tok.getType() == RTFTokenType.CONTROL_SYMBOL) {
+                copy.setChar(tok.getType(), tok.getChar());
+            } else {
+                copy.set(tok.getType(), tok.getName(), tok.getParameter(), tok.hasParameter());
+            }
             tokens.add(copy);
         }
         return tokens;
@@ -109,7 +113,7 @@ public class RTFTokenizerTest {
         List<RTFToken> tokens = tokenize("\\~");
         assertEquals(1, tokens.size());
         assertEquals(RTFTokenType.CONTROL_SYMBOL, tokens.get(0).getType());
-        assertEquals("~", tokens.get(0).getName());
+        assertEquals('~', tokens.get(0).getChar());
     }
 
     @Test
@@ -117,11 +121,11 @@ public class RTFTokenizerTest {
         List<RTFToken> tokens = tokenize("\\{\\}\\\\");
         assertEquals(3, tokens.size());
         assertEquals(RTFTokenType.CONTROL_SYMBOL, tokens.get(0).getType());
-        assertEquals("{", tokens.get(0).getName());
+        assertEquals('{', tokens.get(0).getChar());
         assertEquals(RTFTokenType.CONTROL_SYMBOL, tokens.get(1).getType());
-        assertEquals("}", tokens.get(1).getName());
+        assertEquals('}', tokens.get(1).getChar());
         assertEquals(RTFTokenType.CONTROL_SYMBOL, tokens.get(2).getType());
-        assertEquals("\\", tokens.get(2).getName());
+        assertEquals('\\', tokens.get(2).getChar());
     }
 
     @Test
@@ -133,7 +137,7 @@ public class RTFTokenizerTest {
         }
         StringBuilder sb = new StringBuilder();
         for (RTFToken t : tokens) {
-            sb.append(t.getName());
+            sb.append(t.getChar());
         }
         assertEquals("Hello", sb.toString());
     }
@@ -154,17 +158,17 @@ public class RTFTokenizerTest {
         List<RTFToken> tokens = tokenize("{\\*\\htmltag84 <p>}");
         assertEquals(RTFTokenType.GROUP_OPEN, tokens.get(0).getType());
         assertEquals(RTFTokenType.CONTROL_SYMBOL, tokens.get(1).getType());
-        assertEquals("*", tokens.get(1).getName());
+        assertEquals('*', tokens.get(1).getChar());
         assertEquals(RTFTokenType.CONTROL_WORD, tokens.get(2).getType());
         assertEquals("htmltag", tokens.get(2).getName());
         assertEquals(84, tokens.get(2).getParameter());
         // remaining tokens are < p > }
         assertEquals(RTFTokenType.TEXT, tokens.get(3).getType());
-        assertEquals("<", tokens.get(3).getName());
+        assertEquals('<', tokens.get(3).getChar());
         assertEquals(RTFTokenType.TEXT, tokens.get(4).getType());
-        assertEquals("p", tokens.get(4).getName());
+        assertEquals('p', tokens.get(4).getChar());
         assertEquals(RTFTokenType.TEXT, tokens.get(5).getType());
-        assertEquals(">", tokens.get(5).getName());
+        assertEquals('>', tokens.get(5).getChar());
         assertEquals(RTFTokenType.GROUP_CLOSE, tokens.get(6).getType());
         assertEquals(7, tokens.size());
     }

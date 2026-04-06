@@ -602,7 +602,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 byte[] rtfData = rtf.getData();
                 // Try to extract encapsulated HTML + embedded objects in one pass
                 RTFHtmlDecapsulator decapsulator =
-                        new RTFHtmlDecapsulator(xhtml, parseContext, 20 * 1024);
+                        new RTFHtmlDecapsulator(xhtml, parseContext,
+                                officeParserConfig.getRtfEmbeddedMaxBytesInKb());
                 String html = decapsulator.extract(rtfData);
                 if (html != null) {
                     parseHtmlString(html, xhtml, contentIdNames);
