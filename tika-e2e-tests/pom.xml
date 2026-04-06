@@ -46,7 +46,7 @@
         <tika.version>${revision}</tika.version>
 
         <!-- Test dependencies -->
-        <junit.version>${junit5.version}</junit.version>
+        <junit.version>${junit6.version}</junit.version>
 
         <!-- Logging -->
         <log4j.version>${log4j2.version}</log4j.version>
