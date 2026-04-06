@@ -89,9 +89,6 @@ public class MetadataWriteLimiterTest {
     @Test
     public void testWriteLimiterOverrideViaParseContext(@TempDir Path tmp) throws Exception {
         Metadata metadata;
-        // Create a ParseContext with an override that allows X-TIKA:parse_time_millis
-        // The default config's includeFields (dc:creator, Content-Type, X-TIKA:content)
-        // does NOT include X-TIKA:parse_time_millis, but this override does.
         try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
             // Create a ParseContext with an override that allows X-TIKA:parse_time_millis
             // The default config's includeFields (dc:creator, Content-Type, X-TIKA:content)
