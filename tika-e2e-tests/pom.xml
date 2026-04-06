@@ -47,10 +47,8 @@
 
         <!-- Test dependencies -->
         <junit.version>${junit5.version}</junit.version>
-        <testcontainers.version>${testcontainers.version}</testcontainers.version>
 
         <!-- Logging -->
-        <slf4j.version>${slf4j.version}</slf4j.version>
         <log4j.version>${log4j2.version}</log4j.version>
 
         <!-- Other -->
