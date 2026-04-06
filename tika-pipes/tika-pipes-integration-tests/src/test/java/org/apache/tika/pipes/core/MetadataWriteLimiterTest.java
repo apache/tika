@@ -68,7 +68,6 @@ public class MetadataWriteLimiterTest {
             assertEquals(1, pipesResult.emitData().getMetadataList().size());
             metadata = pipesResult.emitData().getMetadataList().get(0);
         }
-        
 
         // These fields should be present (in includeFields or "must add" fields)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
