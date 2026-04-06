@@ -51,12 +51,12 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
  * http://stackoverflow.com/questions/14779647/extract-embedded-image-object-in-rtf
  * and for granting permission to use his code in Tika.
  */
-public class RTFObjDataParser {
+class RTFObjDataParser {
 
     private final static String WIN_ASCII = "WINDOWS-1252";
     private final int memoryLimitInKb;
 
-    public RTFObjDataParser(int memoryLimitInKb) {
+    RTFObjDataParser(int memoryLimitInKb) {
         this.memoryLimitInKb = memoryLimitInKb;
     }
 
@@ -81,7 +81,7 @@ public class RTFObjDataParser {
      * @return byte[] for contents of obj data
      * @throws IOException
      */
-    public byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
+    protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
         UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
         long version = readUInt(is);
