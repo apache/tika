@@ -41,7 +41,7 @@ import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 public class EmbeddedLimitsTest {
 
     private static final String FETCHER_NAME = "fsf";
-    // mock-embedded.xml has 2 embedded documents
+    // mock-embedded.xml has 4 embedded documents
     private static final String TEST_DOC_WITH_EMBEDDED = "mock-embedded.xml";
 
     private PipesClient init(Path tmp, String testFileName) throws Exception {
