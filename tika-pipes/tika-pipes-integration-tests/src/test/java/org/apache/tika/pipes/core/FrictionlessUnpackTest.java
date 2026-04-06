@@ -89,8 +89,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -154,8 +153,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -206,8 +204,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -290,8 +287,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -358,8 +354,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -434,8 +429,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -495,8 +489,7 @@ public class FrictionlessUnpackTest {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pipesConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, pipesConfigPath))
-        {
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, pipesConfigPath)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -554,8 +547,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -598,8 +590,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, simpleDoc))
-        {
+        try (PipesClient pipesClient = init(tmp, simpleDoc)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
@@ -648,8 +639,7 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             
