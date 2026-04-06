@@ -46,8 +46,8 @@
         <tika.version>${revision}</tika.version>
 
         <!-- Test dependencies -->
-        <junit.version>5.11.4</junit.version>
-        <testcontainers.version>2.0.4</testcontainers.version>
+        <junit.version>${junit5.version}</junit.version>
+        <testcontainers.version>${testcontainers.version}</testcontainers.version>
 
         <!-- Logging -->
         <slf4j.version>${slf4j.version}</slf4j.version>
