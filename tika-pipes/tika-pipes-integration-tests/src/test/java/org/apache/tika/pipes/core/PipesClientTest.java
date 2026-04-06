@@ -59,15 +59,15 @@ public class PipesClientTest {
 
     @Test
     public void testBasic(@TempDir Path tmp) throws Exception {
-        PipesClient pipesClient = init(tmp, testDoc);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                        new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(1, pipesResult.emitData().getMetadataList().size());
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-        assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        try (PipesClient pipesClient = init(tmp, testDoc)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                            new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
     }
 
     @Test
@@ -78,14 +78,15 @@ public class PipesClientTest {
         parseContext.setJsonConfig("metadata-filters", """
             ["mock-upper-case-filter"]
         """);
-        PipesClient pipesClient = init(tmp, testDoc);
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(1, pipesResult.emitData().getMetadataList().size());
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-        assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        try (PipesClient pipesClient = init(tmp, testDoc)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
     }
 
     @Test
@@ -99,15 +100,15 @@ public class PipesClientTest {
 
         String testFile = "mock-embedded.xml";
 
-        PipesClient pipesClient = init(tmp, testFile);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(5, pipesResult.emitData().getMetadataList().size());
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-        assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+        try (PipesClient pipesClient = init(tmp, testFile)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(5, pipesResult.emitData().getMetadataList().size());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+        }
     }
 
     @Test
@@ -121,16 +122,17 @@ public class PipesClientTest {
             ]
         """);
 
-        PipesClient pipesClient = init(tmp, testDoc);
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(1, pipesResult.emitData().getMetadataList().size());
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-        // MockUpperCaseFilter uppercases all metadata values
-        assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        try (PipesClient pipesClient = init(tmp, testDoc)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            // MockUpperCaseFilter uppercases all metadata values
+            assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
     }
 
     @Test
@@ -145,15 +147,15 @@ public class PipesClientTest {
         """);
 
         String testFile = "mock-embedded.xml";
-        PipesClient pipesClient = init(tmp, testFile);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(5, pipesResult.emitData().getMetadataList().size());
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        Metadata metadata;
+        try (PipesClient pipesClient = init(tmp, testFile)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(5, pipesResult.emitData().getMetadataList().size());
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+        }
 
         // AttachmentCountingListFilter should have added the count
         assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
@@ -175,11 +177,12 @@ public class PipesClientTest {
         """);
 
         String testFile = "mock-timeout-10s.xml";
-        PipesClient pipesClient = init(tmp, testFile);
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-        assertEquals(PipesResults.TIMEOUT.status(), pipesResult.status());
+        try (PipesClient pipesClient = init(tmp, testFile)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(PipesResults.TIMEOUT.status(), pipesResult.status());
+        }
     }
 
     @Test
@@ -225,7 +228,7 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, successResult.status(),
                     "Should succeed with 10 second timeout on 3 second file");
             Assertions.assertNotNull(successResult.emitData().getMetadataList());
-            assertTrue(successResult.emitData().getMetadataList().size() > 0);
+            assertFalse(successResult.emitData().getMetadataList().isEmpty());
         }
     }
 
