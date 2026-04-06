@@ -81,6 +81,7 @@ public class PassbackFilterTest {
                 .emitData()
                 .getMetadataList()
                 .get(0);
+        pipesClient.close();
         assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertNull(metadata.get(Metadata.CONTENT_TYPE));
         assertNull(metadata.get(Metadata.CONTENT_LENGTH));
