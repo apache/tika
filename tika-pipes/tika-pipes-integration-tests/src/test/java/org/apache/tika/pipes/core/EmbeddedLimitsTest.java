@@ -64,8 +64,7 @@ public class EmbeddedLimitsTest {
         limits.setMaxCount(1);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -91,8 +90,7 @@ public class EmbeddedLimitsTest {
         limits.setMaxDepth(0);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -112,8 +110,7 @@ public class EmbeddedLimitsTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.RMETA);
         // No limits set - should get all embedded documents
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -141,8 +138,7 @@ public class EmbeddedLimitsTest {
             }
         """);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -199,8 +195,7 @@ public class EmbeddedLimitsTest {
         limits.setThrowOnMaxCount(true);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -230,8 +225,7 @@ public class EmbeddedLimitsTest {
         limits.setMaxDepth(2);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -257,8 +251,7 @@ public class EmbeddedLimitsTest {
         limits.setMaxCount(2);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
@@ -290,8 +283,7 @@ public class EmbeddedLimitsTest {
         limits.setThrowOnMaxDepth(false);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
-        {
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
