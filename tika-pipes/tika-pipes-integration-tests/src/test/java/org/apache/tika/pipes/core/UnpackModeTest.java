@@ -66,7 +66,7 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
@@ -83,10 +83,10 @@ public class UnpackModeTest {
                 List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
                 assertEquals(5, metadataList.size(),
                         "UNPACK should return RMETA-style metadata list (container + 4 embedded docs)");
-                
+
                 // Verify container metadata
                 assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
-                
+
                 // Verify embedded metadata
                 for (int i = 1; i < metadataList.size(); i++) {
                     assertEquals("embeddedAuthor", metadataList.get(i).get("author"),
@@ -105,12 +105,12 @@ public class UnpackModeTest {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
             // No UnpackConfig set - should be created automatically
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK should work without explicit UnpackConfig. Status: " + pipesResult.status() +
                             ", Message: " + pipesResult.message());
@@ -124,13 +124,13 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Create EmitKey with no emitterId to trigger the error
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey("", ""), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             // Should fail because no emitter is configured
             // The error could be a crash (TikaConfigException thrown), initialization failure, or task exception
             assertTrue(!pipesResult.isSuccess(),
@@ -153,7 +153,7 @@ public class UnpackModeTest {
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(), "Processing should succeed. Status: " + pipesResult.status() +
                     ", Message: " + pipesResult.message());
             
@@ -162,7 +162,7 @@ public class UnpackModeTest {
                 List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
                 assertTrue(metadataList.size() > 1,
                         "UNPACK should return multiple metadata objects for documents with embedded content");
-                
+
                 // Each metadata object should have content type
                 for (Metadata m : metadataList) {
                     assertNotNull(m.get("Content-Type"), "Each document should have Content-Type");
@@ -177,19 +177,19 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Create custom UnpackConfig with specific settings
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setZeroPadName(8);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with custom UnpackConfig should succeed. Status: " + pipesResult.status());
         }
@@ -206,12 +206,12 @@ public class UnpackModeTest {
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setIncludeOriginal(true);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with includeOriginal should succeed. Status: " + pipesResult.status());
         }
@@ -229,30 +229,30 @@ public class UnpackModeTest {
                     new FetchEmitTuple(testDocWithEmbedded + "-rmeta", new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded + "-rmeta"), new Metadata(), rmetaContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             // Process with UNPACK
             ParseContext unpackContext = new ParseContext();
             unpackContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             PipesResult unpackResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded + "-unpack", new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded + "-unpack"), new Metadata(), unpackContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             // Both should succeed
             assertTrue(rmetaResult.isSuccess(), "RMETA processing should succeed. Status: " + rmetaResult.status());
             assertTrue(unpackResult.isSuccess(), "UNPACK processing should succeed. Status: " + unpackResult.status() +
                     ", Message: " + unpackResult.message());
-            
+
             // If emitData is available for both, compare them
             if (rmetaResult.emitData() != null && rmetaResult.emitData().getMetadataList() != null &&
                     unpackResult.emitData() != null && unpackResult.emitData().getMetadataList() != null) {
                 List<Metadata> rmetaList = rmetaResult.emitData().getMetadataList();
                 List<Metadata> unpackList = unpackResult.emitData().getMetadataList();
-                
+
                 assertEquals(rmetaList.size(), unpackList.size(),
                         "UNPACK should return same number of metadata objects as RMETA");
-                
+
                 // Compare key metadata values
                 for (int i = 0; i < rmetaList.size(); i++) {
                     assertEquals(rmetaList.get(i).get("author"), unpackList.get(i).get("author"),
@@ -271,16 +271,16 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, simpleDoc)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(simpleDoc, new FetchKey(fetcherName, simpleDoc),
                             new EmitKey(emitterName, simpleDoc), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK should work with simple documents. Status: " + pipesResult.status() +
                             ", Message: " + pipesResult.message());
-            
+
             // Check emitData if available
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
                 assertEquals(1, pipesResult.emitData().getMetadataList().size(),
@@ -314,12 +314,12 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(), "UNPACK should succeed");
             
             // Check that output files were created for the embedded documents
@@ -340,19 +340,19 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Configure UnpackConfig for zip output
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setZipEmbeddedFiles(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with zipEmbeddedFiles should succeed. Status: " + pipesResult.status() +
                             ", Message: " + pipesResult.message());
@@ -393,7 +393,7 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Configure UnpackConfig for zip output with metadata
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
@@ -401,12 +401,12 @@ public class UnpackModeTest {
             unpackConfig.setIncludeMetadataInZip(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with zipEmbeddedFiles and metadata should succeed. Status: " + pipesResult.status() +
                             ", Message: " + pipesResult.message());
@@ -447,7 +447,7 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Configure UnpackConfig for zip output with original document
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
@@ -455,12 +455,12 @@ public class UnpackModeTest {
             unpackConfig.setIncludeOriginal(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with includeOriginal should succeed. Status: " + pipesResult.status());
         }
@@ -501,17 +501,17 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, simpleDoc)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setZipEmbeddedFiles(true);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(simpleDoc, new FetchKey(fetcherName, simpleDoc),
                             new EmitKey(emitterName, simpleDoc), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with zipEmbeddedFiles on simple doc should succeed. Status: " + pipesResult.status());
         }
@@ -541,19 +541,19 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Set a very low maxUnpackBytes limit (10 bytes) - this should cause
             // extraction to stop early after the first few bytes
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setMaxUnpackBytes(10L);  // Only allow 10 bytes total
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded + "-limited", new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded + "-limited"), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             // The parse should succeed (limit exceeded just stops extraction, doesn't fail)
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with maxUnpackBytes limit should succeed. Status: " + pipesResult.status());
@@ -597,12 +597,12 @@ public class UnpackModeTest {
             assertEquals(UnpackConfig.DEFAULT_MAX_UNPACK_BYTES, unpackConfig.getMaxUnpackBytes(),
                     "Default maxUnpackBytes should be 10GB");
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded + "-default", new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded + "-default"), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with default maxUnpackBytes should succeed. Status: " + pipesResult.status());
         }
@@ -617,18 +617,18 @@ public class UnpackModeTest {
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             // Set maxUnpackBytes to -1 (unlimited)
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setMaxUnpackBytes(-1L);  // Unlimited
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(testDocWithEmbedded + "-unlimited", new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded + "-unlimited"), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with unlimited maxUnpackBytes should succeed. Status: " + pipesResult.status());
         }
