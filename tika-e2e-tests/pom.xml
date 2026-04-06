@@ -50,8 +50,8 @@
         <testcontainers.version>2.0.4</testcontainers.version>
 
         <!-- Logging -->
-        <slf4j.version>2.0.17</slf4j.version>
-        <log4j.version>2.25.4</log4j.version>
+        <slf4j.version>${slf4j.version}</slf4j.version>
+        <log4j.version>${log4j2.version}</log4j.version>
 
         <!-- Other -->
         <lombok.version>1.18.44</lombok.version>
