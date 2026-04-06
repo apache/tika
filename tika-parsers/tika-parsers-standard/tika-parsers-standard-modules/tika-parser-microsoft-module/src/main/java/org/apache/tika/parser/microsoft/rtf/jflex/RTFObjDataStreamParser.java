@@ -453,7 +453,7 @@ public class RTFObjDataStreamParser implements Closeable {
         try {
             return new String(buf, 0, len, WIN_ASCII).trim();
         } catch (java.io.UnsupportedEncodingException e) {
-            return new String(buf, 0, len).trim();
+            return new String(buf, 0, len, java.nio.charset.StandardCharsets.US_ASCII).trim();
         }
     }
 

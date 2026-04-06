@@ -78,7 +78,7 @@ public class RTFToken {
             case CONTROL_SYMBOL:
                 return "\\" + name;
             case HEX_ESCAPE:
-                return String.format("\\'%02x", parameter);
+                return String.format(java.util.Locale.ROOT, "\\'%02x", parameter);
             case UNICODE_ESCAPE:
                 return "\\u" + parameter;
             case TEXT:
