@@ -59,16 +59,16 @@ public class MetadataWriteLimiterTest {
      */
     @Test
     public void testWriteLimiterFromConfig(@TempDir Path tmp) throws Exception {
-        PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
-                        new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(1, pipesResult.emitData().getMetadataList().size());
-
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        Metadata metadata;
+        try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
+                            new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+        }
+        
 
         // These fields should be present (in includeFields or "must add" fields)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
@@ -88,31 +88,32 @@ public class MetadataWriteLimiterTest {
      */
     @Test
     public void testWriteLimiterOverrideViaParseContext(@TempDir Path tmp) throws Exception {
-        PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC);
-
+        Metadata metadata;
         // Create a ParseContext with an override that allows X-TIKA:parse_time_millis
         // The default config's includeFields (dc:creator, Content-Type, X-TIKA:content)
         // does NOT include X-TIKA:parse_time_millis, but this override does.
-        ParseContext parseContext = new ParseContext();
-        String overrideJson = """
-                {
-                    "includeFields": ["Content-Type", "X-TIKA:parse_time_millis"],
-                    "maxKeySize": 100,
-                    "maxFieldSize": 1000,
-                    "maxTotalBytes": 10000,
-                    "maxValuesPerField": 5
-                }
-                """;
-        parseContext.setJsonConfig("standard-metadata-limiter-factory", () -> overrideJson);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
-                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertNotNull(pipesResult.emitData().getMetadataList());
-        assertEquals(1, pipesResult.emitData().getMetadataList().size());
-
-        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
+            // Create a ParseContext with an override that allows X-TIKA:parse_time_millis
+            // The default config's includeFields (dc:creator, Content-Type, X-TIKA:content)
+            // does NOT include X-TIKA:parse_time_millis, but this override does.
+            ParseContext parseContext = new ParseContext();
+            String overrideJson = """
+                                              {
+                                                  "includeFields": ["Content-Type", "X-TIKA:parse_time_millis"],
+                                                  "maxKeySize": 100,
+                                                  "maxFieldSize": 1000,
+                                                  "maxTotalBytes": 10000,
+                                                  "maxValuesPerField": 5
+                                              }
+                                              """;
+            parseContext.setJsonConfig("standard-metadata-limiter-factory", () -> overrideJson);
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
+                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertNotNull(pipesResult.emitData().getMetadataList());
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+        }
 
         // These fields should be present (in the override includeFields or ALWAYS_SET/ADD_FIELDS)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
