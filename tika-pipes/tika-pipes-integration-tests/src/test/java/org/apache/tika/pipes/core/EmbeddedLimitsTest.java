@@ -64,20 +64,21 @@ public class EmbeddedLimitsTest {
         limits.setMaxCount(1);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // With maxCount=1, we should get the container (1) + 1 embedded = 2 metadata objects
-        // Note: The actual count depends on how EmbeddedLimits is applied
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount <= 2,
-                "Should have at most 2 metadata objects (container + 1 embedded), got: " + metadataCount);
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // With maxCount=1, we should get the container (1) + 1 embedded = 2 metadata objects
+            // Note: The actual count depends on how EmbeddedLimits is applied
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount <= 2,
+                    "Should have at most 2 metadata objects (container + 1 embedded), got: " + metadataCount);
+        }
     }
 
     @Test
@@ -90,19 +91,20 @@ public class EmbeddedLimitsTest {
         limits.setMaxDepth(0);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // With maxDepth=0, we should only get the container (1 metadata object)
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertEquals(1, metadataCount,
-                "Should have only 1 metadata object (container only) with maxDepth=0");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // With maxDepth=0, we should only get the container (1 metadata object)
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertEquals(1, metadataCount,
+                    "Should have only 1 metadata object (container only) with maxDepth=0");
+        }
     }
 
     @Test
@@ -110,20 +112,20 @@ public class EmbeddedLimitsTest {
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.RMETA);
         // No limits set - should get all embedded documents
-
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // Without limits, should get container + all embedded documents
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount >= 2,
-                "Should have at least 2 metadata objects (container + embedded), got: " + metadataCount);
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // Without limits, should get container + all embedded documents
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount >= 2,
+                    "Should have at least 2 metadata objects (container + embedded), got: " + metadataCount);
+        }
     }
 
     @Test
@@ -139,19 +141,20 @@ public class EmbeddedLimitsTest {
             }
         """);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // With maxCount=1, should have limited embedded documents
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount <= 2,
-                "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // With maxCount=1, should have limited embedded documents
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount <= 2,
+                    "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
+        }
     }
 
     @Test
@@ -165,23 +168,24 @@ public class EmbeddedLimitsTest {
         limits.setThrowOnMaxDepth(true);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        // When throwOnMaxDepth=true and limit is exceeded, an exception is thrown
-        // but caught and recorded. Result is still "success" but with exception.
-        // The key behavior: parsing stops early, container metadata is returned
-        assertTrue(pipesResult.isSuccess(), "Parse should complete (with exception recorded)");
-        assertEquals(1, pipesResult.emitData().getMetadataList().size(),
-                "Should have only container when maxDepth=0 with exception");
-        // The status should indicate an exception was encountered
-        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
-                "Should have parse exception status when throwOnMaxDepth=true and limit exceeded");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            // When throwOnMaxDepth=true and limit is exceeded, an exception is thrown
+            // but caught and recorded. Result is still "success" but with exception.
+            // The key behavior: parsing stops early, container metadata is returned
+            assertTrue(pipesResult.isSuccess(), "Parse should complete (with exception recorded)");
+            assertEquals(1, pipesResult.emitData().getMetadataList().size(),
+                    "Should have only container when maxDepth=0 with exception");
+            // The status should indicate an exception was encountered
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
+                    "Should have parse exception status when throwOnMaxDepth=true and limit exceeded");
+        }
     }
 
     @Test
@@ -195,24 +199,25 @@ public class EmbeddedLimitsTest {
         limits.setThrowOnMaxCount(true);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        // When throwOnMaxCount=true and limit is exceeded, an exception is thrown
-        // but caught and recorded. Result is still "success" but with exception.
-        // The key behavior: parsing stops early, limited metadata is returned
-        assertTrue(pipesResult.isSuccess(), "Parse should complete (with exception recorded)");
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount <= 2,
-                "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
-        // The status should indicate an exception was encountered
-        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
-                "Should have parse exception status when throwOnMaxCount=true and limit exceeded");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            // When throwOnMaxCount=true and limit is exceeded, an exception is thrown
+            // but caught and recorded. Result is still "success" but with exception.
+            // The key behavior: parsing stops early, limited metadata is returned
+            assertTrue(pipesResult.isSuccess(), "Parse should complete (with exception recorded)");
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount <= 2,
+                    "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
+            // The status should indicate an exception was encountered
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
+                    "Should have parse exception status when throwOnMaxCount=true and limit exceeded");
+        }
     }
 
     @Test
@@ -225,20 +230,21 @@ public class EmbeddedLimitsTest {
         limits.setMaxDepth(2);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // With maxDepth=2, first-level embedded should be parsed
-        // mock-embedded.xml has 4 embedded documents
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount >= 2,
-                "Should have at least 2 metadata objects with maxDepth=2, got: " + metadataCount);
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // With maxDepth=2, first-level embedded should be parsed
+            // mock-embedded.xml has 4 embedded documents
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount >= 2,
+                    "Should have at least 2 metadata objects with maxDepth=2, got: " + metadataCount);
+        }
     }
 
     @Test
@@ -251,25 +257,26 @@ public class EmbeddedLimitsTest {
         limits.setMaxCount(2);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed");
-        // With maxCount=2, we should get container + 2 embedded = 3 metadata objects
-        int metadataCount = pipesResult.emitData().getMetadataList().size();
-        assertTrue(metadataCount <= 3,
-                "Should have at most 3 metadata objects with maxCount=2, got: " + metadataCount);
-
-        // Check that the limit reached flag is set
-        Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
-        String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
-        assertEquals("true", limitReached,
-                "Container metadata should have limit reached flag set");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed");
+            // With maxCount=2, we should get container + 2 embedded = 3 metadata objects
+            int metadataCount = pipesResult.emitData().getMetadataList().size();
+            assertTrue(metadataCount <= 3,
+                    "Should have at most 3 metadata objects with maxCount=2, got: " + metadataCount);
+            
+            // Check that the limit reached flag is set
+            Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
+            String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+            assertEquals("true", limitReached,
+                    "Container metadata should have limit reached flag set");
+        }
     }
 
     @Test
@@ -283,22 +290,23 @@ public class EmbeddedLimitsTest {
         limits.setThrowOnMaxDepth(false);
         parseContext.set(EmbeddedLimits.class, limits);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(), new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-        assertTrue(pipesResult.isSuccess(), "Parse should succeed without exception");
-        assertEquals(1, pipesResult.emitData().getMetadataList().size(),
-                "Should have only container when maxDepth=0");
-
-        // Check that the depth limit reached flag is set
-        Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
-        String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED);
-        assertEquals("true", limitReached,
-                "Container metadata should have depth limit reached flag set");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED))
+        {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            
+            assertTrue(pipesResult.isSuccess(), "Parse should succeed without exception");
+            assertEquals(1, pipesResult.emitData().getMetadataList().size(),
+                    "Should have only container when maxDepth=0");
+            
+            // Check that the depth limit reached flag is set
+            Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
+            String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED);
+            assertEquals("true", limitReached,
+                    "Container metadata should have depth limit reached flag set");
+        }
     }
 }
