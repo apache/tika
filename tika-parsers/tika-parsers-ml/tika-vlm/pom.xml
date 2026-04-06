@@ -32,7 +32,7 @@
   <name>Apache Tika VLM module</name>
 
   <properties>
-    <commonmark.version>0.27.1</commonmark.version>
+    <commonmark.version>0.28.0</commonmark.version>
   </properties>
 
   <dependencies>
