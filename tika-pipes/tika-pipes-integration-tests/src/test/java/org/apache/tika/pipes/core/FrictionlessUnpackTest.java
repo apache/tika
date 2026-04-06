@@ -89,29 +89,29 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        unpackConfig.setZeroPadName(8);
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "FRICTIONLESS ZIPPED mode should succeed. Status: " + pipesResult.status() +
-                        ", Message: " + pipesResult.message());
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            unpackConfig.setZeroPadName(8);
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "FRICTIONLESS ZIPPED mode should succeed. Status: " + pipesResult.status() +
+                            ", Message: " + pipesResult.message());
+        }
 
         // Find the frictionless zip file
         List<Path> zipFiles = Files.list(outputDir)
@@ -153,29 +153,29 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
-        unpackConfig.setZeroPadName(8);
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "FRICTIONLESS DIRECTORY mode should succeed. Status: " + pipesResult.status() +
-                        ", Message: " + pipesResult.message());
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
+            unpackConfig.setZeroPadName(8);
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "FRICTIONLESS DIRECTORY mode should succeed. Status: " + pipesResult.status() +
+                            ", Message: " + pipesResult.message());
+        }
 
         // Check that datapackage.json exists in output
         List<Path> dataPackageFiles = Files.walk(outputDir)
@@ -204,27 +204,27 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        unpackConfig.setZeroPadName(8);
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(), "Processing should succeed");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            unpackConfig.setZeroPadName(8);
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(), "Processing should succeed");
+        }
 
         // Extract and parse datapackage.json from zip
         List<Path> zipFiles = Files.list(outputDir)
@@ -287,27 +287,27 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        unpackConfig.setZeroPadName(8);
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(), "Processing should succeed");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            unpackConfig.setZeroPadName(8);
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(), "Processing should succeed");
+        }
 
         // Extract datapackage.json and verify hashes against actual file content
         List<Path> zipFiles = Files.list(outputDir)
@@ -354,30 +354,30 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        unpackConfig.setIncludeFullMetadata(true);  // Include metadata.json
-        unpackConfig.setZeroPadName(8);
-        unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "Processing with includeFullMetadata should succeed. Status: " +
-                        pipesResult.status() + ", Message: " + pipesResult.message());
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            unpackConfig.setIncludeFullMetadata(true);  // Include metadata.json
+            unpackConfig.setZeroPadName(8);
+            unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing with includeFullMetadata should succeed. Status: " +
+                            pipesResult.status() + ", Message: " + pipesResult.message());
+        }
 
         // Find the zip file and verify metadata.json exists
         List<Path> zipFiles = Files.list(outputDir)
@@ -429,27 +429,27 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        // No DigesterFactory in parseContext - should auto-add SHA256
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "Processing without DigesterFactory should succeed");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            // No DigesterFactory in parseContext - should auto-add SHA256
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing without DigesterFactory should succeed");
+        }
 
         // Verify hashes are still computed (auto-added digester)
         List<Path> zipFiles = Files.list(outputDir)
@@ -489,32 +489,32 @@ public class FrictionlessUnpackTest {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pipesConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        PipesClient pipesClient = new PipesClient(pipesConfig, pipesConfigPath);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        // Add selector to only include XML files
-        // (The mock embedded files are XML)
-        StandardUnpackSelector selector = new StandardUnpackSelector();
-        selector.setIncludeMimeTypes(Set.of("application/mock+xml", "application/xml", "text/xml"));
-        parseContext.set(UnpackSelector.class, selector);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "Processing with UnpackSelector should succeed");
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, pipesConfigPath)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            // Add selector to only include XML files
+            // (The mock embedded files are XML)
+            StandardUnpackSelector selector = new StandardUnpackSelector();
+            selector.setIncludeMimeTypes(Set.of("application/mock+xml", "application/xml", "text/xml"));
+            parseContext.set(UnpackSelector.class, selector);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "Processing with UnpackSelector should succeed");
+        }
 
         // Verify that filtering was applied
         List<Path> zipFiles = Files.list(outputDir)
@@ -547,26 +547,26 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);  // Explicit REGULAR
-        unpackConfig.setZipEmbeddedFiles(true);  // Use zip output for comparison
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "REGULAR format should still work. Status: " + pipesResult.status());
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);  // Explicit REGULAR
+            unpackConfig.setZipEmbeddedFiles(true);  // Use zip output for comparison
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "REGULAR format should still work. Status: " + pipesResult.status());
+        }
 
         // Should create -embedded.zip (not -frictionless.zip)
         List<Path> regularZips = Files.list(outputDir)
@@ -590,26 +590,26 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, simpleDoc);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(simpleDoc,
-                        new FetchKey(FETCHER_NAME, simpleDoc),
-                        new EmitKey(EMITTER_NAME, simpleDoc),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "Frictionless should succeed with no embedded files");
+        try (PipesClient pipesClient = init(tmp, simpleDoc)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(simpleDoc,
+                            new FetchKey(FETCHER_NAME, simpleDoc),
+                            new EmitKey(EMITTER_NAME, simpleDoc),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "Frictionless should succeed with no embedded files");
+        }
 
         // Should either not create zip or create zip with empty resources
         List<Path> zipFiles = Files.list(outputDir)
@@ -639,27 +639,27 @@ public class FrictionlessUnpackTest {
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
-        PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED);
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-        UnpackConfig unpackConfig = new UnpackConfig();
-        unpackConfig.setEmitter(EMITTER_NAME);
-        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-        unpackConfig.setIncludeOriginal(true);  // Include container document
-        parseContext.set(UnpackConfig.class, unpackConfig);
-
-        PipesResult pipesResult = pipesClient.process(
-                new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                        new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                        new Metadata(), parseContext,
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-        assertTrue(pipesResult.isSuccess(),
-                "Frictionless with includeOriginal should succeed");
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
+            unpackConfig.setIncludeOriginal(true);  // Include container document
+            parseContext.set(UnpackConfig.class, unpackConfig);
+            
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            
+            assertTrue(pipesResult.isSuccess(),
+                    "Frictionless with includeOriginal should succeed");
+        }
 
         List<Path> zipFiles = Files.list(outputDir)
                 .filter(p -> p.toString().endsWith("-frictionless.zip"))
