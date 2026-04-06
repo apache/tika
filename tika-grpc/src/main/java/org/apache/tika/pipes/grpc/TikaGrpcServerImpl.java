@@ -488,5 +488,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 LOG.error("Error shutting down Ignite server", e);
             }
         }
+        if (pipesClient != null) {
+            LOG.info("Shutting down the pipes client");
+            try {
+                pipesClient.close();
+            }
+            catch (IOException e) {
+                LOG.error("Error closing the pipes client", e);
+            }
+        }
     }
 }
