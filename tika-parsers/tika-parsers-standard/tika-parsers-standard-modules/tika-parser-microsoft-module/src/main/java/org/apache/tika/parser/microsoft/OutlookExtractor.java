@@ -84,8 +84,8 @@ import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
-import org.apache.tika.parser.microsoft.msg.RTFEncapsulatedHTMLExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
+import org.apache.tika.parser.microsoft.rtf.jflex.RTFHtmlDecapsulator;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
@@ -600,8 +600,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                         new MAPIRtfAttribute(MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(),
                                 chunk.getValue());
                 byte[] rtfData = rtf.getData();
-                // Try to extract encapsulated HTML — returns null if not present
-                String html = RTFEncapsulatedHTMLExtractor.extract(rtfData);
+                // Try to extract encapsulated HTML + embedded objects in one pass
+                RTFHtmlDecapsulator decapsulator =
+                        new RTFHtmlDecapsulator(xhtml, parseContext,
+                                officeParserConfig.getRtfEmbeddedMaxBytesInKb());
+                String html = decapsulator.extract(rtfData);
                 if (html != null) {
                     parseHtmlString(html, xhtml, contentIdNames);
                     parentMetadata.add(MAPI.BODY_TYPES_PROCESSED,
