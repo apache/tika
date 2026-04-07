@@ -205,10 +205,11 @@ public class TikaGrpcServerTest {
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        TikaGrpcServerImpl tikaGrpcServerImpl = new TikaGrpcServerImpl(tikaConfig.toAbsolutePath().toString());
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfig.toAbsolutePath().toString()))
+                .addService(tikaGrpcServerImpl)
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -306,6 +307,10 @@ public class TikaGrpcServerTest {
             assertEquals(NUM_TEST_DOCS, successes.size());
             assertEquals(1, errors.size());
             assertTrue(finished.get());
+
+            tikaGrpcServerImpl.shutdown();
+            server.shutdown();
+            tikaGrpcServerImpl.postShutdown();
         } finally {
             FileUtils.deleteDirectory(testDocumentFolder);
         }
