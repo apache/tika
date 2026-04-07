@@ -128,6 +128,9 @@ public class TikaGrpcServer {
                     .shutdown()
                     .awaitTermination(30, TimeUnit.SECONDS);
         }
+        if (serviceImpl != null) {
+            serviceImpl.postShutdown();
+        }
     }
 
     /**
