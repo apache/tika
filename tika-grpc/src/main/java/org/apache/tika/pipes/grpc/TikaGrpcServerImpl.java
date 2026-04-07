@@ -492,9 +492,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             LOG.info("Shutting down the pipes client");
             try {
                 pipesClient.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 LOG.error("Error closing the pipes client", e);
+            } finally {
+                pipesClient = null;
             }
         }
     }
