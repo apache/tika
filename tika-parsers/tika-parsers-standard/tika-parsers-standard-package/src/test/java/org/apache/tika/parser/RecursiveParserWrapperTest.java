@@ -177,14 +177,25 @@ public class RecursiveParserWrapperTest extends TikaTest {
     @Test
     public void testNestedTarball() throws Exception {
         List<Metadata> list = getRecursiveMetadata("test-nested-tarball.tar");
-        List<String> actualInternalPaths =
+        List<String> actualResourceNames =
             list.stream()
                 .map(m -> m.get(TikaCoreProperties.RESOURCE_NAME_KEY))
                 .collect(Collectors.toList());
 
-        List<String> expectedInternalPaths = Arrays.asList("test-nested-tarball.tar",
+        List<String> expectedResourceNames = Arrays.asList("test-nested-tarball.tar",
             "folderWithinTgz/testTXT.txt",
             "nested.tar",
+            "folderContainingTgz/inner/nested.tgz");
+        assertEquals(expectedResourceNames, actualResourceNames);
+
+        List<String> actualInternalPaths =
+            list.stream()
+                .map(m -> m.get(TikaCoreProperties.INTERNAL_PATH))
+                .collect(Collectors.toList());
+
+        List<String> expectedInternalPaths = Arrays.asList(null,
+            "folderWithinTgz/testTXT.txt",
+            null, // tar file within a gz doesn't have an internal path
             "folderContainingTgz/inner/nested.tgz");
         assertEquals(expectedInternalPaths, actualInternalPaths);
 

@@ -58,6 +58,7 @@ import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStrea
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.tika.io.FilenameUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -255,10 +256,7 @@ public class CompressorParser implements Parser {
             return;
         }
 
-        int indexOfLastSlash = name.lastIndexOf('/');
-        if (indexOfLastSlash > -1 && indexOfLastSlash < name.length() - 1) {
-            name = name.substring(indexOfLastSlash+1);
-        }
+        name = FilenameUtils.getName(name);
 
         if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
             name = name.substring(0, name.lastIndexOf(".")) + ".tar";
