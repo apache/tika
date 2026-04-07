@@ -26,8 +26,7 @@ import java.util.Map;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.IOUtils;
-import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -57,12 +56,12 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     private final ZipPackage pkg;
     Map<String, Metadata> embeddedImages = new LinkedHashMap<>();
 
-    public XPSExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor)
+    public XPSExtractorDecorator(ParseContext context, OPCPackage opcPackage)
             throws TikaException {
-        super(context, extractor);
+        super(context, opcPackage);
         this.context = context;
-        if (extractor.getPackage() instanceof ZipPackage) {
-            this.pkg = (ZipPackage) extractor.getPackage();
+        if (opcPackage instanceof ZipPackage) {
+            this.pkg = (ZipPackage) opcPackage;
         } else {
             throw new TikaException("OPCPackage must be a ZipPackage");
         }
@@ -86,11 +85,6 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             throw new TikaException("Couldn't find required zip entry: " + zipPath);
         }
         return TikaInputStream.get(zipEntrySource.getInputStream(zipEntry));
-    }
-
-    @Override
-    public POIXMLDocument getDocument() {
-        return null;
     }
 
     @Override

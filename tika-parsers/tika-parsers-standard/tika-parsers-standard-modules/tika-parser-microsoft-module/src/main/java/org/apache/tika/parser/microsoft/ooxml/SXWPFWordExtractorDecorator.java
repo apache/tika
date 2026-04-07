@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.zip.ZipException;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
@@ -96,7 +95,6 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
             };
 
-    private final OPCPackage opcPackage;
     private final ParseContext context;
     private final Metadata metadata;
     private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
@@ -104,15 +102,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     public SXWPFWordExtractorDecorator(Metadata metadata, ParseContext context,
                                        XWPFEventBasedWordExtractor extractor) {
-        super(context, extractor);
+        super(context, extractor.getPackage());
         this.metadata = metadata;
         this.context = context;
-        this.opcPackage = extractor.getPackage();
-    }
-
-    @Override
-    public MetadataExtractor getMetadataExtractor() {
-        return new SAXBasedMetadataExtractor(opcPackage, context);
     }
 
     @Override

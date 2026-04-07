@@ -18,11 +18,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.util.Locale;
+import java.util.Set;
 
-import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.POIXMLExtractorFactory;
-import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -30,12 +27,9 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
-import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
-import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -49,7 +43,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
-import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
 
@@ -60,21 +53,22 @@ import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
  */
 public class OOXMLExtractorFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(OOXMLExtractorFactory.class);
-    private static final int MAX_BUFFER_LENGTH = 1000000;
-    private static POIXMLExtractorFactory EXTRACTOR_FACTORY = new POIXMLExtractorFactory();
+    private static final String OFFICE_DOCUMENT_REL =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument";
+    private static final String STRICT_OFFICE_DOCUMENT_REL =
+            "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
 
-
-    //TODO find what happened to SUPPORTED_TYPES
-    private static XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[] {
+    private static final XSLFRelation[] XSLF_RELATIONS = new XSLFRelation[]{
             XSLFRelation.MAIN, XSLFRelation.MACRO, XSLFRelation.MACRO_TEMPLATE,
             XSLFRelation.PRESENTATIONML,
             XSLFRelation.PRESENTATIONML_TEMPLATE, XSLFRelation.PRESENTATION_MACRO
     };
 
-    static {
-        ExtractorFactory.setAllThreadsPreferEventExtractors(true);
-    }
+    private static final XSSFRelation[] XSSF_RELATIONS = new XSSFRelation[]{
+            XSSFRelation.WORKBOOK, XSSFRelation.MACROS_WORKBOOK,
+            XSSFRelation.TEMPLATE_WORKBOOK, XSSFRelation.MACRO_TEMPLATE_WORKBOOK,
+            XSSFRelation.MACRO_ADDIN_WORKBOOK
+    };
 
     public static void parse(TikaInputStream tis, ContentHandler baseHandler, Metadata metadata,
                              ParseContext context) throws IOException, SAXException, TikaException {
@@ -84,15 +78,9 @@ public class OOXMLExtractorFactory {
         try {
             OOXMLExtractor extractor = null;
 
-            // Locate or Open the OPCPackage for the file
-            // Detector should have prepared OPCPackageWrapper if salvaging was needed
             if (tis.getOpenContainer() instanceof OPCPackageWrapper) {
                 pkg = ((OPCPackageWrapper) tis.getOpenContainer()).getOPCPackage();
             } else {
-                // POI 5.x can throw InvalidOperationException (a RuntimeException
-                // extending OpenXML4JRuntimeException) for truncated/corrupt zip files.
-                // The detector should have salvaged if needed, but catch broadly here
-                // as a safety net.
                 try {
                     pkg = OPCPackage.open(tis.getPath().toString(), PackageAccess.READ);
                 } catch (RuntimeException e) {
@@ -115,69 +103,89 @@ public class OOXMLExtractorFactory {
                 type = MediaType.parse(mediaTypeString);
             }
             if (type != null && OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
-                // Not a supported type, delegate to Empty Parser
                 EmptyParser.INSTANCE.parse(tis, baseHandler, metadata, context);
                 return;
             }
 
             if (type == null || !OOXMLParser.SUPPORTED_TYPES.contains(type)) {
-                // Get the type, and ensure it's one we handle
                 type = OPCPackageDetector.detectOfficeOpenXML(pkg);
             }
 
             if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
-                // Not a supported type, delegate to Empty Parser
                 EmptyParser.INSTANCE.parse(tis, baseHandler, metadata, context);
                 return;
             }
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
-            // Have the appropriate OOXML text extractor picked
-            POIXMLTextExtractor poiExtractor = null;
-            // Always use SAX-based extractors for docx and pptx
-            poiExtractor = trySXWPF(pkg);
-            if (poiExtractor == null) {
-                poiExtractor = tryXSLF(pkg);
-            }
-            if (type.equals(OOXMLParser.XPS)) {
-                poiExtractor = new XPSTextExtractor(pkg);
+
+            // Detect format and create the appropriate extractor
+            String coreContentType = getCorePartContentType(pkg);
+
+            if (isVisioType(type)) {
+                extractor = new VSDXExtractorDecorator(context, pkg);
+            } else if (type.equals(OOXMLParser.XPS)) {
+                extractor = new XPSExtractorDecorator(context, pkg);
+            } else if (coreContentType != null) {
+                // Try DOCX
+                for (XWPFRelation relation : XWPFWordExtractor.SUPPORTED_TYPES) {
+                    if (coreContentType.equals(relation.getContentType())) {
+                        XWPFEventBasedWordExtractor wordExtractor =
+                                new XWPFEventBasedWordExtractor(pkg);
+                        extractor = new SXWPFWordExtractorDecorator(metadata, context,
+                                wordExtractor);
+                        metadata.add(TikaCoreProperties.TIKA_PARSED_BY,
+                                XWPFEventBasedWordExtractor.class.getCanonicalName());
+                        break;
+                    }
+                }
+
+                // Try PPTX
+                if (extractor == null) {
+                    for (XSLFRelation relation : XSLF_RELATIONS) {
+                        if (relation.getContentType().equals(coreContentType)) {
+                            XSLFEventBasedPowerPointExtractor pptExtractor =
+                                    new XSLFEventBasedPowerPointExtractor(pkg);
+                            extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
+                                    pptExtractor);
+                            metadata.add(TikaCoreProperties.TIKA_PARSED_BY,
+                                    XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
+                            break;
+                        }
+                    }
+                    if (extractor == null &&
+                            XSLFRelation.THEME_MANAGER.getContentType().equals(coreContentType)) {
+                        XSLFEventBasedPowerPointExtractor pptExtractor =
+                                new XSLFEventBasedPowerPointExtractor(pkg);
+                        extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
+                                pptExtractor);
+                        metadata.add(TikaCoreProperties.TIKA_PARSED_BY,
+                                XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
+                    }
+                }
+
+                // Try XLSB
+                if (extractor == null &&
+                        XSSFRelation.XLSB_BINARY_WORKBOOK.getContentType()
+                                .equals(coreContentType)) {
+                    extractor = new XSSFBExcelExtractorDecorator(context, pkg, locale);
+                }
+
+                // Try XLSX
+                if (extractor == null) {
+                    for (XSSFRelation relation : XSSF_RELATIONS) {
+                        if (relation.getContentType().equals(coreContentType)) {
+                            extractor = new XSSFExcelExtractorDecorator(context, pkg, locale);
+                            break;
+                        }
+                    }
+                }
             }
 
-            if (poiExtractor == null) {
-                poiExtractor = EXTRACTOR_FACTORY.create(pkg);
-            }
-
-            POIXMLDocument document = poiExtractor.getDocument();
-            if (poiExtractor instanceof XSSFBEventBasedExcelExtractor) {
-                extractor = new XSSFBExcelExtractorDecorator(context, poiExtractor, locale);
-            } else if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
-                extractor = new XSSFExcelExtractorDecorator(context, poiExtractor, locale);
-            } else if (poiExtractor instanceof XWPFEventBasedWordExtractor) {
-                extractor = new SXWPFWordExtractorDecorator(metadata, context,
-                        (XWPFEventBasedWordExtractor) poiExtractor);
-                metadata.add(TikaCoreProperties.TIKA_PARSED_BY,
-                        XWPFEventBasedWordExtractor.class.getCanonicalName());
-            } else if (poiExtractor instanceof XSLFEventBasedPowerPointExtractor) {
-                extractor = new SXSLFPowerPointExtractorDecorator(metadata, context,
-                        (XSLFEventBasedPowerPointExtractor) poiExtractor);
-                metadata.add(TikaCoreProperties.TIKA_PARSED_BY,
-                        XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
-            } else if (poiExtractor instanceof XPSTextExtractor) {
-                extractor = new XPSExtractorDecorator(context, poiExtractor);
-            } else if (document == null) {
+            if (extractor == null) {
                 throw new TikaException(
-                        "Expecting UserModel based POI OOXML extractor with a document, but none" +
-                                " found. " +
-                                "The extractor returned was a " + poiExtractor);
-            } else {
-                extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
+                        "No OOXML extractor found for content type: " + coreContentType);
             }
 
-
-            // Get the bulk of the metadata first, so that it's accessible during
-            //  parsing if desired by the client (see TIKA-1109)
             extractor.getMetadataExtractor().extract(metadata);
-
-            // Extract the text, along with any in-document metadata
             extractor.getXHTML(baseHandler, metadata, context);
         } catch (IllegalArgumentException e) {
             if (e.getMessage() != null &&
@@ -194,62 +202,33 @@ public class OOXMLExtractorFactory {
         }
     }
 
-    private static POIXMLTextExtractor trySXWPF(OPCPackage pkg)
-            throws TikaException, OpenXML4JException, IOException {
-        PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType(
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
-        if (packageRelationshipCollection.size() == 0) {
-            packageRelationshipCollection = pkg.getRelationshipsByType(
-                    "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument");
-        }
+    private static final Set<String> VISIO_SUBTYPES = Set.of(
+            "vnd.ms-visio.drawing",
+            "vnd.ms-visio.drawing.macroenabled.12",
+            "vnd.ms-visio.stencil",
+            "vnd.ms-visio.stencil.macroenabled.12",
+            "vnd.ms-visio.template",
+            "vnd.ms-visio.template.macroenabled.12"
+    );
 
-        if (packageRelationshipCollection.size() == 0) {
-            return null;
-        }
-        PackagePart corePart = pkg.getPart(packageRelationshipCollection.getRelationship(0));
-        if (corePart == null) {
-            throw new TikaException("Couldn't find core part.");
-        }
-        String targetContentType = corePart.getContentType();
-        for (XWPFRelation relation : XWPFWordExtractor.SUPPORTED_TYPES) {
-            if (targetContentType.equals(relation.getContentType())) {
-                return new XWPFEventBasedWordExtractor(pkg);
-            }
-        }
-        return null;
+    private static boolean isVisioType(MediaType type) {
+        return type != null && VISIO_SUBTYPES.contains(type.getSubtype());
     }
 
-    private static POIXMLTextExtractor tryXSLF(OPCPackage pkg)
-            throws TikaException, OpenXML4JException, IOException {
-
-        PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType(
-                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument");
-        if (packageRelationshipCollection.size() == 0) {
-            packageRelationshipCollection = pkg.getRelationshipsByType(
-                    "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument");
-        }
-
-        if (packageRelationshipCollection.size() == 0) {
+    private static String getCorePartContentType(OPCPackage pkg) {
+        try {
+            PackageRelationshipCollection rels =
+                    pkg.getRelationshipsByType(OFFICE_DOCUMENT_REL);
+            if (rels.size() == 0) {
+                rels = pkg.getRelationshipsByType(STRICT_OFFICE_DOCUMENT_REL);
+            }
+            if (rels.size() == 0) {
+                return null;
+            }
+            PackagePart corePart = pkg.getPart(rels.getRelationship(0));
+            return corePart != null ? corePart.getContentType() : null;
+        } catch (Exception e) {
             return null;
         }
-        PackagePart corePart = pkg.getPart(packageRelationshipCollection.getRelationship(0));
-        if (corePart == null) {
-            throw new TikaException("Couldn't find core part");
-        }
-        String targetContentType = corePart.getContentType();
-
-        for (int i = 0; i < XSLF_RELATIONS.length; i++) {
-            XSLFRelation xslfRelation = XSLF_RELATIONS[i];
-            if (xslfRelation.getContentType().equals(targetContentType)) {
-                return new XSLFEventBasedPowerPointExtractor(pkg);
-            }
-        }
-
-        if (XSLFRelation.THEME_MANAGER.getContentType().equals(targetContentType)) {
-            return new XSLFEventBasedPowerPointExtractor(pkg);
-        }
-        return null;
     }
-
-
 }
