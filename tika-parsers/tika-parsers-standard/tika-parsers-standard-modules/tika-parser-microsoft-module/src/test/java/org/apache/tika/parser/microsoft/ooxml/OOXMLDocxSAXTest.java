@@ -16,21 +16,27 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -42,31 +48,465 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 /**
- * Runs the shared DOCX tests using the SAX-based streaming parser,
- * plus SAX-specific tests (security features, deleted content, etc.).
+ * Tests for the DOCX parser.
  */
-public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
+public class OOXMLDocxSAXTest extends TikaTest {
 
-    @Override
-    ParseContext getParseContext() {
-        ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXDocxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-        return parseContext;
+    // ---- tests from AbstractOOXMLDocxTest ----
+
+    @Test
+    public void testWord() throws Exception {
+        XMLResult xmlResult = getXML("testWORD.docx");
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Sample Word Document", xmlResult.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Keith Bennett", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
+        assertTrue(xmlResult.xml.contains("Sample Word Document"));
     }
 
     @Test
+    public void testWordFootnote() throws Exception {
+        XMLResult xmlResult = getXML("footnotes.docx");
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertTrue(xmlResult.xml.contains("snoska"));
+        assertContains("<div class=\"footnote\">", xmlResult.xml);
+        assertNotContained("<p><div class=\"footnote\">", xmlResult.xml);
+    }
+
+    @Test
+    public void testEndnoteWithTable() throws Exception {
+        XMLResult xmlResult = getXML("testWORD_endnote_table.docx");
+        assertContains("Cat Property Act", xmlResult.xml);
+        assertContains("<div class=\"endnote\">", xmlResult.xml);
+    }
+
+    @Test
+    public void testWordHTML() throws Exception {
+        XMLResult result = getXML("testWORD.docx");
+        String xml = result.xml;
+        Metadata metadata = result.metadata;
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
+        assertTrue(xml.contains("Sample Word Document"));
+        assertTrue(xml.contains("<h1 class=\"title\">"));
+        assertContains("<h1>Heading Level 1</h1>", xml);
+        assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
+        assertContains("Heading Level 3", xml);
+        assertContains("<a name=\"OnLevel3\" />", xml);
+        assertTrue(xml.contains("<b>BOLD</b>"));
+        assertTrue(xml.contains("<i>ITALIC</i>"));
+        assertTrue(xml.contains("<table>"));
+        assertTrue(xml.contains("<td>"));
+        assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
+        assertContains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>", xml);
+        assertTrue(xml.contains("<p class=\"signature\">This one"));
+
+        result = getXML("testWORD_3imgs.docx");
+        xml = result.xml;
+
+        assertTrue(xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"),
+                "Image not found in:\n" + xml);
+        assertTrue(xml.contains("<p>The end!</p>"));
+    }
+
+    @Test
+    public void testWordPicturesInHeader() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("headerPic.docx");
+        assertEquals(2, metadataList.size());
+        Metadata m = metadataList.get(0);
+        String mainContent = m.get(TikaCoreProperties.TIKA_CONTENT);
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                m.get(Metadata.CONTENT_TYPE));
+        assertTrue(mainContent.contains("<img"));
+    }
+
+    @Test
+    public void testNullHeaders() throws Exception {
+        XMLResult xmlResult = getXML("NullHeader.docx");
+        assertEquals(false, xmlResult.xml.isEmpty(), "Should have found some text");
+    }
+
+    @Test
+    public void testMissingText() throws Exception {
+        XMLResult xmlResult = getXML("testWORD_missing_text.docx");
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("BigCompany", xmlResult.xml);
+        assertContains("Seasoned", xmlResult.xml);
+        assertContains("Rich_text_in_cell", xmlResult.xml);
+    }
+
+    @Test
+    public void testBoldHyperlink() throws Exception {
+        String xml = getXML("testWORD_boldHyperlink.docx").xml;
+        xml = xml.replaceAll("\\s+", " ");
+        assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
+        assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold", xml);
+    }
+
+    @Test
+    public void testLongForIntExceptionInSummaryDetails() throws Exception {
+        assertContains("bold",
+                getXML("testWORD_totalTimeOutOfRange.docx").xml);
+    }
+
+    @Test
+    public void testMultiAuthorsManagers() throws Exception {
+        XMLResult r = getXML("testWORD_multi_authors.docx");
+        String[] authors = r.metadata.getValues(TikaCoreProperties.CREATOR);
+        assertEquals(3, authors.length);
+        assertEquals("author2", authors[1]);
+        String[] managers = r.metadata.getValues(OfficeOpenXMLExtended.MANAGER);
+        assertEquals(2, managers.length);
+        assertEquals("manager1", managers[0]);
+        assertEquals("manager2", managers[1]);
+    }
+
+    @Test
+    public void testOrigSourcePath() throws Exception {
+        Metadata embed1_zip_metadata =
+                getRecursiveMetadata("test_recursive_embedded.docx").get(2);
+        assertContains("C:\\Users\\tallison\\AppData\\Local\\Temp\\embed1.zip", Arrays.asList(
+                embed1_zip_metadata.getValues(TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+        assertContains("C:\\Users\\tallison\\Desktop\\tmp\\New folder (2)\\embed1.zip",
+                Arrays.asList(
+                        embed1_zip_metadata.getValues(
+                                TikaCoreProperties.ORIGINAL_RESOURCE_NAME)));
+    }
+
+    @Test
+    public void testDOCXThumbnail() throws Exception {
+        String xml = getXML("testDOCX_Thumbnail.docx").xml;
+        int a = xml.indexOf("This file contains a thumbnail");
+        int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.emf\" />");
+        assertTrue(a != -1);
+        assertTrue(b != -1);
+        assertTrue(a < b);
+    }
+
+    @Test
+    public void testWordCustomProperties() throws Exception {
+        Metadata metadata = getXML("testWORD_custom_props.docx").metadata;
+        assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("EJ04325S", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Etienne Jouvin", metadata.get(TikaCoreProperties.MODIFIER));
+        assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
+        assertEquals("1", metadata.get(Office.PAGE_COUNT));
+        assertEquals("2", metadata.get(Office.WORD_COUNT));
+        assertEquals("My Title", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("My Keyword", metadata.get(Office.KEYWORDS));
+        assertContains("My Keyword",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertEquals("Normal.dotm", metadata.get(OfficeOpenXMLExtended.TEMPLATE));
+        assertEquals("My subject", metadata.get(DublinCore.SUBJECT));
+        assertEquals("EDF-DIT", metadata.get(TikaCoreProperties.PUBLISHER));
+        assertEquals("true", metadata.get("custom:myCustomBoolean"));
+        assertEquals("3", metadata.get("custom:myCustomNumber"));
+        assertEquals("MyStringValue", metadata.get("custom:MyCustomString"));
+        assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
+        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
+
+    @Test
+    public void testEmbeddedPDF() throws Exception {
+        String xml = getXML("testWORD_embedded_pdf.docx").xml;
+        int i = xml.indexOf("Here is the pdf file:");
+        int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\" />");
+        int k = xml.indexOf("Bye Bye");
+        int l = xml.indexOf("<div class=\"embedded\" id=\"rId6\" />");
+        int m = xml.indexOf("Bye for real.");
+        assertTrue(i != -1);
+        assertTrue(j != -1);
+        assertTrue(k != -1);
+        assertTrue(l != -1);
+        assertTrue(m != -1);
+        assertTrue(i < j);
+        assertTrue(j < k);
+        assertTrue(k < l);
+        assertTrue(l < m);
+    }
+
+    @Test
+    public void testWordNullStyle() throws Exception {
+        String xml = getXML("testWORD_null_style.docx").xml;
+        assertContains("Test av styrt dokument", xml);
+    }
+
+    @Test
+    public void testNoFormat() throws Exception {
+        assertContains("This is a piece of text that causes an exception",
+                getXML("testWORD_no_format.docx").xml);
+    }
+
+    @Test
+    public void testTextInsideTextBox() throws Exception {
+        String xml = getXML("testWORD_text_box.docx").xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertContains("This text is inside of a text box in the body of the document.", xml);
+        assertContains("This text is inside of a text box in the header of the document.", xml);
+        assertContains("This text is inside of a text box in the footer of the document.", xml);
+    }
+
+    @Test
+    public void testSDTInTextBox() throws Exception {
+        String xml = getXML("testWORD_sdtInTextBox.docx").xml;
+        assertContains("rich-text-content-control_inside-text-box", xml);
+        assertContainsCount("inside-text", xml, 1);
+    }
+
+    @Test
+    public void testDOCXOverrideParagraphNumbering() throws Exception {
+        String xml = getXML("testWORD_override_list_numbering.docx").xml;
+
+        assertContains("<p>1.1.1.1...1 1.1.1.1...1</p>", xml);
+        assertContains("1st.2.3someText 1st.2.3someText", xml);
+        assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
+        assertContains("5th 5th", xml);
+
+        assertContains("1.a.I 1.a.I", xml);
+        assertContains("<p>1.b.III 1.b.III</p>", xml);
+        assertContains("2.a.I 2.a.I", xml);
+        assertContains("<p>2.b 2.b</p>", xml);
+
+        assertContains("(1)) (1))", xml);
+        assertContains("2.17 2.17", xml);
+        assertContains("2.18.2.1 2.18.2.1", xml);
+        assertContains("<p>2 2</p>", xml);
+
+        assertContains("<p>1 1</p>", xml);
+        assertContains("<p>A A</p>", xml);
+        assertContains("<p>B B</p>", xml);
+        assertContains("<p>C C</p>", xml);
+        assertContains("<p>4 4</p>", xml);
+
+        assertContains(">00 00", xml);
+        assertContains(">01 01", xml);
+        assertContains(">01. 01.", xml);
+        assertContains(">01..1 01..1", xml);
+        assertContains(">02 02", xml);
+    }
+
+    @Test
+    public void testDiagramData() throws Exception {
+        assertContains("From here",
+                getXML("testWORD_diagramData.docx").xml);
+    }
+
+    @Test
+    public void testDOCXChartData() throws Exception {
+        String xml = getXML("testWORD_charts.docx").xml;
+        assertContains("peach", xml);
+        assertContains("March\tApril", xml);
+        assertNotContained("chartSpace", xml);
+    }
+
+    @Test
+    public void testDOCXPhoneticStrings() throws Exception {
+        assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
+                getXML("testWORD_phonetic.docx").xml);
+
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setConcatenatePhoneticRuns(false);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_phonetic.docx", parseContext).xml;
+        assertContains("\u6771\u4EAC", xml);
+        assertNotContained("\u3068", xml);
+    }
+
+    @Test
+    public void testVarious() throws Exception {
+        Metadata metadata = new Metadata();
+        String content = getText("testWORD_various.docx", metadata);
+        assertContains("Footnote appears here", content);
+        assertContains("This is a footnote.", content);
+        assertContains("This is the header text.", content);
+        assertContains("This is the footer text.", content);
+        assertContains("Here is a text box", content);
+        assertContains("Bold", content);
+        assertContains("italic", content);
+        assertContains("underline", content);
+        assertContains("superscript", content);
+        assertContains("subscript", content);
+        assertContains("Here is a citation:", content);
+        assertContains("Figure 1 This is a caption for Figure 1", content);
+        assertContains("(Kramer)", content);
+        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3",
+                content.replaceAll("\\s+", " "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2",
+                content.replaceAll("\\s+", " "));
+        assertContains("This is a hyperlink", content);
+        assertContains("Here is a list:", content);
+        for (int row = 1; row <= 3; row++) {
+            assertContains("Bullet " + row, content);
+        }
+        assertContains("Here is a numbered list:", content);
+        for (int row = 1; row <= 3; row++) {
+            assertContains("Number bullet " + row, content);
+        }
+        for (int row = 1; row <= 2; row++) {
+            for (int col = 1; col <= 3; col++) {
+                assertContains("Row " + row + " Col " + col, content);
+            }
+        }
+        assertContains("Keyword1 Keyword2", content);
+        assertEquals("Keyword1 Keyword2", metadata.get(Office.KEYWORDS));
+        assertContains("Keyword1 Keyword2",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertContains("Subject is here", content);
+        assertEquals("Subject is here", metadata.get(DublinCore.SUBJECT));
+        assertContains("Subject is here",
+                Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT)));
+        assertContains("Suddenly some Japanese text:", content);
+        assertContains("\uff08\uff27\uff28\uff31\uff09", content);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f",
+                content);
+        assertContains("And then some Gothic text:", content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A",
+                content);
+    }
+
+    @Test
+    public void testInstrTextHyperlink() throws Exception {
+        String xml = getXML("testInstrLink.docx").xml;
+        assertContains("<a href=\"https://exmaple.com/file\">", xml);
+        assertContains("Access Document(s)", xml);
+    }
+
+    @Test
+    public void testExternalRefFieldCodes() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testExternalRefs.docx");
+        Metadata m = metadataList.get(0);
+        assertEquals("true", m.get(Office.HAS_FIELD_HYPERLINKS));
+        String xml = getXML("testExternalRefs.docx").xml;
+        assertContains("class=\"external-ref-INCLUDEPICTURE\"", xml);
+        assertContains("http://example.com/tracking.png", xml);
+        assertContains("class=\"external-ref-INCLUDETEXT\"", xml);
+        assertContains("http://example.org/payload.txt", xml);
+        assertContains("class=\"external-ref-IMPORT\"", xml);
+        assertContains("http://example.net/exploit.wmf", xml);
+        assertContains("class=\"external-ref-LINK\"", xml);
+        assertContains("http://test.invalid/cmd.docx", xml);
+    }
+
+    @Test
+    public void testTextDecoration() throws Exception {
+        String xml = getXML("testWORD_various.docx").xml;
+        assertContains("<b>Bold</b>", xml);
+        assertContains("<i>italic</i>", xml);
+        assertContains("<u>underline</u>", xml);
+        assertContains("<s>strikethrough</s>", xml);
+    }
+
+    @Test
+    public void testTextDecorationNested() throws Exception {
+        String xml = getXML("testWORD_various.docx").xml;
+        assertContains("<i>ita<s>li</s>c</i>", xml);
+        assertContains("<i>ita<s>l<u>i</u></s>c</i>", xml);
+        String txt = getText("testWORD_various.docx");
+        assertContainsCount("italic", txt, 3);
+        assertNotContained("ita ", txt);
+        assertContainsCount("underline", txt, 2);
+        assertNotContained("unde ", txt);
+    }
+
+    @Test
+    public void testContiguousHTMLFormatting() throws Exception {
+        String xml = getXML("testWORD_bold_character_runs.docx").xml;
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"),
+                "Bold text wasn't contiguous: " + xml);
+        xml = getXML("testWORD_bold_character_runs2.docx").xml;
+        assertTrue(xml.contains("F<b>oob</b>a<b>r</b>"),
+                "Bold text wasn't contiguous: " + xml);
+    }
+
+    @Test
+    public void testTurningOffTextBoxExtraction() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeShapeBasedContent(false);
+        pc.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_text_box.docx", pc).xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertNotContained(
+                "This text is inside of a text box in the body of the document.", xml);
+        assertNotContained(
+                "This text is inside of a text box in the header of the document.", xml);
+        assertNotContained(
+                "This text is inside of a text box in the footer of the document.", xml);
+    }
+
+    @Test
+    public void testHeaderFooterNotExtraction() throws Exception {
+        ParseContext pc = new ParseContext();
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeHeadersAndFooters(false);
+        pc.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_various.docx", pc).xml;
+        assertNotContained("This is the header text.", xml);
+        assertNotContained("This is the footer text.", xml);
+    }
+
+    @Test
+    public void testWordMissingOOXMLBeans() throws Exception {
+        String[] fileNames = new String[]{"testWORD_missing_ooxml_bean1.docx"};
+        PrintStream origErr = System.err;
+        for (String fileName : fileNames) {
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(errContent, true, UTF_8.name()));
+            getXML(fileName);
+            System.setErr(origErr);
+            String err = errContent.toString(UTF_8.name());
+            assertTrue(err.isEmpty(),
+                    "expected no error msg, but got >" + err + "<");
+        }
+    }
+
+    @Test
+    public void testFeatureExtraction() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testWORD_features.docx");
+        Metadata m = metadataList.get(0);
+        assertContains("Kyle Reese", Arrays.asList(m.getValues(Office.COMMENT_PERSONS)));
+        assertEquals("true", m.get(Office.HAS_HIDDEN_TEXT));
+        assertEquals("true", m.get(Office.HAS_TRACK_CHANGES));
+        assertEquals("true", m.get(Office.HAS_COMMENTS));
+    }
+
+    @Test
+    public void testDotx() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testWORD_template.docx");
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("Metallica", content);
+        assertContains("Hetfield", content);
+        assertContains("one eye open", content);
+        assertContains("Getting the perfect", content);
+    }
+
+    // ---- SAX-specific tests ----
+
+    @Test
     public void testTextDecorationNestedUnderlineStrike() throws Exception {
-        // SAX closes u before opening s (since s is outer): <u>unde</u><s><u>r</u></s><u>line</u>
-        String xml = getXML("testWORD_various.docx", getParseContext()).xml;
+        String xml = getXML("testWORD_various.docx").xml;
         assertContains("<i><u>unde</u><s><u>r</u></s><u>line</u></i>", xml);
     }
 
     @Test
     public void basicTest() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_2006ml.docx", getParseContext());
+                getRecursiveMetadata("testWORD_2006ml.docx");
 
         assertEquals(8, metadataList.size());
         Metadata m = metadataList.get(0);
@@ -146,7 +586,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testPicturesInVariousPlaces() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_embedded_pics.docx", getParseContext());
+                getRecursiveMetadata("testWORD_embedded_pics.docx");
 
         assertEquals(3, metadataList.size());
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
@@ -170,7 +610,6 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
         ParseContext pc = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeDeletedContent(true);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         officeParserConfig.setIncludeMoveFromContent(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
 
@@ -187,7 +626,6 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
 
         PasswordProvider passwordProvider = metadata -> "tika";
         OfficeParserConfig opc = new OfficeParserConfig();
-        opc.setUseSAXDocxExtractor(true);
         ParseContext passwordContext = new ParseContext();
         passwordContext.set(PasswordProvider.class, passwordProvider);
         passwordContext.set(OfficeParserConfig.class, opc);
@@ -198,7 +636,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
         for (Map.Entry<String, String> e : tests.entrySet()) {
             boolean exc = false;
             try {
-                getXML(e.getKey(), getParseContext());
+                getXML(e.getKey());
             } catch (EncryptedDocumentException ex) {
                 exc = true;
             }
@@ -208,7 +646,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
 
     @Test
     public void testDOCXParagraphNumbering() throws Exception {
-        String xml = getXML("testWORD_numbered_list.docx", getParseContext()).xml;
+        String xml = getXML("testWORD_numbered_list.docx").xml;
         assertContains("add a list here", xml);
         assertContains("1) This", xml);
         assertContains("a) Is", xml);
@@ -240,7 +678,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
                 "org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor");
 
         List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_macros.docm", getParseContext());
+                getRecursiveMetadata("testWORD_macros.docm");
         for (Metadata metadata : metadataList) {
             if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
@@ -251,7 +689,6 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         metadataList = getRecursiveMetadata("testWORD_macros.docm", context);
@@ -280,7 +717,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testEmbedded() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_embeded.docx", getParseContext());
+                getRecursiveMetadata("testWORD_embeded.docx");
         Metadata main = metadataList.get(0);
         String content = main.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains(
@@ -291,9 +728,6 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
 
     @Test
     public void testInitializationViaConfig() throws Exception {
-        //NOTE: this test relies on a bug in the DOM extractor that
-        //is passing over the title information.
-        //once we fix that, this test will no longer be meaningful!
         AutoDetectParser p = (AutoDetectParser) TikaLoader.load(
                 getConfigPath(OOXMLDocxSAXTest.class, "tika-config-sax-docx.json"))
                 .loadAutoDetectParser();
@@ -304,7 +738,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testTruncatedSAXDocx() throws Exception {
         assertThrows(TikaException.class, () -> {
-            getRecursiveMetadata("testWORD_truncated.docx", getParseContext());
+            getRecursiveMetadata("testWORD_truncated.docx");
         });
     }
 
@@ -313,12 +747,12 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testHoverAndVmlHyperlinks() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testHoverAndVml.docx", getParseContext());
+                getRecursiveMetadata("testHoverAndVml.docx");
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_HOVER_HYPERLINKS));
         assertEquals("true", m.get(Office.HAS_VML_HYPERLINKS));
 
-        String xml = getXML("testHoverAndVml.docx", getParseContext()).xml;
+        String xml = getXML("testHoverAndVml.docx").xml;
         assertContains("class=\"external-ref-hlinkHover\"", xml);
         assertContains("http://hover.example.com/phishing", xml);
         assertContains("class=\"external-ref-vml-shape-href\"", xml);
@@ -328,7 +762,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testMailMerge() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testMailMerge.docx", getParseContext());
+                getRecursiveMetadata("testMailMerge.docx");
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_MAIL_MERGE));
     }
@@ -336,11 +770,11 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testAttachedTemplate() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testAttachedTemplate.docx", getParseContext());
+                getRecursiveMetadata("testAttachedTemplate.docx");
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_ATTACHED_TEMPLATE));
 
-        String xml = getXML("testAttachedTemplate.docx", getParseContext()).xml;
+        String xml = getXML("testAttachedTemplate.docx").xml;
         assertContains("class=\"external-ref-attachedTemplate\"", xml);
         assertContains("example.com/templates", xml);
     }
@@ -348,11 +782,11 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testSubdocument() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testSubdocument.docx", getParseContext());
+                getRecursiveMetadata("testSubdocument.docx");
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_SUBDOCUMENTS));
 
-        String xml = getXML("testSubdocument.docx", getParseContext()).xml;
+        String xml = getXML("testSubdocument.docx").xml;
         assertContains("class=\"external-ref-subDocument\"", xml);
         assertContains("example.org/chapters", xml);
     }
@@ -360,16 +794,11 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
     @Test
     public void testFrameset() throws Exception {
         List<Metadata> metadataList =
-                getRecursiveMetadata("testFrameset.docx", getParseContext());
+                getRecursiveMetadata("testFrameset.docx");
         Metadata m = metadataList.get(0);
         assertEquals("true", m.get(Office.HAS_FRAMESETS));
     }
 
-    /**
-     * Test with external DOCX files known to trigger "prefix not bound"
-     * from missing namespace declarations in footnote/endnote fragments.
-     * Enable by setting system property "tika.test.docx.namespace" to a file path.
-     */
     @Test
     public void testNamespaceInFragments() throws Exception {
         String filePath = System.getProperty("tika.test.docx.namespace");
@@ -385,7 +814,7 @@ public class OOXMLDocxSAXTest extends AbstractOOXMLDocxTest {
         org.xml.sax.ContentHandler handler =
                 new org.apache.tika.sax.BodyContentHandler(-1);
         try (TikaInputStream tis = TikaInputStream.get(f.toPath())) {
-            parser.parse(tis, handler, metadata, getParseContext());
+            parser.parse(tis, handler, metadata, new ParseContext());
         }
         String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         for (String w : warnings) {

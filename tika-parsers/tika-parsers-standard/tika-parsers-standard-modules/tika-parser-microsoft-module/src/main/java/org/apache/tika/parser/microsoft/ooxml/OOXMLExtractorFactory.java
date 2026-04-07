@@ -29,13 +29,10 @@ import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.util.LocaleUtil;
-import org.apache.poi.xslf.extractor.XSLFExtractor;
-import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +48,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSExtractorDecorator;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
@@ -137,14 +133,10 @@ public class OOXMLExtractorFactory {
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
             // Have the appropriate OOXML text extractor picked
             POIXMLTextExtractor poiExtractor = null;
-            // This has already been set by OOXMLParser's call to configure()
-            // We can rely on this being non-null.
-            OfficeParserConfig config = context.get(OfficeParserConfig.class);
-            if (config.isUseSAXDocxExtractor()) {
-                poiExtractor = trySXWPF(pkg);
-            }
+            // Always use SAX-based extractors for docx and pptx
+            poiExtractor = trySXWPF(pkg);
             if (poiExtractor == null) {
-                poiExtractor = tryXSLF(pkg, config.isUseSAXPptxExtractor());
+                poiExtractor = tryXSLF(pkg);
             }
             if (type.equals(OOXMLParser.XPS)) {
                 poiExtractor = new XPSTextExtractor(pkg);
@@ -176,12 +168,6 @@ public class OOXMLExtractorFactory {
                         "Expecting UserModel based POI OOXML extractor with a document, but none" +
                                 " found. " +
                                 "The extractor returned was a " + poiExtractor);
-            } else if (document instanceof XMLSlideShow) {
-                extractor = new XSLFPowerPointExtractorDecorator(metadata, context,
-                        (org.apache.poi.xslf.extractor.XSLFExtractor) poiExtractor);
-            } else if (document instanceof XWPFDocument) {
-                extractor = new XWPFWordExtractorDecorator(metadata, context,
-                        (XWPFWordExtractor) poiExtractor);
             } else {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
@@ -233,7 +219,7 @@ public class OOXMLExtractorFactory {
         return null;
     }
 
-    private static POIXMLTextExtractor tryXSLF(OPCPackage pkg, boolean eventBased)
+    private static POIXMLTextExtractor tryXSLF(OPCPackage pkg)
             throws TikaException, OpenXML4JException, IOException {
 
         PackageRelationshipCollection packageRelationshipCollection = pkg.getRelationshipsByType(
@@ -255,20 +241,12 @@ public class OOXMLExtractorFactory {
         for (int i = 0; i < XSLF_RELATIONS.length; i++) {
             XSLFRelation xslfRelation = XSLF_RELATIONS[i];
             if (xslfRelation.getContentType().equals(targetContentType)) {
-                if (eventBased) {
-                    return new XSLFEventBasedPowerPointExtractor(pkg);
-                } else {
-                    return new XSLFExtractor(new XMLSlideShow(pkg));
-                }
+                return new XSLFEventBasedPowerPointExtractor(pkg);
             }
         }
 
         if (XSLFRelation.THEME_MANAGER.getContentType().equals(targetContentType)) {
-            if (eventBased) {
-                return new XSLFEventBasedPowerPointExtractor(pkg);
-            } else {
-                return new XSLFExtractor(new XMLSlideShow(pkg));
-            }
+            return new XSLFEventBasedPowerPointExtractor(pkg);
         }
         return null;
     }

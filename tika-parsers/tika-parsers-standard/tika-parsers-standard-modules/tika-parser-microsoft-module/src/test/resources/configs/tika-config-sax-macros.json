@@ -3,9 +3,7 @@
     "default-parser",
     {
       "ooxml-parser": {
-        "extractMacros": true,
-        "useSAXDocxExtractor": true,
-        "useSAXPptxExtractor": true
+        "extractMacros": true
       }
     },
     {
