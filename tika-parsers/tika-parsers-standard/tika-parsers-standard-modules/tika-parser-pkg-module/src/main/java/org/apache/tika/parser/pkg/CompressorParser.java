@@ -66,6 +66,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -254,9 +256,12 @@ public class CompressorParser implements Parser {
         if (StringUtils.isBlank(name)) {
             return;
         }
+
+        name = FilenameUtils.getName(name);
+
         if (name.endsWith(".tgz") || name.endsWith(".tbz") || name.endsWith(".tbz2")) {
             name = name.substring(0, name.lastIndexOf(".")) + ".tar";
-        } else if (name.endsWith(".bz") || name.endsWith("gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
+        } else if (name.endsWith(".bz") || name.endsWith(".gz") || name.endsWith(".bz2") || name.endsWith(".xz") || name.endsWith(".zlib") || name.endsWith(".pack") ||
                 name.endsWith(".br")) {
             name = name.substring(0, name.lastIndexOf("."));
         } else if (!name.isEmpty()) {
