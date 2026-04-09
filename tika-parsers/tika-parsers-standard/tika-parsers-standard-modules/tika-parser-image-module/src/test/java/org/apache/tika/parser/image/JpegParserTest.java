@@ -46,18 +46,18 @@ public class JpegParserTest extends TikaTest {
 
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
     private final Parser parser = new JpegParser();
-    static private TimeZone timezone;
+    private static TimeZone originalTimeZone;
 
     @BeforeAll
     static void init() {
         // metadata-extractor 2.20.0 started making these parsed dates depend on the JVM default time zone;
         // force GMT so the assertions remain deterministic across environments
-        timezone = TimeZone.getDefault();
+        originalTimeZone = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
     }
     @AfterAll
     static void tearDown() {
-        TimeZone.setDefault(timezone);
+        TimeZone.setDefault(originalTimeZone);
     }
 
     @Test
