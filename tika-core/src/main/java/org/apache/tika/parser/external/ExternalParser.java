@@ -161,8 +161,8 @@ public class ExternalParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
+            Path outFile = null;
             Path p = tis.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
@@ -170,15 +170,15 @@ public class ExternalParser implements Parser {
             boolean hasOutputFile = false;
             for (String c : commandLine) {
                 if (inputMatcher.reset(c).find()) {
+                    // ProcessBuilder uses argv arrays, not shell invocation,
+                    // so no escaping is needed or desired here.
                     String updated = c.replace(INPUT_FILE_TOKEN,
-                            ProcessUtils.escapeCommandLine(
-                                    p.toAbsolutePath().toString()));
+                            p.toAbsolutePath().toString());
                     thisCommandLine.add(updated);
                 } else if (outputMatcher.reset(c).find()) {
-                    outFile = Files.createTempFile("tika-external-", "");
+                    outFile = tmp.createTempFile();
                     String updated = c.replace(OUTPUT_FILE_TOKEN,
-                            ProcessUtils.escapeCommandLine(
-                                    outFile.toAbsolutePath().toString()));
+                            outFile.toAbsolutePath().toString());
                     thisCommandLine.add(updated);
                     hasOutputFile = true;
                 } else {
@@ -237,10 +237,6 @@ public class ExternalParser implements Parser {
             }
 
             xhtml.endDocument();
-        } finally {
-            if (outFile != null) {
-                Files.delete(outFile);
-            }
         }
     }
 

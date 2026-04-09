@@ -41,7 +41,7 @@ public class ExternalParserConfig implements Serializable {
     private List<String> checkCommandLine;
     private List<Integer> checkErrorCodes;
     private boolean returnStdout = false;
-    private boolean returnStderr = true;
+    private boolean returnStderr = false;
     private long timeoutMs = ExternalParser.DEFAULT_TIMEOUT_MS;
     private int maxStdErr = 10000;
     private int maxStdOut = 10000;

@@ -20,12 +20,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class StreamGobbler implements Runnable {
 
+    // Maximum chars to buffer for a single line before truncating.
+    // Prevents OOM from a process outputting gigabytes without a newline.
+    private static final int MAX_LINE_LENGTH = 1_000_000;
 
     private final InputStream is;
     private final int maxBufferLength;
@@ -41,17 +45,17 @@ public class StreamGobbler implements Runnable {
 
     @Override
     public void run() {
-
-        try (BufferedReader r = new BufferedReader(
+        try (Reader r = new BufferedReader(
                 new InputStreamReader(is, StandardCharsets.UTF_8))) {
-            String line = r.readLine();
+            String line = readLineBounded(r);
             while (line != null) {
                 if (maxBufferLength >= 0) {
                     if (streamLength + line.length() > maxBufferLength) {
                         int len = maxBufferLength - (int) streamLength;
                         if (len > 0) {
                             isTruncated = true;
-                            String truncatedLine = line.substring(0, Math.min(line.length(), len));
+                            String truncatedLine =
+                                    line.substring(0, Math.min(line.length(), len));
                             lines.add(truncatedLine);
                         }
                     } else {
@@ -59,11 +63,49 @@ public class StreamGobbler implements Runnable {
                     }
                 }
                 streamLength += line.length();
-                line = r.readLine();
+                line = readLineBounded(r);
             }
         } catch (IOException e) {
             return;
         }
+    }
+
+    /**
+     * Reads a line from the reader, capping at {@link #MAX_LINE_LENGTH} chars.
+     * Any remaining chars on the line are discarded. Returns null at EOF.
+     */
+    private String readLineBounded(Reader r) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        boolean discarding = false;
+        int ch;
+        while ((ch = r.read()) != -1) {
+            if (ch == '\n') {
+                break;
+            }
+            if (ch == '\r') {
+                // peek for \r\n
+                r.mark(1);
+                int next = r.read();
+                if (next != '\n' && next != -1) {
+                    r.reset();
+                }
+                break;
+            }
+            if (!discarding) {
+                if (sb.length() < MAX_LINE_LENGTH) {
+                    sb.append((char) ch);
+                } else {
+                    discarding = true;
+                    isTruncated = true;
+                }
+            }
+            // When discarding, we still consume chars until newline/EOF
+            // to keep the stream position correct.
+        }
+        if (ch == -1 && sb.length() == 0) {
+            return null;
+        }
+        return sb.toString();
     }
 
     public List<String> getLines() {
