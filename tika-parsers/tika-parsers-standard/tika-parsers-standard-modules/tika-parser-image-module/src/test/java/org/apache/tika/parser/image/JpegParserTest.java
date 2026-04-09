@@ -29,6 +29,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
@@ -42,6 +44,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 @Isolated
+@ResourceLock(Resources.TIME_ZONE)
 public class JpegParserTest extends TikaTest {
 
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
