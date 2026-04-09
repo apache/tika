@@ -143,6 +143,10 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=tika-parsers-standard-package|
+              tika-parser-*|
+              tika-handler-boilerpipe|
+              tika-encoding-detector-*|
+              tika-langdetect-*|
               jakarta.activation|
               commons-compress|
               xz|
