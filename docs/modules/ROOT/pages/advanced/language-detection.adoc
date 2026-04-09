@@ -287,7 +287,7 @@ numeric check, keeping the language detection hot path fast.
 
 The language detector draws on several well-established techniques.
 
-[bibliography]
+[bibliography%unordered]
 - [[[cavnar1994]]] W. B. Cavnar and J. M. Trenkle,
   "N-Gram-Based Text Categorization,"
   in _Proceedings of the Third Annual Symposium on Document Analysis and
@@ -344,8 +344,7 @@ The language detector draws on several well-established techniques.
   Current models (v7+) use Wikipedia dumps as the primary corpus. +
   https://aclanthology.org/L12-1154/
 
-- [[[jacob2018]]] B. Jacob, S. Kligys, B. Chen, M. Zhu, M. Tang, A. Howard,
-  H. Adam, and D. Kalenichenko,
+- [[[jacob2018]]] B. Jacob, S. Kligys, B. Chen, M. Zhu, M. Tang, A. Howard, H. Adam, and D. Kalenichenko,
   "Quantization and Training of Neural Networks for Efficient
   Integer-Arithmetic-Only Inference,"
   in _Proceedings of the IEEE Conference on Computer Vision and Pattern

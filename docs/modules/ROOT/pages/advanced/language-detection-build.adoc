@@ -363,7 +363,7 @@ new file, and remove the old binary.
 
 Results on the https://github.com/facebookresearch/flores[FLORES-200] dev set
 (204 test languages, 997 sentences each). All scores are macro-averaged F1.
-Raw eval output: xref:advanced/flores-eval-20260320.txt[flores-eval-20260320.txt].
+Raw eval output: link:{attachmentsdir}/advanced/flores-eval-20260320.txt[flores-eval-20260320.txt].
 
 ==== Coverage-adjusted accuracy (each detector on its own supported languages)
 

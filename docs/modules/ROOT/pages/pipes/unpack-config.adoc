@@ -175,7 +175,7 @@ This limits extraction to 100MB total.
 
 == Key Base Strategies
 
-`DEFAULT`:: Output key is `{containerKey}-{embeddedIdPrefix}{id}{suffix}`
+`DEFAULT`:: Output key is `\{containerKey}-\{embeddedIdPrefix}\{id}\{suffix}`
 `CUSTOM`:: Output key uses `emitKeyBase` as the prefix.
 
 == Safety Limits

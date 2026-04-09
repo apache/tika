@@ -20,7 +20,7 @@ with custom parsers, detectors, and other components.
 
 == Topics
 
-* xref:serialization.adoc[Serialization and Configuration] - JSON configuration,
+* xref:developers/serialization.adoc[Serialization and Configuration] - JSON configuration,
   @TikaComponent annotation, and creating custom components
 
 == Coming Soon

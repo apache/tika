@@ -111,7 +111,7 @@ curl -s -X PUT -H "Accept: application/json" -T testPDF.pdf http://localhost:999
 
 *Expected:* JSON object with metadata only (no content).
 
-=== Test 8: PUT /meta/{field}
+=== Test 8: PUT /meta/\{field}
 
 [source,bash]
 ----
@@ -379,7 +379,7 @@ The following endpoints were tested and verified working:
 |`/tika/xml` |PUT |PASS
 |`/tika/json` |PUT |PASS
 |`/meta` |PUT |PASS
-|`/meta/{field}` |PUT |PASS
+|`/meta/\{field}` |PUT |PASS
 |`/rmeta` |PUT |PASS
 |`/rmeta/text` |PUT |PASS
 |`/language/stream` |PUT |PASS
