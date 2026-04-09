@@ -11,7 +11,8 @@
         "commandLine": ["exiftool", "${INPUT_FILE}"],
         "checkCommandLine": ["exiftool", "-ver"],
         "checkErrorCodes": [126, 127],
-        "outputParser": {
+        "contentSource": "none",
+        "stdoutHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "mime": "^MIME Type\\s+: ([^\\r\\n]+)",

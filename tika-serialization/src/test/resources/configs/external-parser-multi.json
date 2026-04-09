@@ -12,7 +12,8 @@
         "checkErrorCodes": [126, 127],
         "returnStderr": true,
         "maxStdErr": 20000,
-        "stderrParser": {
+        "contentSource": "none",
+        "stderrHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "xmpDM:duration": "\\s*Duration:\\s*([0-9:\\.]+),.*",
@@ -30,7 +31,8 @@
         "commandLine": ["exiftool", "${INPUT_FILE}"],
         "checkCommandLine": ["exiftool", "-ver"],
         "checkErrorCodes": [126, 127],
-        "outputParser": {
+        "contentSource": "none",
+        "stdoutHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "exiftool:MIMEType": "^MIME Type\\s+: ([^\\r\\n]+)",

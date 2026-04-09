@@ -4,7 +4,8 @@
       "external-parser": {
         "_mime-include": ["application/octet-stream"],
         "commandLine": ["exiftool", "${INPUT_FILE}"],
-        "outputParser": {
+        "contentSource": "none",
+        "stdoutHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "mime": "^MIME Type\\s+: ([^\\r\\n]+)",

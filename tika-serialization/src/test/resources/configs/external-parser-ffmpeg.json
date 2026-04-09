@@ -10,9 +10,10 @@
         "commandLine": ["ffmpeg", "-i", "${INPUT_FILE}"],
         "checkCommandLine": ["ffmpeg", "-version"],
         "checkErrorCodes": [126, 127],
+        "contentSource": "none",
         "returnStderr": true,
         "maxStdErr": 20000,
-        "stderrParser": {
+        "stderrHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "xmpDM:audioSampleRate": "\\s*Stream.*:.+Audio:.*,\\s+(\\d+)\\s+Hz,.*",

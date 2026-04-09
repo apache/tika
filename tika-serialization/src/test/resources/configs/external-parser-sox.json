@@ -16,7 +16,8 @@
         "checkErrorCodes": [126, 127],
         "returnStderr": true,
         "maxStdErr": 10000,
-        "stderrParser": {
+        "contentSource": "none",
+        "stderrHandler": {
           "regex-capture-parser": {
             "captureMap": {
               "xmpDM:audioChannelType": "\\s*Channels.*:\\s+(\\d+)\\s*",

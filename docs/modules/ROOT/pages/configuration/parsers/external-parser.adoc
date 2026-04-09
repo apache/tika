@@ -30,17 +30,30 @@ Each external parser can declare a `checkCommandLine` that verifies the tool
 is installed. The check runs lazily on first use (not at startup), and if the
 tool is not found, the parser silently disables itself.
 
-=== Output Parser vs Stderr Parser
+=== Stream Handlers
 
-External tools write useful output to different streams:
+An external process produces up to three output streams. Each can have an
+independent handler (any Tika parser):
 
-* **`outputParser`** -- processes stdout (or the output file). Use this for tools
-  like `exiftool` that write structured output to stdout.
-* **`stderrParser`** -- processes stderr. Use this for tools like `ffmpeg` and
-  `sox` that write metadata to stderr.
+* **`stdoutHandler`** -- processes stdout
+* **`stderrHandler`** -- processes stderr
+* **`outputFileHandler`** -- processes the output file (when `${OUTPUT_FILE}` is used)
 
-Both accept any Tika parser; `regex-capture-parser` is the most common choice
-for extracting metadata via regex patterns.
+Handlers extract metadata, content, or both. `regex-capture-parser` is the
+most common choice for extracting metadata via regex patterns.
+
+=== Content Source
+
+The `contentSource` field controls which stream provides the XHTML text content:
+
+* `"stdout"` -- default when no `${OUTPUT_FILE}` in the command
+* `"outputFile"` -- default when `${OUTPUT_FILE}` is in the command
+* `"stderr"` -- use stderr as the content source
+* `"none"` -- metadata-only mode, no text content extracted
+
+When a handler is configured for the content source stream, its
+ContentHandler output becomes the XHTML content. When no handler is
+configured, the raw bytes are written as text.
 
 == Configuration Options
 
@@ -60,13 +73,21 @@ for extracting metadata via regex patterns.
 |`List<Integer>`
 |Exit codes that indicate the tool is not available. Default: `[127]`.
 
-|`outputParser`
+|`stdoutHandler`
 |Parser config
-|Optional. Parser to process stdout or the output file.
+|Optional. Parser to process stdout.
 
-|`stderrParser`
+|`stderrHandler`
 |Parser config
-|Optional. Parser to process stderr (for metadata extraction).
+|Optional. Parser to process stderr.
+
+|`outputFileHandler`
+|Parser config
+|Optional. Parser to process the output file.
+
+|`contentSource`
+|`String`
+|Which stream provides XHTML content: `"stdout"`, `"stderr"`, `"outputFile"`, or `"none"`. Default depends on command.
 
 |`returnStdout`
 |`boolean`
@@ -93,7 +114,7 @@ for extracting metadata via regex patterns.
 
 === Exiftool (metadata from stdout)
 
-Extracts metadata from media files using `exiftool`. The `outputParser` uses
+Extracts metadata from media files using `exiftool`. The `stdoutHandler` uses
 `regex-capture-parser` to extract key-value pairs from exiftool's stdout.
 
 [source,json]
@@ -105,7 +126,7 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-serialization/src/te
 === FFmpeg (metadata from stderr)
 
 Extracts audio/video metadata from `ffmpeg -i` output. FFmpeg writes metadata
-to stderr, so this uses `stderrParser` instead of `outputParser`.
+to stderr, so this uses `stderrHandler`.
 
 [source,json]
 ----
@@ -146,8 +167,9 @@ In Tika 4.x:
 
 * External parsers must be explicitly configured in JSON -- no auto-discovery.
 * The `checkCommandLine` runs lazily on first use, not at startup.
-* The `stderrParser` field replaces the inline regex-on-stderr metadata extraction.
-* The `external2` package has been renamed back to `external`.
+* Three independent stream handlers (`stdoutHandler`, `stderrHandler`,
+  `outputFileHandler`) replace the old `outputParser`/`stderrParser` split.
+* The `contentSource` field explicitly controls which stream provides text content.
 * `CompositeExternalParser`, `ExternalParsersFactory`, and the XML config
   reader have been removed.
 

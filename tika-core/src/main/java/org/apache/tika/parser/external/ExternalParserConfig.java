@@ -30,12 +30,14 @@ import org.apache.tika.parser.Parser;
  */
 public class ExternalParserConfig implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private List<String> supportedTypes = new ArrayList<>();
     private List<String> commandLine = new ArrayList<>();
-    private Parser outputParser;
-    private Parser stderrParser;
+    private Parser stdoutHandler;
+    private Parser stderrHandler;
+    private Parser outputFileHandler;
+    private String contentSource;
     private List<String> checkCommandLine;
     private List<Integer> checkErrorCodes;
     private boolean returnStdout = false;
@@ -63,20 +65,44 @@ public class ExternalParserConfig implements Serializable {
         this.commandLine = commandLine;
     }
 
-    public Parser getOutputParser() {
-        return outputParser;
+    public Parser getStdoutHandler() {
+        return stdoutHandler;
     }
 
-    public void setOutputParser(Parser outputParser) {
-        this.outputParser = outputParser;
+    public void setStdoutHandler(Parser stdoutHandler) {
+        this.stdoutHandler = stdoutHandler;
     }
 
-    public Parser getStderrParser() {
-        return stderrParser;
+    public Parser getStderrHandler() {
+        return stderrHandler;
     }
 
-    public void setStderrParser(Parser stderrParser) {
-        this.stderrParser = stderrParser;
+    public void setStderrHandler(Parser stderrHandler) {
+        this.stderrHandler = stderrHandler;
+    }
+
+    public Parser getOutputFileHandler() {
+        return outputFileHandler;
+    }
+
+    public void setOutputFileHandler(Parser outputFileHandler) {
+        this.outputFileHandler = outputFileHandler;
+    }
+
+    /**
+     * Which stream provides the XHTML content output.
+     * <p>
+     * Valid values: {@code "stdout"}, {@code "stderr"}, {@code "outputFile"}, {@code "none"}.
+     * <p>
+     * If {@code null}, defaults to {@code "stdout"} when no {@code ${OUTPUT_FILE}} token
+     * is in the command, or {@code "outputFile"} when it is.
+     */
+    public String getContentSource() {
+        return contentSource;
+    }
+
+    public void setContentSource(String contentSource) {
+        this.contentSource = contentSource;
     }
 
     public List<String> getCheckCommandLine() {

@@ -45,7 +45,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -58,10 +57,15 @@ import org.apache.tika.utils.ProcessUtils;
  * to extract text content and metadata from a given document.
  * <p>
  * This parser relies on JSON configuration rather than classpath auto-discovery.
- * Users can specify a parser to handle the output of the external process
- * (via {@code outputParser}) and/or a parser to extract metadata from stderr
- * (via {@code stderrParser}). An optional {@code checkCommandLine} can be
- * configured so that the parser lazily verifies the external tool is available.
+ * Users can specify independent handlers for each process stream:
+ * <ul>
+ *   <li>{@code stdoutHandler} — processes stdout</li>
+ *   <li>{@code stderrHandler} — processes stderr</li>
+ *   <li>{@code outputFileHandler} — processes the output file</li>
+ * </ul>
+ * The {@code contentSource} field controls which stream provides the XHTML
+ * content output. An optional {@code checkCommandLine} lazily verifies the
+ * external tool is available.
  */
 @TikaComponent
 public class ExternalParser implements Parser {
@@ -72,18 +76,24 @@ public class ExternalParser implements Parser {
 
     public static final String OUTPUT_FILE_TOKEN = "${OUTPUT_FILE}";
 
-    private static Pattern INPUT_TOKEN_MATCHER = Pattern.compile("\\$\\{INPUT_FILE}");
-    private static Pattern OUTPUT_TOKEN_MATCHER = Pattern.compile("\\$\\{OUTPUT_FILE}");
+    private static final Pattern INPUT_TOKEN_MATCHER =
+            Pattern.compile("\\$\\{INPUT_FILE}");
+    private static final Pattern OUTPUT_TOKEN_MATCHER =
+            Pattern.compile("\\$\\{OUTPUT_FILE}");
 
     private static final Logger LOG = LoggerFactory.getLogger(ExternalParser.class);
+
+    private static final ContentHandler DISCARD_HANDLER =
+            new org.xml.sax.helpers.DefaultHandler();
 
     private final ExternalParserConfig config;
 
     // Cached values derived from config
     private final Set<MediaType> supportedTypes;
     private final List<String> commandLine;
-    private final Parser outputParser;
-    private final Parser stderrParser;
+    private final Parser stdoutHandler;
+    private final Parser stderrHandler;
+    private final Parser outputFileHandler;
 
     // Lazy check state
     private final String[] checkCmd;
@@ -107,14 +117,15 @@ public class ExternalParser implements Parser {
             this.supportedTypes.add(MediaType.parse(s));
         }
         this.commandLine = new ArrayList<>(config.getCommandLine());
-        this.outputParser = config.getOutputParser() != null ?
-                config.getOutputParser() : EmptyParser.INSTANCE;
-        this.stderrParser = config.getStderrParser();
+        this.stdoutHandler = config.getStdoutHandler();
+        this.stderrHandler = config.getStderrHandler();
+        this.outputFileHandler = config.getOutputFileHandler();
 
         // Set up lazy check
         if (config.getCheckCommandLine() != null && !config.getCheckCommandLine().isEmpty()) {
             this.checkCmd = config.getCheckCommandLine().toArray(new String[0]);
-            if (config.getCheckErrorCodes() != null && !config.getCheckErrorCodes().isEmpty()) {
+            if (config.getCheckErrorCodes() != null &&
+                    !config.getCheckErrorCodes().isEmpty()) {
                 this.checkErrorCodes = config.getCheckErrorCodes().stream()
                         .mapToInt(Integer::intValue).toArray();
             } else {
@@ -150,39 +161,39 @@ public class ExternalParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        //this may remain null, depending on whether the external parser writes to a file
         Path outFile = null;
         try (TemporaryResources tmp = new TemporaryResources()) {
             Path p = tis.getPath();
             List<String> thisCommandLine = new ArrayList<>();
             Matcher inputMatcher = INPUT_TOKEN_MATCHER.matcher("");
             Matcher outputMatcher = OUTPUT_TOKEN_MATCHER.matcher("");
-            boolean outputFileInCommandline = false;
+            boolean hasOutputFile = false;
             for (String c : commandLine) {
                 if (inputMatcher.reset(c).find()) {
                     String updated = c.replace(INPUT_FILE_TOKEN,
-                            ProcessUtils.escapeCommandLine(p.toAbsolutePath().toString()));
+                            ProcessUtils.escapeCommandLine(
+                                    p.toAbsolutePath().toString()));
                     thisCommandLine.add(updated);
                 } else if (outputMatcher.reset(c).find()) {
                     outFile = Files.createTempFile("tika-external-", "");
                     String updated = c.replace(OUTPUT_FILE_TOKEN,
-                            ProcessUtils.escapeCommandLine(outFile.toAbsolutePath().toString()));
+                            ProcessUtils.escapeCommandLine(
+                                    outFile.toAbsolutePath().toString()));
                     thisCommandLine.add(updated);
-                    outputFileInCommandline = true;
+                    hasOutputFile = true;
                 } else {
                     thisCommandLine.add(c);
                 }
             }
-            FileProcessResult result = null;
-            long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, config.getTimeoutMs());
-            if (outputFileInCommandline) {
-                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, config.getMaxStdOut(), config.getMaxStdErr());
-            } else {
-                outFile = Files.createTempFile("tika-external-", "");
-                result = ProcessUtils.execute(new ProcessBuilder(thisCommandLine),
-                        localTimeoutMillis, outFile, config.getMaxStdErr());
-            }
+
+            // Always capture both stdout and stderr in memory
+            long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
+                    context, config.getTimeoutMs());
+            FileProcessResult result = ProcessUtils.execute(
+                    new ProcessBuilder(thisCommandLine),
+                    localTimeoutMillis, config.getMaxStdOut(), config.getMaxStdErr());
+
+            // Set process metadata
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
             metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
             TikaProgressTracker.update(context);
@@ -199,17 +210,32 @@ public class ExternalParser implements Parser {
             if (config.isReturnStderr()) {
                 metadata.set(ExternalProcess.STD_ERR, result.getStderr());
             }
-            if (stderrParser != null && result.getStderr() != null
-                    && !result.getStderr().isEmpty()) {
-                try (TikaInputStream stderrStream = TikaInputStream.get(
-                        result.getStderr().getBytes(StandardCharsets.UTF_8))) {
-                    stderrParser.parse(stderrStream, new org.xml.sax.helpers.DefaultHandler(),
-                            metadata, context);
-                }
+
+            // Determine content source
+            String effectiveContentSource = config.getContentSource();
+            if (effectiveContentSource == null) {
+                effectiveContentSource = hasOutputFile ? "outputFile" : "stdout";
             }
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+
+            XHTMLContentHandler xhtml =
+                    new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
-            handleOutput(result, outFile, xhtml, metadata, context);
+
+            // Process each stream through its handler
+            handleStream(result.getStdout(), stdoutHandler,
+                    "stdout".equals(effectiveContentSource),
+                    xhtml, metadata, context);
+
+            handleStream(result.getStderr(), stderrHandler,
+                    "stderr".equals(effectiveContentSource),
+                    xhtml, metadata, context);
+
+            if (hasOutputFile && outFile != null) {
+                handleOutputFile(outFile, outputFileHandler,
+                        "outputFile".equals(effectiveContentSource),
+                        xhtml, metadata, context);
+            }
+
             xhtml.endDocument();
         } finally {
             if (outFile != null) {
@@ -218,45 +244,54 @@ public class ExternalParser implements Parser {
         }
     }
 
-    private void handleOutput(FileProcessResult result, Path outFile,
+    private void handleStream(String content, Parser handler, boolean isContentSource,
                               XHTMLContentHandler xhtml, Metadata metadata,
-                              ParseContext parseContext) throws SAXException, TikaException,
-            IOException {
-        if (outputParser == EmptyParser.INSTANCE) {
-            if (outFile != null) {
-                try (BufferedReader reader = Files.newBufferedReader(outFile)) {
-                    String line = reader.readLine();
-                    while (line != null) {
-                        //do we want to wrap this in <p></p> elements?
-                        xhtml.characters(line);
-                        xhtml.newline();
-                        line = reader.readLine();
-                    }
-                }
-            } else {
-                //read this in line by line and wrap <p></p> elements?
-                xhtml.characters(result.getStdout());
+                              ParseContext context)
+            throws IOException, SAXException, TikaException {
+        if (content == null || content.isEmpty()) {
+            return;
+        }
+        if (handler != null) {
+            ContentHandler target = isContentSource ?
+                    new BodyContentHandler(xhtml) : DISCARD_HANDLER;
+            try (TikaInputStream tis = TikaInputStream.get(
+                    content.getBytes(StandardCharsets.UTF_8))) {
+                handler.parse(tis, target, metadata, context);
             }
-        } else {
-            if (outFile != null) {
-                try (TikaInputStream tis = TikaInputStream.get(outFile)) {
-                    outputParser.parse(tis, new BodyContentHandler(xhtml), metadata, parseContext);
-                }
-            } else {
-                try (TikaInputStream tis = TikaInputStream.get(
-                        result.getStdout().getBytes(StandardCharsets.UTF_8))) {
-                    outputParser.parse(tis, new BodyContentHandler(xhtml), metadata, parseContext);
+        } else if (isContentSource) {
+            // No handler — write raw content as XHTML text
+            String[] lines = content.split("\n", -1);
+            for (int i = 0; i < lines.length; i++) {
+                xhtml.characters(lines[i]);
+                if (i < lines.length - 1) {
+                    xhtml.newline();
                 }
             }
         }
-
     }
 
-    /**
-     * Returns the output parser used to parse the external process output.
-     */
-    public Parser getOutputParser() {
-        return outputParser;
+    private void handleOutputFile(Path outFile, Parser handler,
+                                  boolean isContentSource,
+                                  XHTMLContentHandler xhtml, Metadata metadata,
+                                  ParseContext context)
+            throws IOException, SAXException, TikaException {
+        if (handler != null) {
+            ContentHandler target = isContentSource ?
+                    new BodyContentHandler(xhtml) : DISCARD_HANDLER;
+            try (TikaInputStream tis = TikaInputStream.get(outFile)) {
+                handler.parse(tis, target, metadata, context);
+            }
+        } else if (isContentSource) {
+            // No handler — write raw file content as XHTML text
+            try (BufferedReader reader = Files.newBufferedReader(outFile)) {
+                String line = reader.readLine();
+                while (line != null) {
+                    xhtml.characters(line);
+                    xhtml.newline();
+                    line = reader.readLine();
+                }
+            }
+        }
     }
 
     /**
