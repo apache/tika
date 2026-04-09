@@ -75,11 +75,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -209,7 +209,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         // Try running Tesseract from there, and see if it exists + works
         String[] checkCmd = {tesseract};
-        boolean hasTesseract = ExternalParser.check(checkCmd);
+        boolean hasTesseract = ProcessUtils.checkCommand(checkCmd);
         LOG.debug("hasTesseract (path: " + Arrays.toString(checkCmd) + "): " + hasTesseract);
         return hasTesseract;
     }
@@ -231,7 +231,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         // Try running ImageMagick program from there, and see if it exists + works
         String[] checkCmd = {fullImageMagickPath};
-        this.hasImageMagick = ExternalParser.check(checkCmd);
+        this.hasImageMagick = ProcessUtils.checkCommand(checkCmd);
         if (!this.hasImageMagick) {
             LOG.debug("ImageMagick does not appear to be installed " + "(commandline: " +
                     fullImageMagickPath + ")");

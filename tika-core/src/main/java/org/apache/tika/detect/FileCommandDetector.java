@@ -29,7 +29,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -74,7 +73,7 @@ public class FileCommandDetector implements Detector {
 
     public static boolean checkHasFile(String fileCommandPath) {
         String[] commandline = new String[]{fileCommandPath, "-v"};
-        return ExternalParser.check(commandline);
+        return ProcessUtils.checkCommand(commandline);
     }
 
     /**

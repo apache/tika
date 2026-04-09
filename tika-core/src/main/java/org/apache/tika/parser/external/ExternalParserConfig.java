@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.external2;
+package org.apache.tika.parser.external;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -35,6 +35,9 @@ public class ExternalParserConfig implements Serializable {
     private List<String> supportedTypes = new ArrayList<>();
     private List<String> commandLine = new ArrayList<>();
     private Parser outputParser;
+    private Parser stderrParser;
+    private List<String> checkCommandLine;
+    private List<Integer> checkErrorCodes;
     private boolean returnStdout = false;
     private boolean returnStderr = true;
     private long timeoutMs = ExternalParser.DEFAULT_TIMEOUT_MS;
@@ -66,6 +69,30 @@ public class ExternalParserConfig implements Serializable {
 
     public void setOutputParser(Parser outputParser) {
         this.outputParser = outputParser;
+    }
+
+    public Parser getStderrParser() {
+        return stderrParser;
+    }
+
+    public void setStderrParser(Parser stderrParser) {
+        this.stderrParser = stderrParser;
+    }
+
+    public List<String> getCheckCommandLine() {
+        return checkCommandLine;
+    }
+
+    public void setCheckCommandLine(List<String> checkCommandLine) {
+        this.checkCommandLine = checkCommandLine;
+    }
+
+    public List<Integer> getCheckErrorCodes() {
+        return checkErrorCodes;
+    }
+
+    public void setCheckErrorCodes(List<Integer> checkErrorCodes) {
+        this.checkErrorCodes = checkErrorCodes;
     }
 
     public boolean isReturnStdout() {

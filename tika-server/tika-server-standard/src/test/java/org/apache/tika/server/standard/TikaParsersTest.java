@@ -144,7 +144,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals("org.apache.tika.parser.CompositeParser", json.get("name"));
             assertEquals(Boolean.TRUE, json.get("composite"));
 
-            // At least 20 child parsers which aren't composite, except for CompositeExternalParser
+            // At least 20 child parsers which aren't composite
             List<Object> wrapper = (List) json.get("children");
             Map<String, Object> firstItem = (Map) wrapper.get(0);
             List<Object> children = (List) firstItem.get("children");
@@ -191,7 +191,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(true, hasOOXML);
             assertEquals(true, hasZip);
             assertTrue(nonComposite > 20);
-            assertTrue(composite == 0 || composite == 1); // if CompositeExternalParser is available it will be 1
+            assertEquals(0, composite);
         }
     }
 }

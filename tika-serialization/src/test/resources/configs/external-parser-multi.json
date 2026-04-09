@@ -1,0 +1,45 @@
+{
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": [
+          "video/avi",
+          "video/mpeg",
+          "video/x-msvideo"
+        ],
+        "commandLine": ["ffmpeg", "-i", "${INPUT_FILE}"],
+        "checkCommandLine": ["ffmpeg", "-version"],
+        "checkErrorCodes": [126, 127],
+        "returnStderr": true,
+        "maxStdErr": 20000,
+        "stderrParser": {
+          "regex-capture-parser": {
+            "captureMap": {
+              "xmpDM:duration": "\\s*Duration:\\s*([0-9:\\.]+),.*",
+              "xmpDM:audioSampleRate": "\\s*Stream.*:.+Audio:.*,\\s+(\\d+)\\s+Hz,.*"
+            }
+          }
+        }
+      }
+    },
+    {
+      "external-parser": {
+        "_mime-include": [
+          "application/pdf"
+        ],
+        "commandLine": ["exiftool", "${INPUT_FILE}"],
+        "checkCommandLine": ["exiftool", "-ver"],
+        "checkErrorCodes": [126, 127],
+        "outputParser": {
+          "regex-capture-parser": {
+            "captureMap": {
+              "exiftool:MIMEType": "^MIME Type\\s+: ([^\\r\\n]+)",
+              "exiftool:PageCount": "^Page Count\\s+: ([^\\r\\n]+)",
+              "exiftool:PDFVersion": "^PDF Version\\s+: ([^\\r\\n]+)"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

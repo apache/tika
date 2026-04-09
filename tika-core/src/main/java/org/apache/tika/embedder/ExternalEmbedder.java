@@ -40,7 +40,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 
 /**
  * Embedder that uses an external program (like sed or exiftool) to embed text
@@ -50,6 +49,8 @@ import org.apache.tika.parser.external.ExternalParser;
  */
 public class ExternalEmbedder implements Embedder {
 
+    public static final String INPUT_FILE_TOKEN = "${INPUT}";
+    public static final String OUTPUT_FILE_TOKEN = "${OUTPUT}";
     /**
      * Token to be replaced with a String array of metadata assignment command
      * arguments
@@ -78,7 +79,7 @@ public class ExternalEmbedder implements Embedder {
      */
     private String[] command =
             new String[]{"sed", "-e", "$a\\\n" + METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN,
-                    ExternalParser.INPUT_FILE_TOKEN};
+                    INPUT_FILE_TOKEN};
     private String commandAssignmentOperator = "=";
     private String commandAssignmentDelimeter = ", ";
     private String commandAppendOperator = "=";
@@ -355,15 +356,15 @@ public class ExternalEmbedder implements Embedder {
         String[] origCmd = command;
         List<String> cmd = new ArrayList<>();
         for (String commandSegment : origCmd) {
-            if (commandSegment.contains(ExternalParser.INPUT_FILE_TOKEN)) {
-                commandSegment = commandSegment.replace(ExternalParser.INPUT_FILE_TOKEN,
+            if (commandSegment.contains(INPUT_FILE_TOKEN)) {
+                commandSegment = commandSegment.replace(INPUT_FILE_TOKEN,
                         tikaInputStream.getFile().toString());
                 inputToStdIn = false;
             }
-            if (commandSegment.contains(ExternalParser.OUTPUT_FILE_TOKEN)) {
+            if (commandSegment.contains(OUTPUT_FILE_TOKEN)) {
                 tempOutputFile = tmp.createTemporaryFile();
                 commandSegment = commandSegment
-                        .replace(ExternalParser.OUTPUT_FILE_TOKEN, tempOutputFile.toString());
+                        .replace(OUTPUT_FILE_TOKEN, tempOutputFile.toString());
                 outputFromStdOut = false;
             }
             if (commandSegment.contains(METADATA_COMMAND_ARGUMENTS_SERIALIZED_TOKEN)) {
