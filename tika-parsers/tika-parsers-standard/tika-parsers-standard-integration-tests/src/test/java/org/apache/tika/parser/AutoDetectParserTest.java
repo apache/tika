@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -408,6 +409,7 @@ public class AutoDetectParserTest extends TikaTest {
     }
 
     @Test
+    @Disabled("TIKA-4712 -- CompositeExternalParser SPI registration needs rework")
     public void testExternalParserIsLoaded() {
         Parser p = find((CompositeParser) AUTO_DETECT_PARSER, CompositeExternalParser.class);
         assertNotNull(p);

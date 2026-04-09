@@ -96,6 +96,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
+      <type>pom</type>
     </dependency>
     <dependency>
       <groupId>biz.aQute.bnd</groupId>

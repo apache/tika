@@ -39,6 +39,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
+      <type>pom</type>
     </dependency>
     <!-- inference: text embeddings and CLIP image embeddings -->
     <dependency>
