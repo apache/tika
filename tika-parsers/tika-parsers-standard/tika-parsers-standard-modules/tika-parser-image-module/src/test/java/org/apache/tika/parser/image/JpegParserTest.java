@@ -27,8 +27,8 @@ import java.util.TimeZone;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
