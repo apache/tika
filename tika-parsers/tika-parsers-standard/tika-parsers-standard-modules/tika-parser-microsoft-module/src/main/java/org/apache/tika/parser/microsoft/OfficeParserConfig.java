@@ -32,9 +32,6 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeSlideMasterContent = true;
     private boolean concatenatePhoneticRuns = true;
 
-    private boolean useSAXDocxExtractor = false;
-    private boolean useSAXPptxExtractor = false;
-
     private boolean preferAlternateContentChoice = true;
 
     private boolean writeSelectHeadersInBody = false;
@@ -140,40 +137,6 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setIncludeHeadersAndFooters(boolean includeHeadersAndFooters) {
         this.includeHeadersAndFooters = includeHeadersAndFooters;
-    }
-
-    public boolean isUseSAXDocxExtractor() {
-        return useSAXDocxExtractor;
-    }
-
-    /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
-     * <p/>
-     * Default: <code>false</code> (classic DOM parser)
-     *
-     * @param useSAXDocxExtractor
-     */
-    public void setUseSAXDocxExtractor(boolean useSAXDocxExtractor) {
-        this.useSAXDocxExtractor = useSAXDocxExtractor;
-    }
-
-    public boolean isUseSAXPptxExtractor() {
-        return useSAXPptxExtractor;
-    }
-
-    /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
-     * <p/>
-     * Default: <code>false</code> (classic DOM parser)
-     *
-     * @param useSAXPptxExtractor
-     */
-    public void setUseSAXPptxExtractor(boolean useSAXPptxExtractor) {
-        this.useSAXPptxExtractor = useSAXPptxExtractor;
     }
 
     /**

@@ -60,7 +60,6 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
     private final ParseContext parseContext;
 
     SAXBasedMetadataExtractor(OPCPackage opcPackage, ParseContext parseContext) {
-        super(null);
         this.opcPackage = opcPackage;
         this.parseContext = parseContext;
     }

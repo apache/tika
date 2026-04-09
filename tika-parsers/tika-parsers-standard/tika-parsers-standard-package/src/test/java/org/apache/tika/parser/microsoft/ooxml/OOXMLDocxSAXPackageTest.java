@@ -23,32 +23,40 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
 
 /**
- * SAX-specific docx package tests.
+ * Docx package tests.
  */
-public class OOXMLDocxSAXPackageTest extends AbstractOOXMLDocxPackageTest {
+public class OOXMLDocxSAXPackageTest extends TikaTest {
 
-    @Override
-    ParseContext getParseContext() {
-        ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXDocxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-        return parseContext;
+    @Test
+    public void testAltFileMHTChunk() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testAltChunkMHT.docx");
+        assertEquals(3, metadataList.size());
+        assertContains("Example of a table",
+                metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testAltFileHTMLChunk() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testAltChunkHTML.docx");
+        assertEquals(2, metadataList.size());
+        assertContains("Example of a table",
+                metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
     @Test
     public void testEMFAssociatedWithAttachments() throws Exception {
         //TIKA-3968
         List<Metadata> metadataList =
-                getRecursiveMetadata("testWORD_EMFAndAttachments.docx", getParseContext());
+                getRecursiveMetadata("testWORD_EMFAndAttachments.docx");
 
         assertEquals("true", metadataList.get(1).get(EMFParser.EMF_ICON_ONLY));
         assertEquals("true", metadataList.get(3).get(EMFParser.EMF_ICON_ONLY));

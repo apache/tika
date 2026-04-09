@@ -93,6 +93,12 @@
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.poi</groupId>
+          <artifactId>poi-ooxml-lite</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- needed by jackcess -->
     <dependency>

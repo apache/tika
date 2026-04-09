@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.zip.ZipException;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
@@ -68,7 +67,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     //TODO: what else
             };
 
-    private final OPCPackage opcPackage;
     private final ParseContext context;
     private final Metadata metadata;
     private final CommentAuthors commentAuthors = new CommentAuthors();
@@ -76,10 +74,9 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     public SXSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
                                              XSLFEventBasedPowerPointExtractor extractor) {
-        super(context, extractor);
+        super(context, extractor.getPackage());
         this.metadata = metadata;
         this.context = context;
-        this.opcPackage = extractor.getPackage();
         for (String contentType : MAIN_STORY_PART_RELATIONS) {
             List<PackagePart> pps = opcPackage.getPartsByContentType(contentType);
             if (pps.size() > 0) {
@@ -87,12 +84,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 break;
             }
         }
-        //if mainDocument == null, throw exception
-    }
-
-    @Override
-    public MetadataExtractor getMetadataExtractor() {
-        return new SAXBasedMetadataExtractor(opcPackage, context);
     }
 
     /**

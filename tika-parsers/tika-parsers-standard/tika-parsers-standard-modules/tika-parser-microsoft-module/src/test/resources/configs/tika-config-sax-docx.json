@@ -1,10 +1,5 @@
 {
   "parsers": [
-    "default-parser",
-    {
-      "ooxml-parser": {
-        "useSAXDocxExtractor": true
-      }
-    }
+    "default-parser"
   ]
 }

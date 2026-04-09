@@ -20,17 +20,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
-import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
-import org.apache.poi.xssf.binary.XSSFBCommentsTable;
-import org.apache.poi.xssf.binary.XSSFBSharedStringsTable;
+import org.apache.poi.openxml4j.opc.PackagePartName;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.xssf.binary.XSSFBSheetHandler;
 import org.apache.poi.xssf.binary.XSSFBStylesTable;
 import org.apache.poi.xssf.eventusermodel.XSSFBReader;
-import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
-import org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -43,17 +43,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
-    public XSSFBExcelExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor,
+    public XSSFBExcelExtractorDecorator(ParseContext context, OPCPackage pkg,
                                         Locale locale) {
-        super(context, extractor, locale);
-    }
-
-    @Override
-    protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
-        //need to override this because setFormulasNotResults is not yet available
-        //for xlsb
-        //((XSSFBEventBasedExcelExtractor)extractor).setFormulasNotResults(false);
-        ((XSSFBEventBasedExcelExtractor) extractor).setLocale(locale);
+        super(context, pkg, locale);
     }
 
     @Override
@@ -67,15 +59,12 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
         super.getXHTML(handler, metadata, context);
     }
 
-    /**
-     * @see org.apache.poi.xssf.extractor.XSSFBEventBasedExcelExtractor#getText()
-     */
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        OPCPackage container = extractor.getPackage();
+        OPCPackage container = opcPackage;
 
-        XSSFBSharedStringsTable strings;
+        TikaXSSFBSharedStringsTable strings;
         XSSFBReader.SheetIterator iter;
         XSSFBReader xssfReader;
         XSSFBStylesTable styles;
@@ -87,7 +76,7 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             }
             styles = xssfReader.getXSSFBStylesTable();
             iter = (XSSFBReader.SheetIterator) xssfReader.getSheetsData();
-            strings = new XSSFBSharedStringsTable(container);
+            strings = new TikaXSSFBSharedStringsTable(container);
         } catch (OpenXML4JException e) {
             throw new IOException(e);
         }
@@ -99,24 +88,35 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             sheetParts.add(sheetPart);
 
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
-            XSSFBCommentsTable comments = iter.getXSSFBSheetComments();
 
-            // Start, and output the sheet name
+            // Parse comments with our own binary parser that avoids xmlbeans
+            TikaXSSFBCommentsTable tikaComments = parseBinaryComments(sheetPart);
+            if (tikaComments != null && tikaComments.hasComments()) {
+                metadata.set(Office.HAS_COMMENTS, true);
+            }
+
             xhtml.startElement("div");
             xhtml.element("h1", iter.getSheetName());
 
-            // Extract the main sheet contents
             xhtml.startElement("table");
             xhtml.startElement("tbody");
 
-            processSheet(sheetExtractor, comments, styles, strings, stream);
+            // Pass null for POI's comments table to avoid xmlbeans dependency.
+            // Comments are emitted separately after sheet processing.
+            XSSFBSheetHandler xssfbSheetHandler =
+                    new XSSFBSheetHandler(stream, styles, null, strings,
+                            sheetExtractor, formatter, false);
+            xssfbSheetHandler.parse();
 
             xhtml.endElement("tbody");
             xhtml.endElement("table");
 
-            // Output any headers and footers
-            // (Need to process the sheet to get them, so we can't
-            //  do the headers before the contents)
+            // Emit comments after the table (since we bypass POI's inline
+            // comment handling to avoid xmlbeans dependency)
+            if (tikaComments != null) {
+                tikaComments.emitAllComments(xhtml);
+            }
+
             for (String header : sheetExtractor.headers) {
                 extractHeaderFooter(header, xhtml);
             }
@@ -124,34 +124,40 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
                 extractHeaderFooter(footer, xhtml);
             }
             processDrawings(sheetPart, xhtml);
-
-            //for now dump sheet hyperlinks at bottom of page
-            //consider a double-pass of the inputstream to reunite hyperlinks with cells/textboxes
-            //step 1: extract hyperlink info from bottom of page
-            //step 2: process as we do now, but with cached hyperlink relationship info
             extractHyperLinks(sheetPart, xhtml);
-            // All done with this sheet
             xhtml.endElement("div");
         }
     }
 
+    private static final String RELATION_COMMENTS =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+
+    private TikaXSSFBCommentsTable parseBinaryComments(PackagePart sheetPart) {
+        try {
+            PackageRelationshipCollection rels =
+                    sheetPart.getRelationshipsByType(RELATION_COMMENTS);
+            if (rels.isEmpty()) {
+                return null;
+            }
+            PackageRelationship rel = rels.getRelationship(0);
+            PackagePartName partName =
+                    PackagingURIHelper.createPartName(rel.getTargetURI());
+            PackagePart commentsPart = rel.getPackage().getPart(partName);
+            if (commentsPart == null) {
+                return null;
+            }
+            try (InputStream is = commentsPart.getInputStream()) {
+                return new TikaXSSFBCommentsTable(is);
+            }
+        } catch (InvalidFormatException | IOException e) {
+            return null;
+        }
+    }
 
     @Override
     protected void extractHeaderFooter(String hf, XHTMLContentHandler xhtml) throws SAXException {
         if (hf.length() > 0) {
             xhtml.element("p", hf);
         }
-    }
-
-
-    private void processSheet(SheetContentsHandler sheetContentsExtractor,
-                              XSSFBCommentsTable comments, XSSFBStylesTable styles,
-                              XSSFBSharedStringsTable strings, InputStream sheetInputStream)
-            throws IOException, SAXException {
-
-        XSSFBSheetHandler xssfbSheetHandler =
-                new XSSFBSheetHandler(sheetInputStream, styles, comments, strings,
-                        sheetContentsExtractor, formatter, false);
-        xssfbSheetHandler.parse();
     }
 }
