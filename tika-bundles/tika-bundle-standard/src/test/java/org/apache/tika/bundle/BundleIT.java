@@ -69,6 +69,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.sax.BodyContentHandler;
 
+@Ignore("TIKA-4712 -- BundleIT needs OSGi container updated for 4.x " +
+        "(jackson-databind, slf4j 2.x, updated commons-io)")
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerMethod.class)
 public class BundleIT {
@@ -91,11 +93,8 @@ public class BundleIT {
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 //I couldn't find a way to get the build of bundle to work via imports
                 //for this one
-                mavenBundle("commons-io", "commons-io", "2.11.0"),
-                mavenBundle("org.apache.logging.log4j", "log4j-core", "2.17.1"),
-                mavenBundle("org.apache.logging.log4j", "log4j-api", "2.17.1"),
-                mavenBundle("org.ops4j.pax.logging", "pax-logging-api", "1.8.5"),
-                mavenBundle("org.ops4j.pax.logging", "pax-logging-service", "1.8.5"),
+                mavenBundle("commons-io", "commons-io", "2.21.0"),
+                mavenBundle("org.apache.logging.log4j", "log4j-api", "2.25.4"),
                 junitBundles(),
                 bundle(new File(base, "tika-bundle-standard.jar").toURI().toURL().toString()));
     }

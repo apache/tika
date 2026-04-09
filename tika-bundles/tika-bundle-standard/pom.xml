@@ -104,6 +104,13 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- after we migrate BundleIT to junit5, we can get rid of this -->
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- use non-log4j slf4j backend to prevent main classloader from loading log4j classes -->
     <dependency>
       <groupId>org.slf4j</groupId>
