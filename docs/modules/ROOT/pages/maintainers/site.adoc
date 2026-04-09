@@ -41,6 +41,18 @@ mvn antora:antora
 
 The generated site will be at `docs/target/site/`.
 
+To stamp the build with the current commit hash (shown on the home page),
+add `git-commit` to the attributes in `antora-playbook.yml`:
+
+[source,yaml]
+----
+asciidoc:
+  attributes:
+    git-commit: 'abc1234'
+----
+
+Or pass it on the command line when you have a playbook that supports CLI attributes.
+
 === Previewing the Site
 
 **Option 1: Python HTTP server (recommended)**
@@ -99,7 +111,29 @@ Documentation versions are managed through Git branches with the `docs/` prefix.
 
 The playbook (`antora-playbook.yml`) is configured to build all `docs/*` branches automatically.
 
-=== Publishing a New Release
+=== Publishing to the Site
+
+Use `build-docs.sh` with the `--publish` flag to build and copy to the site SVN checkout:
+
+[source,bash]
+----
+cd docs
+./build-docs.sh --publish /path/to/tika-site/publish
+
+# Then in the SVN checkout:
+cd /path/to/tika-site
+svn add publish/docs publish/_ --force
+svn commit -m "Publish 4.0.0-SNAPSHOT docs"
+----
+
+This builds the Antora site, stamps the git commit on the home page, and copies
+the output to the site with the correct directory layout:
+
+* `publish/docs/4.0.0-SNAPSHOT/` -- the documentation pages
+* `publish/_/` -- CSS, JS, fonts (shared across versions)
+* `publish/docs/index.html` -- redirect to latest version
+
+=== Publishing a Release
 
 When releasing a new version (e.g., 4.0.0):
 
@@ -116,14 +150,13 @@ sed -i "s/4.0.0-SNAPSHOT/4.0.0/" docs/antora.yml
 git commit -am "Set docs version to 4.0.0"
 git push origin docs/4.0.0
 
-# 4. Build the site
+# 4. Build and publish
 cd docs
-mvn antora:antora
+./build-docs.sh --publish /path/to/tika-site/publish
 
-# 5. Publish to SVN
-cp -r target/site/* ~/tika-site/4.x/
-cd ~/tika-site
-svn add 4.x --force
+# 5. Commit to SVN
+cd /path/to/tika-site
+svn add publish/docs publish/_ --force
 svn commit -m "Publish 4.0.0 docs"
 ----
 
@@ -145,9 +178,8 @@ git push origin docs/4.0.0
 
 # 4. Rebuild and republish
 cd docs
-mvn antora:antora
-cp -r target/site/* ~/tika-site/4.x/
-cd ~/tika-site
+./build-docs.sh --publish /path/to/tika-site/publish
+cd /path/to/tika-site
 svn commit -m "Update 4.0.0 docs"
 ----
 
