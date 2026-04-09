@@ -39,7 +39,7 @@ Configure digesters in the `parse-context` section of your tika-config.json.
 
 This example configures multiple digest algorithms:
 
-.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/configs/tika-config-commons-digests-basic.json[tika-config-commons-digests-basic.json]
+.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-commons-digests-basic.json[tika-config-commons-digests-basic.json]
 [source,json]
 ----
 {
@@ -59,7 +59,7 @@ This example configures multiple digest algorithms:
 
 For SHA3 algorithms, use the BouncyCastle digester:
 
-.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/configs/tika-config-bc-digests-multiple.json[tika-config-bc-digests-multiple.json]
+.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-bc-digests-multiple.json[tika-config-bc-digests-multiple.json]
 [source,json]
 ----
 {
@@ -79,7 +79,7 @@ For SHA3 algorithms, use the BouncyCastle digester:
 
 By default, digest values are encoded as lowercase hexadecimal. You can specify BASE32 or BASE64 encoding:
 
-.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/configs/tika-config-digests.json[tika-config-digests.json]
+.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-digests.json[tika-config-digests.json]
 [source,json]
 ----
 {
@@ -102,7 +102,7 @@ When processing documents with embedded content (e.g., a ZIP file with PDFs insi
 want to digest only the embedded documents, not the container. Set `skipContainerDocumentDigest`
 to `true`:
 
-.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/configs/tika-config-digests-skip-container.json[tika-config-digests-skip-container.json]
+.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-digests-skip-container.json[tika-config-digests-skip-container.json]
 [source,json]
 ----
 {
@@ -181,4 +181,4 @@ This computes a SHA256 digest of the document. The digest value appears in the m
 * link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigesterFactory.java[DigesterFactory] - Factory interface
 * link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigestDef.java[DigestDef] - Algorithm and encoding definition
 * link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/Digester.java[Digester] - Digester interface
-* link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/java/org/apache/tika/parser/digest/DigestConfigTest.java[DigestConfigTest] - Test examples
+* link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/java/org/apache/tika/parser/digest/DigestConfigTest.java[DigestConfigTest] - Test examples

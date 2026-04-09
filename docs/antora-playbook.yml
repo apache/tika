@@ -47,7 +47,7 @@ asciidoc:
     # Icons
     icons: font
     # Path attributes for includes
-    parser-examples: '../tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/config-examples'
+    parser-examples: '../tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples'
     server-examples: '../tika-server/tika-server-core/src/test/resources/config-examples'
     pipes-fs-examples: '../tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples'
 

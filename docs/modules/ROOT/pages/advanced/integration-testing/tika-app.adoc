@@ -33,9 +33,9 @@ unzip tika-app-4.0.0-SNAPSHOT.zip
 cd tika-app-4.0.0-SNAPSHOT
 
 # Get test files
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/testPDF.pdf .
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/test_recursive_embedded.docx .
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/testHTML.html .
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/testPDF.pdf .
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/test_recursive_embedded.docx .
+cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/testHTML.html .
 ----
 
 == Test Cases
