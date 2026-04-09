@@ -37,22 +37,26 @@ import java.util.regex.Pattern;
 import aQute.bnd.annotation.spi.ServiceConsumer;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
  * Supports both static service loading using the {@link ServiceLoader} mechanism (and via
- * <a href="https://docs.osgi.org/specification/osgi.cmpn/7.0.0/service.loader.html">OSGi Service Loader Mediator</a>) 
+ * <a href="https://docs.osgi.org/specification/osgi.cmpn/7.0.0/service.loader.html">OSGi Service Loader Mediator</a>)
  * as well as dynamic loading via OSGi service tracking (from the {@link TikaActivator} class).
- * However the Tika parsers don't register as regular OSGi services, 
- * so the dynamic loading is only used for detectors and parser services from non-Tika bundles.
  *
  * @since Apache Tika 0.9
  */
 @ServiceConsumer(Parser.class)
 @ServiceConsumer(Detector.class)
+@ServiceConsumer(EncodingDetector.class)
+@ServiceConsumer(LanguageDetector.class)
+@ServiceConsumer(MetadataFilter.class)
 public class ServiceLoader {
 
     /**

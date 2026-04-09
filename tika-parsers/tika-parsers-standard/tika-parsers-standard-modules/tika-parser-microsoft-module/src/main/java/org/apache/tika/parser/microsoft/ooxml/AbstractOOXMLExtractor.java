@@ -30,8 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.ooxml.POIXMLDocument;
-import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -45,7 +43,6 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
-import org.apache.poi.xwpf.usermodel.XWPFRelation;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -93,9 +90,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_ALTERNATE_FORMAT_CHUNK =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk";
 
+    private static final String PACK_OBJECT_REL_TYPE =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
+    private static final String OLE_OBJECT_REL_TYPE =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
+
     protected static final String[] EMBEDDED_RELATIONSHIPS =
             new String[]{RELATION_AUDIO, PackageRelationshipTypes.IMAGE_PART,
-                    POIXMLDocument.PACK_OBJECT_REL_TYPE, PackageRelationshipTypes.CORE_DOCUMENT,
+                    PACK_OBJECT_REL_TYPE, PackageRelationshipTypes.CORE_DOCUMENT,
                     RELATION_DIAGRAM_DATA};
     private static final String TYPE_OLE_OBJECT =
             "application/vnd.openxmlformats-officedocument.oleObject";
@@ -104,11 +106,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private final EmbeddedDocumentExtractor embeddedExtractor;
     private final ParseContext context;
     protected OfficeParserConfig config;
-    protected POIXMLTextExtractor extractor;
+    protected OPCPackage opcPackage;
 
-    public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
+    public AbstractOOXMLExtractor(ParseContext context, OPCPackage opcPackage) {
         this.context = context;
-        this.extractor = extractor;
+        this.opcPackage = opcPackage;
         embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         // This has already been set by OOXMLParser's call to configure()
@@ -117,17 +119,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     /**
-     * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getDocument()
-     */
-    public POIXMLDocument getDocument() {
-        return (POIXMLDocument) extractor.getDocument();
-    }
-
-    /**
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getMetadataExtractor()
      */
     public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor);
+        return new SAXBasedMetadataExtractor(opcPackage, context);
     }
 
     ParseContext getParseContext() {
@@ -173,7 +168,6 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private void handleThumbnail(ContentHandler handler, Metadata metadata) throws SAXException {
         try {
-            OPCPackage opcPackage = extractor.getPackage();
             for (PackageRelationship rel : opcPackage
                     .getRelationshipsByType(PackageRelationshipTypes.THUMBNAIL)) {
                 PackagePart tPart = opcPackage.getPart(rel);
@@ -274,7 +268,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         if (rel.getTargetMode() != TargetMode.INTERNAL) {
             // External target - emit as external reference for security analysis
             String type = rel.getRelationshipType();
-            if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
+            if (OLE_OBJECT_REL_TYPE.equals(type)) {
                 emitExternalRef(xhtml, "externalOleObject", targetURI.toString());
                 parentMetadata.set(Office.HAS_EXTERNAL_OLE_OBJECTS, true);
             } else if (PackageRelationshipTypes.IMAGE_PART.equals(type)) {
@@ -293,7 +287,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         }
         EmbeddedPartMetadata embeddedPartMetadata = embeddedPartMetadataMap.get(rel.getId());
         String type = rel.getRelationshipType();
-        if (POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type) &&
+        if (OLE_OBJECT_REL_TYPE.equals(type) &&
                 TYPE_OLE_OBJECT.equals(target.getContentType())) {
             handleEmbeddedOLE(target, xhtml, sourceDesc + rel.getId(), parentMetadata,
                     embeddedPartMetadata);
@@ -308,8 +302,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             }
         } else if (RELATION_MEDIA.equals(type) || RELATION_VIDEO.equals(type) ||
                 RELATION_AUDIO.equals(type) ||
-                POIXMLDocument.PACK_OBJECT_REL_TYPE.equals(type) ||
-                POIXMLDocument.OLE_OBJECT_REL_TYPE.equals(type)) {
+                PACK_OBJECT_REL_TYPE.equals(type) ||
+                OLE_OBJECT_REL_TYPE.equals(type)) {
             handleEmbeddedFile(target, xhtml, sourceDesc + rel.getId(),
                     embeddedPartMetadata,
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT);
@@ -566,7 +560,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         Map<String, String> linkedRelationships = new HashMap<>();
         try {
             PackageRelationshipCollection prc =
-                    bodyPart.getRelationshipsByType(XWPFRelation.HYPERLINK.getRelation());
+                    bodyPart.getRelationshipsByType(PackageRelationshipTypes.HYPERLINK_PART);
             for (int i = 0; i < prc.size(); i++) {
                 PackageRelationship pr = prc.getRelationship(i);
                 if (pr == null) {

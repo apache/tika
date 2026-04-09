@@ -141,6 +141,10 @@
             <!--  The file below and the _include entry may be removed once Tika targets OpenJDK 9.0 or above -->
             <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
             <Embed-Dependency>*;scope=compile;artifactId=
+              tika-parser-*|
+              tika-handler-boilerpipe|
+              tika-encoding-detector-*|
+              tika-langdetect-*|
               jakarta.activation|
               commons-compress|
               xz|

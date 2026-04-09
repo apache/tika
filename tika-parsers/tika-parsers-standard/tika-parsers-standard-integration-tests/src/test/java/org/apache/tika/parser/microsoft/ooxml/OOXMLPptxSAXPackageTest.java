@@ -16,17 +16,23 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.OfficeParserConfig;
+import java.util.List;
 
-public class OOXMLPptxSAXPackageTest extends AbstractOOXMLPptxPackageTest {
+import org.junit.jupiter.api.Test;
 
-    @Override
-    ParseContext getParseContext() {
-        ParseContext parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXPptxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-        return parseContext;
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+
+public class OOXMLPptxSAXPackageTest extends TikaTest {
+
+    @Test
+    public void testEmbeddedPDFInPPTX() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testPPT_EmbeddedPDF.pptx");
+        Metadata pdfMetadata1 = metadataList.get(4);
+        assertContains("Apache Tika", pdfMetadata1.get(TikaCoreProperties.TIKA_CONTENT));
+        Metadata pdfMetadata2 = metadataList.get(5);
+        assertContains("Hello World", pdfMetadata2.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

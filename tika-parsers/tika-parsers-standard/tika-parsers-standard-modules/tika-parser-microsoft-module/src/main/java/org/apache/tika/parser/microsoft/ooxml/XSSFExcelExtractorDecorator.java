@@ -26,7 +26,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
-import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -42,7 +41,6 @@ import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
-import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.apache.poi.xssf.usermodel.helpers.HeaderFooterHelper;
 import org.xml.sax.Attributes;
@@ -102,13 +100,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     protected Metadata metadata;
     protected ParseContext parseContext;
 
-    public XSSFExcelExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor,
+    public XSSFExcelExtractorDecorator(ParseContext context, OPCPackage pkg,
                                        Locale locale) {
-        super(context, extractor);
+        super(context, pkg);
 
         this.parseContext = context;
-        this.extractor = (XSSFEventBasedExcelExtractor) extractor;
-        configureExtractor(this.extractor, locale);
 
         if (locale == null) {
             formatter = new TikaExcelDataFormatter();
@@ -122,19 +118,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    protected void configureExtractor(POIXMLTextExtractor extractor, Locale locale) {
-        ((XSSFEventBasedExcelExtractor) extractor)
-                .setIncludeTextBoxes(config.isIncludeShapeBasedContent());
-        ((XSSFEventBasedExcelExtractor) extractor).setFormulasNotResults(false);
-        ((XSSFEventBasedExcelExtractor) extractor).setLocale(locale);
-        //given that we load our own shared strings table, setting:
-        //((XSSFEventBasedExcelExtractor)extractor).setConcatenatePhoneticRuns();
-        //does no good here.
-    }
-
     @Override
     public MetadataExtractor getMetadataExtractor() {
-        return new SAXBasedMetadataExtractor(extractor.getPackage(), parseContext);
+        return new SAXBasedMetadataExtractor(opcPackage, parseContext);
     }
 
     @Override
@@ -154,7 +140,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        OPCPackage container = extractor.getPackage();
+        OPCPackage container = opcPackage;
 
         XSSFSharedStringsShim stringsShim;
         XSSFReader.SheetIterator iter;
@@ -916,7 +902,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         //add main document so that macros can be extracted
         //by AbstractOOXMLExtractor
-        parts.addAll(extractor.getPackage()
+        parts.addAll(opcPackage
                 .getPartsByRelationshipType(PackageRelationshipTypes.CORE_DOCUMENT));
 
         return parts;
