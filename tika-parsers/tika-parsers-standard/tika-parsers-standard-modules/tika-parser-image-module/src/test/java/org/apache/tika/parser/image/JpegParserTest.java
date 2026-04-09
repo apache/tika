@@ -26,7 +26,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
@@ -36,10 +41,25 @@ import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
+@Isolated
+@ResourceLock(Resources.TIME_ZONE)
 public class JpegParserTest {
 
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
     private final Parser parser = new JpegParser();
+    private static TimeZone originalTimeZone;
+
+    @BeforeAll
+    static void init() {
+        // metadata-extractor 2.20.0 started making these parsed dates depend on the JVM default time zone;
+        // force GMT so the assertions remain deterministic across environments
+        originalTimeZone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+    @AfterAll
+    static void tearDown() {
+        TimeZone.setDefault(originalTimeZone);
+    }
 
     @Test
     public void testJPEG() throws Exception {
