@@ -49,7 +49,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
@@ -152,7 +151,7 @@ public class GDALParser implements Parser {
     private long timeoutMs = DEFAULT_TIMEOUT_MS;
 
     public GDALParser() {
-        setCommand("gdalinfo ${INPUT}");
+        setCommand("gdalinfo ${INPUT_FILE}");
     }
 
     public String getCommand() {
@@ -185,7 +184,7 @@ public class GDALParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        if (!ExternalParser.check("gdalinfo")) {
+        if (!ProcessUtils.checkCommand("gdalinfo")) {
             return;
         }
 

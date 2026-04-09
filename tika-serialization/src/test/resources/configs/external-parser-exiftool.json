@@ -2,8 +2,15 @@
   "parsers": [
     {
       "external-parser": {
-        "_mime-include": ["application/octet-stream"],
+        "_mime-include": [
+          "video/avi",
+          "video/mpeg",
+          "video/x-msvideo",
+          "video/mp4"
+        ],
         "commandLine": ["exiftool", "${INPUT_FILE}"],
+        "checkCommandLine": ["exiftool", "-ver"],
+        "checkErrorCodes": [126, 127],
         "contentSource": "none",
         "stdoutHandler": {
           "regex-capture-parser": {

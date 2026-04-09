@@ -29,13 +29,13 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 
 public class StringsParserTest extends TikaTest {
     public static boolean canRun() {
         String[] checkCmd = {new StringsParser().getDefaultConfig().getStringsPath() + getStringsProg(), "--version"};
-        return ExternalParser.check(checkCmd);
+        return ProcessUtils.checkCommand(checkCmd);
     }
 
     @Test

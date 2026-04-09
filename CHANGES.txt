@@ -29,6 +29,9 @@ Release 4.0.0-BETA1 - ???
 
    * Removed DigestingParser (TIKA-4607).
 
+   * Removed legacy ExternalParser; external parsers now require explicit
+     JSON configuration (TIKA-4707).
+
   OTHER CHANGES
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)

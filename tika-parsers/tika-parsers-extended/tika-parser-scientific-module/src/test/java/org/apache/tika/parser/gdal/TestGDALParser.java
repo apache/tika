@@ -28,8 +28,8 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Test harness for the GDAL parser.
@@ -39,7 +39,7 @@ public class TestGDALParser extends TikaTest {
     private boolean canRun() {
         String[] checkCmd = {"gdalinfo"};
         // If GDAL is not on the path, do not run the test.
-        return ExternalParser.check(checkCmd);
+        return ProcessUtils.checkCommand(checkCmd);
     }
 
     @Test
@@ -139,7 +139,7 @@ public class TestGDALParser extends TikaTest {
         // If the exit code is 1 (meaning FITS isn't supported by the installed version of
         // gdalinfo, don't run this test.
         String[] fitsCommand = {"gdalinfo", getResourceAsUrl(fitsFilename).getPath()};
-        assumeTrue(ExternalParser.check(fitsCommand, 1));
+        assumeTrue(ProcessUtils.checkCommand(fitsCommand, 1));
 
         String expectedAllgMin = "-7.319537E1";
         String expectedAtodcorr = "COMPLETE";
