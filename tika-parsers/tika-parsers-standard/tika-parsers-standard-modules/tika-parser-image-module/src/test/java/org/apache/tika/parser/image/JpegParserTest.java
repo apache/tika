@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -42,6 +44,17 @@ public class JpegParserTest extends TikaTest {
 
     static TimeZone CURR_TIME_ZONE = TimeZone.getDefault();
     private final Parser parser = new JpegParser();
+    static private TimeZone timezone;
+
+    @BeforeAll
+    static void init() {
+        timezone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT")); // need to set TZ since extractor 2.20.0, PR# 651
+    }
+    @AfterAll
+    static void tearDown() {
+        TimeZone.setDefault(timezone);
+    }
 
     @Test
     public void testJPEG() throws Exception {
