@@ -16,6 +16,9 @@
  */
 package org.apache.tika.config;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -24,6 +27,9 @@ import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -39,26 +45,31 @@ import org.apache.tika.parser.Parser;
  */
 public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer {
 
-    private ServiceTracker detectorTracker;
-
-    private ServiceTracker parserTracker;
+    private final List<ServiceTracker> trackers = new ArrayList<>();
 
     private BundleContext bundleContext;
-    //-----------------------------------------------------< BundleActivator >
 
     public void start(final BundleContext context) throws Exception {
         bundleContext = context;
 
-        detectorTracker = new ServiceTracker(context, Detector.class.getName(), this);
-        parserTracker = new ServiceTracker(context, Parser.class.getName(), this);
+        trackService(context, Detector.class);
+        trackService(context, Parser.class);
+        trackService(context, EncodingDetector.class);
+        trackService(context, LanguageDetector.class);
+        trackService(context, MetadataFilter.class);
+    }
 
-        detectorTracker.open();
-        parserTracker.open();
+    private void trackService(BundleContext context, Class<?> iface) {
+        ServiceTracker tracker = new ServiceTracker(context, iface.getName(), this);
+        trackers.add(tracker);
+        tracker.open();
     }
 
     public void stop(BundleContext context) throws Exception {
-        parserTracker.close();
-        detectorTracker.close();
+        for (ServiceTracker tracker : trackers) {
+            tracker.close();
+        }
+        trackers.clear();
     }
 
     public Object addingService(ServiceReference reference) {
