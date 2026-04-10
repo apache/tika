@@ -26,8 +26,8 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Test case for parsing unrar files.
@@ -40,7 +40,7 @@ public class UnrarParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEncryptedRar() throws Exception {
-        assumeTrue(ExternalParser.check("unrar"));
+        assumeTrue(ProcessUtils.checkCommand("unrar"));
         Parser parser = new UnrarParser();
 
         try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents-enc.rar")) {

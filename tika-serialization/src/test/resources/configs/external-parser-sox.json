@@ -1,0 +1,37 @@
+{
+  "parsers": [
+    {
+      "external-parser": {
+        "_mime-include": [
+          "audio/mpeg",
+          "audio/mp3",
+          "audio/wav",
+          "audio/x-wav",
+          "audio/ogg",
+          "audio/vorbis",
+          "audio/mp4"
+        ],
+        "commandLine": ["sox", "--info", "${INPUT_FILE}"],
+        "checkCommandLine": ["sox", "--version"],
+        "checkErrorCodes": [126, 127],
+        "returnStderr": true,
+        "maxStdErr": 10000,
+        "contentSource": "none",
+        "stderrHandler": {
+          "regex-capture-parser": {
+            "captureMap": {
+              "xmpDM:audioChannelType": "\\s*Channels.*:\\s+(\\d+)\\s*",
+              "xmpDM:audioSampleRate": "\\s*Sample Rate.*:\\s+(\\d+)\\s*",
+              "xmpDM:audioSampleType": "\\s*Precision.*:\\s+([\\d\\w-]+)\\s*",
+              "xmpDM:duration": "\\s*Duration.*:\\s+([\\d:\\.]+)\\s*",
+              "File Size": "\\s*File Size.*:\\s+([\\d\\w]+)\\s*",
+              "xmpDM:fileDataRate": "\\s*Bit Rate.*:\\s+([\\d\\w]+)\\s*",
+              "Sample Encoding": "\\s*Sample Encoding.*:\\s+(.*)\\s*",
+              "xmpDM:logComment": "\\s*Comment.*:\\s+(.*)\\s*"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

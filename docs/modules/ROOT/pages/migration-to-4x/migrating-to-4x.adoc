@@ -120,10 +120,16 @@ WARNING: The configuration options for `PDFParser` and `TesseractOCRParser` have
 significantly in 4.x. The automatic converter will migrate your parameter names, but you
 should review the updated documentation to ensure your configuration is optimal.
 
-See:
+See the xref:configuration/index.adoc[Configuration] section for full details, including:
 
-* xref:configuration/parsers/pdf-parser.adoc[PDFParser Configuration] - Updated options for PDF parsing
-* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser Configuration] - Updated OCR options
+* xref:configuration/parsers/pdf-parser.adoc[PDFParser Configuration]
+* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser Configuration]
+* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR (In-Process) Configuration]
+* xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
+* xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]
+
+For the general serialization model and how JSON configuration works, see
+xref:developers/serialization.adoc[Serialization and Configuration].
 
 === Full Configuration Example
 
@@ -147,8 +153,64 @@ a full table of changes and code migration examples.
 
 == API Changes
 
-// TODO: Document API changes
+=== TikaConfig replaced by TikaLoader
+
+`TikaConfig` has been removed. Use `TikaLoader` from `tika-serialization` instead.
+
+**3.x:**
+[source,java]
+----
+TikaConfig config = new TikaConfig(getClass().getClassLoader());
+Parser parser = config.getParser();
+Detector detector = config.getDetector();
+AutoDetectParser autoDetect = new AutoDetectParser(config);
+----
+
+**4.x:**
+[source,java]
+----
+// Default configuration (SPI-discovered components)
+TikaLoader loader = TikaLoader.loadDefault(getClass().getClassLoader());
+
+// Or from a JSON config file
+TikaLoader loader = TikaLoader.load(Path.of("tika-config.json"));
+
+// Access components
+Parser parser = loader.loadParsers();
+Detector detector = loader.loadDetectors();
+Parser autoDetect = loader.loadAutoDetectParser();
+ParseContext context = loader.loadParseContext();
+----
+
+NOTE: `TikaLoader` is in the `tika-serialization` module. Add `tika-serialization`
+as a dependency if you were previously only depending on `tika-core`.
+See xref:developers/serialization.adoc[Serialization and Configuration] for
+the full `TikaLoader` API.
+
+For simple use cases, the `Tika` facade and `DefaultParser` still work without
+`TikaLoader`:
+
+[source,java]
+----
+// Simple facade (unchanged from 3.x)
+Tika tika = new Tika();
+String text = tika.parseToString(file);
+
+// Direct parser use (unchanged from 3.x)
+Parser parser = new DefaultParser();
+----
+
+=== ExternalParser
+
+The legacy `ExternalParser` and `CompositeExternalParser` have been removed.
+External parsers must now be explicitly configured via JSON. See
+xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
+for details.
 
 == Deprecations and Removals
 
-// TODO: Document deprecated and removed features
+* `TikaConfig` -- replaced by `TikaLoader`
+* `CompositeExternalParser` -- external parsers now require explicit JSON configuration
+* `ExternalParsersFactory` and XML-based external parser auto-discovery
+* DOM-based OOXML extractors (`XWPFWordExtractorDecorator`, `XSLFPowerPointExtractorDecorator`)
+  -- SAX-based extractors are now the only implementation

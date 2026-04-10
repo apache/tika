@@ -61,13 +61,13 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.xml.XMLProfiler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
 public class PDFParserTest extends TikaTest {
@@ -94,7 +94,7 @@ public class PDFParserTest extends TikaTest {
         if (hasPoppler != null) {
             return hasPoppler;
         }
-        hasPoppler = ExternalParser.check(new String[]{"pdftoppm", "-v"});
+        hasPoppler = ProcessUtils.checkCommand(new String[]{"pdftoppm", "-v"});
         return hasPoppler;
     }
 

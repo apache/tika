@@ -221,8 +221,8 @@ Training performs two passes:
 2. **Calibration pass** — re-scores training sentences to compute per-language
    μ and σ (Welford's online algorithm), stored for z-score computation at runtime.
 
-The corpus can be in Wikipedia dump format (`corpusDir/{code}/sentences.txt`)
-or flat format (`corpusDir/{code}` with one sentence per line).
+The corpus can be in Wikipedia dump format (`corpusDir/\{code}/sentences.txt`)
+or flat format (`corpusDir/\{code}` with one sentence per line).
 Use `--max-per-lang N` (default 500,000) to cap sentences per language.
 
 == Evaluation Tools

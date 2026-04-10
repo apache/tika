@@ -55,10 +55,26 @@ Never allow untrusted users to configure command paths or arguments.
 4. **Audit command configuration**: Regularly review configured external commands and
    their arguments.
 
+=== ExternalParser-Specific Risks
+
+* **checkCommandLine runs at type-query time**: If configured, the check command
+  executes the first time `getSupportedTypes()` is called -- not at parse time.
+  This means merely querying which parsers are available can trigger process execution.
+
+* **stderr information leakage**: External programs often write file paths, system
+  usernames, version strings, and internal errors to stderr. By default,
+  `returnStderr` is `false` to prevent this data from leaking into metadata.
+  If you enable `returnStderr`, be aware that the raw stderr content will be
+  stored in the document's metadata and may be visible to end users.
+
+* **Buffer limits**: The `maxStdOut` and `maxStdErr` settings control how much
+  process output is captured in memory. Set these to reasonable values for your
+  deployment to prevent memory exhaustion from misbehaving external programs.
+
 === Affected Components
 
 * `FileCommandDetector`: Uses the system `file` command for MIME type detection
-* `ExternalParser`: Executes arbitrary external programs to extract content
+* `ExternalParser`: Executes configured external programs to extract content
 * `ExternalEmbedder`: Uses external tools to embed content
 
 == Credential Handling

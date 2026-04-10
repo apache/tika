@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
 public class DWGParserConfig implements Serializable, Initializable {
@@ -62,7 +62,7 @@ public class DWGParserConfig implements Serializable, Initializable {
 
         // Try running DWGRead from there, and see if it exists + works
         String[] checkCmd = { dwgRead };
-        boolean hasDwgRead = ExternalParser.check(checkCmd);
+        boolean hasDwgRead = ProcessUtils.checkCommand(checkCmd);
         LOG.debug("hasDwgRead (path: " + Arrays.toString(checkCmd) + "): " + hasDwgRead);
         return hasDwgRead;
     }

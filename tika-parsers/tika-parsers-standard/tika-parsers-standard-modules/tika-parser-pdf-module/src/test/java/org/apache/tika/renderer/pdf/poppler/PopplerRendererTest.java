@@ -34,10 +34,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.utils.ProcessUtils;
 
 public class PopplerRendererTest {
 
@@ -45,7 +45,7 @@ public class PopplerRendererTest {
 
     @BeforeAll
     static void checkPoppler() {
-        hasPoppler = ExternalParser.check(new String[]{"pdftoppm", "-v"});
+        hasPoppler = ProcessUtils.checkCommand(new String[]{"pdftoppm", "-v"});
     }
 
     @Test

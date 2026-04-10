@@ -1,0 +1,245 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Fetchers
+
+Fetchers retrieve document bytes from a source. Each fetcher is identified by
+its component name and an `id` that is referenced by the pipes iterator.
+
+== File System Fetcher (`file-system-fetcher`)
+
+Reads files from a local or mounted filesystem.
+
+**Module:** `tika-pipes-file-system`
+
+[source,json,subs=none]
+----
+include::example$pipes-fs-fetcher.json[]
+----
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Base directory. Fetch keys are resolved relative to this path.
+
+|`extractFileSystemMetadata`
+|`false`
+|Extract file created/modified timestamps and size into metadata.
+
+|`allowAbsolutePaths`
+|`false`
+|Allow absolute fetch keys when `basePath` is not set.
+|===
+
+== S3 Fetcher (`s3-fetcher`)
+
+Fetches objects from Amazon S3.
+
+**Module:** `tika-pipes-s3`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|S3 bucket name.
+
+|`region`
+|_required_
+|AWS region (e.g., `us-east-1`).
+
+|`credentialsProvider`
+|`profile`
+|Credentials type: `profile`, `static`, `instance`.
+
+|`profile`
+|`default`
+|AWS profile name (when using `profile` credentials).
+
+|`accessKey` / `secretKey`
+|_none_
+|Static credentials (when using `static` credentials).
+
+|`prefix`
+|_none_
+|S3 key prefix.
+
+|`spoolToTemp`
+|`false`
+|Spool object to a temp file before parsing.
+
+|`extractUserMetadata`
+|`false`
+|Extract S3 user metadata.
+
+|`maxLength`
+|_unlimited_
+|Maximum object size to fetch.
+|===
+
+== HTTP Fetcher (`http-fetcher`)
+
+Fetches documents from HTTP/HTTPS URLs.
+
+**Module:** `tika-pipes-http`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`userName`
+|_none_
+|Basic auth username.
+
+|`password`
+|_none_
+|Basic auth password.
+
+|`connectTimeoutMillis`
+|`30000`
+|Connection timeout.
+
+|`socketTimeoutMillis`
+|`120000`
+|Socket read timeout.
+
+|`maxConnections`
+|`200`
+|Maximum concurrent connections.
+
+|`userAgent`
+|_default_
+|HTTP User-Agent header.
+|===
+
+== GCS Fetcher (`gcs-fetcher`)
+
+Fetches objects from Google Cloud Storage.
+
+**Module:** `tika-pipes-gcs`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`projectId`
+|_required_
+|GCP project ID.
+
+|`bucket`
+|_required_
+|GCS bucket name.
+
+|`prefix`
+|_none_
+|Key prefix.
+
+|`spoolToTemp`
+|`false`
+|Spool to temp file before parsing.
+
+|`extractUserMetadata`
+|`false`
+|Extract GCS user metadata.
+|===
+
+== Azure Blob Fetcher (`az-blob-fetcher`)
+
+Fetches blobs from Azure Blob Storage.
+
+**Module:** `tika-pipes-az-blob`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`sasToken`
+|_required_
+|Shared Access Signature token.
+
+|`endpoint`
+|_required_
+|Azure storage endpoint URL.
+
+|`container`
+|_required_
+|Container name.
+
+|`prefix`
+|_none_
+|Blob prefix.
+
+|`extractUserMetadata`
+|`false`
+|Extract Azure user metadata.
+|===
+
+== Google Drive Fetcher (`google-drive-fetcher`)
+
+Fetches files from Google Drive via the Drive API.
+
+**Module:** `tika-pipes-google-drive`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`serviceAccountCredentialsPath`
+|_required_
+|Path to GCP service account JSON key file.
+
+|`impersonatedUser`
+|_none_
+|User email to impersonate (for domain-wide delegation).
+|===
+
+== Microsoft Graph Fetcher (`microsoft-graph-fetcher`)
+
+Fetches files from Microsoft 365 (OneDrive, SharePoint) via the Graph API.
+
+**Module:** `tika-pipes-microsoft-graph`
+
+== Atlassian JWT Fetcher (`atlassian-jwt-fetcher`)
+
+Fetches content from Atlassian products using JWT authentication.
+
+**Module:** `tika-pipes-atlassian-jwt`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`sharedSecret`
+|_required_
+|JWT shared secret.
+
+|`issuer`
+|_required_
+|JWT issuer / app key.
+
+|`connectTimeoutMillis`
+|`30000`
+|Connection timeout.
+
+|`socketTimeoutMillis`
+|`120000`
+|Socket read timeout.
+|===
