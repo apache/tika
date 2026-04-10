@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -44,7 +43,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.external.CompositeExternalParser;
 import org.apache.tika.parser.ogg.FlacParser;
 import org.apache.tika.parser.ogg.OpusParser;
 import org.apache.tika.parser.ogg.VorbisParser;
@@ -408,12 +406,6 @@ public class AutoDetectParserTest extends TikaTest {
         }
     }
 
-    @Test
-    @Disabled("TIKA-4712 -- CompositeExternalParser SPI registration needs rework")
-    public void testExternalParserIsLoaded() {
-        Parser p = find((CompositeParser) AUTO_DETECT_PARSER, CompositeExternalParser.class);
-        assertNotNull(p);
-    }
 
     @Test
     public void testWriteLimit() throws Exception {

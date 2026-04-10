@@ -39,8 +39,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
 public class DWGParserTest extends TikaTest {
@@ -53,7 +53,7 @@ public class DWGParserTest extends TikaTest {
 
         // Try running DWGRead from there, and see if it exists + works
         String[] checkCmd = { dwgRead };
-        return ExternalParser.check(checkCmd);
+        return ProcessUtils.checkCommand(checkCmd);
 
     }
     @Test

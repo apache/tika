@@ -32,6 +32,9 @@ Release 4.0.0-BETA1 - ???
    * tika-parsers-standard-package is now a pom, not a jar.
      Users must add <type>pom</type> in Maven or @pom in Gradle (TIKA-4712).
 
+   * Removed legacy ExternalParser; external parsers now require explicit
+     JSON configuration (TIKA-4707).
+
   OTHER CHANGES
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)

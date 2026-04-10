@@ -23,9 +23,14 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ProcessUtils {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ProcessUtils.class);
 
     private static final ConcurrentHashMap<String, Process> PROCESS_MAP = new ConcurrentHashMap<>();
 
@@ -217,6 +222,75 @@ public class ProcessUtils {
             }
         }
 
+    }
+
+    /**
+     * Checks to see if the command can be run. Typically used with
+     * something like "myapp --version" to check to see if "myapp"
+     * is installed and on the path.
+     *
+     * @param checkCmd   The check command to run
+     * @param errorValue What is considered an error value? Default is 127 (command not found).
+     * @return true if the command ran successfully (exit code not in errorValue list)
+     */
+    public static boolean checkCommand(String checkCmd, int... errorValue) {
+        return checkCommand(new String[]{checkCmd}, errorValue);
+    }
+
+    /**
+     * Checks to see if the command can be run. Typically used with
+     * something like {@code new String[]{"myapp", "--version"}} to check to see if "myapp"
+     * is installed and on the path.
+     *
+     * @param checkCmd   The check command to run
+     * @param errorValue What is considered an error value? Default is 127 (command not found).
+     * @return true if the command ran successfully (exit code not in errorValue list)
+     */
+    public static boolean checkCommand(String[] checkCmd, int... errorValue) {
+        if (errorValue.length == 0) {
+            errorValue = new int[]{127};
+        }
+
+        Process process = null;
+        try {
+            process = Runtime.getRuntime().exec(checkCmd);
+            StreamGobbler outGobbler = new StreamGobbler(process.getInputStream(), 0);
+            StreamGobbler errGobbler = new StreamGobbler(process.getErrorStream(), 0);
+            Thread outThread = new Thread(outGobbler);
+            Thread errThread = new Thread(errGobbler);
+            outThread.start();
+            errThread.start();
+            boolean finished = process.waitFor(60000, TimeUnit.MILLISECONDS);
+            if (!finished) {
+                throw new TimeoutException();
+            }
+            outThread.join(1000);
+            errThread.join(1000);
+            int result = process.exitValue();
+            LOG.debug("exit value for {}: {}", checkCmd[0], result);
+            for (int err : errorValue) {
+                if (result == err) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (IOException | InterruptedException | TimeoutException e) {
+            LOG.debug("exception trying to run " + checkCmd[0], e);
+            return false;
+        } catch (SecurityException se) {
+            throw se;
+        } catch (Error err) {
+            if (err.getMessage() != null && (err.getMessage().contains("posix_spawn") ||
+                    err.getMessage().contains("UNIXProcess"))) {
+                LOG.debug("(TIKA-1526): exception trying to run: " + checkCmd[0], err);
+                return false;
+            }
+            throw err;
+        } finally {
+            if (process != null) {
+                process.destroyForcibly();
+            }
+        }
     }
 
 }

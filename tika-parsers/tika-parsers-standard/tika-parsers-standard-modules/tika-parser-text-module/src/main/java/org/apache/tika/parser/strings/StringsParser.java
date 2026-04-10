@@ -49,8 +49,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.SystemUtils;
 
 /**
@@ -146,7 +146,7 @@ public class StringsParser implements Parser, Initializable {
 
         String[] checkCmd = {stringsProg, "--version"};
         try {
-            stringsPresent = ExternalParser.check(checkCmd);
+            stringsPresent = ProcessUtils.checkCommand(checkCmd);
             if (!stringsPresent) {
                 return;
             }
@@ -157,7 +157,7 @@ public class StringsParser implements Parser, Initializable {
                                 "/dev/null"};
                 int[] errorValues =
                         {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
-                hasEncodingOption = ExternalParser.check(checkOpt, errorValues);
+                hasEncodingOption = ProcessUtils.checkCommand(checkOpt, errorValues);
             }
         } catch (NoClassDefFoundError ncdfe) {
             // This happens under OSGi + Fork Parser - see TIKA-1507

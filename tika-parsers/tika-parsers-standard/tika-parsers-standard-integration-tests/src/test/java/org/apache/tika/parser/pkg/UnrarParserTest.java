@@ -27,7 +27,7 @@ import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.utils.ProcessUtils;
 
 
 /**
@@ -41,7 +41,7 @@ public class UnrarParserTest extends AbstractPkgTest {
      */
     @Test
     public void testEmbedded() throws Exception {
-        assumeTrue(ExternalParser.check("unrar"));
+        assumeTrue(ProcessUtils.checkCommand("unrar"));
 
         // Expected embedded resources in test-documents.rar file.
         String[] expectedResources = { "testHTML.html", "testEXCEL.xls", "testOpenOffice2.odt", "testPDF.pdf",

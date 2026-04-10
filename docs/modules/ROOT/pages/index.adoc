@@ -41,3 +41,7 @@ xref:using-tika/index.adoc[Using Tika] to choose your integration method.
 
 Apache Tika is an Apache Software Foundation project, formerly a subproject of Apache Lucene.
 
+ifdef::git-commit[]
+[.small]#Built from commit: `{git-commit}`#
+endif::[]
+
