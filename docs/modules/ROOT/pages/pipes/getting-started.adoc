@@ -1,0 +1,135 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Getting Started with Tika Pipes
+
+This guide walks through a complete working example: reading files from
+a directory, parsing them, and writing JSON metadata to an output directory.
+
+== Quick Start with tika-app
+
+The simplest way to use Tika Pipes is through `tika-app`:
+
+[source,bash]
+----
+java -jar tika-app.jar -i /data/input -o /data/output
+----
+
+This recursively processes all files in `/data/input` and writes one `.json`
+file per document to `/data/output`. Each JSON file contains the extracted
+metadata and text content.
+
+=== Common Options
+
+[source,bash]
+----
+# Use 4 parallel forked processes
+java -jar tika-app.jar -i /data/input -o /data/output -n 4
+
+# Set memory limit per forked process
+java -jar tika-app.jar -i /data/input -o /data/output -n 4 -X 512m
+
+# Set parse timeout (milliseconds)
+java -jar tika-app.jar -i /data/input -o /data/output -T 120000
+
+# Extract plain text only (no HTML)
+java -jar tika-app.jar -i /data/input -o /data/output --handler t
+
+# Recursively unpack all embedded documents
+java -jar tika-app.jar -i /data/input -o /data/output -Z
+----
+
+Handler types: `t` (text), `h` (html), `x` (xml), `m` (markdown), `b` (body), `i` (ignore/metadata only).
+
+== JSON Configuration
+
+For more control, create a JSON config file. Here is a complete filesystem-to-filesystem
+pipeline:
+
+[source,json,subs=none]
+----
+include::example$pipes-fs-pipeline.json[]
+----
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples/file-system-pipeline.json[View source on GitHub]
+
+Run it with:
+
+[source,bash]
+----
+java -jar tika-app.jar --config tika-config.json -i /data/input -o /data/output
+----
+
+NOTE: The `-i` and `-o` flags override the `basePath` values in the config when used
+with tika-app. The config file is useful for setting other options like `extractFileSystemMetadata`,
+`onExists`, and `prettyPrint`.
+
+== How It Works
+
+A Tika Pipes pipeline has four components:
+
+1. **Pipes Iterator** -- enumerates the documents to process (e.g., walk a directory, list an S3 bucket, query a database)
+2. **Fetcher** -- retrieves each document's bytes (e.g., read from filesystem, download from S3)
+3. **Parsers** -- extract text and metadata (runs in a forked JVM for robustness)
+4. **Emitter** -- writes the results (e.g., JSON to filesystem, index to Elasticsearch)
+
+[source]
+----
+Iterator --> Fetcher --> [forked JVM: Parse] --> Emitter
+----
+
+Each parse runs in an isolated forked process with configurable timeouts and memory
+limits. If a parse hangs or crashes, only that forked process is affected -- the
+pipeline continues with the remaining documents.
+
+== Pipeline Configuration Options
+
+The `pipes` section controls the pipeline behavior:
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`numClients`
+|`4`
+|Number of parallel forked parse processes
+
+|`parseMode`
+|`RMETA`
+|Output mode: `RMETA` (full recursive metadata), `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`
+
+|`socketTimeoutMs`
+|`60000`
+|Maximum time (ms) for a single parse operation
+
+|`maxFilesProcessedPerProcess`
+|`10000`
+|Restart forked processes after this many files (prevents memory leaks)
+
+|`onParseException`
+|`EMIT`
+|What to do on parse failure: `EMIT` (emit error metadata), `SKIP`
+|===
+
+See xref:pipes/parse-modes.adoc[Parse Modes] and xref:pipes/timeouts.adoc[Timeouts]
+for details.
+
+== Next Steps
+
+* xref:pipes/fetchers.adoc[Fetchers] -- all available document sources
+* xref:pipes/emitters.adoc[Emitters] -- all available output destinations
+* xref:pipes/iterators.adoc[Iterators] -- all available document enumeration methods
+* xref:pipes/reporters.adoc[Reporters] -- track processing status
