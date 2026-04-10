@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -681,5 +682,13 @@ public class WordParserTest extends TikaTest {
         assertEquals("true", m.get(Office.HAS_HIDDEN_TEXT));
         assertEquals("true", m.get(Office.HAS_TRACK_CHANGES));
         assertEquals("true", m.get(Office.HAS_COMMENTS));
+    }
+
+    @Test
+    public void testNoFalsePositiveHasComments() throws Exception {
+        // TIKA-4718: POI returns empty strings from getCommentsText() for .doc files
+        // without real comments. Verify we don't falsely report HAS_COMMENTS.
+        Metadata m = getRecursiveMetadata("testWORD.doc").get(0);
+        assertNull(m.get(Office.HAS_COMMENTS), "testWORD.doc should not have comments");
     }
 }
