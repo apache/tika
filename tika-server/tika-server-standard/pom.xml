@@ -37,6 +37,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
       <version>${project.version}</version>
+      <type>pom</type>
       <!-- this is brought in by tika-server-core. Don't duplicate -->
       <exclusions>
         <exclusion>

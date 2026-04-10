@@ -35,6 +35,7 @@
   <modules>
     <module>tika-parsers-standard-modules</module>
     <module>tika-parsers-standard-package</module>
+    <module>tika-parsers-standard-integration-tests</module>
   </modules>
   <build>
     <pluginManagement>
@@ -88,6 +89,7 @@
             <inputExclude>tika-parsers-standard-modules/tika-parser-pkg-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
             <inputExclude>tika-parsers-standard-modules/tika-parser-miscoffice-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
             <inputExclude>tika-parsers-standard-package/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parsers-standard-integration-tests/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
           </inputExcludes>
         </configuration>
       </plugin>

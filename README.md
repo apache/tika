@@ -38,6 +38,7 @@ java -jar tika-app-*.jar --text document.pdf
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers-standard-package</artifactId>
     <version>4.x.y</version>
+    <type>pom</type>
 </dependency>
 ```
 
@@ -152,6 +153,7 @@ If you use Apache Maven:
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
+      <type>pom</type>
       <!-- version not required since BOM included -->
     </dependency>
   </dependencies>
@@ -165,7 +167,7 @@ dependencies {
   implementation(platform("org.apache.tika:tika-bom:4.x.y"))
 
   // version not required since bom (platform in Gradle terms)
-  implementation("org.apache.tika:tika-parsers-standard-package")
+  implementation("org.apache.tika:tika-parsers-standard-package@pom")
 }
 ```
 

@@ -149,6 +149,7 @@
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parsers-standard-package</artifactId>
         <version>${revision}</version>
+        <type>pom</type>
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>

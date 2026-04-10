@@ -139,6 +139,7 @@
             <inputExclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-pkg-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
             <inputExclude>tika-parsers-standard/tika-parsers-standard-modules/tika-parser-xml-module/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
             <inputExclude>tika-parsers-standard/tika-parsers-standard-package/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
+            <inputExclude>tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/**</inputExclude> <!-- already checked -->
             <inputExclude>tika-parsers-ml/tika-parser-nlp-module/**</inputExclude> <!-- already checked -->
           </inputExcludes>
         </configuration>
