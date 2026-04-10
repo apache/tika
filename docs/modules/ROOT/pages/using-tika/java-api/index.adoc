@@ -24,9 +24,49 @@ This section covers using Apache Tika programmatically in your Java applications
 Tika can be embedded directly into your Java applications as a library. This gives you
 full control over parsing, detection, and configuration.
 
-However, for most use cases we recommend using xref:using-tika/server/index.adoc[tika-server]
-or xref:using-tika/grpc/index.adoc[tika-grpc] instead. See
-xref:using-tika/java-api/getting-started.adoc[Getting Started] for guidance on choosing the right approach.
+IMPORTANT: Some file formats can trigger excessive memory use, infinite loops, or JVM
+crashes in the underlying parsing libraries. For production systems processing untrusted
+files, use xref:pipes/index.adoc[Tika Pipes] which runs each parse in a forked JVM with
+timeouts and memory limits. Alternatively, xref:using-tika/server/index.adoc[tika-server]
+and xref:using-tika/grpc/index.adoc[tika-grpc] provide the same robustness as a service.
+See xref:advanced/robustness.adoc[Robustness] for details.
+
+== Dependencies
+
+Add the following to your `pom.xml`:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers-standard-package</artifactId>
+    <version>{tika-version}</version>
+</dependency>
+----
+
+This pulls in `tika-core` and all standard parsers (PDF, Office, HTML, etc.).
+
+If you only need detection (no parsing) or want to select parsers individually:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-core</artifactId>
+    <version>{tika-version}</version>
+</dependency>
+----
+
+To use `TikaLoader` for JSON-based configuration, also add:
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-serialization</artifactId>
+    <version>{tika-version}</version>
+</dependency>
+----
 
 == Parsers
 
@@ -165,14 +205,15 @@ container detection becomes available.
 
 [source,java]
 ----
-TikaConfig tika = new TikaConfig();
+TikaLoader loader = TikaLoader.loadDefault();
+Detector detector = loader.loadDetectors();
 ParseContext parseContext = new ParseContext();
 
 for (Path p : myListOfPaths) {
     Metadata metadata = new Metadata();
 
     try (TikaInputStream stream = TikaInputStream.get(p, metadata)) {
-        MediaType mimetype = tika.getDetector().detect(stream, metadata, parseContext);
+        MediaType mimetype = detector.detect(stream, metadata, parseContext);
         System.out.println("File " + p + " is " + mimetype);
     }
 }

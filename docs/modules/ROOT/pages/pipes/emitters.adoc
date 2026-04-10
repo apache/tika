@@ -1,0 +1,220 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Emitters
+
+Emitters write parsed results to a destination. Each emitter is identified by
+its component name and an `id` that is referenced by the pipes iterator.
+
+== File System Emitter (`file-system-emitter`)
+
+Writes parsed metadata as JSON files to a local or mounted filesystem.
+
+**Module:** `tika-pipes-file-system`
+
+[source,json,subs=none]
+----
+include::example$pipes-fs-emitter.json[]
+----
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Base output directory.
+
+|`fileExtension`
+|`json`
+|Extension for output files.
+
+|`onExists`
+|`EXCEPTION`
+|Behavior when output file exists: `SKIP`, `REPLACE`, `EXCEPTION`.
+
+|`prettyPrint`
+|`false`
+|Pretty-print JSON output.
+|===
+
+== Elasticsearch Emitter (`es-emitter`)
+
+Sends parsed documents to Elasticsearch via the `_bulk` API. Uses plain HTTP --
+no dependency on the ES Java client.
+
+**Module:** `tika-pipes-es`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`esUrl`
+|_required_
+|Full URL including index (e.g., `https://localhost:9200/my-index`).
+
+|`idField`
+|`_id`
+|Metadata field used as the document `_id`.
+
+|`apiKey`
+|_none_
+|Base64-encoded `id:api_key` for authentication.
+
+|`attachmentStrategy`
+|`SEPARATE_DOCUMENTS`
+|`SEPARATE_DOCUMENTS` or `PARENT_CHILD`.
+
+|`updateStrategy`
+|`OVERWRITE`
+|`OVERWRITE` (full replace) or `UPSERT` (field-level merge).
+
+|`embeddedFileFieldName`
+|`embedded`
+|Join-field name for `PARENT_CHILD` mode.
+|===
+
+== OpenSearch Emitter (`opensearch-emitter`)
+
+Sends documents to OpenSearch. Configured identically to the ES emitter
+but uses `openSearchUrl` instead of `esUrl`.
+
+**Module:** `tika-pipes-opensearch`
+
+== S3 Emitter (`s3-emitter`)
+
+Writes parsed metadata as JSON objects to Amazon S3.
+
+**Module:** `tika-pipes-s3`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|S3 bucket name.
+
+|`region`
+|_required_
+|AWS region.
+
+|`prefix`
+|_none_
+|S3 key prefix for output objects.
+
+|`credentialsProvider`
+|`profile`
+|Credentials type: `profile`, `static`, `instance`.
+
+|`fileExtension`
+|`json`
+|File extension for output keys.
+|===
+
+== GCS Emitter (`gcs-emitter`)
+
+Writes parsed metadata to Google Cloud Storage.
+
+**Module:** `tika-pipes-gcs`
+
+== Azure Blob Emitter (`az-blob-emitter`)
+
+Writes parsed metadata to Azure Blob Storage.
+
+**Module:** `tika-pipes-az-blob`
+
+== Solr Emitter (`solr-emitter`)
+
+Indexes parsed documents into Apache Solr.
+
+**Module:** `tika-pipes-solr`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`solrCollection`
+|_required_
+|Solr collection name.
+
+|`solrUrls`
+|_required_
+|List of Solr URLs.
+
+|`idField`
+|`id`
+|Field name for document ID.
+
+|`commitWithin`
+|`-1`
+|Milliseconds before auto-commit (-1 = server default).
+
+|`attachmentStrategy`
+|`SEPARATE_DOCUMENTS`
+|How to handle embedded documents.
+|===
+
+== JDBC Emitter (`jdbc-emitter`)
+
+Writes parsed metadata to a SQL database via JDBC.
+
+**Module:** `tika-pipes-jdbc`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`connection`
+|_required_
+|JDBC connection string.
+
+|`insert`
+|_required_
+|SQL INSERT statement with `?` placeholders.
+
+|`keys`
+|_required_
+|Ordered list of metadata keys to bind to placeholders.
+|===
+
+== Kafka Emitter (`kafka-emitter`)
+
+Sends parsed metadata as messages to Apache Kafka.
+
+**Module:** `tika-pipes-kafka`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`topic`
+|_required_
+|Kafka topic name.
+
+|`bootstrapServers`
+|_required_
+|Kafka broker addresses.
+
+|`acks`
+|`all`
+|Acknowledgment requirement.
+
+|`lingerMs`
+|`0`
+|Batch wait time in milliseconds.
+|===
