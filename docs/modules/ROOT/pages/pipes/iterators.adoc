@@ -1,0 +1,212 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Pipes Iterators
+
+Pipes iterators enumerate the documents to be processed. Each iterator
+produces fetch/emit tuples that the pipeline consumes.
+
+All iterators share a `baseConfig` block that specifies which fetcher and emitter
+to use:
+
+[source,json]
+----
+"baseConfig": {
+  "fetcherId": "my-fetcher-id",
+  "emitterId": "my-emitter-id"
+}
+----
+
+== File System Iterator (`file-system-pipes-iterator`)
+
+Recursively walks a directory tree.
+
+**Module:** `tika-pipes-file-system`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Directory to walk.
+
+|`countTotal`
+|`false`
+|Count total files before processing (enables progress reporting).
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
+
+== S3 Iterator (`s3-pipes-iterator`)
+
+Lists objects in an S3 bucket.
+
+**Module:** `tika-pipes-s3`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|S3 bucket name.
+
+|`region`
+|_required_
+|AWS region.
+
+|`prefix`
+|_none_
+|Key prefix to filter objects.
+
+|`credentialsProvider`
+|`profile`
+|Credentials type.
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
+
+== GCS Iterator (`gcs-pipes-iterator`)
+
+Lists objects in a Google Cloud Storage bucket.
+
+**Module:** `tika-pipes-gcs`
+
+== Azure Blob Iterator (`az-blob-pipes-iterator`)
+
+Lists blobs in an Azure Blob Storage container.
+
+**Module:** `tika-pipes-az-blob`
+
+== CSV Iterator (`csv-pipes-iterator`)
+
+Reads rows from a CSV file to generate fetch/emit tuples.
+
+**Module:** `tika-pipes-csv`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`csvPath`
+|_required_
+|Path to the CSV file.
+
+|`fetchKeyColumn`
+|_required_
+|Column name containing the fetch key (file path, S3 key, etc.).
+
+|`emitKeyColumn`
+|_none_
+|Column name for the emit key. If omitted, uses the fetch key.
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
+
+== JDBC Iterator (`jdbc-pipes-iterator`)
+
+Executes a SQL query and uses each row as a fetch/emit tuple.
+
+**Module:** `tika-pipes-jdbc`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`connection`
+|_required_
+|JDBC connection string.
+
+|`select`
+|_required_
+|SQL SELECT query.
+
+|`fetchKeyColumn`
+|_required_
+|Column containing the fetch key.
+
+|`idColumn`
+|_none_
+|Column containing the document ID.
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
+
+== Solr Iterator (`solr-pipes-iterator`)
+
+Queries a Solr collection and uses each document as a fetch/emit tuple.
+
+**Module:** `tika-pipes-solr`
+
+== JSON Iterator (`json-pipes-iterator`)
+
+Reads an array of objects from a JSON file.
+
+**Module:** `tika-pipes-json`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`jsonPath`
+|_required_
+|Path to the JSON file.
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
+
+== Kafka Iterator (`kafka-pipes-iterator`)
+
+Consumes messages from a Kafka topic as fetch/emit tuples.
+
+**Module:** `tika-pipes-kafka`
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`topic`
+|_required_
+|Kafka topic.
+
+|`bootstrapServers`
+|_required_
+|Kafka broker addresses.
+
+|`groupId`
+|_required_
+|Consumer group ID.
+
+|`autoOffsetReset`
+|`earliest`
+|Where to start reading: `earliest` or `latest`.
+
+|`baseConfig`
+|_required_
+|Fetcher/emitter IDs.
+|===
