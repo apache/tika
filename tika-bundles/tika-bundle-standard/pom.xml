@@ -61,19 +61,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Test dependencies -->
-    <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-junit4</artifactId>
-      <version>${pax.exam.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-container-native</artifactId>
-      <version>${pax.exam.version}</version>
-      <scope>test</scope>
-    </dependency>
+    <!-- Test: programmatic Felix container + JUnit 5 -->
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework</artifactId>
@@ -81,56 +69,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-link-assembly</artifactId>
-      <version>${pax.exam.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.pax.url</groupId>
-      <artifactId>pax-url-aether</artifactId>
-      <version>3.0.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.inject</groupId>
-      <artifactId>jakarta.inject-api</artifactId>
-      <version>2.0.1.MR</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <scope>test</scope>
+      <scope>provided</scope>
     </dependency>
-
-    <!-- after we migrate BundleIT to junit5, we can get rid of this -->
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- use non-log4j slf4j backend to prevent main classloader from loading log4j classes -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>jakarta.activation</groupId>
-      <artifactId>jakarta.activation-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.sun.xml.fastinfoset</groupId>
-      <artifactId>FastInfoset</artifactId>
-      <version>2.1.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -147,6 +92,9 @@
             <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages>
             <!--  The file below and the _include entry may be removed once Tika targets OpenJDK 9.0 or above -->
             <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
+            <Bundle-Activator>
+              org.apache.tika.bundle.internal.BundleActivator
+            </Bundle-Activator>
             <Embed-Dependency>*;scope=compile;artifactId=
               tika-parser-*|
               tika-handler-boilerpipe|
@@ -213,8 +161,24 @@
               !org.junit,
               !org.junit.*,
               !junit.*,
-              org.apache.tika.fork,
+              org.apache.tika,
+              org.apache.tika.concurrent,
+              org.apache.tika.config,
+              org.apache.tika.detect,
+              org.apache.tika.exception,
+              org.apache.tika.extractor,
+              org.apache.tika.io,
+              org.apache.tika.language.detect,
+              org.apache.tika.metadata,
+              org.apache.tika.metadata.filter,
               org.apache.tika.metadata.writefilter,
+              org.apache.tika.mime,
+              org.apache.tika.parser,
+              org.apache.tika.parser.external,
+              org.apache.tika.parser.external2,
+              org.apache.tika.parser.multiple,
+              org.apache.tika.sax,
+              org.apache.tika.utils,
               org.slf4j,
               org.slf4j.event,
               org.slf4j.helpers,
@@ -229,6 +193,11 @@
               com.github.javaparser.ast.expr;resolution:=optional,
               com.github.javaparser.ast.nodeTypes;resolution:=optional,
               com.github.javaparser.ast.type;resolution:=optional,
+              com.github.javaparser.resolution;resolution:=optional,
+              com.github.javaparser.resolution.declarations;resolution:=optional,
+              com.github.javaparser.resolution.types;resolution:=optional,
+              com.github.javaparser.symbolsolver;resolution:=optional,
+              com.github.javaparser.symbolsolver.resolution.typesolvers;resolution:=optional,
               com.github.javaparser.utils;resolution:=optional,
               com.google.common.base;resolution:=optional,
               com.google.common.math;resolution:=optional,
@@ -344,22 +313,17 @@
               sun.nio.ch;resolution:=optional,
               sun.reflect.generics.reflectiveObjects;resolution:=optional,
               thredds.featurecollection;resolution:=optional,
-              *
+              *;resolution:=optional
             </Import-Package>
           </instructions>
           <createDependencyReducedPom>true</createDependencyReducedPom>
         </configuration>
       </plugin>
 
-      <!-- The Tika Bundle has no java code of its own, so no need to do -->
-      <!--  any forbidden API checking against it (it gets confused...) -->
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
         <version>${forbiddenapis.version}</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -392,16 +356,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${project.build.directory}/test-bundles/jdk9plus</additionalClasspathElement>
-          </additionalClasspathElements>
-          <systemPropertyVariables>
-            <org.ops4j.pax.logging.DefaultServiceLog.level>
-              INFO
-            </org.ops4j.pax.logging.DefaultServiceLog.level>
-          </systemPropertyVariables>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
