@@ -174,8 +174,6 @@
               org.apache.tika.metadata.writefilter,
               org.apache.tika.mime,
               org.apache.tika.parser,
-              org.apache.tika.parser.external,
-              org.apache.tika.parser.external2,
               org.apache.tika.parser.multiple,
               org.apache.tika.sax,
               org.apache.tika.utils,
