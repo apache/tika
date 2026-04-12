@@ -169,8 +169,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         LABEL_TO_JAVA_NAME = Collections.unmodifiableMap(m);
     }
 
-    /** Default number of bytes read from the stream for detection. */
-    public static final int MAX_PROBE_BYTES = 4096;
+    /**
+     * Default number of bytes read from the stream for detection.
+     * Set generously so HTML/XML probes reach body text past
+     * ASCII-heavy head / script sections.
+     */
+    public static final int MAX_PROBE_BYTES = 32768;
 
     /**
      * JSON-deserializable configuration for {@link MojibusterEncodingDetector}.
