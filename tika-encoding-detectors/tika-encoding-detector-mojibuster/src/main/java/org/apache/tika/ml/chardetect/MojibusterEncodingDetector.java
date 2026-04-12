@@ -106,7 +106,29 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          * line ending) does <em>not</em> trigger this rule.  Mirrors the legacy
          * {@code UniversalEncodingListener.report()} heuristic.</p>
          */
-        CRLF_TO_WINDOWS
+        CRLF_TO_WINDOWS,
+        /**
+         * Lossless canonicalisation to {@code windows-1252}: if the top
+         * candidate is a single-byte Latin-family charset (not CJK, EBCDIC,
+         * Hebrew, Arabic, Cyrillic, or Greek) and decoding the probe with
+         * both that charset and {@code windows-1252} produces character-for-
+         * character identical strings, relabel the result as
+         * {@code windows-1252}.
+         *
+         * <p>Why: the statistical model is often confident in a sibling
+         * Latin-family charset (windows-1254 Turkish, windows-1257 Baltic,
+         * x-MacRoman, ISO-8859-X) when the probe contains only bytes that
+         * decode to the same characters under {@code windows-1252}.  For
+         * the bytes actually present in the probe, the label difference is
+         * cosmetic.  Canonicalising to {@code windows-1252} matches the
+         * WHATWG default, matches pre-4.x Tika behaviour for ASCII-adjacent
+         * Western text, and does not alter the decoded output.  When the
+         * charsets disagree on any byte actually present (e.g. real
+         * Japanese bytes under Shift_JIS, or Cyrillic under KOI8-R),
+         * the decoded strings differ and the rule does not fire, preserving
+         * the model's decision.</p>
+         */
+        LOSSLESS_WIN1252_CANONICALISATION
     }
 
     private static final long serialVersionUID = 1L;
@@ -476,8 +498,74 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 && StructuralEncodingRules.hasGb18030FourByteSequence(probe)) {
             results = upgradeGbToGb18030(results);
         }
+        if (enabledRules.contains(Rule.LOSSLESS_WIN1252_CANONICALISATION)) {
+            results = losslessWin1252Canonicalise(probe, results);
+        }
         // Trim to topN after all rules have fired, not before.
         return results.subList(0, Math.min(topN, results.size()));
+    }
+
+    /**
+     * Labels for which {@link Rule#LOSSLESS_WIN1252_CANONICALISATION} may fire.
+     * Only single-byte Latin-family code pages are candidates; CJK, Cyrillic,
+     * Greek, Hebrew, Arabic, and Thai charsets are excluded because differing
+     * labels there imply different scripts, not cosmetic variation.
+     *
+     * <p>windows-1252 itself is included so it is a no-op when already chosen.
+     * ISO-8859-1 is included because it is a strict subset of windows-1252 for
+     * the 0xA0-0xFF range (they differ only in 0x80-0x9F, where ISO-8859-1
+     * defines C1 control codes).  ISO-8859-15 differs from 1252 at 8 code
+     * points used for Euro / OE / S-caron / Z-caron; the byte-level equality
+     * check catches those automatically.</p>
+     */
+    private static final java.util.Set<String> WIN1252_CANONICALISABLE_LABELS =
+            java.util.Set.of(
+                    "windows-1252", "ISO-8859-1", "ISO-8859-15",
+                    "windows-1250", "ISO-8859-2",
+                    "windows-1254", "ISO-8859-9",
+                    "windows-1257", "ISO-8859-4", "ISO-8859-13",
+                    "ISO-8859-3", "ISO-8859-16",
+                    "x-MacRoman");
+
+    /**
+     * If the top result's label is in {@link #WIN1252_CANONICALISABLE_LABELS}
+     * and decoding the probe with that charset produces the same string as
+     * decoding with {@code windows-1252}, replace the top result with a
+     * windows-1252 result at the same confidence.  See {@link
+     * Rule#LOSSLESS_WIN1252_CANONICALISATION}.
+     */
+    private static List<EncodingResult> losslessWin1252Canonicalise(byte[] probe,
+                                                                    List<EncodingResult> results) {
+        if (results.isEmpty()) {
+            return results;
+        }
+        EncodingResult top = results.get(0);
+        String topLabel = top.getLabel();
+        if (topLabel == null || !WIN1252_CANONICALISABLE_LABELS.contains(topLabel)) {
+            return results;
+        }
+        if ("windows-1252".equals(topLabel)) {
+            return results;
+        }
+        Charset topCharset = top.getCharset();
+        Charset win1252;
+        try {
+            win1252 = Charset.forName("windows-1252");
+        } catch (IllegalArgumentException e) {
+            return results;
+        }
+        String decodedTop = new String(probe, topCharset);
+        String decoded1252 = new String(probe, win1252);
+        if (!decodedTop.equals(decoded1252)) {
+            return results;
+        }
+        List<EncodingResult> out = new ArrayList<>(results.size());
+        out.add(new EncodingResult(win1252, top.getConfidence(),
+                "windows-1252", top.getResultType()));
+        for (int i = 1; i < results.size(); i++) {
+            out.add(results.get(i));
+        }
+        return out;
     }
 
     /**
