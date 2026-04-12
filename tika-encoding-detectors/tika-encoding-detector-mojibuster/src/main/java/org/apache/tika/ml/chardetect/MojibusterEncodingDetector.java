@@ -422,6 +422,17 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         int[] features = extractor.extract(probe);
         float[] logits = model.predictLogits(features);
 
+        // EBCDIC gate: if the probe lacks the EBCDIC word-separator pattern
+        // (0x40 dominant over 0x20), it cannot be any EBCDIC variant. The
+        // statistical model can produce very large logits for EBCDIC labels
+        // on predominantly-ASCII probes whose n-grams happen to align with
+        // training features (observed with 99%-ASCII vCards mis-scored at
+        // IBM424 logit 55 vs windows-1252 logit 26). Mask those labels out
+        // before ranking so downstream arbitration sees only plausible
+        // candidates.
+        boolean excludeEbcdic = enabledRules.contains(Rule.STRUCTURAL_GATES)
+                && !StructuralEncodingRules.isEbcdicLikely(probe);
+
         for (int i = 0; i < logits.length; i++) {
             String lbl = model.getLabel(i);
             if (excludeUtf8 && "UTF-8".equalsIgnoreCase(lbl)) {
@@ -431,6 +442,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 logits[i] = Float.NEGATIVE_INFINITY;
             }
             if (excludeUtf16Le && lbl.equalsIgnoreCase("UTF-16-LE")) {
+                logits[i] = Float.NEGATIVE_INFINITY;
+            }
+            if (excludeEbcdic && isEbcdicLabel(lbl)) {
                 logits[i] = Float.NEGATIVE_INFINITY;
             }
         }
@@ -704,6 +718,26 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    /**
+     * True EBCDIC variants that must be gated by {@link
+     * StructuralEncodingRules#isEbcdicLikely(byte[])}.
+     *
+     * <p>Note: {@code IBM850}, {@code IBM852}, {@code IBM855}, {@code IBM866},
+     * and {@code IBM437} are DOS/OEM code pages, <em>not</em> EBCDIC — they
+     * use {@code 0x20} for space like ASCII and are therefore not gated.</p>
+     */
+    private static boolean isEbcdicLabel(String label) {
+        if (label == null) {
+            return false;
+        }
+        return label.equals("IBM420-ltr") || label.equals("IBM420-rtl")
+                || label.equals("IBM420")
+                || label.equals("IBM424-ltr") || label.equals("IBM424-rtl")
+                || label.equals("IBM424")
+                || label.equals("IBM500")
+                || label.equals("IBM1047");
     }
 
     private static byte[] readProbe(TikaInputStream is, int maxBytes) throws IOException {

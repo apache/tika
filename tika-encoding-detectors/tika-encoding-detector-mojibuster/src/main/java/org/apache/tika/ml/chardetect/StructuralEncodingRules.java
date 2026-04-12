@@ -202,6 +202,59 @@ public final class StructuralEncodingRules {
         return checkIbm424(bytes, 0, bytes.length);
     }
 
+    /**
+     * Returns {@code true} if the probe is plausibly EBCDIC based on the
+     * word-separator distribution.  In every EBCDIC variant (IBM420, IBM424,
+     * IBM500, IBM1047) the space character is {@code 0x40}, not {@code 0x20};
+     * a stretch of EBCDIC text therefore has {@code 0x40} as its single most
+     * common byte, at roughly 10–20% of the sample.  Conversely, any ASCII
+     * or ISO-8859-X / windows-12XX / DOS / Mac / CJK text uses {@code 0x20}
+     * (or {@code 0x09 / 0x0A}) as its whitespace and has {@code 0x40} only
+     * as the rare {@code @} character (typically less than 0.1% of bytes).
+     *
+     * <p>This is a <em>negative</em> gate: when it returns {@code false}, the
+     * probe cannot be any EBCDIC variant, and downstream scoring should
+     * exclude EBCDIC labels from consideration even if the statistical model
+     * ranks them highly.</p>
+     *
+     * <p>Threshold rationale: we require both (a) {@code 0x40} at least 3%
+     * of the sample and (b) {@code 0x40} at least 3&times; more frequent
+     * than {@code 0x20}.  Gate (b) alone is not sufficient because sparse
+     * binary content can have neither byte; gate (a) alone is not sufficient
+     * because some text formats (CSV with {@code @}-separated fields,
+     * e-mail address lists) can exceed 3% {@code 0x40} while clearly being
+     * ASCII-spaced.  Both gates together match real EBCDIC text reliably
+     * across IBM420/424/500/1047 variants.</p>
+     *
+     * @param bytes the probe to analyse
+     * @return {@code true} if the probe's whitespace distribution is
+     *         consistent with EBCDIC; {@code false} if it is clearly ASCII-spaced
+     */
+    public static boolean isEbcdicLikely(byte[] bytes) {
+        if (bytes == null || bytes.length < 8) {
+            return false;
+        }
+        int sample = Math.min(bytes.length, 4096);
+        int ebcdicSpace = 0;
+        int asciiSpace = 0;
+        int prev = -1;
+        for (int i = 0; i < sample; i++) {
+            int b = bytes[i] & 0xFF;
+            if (b == 0x40) {
+                // Guard against Shift_JIS trail bytes that happen to equal 0x40.
+                boolean isShiftJisTrail = (prev >= 0x81 && prev <= 0x9F)
+                        || (prev >= 0xE0 && prev <= 0xFC);
+                if (!isShiftJisTrail) {
+                    ebcdicSpace++;
+                }
+            } else if (b == 0x20) {
+                asciiSpace++;
+            }
+            prev = b;
+        }
+        return ebcdicSpace >= sample * 0.03 && ebcdicSpace > asciiSpace * 3;
+    }
+
     public static boolean checkIbm424(byte[] bytes, int offset, int length) {
         if (length < 8) {
             return false;
