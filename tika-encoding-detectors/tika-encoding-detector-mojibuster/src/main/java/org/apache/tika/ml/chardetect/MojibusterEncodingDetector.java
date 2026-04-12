@@ -430,8 +430,19 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         boolean excludeUtf8 = gates
                 && StructuralEncodingRules.checkUtf8(probe) == StructuralEncodingRules.Utf8Result.NOT_UTF8;
 
+        // UTF-16 structural gate: stride-2 bigram features can misfire on
+        // non-UTF-16 probes with scattered nulls (e.g. Greek plaintext with
+        // 0.3% nulls scoring as UTF-16-LE). Real UTF-16 of any script has a
+        // concentrated byte column paired with a diverse one; scattered nulls
+        // produce ~balanced column diversity. Mask UTF-16 labels when the
+        // column-asymmetry test fails.
+        boolean utf16Plausible = !gates
+                || StructuralEncodingRules.has2ByteColumnAsymmetry(probe);
+        boolean excludeUtf16Be = wideResult.invalidUtf16Be || !utf16Plausible;
+        boolean excludeUtf16Le = wideResult.invalidUtf16Le || !utf16Plausible;
+
         List<EncodingResult> results = runModel(probe, excludeUtf8,
-                wideResult.invalidUtf16Be, wideResult.invalidUtf16Le, topN);
+                excludeUtf16Be, excludeUtf16Le, topN);
 
         // If the model had no evidence (probe too short or all tokens filtered), fall back to
         // windows-1252 at very low confidence rather than returning empty and letting
