@@ -51,6 +51,7 @@ public enum Cols {
 
 
     MIME_STRING,//string representation of mime type
+    BASE_MIME,//mime type without parameters (charset, delimiter, etc.)
 
     DIR_NAME_A,//for comparisons in REF_PAIR_NAMES
     DIR_NAME_B,
