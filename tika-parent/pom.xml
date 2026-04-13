@@ -315,7 +315,7 @@
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.64.1</google.cloud.version>
+    <google.cloud.version>2.66.0</google.cloud.version>
     <aws2.version>2.42.31</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
