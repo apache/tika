@@ -142,24 +142,55 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             throws SAXException, IOException {
         OPCPackage container = opcPackage;
 
-        XSSFSharedStringsShim stringsShim;
+        XSSFSharedStringsShim stringsShim = null;
         XSSFReader.SheetIterator iter;
         XSSFReader xssfReader;
-        XSSFStylesShim stylesShim;
+        XSSFStylesShim stylesShim = null;
         try {
             xssfReader = new XSSFReader(container);
-            stylesShim = new XSSFStylesShim(xssfReader.getStylesData(), parseContext);
-
             iter = (XSSFReader.SheetIterator) xssfReader.getSheetsData();
-            stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
-                    config.isConcatenatePhoneticRuns(), parseContext);
-        } catch (OpenXML4JException | TikaException e) {
+        } catch (OpenXML4JException | RuntimeException e) {
             throw new IOException(e);
         }
-        while (iter.hasNext()) {
+        // Styles and shared strings are optional — if either part is missing or
+        // unreadable, log to metadata and continue with degraded extraction.
+        try {
+            stylesShim = new XSSFStylesShim(xssfReader.getStylesData(), parseContext);
+        } catch (Exception e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+        }
+        try {
+            stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
+                    config.isConcatenatePhoneticRuns(), parseContext);
+        } catch (Exception e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+        }
+        while (true) {
+            try {
+                if (!iter.hasNext()) {
+                    break;
+                }
+            } catch (RuntimeException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                break;
+            }
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
             PackagePart sheetPart = null;
-            try (InputStream stream = iter.next()) {
+            InputStream nextStream;
+            try {
+                nextStream = iter.next();
+            } catch (RuntimeException e) {
+                // POI can throw POIXMLException for missing sheet parts (e.g.,
+                // truncated workbook references a sheet that isn't in the zip).
+                // Skip the sheet but keep what we've already extracted.
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                continue;
+            }
+            try (InputStream stream = nextStream) {
                 sheetPart = iter.getSheetPart();
 
                 addDrawingHyperLinks(sheetPart);
@@ -178,7 +209,16 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 xhtml.startElement("table");
                 xhtml.startElement("tbody");
 
-                processSheet(sheetExtractor, commentsShim, stylesShim, stringsShim, stream);
+                try {
+                    processSheet(sheetExtractor, commentsShim, stylesShim, stringsShim, stream);
+                } catch (SAXException e) {
+                    // Truncated/malformed sheet XML — keep prior sheets and
+                    // record the failure as a warning.
+                    org.apache.tika.exception.WriteLimitReachedException
+                            .throwIfWriteLimitReached(e);
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                }
                 try {
                     getThreadedComments(container, sheetPart, xhtml);
                 } catch (InvalidFormatException | TikaException | IOException e) {

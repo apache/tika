@@ -281,6 +281,18 @@ public class OPCPackageDetector implements ZipContainerDetector {
             //no need to close zipEntrySource because it
             //only closes the underlying zipFile, not any other resources
             //as of this writing.... :'(
+            //POI failed (often: malformed _rels in truncated/corrupt files).
+            //Fall back to parsing [Content_Types].xml directly — same approach
+            //as the streaming detector.
+            try (InputStream contentTypesStream =
+                         zipEntrySource.getEntry("[Content_Types].xml").getInputStream()) {
+                MediaType fallback = parseOOXMLContentTypes(contentTypesStream);
+                if (fallback != null) {
+                    return fallback;
+                }
+            } catch (IOException ignore) {
+                //swallow
+            }
             return null;
         }
         //this will now be closed eventually when the wrapper closes
