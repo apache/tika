@@ -67,6 +67,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
@@ -194,21 +195,29 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         if (officeParserConfig.isIncludeShapeBasedContent()) {
             // Do everything else
             for (String paragraph : wordExtractor.getMainTextboxText()) {
-                xhtml.element("p", paragraph);
+                if (!StringUtils.isBlank(paragraph)) {
+                    xhtml.element("p", paragraph);
+                }
             }
         }
 
         for (String paragraph : wordExtractor.getFootnoteText()) {
-            xhtml.element("p", paragraph);
+            if (!StringUtils.isBlank(paragraph)) {
+                xhtml.element("p", paragraph);
+            }
         }
 
         for (String paragraph : wordExtractor.getCommentsText()) {
-            xhtml.element("p", paragraph);
-            hasComments = true;
+            if (!StringUtils.isBlank(paragraph)) {
+                xhtml.element("p", paragraph);
+                hasComments = true;
+            }
         }
 
         for (String paragraph : wordExtractor.getEndnoteText()) {
-            xhtml.element("p", paragraph);
+            if (!StringUtils.isBlank(paragraph)) {
+                xhtml.element("p", paragraph);
+            }
         }
 
         if (officeParserConfig.isIncludeHeadersAndFooters()) {
