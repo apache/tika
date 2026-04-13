@@ -34,7 +34,7 @@ import org.apache.tika.parser.ParseContext;
  * class.
  *
  * <p>Before the {@link StructuralEncodingRules#isEbcdicLikely(byte[])}
- * gate and the {@link MojibusterEncodingDetector.Rule#LOSSLESS_WIN1252_CANONICALISATION}
+ * gate and the {@link MojibusterEncodingDetector.Rule#LATIN_FALLBACK_WIN1252}
  * post-rule, a predominantly-ASCII probe with a small number of
  * Latin-supplement high bytes (e.g. a vCard containing a German
  * business name) detected as {@code IBM424} (Hebrew EBCDIC) at 0.99
