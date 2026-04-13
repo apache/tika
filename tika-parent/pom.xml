@@ -393,7 +393,7 @@
     <!-- junit 6.x requires jdk 17 -->
     <junit5.version>5.14.3</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>7.5.8</junrar.version>
+    <junrar.version>7.5.9</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
     <libpst.version>0.9.3</libpst.version>
