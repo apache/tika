@@ -313,8 +313,8 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.64.1</google.cloud.version>
-    <aws2.version>2.42.31</aws2.version>
+    <google.cloud.version>2.66.0</google.cloud.version>
+    <aws2.version>2.42.33</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -364,7 +364,7 @@
     -->
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.22.2</jackrabbit.version>
+    <jackrabbit.version>2.22.3</jackrabbit.version>
     <jackson.version>2.21.2</jackson.version>
     <jackcess.version>4.0.10</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
@@ -384,6 +384,7 @@
     <jempbox.version>1.8.17</jempbox.version>
     <!-- 12.0.* needs java 17 -->
     <jetty.version>11.0.26</jetty.version>
+    <!-- 2.0.* needs java 17 -->
     <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
