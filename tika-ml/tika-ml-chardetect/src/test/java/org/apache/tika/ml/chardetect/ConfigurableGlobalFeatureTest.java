@@ -157,4 +157,77 @@ public class ConfigurableGlobalFeatureTest {
                     "bucket " + i + " differs between dense and sparse paths");
         }
     }
+
+    // --- split-space layout ---
+
+    private static final int SPLIT_NUM_BUCKETS = 32768 + ConfigurableByteNgramFeatureExtractor.GLOBAL_FEATURE_COUNT;
+
+    private static ConfigurableByteNgramFeatureExtractor withSplitAndGlobals() {
+        return new ConfigurableByteNgramFeatureExtractor(
+                SPLIT_NUM_BUCKETS, true, true, false, false, true, true, true);
+    }
+
+    @Test
+    public void splitSpacesStride1FiresOnlyLowRegion() {
+        ConfigurableByteNgramFeatureExtractor ext = withSplitAndGlobals();
+        int[] dense = new int[SPLIT_NUM_BUCKETS];
+        int[] touched = new int[SPLIT_NUM_BUCKETS];
+        // High bytes only — fires stride-1 unigrams + bigrams + stride-2 pairs
+        byte[] probe = new byte[]{(byte) 0xE4, (byte) 0xF6, (byte) 0xFC};
+        int n = ext.extractSparseInto(probe, dense, touched);
+
+        // stride-1 firings must be in [0, 16384), stride-2 in [16384, 32768),
+        // globals in [32768, 32774).
+        int stride1Count = 0;
+        int stride2Count = 0;
+        int globalCount = 0;
+        for (int i = 0; i < n; i++) {
+            int bkt = touched[i];
+            if (bkt < 16384) {
+                stride1Count++;
+            } else if (bkt < 32768) {
+                stride2Count++;
+            } else {
+                globalCount++;
+            }
+        }
+        assertTrue(stride1Count > 0, "expected stride-1 firings in low region");
+        assertTrue(stride2Count > 0, "expected stride-2 firings in high region");
+        assertEquals(1, globalCount, "exactly one global bin fires");
+    }
+
+    @Test
+    public void splitSpacesAsciiProbeFiresOnlyStride2AndGlobals() {
+        ConfigurableByteNgramFeatureExtractor ext = withSplitAndGlobals();
+        int[] dense = new int[SPLIT_NUM_BUCKETS];
+        int[] touched = new int[SPLIT_NUM_BUCKETS];
+        // Pure ASCII — no stride-1 firings (no high bytes), all firings are
+        // stride-2 (HTML markup-shaped pairs) + the globals bin.
+        byte[] probe = "Hello, world! This is ASCII only.\r\n"
+                .getBytes(StandardCharsets.US_ASCII);
+        int n = ext.extractSparseInto(probe, dense, touched);
+
+        for (int i = 0; i < n; i++) {
+            int bkt = touched[i];
+            assertTrue(bkt >= 16384,
+                    "ASCII probe must NOT fire any stride-1 slot, got bkt=" + bkt);
+        }
+    }
+
+    @Test
+    public void splitSpacesDenseSparseAgree() {
+        ConfigurableByteNgramFeatureExtractor ext = withSplitAndGlobals();
+        byte[] probe = "r\u00E9sum\u00E9 caf\u00E9"
+                .getBytes(StandardCharsets.ISO_8859_1);
+
+        int[] dense = ext.extract(probe);
+        int[] sparseDense = new int[SPLIT_NUM_BUCKETS];
+        int[] touched = new int[SPLIT_NUM_BUCKETS];
+        ext.extractSparseInto(probe, sparseDense, touched);
+
+        for (int i = 0; i < SPLIT_NUM_BUCKETS; i++) {
+            assertEquals(dense[i], sparseDense[i],
+                    "bucket " + i + " differs between dense and sparse paths (split layout)");
+        }
+    }
 }

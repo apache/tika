@@ -254,4 +254,101 @@ public class FeatureExtractorParityTest {
         assertArrayEquals(dense, sparseDense,
                 "ByteNgramFeatureExtractor: extract() vs extractSparseInto() differ");
     }
+
+    // =====================================================================
+    // Parity in the split-spaces + globals layout (next-generation model).
+    // =====================================================================
+
+    private static final int SPLIT_NUM_BUCKETS =
+            32768 + ByteNgramFeatureExtractor.GLOBAL_FEATURE_COUNT;
+
+    private final ByteNgramFeatureExtractor productionSplit =
+            new ByteNgramFeatureExtractor(SPLIT_NUM_BUCKETS, true, true);
+
+    private final ConfigurableByteNgramFeatureExtractor configurableSplit =
+            new ConfigurableByteNgramFeatureExtractor(
+                    SPLIT_NUM_BUCKETS,
+                    true,   // unigrams
+                    true,   // bigrams
+                    false,  // trigrams OFF
+                    false,  // anchored OFF
+                    true,   // stride2 ON
+                    true,   // globals ON
+                    true);  // split spaces ON
+
+    private void assertSplitParity(byte[] probe) {
+        int[] prodFeatures = productionSplit.extract(probe);
+        int[] confFeatures = configurableSplit.extract(probe);
+        assertEquals(prodFeatures.length, confFeatures.length,
+                "split-layout feature vector lengths differ");
+        for (int i = 0; i < prodFeatures.length; i++) {
+            if (prodFeatures[i] != confFeatures[i]) {
+                org.junit.jupiter.api.Assertions.fail(String.format(
+                        "split-layout bucket %d: production=%d, configurable=%d",
+                        i, prodFeatures[i], confFeatures[i]));
+            }
+        }
+    }
+
+    @Test
+    public void splitParityOnPureAscii() {
+        assertSplitParity("Hello, world! This is ASCII text.\r\n"
+                .getBytes(StandardCharsets.US_ASCII));
+    }
+
+    @Test
+    public void splitParityOnHighByteContent() {
+        assertSplitParity(new byte[]{
+                (byte) 0x72, (byte) 0xE9, (byte) 0x73, (byte) 0x75,
+                (byte) 0x6D, (byte) 0xE9, (byte) 0x20,
+                (byte) 0x63, (byte) 0x61, (byte) 0x66, (byte) 0xE9
+        });
+    }
+
+    @Test
+    public void splitParityOnRealUtf16Le() {
+        assertSplitParity("日本語テスト".getBytes(StandardCharsets.UTF_16LE));
+    }
+
+    @Test
+    public void splitParityOnArabicLike() {
+        // Synthesized Arabic-style byte pattern: 0xC7/0xE1/0xE3 alef/lam/meem
+        byte[] probe = new byte[]{
+                (byte) 0xC7, (byte) 0xE1, (byte) 0xE3, 0x20,
+                (byte) 0xD9, (byte) 0xED, (byte) 0xC7, (byte) 0xE1,
+                (byte) 0xCA, (byte) 0xD1, 0x0D, 0x0A
+        };
+        assertSplitParity(probe);
+    }
+
+    @Test
+    public void splitParityOnLongMixedProbe() {
+        byte[] probe = new byte[4096];
+        for (int i = 0; i < probe.length; i++) {
+            probe[i] = (byte) ((i % 3 == 0) ? (0x80 + (i % 128)) : (0x20 + (i % 96)));
+        }
+        assertSplitParity(probe);
+    }
+
+    @Test
+    public void splitLayoutProductionDenseMatchesSparse() {
+        byte[] probe = "日本語テスト résumé".getBytes(StandardCharsets.UTF_16LE);
+        int[] dense = productionSplit.extract(probe);
+        int[] sparseDense = new int[SPLIT_NUM_BUCKETS];
+        int[] touched = new int[SPLIT_NUM_BUCKETS];
+        productionSplit.extractSparseInto(probe, sparseDense, touched);
+        assertArrayEquals(dense, sparseDense,
+                "split layout: production extract() vs extractSparseInto() differ");
+    }
+
+    @Test
+    public void splitLayoutConfigurableDenseMatchesSparse() {
+        byte[] probe = "日本語テスト résumé".getBytes(StandardCharsets.UTF_16LE);
+        int[] dense = configurableSplit.extract(probe);
+        int[] sparseDense = new int[SPLIT_NUM_BUCKETS];
+        int[] touched = new int[SPLIT_NUM_BUCKETS];
+        configurableSplit.extractSparseInto(probe, sparseDense, touched);
+        assertArrayEquals(dense, sparseDense,
+                "split layout: configurable extract() vs extractSparseInto() differ");
+    }
 }

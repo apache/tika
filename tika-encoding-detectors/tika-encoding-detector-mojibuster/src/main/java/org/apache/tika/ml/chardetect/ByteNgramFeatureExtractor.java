@@ -93,22 +93,121 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
     /** Distinct salt for stride-2 bigrams — prevents collision with stride-1 hashes. */
     private static final int FNV_STRIDE2_SALT = 0x9e3779b9;
 
+    /**
+     * Number of reserved slots at the high end of the feature vector used for
+     * global (whole-probe) features when {@link #useGlobalFeatures} is enabled.
+     * Currently 6 slots hold ASCII-text-density bins (see
+     * {@link #asciiDensityBin(byte[])}).  Must match the training-side
+     * {@code ConfigurableByteNgramFeatureExtractor.GLOBAL_FEATURE_COUNT}.
+     */
+    public static final int GLOBAL_FEATURE_COUNT = 6;
+
     private final int numBuckets;
+    private final int stride1Buckets;
+    private final int stride2Buckets;
+    private final int stride2Base;
+    private final int globalBase;
+    private final boolean useGlobalFeatures;
+    private final boolean useSplitSpaces;
 
     /**
-     * Create an extractor with the production feature set (UBT-: unigrams +
-     * bigrams + trigrams, no anchored bigrams) and the given bucket count.
-     * The bucket count must match the model the extractor will be paired with —
-     * in practice this is read from the model binary via
-     * {@link org.apache.tika.ml.LinearModel#getNumBuckets()}.
+     * Legacy constructor: no globals, shared stride-1/stride-2 hash space.
+     * Matches the layout used by the shipped {@code chardetect-v6-no-utf32.bin}.
      *
      * @param numBuckets number of hash buckets (feature-vector dimension)
      */
     public ByteNgramFeatureExtractor(int numBuckets) {
+        this(numBuckets, false, false);
+    }
+
+    /**
+     * Create an extractor matching the layout of a trained model.
+     *
+     * @param numBuckets         total feature-vector dimension.
+     * @param useGlobalFeatures  reserve the last {@link #GLOBAL_FEATURE_COUNT}
+     *                           slots for ASCII-density bin features.
+     * @param useSplitSpaces     split the hash space 50/50 between stride-1
+     *                           features (low half) and stride-2 features
+     *                           (high half) so cross-family hash collisions
+     *                           cannot pollute single-byte-charset weights
+     *                           with stride-2 signals.
+     */
+    public ByteNgramFeatureExtractor(int numBuckets,
+                                     boolean useGlobalFeatures,
+                                     boolean useSplitSpaces) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException("numBuckets must be positive: " + numBuckets);
         }
+        int globalsReserved = useGlobalFeatures ? GLOBAL_FEATURE_COUNT : 0;
+        int hashSpace = numBuckets - globalsReserved;
+        if (hashSpace <= 0) {
+            throw new IllegalArgumentException(
+                    "numBuckets must exceed GLOBAL_FEATURE_COUNT when useGlobalFeatures=true: "
+                            + numBuckets);
+        }
+        if (useSplitSpaces && hashSpace < 2) {
+            throw new IllegalArgumentException(
+                    "useSplitSpaces requires hashSpace >= 2: " + hashSpace);
+        }
         this.numBuckets = numBuckets;
+        this.useSplitSpaces = useSplitSpaces;
+        this.useGlobalFeatures = useGlobalFeatures;
+        if (useSplitSpaces) {
+            this.stride1Buckets = hashSpace / 2;
+            this.stride2Buckets = hashSpace - this.stride1Buckets;
+            this.stride2Base = this.stride1Buckets;
+        } else {
+            this.stride1Buckets = hashSpace;
+            this.stride2Buckets = hashSpace;
+            this.stride2Base = 0;
+        }
+        this.globalBase = hashSpace;
+    }
+
+    /**
+     * Returns which ASCII-text-density bin this probe falls into, in [0, 6).
+     * Must match the training-side
+     * {@code ConfigurableByteNgramFeatureExtractor.asciiDensityBin}.
+     *
+     * <p>Bin layout (fraction of bytes that are ASCII-text: printable
+     * {@code 0x20..0x7E} plus {@code 0x09 0x0A 0x0D}):</p>
+     * <ul>
+     *   <li>0: [0.00, 0.10)</li>
+     *   <li>1: [0.10, 0.50)</li>
+     *   <li>2: [0.50, 0.80)</li>
+     *   <li>3: [0.80, 0.95)</li>
+     *   <li>4: [0.95, 0.99)</li>
+     *   <li>5: [0.99, 1.00]</li>
+     * </ul>
+     */
+    public static int asciiDensityBin(byte[] input) {
+        if (input == null || input.length == 0) {
+            return 5;
+        }
+        int asciiText = 0;
+        for (byte b : input) {
+            int v = b & 0xFF;
+            if ((v >= 0x20 && v <= 0x7E) || v == 0x09 || v == 0x0A || v == 0x0D) {
+                asciiText++;
+            }
+        }
+        double p = (double) asciiText / input.length;
+        if (p < 0.10) {
+            return 0;
+        }
+        if (p < 0.50) {
+            return 1;
+        }
+        if (p < 0.80) {
+            return 2;
+        }
+        if (p < 0.95) {
+            return 3;
+        }
+        if (p < 0.99) {
+            return 4;
+        }
+        return 5;
     }
 
     @Override
@@ -166,7 +265,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
 
             // Unigram
             int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
-            int bkt = (h & 0x7fffffff) % numBuckets;
+            int bkt = stride1Bucket(h);
             if (dense[bkt] == 0) {
                 touched[n++] = bkt;
             }
@@ -178,7 +277,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
                 // Bigram
                 h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                 h = (h ^ bi1) * FNV_PRIME;
-                bkt = (h & 0x7fffffff) % numBuckets;
+                bkt = stride1Bucket(h);
                 if (dense[bkt] == 0) {
                     touched[n++] = bkt;
                 }
@@ -193,7 +292,16 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             int b1 = input[i + 1] & 0xFF;
             int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
             h = (h ^ b1) * FNV_PRIME;
-            int bkt = (h & 0x7fffffff) % numBuckets;
+            int bkt = stride2Bucket(h);
+            if (dense[bkt] == 0) {
+                touched[n++] = bkt;
+            }
+            dense[bkt]++;
+        }
+
+        // Global features: fire exactly one ASCII-density bin.
+        if (useGlobalFeatures) {
+            int bkt = globalBase + asciiDensityBin(input);
             if (dense[bkt] == 0) {
                 touched[n++] = bkt;
             }
@@ -212,7 +320,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             }
 
             // Unigram
-            counts[bucket((FNV_OFFSET ^ bi) * FNV_PRIME)]++;
+            counts[stride1Bucket((FNV_OFFSET ^ bi) * FNV_PRIME)]++;
 
             if (i + 1 < to) {
                 int bi1 = b[i + 1] & 0xFF;
@@ -220,7 +328,7 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
                 // Bigram
                 int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                 h = (h ^ bi1) * FNV_PRIME;
-                counts[bucket(h)]++;
+                counts[stride1Bucket(h)]++;
             }
         }
 
@@ -230,12 +338,23 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             int b1 = b[i + 1] & 0xFF;
             int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
             h = (h ^ b1) * FNV_PRIME;
-            counts[bucket(h)]++;
+            counts[stride2Bucket(h)]++;
+        }
+
+        // Global features: fire exactly one ASCII-density bin.
+        if (useGlobalFeatures) {
+            byte[] slice = (from == 0 && to == b.length)
+                    ? b : java.util.Arrays.copyOfRange(b, from, to);
+            counts[globalBase + asciiDensityBin(slice)]++;
         }
     }
 
-    private int bucket(int hash) {
-        return (hash & 0x7fffffff) % numBuckets;
+    private int stride1Bucket(int hash) {
+        return (hash & 0x7fffffff) % stride1Buckets;
+    }
+
+    private int stride2Bucket(int hash) {
+        return stride2Base + (hash & 0x7fffffff) % stride2Buckets;
     }
 
     @Override
