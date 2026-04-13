@@ -234,19 +234,16 @@ public class DefaultZipContainerDetector implements Detector {
         try {
             zip = ZipFile.builder().setFile(tis.getFile()).get();
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);
-            System.err.println("[DZCD] direct ZipFile open OK");
         } catch (IOException e) {
             // ZipFile failed to open (truncated/corrupt)
             if (LOG.isDebugEnabled()) {
                 LOG.debug("ZipFile failed to open directly", e);
             }
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, false);
-            System.err.println("[DZCD] direct ZipFile open FAILED: " + e);
 
             // If parsing will follow, try salvaging to prepare ZipFile for parser reuse
             if (parseContext.get(ParsingIntent.class) != null) {
                 zip = ZipSalvager.tryToOpenZipFile(tis, metadata);
-                System.err.println("[DZCD] salvage result: " + (zip != null ? "OK" : "null"));
                 if (zip != null && LOG.isDebugEnabled()) {
                     LOG.debug("Successfully salvaged ZIP for parsing");
                 }
@@ -265,35 +262,35 @@ public class DefaultZipContainerDetector implements Detector {
             try {
                 for (ZipContainerDetector zipDetector : getDetectors()) {
                     MediaType type = zipDetector.detect(zip, tis);
-                    System.err.println("[DZCD] " + zipDetector.getClass().getSimpleName() + " -> " + type);
                     if (type != null) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("{} detected {}", zipDetector.getClass(), type.toString());
                         }
                         return type;
+                    } else {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("{} detected null", zipDetector.getClass());
+                        }
                     }
                 }
             } catch (IOException e) {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Detection failed on ZipFile", e);
                 }
-                System.err.println("[DZCD] file detect IOException: " + e);
             }
-            System.err.println("[DZCD] returning APPLICATION_ZIP");
+            // No specific type detected - it's a plain ZIP
             return MediaType.APPLICATION_ZIP;
         }
 
         // ZipFile not available - fall back to streaming detection
+        // Streaming can examine entries without needing the central directory
         if (LOG.isDebugEnabled()) {
             LOG.debug("Falling back to streaming detection");
         }
-        System.err.println("[DZCD] zipFile null, falling to streaming detect");
         try {
-            MediaType t = detectStreamingFromPath(tis.getPath(), metadata, false);
-            System.err.println("[DZCD] streaming detect -> " + t);
-            return t;
+            return detectStreamingFromPath(tis.getPath(), metadata, false);
         } catch (IOException e) {
-            System.err.println("[DZCD] streaming detect IOException: " + e);
+            //swallow
         }
         return MediaType.APPLICATION_ZIP;
 
