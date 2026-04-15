@@ -152,17 +152,6 @@ public class CharSoupEncodingDetectorTest {
     }
 
     @Test
-    public void testStripTags() {
-        assertEquals("Hello world",
-                CharSoupEncodingDetector.stripTags(
-                        "<html><body>Hello world</body></html>"));
-        assertEquals("no tags here",
-                CharSoupEncodingDetector.stripTags("no tags here"));
-        assertEquals("",
-                CharSoupEncodingDetector.stripTags("<empty/>"));
-    }
-
-    @Test
     public void testDecode() {
         byte[] utf8Bytes = "caf\u00e9".getBytes(UTF_8);
         assertEquals("caf\u00e9",

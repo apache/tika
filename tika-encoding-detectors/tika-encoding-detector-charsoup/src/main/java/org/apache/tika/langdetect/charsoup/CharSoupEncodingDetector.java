@@ -190,7 +190,7 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
 
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset candidate : uniqueCharsets) {
-            candidates.put(candidate, stripTags(decode(bytes, candidate)));
+            candidates.put(candidate, HtmlStripper.strip(decode(bytes, candidate)));
         }
 
         CharSoupLanguageDetector langDetector = new CharSoupLanguageDetector();
@@ -447,26 +447,6 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
         decoder.flush(cb);
         cb.flip();
         return cb.toString();
-    }
-
-    /**
-     * Simple tag stripping: removes &lt;...&gt; sequences so that
-     * HTML/XML tag names and attributes don't pollute language scoring.
-     */
-    static String stripTags(String text) {
-        StringBuilder sb = new StringBuilder(text.length());
-        boolean inTag = false;
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            if (c == '<') {
-                inTag = true;
-            } else if (c == '>') {
-                inTag = false;
-            } else if (!inTag) {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
     }
 
     public int getReadLimit() {
