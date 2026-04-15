@@ -225,6 +225,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parser-ocr-encode-module</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-pdf-module</artifactId>
         <version>${revision}</version>
       </dependency>
