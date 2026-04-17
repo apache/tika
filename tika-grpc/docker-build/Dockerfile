@@ -10,12 +10,19 @@
 # License for the specific language governing permissions and limitations under
 # the License.
 
-FROM ubuntu:plucky
+# "random" uid/gid hopefully not used anywhere else
+# This needs to be set globally and then referenced in
+# the subsequent stages -- see TIKA-3912
+ARG UID_GID="35002:35002"
+
+FROM ubuntu:noble
+
+ARG UID_GID
 COPY libs/ /tika/libs/
 COPY plugins/ /tika/plugins/
 COPY config/ /tika/config/
 COPY bin/ /tika/bin
-ARG JRE='openjdk-17-jre-headless'
+ARG JRE='openjdk-21-jre-headless'
 ARG VERSION
 ARG TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE=104857600
 ARG TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE=104857600
@@ -41,6 +48,8 @@ RUN set -eux \
         cabextract \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+USER $UID_GID
 
 EXPOSE 9090
 ENV TIKA_VERSION=$VERSION
