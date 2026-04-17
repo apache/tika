@@ -1,0 +1,4 @@
+# MoE statistical specialists bundled with the core mojibuster detector.
+# Additional specialists (SBCS, extended EBCDIC, IBM-DOS-OEM) register themselves
+# via their own META-INF/services file when their JAR is on the classpath.
+org.apache.tika.ml.chardetect.Utf16SpecialistEncodingDetector

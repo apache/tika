@@ -191,6 +191,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private final ByteNgramFeatureExtractor extractor;
     private final EnumSet<Rule> enabledRules;
     private final int maxProbeBytes;
+    /**
+     * UTF-16 specialist.  Replaces the legacy structural UTF-16 detection
+     * in {@link WideUnicodeDetector}: correctly distinguishes LE from BE
+     * for Latin, Cyrillic, Arabic, Hebrew, Indic, Thai, CJK Unified and
+     * Hangul alike — the last two of which the structural detector
+     * explicitly could not handle.  Loaded eagerly at construction; the
+     * detector refuses to start if the specialist model is not on the
+     * classpath.
+     */
+    private final Utf16SpecialistEncodingDetector utf16Specialist;
 
     /**
      * Load the model from its default classpath location with all rules enabled
@@ -246,6 +256,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         this.extractor    = new ByteNgramFeatureExtractor(model.getNumBuckets());
         this.enabledRules = rules.isEmpty() ? EnumSet.noneOf(Rule.class) : EnumSet.copyOf(rules);
         this.maxProbeBytes = maxProbeBytes;
+        try {
+            this.utf16Specialist = new Utf16SpecialistEncodingDetector();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "UTF-16 specialist model could not be loaded.  Mojibuster "
+                            + "refuses to run without it — silent no-op produces "
+                            + "wrong answers.  Ensure utf16-specialist.bin is on "
+                            + "the classpath.", e);
+        }
     }
 
     /**
@@ -384,15 +403,39 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public List<EncodingResult> detectAll(byte[] probe, int topN) {
         boolean gates = enabledRules.contains(Rule.STRUCTURAL_GATES);
 
-        // Wide-Unicode analysis: positive detection and/or invalidity flags.
-        // Must run BEFORE isPureAscii: scripts like Cyrillic in UTF-16-LE have
-        // all bytes < 0x80 with no nulls, so isPureAscii would misclassify them.
+        // Wide-Unicode analysis: UTF-32 positive detection + UTF-16 surrogate
+        // invalidity flags.  UTF-16 positive detection is delegated to the
+        // trained Utf16 specialist below (which handles CJK/Hangul that the
+        // structural detector cannot).  Must run BEFORE isPureAscii: scripts
+        // like Cyrillic in UTF-16-LE have all bytes < 0x80 with no nulls, so
+        // isPureAscii would misclassify them.
         WideUnicodeDetector.Result wideResult = gates
                 ? WideUnicodeDetector.analyze(probe)
                 : WideUnicodeDetector.Result.EMPTY;
         if (wideResult.charset != null) {
             return singleResult(wideResult.charset.name(), 1.0f,
                     EncodingResult.ResultType.STRUCTURAL, topN);
+        }
+
+        // UTF-16 specialist: evidence-based column-asymmetry prefilter (the
+        // conservative "true-on-short-probe" default used for the main SBCS
+        // model's negative gate is wrong here — absence of evidence must
+        // mean "not UTF-16"), then a trained maxent over per-column
+        // byte-range counts decides LE vs BE.  Refuses if the chosen
+        // endianness is surrogate-invalid.
+        if (gates && StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe)) {
+            List<EncodingResult> utf16 = utf16Specialist.detect(probe);
+            if (!utf16.isEmpty()) {
+                EncodingResult er = utf16.get(0);
+                String name = er.getCharset().name();
+                boolean invalid =
+                        ("UTF-16LE".equals(name) && wideResult.invalidUtf16Le)
+                                || ("UTF-16BE".equals(name) && wideResult.invalidUtf16Be);
+                if (!invalid) {
+                    return singleResult(name, 1.0f,
+                            EncodingResult.ResultType.STRUCTURAL, topN);
+                }
+            }
         }
 
         if (gates) {
