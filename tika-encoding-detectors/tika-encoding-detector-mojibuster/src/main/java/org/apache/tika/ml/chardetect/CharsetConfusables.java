@@ -139,6 +139,21 @@ public final class CharsetConfusables {
 
     private static final Map<String, Set<String>> SYMMETRIC_PEER_MAP;
 
+    /**
+     * Single-byte Latin-family charsets that may decode byte-identically to
+     * windows-1252 on sparse probes (where the only high bytes present fall
+     * in positions the family agrees on — e.g. 0xE4='ä' in every member).
+     *
+     * <p>Used by the Latin-windows-1252 fallback rule in
+     * {@link MojibusterEncodingDetector}: if the top candidate is a member
+     * of this set AND the probe decodes byte-identically under windows-1252,
+     * swap to windows-1252 as the unmarked Latin default.  This is a
+     * narrower replacement for an earlier general "decode-equivalence
+     * expansion" design — see {@code charset-detection.md} for the full
+     * design-options discussion.</p>
+     */
+    public static final Set<String> SBCS_LATIN_FAMILY;
+
     static {
         // ----------------------------------------------------------------
         // Symmetric groups
@@ -277,6 +292,12 @@ public final class CharsetConfusables {
             }
         }
         SYMMETRIC_PEER_MAP = Collections.unmodifiableMap(peerMap);
+
+        SBCS_LATIN_FAMILY = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                "windows-1250", "windows-1252", "windows-1254", "windows-1257",
+                "ISO-8859-1", "ISO-8859-2", "ISO-8859-3", "ISO-8859-4",
+                "ISO-8859-9", "ISO-8859-13", "ISO-8859-15", "ISO-8859-16",
+                "x-MacRoman")));
     }
 
     private CharsetConfusables() {

@@ -108,34 +108,21 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          */
         CRLF_TO_WINDOWS,
         /**
-         * Lossless canonicalisation to {@code windows-1252}: if the top
-         * candidate is a single-byte Latin-family charset (not CJK, EBCDIC,
-         * Hebrew, Arabic, Cyrillic, or Greek) and decoding the probe with
-         * both that charset and {@code windows-1252} produces character-for-
-         * character identical strings, relabel the result as
-         * {@code windows-1252}.
-         *
-         * <p>Why: the statistical model is often confident in a sibling
-         * Latin-family charset (windows-1254 Turkish, windows-1257 Baltic,
-         * x-MacRoman, ISO-8859-X) when the probe contains only bytes that
-         * decode to the same characters under {@code windows-1252}.  For
-         * the bytes actually present in the probe, the label difference is
-         * cosmetic.  Canonicalising to {@code windows-1252} matches the
-         * WHATWG default, matches pre-4.x Tika behaviour for ASCII-adjacent
-         * Western text, and does not alter the decoded output.  When the
-         * charsets disagree on any byte actually present (e.g. real
-         * Japanese bytes under Shift_JIS, or Cyrillic under KOI8-R),
-         * the decoded strings differ and the rule does not fire, preserving
-         * the model's decision.</p>
+         * On low-evidence probes, if the top candidate is a
+         * {@link CharsetConfusables#SBCS_LATIN_FAMILY} non-1252 sibling that
+         * decodes byte-identically under windows-1252, relabel as
+         * windows-1252.  Gate: fewer than {@link #MIN_HIGH_BYTE_EVIDENCE}
+         * high bytes — enough evidence and the model's sibling choice is
+         * genuine.
          */
-        LOSSLESS_WIN1252_CANONICALISATION
+        LATIN_FALLBACK_WIN1252
     }
 
     private static final long serialVersionUID = 1L;
 
     /** Default model resource path on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/chardetect-v6-no-utf32.bin";
+            "/org/apache/tika/ml/chardetect/chardetect.bin";
 
     /**
      * Maps model label strings (from training-data filenames) to the canonical
@@ -201,6 +188,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private final ByteNgramFeatureExtractor extractor;
     private final EnumSet<Rule> enabledRules;
     private final int maxProbeBytes;
+    /**
+     * UTF-16 specialist.  Replaces the legacy structural UTF-16 detection
+     * in {@link WideUnicodeDetector}: correctly distinguishes LE from BE
+     * for Latin, Cyrillic, Arabic, Hebrew, Indic, Thai, CJK Unified and
+     * Hangul alike — the last two of which the structural detector
+     * explicitly could not handle.  Loaded eagerly at construction; the
+     * detector refuses to start if the specialist model is not on the
+     * classpath.
+     */
+    private final Utf16SpecialistEncodingDetector utf16Specialist;
 
     /**
      * Load the model from its default classpath location with all rules enabled
@@ -256,6 +253,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         this.extractor    = new ByteNgramFeatureExtractor(model.getNumBuckets());
         this.enabledRules = rules.isEmpty() ? EnumSet.noneOf(Rule.class) : EnumSet.copyOf(rules);
         this.maxProbeBytes = maxProbeBytes;
+        try {
+            this.utf16Specialist = new Utf16SpecialistEncodingDetector();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "UTF-16 specialist model could not be loaded.  Mojibuster "
+                            + "refuses to run without it — silent no-op produces "
+                            + "wrong answers.  Ensure utf16-specialist.bin is on "
+                            + "the classpath.", e);
+        }
     }
 
     /**
@@ -300,7 +306,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // An empty probe (e.g. empty file, or a file that was only a BOM) falls
         // through to detectAll where isPureAscii returns true for a zero-length
         // array, yielding windows-1252 as the default.
-        int topN = probe.length <= SHORT_PROBE_THRESHOLD ? TOP_N_SHORT : TOP_N_LONG;
+        // Evidence-based topN selection: on low-high-byte probes (sparse Latin
+        // in HTML, short probes, anything with few discriminative features),
+        // widen so CharSoup can arbitrate by language-scoring the decoded
+        // candidates.  On high-evidence probes the model has plenty to work
+        // with and we trust the top result.
+        int topN = countHighBytes(probe) < MIN_HIGH_BYTE_EVIDENCE
+                ? TOP_N_LOW_EVIDENCE
+                : TOP_N_HIGH_EVIDENCE;
         return detectAll(probe, topN);
     }
 
@@ -394,15 +407,39 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public List<EncodingResult> detectAll(byte[] probe, int topN) {
         boolean gates = enabledRules.contains(Rule.STRUCTURAL_GATES);
 
-        // Wide-Unicode analysis: positive detection and/or invalidity flags.
-        // Must run BEFORE isPureAscii: scripts like Cyrillic in UTF-16-LE have
-        // all bytes < 0x80 with no nulls, so isPureAscii would misclassify them.
+        // Wide-Unicode analysis: UTF-32 positive detection + UTF-16 surrogate
+        // invalidity flags.  UTF-16 positive detection is delegated to the
+        // trained Utf16 specialist below (which handles CJK/Hangul that the
+        // structural detector cannot).  Must run BEFORE isPureAscii: scripts
+        // like Cyrillic in UTF-16-LE have all bytes < 0x80 with no nulls, so
+        // isPureAscii would misclassify them.
         WideUnicodeDetector.Result wideResult = gates
                 ? WideUnicodeDetector.analyze(probe)
                 : WideUnicodeDetector.Result.EMPTY;
         if (wideResult.charset != null) {
             return singleResult(wideResult.charset.name(), 1.0f,
                     EncodingResult.ResultType.STRUCTURAL, topN);
+        }
+
+        // UTF-16 specialist: evidence-based column-asymmetry prefilter (the
+        // conservative "true-on-short-probe" default used for the main SBCS
+        // model's negative gate is wrong here — absence of evidence must
+        // mean "not UTF-16"), then a trained maxent over per-column
+        // byte-range counts decides LE vs BE.  Refuses if the chosen
+        // endianness is surrogate-invalid.
+        if (gates && StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe)) {
+            List<EncodingResult> utf16 = utf16Specialist.detect(probe);
+            if (!utf16.isEmpty()) {
+                EncodingResult er = utf16.get(0);
+                String name = er.getCharset().name();
+                boolean invalid =
+                        ("UTF-16LE".equals(name) && wideResult.invalidUtf16Le)
+                                || ("UTF-16BE".equals(name) && wideResult.invalidUtf16Be);
+                if (!invalid) {
+                    return singleResult(name, 1.0f,
+                            EncodingResult.ResultType.STRUCTURAL, topN);
+                }
+            }
         }
 
         if (gates) {
@@ -495,12 +532,30 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             results = refineCjkResults(probe, results);
         }
 
-        // On short probes, ensure enough candidates survive for CharSoup to
-        // arbitrate. Grammar-killed CJK charsets are skipped so they don't
-        // consume slots meant for viable alternatives.
-        if (probe.length < SHORT_PROBE_THRESHOLD && results.size() < MIN_CANDIDATES) {
+        // Ensure enough candidates survive for CharSoup to arbitrate.
+        // Triggers: low-evidence probes (few high bytes) OR results
+        // emptied by grammar filtering — if the model's only top-gap winner
+        // was a CJK charset that CjkEncodingRules rejected, selectByLogitGap
+        // leaves nothing behind, even on content-rich probes (e.g. Greek
+        // text where a hash-bucket collision made GB18030 the runaway top
+        // logit, which the grammar walker then correctly dropped).
+        int highByteCount = countHighBytes(probe);
+        boolean lowEvidence = highByteCount < MIN_HIGH_BYTE_EVIDENCE;
+        if ((lowEvidence || results.isEmpty()) && results.size() < MIN_CANDIDATES) {
             boolean grammar = enabledRules.contains(Rule.CJK_GRAMMAR);
             results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
+        }
+
+        // LATIN_FALLBACK_WIN1252 is gated to low-evidence probes only.  When
+        // the model has enough high-byte evidence it can discriminate sibling
+        // Latin code pages (windows-1250/1254/1257/ISO-8859-X) genuinely, and
+        // forcing a rewrite to windows-1252 would erase those distinctions.
+        // On low-evidence probes the model falls back to bias — that's where
+        // the fallback prevents IBM424/windows-1257/x-MacRoman false positives
+        // on sparse-Latin vCard-style and HTML-heavy content.
+        if (enabledRules.contains(Rule.LATIN_FALLBACK_WIN1252)
+                && highByteCount < MIN_HIGH_BYTE_EVIDENCE) {
+            results = applyLatinFallback(probe, results);
         }
 
         if (enabledRules.contains(Rule.ISO_TO_WINDOWS) && StructuralEncodingRules.hasC1Bytes(probe)) {
@@ -513,74 +568,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 && StructuralEncodingRules.hasGb18030FourByteSequence(probe)) {
             results = upgradeGbToGb18030(results);
         }
-        if (enabledRules.contains(Rule.LOSSLESS_WIN1252_CANONICALISATION)) {
-            results = losslessWin1252Canonicalise(probe, results);
-        }
         // Trim to topN after all rules have fired, not before.
         return results.subList(0, Math.min(topN, results.size()));
-    }
-
-    /**
-     * Labels for which {@link Rule#LOSSLESS_WIN1252_CANONICALISATION} may fire.
-     * Only single-byte Latin-family code pages are candidates; CJK, Cyrillic,
-     * Greek, Hebrew, Arabic, and Thai charsets are excluded because differing
-     * labels there imply different scripts, not cosmetic variation.
-     *
-     * <p>windows-1252 itself is included so it is a no-op when already chosen.
-     * ISO-8859-1 is included because it is a strict subset of windows-1252 for
-     * the 0xA0-0xFF range (they differ only in 0x80-0x9F, where ISO-8859-1
-     * defines C1 control codes).  ISO-8859-15 differs from 1252 at 8 code
-     * points used for Euro / OE / S-caron / Z-caron; the byte-level equality
-     * check catches those automatically.</p>
-     */
-    private static final java.util.Set<String> WIN1252_CANONICALISABLE_LABELS =
-            java.util.Set.of(
-                    "windows-1252", "ISO-8859-1", "ISO-8859-15",
-                    "windows-1250", "ISO-8859-2",
-                    "windows-1254", "ISO-8859-9",
-                    "windows-1257", "ISO-8859-4", "ISO-8859-13",
-                    "ISO-8859-3", "ISO-8859-16",
-                    "x-MacRoman");
-
-    /**
-     * If the top result's label is in {@link #WIN1252_CANONICALISABLE_LABELS}
-     * and decoding the probe with that charset produces the same string as
-     * decoding with {@code windows-1252}, replace the top result with a
-     * windows-1252 result at the same confidence.  See {@link
-     * Rule#LOSSLESS_WIN1252_CANONICALISATION}.
-     */
-    private static List<EncodingResult> losslessWin1252Canonicalise(byte[] probe,
-                                                                    List<EncodingResult> results) {
-        if (results.isEmpty()) {
-            return results;
-        }
-        EncodingResult top = results.get(0);
-        String topLabel = top.getLabel();
-        if (topLabel == null || !WIN1252_CANONICALISABLE_LABELS.contains(topLabel)) {
-            return results;
-        }
-        if ("windows-1252".equals(topLabel)) {
-            return results;
-        }
-        Charset topCharset = top.getCharset();
-        Charset win1252;
-        try {
-            win1252 = Charset.forName("windows-1252");
-        } catch (IllegalArgumentException e) {
-            return results;
-        }
-        String decodedTop = new String(probe, topCharset);
-        String decoded1252 = new String(probe, win1252);
-        if (!decodedTop.equals(decoded1252)) {
-            return results;
-        }
-        List<EncodingResult> out = new ArrayList<>(results.size());
-        out.add(new EncodingResult(win1252, top.getConfidence(),
-                "windows-1252", top.getResultType()));
-        for (int i = 1; i < results.size(); i++) {
-            out.add(results.get(i));
-        }
-        return out;
     }
 
     /**
@@ -606,11 +595,45 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final int SHORT_PROBE_THRESHOLD = 50;
 
-    /** Max results returned to CharSoup on short probes (<=SHORT_PROBE_THRESHOLD). */
-    private static final int TOP_N_SHORT = 3;
+    /**
+     * The true "low-evidence" signal for this extractor: the feature path only
+     * fires on bytes &ge; {@code 0x80} (stride-1 anchored unigrams/bigrams),
+     * so the count of high bytes is the discriminative feature budget.  Below
+     * this threshold the model has too few features to discriminate reliably
+     * regardless of probe length — an HTML page full of ASCII markup plus
+     * two accented characters has the same evidence profile as a 40-byte
+     * sparse-Latin vCard.  Gate on this (not on probe length) for:
+     * <ul>
+     *   <li>widening {@code topN} so CharSoup has candidates to arbitrate;</li>
+     *   <li>firing {@link Rule#LATIN_FALLBACK_WIN1252};</li>
+     *   <li>{@code selectAtLeast} minimum-candidate fallback.</li>
+     * </ul>
+     */
+    private static final int MIN_HIGH_BYTE_EVIDENCE = 5;
 
-    /** Max results returned to CharSoup on long probes. */
-    private static final int TOP_N_LONG = 1;
+    private static int countHighBytes(byte[] probe) {
+        int n = 0;
+        for (byte b : probe) {
+            if ((b & 0xFF) >= 0x80) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Max results returned to CharSoup on low-evidence probes
+     * (high-byte count &lt; {@link #MIN_HIGH_BYTE_EVIDENCE}).  Needs to be
+     * wide enough to include the first SBCS-Latin-family candidate so
+     * {@link #applyLatinFallback} can fire — sparse-Latin probes tend to
+     * rank DOS OEM / Cyrillic / Arabic / CJK classes ahead of Latin
+     * siblings on bias and hash-bucket accidents, so the Latin sibling
+     * may be rank 4-5 even when it's actually the right answer.
+     */
+    private static final int TOP_N_LOW_EVIDENCE = 5;
+
+    /** Max results returned to CharSoup on high-evidence probes. */
+    private static final int TOP_N_HIGH_EVIDENCE = 1;
 
     /** Minimum candidates guaranteed to downstream rules on short probes. */
     private static final int MIN_CANDIDATES = 3;
@@ -774,6 +797,46 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         return upgraded;
+    }
+
+    private static final String WIN1252 = "windows-1252";
+
+    /**
+     * Latin→windows-1252 fallback.  See {@link Rule#LATIN_FALLBACK_WIN1252}.
+     *
+     * <p>For each candidate whose label is in {@link CharsetConfusables#SBCS_LATIN_FAMILY}
+     * but is not already windows-1252, if the probe decodes byte-identically
+     * under windows-1252 (cheap per-probe byte walk via
+     * {@link DecodeEquivalence#byteIdenticalOnProbe}), swap the result to
+     * windows-1252 at the same confidence.  A candidate that is already
+     * windows-1252 short-circuits the rest of the list — once windows-1252
+     * has been selected there's nothing to relabel.</p>
+     */
+    private static List<EncodingResult> applyLatinFallback(byte[] probe,
+                                                           List<EncodingResult> results) {
+        if (results.isEmpty()) {
+            return results;
+        }
+        Charset win1252 = labelToCharset(WIN1252);
+        if (win1252 == null) {
+            return results;
+        }
+        List<EncodingResult> out = new ArrayList<>(results.size());
+        boolean replaced = false;
+        for (EncodingResult er : results) {
+            String label = er.getLabel() != null ? er.getLabel() : er.getCharset().name();
+            if (!replaced
+                    && CharsetConfusables.SBCS_LATIN_FAMILY.contains(label)
+                    && !WIN1252.equals(label)
+                    && DecodeEquivalence.byteIdenticalOnProbe(probe, er.getCharset(), win1252)) {
+                out.add(new EncodingResult(win1252, er.getConfidence(), WIN1252,
+                        er.getResultType()));
+                replaced = true;
+            } else {
+                out.add(er);
+            }
+        }
+        return out;
     }
 
     private static List<EncodingResult> upgradeIsoToWindows(List<EncodingResult> results) {

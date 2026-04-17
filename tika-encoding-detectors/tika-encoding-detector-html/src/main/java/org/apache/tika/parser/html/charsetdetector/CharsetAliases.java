@@ -61,7 +61,15 @@ final class CharsetAliases {
         addCharset(charset("Big5"), "big5", "big5-hkscs", "cn-big5", "csbig5", "x-x-big5");
         addCharset(charset("EUC-JP"), "cseucpkdfmtjapanese", "euc-jp", "x-euc-jp");
         addCharset(charset("EUC-KR"), "cseuckr", "csksc56011987", "euc-kr", "iso-ir-149", "korean",
-                "ks_c_5601-1987", "ks_c_5601-1989", "ksc5601", "ksc_5601", "windows-949");
+                "ks_c_5601-1987", "ks_c_5601-1989", "ksc5601", "ksc_5601");
+        // windows-949 / MS949 / CP949: the WHATWG encoding spec lists these as
+        // labels for EUC-KR, but MS949 is a *strict superset* of EUC-KR (Unified
+        // Hangul Code adds 8,822 syllables outside EUC-KR's Wansung range).
+        // Honoring the spec alias would be data-destructive on any file that
+        // genuinely uses MS949-extension bytes (lead 0x81-0xA0): EUC-KR's decoder
+        // emits U+FFFD where MS949 emits the correct Hangul syllable.  Resolve
+        // these labels to Java's x-windows-949 (MS949) for byte-correct decoding.
+        addCharset(charset("x-windows-949"), "windows-949", "ms949", "cp949");
         addCharset(charset("GBK"), "chinese", "csgb2312", "csiso58gb231280", "gb2312", "gb_2312",
                 "gb_2312-80", "gbk", "iso-ir-58", "x-gbk");
         addCharset(charset("IBM866"), "866", "cp866", "csibm866", "ibm866");

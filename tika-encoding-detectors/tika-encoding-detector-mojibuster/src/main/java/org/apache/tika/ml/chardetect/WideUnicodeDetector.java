@@ -17,14 +17,11 @@
 package org.apache.tika.ml.chardetect;
 
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
- * Structural analysis for UTF-16 LE/BE and UTF-32 LE/BE based on
- * byte-position patterns. This is an internal component of
- * {@link MojibusterEncodingDetector}'s pipeline — not a standalone
- * {@code EncodingDetector}. It intentionally does not handle CJK UTF-16
- * (which falls through to the statistical model) and requires upstream
+ * Structural analysis for UTF-32 LE/BE, plus UTF-16 surrogate validity
+ * flags. This is an internal component of {@link MojibusterEncodingDetector}'s
+ * pipeline — not a standalone {@code EncodingDetector}. Requires upstream
  * BOM stripping.
  *
  * <h3>UTF-32</h3>
@@ -34,30 +31,17 @@ import java.nio.charset.StandardCharsets;
  * non-UTF-32 data almost always produces out-of-range values immediately.
  * Inspired by ICU4J's {@code CharsetRecog_UTF_32}.</p>
  *
- * <h3>UTF-16</h3>
- * <p>Two phases, each targeting a different script family:
- * <ol>
- *   <li><strong>Null-column</strong> — Latin/ASCII BMP content: one byte
- *       column (even or odd positions at stride-2) has a high null rate.
- *       Safe: no legacy encoding produces alternating nulls.</li>
- *   <li><strong>Low-block-prefix</strong> — scripts whose UTF-16 high byte
- *       is below {@code 0x20} (Cyrillic 0x04, Arabic 0x06, Hebrew 0x05,
- *       Devanagari 0x09, Bengali 0x09, Thai 0x0E, etc.): the constrained
- *       column has all non-null values below {@code 0x20}, the other column
- *       is more diverse. Safe: Big5/Shift-JIS/GBK lead bytes are always
- *       &ge; 0x81.</li>
- * </ol>
- *
- * <p>CJK Unified (block prefix 0x4E–0x9F) and Hangul (0xAC–0xD7) are
- * intentionally not handled — their block prefixes overlap with
- * Big5/Shift-JIS/GBK lead bytes (0x81+) and with ISO-2022-JP JIS row
- * bytes, making structural discrimination unsafe. Those cases fall
- * through to the statistical model.</p>
- *
- * <p>In addition to positive detection, {@link Result} carries surrogate-
- * invalidity flags for each endianness. When no positive detection fires,
- * these flags allow the caller to suppress UTF-16 model predictions for
- * probes that are structurally impossible as UTF-16.</p>
+ * <h3>UTF-16 surrogate validation</h3>
+ * <p>UTF-16 positive detection is handled by
+ * {@link Utf16SpecialistEncodingDetector}, which uses a trained maxent
+ * model over per-column byte-range counts and correctly distinguishes
+ * LE from BE for Latin, Cyrillic, Arabic, Hebrew, Indic, Thai, CJK
+ * Unified, and Hangul content alike.  This class only performs surrogate-
+ * invalidity validation: {@link Result#invalidUtf16Be} and
+ * {@link Result#invalidUtf16Le} carry whether the probe contains
+ * structurally impossible UTF-16 surrogate sequences under each
+ * endianness, so callers can suppress UTF-16 labels from statistical
+ * models when the bytes cannot be valid UTF-16.</p>
  *
  * <p>All methods are stateless and safe to call from multiple threads.</p>
  */
@@ -190,33 +174,13 @@ final class WideUnicodeDetector {
     // -----------------------------------------------------------------------
 
     /**
-     * Null-column threshold: the null rate in one column must exceed
-     * {@code 1 / NULL_DENOM} of pairs. Set to 4 (25%) to avoid false
-     * positives on OLE2 and bzip2 which have 12–20% null at one column.
-     * Real Latin UTF-16 has >90% null in the null column.
+     * Surrogate-validation scan over {@code length} bytes starting at
+     * {@code offset}.  Does not attempt UTF-16 positive detection — that is
+     * the job of {@link Utf16SpecialistEncodingDetector}.  Returns only
+     * surrogate-invalidity flags under each endianness, used by
+     * {@link MojibusterEncodingDetector} to suppress UTF-16 labels from
+     * the main statistical model on probes that cannot be valid UTF-16.
      */
-    private static final int NULL_DENOM = 4;
-
-    /**
-     * Variety-ratio minimum: the diverse column must have at least this
-     * many times more distinct values than the constrained column.
-     */
-    private static final double VARIETY_RATIO = 2.0;
-
-    /**
-     * The constrained column must have fewer than this fraction of pairs
-     * as distinct values. Guards against uniformly random data.
-     */
-    private static final double CONSTRAINED_MAX_RATIO = 0.40;
-
-    /**
-     * Upper bound for the low-block-prefix phase. Scripts with UTF-16 high
-     * bytes below this value are safely distinguishable from all legacy CJK
-     * lead bytes (which start at 0x81).
-     */
-    private static final int LOW_PREFIX_MAX = 0x20;
-
-
     private static Result tryUtf16(byte[] bytes, int offset, int length) {
         int sampleLen = (Math.min(length, 512) / 2) * 2;
         if (sampleLen < 8) {
@@ -224,12 +188,6 @@ final class WideUnicodeDetector {
         }
         int pairs = sampleLen / 2;
 
-        int nullsAtEven = 0;
-        int nullsAtOdd = 0;
-        int[] countsEven = new int[256];
-        int[] countsOdd = new int[256];
-
-        // Surrogate validation
         boolean awaitLowBe = false, awaitLowLe = false;
         boolean invalidBe = false, invalidLe = false;
 
@@ -237,12 +195,6 @@ final class WideUnicodeDetector {
             int even = bytes[offset + p * 2] & 0xFF;
             int odd = bytes[offset + p * 2 + 1] & 0xFF;
 
-            if (even == 0) nullsAtEven++;
-            if (odd == 0) nullsAtOdd++;
-            countsEven[even]++;
-            countsOdd[odd]++;
-
-            // UTF-16BE surrogate validation (high byte = even)
             if (!invalidBe) {
                 if (awaitLowBe) {
                     if (even >= 0xDC && even <= 0xDF) {
@@ -259,7 +211,6 @@ final class WideUnicodeDetector {
                 }
             }
 
-            // UTF-16LE surrogate validation (high byte = odd)
             if (!invalidLe) {
                 if (awaitLowLe) {
                     if (odd >= 0xDC && odd <= 0xDF) {
@@ -279,70 +230,7 @@ final class WideUnicodeDetector {
         if (awaitLowBe) invalidBe = true;
         if (awaitLowLe) invalidLe = true;
 
-        int uniqueEven = countUnique(countsEven);
-        int uniqueOdd = countUnique(countsOdd);
-
-        // Phase 1: null-column (Latin/ASCII BMP content)
-        boolean highEven = nullsAtEven * NULL_DENOM > pairs;
-        boolean highOdd = nullsAtOdd * NULL_DENOM > pairs;
-        if (highOdd && !highEven && !invalidLe) {
-            return new Result(StandardCharsets.UTF_16LE, invalidBe, false);
-        }
-        if (highEven && !highOdd && !invalidBe) {
-            return new Result(StandardCharsets.UTF_16BE, false, invalidLe);
-        }
-
-        // Phase 2: low-block-prefix (Cyrillic, Arabic, Hebrew, Indic, Thai, …)
-        // The constrained column has all non-null values < 0x20.
-        // Safe: no legacy CJK lead byte is below 0x81.
-        double constrainedMax = pairs * CONSTRAINED_MAX_RATIO;
-
-        // Check LE: odd column is constrained (block-prefix), even is diverse
-        if (!invalidLe
-                && allNonNullBelow(countsOdd, LOW_PREFIX_MAX)
-                && uniqueOdd <= constrainedMax
-                && (double) uniqueEven / uniqueOdd >= VARIETY_RATIO
-                && hasNonNull(countsOdd)) {
-            return new Result(StandardCharsets.UTF_16LE, invalidBe, false);
-        }
-        // Check BE: even column is constrained, odd is diverse
-        if (!invalidBe
-                && allNonNullBelow(countsEven, LOW_PREFIX_MAX)
-                && uniqueEven <= constrainedMax
-                && (double) uniqueOdd / uniqueEven >= VARIETY_RATIO
-                && hasNonNull(countsEven)) {
-            return new Result(StandardCharsets.UTF_16BE, false, invalidLe);
-        }
-
         return new Result(null, invalidBe, invalidLe);
-    }
-
-    // -----------------------------------------------------------------------
-    //  Helpers
-    // -----------------------------------------------------------------------
-
-    private static int countUnique(int[] counts) {
-        int n = 0;
-        for (int c : counts) {
-            if (c > 0) n++;
-        }
-        return n;
-    }
-
-    /** True if every non-null byte value in {@code counts} is < {@code max}. */
-    private static boolean allNonNullBelow(int[] counts, int max) {
-        for (int v = max; v < counts.length; v++) {
-            if (counts[v] > 0) return false;
-        }
-        return true;
-    }
-
-    /** True if at least one non-null byte value has a positive count. */
-    private static boolean hasNonNull(int[] counts) {
-        for (int v = 1; v < counts.length; v++) {
-            if (counts[v] > 0) return true;
-        }
-        return false;
     }
 
 }

@@ -33,12 +33,15 @@ import java.util.zip.GZIPInputStream;
  * <pre>
  *   Offset  Field
  *   0       4B magic: 0x4C444D31
- *   4       4B version: 1
+ *   4       4B version: 1 or 2
  *   8       4B numBuckets (B)
  *   12      4B numClasses (C)
  *   16+     Labels: C entries of [2B length + UTF-8 bytes]
  *           Scales: C × 4B float (per-class dequantization)
  *           Biases: C × 4B float (per-class bias term)
+ *           (V2 only)
+ *           1B hasCalibration flag
+ *           If hasCalibration: ClassMean: C × 4B float, ClassStd: C × 4B float
  *           Weights: B × C bytes (bucket-major, INT8 signed)
  * </pre>
  * <p>
@@ -48,17 +51,36 @@ import java.util.zip.GZIPInputStream;
  * — each non-zero bucket reads a contiguous run of
  * {@code numClasses} bytes, ideal for SIMD and cache
  * prefetching.
+ * <p>
+ * Calibration (V2): optional per-class mean/std of training-set logits.
+ * When present, {@link #predictCalibratedLogits} standardizes raw logits
+ * so cross-specialist pooling can compare "unusually confident" signals on
+ * equal footing.  V1 files are still readable; calibration is absent and
+ * {@link #predictCalibratedLogits} falls back to raw logits.
  */
 public class LinearModel {
 
     public static final int MAGIC = 0x4C444D31; // "LDM1"
-    public static final int VERSION = 1;
+    public static final int VERSION_V1 = 1;
+    public static final int VERSION_V2 = 2;
+    /**
+     * Latest version we emit.
+     */
+    public static final int VERSION = VERSION_V2;
 
     private final int numBuckets;
     private final int numClasses;
     private final String[] labels;
     private final float[] scales;
     private final float[] biases;
+    /**
+     * Optional per-class logit mean for calibration; {@code null} if absent.
+     */
+    private final float[] classMean;
+    /**
+     * Optional per-class logit std (never zero when present).
+     */
+    private final float[] classStd;
 
     /**
      * Flat INT8 weight array in bucket-major order:
@@ -67,29 +89,76 @@ public class LinearModel {
     private final byte[] flatWeights;
 
     /**
-     * Construct from class-major {@code byte[][]} weights.
-     * Transposes to bucket-major flat layout internally.
+     * Construct without calibration (V1-compatible).
+     * Transposes class-major weights to bucket-major flat layout internally.
      */
     public LinearModel(int numBuckets, int numClasses,
                        String[] labels, float[] scales,
                        float[] biases, byte[][] weights) {
+        this(numBuckets, numClasses, labels, scales, biases, weights, null, null);
+    }
+
+    /**
+     * Construct with optional calibration.  Pass {@code classMean} and
+     * {@code classStd} (each of length {@code numClasses}) to enable
+     * z-score calibration in {@link #predictCalibratedLogits}; pass
+     * {@code null} for both to skip.  Any {@code classStd[c] == 0} is
+     * rewritten to {@code 1.0f} to avoid divide-by-zero.
+     */
+    public LinearModel(int numBuckets, int numClasses,
+                       String[] labels, float[] scales,
+                       float[] biases, byte[][] weights,
+                       float[] classMean, float[] classStd) {
         this.numBuckets = numBuckets;
         this.numClasses = numClasses;
         this.labels = labels;
         this.scales = scales;
         this.biases = biases;
+        this.classMean = classMean;
+        this.classStd = sanitizeStd(classStd);
         this.flatWeights = transposeToBucketMajor(weights, numBuckets, numClasses);
+        validateCalibration();
     }
 
     private LinearModel(int numBuckets, int numClasses,
                         String[] labels, float[] scales,
-                        float[] biases, byte[] flatWeights) {
+                        float[] biases, byte[] flatWeights,
+                        float[] classMean, float[] classStd) {
         this.numBuckets = numBuckets;
         this.numClasses = numClasses;
         this.labels = labels;
         this.scales = scales;
         this.biases = biases;
+        this.classMean = classMean;
+        this.classStd = sanitizeStd(classStd);
         this.flatWeights = flatWeights;
+        validateCalibration();
+    }
+
+    private static float[] sanitizeStd(float[] std) {
+        if (std == null) {
+            return null;
+        }
+        float[] out = new float[std.length];
+        for (int i = 0; i < std.length; i++) {
+            out[i] = std[i] > 0f ? std[i] : 1.0f;
+        }
+        return out;
+    }
+
+    private void validateCalibration() {
+        if ((classMean == null) != (classStd == null)) {
+            throw new IllegalArgumentException(
+                    "classMean and classStd must both be provided or both null");
+        }
+        if (classMean != null && classMean.length != numClasses) {
+            throw new IllegalArgumentException(
+                    "classMean length " + classMean.length + " != numClasses " + numClasses);
+        }
+        if (classStd != null && classStd.length != numClasses) {
+            throw new IllegalArgumentException(
+                    "classStd length " + classStd.length + " != numClasses " + numClasses);
+        }
     }
 
     private static byte[] transposeToBucketMajor(
@@ -154,7 +223,9 @@ public class LinearModel {
         return loadRaw(is);
     }
 
-    /** Read LDM1 from an already-unwrapped (non-gzip) stream. */
+    /**
+     * Read LDM from an already-unwrapped (non-gzip) stream.
+     */
     private static LinearModel loadRaw(InputStream is) throws IOException {
         DataInputStream dis = new DataInputStream(is);
         int magic = dis.readInt();
@@ -163,9 +234,10 @@ public class LinearModel {
                     "Invalid magic: expected 0x%08X, got 0x%08X", MAGIC, magic));
         }
         int version = dis.readInt();
-        if (version != VERSION) {
+        if (version != VERSION_V1 && version != VERSION_V2) {
             throw new IOException(
-                    "Unsupported version: " + version + " (expected " + VERSION + ")");
+                    "Unsupported version: " + version
+                            + " (expected " + VERSION_V1 + " or " + VERSION_V2 + ")");
         }
 
         int numBuckets = dis.readInt();
@@ -175,10 +247,21 @@ public class LinearModel {
         float[] scales = readFloats(dis, numClasses);
         float[] biases = readFloats(dis, numClasses);
 
+        float[] classMean = null;
+        float[] classStd = null;
+        if (version >= VERSION_V2) {
+            boolean hasCalibration = dis.readBoolean();
+            if (hasCalibration) {
+                classMean = readFloats(dis, numClasses);
+                classStd = readFloats(dis, numClasses);
+            }
+        }
+
         byte[] flat = new byte[numBuckets * numClasses];
         dis.readFully(flat);
 
-        return new LinearModel(numBuckets, numClasses, labels, scales, biases, flat);
+        return new LinearModel(numBuckets, numClasses, labels, scales, biases,
+                flat, classMean, classStd);
     }
 
     // ================================================================
@@ -186,17 +269,24 @@ public class LinearModel {
     // ================================================================
 
     /**
-     * Write the model in LDM1 binary format.
+     * Write the model in LDM binary format.  Emits V2 (with or without
+     * calibration block depending on whether this model has calibration).
      */
     public void save(OutputStream os) throws IOException {
         DataOutputStream dos = new DataOutputStream(os);
         dos.writeInt(MAGIC);
-        dos.writeInt(VERSION);
+        dos.writeInt(VERSION_V2);
         dos.writeInt(numBuckets);
         dos.writeInt(numClasses);
         writeLabels(dos);
         writeFloats(dos, scales);
         writeFloats(dos, biases);
+        boolean hasCal = hasCalibration();
+        dos.writeBoolean(hasCal);
+        if (hasCal) {
+            writeFloats(dos, classMean);
+            writeFloats(dos, classStd);
+        }
         dos.write(flatWeights);
         dos.flush();
     }
@@ -252,6 +342,40 @@ public class LinearModel {
      */
     public float[] predict(int[] features) {
         return softmax(predictLogits(features));
+    }
+
+    /**
+     * Compute calibrated logits: {@code (raw - classMean[c]) / classStd[c]}
+     * for each class, if the model carries calibration statistics, else raw
+     * logits (no-op).  Calibrated logits are comparable across specialists
+     * with different natural logit scales — they express "how many standard
+     * deviations above this class's training-set mean" rather than raw weight
+     * arithmetic.
+     */
+    public float[] predictCalibratedLogits(int[] features) {
+        float[] raw = predictLogits(features);
+        if (classMean == null || classStd == null) {
+            return raw;
+        }
+        for (int c = 0; c < numClasses; c++) {
+            raw[c] = (raw[c] - classMean[c]) / classStd[c];
+        }
+        return raw;
+    }
+
+    /**
+     * {@code true} if this model carries per-class calibration statistics.
+     */
+    public boolean hasCalibration() {
+        return classMean != null && classStd != null;
+    }
+
+    public float[] getClassMean() {
+        return classMean;
+    }
+
+    public float[] getClassStd() {
+        return classStd;
     }
 
     /**

@@ -73,7 +73,7 @@ public class EvalCharsetDetectors {
     private static final double OOV_THRESHOLD_CJK  = 0.80;
     private static final double OOV_THRESHOLD_SBCS = 0.98;
     private static final Set<String> CJK_CHARSETS = Set.of(
-            "Big5", "Big5-HKSCS", "EUC-JP", "EUC-KR", "EUC-TW",
+            "Big5", "Big5-HKSCS", "EUC-JP", "EUC-KR", "EUC-TW", "x-windows-949",
             "GB18030", "GB2312", "GBK", "Shift_JIS"
     );
     private static final Set<String> OOV_EXEMPT = Set.of(

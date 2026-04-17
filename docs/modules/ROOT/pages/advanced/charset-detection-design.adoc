@@ -91,8 +91,23 @@ Each `EncodingResult` carries:
 
 | `DECLARATIVE`
 | Explicit charset declaration: BOM, HTML `<meta>` tag, HTTP Content-Type
-  header, or metadata hint.  Should be respected over statistical inferences
-  unless structurally impossible.
+  header, or metadata hint.
++
+*Important — declared charsets are NOT trusted by default.* When
+`CharSoupEncodingDetector` is in the chain (the default configuration),
+DECLARATIVE candidates are treated as one input among several and are
+arbitrated by language signal alongside STATISTICAL and STRUCTURAL
+candidates.  This is deliberate: real-world declarations are notoriously
+unreliable — sites serve `windows-1252` and declare `ISO-8859-1`, serve
+`UTF-8` and declare `ASCII`, copy-paste templates from other regions
+without updating the meta tag, and so on.  Tika's stance is that
+language signal over the actual decoded bytes is more trustworthy than
+a declaration on the wire.
++
+If you want declared charsets to be authoritative (e.g. you trust your
+input pipeline, or you specifically want HTML5-spec-compliant behaviour),
+configure your detector chain *without* `CharSoupEncodingDetector` —
+see <<opting-out-of-arbitration>>.
 
 | `STRUCTURAL`
 | Derived from byte-level structure (UTF-8 validity, EBCDIC space distribution).
@@ -271,6 +286,25 @@ chain switches `CompositeEncodingDetector` into collect-all mode.  After all
 other detectors run, CharSoup receives the full `EncodingDetectorContext` and
 arbitrates.
 
+[IMPORTANT]
+====
+*CharSoup intentionally arbitrates over ALL candidates, including
+DECLARATIVE ones.*  A `<meta charset>` tag, HTTP `Content-Type` charset
+parameter, or other declared charset is treated as one input among many
+— not as authoritative.  Real-world declarations on the legacy web are
+notoriously unreliable (sites declare ASCII while serving UTF-8, declare
+ISO-8859-1 while serving windows-1252, copy-paste templates from other
+regions and forget to update the meta tag, etc.).  CharSoup's stance:
+language signal over the actual decoded bytes is more trustworthy than
+the wire declaration.
+
+If you want declared charsets to be authoritative — for example because
+you trust your input pipeline, or you specifically need HTML5
+spec-compliant behaviour — *opt out of CharSoup* (see
+<<opting-out-of-arbitration>>).  This is a configuration choice, not a
+limitation.
+====
+
 Before any charset decoding, CharSoup strips leading BOM bytes from the raw
 probe.  This ensures every candidate charset decodes the same content bytes,
 preventing the BOM itself from skewing language scores.
@@ -305,6 +339,48 @@ false positives from truly lying BOMs or wrong `<meta charset>` tags.
   DECLARATIVE result if one exists and its decoding is at least as clean as the
   statistical winner; otherwise it returns the first candidate from the
   highest-confidence statistical detector.
+
+[[opting-out-of-arbitration]]
+=== Opting out — strict declared-charset honoring
+
+If your application needs declared charsets to be authoritative, omit
+`CharSoupEncodingDetector` from the encoding-detector chain.  Without
+CharSoup, `CompositeEncodingDetector` runs in classic
+"first-detector-with-a-result wins" mode.  A typical declared-charset-honoring
+configuration:
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    { "bom-detector": {} },
+    { "metadata-charset-detector": {} },
+    { "standard-html-encoding-detector": {} },
+    { "mojibuster-encoding-detector": {} }
+  ]
+}
+----
+
+In this chain:
+
+* `BOMDetector` returns DECLARATIVE on a recognised BOM.
+* `MetadataCharsetDetector` returns DECLARATIVE from HTTP/MIME headers.
+* `StandardHtmlEncodingDetector` returns DECLARATIVE from `<meta charset>` /
+  `<meta http-equiv>` tags.
+* `MojibusterEncodingDetector` runs only when none of the above produced a
+  declaration, and its STATISTICAL result is final (no language-signal
+  arbitration to second-guess it).
+
+This is HTML5-spec-compliant for the declaration cases and matches the
+behaviour callers familiar with Tika 2.x and earlier expect.  The
+trade-off is that lying declarations (e.g. a Korean MS949 page that
+declares `Windows-949` correctly but where Mojibuster's statistical
+output would have rescued a misdeclaration) propagate unfiltered.
+
+Conversely, the default chain (with CharSoup) tolerates lying
+declarations at the cost of occasionally overriding a correct one when
+the language signal is ambiguous.  Pick the trade-off that matches your
+deployment.
 
 [[thai-gbk-case-study]]
 === Case study: why top-N limiting and the generative model matter

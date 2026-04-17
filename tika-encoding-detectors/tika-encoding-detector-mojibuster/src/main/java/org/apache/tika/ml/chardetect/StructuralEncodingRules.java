@@ -309,6 +309,38 @@ public final class StructuralEncodingRules {
         if (bytes == null || bytes.length < MIN_COLUMN_ASYMMETRY_PROBE) {
             return true;
         }
+        return computeColumnAsymmetry(bytes);
+    }
+
+    /**
+     * Evidence-based variant of {@link #has2ByteColumnAsymmetry} with no
+     * conservative short-probe default: returns {@code true} only when the
+     * bytes themselves demonstrate column asymmetry, regardless of probe
+     * length.  Use this to gate <em>positive</em> UTF-16 detection (e.g.
+     * invoking {@code Utf16SpecialistEncodingDetector}), where absence of
+     * evidence must mean "not UTF-16", not "unknown".
+     *
+     * <p>Rejects probes below {@value #MIN_COLUMN_EVIDENCE_PROBE} bytes
+     * outright: with fewer than 8 pairs, column-distinct counts don't
+     * discriminate any UTF-16 variant from legacy double-byte encodings
+     * like GBK or Shift_JIS, which also have constrained lead-byte columns
+     * on short samples.</p>
+     */
+    public static boolean has2ByteColumnAsymmetryEvidence(byte[] bytes) {
+        if (bytes == null || bytes.length < MIN_COLUMN_EVIDENCE_PROBE) {
+            return false;
+        }
+        return computeColumnAsymmetry(bytes);
+    }
+
+    /**
+     * Minimum bytes required for {@link #has2ByteColumnAsymmetryEvidence}.
+     * Below this, legacy CJK double-byte encodings (GBK, Shift_JIS) can
+     * produce apparent column asymmetry indistinguishable from UTF-16.
+     */
+    private static final int MIN_COLUMN_EVIDENCE_PROBE = 16;
+
+    private static boolean computeColumnAsymmetry(byte[] bytes) {
         int sample = Math.min(bytes.length, 4096);
         boolean[] evenSeen = new boolean[256];
         boolean[] oddSeen = new boolean[256];
@@ -330,7 +362,7 @@ public final class StructuralEncodingRules {
         }
         int min = Math.min(evenDistinct, oddDistinct);
         int max = Math.max(evenDistinct, oddDistinct);
-        return max >= min * 3;
+        return min > 0 && max >= min * 3;
     }
 
     public static boolean checkIbm424(byte[] bytes, int offset, int length) {

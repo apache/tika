@@ -37,4 +37,27 @@ public interface FeatureExtractor<T> {
      * @return number of hash buckets (feature-vector dimension)
      */
     int getNumBuckets();
+
+    /**
+     * Sparse extraction into caller-owned reusable buffers: populates
+     * {@code dense} with feature counts, writes the indices of non-zero
+     * entries into {@code touched}, and returns how many indices were
+     * written.  Callers are responsible for clearing the touched entries
+     * of {@code dense} before reuse.
+     *
+     * <p>Default implementation delegates to {@link #extract}.  Extractors
+     * that can do better (avoid allocating the full dense vector, or scan
+     * the input only once) should override.</p>
+     */
+    default int extractSparseInto(T input, int[] dense, int[] touched) {
+        int[] features = extract(input);
+        int n = 0;
+        for (int i = 0; i < features.length; i++) {
+            if (features[i] != 0) {
+                dense[i] = features[i];
+                touched[n++] = i;
+            }
+        }
+        return n;
+    }
 }
