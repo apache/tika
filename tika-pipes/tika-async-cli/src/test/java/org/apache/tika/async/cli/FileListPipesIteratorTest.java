@@ -47,6 +47,10 @@ public class FileListPipesIteratorTest {
         assertEquals("subdir/doc2.txt", tuples.get(1).getFetchKey().getFetchKey());
         assertEquals("doc3.html", tuples.get(2).getFetchKey().getFetchKey());
 
+        assertEquals("doc1.pdf", tuples.get(0).getId());
+        assertEquals("subdir/doc2.txt", tuples.get(1).getId());
+        assertEquals("doc3.html", tuples.get(2).getId());
+
         assertEquals("fsf", tuples.get(0).getFetchKey().getFetcherId());
         assertEquals("fse", tuples.get(0).getEmitKey().getEmitterId());
     }

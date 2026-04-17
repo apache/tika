@@ -301,7 +301,9 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {
-
+        if (slidePart == null) {
+            return;
+        }
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
                 XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
                 XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),

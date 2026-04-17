@@ -14,17 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.iterator.filelist;
+package org.apache.tika.metadata;
 
 /**
- * Reads a list of file names/relative paths from a UTF-8 file.
- * One file name/relative path per line.  This path is used for the fetch key,
- * the id and the emit key.  If you need more customized control of the keys/ids,
- * consider using the jdbc pipes iterator or the csv pipes iterator.
- *
- * Skips empty lines and lines starting with '#'
- *
- * TODO: implement this class
+ * DWG-specific properties surfaced by LibreDWG's dwgread JSON output.
  */
-public class FileListPipesIterator {
+public interface DWG {
+
+    String DWG_PREFIX = "dwg" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
+    Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "applicationName");
+
+    Property APPLICATION_VERSION = Property.externalText(DWG_PREFIX + "applicationVersion");
+
+    Property APPLICATION_COMMENT = Property.externalText(DWG_PREFIX + "applicationComment");
+
+    Property PRODUCT_INFO = Property.externalText(DWG_PREFIX + "productInfo");
 }

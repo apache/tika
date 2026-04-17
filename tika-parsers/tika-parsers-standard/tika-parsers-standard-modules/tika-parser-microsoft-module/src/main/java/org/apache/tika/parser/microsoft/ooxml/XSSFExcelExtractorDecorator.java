@@ -725,8 +725,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     protected void extractHyperLinks(PackagePart sheetPart, XHTMLContentHandler xhtml)
             throws SAXException {
         try {
+            boolean first = true;
             for (PackageRelationship rel : sheetPart
                     .getRelationshipsByType(RELATION_HYPERLINK)) {
+                if (!first) {
+                    xhtml.characters(" ");
+                }
+                first = false;
                 xhtml.startElement("a", "href", rel.getTargetURI().toString());
                 xhtml.characters(rel.getTargetURI().toString());
                 xhtml.endElement("a");

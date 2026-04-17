@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -48,11 +49,15 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.DWG;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.FileProcessResult;
@@ -116,9 +121,9 @@ public class DWGReadParser extends AbstractDWGParser {
             List<String> command = Arrays.asList(dwgc.getDwgReadExecutable(), "-O", "JSON", "-o",
                     tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
             ProcessBuilder pb = new ProcessBuilder().command(command);
-            LOG.info("About to call DWGRead: " + command.toString());
+            LOG.debug("About to call DWGRead: {}", command);
             FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 10000, 10000);
-            LOG.info("DWGRead Exit code is: " + fpr.getExitValue());
+            LOG.debug("DWGRead Exit code is: {}", fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
                     // dwgread sometimes creates strings with invalid utf-8 sequences or invalid
@@ -216,6 +221,10 @@ public class DWGReadParser extends AbstractDWGParser {
                             parseHeader(jParser, metadata);
                         } else if ("SummaryInfo".equals(nextFieldName)) {
                             parseSummaryInfo(jParser, metadata);
+                        } else if ("AppInfo".equals(nextFieldName)) {
+                            parseAppInfo(jParser, metadata);
+                        } else if ("THUMBNAILIMAGE".equals(nextFieldName)) {
+                            parseThumbnail(jParser, xhtml, metadata, context);
                         } else {
                             jParser.skipChildren();
                         }
@@ -233,6 +242,17 @@ public class DWGReadParser extends AbstractDWGParser {
         xhtml.endDocument();
     }
 
+    private static final Set<String> OBJECT_TEXT_FIELDS = Set.of(
+            "text",
+            "text_value",
+            "default_value",
+            "user_text",
+            "tag",
+            "prompt",
+            "code",
+            "value_string",
+            "ctx.content.txt.default_text");
+
     private void parseDwgObject(JsonParser jsonParser, Consumer<String> textConsumer) throws IOException {
         JsonToken nextToken;
         while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
@@ -242,23 +262,27 @@ public class DWGReadParser extends AbstractDWGParser {
                 if (nextToken.isStructStart()) {
                     jsonParser.skipChildren();
                 } else if (nextToken.isScalarValue()) {
-                    if ("text".equals(nextFieldName)) {
+                    if (OBJECT_TEXT_FIELDS.contains(nextFieldName)) {
                         String textVal = jsonParser.getText();
-                        if (StringUtils.isNotBlank(textVal)) {
-
+                        if (hasLetter(textVal)) {
                             textConsumer.accept(textVal);
-                        }
-                    } else if ("text_value".equals(nextFieldName)) {
-                        String textVal = jsonParser.getText();
-                        if (StringUtils.isNotBlank(textVal)) {
-
-                            textConsumer.accept(textVal);
-
                         }
                     }
                 }
             }
         }
+    }
+
+    private static boolean hasLetter(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isLetter(s.charAt(i))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void parseHeader(JsonParser jsonParser, Metadata metadata) throws IOException {
@@ -312,12 +336,96 @@ public class DWGReadParser extends AbstractDWGParser {
                             metadata.set(TikaCoreProperties.TITLE, textVal);
                         } else if ("LASTSAVEDBY".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.MODIFIER, textVal);
+                        } else if ("AUTHOR".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.CREATOR, textVal);
+                        } else if ("SUBJECT".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.DESCRIPTION, textVal);
+                        } else if ("KEYWORDS".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.SUBJECT, textVal);
+                        } else if ("COMMENTS".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.COMMENTS, textVal);
+                        } else if ("HYPERLINKBASE".equals(nextFieldName)) {
+                            metadata.set(TikaCoreProperties.RELATION, textVal);
                         } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
                             metadata.set(nextFieldName, textVal);
                         }
                     }
                 }
             }
+        }
+    }
+
+    private void parseAppInfo(JsonParser jsonParser, Metadata metadata) throws IOException {
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    jsonParser.skipChildren();
+                } else if (nextToken.isScalarValue()) {
+                    String textVal = jsonParser.getText();
+                    if (StringUtils.isBlank(textVal)) {
+                        continue;
+                    }
+                    if ("appinfo_name".equals(nextFieldName)) {
+                        metadata.set(DWG.APPLICATION_NAME, textVal);
+                    } else if ("version".equals(nextFieldName)) {
+                        metadata.set(DWG.APPLICATION_VERSION, textVal);
+                    } else if ("comment".equals(nextFieldName)) {
+                        metadata.set(DWG.APPLICATION_COMMENT, textVal);
+                    } else if ("product_info".equals(nextFieldName)) {
+                        metadata.set(DWG.PRODUCT_INFO, textVal);
+                    }
+                }
+            }
+        }
+    }
+
+    private void parseThumbnail(JsonParser jsonParser, XHTMLContentHandler xhtml,
+                                Metadata metadata, ParseContext context)
+            throws IOException, SAXException {
+        String hexChain = null;
+        JsonToken nextToken;
+        while ((nextToken = jsonParser.nextToken()) != JsonToken.END_OBJECT) {
+            if (nextToken == JsonToken.FIELD_NAME) {
+                String nextFieldName = jsonParser.currentName();
+                nextToken = jsonParser.nextToken();
+                if (nextToken.isStructStart()) {
+                    jsonParser.skipChildren();
+                } else if (nextToken.isScalarValue() && "chain".equals(nextFieldName)) {
+                    hexChain = jsonParser.getText();
+                }
+            }
+        }
+        if (StringUtils.isBlank(hexChain)) {
+            return;
+        }
+        byte[] bytes;
+        try {
+            bytes = HexFormat.of().parseHex(hexChain);
+        } catch (IllegalArgumentException e) {
+            LOG.warn("Failed to decode DWG thumbnail hex chain", e);
+            return;
+        }
+        if (bytes.length == 0) {
+            return;
+        }
+
+        EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        Metadata embeddedMetadata = new Metadata();
+        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail");
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            return;
+        }
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            embeddedDocumentExtractor.parseEmbedded(tis,
+                    new EmbeddedContentHandler(xhtml), embeddedMetadata, context, true);
+        } catch (IOException e) {
+            LOG.warn("Failed to parse DWG thumbnail", e);
         }
     }
 
