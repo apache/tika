@@ -56,29 +56,20 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
     /** Distinct salt for stride-2 bigrams — prevents collision with stride-1 hashes. */
     private static final int FNV_STRIDE2_SALT = 0x9e3779b9;
 
-    /**
-     * Number of reserved slots at the high end of the feature vector used for
-     * global (whole-probe) features when {@link #useGlobalFeatures} is enabled.
-     * Currently 6 slots hold ASCII-low-byte density bins (see
-     * {@link #asciiDensityBin(byte[])}).
-     */
-    public static final int GLOBAL_FEATURE_COUNT = 6;
-
     private final int numBuckets;
-    private final int stride1Buckets;    // size of the stride-1 hash region
-    private final int stride2Buckets;    // size of the stride-2 hash region
-    private final int stride2Base;       // first slot of the stride-2 region
-    private final int globalBase;        // first slot of the globals region (or numBuckets if disabled)
     private final boolean useUnigrams;
     private final boolean useBigrams;
     private final boolean useTrigrams;
     private final boolean useAnchoredBigrams;
     private final boolean useStride2Bigrams;
-    private final boolean useGlobalFeatures;
-    private final boolean useSplitSpaces;
 
     /**
-     * Backwards-compatible constructor (no global features, no split spaces).
+     * @param numBuckets         number of hash buckets (feature-vector dimension)
+     * @param useUnigrams        emit unigram for each high byte
+     * @param useBigrams         emit bigram anchored on each high byte
+     * @param useTrigrams        emit trigram anchored on each high byte
+     * @param useAnchoredBigrams emit bigram anchored on each low trail byte
+     * @param useStride2Bigrams  emit stride-2 bigrams at even positions (all bytes)
      */
     public ConfigurableByteNgramFeatureExtractor(int numBuckets,
                                                  boolean useUnigrams,
@@ -86,140 +77,15 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                                                  boolean useTrigrams,
                                                  boolean useAnchoredBigrams,
                                                  boolean useStride2Bigrams) {
-        this(numBuckets, useUnigrams, useBigrams, useTrigrams,
-                useAnchoredBigrams, useStride2Bigrams, false);
-    }
-
-    /**
-     * Constructor with globals support, shared hash space (stride-1 and stride-2
-     * mod into the same bucket range).
-     */
-    public ConfigurableByteNgramFeatureExtractor(int numBuckets,
-                                                 boolean useUnigrams,
-                                                 boolean useBigrams,
-                                                 boolean useTrigrams,
-                                                 boolean useAnchoredBigrams,
-                                                 boolean useStride2Bigrams,
-                                                 boolean useGlobalFeatures) {
-        this(numBuckets, useUnigrams, useBigrams, useTrigrams,
-                useAnchoredBigrams, useStride2Bigrams, useGlobalFeatures, false);
-    }
-
-    /**
-     * @param numBuckets         total feature-vector dimension.  When
-     *                           {@code useGlobalFeatures} is {@code true}, the
-     *                           last {@link #GLOBAL_FEATURE_COUNT} slots are
-     *                           reserved for global features.  When
-     *                           {@code useSplitSpaces} is {@code true}, the
-     *                           remaining hash space is split 50/50 between
-     *                           stride-1 features and stride-2 features so
-     *                           HTML-shaped stride-2 emissions cannot collide
-     *                           with single-byte-charset stride-1 weights.
-     * @param useUnigrams        emit unigram for each high byte
-     * @param useBigrams         emit bigram anchored on each high byte
-     * @param useTrigrams        emit trigram anchored on each high byte
-     * @param useAnchoredBigrams emit bigram anchored on each low trail byte
-     * @param useStride2Bigrams  emit stride-2 bigrams at even positions (all bytes)
-     * @param useGlobalFeatures  emit whole-probe global features into the
-     *                           reserved tail slots (ASCII-density bins)
-     * @param useSplitSpaces     give stride-1 and stride-2 features disjoint
-     *                           bucket ranges
-     */
-    public ConfigurableByteNgramFeatureExtractor(int numBuckets,
-                                                 boolean useUnigrams,
-                                                 boolean useBigrams,
-                                                 boolean useTrigrams,
-                                                 boolean useAnchoredBigrams,
-                                                 boolean useStride2Bigrams,
-                                                 boolean useGlobalFeatures,
-                                                 boolean useSplitSpaces) {
         if (numBuckets <= 0) {
             throw new IllegalArgumentException("numBuckets must be positive: " + numBuckets);
         }
-        int globalsReserved = useGlobalFeatures ? GLOBAL_FEATURE_COUNT : 0;
-        int hashSpace = numBuckets - globalsReserved;
-        if (hashSpace <= 0) {
-            throw new IllegalArgumentException(
-                    "numBuckets must exceed GLOBAL_FEATURE_COUNT (" + GLOBAL_FEATURE_COUNT
-                            + ") when useGlobalFeatures=true: " + numBuckets);
-        }
-        if (useSplitSpaces && hashSpace < 2) {
-            throw new IllegalArgumentException(
-                    "useSplitSpaces requires hashSpace >= 2: " + hashSpace);
-        }
         this.numBuckets = numBuckets;
-        this.useSplitSpaces = useSplitSpaces;
-        if (useSplitSpaces) {
-            // 50/50 split; stride-1 gets the first half, stride-2 gets the second.
-            this.stride1Buckets = hashSpace / 2;
-            this.stride2Buckets = hashSpace - this.stride1Buckets;
-            this.stride2Base = this.stride1Buckets;
-        } else {
-            // Both stride families share the same hash region [0, hashSpace).
-            this.stride1Buckets = hashSpace;
-            this.stride2Buckets = hashSpace;
-            this.stride2Base = 0;
-        }
-        // Globals region always starts immediately after the hash region(s).
-        this.globalBase = hashSpace;
         this.useUnigrams = useUnigrams;
         this.useBigrams = useBigrams;
         this.useTrigrams = useTrigrams;
         this.useAnchoredBigrams = useAnchoredBigrams;
         this.useStride2Bigrams = useStride2Bigrams;
-        this.useGlobalFeatures = useGlobalFeatures;
-    }
-
-    /**
-     * Returns which ASCII-text-density bin this probe falls into, in [0, 6).
-     *
-     * <p>Counts only <em>ASCII text bytes</em> — printable (0x20..0x7E) plus
-     * common whitespace (0x09 tab, 0x0A LF, 0x0D CR).  NUL and other control
-     * bytes do <em>not</em> count.  This matters because UTF-16LE/BE probes
-     * contain ~50% 0x00 bytes; if we counted those as "low", UTF-16 English
-     * would look like sparse Latin to the model, defeating the point of the
-     * feature.  With the current definition, real UTF-16 English lands around
-     * bin 2-3 (half ASCII-letter bytes, half nulls), distinguishable from
-     * plain-ASCII probes (bin 5) and from real EBCDIC (bin 0-1).</p>
-     *
-     * <p>Bin layout (fraction of bytes that are ASCII-text):</p>
-     * <ul>
-     *   <li>0: [0.00, 0.10) — effectively no ASCII text (real EBCDIC letters)</li>
-     *   <li>1: [0.10, 0.50) — heavy non-ASCII content (CJK text, UTF-16 mixed)</li>
-     *   <li>2: [0.50, 0.80) — text with dense foreign script, UTF-16 Latin</li>
-     *   <li>3: [0.80, 0.95) — normal foreign-script text with ASCII markup</li>
-     *   <li>4: [0.95, 0.99) — sparse-diacritic Western text</li>
-     *   <li>5: [0.99, 1.00] — near-pure ASCII (vCards, config, scripts)</li>
-     * </ul>
-     */
-    public static int asciiDensityBin(byte[] input) {
-        if (input == null || input.length == 0) {
-            return 5;
-        }
-        int asciiText = 0;
-        for (byte b : input) {
-            int v = b & 0xFF;
-            if ((v >= 0x20 && v <= 0x7E) || v == 0x09 || v == 0x0A || v == 0x0D) {
-                asciiText++;
-            }
-        }
-        double p = (double) asciiText / input.length;
-        if (p < 0.10) {
-            return 0;
-        }
-        if (p < 0.50) {
-            return 1;
-        }
-        if (p < 0.80) {
-            return 2;
-        }
-        if (p < 0.95) {
-            return 3;
-        }
-        if (p < 0.99) {
-            return 4;
-        }
-        return 5;
     }
 
     @Override
@@ -255,7 +121,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
 
             if (useUnigrams) {
                 int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
-                int bkt = stride1Bucket(h);
+                int bkt = (h & 0x7fffffff) % numBuckets;
                 if (dense[bkt] == 0) {
                     touched[n++] = bkt;
                 }
@@ -268,7 +134,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 if (useBigrams) {
                     int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                     h = (h ^ bi1) * FNV_PRIME;
-                    int bkt = stride1Bucket(h);
+                    int bkt = (h & 0x7fffffff) % numBuckets;
                     if (dense[bkt] == 0) {
                         touched[n++] = bkt;
                     }
@@ -280,7 +146,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                     if (i + 2 < input.length) {
                         h = (h ^ (input[i + 2] & 0xFF)) * FNV_PRIME;
                     }
-                    int bkt = stride1Bucket(h);
+                    int bkt = (h & 0x7fffffff) % numBuckets;
                     if (dense[bkt] == 0) {
                         touched[n++] = bkt;
                     }
@@ -292,7 +158,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                     int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                     h = (h ^ bi1) * FNV_PRIME;
                     h = (h ^ bi2) * FNV_PRIME;
-                    int bkt = stride1Bucket(h);
+                    int bkt = (h & 0x7fffffff) % numBuckets;
                     if (dense[bkt] == 0) {
                         touched[n++] = bkt;
                     }
@@ -308,21 +174,12 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 int b1 = input[i + 1] & 0xFF;
                 int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
                 h = (h ^ b1) * FNV_PRIME;
-                int bkt = stride2Bucket(h);
+                int bkt = (h & 0x7fffffff) % numBuckets;
                 if (dense[bkt] == 0) {
                     touched[n++] = bkt;
                 }
                 dense[bkt]++;
             }
-        }
-
-        // Global features at reserved tail slots: fire exactly one ASCII-density bin.
-        if (useGlobalFeatures) {
-            int bkt = globalBase + asciiDensityBin(input);
-            if (dense[bkt] == 0) {
-                touched[n++] = bkt;
-            }
-            dense[bkt]++;
         }
 
         return n;
@@ -337,7 +194,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
             }
 
             if (useUnigrams) {
-                counts[stride1Bucket((FNV_OFFSET ^ bi) * FNV_PRIME)]++;
+                counts[bucket((FNV_OFFSET ^ bi) * FNV_PRIME)]++;
             }
 
             if (i + 1 < to) {
@@ -346,7 +203,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 if (useBigrams) {
                     int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                     h = (h ^ bi1) * FNV_PRIME;
-                    counts[stride1Bucket(h)]++;
+                    counts[bucket(h)]++;
                 }
 
                 if (useAnchoredBigrams && bi1 < 0x80) {
@@ -354,7 +211,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                     if (i + 2 < to) {
                         h = (h ^ (b[i + 2] & 0xFF)) * FNV_PRIME;
                     }
-                    counts[stride1Bucket(h)]++;
+                    counts[bucket(h)]++;
                 }
 
                 if (useTrigrams && i + 2 < to) {
@@ -362,7 +219,7 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                     int h = (FNV_OFFSET ^ bi) * FNV_PRIME;
                     h = (h ^ bi1) * FNV_PRIME;
                     h = (h ^ bi2) * FNV_PRIME;
-                    counts[stride1Bucket(h)]++;
+                    counts[bucket(h)]++;
                 }
             }
         }
@@ -374,24 +231,13 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
                 int b1 = b[i + 1] & 0xFF;
                 int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
                 h = (h ^ b1) * FNV_PRIME;
-                counts[stride2Bucket(h)]++;
+                counts[bucket(h)]++;
             }
         }
-
-        // Global features at reserved tail slots: fire exactly one ASCII-density bin.
-        if (useGlobalFeatures) {
-            byte[] slice = (from == 0 && to == b.length)
-                    ? b : java.util.Arrays.copyOfRange(b, from, to);
-            counts[globalBase + asciiDensityBin(slice)]++;
-        }
     }
 
-    private int stride1Bucket(int hash) {
-        return (hash & 0x7fffffff) % stride1Buckets;
-    }
-
-    private int stride2Bucket(int hash) {
-        return stride2Base + (hash & 0x7fffffff) % stride2Buckets;
+    private int bucket(int hash) {
+        return (hash & 0x7fffffff) % numBuckets;
     }
 
     @Override
@@ -399,18 +245,10 @@ public class ConfigurableByteNgramFeatureExtractor implements FeatureExtractor<b
         return numBuckets;
     }
 
-    public boolean isUseSplitSpaces() {
-        return useSplitSpaces;
-    }
-
     @Override
     public String toString() {
         return String.format(java.util.Locale.ROOT,
-                "ConfigurableByteNgramFeatureExtractor{buckets=%d, stride1=[0,%d) stride2=[%d,%d) globals=[%d,%d)"
-                        + " uni=%b, bi=%b, tri=%b, anchored=%b, stride2f=%b, globalsf=%b, split=%b}",
-                numBuckets, stride1Buckets, stride2Base, stride2Base + stride2Buckets,
-                globalBase, numBuckets,
-                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams,
-                useStride2Bigrams, useGlobalFeatures, useSplitSpaces);
+                "ConfigurableByteNgramFeatureExtractor{buckets=%d, uni=%b, bi=%b, tri=%b, anchored=%b, stride2=%b}",
+                numBuckets, useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
     }
 }

@@ -81,8 +81,6 @@ public class TrainCharsetModel {
         boolean useTrigrams = true;
         boolean useAnchoredBigrams = false;
         boolean useStride2Bigrams = true;
-        boolean useGlobalFeatures = false;
-        boolean useSplitSpaces = false;
         // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
         // one target label at training time (e.g. merge script variants into one class).
         Map<String, String> labelRemap = new HashMap<>();
@@ -142,18 +140,6 @@ public class TrainCharsetModel {
                 case "--no-stride2":
                     useStride2Bigrams = false;
                     break;
-                case "--globals":
-                    useGlobalFeatures = true;
-                    break;
-                case "--no-globals":
-                    useGlobalFeatures = false;
-                    break;
-                case "--split-spaces":
-                    useSplitSpaces = true;
-                    break;
-                case "--no-split-spaces":
-                    useSplitSpaces = false;
-                    break;
                 case "--exclude":
                     for (String label : args[++i].split(",")) {
                         excludeLabels.add(label.trim());
@@ -178,8 +164,6 @@ public class TrainCharsetModel {
             System.err.println("  --tri / --no-tri         enable/disable trigram features (default: on)");
             System.err.println("  --anchored / --no-anchored  anchored bigrams (default: off)");
             System.err.println("  --stride2 / --no-stride2    stride-2 bigrams at even positions (default: on)");
-            System.err.println("  --globals / --no-globals    emit global ASCII-density bin features (default: off)");
-            System.err.println("  --split-spaces / --no-split-spaces  give stride-1 and stride-2 features disjoint bucket ranges (default: off)");
             System.err.println("  --exclude cs1,cs2          skip these charset labels (e.g. UTF-32-BE,UTF-32-LE)");
             System.exit(1);
         }
@@ -227,14 +211,12 @@ public class TrainCharsetModel {
                 "Buckets: %d  epochs: %d  lr: %.4f  max-samples/class: %d%n",
                 numBuckets, epochs, lr, maxSamplesPerClass);
         System.out.printf(java.util.Locale.ROOT,
-                "Features: uni=%b  bi=%b  tri=%b  anchored=%b  stride2=%b  globals=%b  split=%b%n",
-                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams,
-                useGlobalFeatures, useSplitSpaces);
+                "Features: uni=%b  bi=%b  tri=%b  anchored=%b  stride2=%b%n",
+                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
 
         ConfigurableByteNgramFeatureExtractor extractor =
                 new ConfigurableByteNgramFeatureExtractor(numBuckets,
-                        useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams,
-                        useStride2Bigrams, useGlobalFeatures, useSplitSpaces);
+                        useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
 
         // Build class index map
         Map<String, Integer> labelIndex = new HashMap<>();
@@ -299,6 +281,8 @@ public class TrainCharsetModel {
                 // Sparse extraction: O(probeLength), not O(numBuckets)
                 int nActive = extractor.extractSparseInto(sample, denseScratch, touched);
 
+                // L1 normalization: compute sum of feature counts so each sample
+                // contributes equal total mass regardless of encoding density.
                 // Forward pass: only iterate active buckets
                 float[] logits = new float[numClasses];
                 for (int c = 0; c < numClasses; c++) {
