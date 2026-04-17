@@ -438,6 +438,18 @@ public interface TikaCoreProperties {
             Property.externalText(TIKA_META_PREFIX + "encodingDetectionTrace");
 
     /**
+     * The charset actually used to decode the stream when a superset override was applied.
+     * When the detected encoding (reported in Content-Type and {@link #DETECTED_ENCODING}) is
+     * a subset of a safer, broader charset (e.g. EUC-KR is a subset of x-windows-949, or
+     * GB2312 is a subset of GB18030), Tika decodes using the superset charset to avoid
+     * mojibake on extension characters. This field records the superset charset name so
+     * callers know which codec was actually used. Absent when detection and decoding use
+     * the same charset.
+     */
+    Property DECODED_CHARSET =
+            Property.externalText(TIKA_META_PREFIX + "decodedCharset");
+
+    /**
      * General metadata key for the count of non-final versions available within a file.  This
      * was added initially to support generalizing incremental updates in PDF.
      */

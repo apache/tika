@@ -43,9 +43,7 @@ import org.apache.tika.ml.FeatureExtractor;
  *
  * <p>The feature flags are intentionally not configurable here — the shipped model
  * was trained with exactly this configuration, and using any other combination
- * at inference time would produce silently wrong predictions.
- * For training new models with different feature combinations, use
- * {@code ConfigurableByteNgramFeatureExtractor} in the training-tools module.</p>
+ * at inference time would produce silently wrong predictions.</p>
  *
  * <h3>Features emitted</h3>
  * <ul>
@@ -64,10 +62,11 @@ import org.apache.tika.ml.FeatureExtractor;
  *       cross-character boundary structure in Shift-JIS and Big5 where trail
  *       bytes fall below 0x80 (0x40–0x7E). A distinct salt ({@code FNV_ANCHOR_SALT})
  *       prevents hash collisions with stride-1 bigrams.</li>
- *   <li><strong>Stride-2 bigrams</strong>: pairs {@code (b[i], b[i+1])} sampled
- *       at even positions {@code i = 0, 2, 4, ...}, covering all bytes (not just
- *       high bytes). These pairs directly reflect code-unit structure: UTF-16LE
- *       BMP text produces many {@code (XX, 0x00)} pairs; UTF-16BE produces
+ *   <li><strong>Stride-2 bigrams (filtered)</strong>: pairs {@code (b[i], b[i+1])} sampled
+ *       at even positions {@code i = 0, 2, 4, ...}, emitted only when at least one byte
+ *       is outside {@code [0x20, 0x7E]}. This keeps UTF-16 null bytes, CJK lead/trail pairs,
+ *       and EBCDIC structure while discarding printable-ASCII-only pairs (HTML tag noise).
+ *       UTF-16LE BMP text produces many {@code (XX, 0x00)} pairs; UTF-16BE produces
  *       {@code (0x00, XX)}. A distinct FNV salt ({@code FNV_STRIDE2_SALT})
  *       prevents hash collisions with stride-1 features. The BOM must be
  *       stripped upstream before bytes reach this extractor so that offset 0
@@ -93,81 +92,36 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
     /** Distinct salt for stride-2 bigrams — prevents collision with stride-1 hashes. */
     private static final int FNV_STRIDE2_SALT = 0x9e3779b9;
 
+    /** Total feature-vector dimension used by the shipped model (including global slots). */
+    public static final int NUM_BUCKETS = 16390;
+
     /**
-     * Number of reserved slots at the high end of the feature vector used for
-     * global (whole-probe) features when {@link #useGlobalFeatures} is enabled.
-     * Currently 6 slots hold ASCII-text-density bins (see
-     * {@link #asciiDensityBin(byte[])}).  Must match the training-side
-     * {@code ConfigurableByteNgramFeatureExtractor.GLOBAL_FEATURE_COUNT}.
+     * Number of reserved slots at the high end of the feature vector for
+     * global (whole-probe) features. The last 6 slots hold ASCII-text-density
+     * bins (see {@link #asciiDensityBin(byte[])}). Always active.
      */
     public static final int GLOBAL_FEATURE_COUNT = 6;
 
     private final int numBuckets;
-    private final int stride1Buckets;
-    private final int stride2Buckets;
-    private final int stride2Base;
-    private final int globalBase;
-    private final boolean useGlobalFeatures;
-    private final boolean useSplitSpaces;
+    private final int hashSpace;   // numBuckets - GLOBAL_FEATURE_COUNT
+    private final int globalBase;  // = hashSpace (first of 6 global slots)
 
     /**
-     * Legacy constructor: no globals, shared stride-1/stride-2 hash space.
-     * Matches the layout used by the shipped {@code chardetect-v6-no-utf32.bin}.
-     *
-     * @param numBuckets number of hash buckets (feature-vector dimension)
+     * @param numBuckets total feature-vector dimension, including the
+     *                   {@link #GLOBAL_FEATURE_COUNT} global slots at the end.
      */
     public ByteNgramFeatureExtractor(int numBuckets) {
-        this(numBuckets, false, false);
-    }
-
-    /**
-     * Create an extractor matching the layout of a trained model.
-     *
-     * @param numBuckets         total feature-vector dimension.
-     * @param useGlobalFeatures  reserve the last {@link #GLOBAL_FEATURE_COUNT}
-     *                           slots for ASCII-density bin features.
-     * @param useSplitSpaces     split the hash space 50/50 between stride-1
-     *                           features (low half) and stride-2 features
-     *                           (high half) so cross-family hash collisions
-     *                           cannot pollute single-byte-charset weights
-     *                           with stride-2 signals.
-     */
-    public ByteNgramFeatureExtractor(int numBuckets,
-                                     boolean useGlobalFeatures,
-                                     boolean useSplitSpaces) {
-        if (numBuckets <= 0) {
-            throw new IllegalArgumentException("numBuckets must be positive: " + numBuckets);
-        }
-        int globalsReserved = useGlobalFeatures ? GLOBAL_FEATURE_COUNT : 0;
-        int hashSpace = numBuckets - globalsReserved;
-        if (hashSpace <= 0) {
+        if (numBuckets <= GLOBAL_FEATURE_COUNT) {
             throw new IllegalArgumentException(
-                    "numBuckets must exceed GLOBAL_FEATURE_COUNT when useGlobalFeatures=true: "
-                            + numBuckets);
-        }
-        if (useSplitSpaces && hashSpace < 2) {
-            throw new IllegalArgumentException(
-                    "useSplitSpaces requires hashSpace >= 2: " + hashSpace);
+                    "numBuckets must exceed GLOBAL_FEATURE_COUNT: " + numBuckets);
         }
         this.numBuckets = numBuckets;
-        this.useSplitSpaces = useSplitSpaces;
-        this.useGlobalFeatures = useGlobalFeatures;
-        if (useSplitSpaces) {
-            this.stride1Buckets = hashSpace / 2;
-            this.stride2Buckets = hashSpace - this.stride1Buckets;
-            this.stride2Base = this.stride1Buckets;
-        } else {
-            this.stride1Buckets = hashSpace;
-            this.stride2Buckets = hashSpace;
-            this.stride2Base = 0;
-        }
+        this.hashSpace  = numBuckets - GLOBAL_FEATURE_COUNT;
         this.globalBase = hashSpace;
     }
 
     /**
      * Returns which ASCII-text-density bin this probe falls into, in [0, 6).
-     * Must match the training-side
-     * {@code ConfigurableByteNgramFeatureExtractor.asciiDensityBin}.
      *
      * <p>Bin layout (fraction of bytes that are ASCII-text: printable
      * {@code 0x20..0x7E} plus {@code 0x09 0x0A 0x0D}):</p>
@@ -286,10 +240,15 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
         }
 
         // Stride-2: code-unit pairs at positions 0, 2, 4, ...
-        // Covers all bytes (not just high bytes) so UTF-16 null bytes are visible.
+        // Filter: only emit pairs where at least one byte is non-ASCII (>= 0x20 and <= 0x7E
+        // means both bytes are printable ASCII — skip those). This keeps UTF-16 null bytes,
+        // CJK lead/trail pairs, and EBCDIC structure while discarding HTML tag noise.
         for (int i = 0; i + 1 < input.length; i += 2) {
             int b0 = input[i] & 0xFF;
             int b1 = input[i + 1] & 0xFF;
+            if (b0 >= 0x20 && b0 <= 0x7E && b1 >= 0x20 && b1 <= 0x7E) {
+                continue;
+            }
             int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
             h = (h ^ b1) * FNV_PRIME;
             int bkt = stride2Bucket(h);
@@ -299,14 +258,12 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             dense[bkt]++;
         }
 
-        // Global features: fire exactly one ASCII-density bin.
-        if (useGlobalFeatures) {
-            int bkt = globalBase + asciiDensityBin(input);
-            if (dense[bkt] == 0) {
-                touched[n++] = bkt;
-            }
-            dense[bkt]++;
+        // Global feature: fire exactly one ASCII-density bin.
+        int bkt = globalBase + asciiDensityBin(input);
+        if (dense[bkt] == 0) {
+            touched[n++] = bkt;
         }
+        dense[bkt]++;
 
         return n;
     }
@@ -332,29 +289,30 @@ public class ByteNgramFeatureExtractor implements FeatureExtractor<byte[]> {
             }
         }
 
-        // Stride-2 bigrams (same logic as extractSparseInto).
+        // Stride-2 bigrams — filtered (same logic as extractSparseInto).
         for (int i = from; i + 1 < to; i += 2) {
             int b0 = b[i] & 0xFF;
             int b1 = b[i + 1] & 0xFF;
+            if (b0 >= 0x20 && b0 <= 0x7E && b1 >= 0x20 && b1 <= 0x7E) {
+                continue;
+            }
             int h = (FNV_STRIDE2_SALT ^ b0) * FNV_PRIME;
             h = (h ^ b1) * FNV_PRIME;
             counts[stride2Bucket(h)]++;
         }
 
-        // Global features: fire exactly one ASCII-density bin.
-        if (useGlobalFeatures) {
-            byte[] slice = (from == 0 && to == b.length)
-                    ? b : java.util.Arrays.copyOfRange(b, from, to);
-            counts[globalBase + asciiDensityBin(slice)]++;
-        }
+        // Global feature: fire exactly one ASCII-density bin.
+        byte[] slice = (from == 0 && to == b.length)
+                ? b : java.util.Arrays.copyOfRange(b, from, to);
+        counts[globalBase + asciiDensityBin(slice)]++;
     }
 
     private int stride1Bucket(int hash) {
-        return (hash & 0x7fffffff) % stride1Buckets;
+        return (hash & 0x7fffffff) % hashSpace;
     }
 
     private int stride2Bucket(int hash) {
-        return stride2Base + (hash & 0x7fffffff) % stride2Buckets;
+        return (hash & 0x7fffffff) % hashSpace;
     }
 
     @Override

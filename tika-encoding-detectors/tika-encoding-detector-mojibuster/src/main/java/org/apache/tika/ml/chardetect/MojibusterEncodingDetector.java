@@ -26,6 +26,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
@@ -51,8 +52,9 @@ import org.apache.tika.parser.ParseContext;
  *       charsets as direct labels, including EBCDIC variants (IBM420-ltr/rtl,
  *       IBM424-ltr/rtl, IBM500, IBM1047) alongside CJK, Latin, and other
  *       single-byte encodings.</li>
- *   <li><strong>Post-model rules</strong> — CJK grammar walkers, ISO→Windows
- *       C1-byte upgrade, GB18030 four-byte upgrade.</li>
+ *   <li><strong>Post-model rules</strong> — ISO→Windows C1-byte upgrade,
+ *       CRLF→Windows heuristic, windows-1252 Latin fallback (sparse probes),
+ *       IBM500 EBCDIC fallback.</li>
  * </ol>
  *
  * <p>This class is thread-safe: the model is loaded once at construction time
@@ -78,19 +80,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          * when the probe contains C1 bytes (0x80–0x9F).
          */
         ISO_TO_WINDOWS,
-        /**
-         * Refine CJK candidates nominated by the model with grammar walkers
-         * (Shift_JIS, EUC-JP, EUC-KR, Big5, GB18030).
-         */
-        CJK_GRAMMAR,
-        /**
-         * Upgrade a GBK or GB2312 result to GB18030 when the probe contains at
-         * least one GB18030-specific 4-byte sequence ([0x81–0xFE][0x30–0x39][0x81–0xFE][0x30–0x39]).
-         * Such sequences are impossible in GBK/GB2312 (whose trail bytes are
-         * 0x40–0xFE), so their presence is definitive proof that a GB18030 codec
-         * is required to avoid replacement characters.
-         */
-        GB_FOUR_BYTE_UPGRADE,
         /**
          * Upgrade an ISO-8859-X result to its Windows-12XX equivalent when the
          * probe contains at least one CRLF pair ({@code 0x0D 0x0A}) but no C1
@@ -118,14 +107,25 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          * candidate isn't Latin-family (CJK, UTF-*, EBCDIC, Cyrillic,
          * Arabic, Greek, Hebrew).
          */
-        LATIN_FALLBACK_WIN1252
+        LATIN_FALLBACK_WIN1252,
+        /**
+         * When the top candidate is a script-specific EBCDIC variant
+         * (IBM424 Hebrew, IBM420 Arabic) and the probe decodes byte-identically
+         * under IBM500 (International EBCDIC), swap to IBM500 as the unmarked
+         * EBCDIC default.  This handles English-only EBCDIC text, which is
+         * byte-identical in all EBCDIC variants — the model cannot distinguish
+         * them and falls back to bias, which may favour the script-specific
+         * variant.  IBM500 is chosen as the default on the same grounds as
+         * windows-1252: it is the international, general-purpose code page.
+         */
+        EBCDIC_FALLBACK_IBM500,
     }
 
     private static final long serialVersionUID = 1L;
 
     /** Default model resource path on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/chardetect-v6-no-utf32.bin";
+            "/org/apache/tika/ml/chardetect/chardetect.bin";
 
     /**
      * Maps model label strings (from training-data filenames) to the canonical
@@ -478,34 +478,22 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         List<EncodingResult> results = selectByLogitGap(model, logits, topN);
 
-        // CJK grammar filtering runs first so that grammar-killed charsets
-        // (e.g. x-EUC-TW on a Shift_JIS probe) don't consume MIN_CANDIDATES
-        // slots that should go to viable alternatives.
-        if (enabledRules.contains(Rule.CJK_GRAMMAR)) {
-            results = refineCjkResults(probe, results);
-        }
-
-        // On short probes, ensure enough candidates survive for CharSoup to
-        // arbitrate. Grammar-killed CJK charsets are skipped so they don't
-        // consume slots meant for viable alternatives.
+        // On short probes, ensure enough candidates survive for CharSoup to arbitrate.
         if (probe.length < SHORT_PROBE_THRESHOLD && results.size() < MIN_CANDIDATES) {
-            boolean grammar = enabledRules.contains(Rule.CJK_GRAMMAR);
-            results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
+            results = selectAtLeast(model, logits, MIN_CANDIDATES, probe);
         }
 
         if (enabledRules.contains(Rule.LATIN_FALLBACK_WIN1252)) {
             results = applyLatinFallback(probe, results);
         }
-
+        if (enabledRules.contains(Rule.EBCDIC_FALLBACK_IBM500)) {
+            results = applyEbcdicFallback(probe, results);
+        }
         if (enabledRules.contains(Rule.ISO_TO_WINDOWS) && StructuralEncodingRules.hasC1Bytes(probe)) {
             results = upgradeIsoToWindows(results);
         }
         if (enabledRules.contains(Rule.CRLF_TO_WINDOWS) && StructuralEncodingRules.hasCrlfBytes(probe)) {
             results = upgradeIsoToWindows(results);
-        }
-        if (enabledRules.contains(Rule.GB_FOUR_BYTE_UPGRADE)
-                && StructuralEncodingRules.hasGb18030FourByteSequence(probe)) {
-            results = upgradeGbToGb18030(results);
         }
         // Trim to topN after all rules have fired, not before.
         return results.subList(0, Math.min(topN, results.size()));
@@ -546,12 +534,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /**
      * Same as {@link #selectByLogitGap} but guarantees at least {@code minN} results
      * by extending the window to include the next-best candidates by raw logit rank.
-     * CJK charsets that fail grammar validation are skipped so they don't consume
-     * slots meant for viable alternatives.
      */
     private static List<EncodingResult> selectAtLeast(LinearModel m, float[] logits,
-                                                       int minN, byte[] probe,
-                                                       boolean applyGrammar) {
+                                                       int minN, byte[] probe) {
         List<int[]> all = new ArrayList<>();
         for (int i = 0; i < logits.length; i++) {
             if (labelToCharset(m.getLabel(i)) != null) {
@@ -566,10 +551,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             int i = all.get(rank)[0];
             String lbl = m.getLabel(i);
             Charset cs = labelToCharset(lbl);
-            if (applyGrammar && CjkEncodingRules.isCjk(cs)
-                    && CjkEncodingRules.match(probe, cs) == 0) {
-                continue;
-            }
             float conf = maxLogit > 0
                     ? Math.max(0f, logits[i] / maxLogit) * MAX_STATISTICAL_CONFIDENCE
                     : 0f;
@@ -604,123 +585,55 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return results.subList(0, Math.min(topN, results.size()));
     }
 
-    /**
-     * When the probe contains C1 bytes (0x80–0x9F), any ISO-8859-X result is
-     * invalid — those bytes are C1 control codes in every ISO-8859-X standard.
-     * This method replaces each such result with its Windows-12XX equivalent
-     * from {@link CharsetConfusables#ISO_TO_WINDOWS}, preserving confidence.
-     *
-     * <p>This is a post-{@code collapseGroups} correction: the model has
-     * already identified the right script family (Western European, Cyrillic,
-     * Arabic, …); we are only fixing the ISO-vs-Windows attribution within
-     * that family.</p>
-     */
-    /**
-     * For each CJK encoding in {@code results}, runs the corresponding grammar
-     * walker and adjusts the result:
-     * <ul>
-     *   <li>Grammar score 0 (bad byte sequences) → drop the result; the model
-     *       was wrong about this encoding</li>
-     *   <li>Grammar score &gt; 10 (enough valid multi-byte chars) → replace
-     *       model confidence with grammar confidence</li>
-     *   <li>Grammar score 10 (valid but too few chars to be sure) → keep
-     *       model confidence; grammar cannot add information</li>
-     * </ul>
-     * Results are re-sorted after adjustment since grammar scores may reorder
-     * candidates.  Non-CJK results pass through unchanged.
-     */
-    /**
-     * Refines CJK candidates using grammar walkers, and on short probes drops
-     * single-byte alternatives when a CJK charset validates cleanly.
-     *
-     * <p><b>Short-probe promotion rule</b> (probe &lt; {@link #SHORT_PROBE_THRESHOLD}):
-     * if any CJK charset scores ≥ {@link CjkEncodingRules#CLEAN_SHORT_PROBE_CONFIDENCE}
-     * (bad == 0, at least one valid 2-byte pair), all non-CJK results are removed.
-     * Single-byte encodings have no structural constraints — they silently accept
-     * any byte sequence. A CJK parser that consumes all high bytes without errors
-     * is providing genuine structural evidence, and that evidence should win over
-     * the byte-ngram model's single-byte predictions on short probes.</p>
-     *
-     * <p><b>Long-probe rule</b>: grammar score replaces model confidence when the
-     * grammar has enough signal (score &gt; 10 in the old convention, which is now
-     * always satisfied for bad==0 probes via the new confidence formula).</p>
-     */
-    private static List<EncodingResult> refineCjkResults(byte[] probe,
-                                                          List<EncodingResult> results) {
-        boolean hasCjk = false;
-        for (EncodingResult er : results) {
-            if (CjkEncodingRules.isCjk(er.getCharset())) {
-                hasCjk = true;
-                break;
-            }
-        }
-        if (!hasCjk) {
-            return results;
-        }
-
-        // Grammar-filter CJK charsets: drop those that produce invalid byte sequences
-        // (score == 0 means the grammar walker found bad bytes — the model was wrong).
-        // Charsets that pass grammar keep their model confidence unchanged so that
-        // all candidates remain on the same sigmoid scale for CharSoup to compare.
-        // Non-CJK charsets pass through unchanged.
-        List<EncodingResult> refined = new ArrayList<>(results.size());
-        for (EncodingResult er : results) {
-            if (!CjkEncodingRules.isCjk(er.getCharset())) {
-                refined.add(er);
-                continue;
-            }
-            int score = CjkEncodingRules.match(probe, er.getCharset());
-            if (score == 0) {
-                // grammar rejects this charset entirely — drop it
-                continue;
-            }
-            // Grammar passes: keep the model's sigmoid confidence so everything
-            // is on the same scale when CharSoup compares candidates.
-            refined.add(er);
-        }
-        return refined;
-    }
-
-    /**
-     * When a GB18030-specific 4-byte sequence has been found in the probe,
-     * any GBK or GB2312 result is upgraded to GB18030. The confidence is
-     * preserved; only the charset label changes.
-     */
-    private static List<EncodingResult> upgradeGbToGb18030(List<EncodingResult> results) {
-        Charset gb18030 = labelToCharset("GB18030");
-        if (gb18030 == null) {
-            return results;
-        }
-        List<EncodingResult> upgraded = new ArrayList<>(results.size());
-        for (EncodingResult er : results) {
-            String name = er.getCharset().name();
-            if ("GBK".equalsIgnoreCase(name) || "GB2312".equalsIgnoreCase(name)) {
-                // Preserve the original detected label; only the decode charset changes.
-                upgraded.add(new EncodingResult(gb18030, er.getConfidence(), er.getLabel()));
-            } else {
-                upgraded.add(er);
-            }
-        }
-        return upgraded;
-    }
-
     private static final String WIN1252 = "windows-1252";
+
+    /**
+     * Minimum number of high bytes (≥ 0x80) required in the probe for the
+     * model to have statistical basis for preferring one Latin encoding over
+     * another.  Below this threshold, the probe is "genuinely sparse" — the
+     * model has seen too few high bytes to discriminate, and the fallback to
+     * windows-1252 as the unmarked Latin default is safe.
+     *
+     * <p>Derived from training data: p75 at 64B for affected charsets
+     * (ISO-8859-16, windows-1257, windows-1250, windows-1254) is 4–5 high
+     * bytes, meaning the bottom 75% of 64B probes are in this regime.
+     * The value is a raw count, not normalized by probe length, because the
+     * model's signal scales with the count of high bytes seen, not their
+     * density — ASCII bytes are invisible to the model regardless of probe
+     * length.</p>
+     */
+    static final int LATIN_FALLBACK_HIGH_BYTE_THRESHOLD = 5;
 
     /**
      * Latin→windows-1252 fallback.  See {@link Rule#LATIN_FALLBACK_WIN1252}.
      *
      * <p>For each candidate whose label is in {@link CharsetConfusables#SBCS_LATIN_FAMILY}
-     * but is not already windows-1252, if the probe decodes byte-identically
-     * under windows-1252 (cheap per-probe byte walk via
-     * {@link DecodeEquivalence#byteIdenticalOnProbe}), swap the result to
+     * but is not already windows-1252, if the probe has fewer than
+     * {@link #LATIN_FALLBACK_HIGH_BYTE_THRESHOLD} high bytes (≥ 0x80) and
+     * decodes byte-identically under windows-1252, swap the result to
      * windows-1252 at the same confidence.  A candidate that is already
      * windows-1252 short-circuits the rest of the list — once windows-1252
      * has been selected there's nothing to relabel.</p>
+     *
+     * <p>The high-byte threshold ensures that when the probe contains enough
+     * high bytes for the model to have real discriminating signal, the model
+     * prediction is trusted even if the probe is byte-identical under
+     * windows-1252.  Below the threshold, the model essentially has no
+     * statistical basis for its prediction and the fallback is appropriate.</p>
      */
     private static List<EncodingResult> applyLatinFallback(byte[] probe,
                                                            List<EncodingResult> results) {
         if (results.isEmpty()) {
             return results;
+        }
+        int highBytes = 0;
+        for (byte b : probe) {
+            if ((b & 0xFF) >= 0x80) {
+                highBytes++;
+                if (highBytes >= LATIN_FALLBACK_HIGH_BYTE_THRESHOLD) {
+                    return results;  // enough signal — trust the model
+                }
+            }
         }
         Charset win1252 = labelToCharset(WIN1252);
         if (win1252 == null) {
@@ -742,6 +655,80 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         return out;
+    }
+
+    private static final String IBM500 = "IBM500";
+    private static final Set<String> SPECIALIZED_EBCDIC_LABELS = Set.of(
+            "IBM424-ltr", "IBM424-rtl", "IBM420-ltr", "IBM420-rtl");
+
+    /**
+     * EBCDIC→IBM500 fallback.  See {@link Rule#EBCDIC_FALLBACK_IBM500}.
+     *
+     * <p>Fires when the top candidate is a script-specific EBCDIC variant
+     * (IBM424 Hebrew, IBM420 Arabic) and the probe decodes to the
+     * <em>same Unicode string</em> under IBM500 and the predicted variant.
+     * IBM500 is chosen as the unmarked international EBCDIC default.</p>
+     *
+     * <p>Identical decoded output means the probe contains only bytes that
+     * are shared (e.g. common English/Latin characters) — the model has no
+     * byte-level discriminating signal and falls back to training-data bias,
+     * which favours IBM424-ltr.  When the decoded outputs differ, the probe
+     * contains script-specific bytes (Hebrew in IBM424, Arabic in IBM420) and
+     * the model's prediction is trusted.</p>
+     *
+     * <p>Note: {@link DecodeEquivalence#byteIdenticalOnProbe} cannot be used
+     * here because it skips bytes below {@code 0x80}, treating them as
+     * ASCII-identical across charsets.  In EBCDIC, bytes below {@code 0x80}
+     * are <em>not</em> ASCII — Hebrew letters in IBM424 live in the
+     * {@code 0x41–0x79} range.  This method compares all 256 byte positions
+     * via the same cached byte-to-char tables.</p>
+     */
+    private static List<EncodingResult> applyEbcdicFallback(byte[] probe,
+                                                             List<EncodingResult> results) {
+        if (results.isEmpty()) {
+            return results;
+        }
+        Charset ibm500 = labelToCharset(IBM500);
+        if (ibm500 == null) {
+            return results;
+        }
+        char[] tableIbm500 = DecodeEquivalence.tableFor(ibm500);
+        if (tableIbm500 == null) {
+            return results;
+        }
+        List<EncodingResult> out = new ArrayList<>(results.size());
+        boolean replaced = false;
+        for (EncodingResult er : results) {
+            String label = er.getLabel() != null ? er.getLabel() : er.getCharset().name();
+            if (!replaced && SPECIALIZED_EBCDIC_LABELS.contains(label)) {
+                char[] tableVariant = DecodeEquivalence.tableFor(er.getCharset());
+                if (tableVariant != null && ebcdicDecodeIdentical(probe, tableIbm500, tableVariant)) {
+                    out.add(new EncodingResult(ibm500, er.getConfidence(), IBM500,
+                            er.getResultType()));
+                    replaced = true;
+                    continue;
+                }
+            }
+            out.add(er);
+        }
+        return out;
+    }
+
+    /**
+     * Returns true if every byte in {@code probe} maps to the same Unicode
+     * character under both EBCDIC byte-to-char tables.  Unlike
+     * {@link DecodeEquivalence#byteIdenticalOnProbe}, this checks
+     * <em>all</em> byte values — EBCDIC bytes below {@code 0x80} are not
+     * ASCII and must not be skipped.
+     */
+    private static boolean ebcdicDecodeIdentical(byte[] probe, char[] tableA, char[] tableB) {
+        for (byte b : probe) {
+            int v = b & 0xFF;
+            if (tableA[v] != tableB[v]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static List<EncodingResult> upgradeIsoToWindows(List<EncodingResult> results) {
