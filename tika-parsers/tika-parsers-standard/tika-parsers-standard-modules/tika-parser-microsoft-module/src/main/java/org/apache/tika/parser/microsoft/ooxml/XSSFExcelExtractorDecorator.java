@@ -51,6 +51,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -58,6 +59,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -158,14 +160,14 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             stylesShim = new XSSFStylesShim(xssfReader.getStylesData(), parseContext);
         } catch (Exception e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                    ExceptionUtils.getStackTrace(e));
         }
         try {
             stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
                     config.isConcatenatePhoneticRuns(), parseContext);
         } catch (Exception e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                    ExceptionUtils.getStackTrace(e));
         }
         while (true) {
             try {
@@ -174,7 +176,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             } catch (RuntimeException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                        ExceptionUtils.getStackTrace(e));
                 break;
             }
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
@@ -185,10 +187,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             } catch (RuntimeException e) {
                 // POI can throw POIXMLException for missing sheet parts (e.g.,
                 // truncated workbook references a sheet that isn't in the zip).
-                // Skip the sheet but keep what we've already extracted.
+                // Break rather than continue — POI's iterator state may not have
+                // advanced, which would cause an infinite loop.
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
-                continue;
+                        ExceptionUtils.getStackTrace(e));
+                break;
             }
             try (InputStream stream = nextStream) {
                 sheetPart = iter.getSheetPart();
@@ -214,10 +217,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 } catch (SAXException e) {
                     // Truncated/malformed sheet XML — keep prior sheets and
                     // record the failure as a warning.
-                    org.apache.tika.exception.WriteLimitReachedException
-                            .throwIfWriteLimitReached(e);
+                    WriteLimitReachedException.throwIfWriteLimitReached(e);
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            org.apache.tika.utils.ExceptionUtils.getStackTrace(e));
+                            ExceptionUtils.getStackTrace(e));
                 }
                 try {
                     getThreadedComments(container, sheetPart, xhtml);
