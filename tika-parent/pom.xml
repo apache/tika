@@ -326,7 +326,7 @@
     <biz.aqute.version>7.2.3</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.83</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <c3p0.version>0.12.0</c3p0.version>
@@ -388,8 +388,8 @@
          (only on the CI, not on local Windows with Docker, see comment in TIKA-4327 on 14.12.2024)
          expecting org.eclipse.jetty.client.util.InputStreamResponseListener which is only available
          in Jetty up to 11.0.26
-         but this class is now in org.eclipse.jetty.client, see also 
-         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html 
+         but this class is now in org.eclipse.jetty.client, see also
+         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html
          when updating, see also TODO in PipesBiDirectionalStreamingIntegrationTest
          and add jakarta.servlet jakarta.servlet-api 6.0.0 to tika-server-core
     -->
@@ -402,7 +402,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.0.3</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>7.5.8</junrar.version>
+    <junrar.version>7.5.9</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
     <kotlin-stdlib.version>2.3.20</kotlin-stdlib.version>
@@ -444,7 +444,7 @@
     <!-- TODO (incomplete) if updating to solrj 10:
      https://solr.apache.org/guide/solr/latest/upgrade-notes/major-changes-in-solr-10.html
      add solr-solrj-jetty artifact, add log4j
-     Http2SolrClient -> HttpJettySolrClient 
+     Http2SolrClient -> HttpJettySolrClient
      LBHttpSolrClient -> LBHttp2SolrClient -> LBJettySolrClient (doesn't work)
      -->
     <solrj.version>9.10.1</solrj.version>
