@@ -108,28 +108,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          */
         CRLF_TO_WINDOWS,
         /**
-         * On <strong>short probes only</strong>, when the top candidate is a
-         * single-byte Latin-family charset (see
-         * {@link CharsetConfusables#SBCS_LATIN_FAMILY}) other than
-         * windows-1252, and the probe decodes byte-identically under
-         * windows-1252, swap the result to windows-1252 as the unmarked
-         * Latin default.
-         *
-         * <p>Short-probe gate: the rule only fires when
-         * {@code probe.length < SHORT_PROBE_THRESHOLD} (currently 50 bytes).
-         * On longer probes the model has seen enough high-byte evidence to
-         * discriminate sibling Latin code pages (windows-1250/1254/1257,
-         * ISO-8859-X) genuinely — rewriting to windows-1252 there would
-         * erase real distinctions.  On short probes the model is falling
-         * back to bias, which is where sparse-Latin vCard-style content
-         * false-positives as IBM424 / windows-1257 / x-MacRoman; this gate
-         * catches those.</p>
-         *
-         * <p>Per-probe byte walk via
-         * {@link DecodeEquivalence#byteIdenticalOnProbe}; short-circuits on
-         * the first disagreeing high byte.  Zero cost for probes whose top
-         * candidate isn't Latin-family (CJK, UTF-*, EBCDIC, Cyrillic,
-         * Arabic, Greek, Hebrew).</p>
+         * On low-evidence probes, if the top candidate is a
+         * {@link CharsetConfusables#SBCS_LATIN_FAMILY} non-1252 sibling that
+         * decodes byte-identically under windows-1252, relabel as
+         * windows-1252.  Gate: fewer than {@link #MIN_HIGH_BYTE_EVIDENCE}
+         * high bytes — enough evidence and the model's sibling choice is
+         * genuine.
          */
         LATIN_FALLBACK_WIN1252
     }
@@ -138,7 +122,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     /** Default model resource path on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
-            "/org/apache/tika/ml/chardetect/chardetect-v6-no-utf32.bin";
+            "/org/apache/tika/ml/chardetect/chardetect.bin";
 
     /**
      * Maps model label strings (from training-data filenames) to the canonical
@@ -322,7 +306,14 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // An empty probe (e.g. empty file, or a file that was only a BOM) falls
         // through to detectAll where isPureAscii returns true for a zero-length
         // array, yielding windows-1252 as the default.
-        int topN = probe.length <= SHORT_PROBE_THRESHOLD ? TOP_N_SHORT : TOP_N_LONG;
+        // Evidence-based topN selection: on low-high-byte probes (sparse Latin
+        // in HTML, short probes, anything with few discriminative features),
+        // widen so CharSoup can arbitrate by language-scoring the decoded
+        // candidates.  On high-evidence probes the model has plenty to work
+        // with and we trust the top result.
+        int topN = countHighBytes(probe) < MIN_HIGH_BYTE_EVIDENCE
+                ? TOP_N_LOW_EVIDENCE
+                : TOP_N_HIGH_EVIDENCE;
         return detectAll(probe, topN);
     }
 
@@ -541,24 +532,25 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             results = refineCjkResults(probe, results);
         }
 
-        // On short probes, ensure enough candidates survive for CharSoup to
-        // arbitrate. Grammar-killed CJK charsets are skipped so they don't
-        // consume slots meant for viable alternatives.
-        if (probe.length < SHORT_PROBE_THRESHOLD && results.size() < MIN_CANDIDATES) {
+        // On low-evidence probes (few high bytes), ensure enough candidates
+        // survive for CharSoup to arbitrate.  Grammar-killed CJK charsets
+        // are skipped so they don't consume slots meant for viable
+        // alternatives.
+        int highByteCount = countHighBytes(probe);
+        if (highByteCount < MIN_HIGH_BYTE_EVIDENCE && results.size() < MIN_CANDIDATES) {
             boolean grammar = enabledRules.contains(Rule.CJK_GRAMMAR);
             results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
         }
 
-        // LATIN_FALLBACK_WIN1252 is gated to short probes only.  On long probes
-        // the model has enough high-byte evidence to discriminate sibling Latin
-        // code pages (windows-1250/1254/1257/ISO-8859-X) and we trust it;
+        // LATIN_FALLBACK_WIN1252 is gated to low-evidence probes only.  When
+        // the model has enough high-byte evidence it can discriminate sibling
+        // Latin code pages (windows-1250/1254/1257/ISO-8859-X) genuinely, and
         // forcing a rewrite to windows-1252 would erase those distinctions.
-        // Short probes (< SHORT_PROBE_THRESHOLD bytes) are where the model
-        // falls back to bias — that's where the fallback prevents
-        // IBM424/windows-1257/x-MacRoman false positives on sparse-Latin
-        // vCard-style content.
+        // On low-evidence probes the model falls back to bias — that's where
+        // the fallback prevents IBM424/windows-1257/x-MacRoman false positives
+        // on sparse-Latin vCard-style and HTML-heavy content.
         if (enabledRules.contains(Rule.LATIN_FALLBACK_WIN1252)
-                && probe.length < SHORT_PROBE_THRESHOLD) {
+                && highByteCount < MIN_HIGH_BYTE_EVIDENCE) {
             results = applyLatinFallback(probe, results);
         }
 
@@ -599,11 +591,45 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final int SHORT_PROBE_THRESHOLD = 50;
 
-    /** Max results returned to CharSoup on short probes (<=SHORT_PROBE_THRESHOLD). */
-    private static final int TOP_N_SHORT = 3;
+    /**
+     * The true "low-evidence" signal for this extractor: the feature path only
+     * fires on bytes &ge; {@code 0x80} (stride-1 anchored unigrams/bigrams),
+     * so the count of high bytes is the discriminative feature budget.  Below
+     * this threshold the model has too few features to discriminate reliably
+     * regardless of probe length — an HTML page full of ASCII markup plus
+     * two accented characters has the same evidence profile as a 40-byte
+     * sparse-Latin vCard.  Gate on this (not on probe length) for:
+     * <ul>
+     *   <li>widening {@code topN} so CharSoup has candidates to arbitrate;</li>
+     *   <li>firing {@link Rule#LATIN_FALLBACK_WIN1252};</li>
+     *   <li>{@code selectAtLeast} minimum-candidate fallback.</li>
+     * </ul>
+     */
+    private static final int MIN_HIGH_BYTE_EVIDENCE = 5;
 
-    /** Max results returned to CharSoup on long probes. */
-    private static final int TOP_N_LONG = 1;
+    private static int countHighBytes(byte[] probe) {
+        int n = 0;
+        for (byte b : probe) {
+            if ((b & 0xFF) >= 0x80) {
+                n++;
+            }
+        }
+        return n;
+    }
+
+    /**
+     * Max results returned to CharSoup on low-evidence probes
+     * (high-byte count &lt; {@link #MIN_HIGH_BYTE_EVIDENCE}).  Needs to be
+     * wide enough to include the first SBCS-Latin-family candidate so
+     * {@link #applyLatinFallback} can fire — sparse-Latin probes tend to
+     * rank DOS OEM / Cyrillic / Arabic / CJK classes ahead of Latin
+     * siblings on bias and hash-bucket accidents, so the Latin sibling
+     * may be rank 4-5 even when it's actually the right answer.
+     */
+    private static final int TOP_N_LOW_EVIDENCE = 5;
+
+    /** Max results returned to CharSoup on high-evidence probes. */
+    private static final int TOP_N_HIGH_EVIDENCE = 1;
 
     /** Minimum candidates guaranteed to downstream rules on short probes. */
     private static final int MIN_CANDIDATES = 3;

@@ -65,25 +65,37 @@ public class EbcdicRoutingTest {
     }
 
     /**
-     * The general model must have direct labels for all EBCDIC variants.
-     * There must be no bare "EBCDIC" routing label — that was the old two-model
-     * architecture which has been replaced by a single model.
+     * The general model must have a direct label for the international EBCDIC
+     * variant it trains on today.  There must be no bare "EBCDIC" routing label
+     * — that was the old two-model architecture which has been replaced by a
+     * single model.
+     *
+     * <p>Script-specific EBCDIC variants (IBM424 Hebrew, IBM420 Arabic, and
+     * IBM1047 z/OS Unix Latin) are explicitly excluded from today's SBCS
+     * include list (see {@code TrainCharsetModel.TODAY_SBCS_INCLUDE}).  A
+     * future EBCDIC specialist will cover them; today they must NOT appear
+     * as direct labels.</p>
      */
     @Test
-    public void generalModelHasDirectEbcdicLabels() {
+    public void generalModelEbcdicLabelPolicy() {
         LinearModel general = detector.getModel();
         List<String> labels = Arrays.asList(general.getLabels());
 
         assertFalse(labels.contains("EBCDIC"),
                 "Model must not have a bare 'EBCDIC' routing label (single-model architecture)");
 
-        // True EBCDIC variants must be direct labels
-        for (String ebcdic : new String[]{"IBM420-ltr", "IBM420-rtl", "IBM424-ltr", "IBM424-rtl", "IBM500", "IBM1047"}) {
-            assertTrue(labels.contains(ebcdic),
-                    "EBCDIC variant must be a direct model label: " + ebcdic);
+        // IBM500 (international EBCDIC) is the only EBCDIC in today's SBCS model.
+        assertTrue(labels.contains("IBM500"),
+                "IBM500 must be a direct model label");
+
+        // Script-specific and duplicate EBCDIC variants must NOT be direct labels.
+        for (String excluded : new String[]{
+                "IBM420-ltr", "IBM420-rtl", "IBM424-ltr", "IBM424-rtl", "IBM1047"}) {
+            assertFalse(labels.contains(excluded),
+                    "Excluded EBCDIC variant must not appear in today's model: " + excluded);
         }
 
-        // DOS Cyrillic variants must also be direct labels
+        // DOS Cyrillic variants (not EBCDIC) must be direct labels.
         assertTrue(labels.contains("IBM855"), "IBM855 (DOS Cyrillic) must be a direct model label");
         assertTrue(labels.contains("IBM866"), "IBM866 (DOS Cyrillic) must be a direct model label");
     }

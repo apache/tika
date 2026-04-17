@@ -103,8 +103,11 @@ public class TrainCharsetModel {
      * </ul>
      */
     static final Set<String> TODAY_SBCS_INCLUDE = Set.of(
-            // CJK (multi-byte)
-            "Big5-HKSCS", "EUC-JP", "EUC-KR", "x-windows-949",
+            // CJK (multi-byte) — train only the supersets, let CharsetSupersets
+            // handle decode.  Korean: x-windows-949 only (EUC-KR is a strict
+            // subset; training both caused 27-logit bias collapse because
+            // MADLAD-derived samples were byte-identical across the pair).
+            "Big5-HKSCS", "EUC-JP", "x-windows-949",
             "GB18030", "Shift_JIS", "x-EUC-TW",
             // Unicode
             "UTF-8",
