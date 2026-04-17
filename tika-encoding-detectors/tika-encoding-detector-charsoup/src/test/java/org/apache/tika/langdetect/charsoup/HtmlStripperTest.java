@@ -63,30 +63,41 @@ public class HtmlStripperTest {
     }
 
     @Test
-    public void handlesEntities() {
-        // Named entities (e.g. &amp;, &nbsp;) → stripped to space (low signal,
-        // and a full named-entity table is heavyweight).
-        // Numeric entities (e.g. &#1234;, &#x201D;) → DECODED to their actual
-        // code point so the content reaches the language detector.  This
-        // matters for files where the page's primary content is delivered
-        // via numeric entities (e.g. industrial-product pages emitting CJK
-        // ideographs as &#NNNN; for cross-charset compatibility).
+    public void handlesEntitiesDefault() {
+        // Default strip(): both named and numeric entities are dropped to a
+        // space.  Numeric decode is opt-in via stripAndDecodeNumeric(); the
+        // default target is charset detection on raw bytes, where a big
+        // numeric-entity expansion would distort what we're measuring.
         String stripped = HtmlStripper.strip(
                 "<p>&amp;hello&nbsp;world&#8211;test&#x201D;end</p>");
         assertFalse(stripped.contains("&"),
                 "No entity references should survive: " + stripped);
-        // 0x2013 = en-dash, 0x201D = right double quote — should appear as
-        // actual chars, not as entity references nor as spaces.
-        assertTrue(stripped.contains("\u2013"),
-                "Numeric entity &#8211; should decode to en-dash: " + stripped);
-        assertTrue(stripped.contains("\u201D"),
-                "Numeric entity &#x201D; should decode to right double quote: " + stripped);
+        assertFalse(stripped.contains("\u2013"),
+                "Default strip must NOT decode numeric entities: " + stripped);
+        assertFalse(stripped.contains("\u201D"),
+                "Default strip must NOT decode numeric entities: " + stripped);
         assertTrue(stripped.contains("hello"));
         assertTrue(stripped.contains("world"));
     }
 
     @Test
-    public void decodesCjkNumericEntities() {
+    public void decodeVariantDecodesEntities() {
+        // stripAndDecodeNumeric() preserves the legacy behaviour: named
+        // entities → space, numeric entities → actual code point.  Kept for
+        // callers that need the content behind numeric entities (e.g.
+        // language scoring on pages that emit CJK ideographs as &#NNNN;).
+        String stripped = HtmlStripper.stripAndDecodeNumeric(
+                "<p>&amp;hello&nbsp;world&#8211;test&#x201D;end</p>");
+        assertFalse(stripped.contains("&"),
+                "No entity references should survive: " + stripped);
+        assertTrue(stripped.contains("\u2013"),
+                "Numeric entity &#8211; should decode to en-dash: " + stripped);
+        assertTrue(stripped.contains("\u201D"),
+                "Numeric entity &#x201D; should decode to right double quote: " + stripped);
+    }
+
+    @Test
+    public void decodeVariantDecodesCjkNumericEntities() {
         // Real-world case: industrial-product pages that emit CJK ideographs
         // via numeric entities (so they render correctly regardless of the
         // page's declared charset).  The decoded content must reach the
@@ -94,7 +105,7 @@ public class HtmlStripperTest {
         // ASCII markup and concludes "English" no matter what the page is
         // actually about.
         String input = "<p>&#36807;&#28388;&#31163; cyclone</p>";
-        String stripped = HtmlStripper.strip(input);
+        String stripped = HtmlStripper.stripAndDecodeNumeric(input);
         assertTrue(stripped.contains("\u8FC7"),
                 "0x8FC7 (过) should decode: " + stripped);
         assertTrue(stripped.contains("\u6EE4"),
@@ -104,11 +115,28 @@ public class HtmlStripperTest {
     }
 
     @Test
-    public void rejectsInvalidNumericEntities() {
+    public void defaultDropsCjkNumericEntitiesToSpaces() {
+        // The inverse of decodeVariantDecodesCjkNumericEntities: default
+        // strip() drops all numeric entities.  This is what we want for
+        // raw-byte charset-detection scoring — the CJK ideographs are not
+        // part of the probe we are characterising.
+        String input = "<p>&#36807;&#28388;&#31163; cyclone</p>";
+        String stripped = HtmlStripper.strip(input);
+        assertFalse(stripped.contains("\u8FC7"), "default must not decode: " + stripped);
+        assertFalse(stripped.contains("\u6EE4"), "default must not decode: " + stripped);
+        assertFalse(stripped.contains("\u79BB"), "default must not decode: " + stripped);
+        assertTrue(stripped.contains("cyclone"));
+    }
+
+    @Test
+    public void rejectsInvalidNumericEntitiesInDecodeVariant() {
         // Surrogate-half codepoints, control chars, and out-of-range numbers
         // should be replaced with a space rather than emitted (they would
-        // either crash the language detector or skew scores).
-        String stripped = HtmlStripper.strip("good&#xD800;bad&#0;bad&#9999999;good");
+        // either crash the language detector or skew scores).  Applies to
+        // the decode-numeric variant; the default already drops everything
+        // numeric to a space regardless of validity.
+        String stripped = HtmlStripper.stripAndDecodeNumeric(
+                "good&#xD800;bad&#0;bad&#9999999;good");
         assertFalse(stripped.contains("\uD800"),
                 "Surrogate code point should not be emitted: " + stripped);
         assertTrue(stripped.contains("good"));

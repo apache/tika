@@ -108,15 +108,28 @@ public class MojibusterEncodingDetector implements EncodingDetector {
          */
         CRLF_TO_WINDOWS,
         /**
-         * When the top candidate is a single-byte Latin-family charset
-         * (see {@link CharsetConfusables#SBCS_LATIN_FAMILY}) other than
+         * On <strong>short probes only</strong>, when the top candidate is a
+         * single-byte Latin-family charset (see
+         * {@link CharsetConfusables#SBCS_LATIN_FAMILY}) other than
          * windows-1252, and the probe decodes byte-identically under
          * windows-1252, swap the result to windows-1252 as the unmarked
-         * Latin default.  Cheap per-probe byte walk via
+         * Latin default.
+         *
+         * <p>Short-probe gate: the rule only fires when
+         * {@code probe.length < SHORT_PROBE_THRESHOLD} (currently 50 bytes).
+         * On longer probes the model has seen enough high-byte evidence to
+         * discriminate sibling Latin code pages (windows-1250/1254/1257,
+         * ISO-8859-X) genuinely — rewriting to windows-1252 there would
+         * erase real distinctions.  On short probes the model is falling
+         * back to bias, which is where sparse-Latin vCard-style content
+         * false-positives as IBM424 / windows-1257 / x-MacRoman; this gate
+         * catches those.</p>
+         *
+         * <p>Per-probe byte walk via
          * {@link DecodeEquivalence#byteIdenticalOnProbe}; short-circuits on
          * the first disagreeing high byte.  Zero cost for probes whose top
          * candidate isn't Latin-family (CJK, UTF-*, EBCDIC, Cyrillic,
-         * Arabic, Greek, Hebrew).
+         * Arabic, Greek, Hebrew).</p>
          */
         LATIN_FALLBACK_WIN1252
     }
@@ -536,7 +549,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
         }
 
-        if (enabledRules.contains(Rule.LATIN_FALLBACK_WIN1252)) {
+        // LATIN_FALLBACK_WIN1252 is gated to short probes only.  On long probes
+        // the model has enough high-byte evidence to discriminate sibling Latin
+        // code pages (windows-1250/1254/1257/ISO-8859-X) and we trust it;
+        // forcing a rewrite to windows-1252 would erase those distinctions.
+        // Short probes (< SHORT_PROBE_THRESHOLD bytes) are where the model
+        // falls back to bias — that's where the fallback prevents
+        // IBM424/windows-1257/x-MacRoman false positives on sparse-Latin
+        // vCard-style content.
+        if (enabledRules.contains(Rule.LATIN_FALLBACK_WIN1252)
+                && probe.length < SHORT_PROBE_THRESHOLD) {
             results = applyLatinFallback(probe, results);
         }
 

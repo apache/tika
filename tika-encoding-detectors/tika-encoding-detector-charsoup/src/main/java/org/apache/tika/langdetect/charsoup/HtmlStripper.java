@@ -17,16 +17,16 @@
 package org.apache.tika.langdetect.charsoup;
 
 /**
- * HTML/XML markup stripping tuned for language scoring.  Not a full HTML
- * parser — purpose-built to feed character-bigram language detectors a
- * markup-free string that still carries the page's content language.
+ * HTML/XML markup stripping tuned for language scoring and charset
+ * disambiguation.  Not a full HTML parser — purpose-built to feed
+ * character-bigram language detectors a markup-free string that still
+ * carries the page's content language.
  *
  * <p>Real-world HTML probes are routinely 95-99% markup by byte count.
  * Without this pass, a language detector sees the markup as its primary
  * input — which on any HTML page looks predominantly like ASCII English
- * regardless of the page's actual content language.  Stripping markup
- * (and decoding numeric entities, which can carry content) lets the
- * detector see the actual content.
+ * regardless of the page's actual content language.  Stripping the markup
+ * lets the detector see the actual content.
  *
  * <h3>What it does, in one linear pass</h3>
  * <ul>
@@ -37,15 +37,23 @@ package org.apache.tika.langdetect.charsoup;
  *   <li>Removes {@code <!-- ... -->} comments.</li>
  *   <li>Removes {@code <...>} tag markup (element names, attribute names,
  *       attribute values).</li>
- *   <li><em>Decodes</em> numeric character references ({@code &#1234;},
- *       {@code &#xABCD;}) to their actual code points — these can carry
- *       the page's primary content (e.g. Korean-charset pages that emit
- *       simplified-Chinese-only ideographs via numeric entities for
- *       cross-charset compatibility).</li>
  *   <li>Replaces named entity references ({@code &amp;}, {@code &nbsp;},
  *       {@code &copy;}) with a space — these are nearly always
  *       punctuation/typography with low language signal, and a full
  *       named-entity table would be heavyweight.</li>
+ *   <li>Default ({@link #strip(String)}): <strong>drops numeric character
+ *       references</strong> ({@code &#1234;}, {@code &#xABCD;}) to a single
+ *       space, on the grounds that a single numeric-entity-heavy section
+ *       can expand to a very different byte distribution than the raw
+ *       probe we are trying to characterise — at charset-detection time
+ *       we want to score the raw bytes, not a synthetic Unicode rendering
+ *       of them.</li>
+ *   <li>Opt-in ({@link #stripAndDecodeNumeric(String)}): <em>decodes</em>
+ *       numeric character references to their actual code points.  Useful
+ *       where numeric entities carry the page's primary content (e.g.
+ *       pages that emit CJK ideographs via {@code &#NNNN;} for
+ *       cross-charset compatibility, so the decoded content reaches a
+ *       downstream language scorer).</li>
  * </ul>
  *
  * <h3>What it doesn't do</h3>
@@ -68,14 +76,34 @@ public final class HtmlStripper {
     }
 
     /**
-     * Strip markup from {@code text} and return the content with numeric
-     * entities decoded.  See class javadoc for details.
+     * Strip markup from {@code text}.  Numeric character references are
+     * dropped to a space — same treatment as named entities.  See class
+     * javadoc for details.  Use {@link #stripAndDecodeNumeric(String)} when
+     * a caller specifically needs numeric entities decoded.
+     *
+     * @param text input string (HTML/XML or plain text); {@code null} or empty
+     *             returns the input unchanged
+     * @return content with markup removed and entity references dropped to space
+     */
+    public static String strip(String text) {
+        return strip(text, false);
+    }
+
+    /**
+     * Strip markup from {@code text}, decoding numeric character references
+     * to their actual code points.  Use when numeric entities carry content
+     * the downstream consumer needs to see (e.g. language scoring on pages
+     * that emit CJK ideographs as {@code &#NNNN;}).
      *
      * @param text input string (HTML/XML or plain text); {@code null} or empty
      *             returns the input unchanged
      * @return content with markup removed and numeric entities decoded
      */
-    public static String strip(String text) {
+    public static String stripAndDecodeNumeric(String text) {
+        return strip(text, true);
+    }
+
+    private static String strip(String text, boolean decodeNumericEntities) {
         if (text == null || text.isEmpty()) {
             return text;
         }
@@ -87,7 +115,7 @@ public final class HtmlStripper {
             if (c == '<') {
                 i = handleOpenAngle(text, i, n, out);
             } else if (c == '&') {
-                i = handleAmpersand(text, i, n, out);
+                i = handleAmpersand(text, i, n, out, decodeNumericEntities);
             } else {
                 out.append(c);
                 i++;
@@ -114,8 +142,15 @@ public final class HtmlStripper {
         return end < 0 ? n : end + 1;
     }
 
-    /** Handle a {@code &} — numeric entity (decode), named entity (drop), or literal. */
-    private static int handleAmpersand(String s, int i, int n, StringBuilder out) {
+    /**
+     * Handle a {@code &} — numeric entity, named entity, or literal.  When
+     * {@code decodeNumericEntities} is {@code true}, valid numeric entities
+     * are decoded to their Unicode code point; otherwise they are dropped
+     * to a space, same as named entities.  An unparseable numeric entity is
+     * always dropped to space (it's not literal text even in no-decode mode).
+     */
+    private static int handleAmpersand(String s, int i, int n, StringBuilder out,
+                                       boolean decodeNumericEntities) {
         // Look for ; within a small window — entity references are short.
         int max = Math.min(n, i + 12);
         int semi = -1;
@@ -135,12 +170,15 @@ public final class HtmlStripper {
         }
         // Numeric entity?
         if (semi >= i + 3 && s.charAt(i + 1) == '#') {
-            int cp = parseNumericEntity(s, i + 2, semi);
-            if (cp >= 0) {
-                appendCodePointSafe(out, cp);
-                return semi + 1;
+            if (decodeNumericEntities) {
+                int cp = parseNumericEntity(s, i + 2, semi);
+                if (cp >= 0) {
+                    appendCodePointSafe(out, cp);
+                    return semi + 1;
+                }
             }
-            // Unparseable numeric entity — treat as space (it's not literal text).
+            // Default (no-decode) path, or unparseable numeric in decode mode:
+            // drop to a space — numeric entities are not literal text.
             out.append(' ');
             return semi + 1;
         }

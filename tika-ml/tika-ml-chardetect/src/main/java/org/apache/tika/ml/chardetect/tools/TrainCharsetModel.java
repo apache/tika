@@ -70,36 +70,60 @@ public class TrainCharsetModel {
     private static final int DEFAULT_MAX_SAMPLES = 500_000;
 
     /**
-     * Labels excluded from the main SBCS "kitchen-sink" model by default.
+     * Labels the main SBCS "kitchen-sink" model is trained on today.
      *
-     * <p>Hardcoded here (rather than passed on the command line) so the model's
-     * class set is versioned in git alongside the code that uses it — past
-     * retraining runs with inconsistent CLI flags were a recurring source of
-     * mismatched inference/training feature sets.</p>
+     * <p>Include-list semantics (not exclude): {@link BuildCharsetTrainingData}
+     * generates training corpora for many more labels than these (EBCDIC
+     * nationals, DOS OEM, Mac charsets, extended ISO-8859 variants, etc.),
+     * pre-positioned for future specialists; today's SBCS consumes only the
+     * explicit set below.  Hardcoded here so the model's class set is
+     * versioned in git alongside the code that uses it — past retraining
+     * runs with inconsistent CLI flags were a recurring source of mismatched
+     * inference/training feature sets.</p>
      *
-     * <p>{@link BuildCharsetTrainingData} still generates training corpora for
-     * these labels — they are needed by future specialists (e.g. an EBCDIC
-     * specialist) — but the main SBCS model doesn't consume them today:</p>
+     * <p>Baseline is the v6 label set ({@code chardetect-v6-no-utf32.bin},
+     * 35 classes), with these changes:</p>
      * <ul>
-     *   <li><b>IBM424-ltr/rtl</b> (Hebrew EBCDIC) — content bytes occupy 0x41–0x6A,
-     *       entirely below the 0x80 threshold the shipped
+     *   <li><b>Removed</b> {@code IBM424-ltr/rtl}, {@code IBM420-ltr/rtl}
+     *       (Hebrew/Arabic EBCDIC) — content bytes occupy {@code 0x41–0x6A},
+     *       entirely below the {@code 0x80} threshold the shipped
      *       {@link ByteNgramFeatureExtractor} considers.  Training on these
-     *       labels teaches weights the inference path cannot ever match.</li>
-     *   <li><b>IBM420-ltr/rtl</b> (Arabic EBCDIC) — same reason as IBM424.</li>
-     *   <li><b>IBM1047</b> (z/OS Unix System Services Latin-1) — byte-identical
-     *       to IBM500 on most prose; having both as classes just splits the
-     *       EBCDIC-Latin signal without adding discrimination the model can
-     *       use.</li>
+     *       labels teaches weights the inference path cannot match.</li>
+     *   <li><b>Removed</b> {@code IBM1047} — byte-identical to {@code IBM500}
+     *       on most prose; having both as classes splits the EBCDIC-Latin
+     *       signal without adding discrimination.</li>
+     *   <li><b>Removed</b> {@code UTF-16-LE} / {@code UTF-16-BE} — owned by
+     *       {@code Utf16SpecialistEncodingDetector}; no longer emitted as
+     *       main-model classes (same reasoning the v6 name
+     *       "{@code -no-utf32}" captures for UTF-32).</li>
+     *   <li><b>Added</b> {@code x-windows-949} — Korean MS949, strict
+     *       superset of EUC-KR; trained as a separate class so the model
+     *       can discriminate MS949-extension-byte content from pure
+     *       EUC-KR.</li>
      * </ul>
-     *
-     * <p>CLI {@code --exclude} is unioned with this set, not replaced, so an
-     * operator can add further exclusions but cannot accidentally suppress
-     * the hardcoded policy.</p>
      */
-    static final Set<String> TODAY_SBCS_EXCLUDE = Set.of(
-            "IBM424-ltr", "IBM424-rtl",
-            "IBM420-ltr", "IBM420-rtl",
-            "IBM1047");
+    static final Set<String> TODAY_SBCS_INCLUDE = Set.of(
+            // CJK (multi-byte)
+            "Big5-HKSCS", "EUC-JP", "EUC-KR", "x-windows-949",
+            "GB18030", "Shift_JIS", "x-EUC-TW",
+            // Unicode
+            "UTF-8",
+            // EBCDIC (international Latin only — other variants deferred to specialist)
+            "IBM500",
+            // DOS / OEM Latin (retained from v6)
+            "IBM850", "IBM852",
+            // Cyrillic
+            "IBM855", "IBM866", "KOI8-R", "KOI8-U",
+            "windows-1251", "x-mac-cyrillic",
+            // Windows single-byte
+            "windows-1250", "windows-1252", "windows-1253", "windows-1254",
+            "windows-1255", "windows-1256", "windows-1257", "windows-1258",
+            "windows-874",
+            // ISO-8859 (only the ones v6 kept as distinct labels; 1/2/4/9 fold
+            // into their windows-12XX supersets)
+            "ISO-8859-3", "ISO-8859-16",
+            // Mac
+            "x-MacRoman");
 
     public static void main(String[] args) throws IOException {
         Path dataDir = null;
@@ -111,9 +135,10 @@ public class TrainCharsetModel {
         // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
         // one target label at training time (e.g. merge script variants into one class).
         Map<String, String> labelRemap = new HashMap<>();
-        // Start from the hardcoded SBCS-kitchen-sink exclusion list; CLI
-        // --exclude adds to it but cannot override.
-        Set<String> excludeLabels = new java.util.HashSet<>(TODAY_SBCS_EXCLUDE);
+        // CLI --exclude adds extra labels to drop *on top of* the include-list
+        // policy (used for ablation experiments).  Cannot override the include
+        // list — labels not in the policy are excluded regardless.
+        Set<String> excludeLabels = new java.util.HashSet<>();
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -164,27 +189,44 @@ public class TrainCharsetModel {
             System.err.println("  --max-samples-per-class N");
             System.err.println("  --label-remap src1:dst1,src2:dst2");
             System.err.println("                           merge source labels into a single target label");
-            System.err.println("  --exclude cs1,cs2          ADD these to the hardcoded exclusion list "
-                    + TODAY_SBCS_EXCLUDE);
+            System.err.println("  --exclude cs1,cs2          drop these additionally on top of the hardcoded "
+                    + "include list (" + TODAY_SBCS_INCLUDE.size() + " classes in TODAY_SBCS_INCLUDE)");
             System.exit(1);
         }
 
-        // Discover charset files
+        // Discover charset files.  Include-list policy: only labels in
+        // TODAY_SBCS_INCLUDE are admitted, regardless of what files exist in
+        // dataDir (which may contain future-specialist corpora — Mac, DOS
+        // OEM, EBCDIC nationals, etc.).  CLI --exclude can drop further
+        // labels for ablation.
         List<Path> charsetFiles = Files.list(dataDir)
                 .filter(p -> p.getFileName().toString().endsWith(".bin.gz"))
                 .filter(p -> {
                     String cs = p.getFileName().toString().replaceAll("\\.bin\\.gz$", "");
-                    return !excludeLabels.contains(cs);
+                    return TODAY_SBCS_INCLUDE.contains(cs) && !excludeLabels.contains(cs);
                 })
                 .sorted()
                 .collect(Collectors.toList());
 
+        System.out.println("TODAY_SBCS_INCLUDE (" + TODAY_SBCS_INCLUDE.size() + " classes): "
+                + new java.util.TreeSet<>(TODAY_SBCS_INCLUDE));
         if (!excludeLabels.isEmpty()) {
-            System.out.println("Excluded labels: " + excludeLabels);
+            System.out.println("Additional CLI --exclude: " + excludeLabels);
+        }
+        // Report any include-list classes that had no matching file on disk.
+        java.util.Set<String> foundLabels = charsetFiles.stream()
+                .map(p -> p.getFileName().toString().replaceAll("\\.bin\\.gz$", ""))
+                .collect(Collectors.toCollection(java.util.TreeSet::new));
+        java.util.Set<String> missing = new java.util.TreeSet<>(TODAY_SBCS_INCLUDE);
+        missing.removeAll(foundLabels);
+        missing.removeAll(excludeLabels);
+        if (!missing.isEmpty()) {
+            System.err.println("WARNING: include-list classes with no data file in "
+                    + dataDir + ": " + missing);
         }
 
         if (charsetFiles.isEmpty()) {
-            System.err.println("No .bin.gz files found in: " + dataDir);
+            System.err.println("No matching .bin.gz files found in: " + dataDir);
             System.exit(1);
         }
 
