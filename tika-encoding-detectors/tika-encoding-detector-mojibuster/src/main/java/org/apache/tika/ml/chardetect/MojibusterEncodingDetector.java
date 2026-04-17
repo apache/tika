@@ -532,12 +532,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             results = refineCjkResults(probe, results);
         }
 
-        // On low-evidence probes (few high bytes), ensure enough candidates
-        // survive for CharSoup to arbitrate.  Grammar-killed CJK charsets
-        // are skipped so they don't consume slots meant for viable
-        // alternatives.
+        // Ensure enough candidates survive for CharSoup to arbitrate.
+        // Triggers: low-evidence probes (few high bytes) OR results
+        // emptied by grammar filtering — if the model's only top-gap winner
+        // was a CJK charset that CjkEncodingRules rejected, selectByLogitGap
+        // leaves nothing behind, even on content-rich probes (e.g. Greek
+        // text where a hash-bucket collision made GB18030 the runaway top
+        // logit, which the grammar walker then correctly dropped).
         int highByteCount = countHighBytes(probe);
-        if (highByteCount < MIN_HIGH_BYTE_EVIDENCE && results.size() < MIN_CANDIDATES) {
+        boolean lowEvidence = highByteCount < MIN_HIGH_BYTE_EVIDENCE;
+        if ((lowEvidence || results.isEmpty()) && results.size() < MIN_CANDIDATES) {
             boolean grammar = enabledRules.contains(Rule.CJK_GRAMMAR);
             results = selectAtLeast(model, logits, MIN_CANDIDATES, probe, grammar);
         }
