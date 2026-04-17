@@ -202,6 +202,137 @@ public final class StructuralEncodingRules {
         return checkIbm424(bytes, 0, bytes.length);
     }
 
+    /**
+     * Returns {@code true} if the probe is plausibly EBCDIC based on the
+     * word-separator distribution.  In every EBCDIC variant (IBM420, IBM424,
+     * IBM500, IBM1047) the space character is {@code 0x40}, not {@code 0x20};
+     * a stretch of EBCDIC text therefore has {@code 0x40} as its single most
+     * common byte, at roughly 10–20% of the sample.  Conversely, any ASCII
+     * or ISO-8859-X / windows-12XX / DOS / Mac / CJK text uses {@code 0x20}
+     * (or {@code 0x09 / 0x0A}) as its whitespace and has {@code 0x40} only
+     * as the rare {@code @} character (typically less than 0.1% of bytes).
+     *
+     * <p>This is a <em>negative</em> gate: when it returns {@code false}, the
+     * probe cannot be any EBCDIC variant, and downstream scoring should
+     * exclude EBCDIC labels from consideration even if the statistical model
+     * ranks them highly.</p>
+     *
+     * <p>Threshold rationale: we require both (a) {@code 0x40} at least 3%
+     * of the sample and (b) {@code 0x40} at least 3&times; more frequent
+     * than {@code 0x20}.  Gate (b) alone is not sufficient because sparse
+     * binary content can have neither byte; gate (a) alone is not sufficient
+     * because some text formats (CSV with {@code @}-separated fields,
+     * e-mail address lists) can exceed 3% {@code 0x40} while clearly being
+     * ASCII-spaced.  Both gates together match real EBCDIC text reliably
+     * across IBM420/424/500/1047 variants.</p>
+     *
+     * @param bytes the probe to analyse
+     * @return {@code true} if the probe's whitespace distribution is
+     *         consistent with EBCDIC; {@code false} if it is clearly ASCII-spaced
+     */
+    public static boolean isEbcdicLikely(byte[] bytes) {
+        if (bytes == null || bytes.length < 8) {
+            return false;
+        }
+        int sample = Math.min(bytes.length, 4096);
+        int ebcdicSpace = 0;
+        int asciiSpace = 0;
+        int prev = -1;
+        for (int i = 0; i < sample; i++) {
+            int b = bytes[i] & 0xFF;
+            if (b == 0x40) {
+                // Guard against Shift_JIS trail bytes that happen to equal 0x40.
+                boolean isShiftJisTrail = (prev >= 0x81 && prev <= 0x9F)
+                        || (prev >= 0xE0 && prev <= 0xFC);
+                if (!isShiftJisTrail) {
+                    ebcdicSpace++;
+                }
+            } else if (b == 0x20) {
+                asciiSpace++;
+            }
+            prev = b;
+        }
+        return ebcdicSpace >= sample * 0.03 && ebcdicSpace > asciiSpace * 3;
+    }
+
+    /**
+     * Minimum probe length before {@link #has2ByteColumnAsymmetry} produces
+     * meaningful diversity counts.  Short probes or probes with limited
+     * vocabulary may have too few distinct byte values per column to compare
+     * reliably; on anything below this threshold we fall back to the pre-gate
+     * behaviour (model + {@link WideUnicodeDetector} positive signal).  Set
+     * above the size of typical short probes (a few hundred bytes) so real
+     * CJK UTF-16 text has room to diversify its high-byte column.
+     */
+    public static final int MIN_COLUMN_ASYMMETRY_PROBE = 2048;
+
+    /**
+     * Returns {@code true} if the probe's byte distribution across stride-2
+     * columns is sufficiently asymmetric to be plausible UTF-16 of some script.
+     *
+     * <p>Every UTF-16 variant has one byte column concentrated in a
+     * script-specific Unicode block prefix while the other column is diverse:
+     * UTF-16 Latin pairs to {@code (ascii, 0x00)} so one column is {@code 0x00}
+     * (1 value) vs ASCII range (~70 values); UTF-16 Cyrillic / Greek / Arabic /
+     * Hebrew pair to a single high-byte block prefix ({@code 0x04}, {@code 0x03},
+     * {@code 0x06}, {@code 0x05}); UTF-16 CJK Unified uses {@code 0x4E}-{@code 0x9F}
+     * (~80 distinct high bytes) against ~256 low bytes; Hangul uses
+     * {@code 0xAC}-{@code 0xD7} (~44 high bytes).</p>
+     *
+     * <p>Non-UTF-16 text — including scattered-null binaries and mixed-content
+     * files — has roughly balanced column diversity (both columns saturate
+     * near 256 distinct byte values on long probes).</p>
+     *
+     * <p>This is a <em>negative</em> gate: when it returns {@code false}, the
+     * probe cannot be any UTF-16 variant, and UTF-16 labels should be masked
+     * from model output even when the stride-2 bigram features score them
+     * highly (e.g. a Greek plaintext file with 0.36% scattered nulls being
+     * mis-scored as UTF-16-LE).</p>
+     *
+     * <p>A diversity ratio of 3× (more diverse column has at least 3× as many
+     * distinct values as the more concentrated column) admits all UTF-16
+     * variants including CJK (ratio ~3.2) while rejecting scattered-null
+     * false positives (ratio ~1:1).</p>
+     *
+     * <p>For probes shorter than {@link #MIN_COLUMN_ASYMMETRY_PROBE}, this
+     * method returns {@code true} conservatively — column counts from short
+     * samples are not statistically meaningful, so the caller should rely on
+     * {@link WideUnicodeDetector} positive signal and downstream CharSoup
+     * arbitration rather than masking.</p>
+     *
+     * @param bytes the probe to analyse
+     * @return {@code true} if the probe has UTF-16-compatible column asymmetry
+     *         (or is too short to judge); {@code false} if column diversity is
+     *         too balanced to be any UTF-16 variant
+     */
+    public static boolean has2ByteColumnAsymmetry(byte[] bytes) {
+        if (bytes == null || bytes.length < MIN_COLUMN_ASYMMETRY_PROBE) {
+            return true;
+        }
+        int sample = Math.min(bytes.length, 4096);
+        boolean[] evenSeen = new boolean[256];
+        boolean[] oddSeen = new boolean[256];
+        int evenDistinct = 0;
+        int oddDistinct = 0;
+        for (int i = 0; i < sample; i++) {
+            int v = bytes[i] & 0xFF;
+            if ((i & 1) == 0) {
+                if (!evenSeen[v]) {
+                    evenSeen[v] = true;
+                    evenDistinct++;
+                }
+            } else {
+                if (!oddSeen[v]) {
+                    oddSeen[v] = true;
+                    oddDistinct++;
+                }
+            }
+        }
+        int min = Math.min(evenDistinct, oddDistinct);
+        int max = Math.max(evenDistinct, oddDistinct);
+        return max >= min * 3;
+    }
+
     public static boolean checkIbm424(byte[] bytes, int offset, int length) {
         if (length < 8) {
             return false;
