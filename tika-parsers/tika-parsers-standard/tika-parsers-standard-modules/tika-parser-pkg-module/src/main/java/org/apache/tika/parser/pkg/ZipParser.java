@@ -59,6 +59,7 @@ import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ParserUtils;
 
 /**
  * Parser for ZIP and JAR archives using file-based access for complete metadata extraction.
@@ -374,12 +375,22 @@ public class ZipParser extends AbstractArchiveParser {
             throws TikaException, IOException, SAXException {
 
         try {
-            ArchiveEntry entry = zis.getNextEntry();
-            while (entry != null) {
+            ArchiveEntry entry;
+            while (true) {
+                try {
+                    entry = zis.getNextEntry();
+                } catch (java.util.zip.ZipException ze) {
+                    // Truncated/corrupt central directory: stop iteration but keep
+                    // entries already extracted. Record the failure as a warning.
+                    ParserUtils.recordParserFailure(this, ze, metadata);
+                    break;
+                }
+                if (entry == null) {
+                    break;
+                }
                 if (shouldUseDataDescriptor && entryCnt.get() > 0) {
                     // Skip already-processed entries on re-read
                     entryCnt.decrementAndGet();
-                    entry = zis.getNextEntry();
                     continue;
                 }
 
@@ -405,8 +416,6 @@ public class ZipParser extends AbstractArchiveParser {
                 if (!shouldUseDataDescriptor) {
                     entryCnt.incrementAndGet();
                 }
-
-                entry = zis.getNextEntry();
             }
         } catch (UnsupportedZipFeatureException zfe) {
             if (zfe.getFeature() == Feature.ENCRYPTION) {
