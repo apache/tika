@@ -1318,12 +1318,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_a pa
       left join profiles_b pb on pa.id=pb.id
       join mimes m on pa.mime_id=m.mime_id
       where pb.id is null
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>
@@ -1333,12 +1333,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_a pa
       left join profiles_b pb on pa.id=pb.id
       join mimes m on pa.mime_id=m.mime_id
       where pb.id is null and pa.is_embedded=false
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>
@@ -1348,12 +1348,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_a pa
       left join profiles_b pb on pa.id=pb.id
       join mimes m on pa.mime_id=m.mime_id
       where pb.id is null and pa.is_embedded=true
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>
@@ -1363,12 +1363,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_b pb
       left join profiles_a pa on pb.id=pa.id
       join mimes m on pb.mime_id=m.mime_id
       where pa.id is null
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>
@@ -1378,12 +1378,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_b pb
       left join profiles_a pa on pb.id=pa.id
       join mimes m on pb.mime_id=m.mime_id
       where pa.id is null and pb.is_embedded=false
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>
@@ -1393,12 +1393,12 @@
           includeSql="true">
 
     <sql>
-      select mime_string, count(1) as cnt
+      select base_mime, count(1) as cnt
       from profiles_b pb
       left join profiles_a pa on pb.id=pa.id
       join mimes m on pb.mime_id=m.mime_id
       where pa.id is null and pb.is_embedded=true
-      group by mime_string
+      group by base_mime
       order by cnt desc
     </sql>
   </report>

@@ -36,7 +36,10 @@ public class MimeBuffer extends AbstractDBBuffer {
 
     public MimeBuffer(Connection connection, TableInfo mimeTable, MimeTypes mimeTypes) throws SQLException {
         st = connection.prepareStatement(
-                "insert into " + mimeTable.getName() + "( " + Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() + ", " + Cols.FILE_EXTENSION.name() + ") values (?,?,?)");
+                "insert into " + mimeTable.getName() + "( " +
+                        Cols.MIME_ID.name() + ", " + Cols.MIME_STRING.name() +
+                        ", " + Cols.BASE_MIME.name() + ", " +
+                        Cols.FILE_EXTENSION.name() + ") values (?,?,?,?)");
         this.mimeTypes = mimeTypes;
         this.connection = connection;
     }
@@ -47,15 +50,17 @@ public class MimeBuffer extends AbstractDBBuffer {
             st.clearParameters();
             st.setInt(1, id);
             st.setString(2, value);
+            int semi = value.indexOf(';');
+            st.setString(3, semi > 0 ? value.substring(0, semi).trim() : value);
             try {
                 String ext = MimeUtil.getExtension(value, mimeTypes);
                 if (ext == null || ext.isEmpty()) {
-                    st.setNull(3, Types.VARCHAR);
+                    st.setNull(4, Types.VARCHAR);
                 } else {
-                    st.setString(3, ext);
+                    st.setString(4, ext);
                 }
             } catch (MimeTypeException e) {
-                st.setNull(3, Types.VARCHAR);
+                st.setNull(4, Types.VARCHAR);
             }
             st.execute();
 
