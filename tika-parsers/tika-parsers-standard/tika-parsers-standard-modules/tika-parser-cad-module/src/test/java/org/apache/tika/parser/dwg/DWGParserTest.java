@@ -73,7 +73,8 @@ public class DWGParserTest extends TikaTest {
         if (!StringUtils.isBlank(configPath) && Files.isRegularFile(Paths.get(configPath))) {
             return configPath;
         }
-        boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
+        boolean windows = System.getProperty("os.name")
+                .toLowerCase(java.util.Locale.ROOT).contains("win");
         String exeName = windows ? "dwgread.exe" : "dwgread";
         String pathEnv = System.getenv("PATH");
         if (pathEnv != null) {
