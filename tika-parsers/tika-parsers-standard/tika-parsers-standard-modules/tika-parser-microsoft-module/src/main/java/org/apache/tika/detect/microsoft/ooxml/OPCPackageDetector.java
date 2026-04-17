@@ -288,12 +288,14 @@ public class OPCPackageDetector implements ZipContainerDetector {
         // collection. Either way, fall back to parsing [Content_Types].xml
         // directly — same approach as the streaming detector.
         if (type == null) {
-            try (InputStream contentTypesStream =
-                         zipEntrySource.getInputStream(
-                                 zipEntrySource.getEntry("[Content_Types].xml"))) {
-                type = parseOOXMLContentTypes(contentTypesStream);
-            } catch (IOException ignore) {
-                //swallow
+            ZipArchiveEntry ctEntry = zipEntrySource.getEntry("[Content_Types].xml");
+            if (ctEntry != null) {
+                try (InputStream contentTypesStream =
+                             zipEntrySource.getInputStream(ctEntry)) {
+                    type = parseOOXMLContentTypes(contentTypesStream);
+                } catch (IOException ignore) {
+                    //swallow
+                }
             }
             if (type == null || pkg == null) {
                 return type;
