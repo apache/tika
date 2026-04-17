@@ -95,7 +95,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
                 networkServer = props.getProperty(JOSHUA_SERVER);
             }
         } catch (IOException e) {
-            LOG.error("An error occured whilst reading translator.joshua.properties file", e);
+            LOG.error("An error occurred whilst reading translator.joshua.properties file", e);
         }
     }
 

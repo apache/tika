@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -58,7 +57,6 @@ class FileListPipesIterator implements PipesIterator {
             throw new RuntimeException("Failed to open file list: " + fileListPath, e);
         }
 
-        AtomicInteger id = new AtomicInteger();
         return new Iterator<>() {
             private FetchEmitTuple next;
             private boolean done;
@@ -77,7 +75,7 @@ class FileListPipesIterator implements PipesIterator {
                         line = line.trim();
                         if (!line.isEmpty() && !line.startsWith("#")) {
                             next = new FetchEmitTuple(
-                                    String.valueOf(id.getAndIncrement()),
+                                    line,
                                     new FetchKey(TikaConfigAsyncWriter.FETCHER_NAME, line),
                                     new EmitKey(TikaConfigAsyncWriter.EMITTER_NAME, line));
                             return true;

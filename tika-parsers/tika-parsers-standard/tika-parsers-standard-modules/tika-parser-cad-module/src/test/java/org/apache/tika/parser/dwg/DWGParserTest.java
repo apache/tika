@@ -19,14 +19,18 @@ package org.apache.tika.parser.dwg;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -35,6 +39,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.DWG;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.CompositeParser;
@@ -45,16 +50,45 @@ import org.apache.tika.utils.StringUtils;
 
 public class DWGParserTest extends TikaTest {
     public boolean canRun(DWGParser parser)  {
-        String dwgRead = parser.getDefaultConfig().getDwgReadExecutable();
-
-        if (!StringUtils.isBlank(dwgRead) && !Files.isRegularFile(Paths.get(dwgRead))) {
+        String resolved = resolveDwgRead(parser.getDefaultConfig().getDwgReadExecutable());
+        if (resolved == null) {
             return false;
         }
-
-        // Try running DWGRead from there, and see if it exists + works
-        String[] checkCmd = { dwgRead };
+        // Point the parser config at the resolved executable so tests "just work"
+        // on whichever machine has libredwg installed.
+        parser.getDefaultConfig().setDwgReadExecutable(resolved);
+        String[] checkCmd = {resolved};
         return ProcessUtils.checkCommand(checkCmd);
+    }
 
+    /**
+     * Look for dwgread in (1) the DWGREAD_EXE env var, (2) the configured path,
+     * (3) on PATH. Returns null if none are found.
+     */
+    private static String resolveDwgRead(String configPath) {
+        String env = System.getenv("DWGREAD_EXE");
+        if (!StringUtils.isBlank(env) && Files.isRegularFile(Paths.get(env))) {
+            return env;
+        }
+        if (!StringUtils.isBlank(configPath) && Files.isRegularFile(Paths.get(configPath))) {
+            return configPath;
+        }
+        boolean windows = System.getProperty("os.name")
+                .toLowerCase(java.util.Locale.ROOT).contains("win");
+        String exeName = windows ? "dwgread.exe" : "dwgread";
+        String pathEnv = System.getenv("PATH");
+        if (pathEnv != null) {
+            for (String dir : pathEnv.split(File.pathSeparator)) {
+                if (dir.isEmpty()) {
+                    continue;
+                }
+                Path candidate = Paths.get(dir, exeName);
+                if (Files.isRegularFile(candidate)) {
+                    return candidate.toString();
+                }
+            }
+        }
+        return null;
     }
     @Test
     public void testDWG2000Parser() throws Exception {
@@ -221,8 +255,52 @@ public class DWGParserTest extends TikaTest {
                         .loadParsers())
                         .getAllComponentParsers().get(0);
         assumeTrue(canRun(parser), "Can't run DWGRead.exe");
-        String output = getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser);
-        assertContains("ELEV. 11'-9\" TOP OF SECOND FLR.",output);
+        List<Metadata> metadataList = getRecursiveMetadata(
+                "architectural_-_annotation_scaling_and_multileaders.dwg", parser);
+        Metadata root = metadataList.get(0);
+
+        String content = root.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("ELEV. 11'-9\" TOP OF SECOND FLR.", content);
+        // MULTILEADER ctx.content.txt.default_text
+        assertContains("EPDM ROOF CONSTRUCTION", content);
+        assertContains("O.S.B SHEATHING", content);
+        // ATTRIB tag / prompt
+        assertContains("Enter sheet number", content);
+
+        // AppInfo
+        assertEquals("AppInfoDataList", root.get(DWG.APPLICATION_NAME));
+        assertEquals("17.1.51.0", root.get(DWG.APPLICATION_VERSION));
+        assertNotNull(root.get(DWG.APPLICATION_COMMENT));
+        assertContains("AutoCAD", root.get(DWG.PRODUCT_INFO));
+
+        // Thumbnail embedded as INLINE
+        Metadata thumb = null;
+        for (int i = 1; i < metadataList.size(); i++) {
+            String type = metadataList.get(i).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (TikaCoreProperties.EmbeddedResourceType.INLINE.name().equals(type)) {
+                thumb = metadataList.get(i);
+                break;
+            }
+        }
+        assertNotNull(thumb, "Expected an INLINE thumbnail attachment");
+    }
+
+    @Test
+    public void testDWGReadSummaryInfoMapping() throws Exception {
+        DWGParser parser =
+                (DWGParser) ((CompositeParser) TikaLoader.load(
+                                getConfigPath(DWGParserTest.class, "tika-config-dwgRead.json"))
+                        .loadParsers())
+                        .getAllComponentParsers().get(0);
+        assumeTrue(canRun(parser), "Can't run DWGRead.exe");
+        Metadata metadata = getXML("testDWGmech2004.dwg", parser).metadata;
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Test Subject", metadata.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals("My Author", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("My keyword1, MyKeyword2", metadata.get(TikaCoreProperties.SUBJECT));
+        assertEquals("This is a comment", metadata.get(TikaCoreProperties.COMMENTS));
+        assertEquals("bejanpol", metadata.get(TikaCoreProperties.MODIFIER));
+        assertEquals("http://mycompany/drawings", metadata.get(TikaCoreProperties.RELATION));
     }
 
     @Test

@@ -33,7 +33,6 @@ import org.apache.tika.metadata.Epub;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.Parser;
 
 public class EpubParserTest extends TikaTest {
 
@@ -88,10 +87,12 @@ public class EpubParserTest extends TikaTest {
 
     @Test
     public void testTruncated() throws Exception {
-        Parser p = new EpubParser();
+        // Truncated zips are salvaged by DefaultZipContainerDetector and the
+        // recovered ZipFile is handed to EpubParser via openContainer.
+        // EpubParser itself no longer salvages — it relies on the detector.
         List<Metadata> metadataList;
         try (TikaInputStream tis = truncate("testEPUB.epub", 10000)) {
-            metadataList = getRecursiveMetadata(tis, p, true);
+            metadataList = getRecursiveMetadata(tis, true);
         }
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int ch1 = xml.indexOf("<h1>Chapter 1");

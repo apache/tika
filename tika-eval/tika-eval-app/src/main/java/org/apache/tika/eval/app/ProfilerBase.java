@@ -102,6 +102,7 @@ public abstract class ProfilerBase {
     public static TableInfo REF_PARSE_EXCEPTION_TYPES =
             new TableInfo("ref_parse_exception_types", new ColInfo(Cols.PARSE_EXCEPTION_ID, Types.INTEGER), new ColInfo(Cols.PARSE_EXCEPTION_DESCRIPTION, Types.VARCHAR, 128));
     public static TableInfo MIME_TABLE = new TableInfo("mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
+            new ColInfo(Cols.BASE_MIME, Types.VARCHAR, 256),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
     private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
