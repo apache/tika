@@ -119,6 +119,7 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("Shift_JIS",      "Shift_JIS");
         CHARSET_JAVA.put("EUC-JP",         "EUC-JP");
         CHARSET_JAVA.put("EUC-KR",         "EUC-KR");
+        CHARSET_JAVA.put("x-windows-949",  "x-windows-949");
         CHARSET_JAVA.put("GB18030",        "GB18030");
         CHARSET_JAVA.put("Big5-HKSCS",     "Big5-HKSCS");
         CHARSET_JAVA.put("x-EUC-TW",      "x-EUC-TW");
@@ -153,7 +154,15 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("IBM852",         "IBM852");
         // Mac Roman
         CHARSET_JAVA.put("x-MacRoman",     "x-MacRoman");
-        // EBCDIC
+        // EBCDIC — all variants are generated into the training corpus so a future
+        // EBCDIC specialist can be trained against them.  Today's main SBCS model
+        // consumes only a subset of these (see TrainCharsetModel's hardcoded
+        // exclusion list): IBM424 (Hebrew) and IBM420 (Arabic) live entirely in
+        // the 0x41–0x6A range, below the 0x80 threshold our feature extractor
+        // considers, so excluding them from today's model avoids training on a
+        // signal the inference path cannot see; IBM1047 is byte-identical to
+        // IBM500 on most prose bytes and is excluded to avoid near-duplicate
+        // classes in the SBCS kitchen-sink model.
         CHARSET_JAVA.put("IBM500",         "IBM500");
         CHARSET_JAVA.put("IBM1047",        "IBM1047");
         CHARSET_JAVA.put("IBM424-ltr",     "IBM424");
@@ -237,8 +246,11 @@ public class BuildCharsetTrainingData {
         put("jpn", "Shift_JIS", "EUC-JP", "ISO-2022-JP");
         // Chinese (Simplified)
         put("zho", "GB18030", "ISO-2022-CN");
-        // Korean
-        put("kor", "EUC-KR", "ISO-2022-KR");
+        // Korean — x-windows-949 (MS949) is a strict superset of EUC-KR.
+        // Trained as a separate class so the model can discriminate MS949-
+        // extension-byte content from pure-EUC-KR content.  Supersets at the
+        // decoder level (CharsetSupersets) decode EUC-KR output as MS949 anyway.
+        put("kor", "EUC-KR", "ISO-2022-KR", "x-windows-949");
         // Thai
         put("tha", "windows-874");
         // Traditional Chinese — sourced from Cantonese Wikipedia (yue)
@@ -306,7 +318,8 @@ public class BuildCharsetTrainingData {
      * ASCII-range characters.
      */
     private static final Set<String> HIGH_BYTE_CJK = new HashSet<>(Arrays.asList(
-            "Shift_JIS", "EUC-JP", "EUC-KR", "GB18030", "Big5-HKSCS", "x-EUC-TW"
+            "Shift_JIS", "EUC-JP", "EUC-KR", "x-windows-949",
+            "GB18030", "Big5-HKSCS", "x-EUC-TW"
     ));
 
     /** RTL charsets: text is reversed (character level) before encoding. */
