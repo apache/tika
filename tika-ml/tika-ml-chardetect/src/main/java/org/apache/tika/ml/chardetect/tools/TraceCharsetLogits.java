@@ -53,8 +53,6 @@ public final class TraceCharsetLogits {
         List<String> focus = new ArrayList<>();
         int topBuckets = 20;
         int maxProbeBytes = 32 * 1024;
-        boolean noStride2 = false;
-
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--probe":
@@ -74,9 +72,6 @@ public final class TraceCharsetLogits {
                 case "--max-probe-bytes":
                     maxProbeBytes = Integer.parseInt(args[++i]);
                     break;
-                case "--no-stride2":
-                    noStride2 = true;
-                    break;
                 default:
                     System.err.println("Unknown arg: " + args[i]);
                     System.exit(1);
@@ -89,15 +84,7 @@ public final class TraceCharsetLogits {
         }
 
         LinearModel model = loadModel(modelPath);
-        FeatureExtractor<byte[]> extractor = noStride2
-                // Production flags minus stride-2, matching FeatureExtractorParityTest
-                // for the stride-1 features (uni + bi, no trigrams, no anchored).
-                ? new ConfigurableByteNgramFeatureExtractor(model.getNumBuckets(),
-                        true, true, false, false, false)
-                : new ByteNgramFeatureExtractor(model.getNumBuckets());
-        if (noStride2) {
-            System.out.println("Stride-2 features suppressed for this run.");
-        }
+        FeatureExtractor<byte[]> extractor = new ByteNgramFeatureExtractor(model.getNumBuckets());
 
         byte[] allBytes = Files.readAllBytes(probePath);
         byte[] probe = allBytes.length <= maxProbeBytes

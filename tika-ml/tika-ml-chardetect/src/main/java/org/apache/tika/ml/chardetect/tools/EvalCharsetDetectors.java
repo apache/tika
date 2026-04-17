@@ -70,18 +70,7 @@ public class EvalCharsetDetectors {
     private static final String NULL_LABEL = "(null)";
     private static final int FULL_LENGTH = Integer.MAX_VALUE;
 
-    private static final double OOV_THRESHOLD_CJK  = 0.80;
-    private static final double OOV_THRESHOLD_SBCS = 0.98;
-    private static final Set<String> CJK_CHARSETS = Set.of(
-            "Big5", "Big5-HKSCS", "EUC-JP", "EUC-KR", "EUC-TW",
-            "GB18030", "GB2312", "GBK", "Shift_JIS"
-    );
-    private static final Set<String> OOV_EXEMPT = Set.of(
-            "US-ASCII", "UTF-16-LE", "UTF-16-BE", "UTF-32-LE", "UTF-32-BE",
-            "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN"
-    );
-
-    private static final String[] COL_NAMES = {"Stat", "+ISO", "+CJK", "All", "ICU4J", "juniv"};
+    private static final String[] COL_NAMES = {"Stat", "+ISO", "+Gates", "All", "ICU4J", "juniv"};
     private static final int NUM_DETECTORS = COL_NAMES.length;
     // Index of the "All" detector — used for confusion matrix and score-only output
     private static final int IDX_ALL = 3;
@@ -146,7 +135,7 @@ public class EvalCharsetDetectors {
         EncodingDetector[] detectors = {
             base.withRules(EnumSet.noneOf(Rule.class)),
             base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.ISO_TO_WINDOWS)),
-            base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.CJK_GRAMMAR)),
+            base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES)),
             base,
             new Icu4jEncodingDetector(),
             new UniversalEncodingDetector()
@@ -377,7 +366,7 @@ public class EvalCharsetDetectors {
         }
         sb.append("|");
         System.out.println(sb);
-        System.out.println("  Stat=model only | +ISO=+C1-correction | +CJK=+grammar | "
+        System.out.println("  Stat=model only | +ISO=+C1-correction | +Gates=+structural-only | "
                 + "All=ML+rules | R%=strict | S%=soft | T" + TOP_K + "%=top-" + TOP_K
                 + " hit | D%=decode-match | A%=alpha-match");
 

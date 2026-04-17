@@ -119,6 +119,7 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("Shift_JIS",      "Shift_JIS");
         CHARSET_JAVA.put("EUC-JP",         "EUC-JP");
         CHARSET_JAVA.put("EUC-KR",         "EUC-KR");
+        CHARSET_JAVA.put("x-windows-949", "x-windows-949");
         CHARSET_JAVA.put("GB18030",        "GB18030");
         CHARSET_JAVA.put("Big5-HKSCS",     "Big5-HKSCS");
         CHARSET_JAVA.put("x-EUC-TW",      "x-EUC-TW");
@@ -153,13 +154,95 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("IBM852",         "IBM852");
         // Mac Roman
         CHARSET_JAVA.put("x-MacRoman",     "x-MacRoman");
-        // EBCDIC
+        // EBCDIC — main model (international/open-systems)
         CHARSET_JAVA.put("IBM500",         "IBM500");
         CHARSET_JAVA.put("IBM1047",        "IBM1047");
         CHARSET_JAVA.put("IBM424-ltr",     "IBM424");
         CHARSET_JAVA.put("IBM424-rtl",     "IBM424");
         CHARSET_JAVA.put("IBM420-ltr",     "IBM420");
         CHARSET_JAVA.put("IBM420-rtl",     "IBM420");
+        // EBCDIC national variants — Euro-bearing versions (IBM01140–IBM01149) are trained
+        // instead of the non-Euro base code pages (IBM037, IBM273, etc.).  IBM500/IBM1047
+        // are retained as-is; IBM01148 (IBM500+Euro) is skipped since the Euro byte (0x9F)
+        // is rare in prose and the pair would be nearly ambiguous with IBM500.
+        CHARSET_JAVA.put("IBM01140",   "IBM01140"); // US EBCDIC + Euro (replaces IBM037)
+        CHARSET_JAVA.put("IBM01141",   "IBM01141"); // German EBCDIC + Euro (replaces IBM273)
+        CHARSET_JAVA.put("IBM01142",   "IBM01142"); // Danish/Norwegian EBCDIC + Euro (replaces IBM277)
+        CHARSET_JAVA.put("IBM01143",   "IBM01143"); // Finnish/Swedish EBCDIC + Euro (replaces IBM278)
+        CHARSET_JAVA.put("IBM01144",   "IBM01144"); // Italian EBCDIC + Euro (replaces IBM280)
+        CHARSET_JAVA.put("IBM01145",   "IBM01145"); // Spanish EBCDIC + Euro (replaces IBM284)
+        CHARSET_JAVA.put("IBM01146",   "IBM01146"); // UK EBCDIC + Euro (replaces IBM285)
+        CHARSET_JAVA.put("IBM01147",   "IBM01147"); // French EBCDIC + Euro (replaces IBM297)
+        CHARSET_JAVA.put("IBM01149",   "IBM01149"); // Icelandic EBCDIC + Euro (replaces IBM871)
+        // EBCDIC multilingual variants
+        CHARSET_JAVA.put("IBM875",     "x-IBM875"); // Greek EBCDIC
+        CHARSET_JAVA.put("IBM1025",    "x-IBM1025"); // Russian/Cyrillic EBCDIC
+        CHARSET_JAVA.put("x-IBM1123",  "x-IBM1123"); // Ukrainian Cyrillic EBCDIC
+        CHARSET_JAVA.put("x-IBM1166",  "x-IBM1166"); // Kazakh Cyrillic EBCDIC
+        CHARSET_JAVA.put("IBM1026",    "IBM1026");  // Turkish EBCDIC
+        CHARSET_JAVA.put("IBM870",     "IBM870");   // Central European EBCDIC
+        CHARSET_JAVA.put("IBM1112",    "x-IBM1112"); // Lithuanian EBCDIC
+        CHARSET_JAVA.put("IBM1122",    "x-IBM1122"); // Estonian EBCDIC
+        CHARSET_JAVA.put("IBM-Thai",   "IBM-Thai"); // Thai EBCDIC (IBM838)
+        // IBM918 (Urdu EBCDIC) and IBM1097 (Farsi EBCDIC) omitted:
+        // MADLAD Urdu/Farsi text cannot round-trip through these charsets
+        // (missing Urdu/Farsi-specific letters) — quality gate yields near-zero samples.
+        // IBM/DOS/OEM (ASCII-compatible, optional module)
+        // Western European DOS variants — regional characters differentiate from IBM850
+        CHARSET_JAVA.put("IBM00858",   "IBM00858");  // IBM850 + Euro sign (0xD5=€)
+        CHARSET_JAVA.put("IBM857",     "IBM857");    // Turkish DOS
+        CHARSET_JAVA.put("IBM860",     "IBM860");    // Portuguese DOS
+        CHARSET_JAVA.put("IBM861",     "IBM861");    // Icelandic DOS
+        CHARSET_JAVA.put("IBM863",     "IBM863");    // Canadian French DOS
+        CHARSET_JAVA.put("IBM865",     "IBM865");    // Nordic DOS
+        // Greek DOS
+        CHARSET_JAVA.put("IBM869",     "IBM869");    // PC Greek (CP869)
+        CHARSET_JAVA.put("x-IBM737",   "x-IBM737"); // PC Greek (CP737)
+        // Hebrew DOS
+        CHARSET_JAVA.put("IBM862",        "IBM862");    // PC Hebrew (CP862) — always visual/RTL
+        CHARSET_JAVA.put("x-IBM856",      "x-IBM856"); // PC Hebrew variant (CP856) — always visual/RTL
+        // Baltic DOS
+        CHARSET_JAVA.put("IBM775",     "IBM775");    // PC Baltic (CP775)
+        CHARSET_JAVA.put("x-IBM921",   "x-IBM921"); // Lithuanian (CP921)
+        CHARSET_JAVA.put("x-IBM922",   "x-IBM922"); // Estonian (CP922)
+        // Cyrillic DOS
+        CHARSET_JAVA.put("x-IBM1124",  "x-IBM1124"); // Ukrainian Cyrillic DOS
+        // Vietnamese DOS — uses combining diacritics like windows-1258
+        CHARSET_JAVA.put("x-IBM1129",  "x-IBM1129"); // Vietnamese DOS (CP1129)
+        // Arabic-script DOS — visual-order presentation forms; cannot encode from
+        // logical Unicode MADLAD text without an Arabic shaping engine.
+        // Registered for future data generation; no language mapping added yet.
+        CHARSET_JAVA.put("IBM864",     "IBM864");    // PC Arabic (CP864)
+        CHARSET_JAVA.put("IBM868",     "IBM868");    // PC Urdu (CP868)
+        CHARSET_JAVA.put("x-IBM1006",  "x-IBM1006"); // Urdu DOS (CP1006)
+        CHARSET_JAVA.put("x-IBM1046",  "x-IBM1046"); // Arabic visual-order Unix (CP1046)
+        CHARSET_JAVA.put("x-IBM1098",  "x-IBM1098"); // Farsi DOS (CP1098)
+        // Mac charsets (optional module) — x-MacRoman and x-mac-cyrillic are in the main model
+        // x-MacArabic uses logical-order Arabic (maps U+06xx directly, like IBM420),
+        // so it can be trained from MADLAD without an Arabic shaping engine.
+        CHARSET_JAVA.put("x-MacArabic",        "x-MacArabic");
+        CHARSET_JAVA.put("x-MacCentralEurope", "x-MacCentralEurope");
+        CHARSET_JAVA.put("x-MacCroatian",      "x-MacCroatian");
+        CHARSET_JAVA.put("x-MacGreek",         "x-MacGreek");
+        CHARSET_JAVA.put("x-MacHebrew",        "x-MacHebrew");  // always visual/RTL (Classic Mac OS convention)
+        CHARSET_JAVA.put("x-MacIceland",       "x-MacIceland");
+        CHARSET_JAVA.put("x-MacRomania",       "x-MacRomania");
+        CHARSET_JAVA.put("x-MacThai",          "x-MacThai");
+        CHARSET_JAVA.put("x-MacTurkish",       "x-MacTurkish");
+        CHARSET_JAVA.put("x-MacUkraine",       "x-MacUkraine");
+        // Extended ISO-8859 (optional module)
+        // ISO-8859-1/2/4/9 are skipped: their 0x80-0x9F range is C1 controls, not prose
+        // bytes; the Windows supersets (1252/1250/1257/1254) are trained instead.
+        // ISO-8859-5/7/8/13/15 have distinct high-byte layouts worth distinguishing.
+        CHARSET_JAVA.put("ISO-8859-5",  "ISO-8859-5");  // Cyrillic
+        CHARSET_JAVA.put("ISO-8859-7",  "ISO-8859-7");  // Greek
+        // ISO-8859-8: visual order (original spec, right-to-left byte stream)
+        // ISO-8859-8-I: logical order (implicit, RFC 1555; modern usage)
+        // Both use the same Java charset; -rtl reverses text before encoding.
+        CHARSET_JAVA.put("ISO-8859-8-rtl", "ISO-8859-8"); // visual/explicit (original spec)
+        CHARSET_JAVA.put("ISO-8859-8-ltr", "ISO-8859-8"); // logical/implicit (ISO-8859-8-I)
+        CHARSET_JAVA.put("ISO-8859-13", "ISO-8859-13"); // Baltic Latin-7
+        CHARSET_JAVA.put("ISO-8859-15", "ISO-8859-15"); // Latin-9 (Western European + Euro)
     }
 
     // -----------------------------------------------------------------------
@@ -177,70 +260,108 @@ public class BuildCharsetTrainingData {
         // Western European
         // IBM500 and IBM1047 share the same Latin-1 character set;
         // IBM1047 is used on z/OS Unix System Services (Open Systems).
-        put("eng", "US-ASCII", "windows-1252", "IBM850", "x-MacRoman",
-                   "IBM500", "IBM1047");
-        put("deu", "windows-1252", "IBM850", "x-MacRoman", "IBM500", "IBM1047");
-        put("fra", "windows-1252", "IBM850", "x-MacRoman", "IBM500", "IBM1047");
-        put("ita", "windows-1252", "IBM850", "x-MacRoman", "IBM500", "IBM1047");
-        put("spa", "windows-1252", "IBM850", "x-MacRoman", "IBM500", "IBM1047");
-        put("nld", "windows-1252", "IBM850", "x-MacRoman", "IBM500", "IBM1047");
-        put("por", "windows-1252", "IBM850", "x-MacRoman");
-        put("dan", "windows-1252", "IBM850", "x-MacRoman");
-        put("swe", "windows-1252", "IBM850", "x-MacRoman");
-        put("nob", "windows-1252", "IBM850", "x-MacRoman");
-        put("fin", "windows-1252", "IBM850", "x-MacRoman");
-        put("isl", "windows-1252", "IBM850", "x-MacRoman");
-        put("cat", "windows-1252", "IBM850");
-        put("glg", "windows-1252", "IBM850");
+        // IBM00858 = IBM850 + Euro sign (0xD5); trained so model can distinguish
+        // Euro-bearing files from dotless-i-bearing (Turkish) IBM850 files.
+        // IBM500/IBM1047 trained on all major Western European languages (no national variant needed
+        // since IBM500 is the international code page).
+        // IBM01140/01146 (US/UK EBCDIC+Euro) distinguished from IBM500 by different positions
+        // for $, £, @, and other national chars.
+        put("eng", "US-ASCII", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM500", "IBM1047", "IBM01140", "IBM01146", "ISO-8859-15");
+        put("deu", "windows-1252", "IBM850", "IBM00858", "x-MacRoman", "IBM500", "IBM1047",
+                   "IBM01141", "ISO-8859-15");
+        put("fra", "windows-1252", "IBM850", "IBM00858", "x-MacRoman", "IBM500", "IBM1047",
+                   "IBM863", "IBM01147", "ISO-8859-15");
+        put("ita", "windows-1252", "IBM850", "IBM00858", "x-MacRoman", "IBM500", "IBM1047",
+                   "IBM01144", "ISO-8859-15");
+        put("spa", "windows-1252", "IBM850", "IBM00858", "x-MacRoman", "IBM500", "IBM1047",
+                   "IBM01145", "ISO-8859-15");
+        put("nld", "windows-1252", "IBM850", "IBM00858", "x-MacRoman", "IBM500", "IBM1047",
+                   "ISO-8859-15");
+        put("por", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM860", "ISO-8859-15");
+        put("dan", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM865", "IBM01142", "ISO-8859-15");
+        put("swe", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM01143", "ISO-8859-15");
+        put("nob", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM865", "IBM01142", "ISO-8859-15");
+        put("fin", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM01143", "ISO-8859-15");
+        put("isl", "windows-1252", "IBM850", "IBM00858", "x-MacRoman",
+                   "IBM861", "x-MacIceland", "IBM01149", "ISO-8859-15");
+        put("cat", "windows-1252", "IBM850", "IBM00858", "ISO-8859-15");
+        put("glg", "windows-1252", "IBM850", "IBM00858", "ISO-8859-15");
         put("eus", "windows-1252");
         put("afr", "windows-1252");
         put("swh", "windows-1252");
         put("ind", "windows-1252");
         put("msa", "windows-1252");
         // Baltic
-        put("lav", "windows-1257");
-        put("lit", "windows-1257");
-        put("est", "windows-1257");
+        // IBM775 = PC Baltic DOS; x-IBM921 = Lithuanian DOS; x-IBM922 = Estonian DOS
+        // ISO-8859-13 = Baltic Latin-7
+        // IBM1112 = Lithuanian EBCDIC; IBM1122 = Estonian EBCDIC
+        put("lav", "windows-1257", "IBM775", "ISO-8859-13");
+        put("lit", "windows-1257", "IBM775", "x-IBM921", "ISO-8859-13", "IBM1112");
+        put("est", "windows-1257", "x-IBM922", "ISO-8859-13", "IBM1122");
         // Southern European — ISO-8859-3 retained for Maltese (no Windows equivalent)
         put("mlt", "ISO-8859-3");
-        put("tur", "windows-1254");
+        put("tur", "windows-1254", "IBM857", "x-MacTurkish", "IBM1026");
         // Central / Eastern European
-        put("ces", "windows-1250", "IBM852");
-        put("pol", "windows-1250", "IBM852");
-        put("hrv", "windows-1250", "IBM852");
-        put("slk", "windows-1250", "IBM852");
-        put("slv", "windows-1250", "IBM852");
-        put("hun", "windows-1250", "IBM852");
+        // x-MacCentralEurope covers Czech, Polish, Slovak, Slovenian, Hungarian, Romanian
+        // x-MacCroatian is Croatian-specific
+        // IBM870 = Central European EBCDIC (Polish, Czech, Slovak, Hungarian, Croatian)
+        put("ces", "windows-1250", "IBM852", "x-MacCentralEurope", "IBM870");
+        put("pol", "windows-1250", "IBM852", "x-MacCentralEurope", "IBM870");
+        put("hrv", "windows-1250", "IBM852", "x-MacCentralEurope", "x-MacCroatian", "IBM870");
+        put("slk", "windows-1250", "IBM852", "x-MacCentralEurope", "IBM870");
+        put("slv", "windows-1250", "IBM852", "x-MacCentralEurope");
+        put("hun", "windows-1250", "IBM852", "x-MacCentralEurope", "IBM870");
         // ISO-8859-16 (Latin-10) retained for Romanian and Albanian
-        put("ron", "windows-1250", "IBM852", "ISO-8859-16");
+        put("ron", "windows-1250", "IBM852", "ISO-8859-16", "x-MacCentralEurope", "x-MacRomania");
         put("bos", "windows-1250", "IBM852");
         put("sqi", "windows-1250", "IBM852", "ISO-8859-16");
         // Cyrillic — keep all distinct encodings
-        put("rus", "windows-1251", "KOI8-R", "IBM855", "IBM866", "x-mac-cyrillic");
-        put("ukr", "windows-1251", "KOI8-U", "IBM855", "x-mac-cyrillic");
-        put("bul", "windows-1251", "IBM855", "x-mac-cyrillic");
-        put("bel", "windows-1251", "IBM855");
+        // IBM1025 = Russian/Cyrillic EBCDIC; x-IBM1123 = Ukrainian Cyrillic EBCDIC
+        // x-IBM1166 = Kazakh Cyrillic EBCDIC
+        put("rus", "windows-1251", "KOI8-R", "IBM855", "IBM866", "x-mac-cyrillic",
+                   "ISO-8859-5", "IBM1025");
+        put("ukr", "windows-1251", "KOI8-U", "IBM855", "x-mac-cyrillic", "x-IBM1124",
+                   "ISO-8859-5", "x-MacUkraine", "x-IBM1123");
+        put("bul", "windows-1251", "IBM855", "x-mac-cyrillic", "ISO-8859-5");
+        put("bel", "windows-1251", "IBM855", "ISO-8859-5");
         put("mkd", "windows-1251");
         put("srp", "windows-1251");
+        put("kaz", "x-IBM1166");
         // Arabic
-        put("ara", "windows-1256", "IBM420-ltr", "IBM420-rtl");
+        // x-MacArabic uses logical-order Arabic (maps U+06xx directly, unlike IBM864/IBM1046)
+        // Visual-order DOS charsets (IBM864, IBM868, x-IBM1046, x-IBM1098, x-IBM1006) deferred
+        put("ara", "windows-1256", "IBM420-ltr", "IBM420-rtl", "x-MacArabic");
         put("urd", "windows-1256");
         put("fas", "windows-1256");
         put("pus", "windows-1256");
         // Hebrew
-        put("heb", "windows-1255", "IBM424-ltr", "IBM424-rtl");
+        // windows-1255: logical order; IBM424-ltr/rtl: EBCDIC both orders
+        // IBM862/x-IBM856/x-MacHebrew: always visual order (in RTL_CHARSETS)
+        // ISO-8859-8-rtl: visual/explicit; ISO-8859-8-ltr: logical (ISO-8859-8-I)
+        put("heb", "windows-1255", "IBM424-ltr", "IBM424-rtl",
+                   "IBM862", "x-IBM856",
+                   "ISO-8859-8-rtl", "ISO-8859-8-ltr",
+                   "x-MacHebrew");
         // Greek
-        put("ell", "windows-1253");
-        // Vietnamese — windows-1258 requires NFD normalization before encoding
-        put("vie", "windows-1258");
+        // IBM869/x-IBM737: PC Greek DOS variants; ISO-8859-7: ISO standard
+        // x-MacGreek: Classic Mac OS Greek; IBM875: Greek EBCDIC
+        put("ell", "windows-1253", "IBM869", "x-IBM737", "ISO-8859-7", "x-MacGreek", "IBM875");
+        // Vietnamese — both windows-1258 and x-IBM1129 use combining diacritics (NFD required)
+        put("vie", "windows-1258", "x-IBM1129");
         // Japanese
         put("jpn", "Shift_JIS", "EUC-JP", "ISO-2022-JP");
         // Chinese (Simplified)
         put("zho", "GB18030", "ISO-2022-CN");
         // Korean
-        put("kor", "EUC-KR", "ISO-2022-KR");
-        // Thai
-        put("tha", "windows-874");
+        put("kor", "EUC-KR", "ISO-2022-KR", "x-windows-949");
+        // Thai — x-MacThai (37 byte diffs from windows-874); IBM-Thai = Thai EBCDIC
+        put("tha", "windows-874", "x-MacThai", "IBM-Thai");
         // Traditional Chinese — sourced from Cantonese Wikipedia (yue)
         // and Chinese Wikipedia (zho-trad, which stores Traditional).
         // Both are loaded from sentences_wikipedia.txt in their MADLAD dirs.
@@ -267,26 +388,13 @@ public class BuildCharsetTrainingData {
     ));
 
     /**
-     * Charsets whose encoded bytes are all {@literal <} 0x80, so the ML model
-     * would see zero features.  Only devtest/test files are generated; train
-     * is skipped.  These charsets are detected by structural gates in
-     * {@code MojibusterEncodingDetector} before the model is ever called.
-     */
-    private static final Set<String> STRUCTURAL_ONLY = new HashSet<>(Arrays.asList(
-            "US-ASCII", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN", "x-ISO-2022-CN-CNS"
-    ));
-
-    /**
-     * Charsets that must not appear in train, devtest, or test splits either
-     * because they are confusable aliases for a trained label (IBM437 → IBM850)
-     * or because they are structural-only charsets whose test data was generated
-     * before the structural-only category was established (x-ISO-2022-CN-CNS).
-     * The eval tool mirrors this set via {@code DEFAULT_EXCLUDE} so neither
-     * charset produces misleading 0% strict rows.
+     * Charsets that must not appear in train, devtest, or test splits because
+     * they are confusable aliases for a trained label (IBM437 → IBM850).
+     * The eval tool mirrors this set via {@code DEFAULT_EXCLUDE} so the
+     * charset does not produce misleading 0% strict rows.
      */
     private static final Set<String> CONFUSABLE_ALIAS = new HashSet<>(Arrays.asList(
-            "IBM437",           // box-drawing bytes never appear in prose; IBM850 is the trained label
-            "x-ISO-2022-CN-CNS" // structural-only; detected by ISO-2022 escape gates, not the model
+            "IBM437"            // box-drawing bytes never appear in prose; IBM850 is the trained label
     ));
 
     /**
@@ -306,21 +414,32 @@ public class BuildCharsetTrainingData {
      * ASCII-range characters.
      */
     private static final Set<String> HIGH_BYTE_CJK = new HashSet<>(Arrays.asList(
-            "Shift_JIS", "EUC-JP", "EUC-KR", "GB18030", "Big5-HKSCS", "x-EUC-TW"
+            "Shift_JIS", "EUC-JP", "EUC-KR", "x-windows-949", "GB18030", "Big5-HKSCS", "x-EUC-TW"
     ));
 
-    /** RTL charsets: text is reversed (character level) before encoding. */
+    /**
+     * RTL charsets: text is reversed (character level) before encoding.
+     *
+     * <p>IBM424-rtl / IBM420-rtl: EBCDIC mainframe visual-order variants (dual-convention).
+     * IBM862 / x-IBM856: DOS Hebrew — always stored in visual (right-to-left) byte order.
+     * x-MacHebrew: Classic Mac OS Hebrew — always stored in visual order.
+     * ISO-8859-8-rtl: visual/explicit Hebrew (original ISO-8859-8 spec).
+     * ISO-8859-8-ltr encodes logical-order text (ISO-8859-8-I, modern usage) and is NOT listed here.
+     */
     private static final Set<String> RTL_CHARSETS = new HashSet<>(Arrays.asList(
-            "IBM424-rtl", "IBM420-rtl"
+            "IBM424-rtl", "IBM420-rtl",
+            "IBM862", "x-IBM856", "x-MacHebrew",
+            "ISO-8859-8-rtl"
     ));
 
     /**
      * Charsets that require NFD normalization before encoding and NFC
      * recomposition after decoding for a fair drop-count comparison.
-     * windows-1258 (Vietnamese) uses combining diacritical marks.
+     * windows-1258 and x-IBM1129 (Vietnamese DOS) both use combining diacritical
+     * marks for Vietnamese tonal marks.
      */
     private static final Set<String> NFD_CHARSETS = new HashSet<>(Arrays.asList(
-            "windows-1258"
+            "windows-1258", "x-IBM1129"
     ));
 
     /**
@@ -518,12 +637,10 @@ public class BuildCharsetTrainingData {
         for (String label : targetCharsets) {
             String javaName = CHARSET_JAVA.get(label);
             Charset cs      = Charset.forName(javaName);
-            boolean structOnly = STRUCTURAL_ONLY.contains(label);
             String[] splits       = {"train", "devtest", "test"};
             int[]    splitCaps    = {sampleCap, sampleCap, sampleCap};
             long[]   splitBudgets = {byteBudget, byteBudget / 5, byteBudget / 5};
-            System.out.printf("%s  (%s)%s%n", label, javaName,
-                    structOnly ? "  [structural-only: skipping train]" : "");
+            System.out.printf("%s  (%s)%n", label, javaName);
 
             // Determine contributing languages.
             // For Unicode charsets, read from unicode_langs.txt (generated
@@ -587,12 +704,6 @@ public class BuildCharsetTrainingData {
                 String split = splits[si];
                 int cap      = splitCaps[si];
                 long budget  = splitBudgets[si];
-
-                if (structOnly && "train".equals(split)) {
-                    splitCounts.put(split, 0);
-                    splitBytes.put(split, 0L);
-                    continue;
-                }
 
                 List<String> sents = new ArrayList<>(splitSents.get(split));
                 Collections.shuffle(sents,
@@ -685,7 +796,6 @@ public class BuildCharsetTrainingData {
             if (!CHARSET_JAVA.containsKey(label))       continue;
             if (UNICODE_CHARSETS.contains(label))        continue;
             if (HIGH_BYTE_CJK.contains(label))           continue;
-            if (STRUCTURAL_ONLY.contains(label))         continue;
             sbcsMap.put(label, Charset.forName(CHARSET_JAVA.get(label)));
         }
         Map<String, List<CharsetEncoder>> result = new LinkedHashMap<>();
@@ -1261,8 +1371,6 @@ public class BuildCharsetTrainingData {
             sb.append("  \"").append(cs).append("\": {\n");
             sb.append("    \"java_charset\": \"")
               .append(CHARSET_JAVA.getOrDefault(cs, cs)).append("\",\n");
-            sb.append("    \"structural_only\": ")
-              .append(STRUCTURAL_ONLY.contains(cs)).append(",\n");
             sb.append("    \"samples\": {\n");
             sb.append("      \"train\": ").append(samples.getOrDefault("train", 0)).append(",\n");
             sb.append("      \"devtest\": ")

@@ -48,11 +48,11 @@ public class ByteNgramFeatureExtractorTest {
     @Test
     public void testAsciiOnlyProducesStride2Features() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // Stride-1 skips bytes < 0x80, but stride-2 covers ALL bytes (needed for UTF-16/32
-        // null-byte detection). "hello world" (11 bytes) → 5 stride-2 pairs at positions
-        // 0,2,4,6,8 → 5 features total.
+        // Stride-1 skips bytes < 0x80; stride-2 filtered bigrams skip pairs where both bytes
+        // are printable ASCII [0x20,0x7E]. "hello world" is all ASCII → all stride-2 pairs
+        // filtered out → only the global ASCII-density bin fires.
         byte[] ascii = "hello world".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        assertEquals(5, sum(ext.extract(ascii)));
+        assertEquals(1, sum(ext.extract(ascii))); // 0 stride-2 (filtered) + 1 global ASCII-density bin
     }
 
     @Test
@@ -60,7 +60,7 @@ public class ByteNgramFeatureExtractorTest {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
         // One high byte, no following byte → 1 stride-1 unigram; no stride-2 pair
         int[] counts = ext.extract(new byte[]{(byte) 0xE0});
-        assertEquals(1, sum(counts));
+        assertEquals(2, sum(counts)); // 1 unigram + 1 global ASCII-density bin
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ByteNgramFeatureExtractorTest {
         // Stride-2: pair(0xE0,0xE1) at position 0 = 1
         // Total = 4
         int[] counts = ext.extract(new byte[]{(byte) 0xE0, (byte) 0xE1});
-        assertEquals(4, sum(counts));
+        assertEquals(5, sum(counts)); // 3 stride-1 + 1 stride-2 + 1 global
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ByteNgramFeatureExtractorTest {
         // Stride-2: pair(0xE0,0x41) at position 0 = 1
         // Total = 3
         int[] counts = ext.extract(new byte[]{(byte) 0xE0, 0x41});
-        assertEquals(3, sum(counts));
+        assertEquals(4, sum(counts)); // 2 stride-1 + 1 stride-2 + 1 global
     }
 
     @Test
@@ -88,9 +88,10 @@ public class ByteNgramFeatureExtractorTest {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
         // Stride-1: 0x41 skipped; unigram(0xE0), no following byte = 1
         // Stride-2: pair(0x41,0xE0) at position 0 = 1
-        // Total = 2
+        // Global: 1
+        // Total = 3
         int[] counts = ext.extract(new byte[]{0x41, (byte) 0xE0});
-        assertEquals(2, sum(counts));
+        assertEquals(3, sum(counts));
     }
 
     @Test

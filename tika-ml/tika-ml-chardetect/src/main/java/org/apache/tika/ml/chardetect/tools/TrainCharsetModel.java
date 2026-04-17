@@ -35,8 +35,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.tika.ml.FeatureExtractor;
 import org.apache.tika.ml.LinearModel;
+import org.apache.tika.ml.chardetect.ByteNgramFeatureExtractor;
 import org.apache.tika.ml.chardetect.CharsetConfusables;
 
 /**
@@ -64,7 +64,7 @@ import org.apache.tika.ml.chardetect.CharsetConfusables;
  */
 public class TrainCharsetModel {
 
-    private static final int DEFAULT_NUM_BUCKETS = 16384;
+    private static final int DEFAULT_NUM_BUCKETS = ByteNgramFeatureExtractor.NUM_BUCKETS;
     private static final int DEFAULT_EPOCHS = 3;
     private static final float DEFAULT_LR = 0.05f;
     private static final int DEFAULT_MAX_SAMPLES = 500_000;
@@ -76,11 +76,6 @@ public class TrainCharsetModel {
         int epochs = DEFAULT_EPOCHS;
         float lr = DEFAULT_LR;
         int maxSamplesPerClass = DEFAULT_MAX_SAMPLES;
-        boolean useUnigrams = true;
-        boolean useBigrams = true;
-        boolean useTrigrams = true;
-        boolean useAnchoredBigrams = false;
-        boolean useStride2Bigrams = true;
         // --label-remap src1:dst1,src2:dst2 — merges multiple source labels into
         // one target label at training time (e.g. merge script variants into one class).
         Map<String, String> labelRemap = new HashMap<>();
@@ -116,30 +111,6 @@ public class TrainCharsetModel {
                         labelRemap.put(kv[0].trim(), kv[1].trim());
                     }
                     break;
-                case "--no-uni":
-                    useUnigrams = false;
-                    break;
-                case "--no-bi":
-                    useBigrams = false;
-                    break;
-                case "--tri":
-                    useTrigrams = true;
-                    break;
-                case "--no-tri":
-                    useTrigrams = false;
-                    break;
-                case "--anchored":
-                    useAnchoredBigrams = true;
-                    break;
-                case "--no-anchored":
-                    useAnchoredBigrams = false;
-                    break;
-                case "--stride2":
-                    useStride2Bigrams = true;
-                    break;
-                case "--no-stride2":
-                    useStride2Bigrams = false;
-                    break;
                 case "--exclude":
                     for (String label : args[++i].split(",")) {
                         excludeLabels.add(label.trim());
@@ -159,11 +130,6 @@ public class TrainCharsetModel {
             System.err.println("  --max-samples-per-class N");
             System.err.println("  --label-remap src1:dst1,src2:dst2");
             System.err.println("                           merge source labels into a single target label");
-            System.err.println("  --no-uni                 disable unigram features");
-            System.err.println("  --no-bi                  disable bigram features");
-            System.err.println("  --tri / --no-tri         enable/disable trigram features (default: on)");
-            System.err.println("  --anchored / --no-anchored  anchored bigrams (default: off)");
-            System.err.println("  --stride2 / --no-stride2    stride-2 bigrams at even positions (default: on)");
             System.err.println("  --exclude cs1,cs2          skip these charset labels (e.g. UTF-32-BE,UTF-32-LE)");
             System.exit(1);
         }
@@ -210,13 +176,8 @@ public class TrainCharsetModel {
         System.out.printf(java.util.Locale.ROOT,
                 "Buckets: %d  epochs: %d  lr: %.4f  max-samples/class: %d%n",
                 numBuckets, epochs, lr, maxSamplesPerClass);
-        System.out.printf(java.util.Locale.ROOT,
-                "Features: uni=%b  bi=%b  tri=%b  anchored=%b  stride2=%b%n",
-                useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
 
-        ConfigurableByteNgramFeatureExtractor extractor =
-                new ConfigurableByteNgramFeatureExtractor(numBuckets,
-                        useUnigrams, useBigrams, useTrigrams, useAnchoredBigrams, useStride2Bigrams);
+        ByteNgramFeatureExtractor extractor = new ByteNgramFeatureExtractor(numBuckets);
 
         // Build class index map
         Map<String, Integer> labelIndex = new HashMap<>();
@@ -281,14 +242,18 @@ public class TrainCharsetModel {
                 // Sparse extraction: O(probeLength), not O(numBuckets)
                 int nActive = extractor.extractSparseInto(sample, denseScratch, touched);
 
-                // L1 normalization: compute sum of feature counts so each sample
-                // contributes equal total mass regardless of encoding density.
-                // Forward pass: only iterate active buckets
+                // Per-bucket contribution clip matching LinearModel.predictLogits at inference.
+                // Prevents any single colliding bucket from dominating the logit.
+                float clip = 1.5f * (float) Math.sqrt(nActive);
+
+                // Forward pass: clipped contributions, matching inference behaviour.
                 float[] logits = new float[numClasses];
                 for (int c = 0; c < numClasses; c++) {
                     float dot = biases[c];
                     for (int t = 0; t < nActive; t++) {
-                        dot += weights[c][touched[t]] * denseScratch[touched[t]];
+                        int b = touched[t];
+                        float contrib = weights[c][b] * denseScratch[b];
+                        dot += Math.max(-clip, Math.min(clip, contrib));
                     }
                     logits[c] = dot;
                 }
@@ -306,13 +271,20 @@ public class TrainCharsetModel {
                 grad[trueClass] -= 1f;
 
                 // Sparse SGD update with L2 regularization on both weights and biases.
+                // Straight-through estimator for the clip: pass the full gradient when
+                // the contribution was inside the clip window; only L2 decay when clipped.
                 for (int c = 0; c < numClasses; c++) {
                     float g = grad[c];
                     biases[c] -= lr * (g + lambda * biases[c]);
                     for (int t = 0; t < nActive; t++) {
                         int b = touched[t];
-                        weights[c][b] -= lr * (g * denseScratch[b]
-                                + lambda * weights[c][b]);
+                        float contrib = weights[c][b] * denseScratch[b];
+                        if (contrib > -clip && contrib < clip) {
+                            weights[c][b] -= lr * (g * denseScratch[b]
+                                    + lambda * weights[c][b]);
+                        } else {
+                            weights[c][b] -= lr * lambda * weights[c][b];
+                        }
                     }
                 }
                 count++;
@@ -418,7 +390,7 @@ public class TrainCharsetModel {
      */
     private static void evaluatePerCharset(
             LinearModel model,
-            FeatureExtractor<byte[]> extractor,
+            ByteNgramFeatureExtractor extractor,
             List<byte[]>[] samplesPerClass,
             String[] labels,
             int[][] groupIndices) {
