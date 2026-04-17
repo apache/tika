@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -376,6 +377,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             linkedRelationships, config.isIncludeShapeBasedContent(),
                             config.isConcatenatePhoneticRuns(),
                             config.isPreferAlternateContentChoice())), context);
+        } catch (SAXException e) {
+            WriteLimitReachedException.throwIfWriteLimitReached(e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

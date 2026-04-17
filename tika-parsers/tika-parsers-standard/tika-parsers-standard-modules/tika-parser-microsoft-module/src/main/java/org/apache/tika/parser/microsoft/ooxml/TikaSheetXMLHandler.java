@@ -299,7 +299,7 @@ class TikaSheetXMLHandler extends DefaultHandler {
                     break;
                 case SST_STRING:
                     String sstIndex = value.toString().trim();
-                    if (!sstIndex.isEmpty()) {
+                    if (!sstIndex.isEmpty() && sharedStringsShim != null) {
                         try {
                             int idx = Integer.parseInt(sstIndex);
                             thisStr = sharedStringsShim.getItemAt(idx);
