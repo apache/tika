@@ -46,21 +46,21 @@ public class ByteNgramFeatureExtractorTest {
     }
 
     @Test
-    public void testAsciiOnlyProducesStride2Features() {
+    public void testAsciiOnlyProducesOnlyGlobalFeature() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // Stride-1 skips bytes < 0x80, but stride-2 covers ALL bytes (needed for UTF-16/32
-        // null-byte detection). "hello world" (11 bytes) → 5 stride-2 pairs at positions
-        // 0,2,4,6,8 → 5 features total.
+        // Stride-1 skips bytes < 0x80. "hello world" is all ASCII → no unigrams
+        // or bigrams emitted. Exactly one ASCII-density global bin fires.
         byte[] ascii = "hello world".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        assertEquals(5, sum(ext.extract(ascii)));
+        assertEquals(1, sum(ext.extract(ascii)));
     }
 
     @Test
     public void testSingleHighByteProducesOneUnigram() {
         ByteNgramFeatureExtractor ext = new ByteNgramFeatureExtractor(NUM_BUCKETS);
-        // One high byte, no following byte → 1 stride-1 unigram; no stride-2 pair
+        // One high byte, no following byte → 1 stride-1 unigram + 1 global
+        // ASCII-density bin = 2.
         int[] counts = ext.extract(new byte[]{(byte) 0xE0});
-        assertEquals(1, sum(counts));
+        assertEquals(2, sum(counts));
     }
 
     @Test
