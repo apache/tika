@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.64.1</google.cloud.version>
+    <google.cloud.version>2.67.0</google.cloud.version>
     <azure.version>1.3.6</azure.version>
     <aws.version>1.12.797</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -319,7 +319,7 @@
     <asm.version>9.9.1</asm.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!-- used by POI, PDFBox and Jackcess ...try to sync -->
-    <bouncycastle.version>1.83</bouncycastle.version>
+    <bouncycastle.version>1.84</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.11.0</commons.cli.version>
@@ -342,7 +342,7 @@
     <dl4j.version>1.0.0-M2</dl4j.version>
     <!-- fakeload versions > 0.4.0 require java > 8 -->
     <fakeload.version>0.4.0</fakeload.version>
-    <guava.version>33.5.0-jre</guava.version>
+    <guava.version>33.6.0-jre</guava.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -366,12 +366,13 @@
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
     <jetty.version>9.4.58.v20250814</jetty.version>
+    <!-- 2.0.* needs java 17 -->
     <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
     <junit5.version>5.14.3</junit5.version>
-    <junrar.version>7.5.8</junrar.version>
+    <junrar.version>7.5.10</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.4</log4j2.version>
     <!-- lucene >= 9.x requires Java 11 -->
@@ -398,8 +399,8 @@
     <poi.version>5.5.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.4.1</quartz.version>
-    <reactor.core.version>3.8.4</reactor.core.version>
-    <reactor.netty.version>1.3.4</reactor.netty.version>
+    <reactor.core.version>3.8.5</reactor.core.version>
+    <reactor.netty.version>1.3.5</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.2.1</scm.version>
     <!-- sis 1.3 xml bind 4 -->
@@ -409,7 +410,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.51.3.0</sqlite.version>
+    <sqlite.version>3.53.0.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.21.4</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
