@@ -388,7 +388,7 @@
     <jhighlight.version>1.1.1</jhighlight.version>
     <jna.version>5.18.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.22.1</jsoup.version>
+    <jsoup.version>1.22.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <!-- junit 6.x requires jdk 17 -->
     <junit5.version>5.14.3</junit5.version>
@@ -437,7 +437,7 @@
     <spring.version>5.3.39</spring.version>
     <sqlite.version>3.53.0.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
-    <testcontainers.version>2.0.4</testcontainers.version>
+    <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
     <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
