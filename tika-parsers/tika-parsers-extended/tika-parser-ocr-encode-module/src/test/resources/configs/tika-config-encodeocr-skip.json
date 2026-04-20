@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "encode-ocr-parser": {
+        "skipOcr": true
+      }
+    }
+  ]
+}

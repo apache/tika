@@ -1,0 +1,12 @@
+{
+  "parsers": [
+    {
+      "encode-ocr-parser": {
+        "minFileSizeToOcr": 1,
+        "maxFileSizeToOcr": 2000000,
+        "maxImagesToOcr": 25,
+        "skipOcr": false
+      }
+    }
+  ]
+}
