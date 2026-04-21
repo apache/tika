@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one or more
+  ~ contributor license agreements.  See the NOTICE file distributed with
+  ~ this work for additional information regarding copyright ownership.
+  ~ The ASF licenses this file to You under the Apache License, Version 2.0
+  ~ (the "License"); you may not use this file except in compliance with
+  ~ the License.  You may obtain a copy of the License at
+  ~
+  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<properties>
+  <parsers>     
+        <!-- Load TesseractOCRParser (could use DefaultParser if you want others too) -->
+        <parser class="org.apache.tika.parser.ocr.TesseractOCRParser"/>   
+
+        <!-- OCR on Rendered Pages -->
+        <parser class="org.apache.tika.parser.pdf.PDFParser">
+            <params>
+                <!-- no_ocr - extract text only
+                     ocr_only - don't extract text and just attempt OCR
+                     ocr_and_text - extract text and attempt OCR (from Tika 1.24)
+                     auto - extract text but if < 10 characters try OCR
+                -->
+                <param name="ocrStrategy" type="string">ocr_only</param>
+                <param name="ocrImageType" type="string">rgb</param>
+                <param name="ocrDPI" type="int">100</param>
+            </params>
+        </parser>
+
+  </parsers>
+</properties>

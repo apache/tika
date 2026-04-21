@@ -19,6 +19,11 @@ package org.apache.tika.pipes.grpc;
 import static io.grpc.health.v1.HealthCheckResponse.ServingStatus;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.JCommander;
@@ -91,7 +96,8 @@ public class TikaGrpcServer {
             creds = InsecureServerCredentials.create();
         }
         if (tikaConfig == null) {
-            throw new IllegalArgumentException("Tika config file is required");
+            tikaConfig = extractDefaultConfig();
+            LOGGER.info("No config file specified, using bundled default-tika-config.json");
         }
         File tikaConfigFile = new File(tikaConfig.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
@@ -161,6 +167,22 @@ public class TikaGrpcServer {
 
         server.start();
         server.blockUntilShutdown();
+    }
+
+    private static File extractDefaultConfig() {
+        try (InputStream is = TikaGrpcServer.class.getResourceAsStream("/default-tika-config.json")) {
+            if (is == null) {
+                throw new IllegalArgumentException(
+                        "Tika config file is required. Use -c to specify a config file.");
+            }
+            Path tempConfig = Files.createTempFile("tika-config-", ".json");
+            tempConfig.toFile().deleteOnExit();
+            Files.copy(is, tempConfig, StandardCopyOption.REPLACE_EXISTING);
+            return tempConfig.toFile();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(
+                    "Tika config file is required. Use -c to specify a config file.", e);
+        }
     }
 
     public TikaGrpcServer setTikaConfig(File tikaConfig) {
