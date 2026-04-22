@@ -408,7 +408,7 @@
     <kotlin-stdlib.version>2.3.20</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.4</log4j2.version>
-    <lombok.version>1.18.44</lombok.version>
+    <lombok.version>1.18.46</lombok.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
