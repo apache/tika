@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.67.0</google.cloud.version>
-    <aws2.version>2.42.36</aws2.version>
+    <aws2.version>2.42.37</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -421,7 +421,7 @@
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.12.Final</netty.version>
-    <oak.jackrabbit.version>1.92.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.7</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
