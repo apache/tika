@@ -86,7 +86,8 @@ public final class TextQualityScore {
         if (isUnknown()) {
             return "TextQualityScore[UNKNOWN script=" + dominantScript + "]";
         }
-        return String.format("TextQualityScore[z=%.3f p=%.3f ci=(%.3f,%.3f) script=%s]",
+        return String.format(java.util.Locale.ROOT,
+                "TextQualityScore[z=%.3f p=%.3f ci=(%.3f,%.3f) script=%s]",
                 zScore, pClean, ciLow, ciHigh, dominantScript);
     }
 }

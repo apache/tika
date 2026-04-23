@@ -87,7 +87,8 @@ public final class TextQualityComparison {
 
     @Override
     public String toString() {
-        return String.format("TextQualityComparison[winner=%s(%s) delta=%.3f A=%s B=%s]",
+        return String.format(java.util.Locale.ROOT,
+                "TextQualityComparison[winner=%s(%s) delta=%.3f A=%s B=%s]",
                 winner, winner.equals("A") ? labelA : labelB,
                 delta, scoreA, scoreB);
     }

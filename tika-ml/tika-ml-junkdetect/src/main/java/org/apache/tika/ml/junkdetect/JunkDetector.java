@@ -24,9 +24,11 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -278,15 +280,19 @@ public final class JunkDetector implements TextQualityDetector {
     /**
      * {@inheritDoc}
      *
-     * <p>The string is encoded to UTF-8 internally for bigram and control-byte scoring.
-     * Codepoints are used directly for block-transition scoring.
+     * <p>The text is split into contiguous runs of the same Unicode script.
+     * Each run is scored against its own script model.  Logits are combined
+     * as a byte-count-weighted average, so mixed-script text (e.g. half
+     * LATIN, half HAN) is scored fairly without arbitrarily picking one script.
+     * COMMON, INHERITED, and UNKNOWN codepoints (spaces, punctuation, digits)
+     * are attached to the preceding script run.
      */
     @Override
     public TextQualityScore score(String text) {
         if (text == null || text.isEmpty()) {
             return unknownScore("UNKNOWN");
         }
-        return scoreText(text.getBytes(StandardCharsets.UTF_8), text);
+        return scoreText(text);
     }
 
     /**
@@ -332,15 +338,64 @@ public final class JunkDetector implements TextQualityDetector {
     // Internal scoring
     // -----------------------------------------------------------------------
 
-    private TextQualityScore scoreText(byte[] utf8, String text) {
-        String script = detectDominantScript(text);
+    private TextQualityScore scoreText(String text) {
+        List<ScriptRun> runs = buildScriptRuns(text);
 
-        float[] bigramTable = tables.get(script);
-        if (bigramTable == null) {
-            return unknownScore(script);
+        // Score each run against its own model; aggregate weighted by byte count.
+        float totalBytes = 0;
+        float weightedLogit = 0;
+        String dominantScript = null;
+        int maxBytes = 0;
+        int totalBigramCount = 0;
+        float[] dominantCal1 = null;
+
+        for (ScriptRun run : runs) {
+            if (!tables.containsKey(run.script)) {
+                continue; // skip scripts not in model; treat as neutral, not junk
+            }
+            byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
+            if (runUtf8.length < 2) {
+                continue; // too short to score
+            }
+            float logit = scoreChunk(runUtf8, run.text, run.script);
+            int n = runUtf8.length;
+            weightedLogit += logit * n;
+            totalBytes += n;
+            totalBigramCount += n - 1;
+            if (n > maxBytes) {
+                maxBytes = n;
+                dominantScript = run.script;
+                dominantCal1 = calibrations.get(run.script);
+            }
         }
-        if (utf8.length < 2) {
-            return unknownScore(script);
+
+        if (totalBytes == 0 || dominantScript == null) {
+            // No scoreable runs; return UNKNOWN keyed on the first run's script (for debug)
+            String label = runs.isEmpty() ? "LATIN" : runs.get(0).script;
+            return unknownScore(label);
+        }
+
+        float zScore = weightedLogit / totalBytes;
+
+        // CI: standard error of the weighted mean, approximated via dominant script's sigma
+        float uncertainty = (dominantCal1 != null && totalBigramCount > 0)
+                ? (float) (1.96 * dominantCal1[1] / Math.sqrt(totalBigramCount)) : 0f;
+        float ciLow = zScore - uncertainty;
+        float ciHigh = zScore + uncertainty;
+        float pClean = (float) (1.0 / (1.0 + Math.exp(-zScore)));
+
+        return new TextQualityScore(zScore, pClean, ciLow, ciHigh, dominantScript);
+    }
+
+    /**
+     * Scores a single script-homogeneous chunk and returns its logit.
+     * Positive = clean, negative = junk.  Returns 0 (neutral) if the chunk
+     * has no model or is too short.
+     */
+    private float scoreChunk(byte[] utf8, String text, String script) {
+        float[] bigramTable = tables.get(script);
+        if (bigramTable == null || utf8.length < 2) {
+            return 0f;
         }
 
         // Feature 1: byte-bigram mean log-prob
@@ -354,7 +409,6 @@ public final class JunkDetector implements TextQualityDetector {
         float[] cal1 = calibrations.get(script);
         float z1 = (meanBigramLogProb - cal1[0]) / cal1[1];
 
-        // Features 2 & 3 (version 2+)
         float z2 = 0f, z3 = 0f;
         if (modelVersion >= 2 && blockTables != null) {
             // Feature 2: named-block transition mean log-prob
@@ -392,33 +446,77 @@ public final class JunkDetector implements TextQualityDetector {
             z3 = cal3 != null ? (controlScore - cal3[0]) / cal3[1] : 0f;
         }
 
-        // Combine features
-        float zScore;
         if (modelVersion >= 3 && classifierWeights != null) {
-            // Version 3: per-script linear combination (logistic regression weights)
             float[] cw = classifierWeights.get(script);
             if (cw != null && cw.length >= 4) {
-                // cw = {w1, w2, w3, bias}; positive logit = clean
-                zScore = cw[0] * z1 + cw[1] * z2 + cw[2] * z3 + cw[cw.length - 1];
-            } else {
-                zScore = (z1 + z2 + z3) / 3.0f; // fallback if weights missing
+                return cw[0] * z1 + cw[1] * z2 + cw[2] * z3 + cw[cw.length - 1];
             }
+            return (z1 + z2 + z3) / 3.0f;
         } else if (modelVersion >= 2 && blockTables != null) {
-            // Version 2: equal-weight average
-            zScore = (z1 + z2 + z3) / 3.0f;
+            return (z1 + z2 + z3) / 3.0f;
         } else {
-            // Version 1: bigrams only
-            zScore = z1;
+            return z1;
+        }
+    }
+
+    /**
+     * Splits text into maximal runs of the same Unicode script.
+     * COMMON, INHERITED, and UNKNOWN codepoints (spaces, punctuation, digits)
+     * are attached to the preceding script run so that inter-word bigrams are
+     * preserved within each run.  Any leading COMMON characters are prepended
+     * to the first non-COMMON run.
+     */
+    private List<ScriptRun> buildScriptRuns(String text) {
+        List<ScriptRun> runs = new ArrayList<>();
+        String currentScript = null;
+        StringBuilder currentText = new StringBuilder();
+        StringBuilder leadingCommon = new StringBuilder();
+
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s == Character.UnicodeScript.COMMON
+                    || s == Character.UnicodeScript.INHERITED
+                    || s == Character.UnicodeScript.UNKNOWN) {
+                if (currentScript != null) {
+                    currentText.appendCodePoint(cp);
+                } else {
+                    leadingCommon.appendCodePoint(cp);
+                }
+                continue;
+            }
+
+            String scriptName = SCRIPT_MODEL_FALLBACK.getOrDefault(s.name(), s.name());
+
+            if (!scriptName.equals(currentScript)) {
+                if (currentScript != null && currentText.length() > 0) {
+                    runs.add(new ScriptRun(currentScript, currentText.toString()));
+                }
+                currentScript = scriptName;
+                currentText = new StringBuilder();
+                if (leadingCommon.length() > 0) {
+                    currentText.append(leadingCommon);
+                    leadingCommon.setLength(0);
+                }
+            }
+            currentText.appendCodePoint(cp);
         }
 
-        // CI is approximated from the bigram count and bigram sigma
-        float uncertainty = (float) (1.96 * cal1[1] / Math.sqrt(bigramCount));
-        float ciLow = zScore - uncertainty;
-        float ciHigh = zScore + uncertainty;
+        if (currentScript != null && currentText.length() > 0) {
+            runs.add(new ScriptRun(currentScript, currentText.toString()));
+        }
+        return runs;
+    }
 
-        float pClean = (float) (1.0 / (1.0 + Math.exp(-zScore)));
-
-        return new TextQualityScore(zScore, pClean, ciLow, ciHigh, script);
+    private static final class ScriptRun {
+        final String script;
+        final String text;
+        ScriptRun(String script, String text) {
+            this.script = script;
+            this.text = text;
+        }
     }
 
     /**
