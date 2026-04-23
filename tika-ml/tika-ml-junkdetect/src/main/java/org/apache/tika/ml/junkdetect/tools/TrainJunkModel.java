@@ -823,8 +823,15 @@ public class TrainJunkModel {
      * <p>Label convention: 1 = clean, 0 = corrupted.  At inference, positive
      * logit → clean text; negative logit → corrupted text.
      *
-     * <p>Uses full-batch gradient descent with L2 regularization.  Converges
-     * reliably for {@code numFeatures} ≤ 10 with the default hyperparameters.
+     * <p>Uses full-batch gradient descent with L2 regularization and a
+     * non-negativity constraint on feature weights (projected gradient descent:
+     * {@code w[j] = max(0, w[j])} after each step).  The constraint enforces the
+     * semantic invariant that every feature is calibrated so higher = cleaner;
+     * a negative weight would mean "more unusual transitions → cleaner text", which
+     * is semantically wrong and causes pathological behaviour when collinear features
+     * (e.g. z2 block-transitions and z4 script-transitions) are both present.
+     * The bias term is unconstrained.  Converges reliably for {@code numFeatures} ≤ 10
+     * with the default hyperparameters.
      *
      * @param features list of feature vectors, each of length {@code numFeatures}
      * @param labels   parallel list of labels (0 or 1)
@@ -875,6 +882,7 @@ public class TrainJunkModel {
 
             for (int j = 0; j < numFeatures; j++) {
                 w[j] -= lr * (float) (gradW[j] / n + lambda * w[j]);
+                w[j] = Math.max(0f, w[j]); // projected gradient: feature weights are non-negative by design
             }
             bias -= lr * (float) (gradB / n);
         }
