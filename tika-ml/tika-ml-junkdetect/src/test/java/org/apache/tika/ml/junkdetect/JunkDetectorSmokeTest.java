@@ -25,10 +25,12 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.quality.TextQualityComparison;
+import org.apache.tika.quality.TextQualityScore;
+
 /**
- * Smoke tests corresponding to Phase 5.1 target cases in the design doc.
- * These should pass once the model is trained; failures indicate the model
- * needs more data or the feature extraction is wrong.
+ * Smoke tests verifying the bundled model meets minimum quality thresholds.
+ * Failures indicate the model needs more data or feature extraction is wrong.
  */
 public class JunkDetectorSmokeTest {
 
@@ -40,43 +42,44 @@ public class JunkDetectorSmokeTest {
     }
 
     /**
-     * Clean English should score higher than random high-byte garbage.
-     * Also serves as the byte-reversal baseline: garbage bytes ~ byte-reversed text.
+     * Clean English should score higher than random high-byte garbage interpreted
+     * as ISO-8859-1.  Simulates binary data mixed into a text extraction.
      */
     @Test
     void cleanVsGarbage() {
-        JunkScore clean = detector.score("The quick brown fox jumps over the lazy dog. "
-                + "Pack my box with five dozen liquor jugs.");
+        String clean = "The quick brown fox jumps over the lazy dog. "
+                + "Pack my box with five dozen liquor jugs.";
+
         byte[] garbageBytes = new byte[80];
         new Random(42).nextBytes(garbageBytes);
-        // Force all bytes >= 0x80 so it's clearly invalid UTF-8-looking garbage
         for (int i = 0; i < garbageBytes.length; i++) {
             garbageBytes[i] = (byte) (0x80 | (garbageBytes[i] & 0x7F));
         }
-        JunkScore garbage = detector.score(new String(garbageBytes, StandardCharsets.ISO_8859_1)
-                .getBytes(StandardCharsets.UTF_8));
+        // Decode as ISO-8859-1 so the string contains high-codepoint characters
+        String garbage = new String(garbageBytes, StandardCharsets.ISO_8859_1);
 
-        System.out.println("clean:   " + clean);
-        System.out.println("garbage: " + garbage);
+        TextQualityScore cleanScore = detector.score(clean);
+        TextQualityScore garbageScore = detector.score(garbage);
 
-        assertTrue(clean.getZScore() > garbage.getZScore(),
+        System.out.println("clean:   " + cleanScore);
+        System.out.println("garbage: " + garbageScore);
+
+        assertTrue(cleanScore.getZScore() > garbageScore.getZScore(),
                 "Clean text should score higher than garbage");
     }
 
     /**
      * Forward Arabic should score higher than character-reversed Arabic.
-     * Character (codepoint) reversal is a realistic distortion: it produces
-     * valid UTF-8 but wrong reading order — analogous to bidirectional rendering
-     * failures or incorrectly stored RTL text.
+     * Character (codepoint) reversal produces valid UTF-8 but wrong reading order —
+     * analogous to bidirectional rendering failures or incorrectly stored RTL text.
      */
     @Test
     void forwardVsReversedArabic() {
         String arabic = "اللغة العربية جميلة وغنية بالمفردات والتعبيرات";
-        byte[] forward = arabic.getBytes(StandardCharsets.UTF_8);
-        byte[] reversed = reverseString(arabic).getBytes(StandardCharsets.UTF_8);
+        String reversed = reverseString(arabic);
 
-        JunkScore fwd = detector.score(forward);
-        JunkScore rev = detector.score(reversed);
+        TextQualityScore fwd = detector.score(arabic);
+        TextQualityScore rev = detector.score(reversed);
 
         System.out.println("arabic forward:  " + fwd);
         System.out.println("arabic reversed: " + rev);
@@ -88,19 +91,22 @@ public class JunkDetectorSmokeTest {
     /**
      * cp1257 (Baltic) decoding of Lithuanian text should win over cp1252.
      *
-     * <p>This tests the {@link JunkDetector#compare} API: given raw bytes that were
-     * encoded as cp1257, scoring both decodings should prefer the correct one.
+     * <p>Tests the {@link JunkDetector#compare} API: given raw bytes that were
+     * encoded as cp1257, comparing both decodings should prefer the correct one.
      * A low delta is expected because the LATIN model is trained across ~322 languages
      * and Baltic-specific bigrams are diluted.
      *
-     * <p>TODO: improve separation by adding a Baltic sub-model or Baltic-weighted retraining.
+     * <p>TODO: improve separation with a Baltic sub-model or Baltic-weighted retraining.
      */
     @Test
     void cp1252VsCp1257OnBalticText() throws Exception {
         String lithuanian = "Lietuvių kalba yra labai graži ir turtinga";
         byte[] cp1257bytes = lithuanian.getBytes("cp1257");
 
-        JunkDetector.CompareResult result = detector.compare(cp1257bytes, "cp1252", "cp1257");
+        String ascp1252 = new String(cp1257bytes, "cp1252");
+        String ascp1257 = new String(cp1257bytes, "cp1257");
+
+        TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1257", ascp1257);
 
         System.out.println("Baltic comparison: " + result);
 
@@ -115,21 +121,24 @@ public class JunkDetectorSmokeTest {
     /**
      * cp1251 decoding of Russian text should win over cp1252.
      *
-     * <p>This is the canonical Cyrillic mojibake scenario: Windows-1251-encoded
-     * Russian text misinterpreted as Windows-1252 (Western European).  The cp1252
-     * decoding produces Latin symbols interspersed with control characters, while
-     * cp1251 produces proper Cyrillic.  The model should strongly prefer cp1251.
+     * <p>This is the canonical Cyrillic mojibake scenario: Windows-1251-encoded Russian
+     * text misinterpreted as Windows-1252 (Western European).  The cp1252 decoding
+     * produces Latin symbols interspersed with control characters, while cp1251 produces
+     * proper Cyrillic.  The model should strongly prefer cp1251.
      *
-     * <p>Note: character-reversal of LTR Cyrillic is NOT a useful test here —
-     * byte-bigram statistics are nearly identical forward and backward for LTR scripts,
-     * so the model cannot distinguish them.  Use codec-confusion tests for LTR scripts.
+     * <p>Note: character-reversal of LTR Cyrillic is NOT a useful test — byte-bigram
+     * statistics are nearly identical forward and backward for LTR scripts.  Codec
+     * comparison is the correct test for LTR scripts.
      */
     @Test
     void cp1252VsCp1251OnRussianText() throws Exception {
         String russian = "Русский язык является одним из восточнославянских языков";
         byte[] cp1251bytes = russian.getBytes("cp1251");
 
-        JunkDetector.CompareResult result = detector.compare(cp1251bytes, "cp1252", "cp1251");
+        String ascp1252 = new String(cp1251bytes, "cp1252");
+        String ascp1251 = new String(cp1251bytes, "cp1251");
+
+        TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1251", ascp1251);
 
         System.out.println("Russian Cyrillic comparison: " + result);
 
@@ -140,16 +149,19 @@ public class JunkDetectorSmokeTest {
     }
 
     /**
-     * Clean Japanese (CJK) should score higher than shuffled bytes.
+     * Clean Japanese (CJK) should score higher than byte-shuffled Japanese.
      */
     @Test
     void cleanVsShuffledCjk() {
         String japanese = "日本語は美しい言語であり、世界中で約1億3千万人が話している。";
-        byte[] clean = japanese.getBytes(StandardCharsets.UTF_8);
-        byte[] shuffled = shuffled(clean, 42);
+        byte[] cleanBytes = japanese.getBytes(StandardCharsets.UTF_8);
+        byte[] shuffledBytes = shuffled(cleanBytes, 42);
 
-        JunkScore cleanScore = detector.score(clean);
-        JunkScore shuffledScore = detector.score(shuffled);
+        // Shuffled bytes are not valid UTF-8; decode as ISO-8859-1 to get a scoreable string
+        String shuffledText = new String(shuffledBytes, StandardCharsets.ISO_8859_1);
+
+        TextQualityScore cleanScore = detector.score(japanese);
+        TextQualityScore shuffledScore = detector.score(shuffledText);
 
         System.out.println("Japanese clean:    " + cleanScore);
         System.out.println("Japanese shuffled: " + shuffledScore);
@@ -158,12 +170,41 @@ public class JunkDetectorSmokeTest {
                 "Clean Japanese should score higher than shuffled bytes");
     }
 
+    /**
+     * Shift-JIS zip entry name (9 bytes) decoded as Shift-JIS should beat the same
+     * bytes decoded as UTF-8 (which produces mojibake with FFFD replacement chars).
+     *
+     * <p>This is the canonical short-text use case: zip parsers encounter raw filename
+     * bytes with no BOM or language tag.  At 9 bytes the z-score signal is weak, but
+     * the corrupted UTF-8 decode contains FFFD sequences (0xEF 0xBF 0xBD) which are
+     * very unlikely in LATIN text, yielding a clearly negative bigram z-score.
+     *
+     * <p>"テスト.tx" is pure katakana — KATAKANA script maps to the HAN model via
+     * {@link JunkDetector#SCRIPT_MODEL_FALLBACK}.
+     */
+    @Test
+    void shiftJisZipEntryNameVsUtf8() throws Exception {
+        // 9 Shift-JIS bytes: テスト.tx
+        byte[] sjisBytes = "テスト.tx".getBytes("Shift_JIS");
+        assertEquals(9, sjisBytes.length, "fixture sanity: expect exactly 9 Shift-JIS bytes");
+
+        String asShiftJis = new String(sjisBytes, "Shift_JIS"); // "テスト.tx"
+        String asUtf8     = new String(sjisBytes, StandardCharsets.UTF_8); // "?e?X?g.tx" (mojibake)
+
+        TextQualityComparison result = detector.compare("Shift-JIS", asShiftJis, "UTF-8", asUtf8);
+
+        System.out.println("Shift-JIS zip entry: " + result);
+
+        assertEquals("A", result.winner(),
+                "Shift-JIS decode should beat garbled UTF-8 for short Japanese filename");
+    }
+
     // -----------------------------------------------------------------------
 
     /**
      * Reverses the string at codepoint granularity (not char granularity), so
-     * surrogate pairs are kept intact.  This produces valid Unicode text in
-     * reverse reading order — a realistic distortion for RTL-language tests.
+     * surrogate pairs are kept intact.  Produces valid Unicode in reverse reading
+     * order — a realistic distortion for RTL-language tests.
      */
     static String reverseString(String s) {
         int[] codepoints = s.codePoints().toArray();

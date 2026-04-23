@@ -113,6 +113,15 @@ public class BuildJunkTrainingData {
     private static final double DEV_FRAC   = 0.10;
     // remaining (1 - TRAIN_FRAC - DEV_FRAC) goes to the test split
 
+    /**
+     * Minimum number of sentences that must land in the dev split for a script to be
+     * included in the model.  Scripts below this floor have too few samples to reliably
+     * estimate calibration statistics (mu/sigma), which produces noisy z-scores and
+     * inflated false positive rates.  With DEV_FRAC=0.10 the effective minimum total
+     * sentence count is minDevSentences / DEV_FRAC (default: 5,000 total sentences).
+     */
+    private static final int DEFAULT_MIN_DEV_SENTENCES = 500;
+
     // -----------------------------------------------------------------------
     // Entry point
     // -----------------------------------------------------------------------
@@ -126,6 +135,7 @@ public class BuildJunkTrainingData {
         double maxPuncFrac = DEFAULT_MAX_PUNC_FRAC;
         int seed = 42;
         boolean dryRun = false;
+        int minDevSentences = DEFAULT_MIN_DEV_SENTENCES;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -150,6 +160,9 @@ public class BuildJunkTrainingData {
                 case "--seed":
                     seed = Integer.parseInt(args[++i]);
                     break;
+                case "--min-dev-sentences":
+                    minDevSentences = Integer.parseInt(args[++i]);
+                    break;
                 case "--dry-run":
                     dryRun = true;
                     break;
@@ -167,6 +180,8 @@ public class BuildJunkTrainingData {
                 totalBudgetBytes, totalBudgetBytes / 1_000_000.0);
         System.out.printf( "  min-bytes:          %d%n", minBytes);
         System.out.printf( "  max-punc-frac:      %.2f%n", maxPuncFrac);
+        System.out.printf( "  min-dev-sentences:  %d  (min total ≈ %d)%n",
+                minDevSentences, (int)(minDevSentences / DEV_FRAC));
         System.out.println("  dry-run:            " + dryRun);
 
         if (!Files.isDirectory(dataDir)) {
@@ -246,12 +261,13 @@ public class BuildJunkTrainingData {
         // -----------------------------------------------------------------------
 
         Files.createDirectories(outputDir);
-        System.out.println("\n--- Phase 4: Collecting and writing per-script files ---");
+        System.out.println("\n--- Phase 4a: Round 1 — collecting with initial budgets ---");
 
         Random rng = new Random(seed);
 
-        // manifest columns: script, entropy, budget_bytes, written_bytes, sentences, train_bytes, languages
-        Map<String, long[]> manifestStats = new TreeMap<>();
+        // Collect sentences and actual byte counts for every script
+        Map<String, List<String>> allSentences = new LinkedHashMap<>();
+        Map<String, Long> actualBytes = new LinkedHashMap<>();
 
         for (Map.Entry<String, Long> budgetEntry : scriptBudget.entrySet()) {
             String script = budgetEntry.getKey();
@@ -259,15 +275,12 @@ public class BuildJunkTrainingData {
             List<Path> langDirs = scriptGroups.get(script);
 
             long perLangBytes = Math.max(budget / langDirs.size(), 1L);
-
             List<String> sentences = new ArrayList<>();
             long totalBytesLoaded = 0;
 
             for (Path langDir : langDirs) {
                 long remaining = budget - totalBytesLoaded;
-                if (remaining <= 0) {
-                    break;
-                }
+                if (remaining <= 0) break;
                 long langBytes = loadSentences(langDir,
                         Math.min(perLangBytes, remaining),
                         minBytes, maxPuncFrac, sentences);
@@ -277,10 +290,80 @@ public class BuildJunkTrainingData {
                             script, langDir.getFileName(), langBytes);
                 }
             }
+            allSentences.put(script, sentences);
+            actualBytes.put(script, totalBytesLoaded);
+        }
 
-            if (sentences.isEmpty()) {
-                System.out.printf("  SKIP %-12s — no sentences collected%n", script);
-                manifestStats.put(script, new long[]{0, 0, 0});
+        // Compute surplus bytes from data-starved scripts (< 90% of budget used)
+        long surplus = 0;
+        for (Map.Entry<String, Long> e : scriptBudget.entrySet()) {
+            long budget = e.getValue();
+            long actual = actualBytes.getOrDefault(e.getKey(), 0L);
+            if (actual < budget * 0.9) {
+                surplus += (budget - actual);
+            }
+        }
+
+        // Round 2: redistribute surplus to saturated scripts proportional to entropy
+        if (surplus > 0) {
+            System.out.printf(
+                    "\n--- Phase 4b: Redistributing %,d surplus bytes (%.1f MB) ---\n",
+                    surplus, surplus / 1_000_000.0);
+
+            double saturatedEntropy = scriptBudget.entrySet().stream()
+                    .filter(e -> actualBytes.getOrDefault(e.getKey(), 0L) >= e.getValue() * 0.9)
+                    .mapToDouble(e -> scriptEntropy.getOrDefault(e.getKey(), 0.0))
+                    .sum();
+
+            for (Map.Entry<String, Long> budgetEntry : scriptBudget.entrySet()) {
+                String script = budgetEntry.getKey();
+                long budget = budgetEntry.getValue();
+                long actual = actualBytes.getOrDefault(script, 0L);
+                if (actual < budget * 0.9) continue; // data-starved — skip
+
+                long extra = (long) (surplus
+                        * scriptEntropy.getOrDefault(script, 0.0) / saturatedEntropy);
+                if (extra <= 0) continue;
+
+                long newBudget = budget + extra;
+                List<Path> langDirs = scriptGroups.get(script);
+                long perLangBytes = Math.max(newBudget / langDirs.size(), 1L);
+
+                List<String> sentences = new ArrayList<>();
+                long totalBytesLoaded = 0;
+                for (Path langDir : langDirs) {
+                    long remaining = newBudget - totalBytesLoaded;
+                    if (remaining <= 0) break;
+                    long langBytes = loadSentences(langDir,
+                            Math.min(perLangBytes, remaining),
+                            minBytes, maxPuncFrac, sentences);
+                    totalBytesLoaded += langBytes;
+                }
+                if (!sentences.isEmpty()) {
+                    allSentences.put(script, sentences);
+                    actualBytes.put(script, totalBytesLoaded);
+                    System.out.printf("  %-20s +%,d extra → %,d total bytes, %,d sentences%n",
+                            script, extra, totalBytesLoaded, sentences.size());
+                }
+            }
+        }
+
+        // Write split files
+        System.out.println("\n--- Phase 4c: Writing train/dev/test splits ---");
+
+        // manifest columns: script, entropy, budget_bytes, written_bytes, sentences, train_bytes, languages
+        Map<String, long[]> manifestStats = new TreeMap<>();
+
+        for (Map.Entry<String, List<String>> e : allSentences.entrySet()) {
+            String script = e.getKey();
+            List<String> sentences = e.getValue();
+
+            int expectedDevSize = (int) (sentences.size() * DEV_FRAC);
+            if (sentences.isEmpty() || expectedDevSize < minDevSentences) {
+                System.out.printf(
+                        "  SKIP %-20s — %,d sentences → dev=%d < min-dev-sentences=%d%n",
+                        script, sentences.size(), expectedDevSize, minDevSentences);
+                manifestStats.put(script, new long[]{0, 0, 0, 0, 0});
                 continue;
             }
 
@@ -297,6 +380,7 @@ public class BuildJunkTrainingData {
             writeGzipped(outputDir.resolve(baseName + ".dev.gz"),   dev);
             writeGzipped(outputDir.resolve(baseName + ".test.gz"),  test);
 
+            long totalBytesLoaded = actualBytes.getOrDefault(script, 0L);
             manifestStats.put(script,
                     new long[]{totalBytesLoaded, sentences.size(), nTrain, nDev, test.size()});
             System.out.printf(
@@ -552,6 +636,9 @@ public class BuildJunkTrainingData {
                 + " (default: 50)");
         System.err.println("  --max-punc-frac         F       Max ASCII punct fraction"
                 + " (default: 0.30)");
+        System.err.println("  --min-dev-sentences     N       Min sentences in dev split for a"
+                + " script to be included (default: 500). Scripts below this floor"
+                + " have unreliable calibration and inflated FPR.");
         System.err.println("  --seed                  N       Random seed (default: 42)");
         System.err.println("  --dry-run                       Detect scripts + show budget,"
                 + " skip file writing");

@@ -56,6 +56,10 @@ than clean"; a score of −10 means "almost certainly garbled."
 
 == Using the API
 
+The public interface is `TextQualityDetector` in `tika-core`.
+The implementation lives in `tika-ml-junkdetect`, which registers itself via
+the Java `ServiceLoader` mechanism.
+
 Add the dependency to your project:
 
 [source,xml]
@@ -67,24 +71,30 @@ Add the dependency to your project:
 </dependency>
 ----
 
-=== Scoring a string or byte array
+=== Loading the detector
 
 [source,java]
 ----
+// Via ServiceLoader — picks up any registered TextQualityDetector implementation
+TextQualityDetector detector = ServiceLoader.load(TextQualityDetector.class)
+        .findFirst()
+        .orElseThrow(() -> new IllegalStateException("No TextQualityDetector on classpath"));
+
+// Or directly, when you know you want JunkDetector specifically
 JunkDetector detector = JunkDetector.loadFromClasspath();
-
-// Score a string directly
-JunkScore score = detector.score("The quick brown fox jumps over the lazy dog.");
-System.out.println(score.getZScore());   // e.g. -0.74 — within normal range
-System.out.println(score.getPClean());   // e.g. 0.32  — P(clean) via sigmoid
-
-// Score raw UTF-8 bytes (same result; use when you already have bytes)
-byte[] utf8 = text.getBytes(StandardCharsets.UTF_8);
-JunkScore score2 = detector.score(utf8);
 ----
 
 `JunkDetector` is **immutable and thread-safe** after construction.  Load it once
 at application startup.
+
+=== Scoring a string
+
+[source,java]
+----
+TextQualityScore score = detector.score("The quick brown fox jumps over the lazy dog.");
+System.out.println(score.getZScore());   // e.g. -0.74 — within normal range
+System.out.println(score.getPClean());   // e.g. 0.32  — P(clean) via sigmoid
+----
 
 === Interpreting the score
 
@@ -111,7 +121,7 @@ at application startup.
   or heavy corruption.
 |===
 
-The `JunkScore` also carries:
+The `TextQualityScore` also carries:
 
 * `getPClean()` — `sigmoid(z)`, a rough probability estimate in [0, 1] that the
   text is clean.  Useful for ranking candidates; the absolute value is not
@@ -123,18 +133,24 @@ The `JunkScore` also carries:
   `"CYRILLIC"`, `"ARABIC"`, `"HAN"`).  If `isUnknown()` is true, the dominant
   script had no model and scoring was not possible.
 
-=== Comparing two charset interpretations
+=== Comparing two candidates
 
 The `compare()` method is the primary use case for charset detection:
 given the same raw bytes decoded two different ways, which decoding
 looks more like natural language?
 
+The caller is responsible for decoding the raw bytes; the detector just compares
+the resulting strings.  Each candidate is given a human-readable label (typically
+the charset name) that is echoed back in the result.
+
 [source,java]
 ----
 byte[] rawBytes = ...; // bytes from an unknown-encoding file
 
-JunkDetector.CompareResult result =
-    detector.compare(rawBytes, "cp1252", "cp1251");
+String ascp1252 = new String(rawBytes, Charset.forName("cp1252"));
+String ascp1251 = new String(rawBytes, Charset.forName("cp1251"));
+
+TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1251", ascp1251);
 
 System.out.println(result.winner());  // "A" or "B"
 System.out.println(result.delta());   // z-score separation between the two
@@ -144,7 +160,7 @@ if (result.winner().equals("B") && result.delta() > 1.0) {
 }
 ----
 
-The `delta()` is the absolute difference in z-scores between the two decodings.
+The `delta()` is the absolute difference in z-scores between the two candidates.
 As a rough guide:
 
 [cols="1,3"]
@@ -177,7 +193,7 @@ detector.knownScripts();  // returns Set<String>
 ----
 
 If the dominant script of an input is not in this set, `score()` returns a
-`JunkScore` where `isUnknown()` is true and no z-score is available.
+`TextQualityScore` where `isUnknown()` is true and no z-score is available.
 
 == Thresholds and operating points
 

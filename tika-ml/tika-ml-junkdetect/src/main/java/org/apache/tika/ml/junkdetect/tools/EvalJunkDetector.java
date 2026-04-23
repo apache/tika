@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.tika.ml.junkdetect.JunkDetector;
-import org.apache.tika.ml.junkdetect.JunkScore;
+import org.apache.tika.quality.TextQualityScore;
 
 /**
  * Ablation evaluation for the junk detector.
@@ -232,6 +232,26 @@ public class EvalJunkDetector {
                         detail.println(row.toTsv());
                     }
 
+                    // --- wrong-codec: re-read UTF-8 bytes as ISO-8859-1 then re-encode ---
+                    {
+                        List<Float> corruptZ = scoreWrongCodec(detector, sentences, len,
+                                samplesPerCell, new Random(seed + 4));
+                        Row row = new Row(script, "wrong-codec", "latin1-as-utf8", len,
+                                cleanZ, corruptZ, threshold);
+                        allRows.add(row);
+                        detail.println(row.toTsv());
+                    }
+
+                    // --- byte-swap: swap each adjacent pair of bytes (endianness flip) ---
+                    {
+                        List<Float> corruptZ = scoreByteSwapped(detector, sentences, len,
+                                samplesPerCell, new Random(seed + 5));
+                        Row row = new Row(script, "byte-swap", "-", len,
+                                cleanZ, corruptZ, threshold);
+                        allRows.add(row);
+                        detail.println(row.toTsv());
+                    }
+
                     detail.flush();
                     rng = new Random(seed); // reset between lengths for reproducibility
                 }
@@ -266,6 +286,8 @@ public class EvalJunkDetector {
             }
             conditions.add(new String[]{"char-reverse", "-"});
             conditions.add(new String[]{"byte-shuffle", "-"});
+            conditions.add(new String[]{"wrong-codec", "latin1-as-utf8"});
+            conditions.add(new String[]{"byte-swap", "-"});
 
             for (String[] cond : conditions) {
                 String distortion = cond[0];
@@ -406,7 +428,7 @@ public class EvalJunkDetector {
         List<Float> results = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             String s = pickSubstring(sentences, targetLen, rng);
-            JunkScore score = detector.score(s);
+            TextQualityScore score = detector.score(s);
             if (!score.isUnknown()) {
                 results.add(score.getZScore());
             }
@@ -422,7 +444,7 @@ public class EvalJunkDetector {
             String s = pickSubstring(sentences, targetLen, rng);
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             injectRandomBytes(bytes, rate, rng);
-            JunkScore score = detector.score(bytes);
+            TextQualityScore score = detector.score(new String(bytes, StandardCharsets.ISO_8859_1));
             if (!score.isUnknown()) {
                 results.add(score.getZScore());
             }
@@ -435,7 +457,7 @@ public class EvalJunkDetector {
         List<Float> results = new ArrayList<>(n);
         for (int i = 0; i < n; i++) {
             String s = reverseCodepoints(pickSubstring(sentences, targetLen, rng));
-            JunkScore score = detector.score(s);
+            TextQualityScore score = detector.score(s);
             if (!score.isUnknown()) {
                 results.add(score.getZScore());
             }
@@ -450,7 +472,35 @@ public class EvalJunkDetector {
             String s = pickSubstring(sentences, targetLen, rng);
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             shuffleBytes(bytes, rng);
-            JunkScore score = detector.score(bytes);
+            TextQualityScore score = detector.score(new String(bytes, StandardCharsets.ISO_8859_1));
+            if (!score.isUnknown()) {
+                results.add(score.getZScore());
+            }
+        }
+        return results;
+    }
+
+    private static List<Float> scoreWrongCodec(JunkDetector detector, List<String> sentences,
+                                                int targetLen, int n, Random rng) {
+        List<Float> results = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            String s = pickSubstring(sentences, targetLen, rng);
+            byte[] garbled = wrongCodecBytes(s.getBytes(StandardCharsets.UTF_8));
+            TextQualityScore score = detector.score(new String(garbled, StandardCharsets.UTF_8));
+            if (!score.isUnknown()) {
+                results.add(score.getZScore());
+            }
+        }
+        return results;
+    }
+
+    private static List<Float> scoreByteSwapped(JunkDetector detector, List<String> sentences,
+                                                 int targetLen, int n, Random rng) {
+        List<Float> results = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            String s = pickSubstring(sentences, targetLen, rng);
+            byte[] swapped = swapByteOrder(s.getBytes(StandardCharsets.UTF_8));
+            TextQualityScore score = detector.score(new String(swapped, StandardCharsets.ISO_8859_1));
             if (!score.isUnknown()) {
                 results.add(score.getZScore());
             }
@@ -462,12 +512,47 @@ public class EvalJunkDetector {
     // Distortion primitives
     // -----------------------------------------------------------------------
 
+    /**
+     * Injects control characters (0x01–0x09, i.e. below newline/0x0A, excluding null)
+     * at the given rate.  These bytes never appear in clean natural-language UTF-8 text
+     * and simulate binary data leaking into a text stream.  0x00 is excluded because
+     * null bytes cause problems in many text-processing pipelines.
+     */
     static void injectRandomBytes(byte[] bytes, double rate, Random rng) {
         for (int i = 0; i < bytes.length; i++) {
             if (rng.nextDouble() < rate) {
-                bytes[i] = (byte) (0x80 | rng.nextInt(128));
+                // 0x01..0x09 inclusive (9 values): SOH STX ETX EOT ENQ ACK BEL BS HT
+                bytes[i] = (byte) (0x01 + rng.nextInt(9));
             }
         }
+    }
+
+    /**
+     * Wrong-codec distortion: the UTF-8 bytes of the sentence are re-interpreted
+     * as ISO-8859-1 (Latin-1) and then re-encoded as UTF-8.  This is the classic
+     * "saved as UTF-8, displayed as Latin-1" mojibake: every byte in 0x80–0xFF
+     * becomes a two-byte UTF-8 sequence, doubling the byte length of non-ASCII runs
+     * and producing bogus accented-Latin bigrams.
+     */
+    static byte[] wrongCodecBytes(byte[] utf8) {
+        String misread = new String(utf8, StandardCharsets.ISO_8859_1);
+        return misread.getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Byte-swap distortion: swaps each adjacent pair of bytes — (0,1), (2,3), etc.
+     * If the array has an odd length the last byte is left unchanged.
+     * Simulates reading a 2-byte encoding (UTF-16, UCS-2, CP932 two-byte sequences)
+     * with the wrong byte order.
+     */
+    static byte[] swapByteOrder(byte[] bytes) {
+        byte[] out = bytes.clone();
+        for (int i = 0; i + 1 < out.length; i += 2) {
+            byte tmp = out[i];
+            out[i] = out[i + 1];
+            out[i + 1] = tmp;
+        }
+        return out;
     }
 
     static void shuffleBytes(byte[] bytes, Random rng) {

@@ -392,28 +392,33 @@ The default 50 MB byte budget is a proof-of-concept setting.  For production:
 
 == Smoke tests
 
-Five smoke tests in `JunkDetectorSmokeTest` verify the bundled model:
+Five smoke tests in `JunkDetectorSmokeTest` verify the bundled model.
+All tests use the `TextQualityDetector` interface and return `TextQualityScore`
+or `TextQualityComparison` from `tika-core`.
 
 [cols="1,3"]
 |===
 | Test | What it checks
 
 | `cleanVsGarbage`
-| Clean English z-score > random high-byte garbage z-score.
+| Clean English `TextQualityScore` z-score > random high-byte garbage z-score.
+  Garbage is decoded from ISO-8859-1 to produce a scoreable string.
 
 | `forwardVsReversedArabic`
 | Forward Arabic z-score > codepoint-reversed Arabic z-score.
+  Reversal is done at codepoint (not byte) granularity, preserving valid Unicode.
 
 | `cp1252VsCp1257OnBalticText`
-| `compare()` picks cp1257 as the correct encoding for Lithuanian text.
+| `compare()` returns `TextQualityComparison` picking cp1257 for Lithuanian text.
   Delta > 0.1 (weak; Baltic limitation documented above).
 
 | `cp1252VsCp1251OnRussianText`
-| `compare()` picks cp1251 as the correct encoding for Russian text.
-  Delta > 1.0 (strong; Cyrillic bigrams are highly distinctive).
+| `compare()` picks cp1251 for Russian text.  Delta > 1.0 (strong; Cyrillic
+  bigrams are highly distinctive).
 
 | `cleanVsShuffledCjk`
-| Clean Japanese UTF-8 z-score > byte-shuffled Japanese z-score.
+| Clean Japanese z-score > byte-shuffled Japanese z-score.
+  Shuffled bytes are decoded as ISO-8859-1 to produce a scoreable string.
 |===
 
 NOTE: Codepoint reversal of LTR scripts (Russian, Latin) is **not** a useful

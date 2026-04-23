@@ -40,6 +40,11 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-ml-core</artifactId>
       <version>${revision}</version>
     </dependency>
