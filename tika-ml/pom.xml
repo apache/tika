@@ -34,6 +34,7 @@
   <modules>
     <module>tika-ml-core</module>
     <module>tika-ml-chardetect</module>
+    <module>tika-ml-junkdetect</module>
   </modules>
 
   <build>
