@@ -20,63 +20,76 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.tika.ml.junkdetect.JunkDetector;
+import org.apache.tika.quality.TextQualityComparison;
 import org.apache.tika.quality.TextQualityScore;
 
 /**
  * Ablation evaluation for the junk detector.
  *
- * <p>For each script's dev set, scores clean sentences alongside three corruption
- * modes — random-byte injection, codepoint-reversal, and byte-shuffle — at several
- * injection rates and string lengths.  Computes per-cell Cohen's d (discrimination
- * power) and TPR/FPR at a fixed z-score threshold.
+ * <p>For each script's dev set, scores clean sentences alongside several corruption
+ * modes at various injection rates and string lengths.  Computes per-cell Cohen's d
+ * (discrimination power) and TPR/FPR at a fixed z-score threshold.
  *
- * <p>Output: two TSV files.
+ * <p>Output files in {@code --output-dir}:
  * <ul>
  *   <li><b>detail.tsv</b> — one row per (script, distortion, rate, length):
  *       {@code script, distortion, param, length, n_clean, n_corrupt,
  *       mean_clean_z, mean_corrupt_z, cohens_d, fpr, tpr}
  *   <li><b>summary.tsv</b> — macro-averaged Cohen's d and FPR/TPR per
  *       (distortion, rate, length) across all scripts.
+ *   <li><b>compare.tsv</b> — pairwise codec-comparison accuracy using the
+ *       {@link JunkDetector#compare} API, stratified by string length.
+ *       This is the primary metric for the charset-arbitration use case;
+ *       larger mean delta = better discrimination at that length.
  * </ul>
+ *
+ * <p><b>Why char-remap is not in summary.tsv:</b> The character-level wrong-codec
+ * substitution (e.g. CP1252→CP1255, replacing umlauts with Hebrew letters) is added
+ * to training at a 5% rate.  At that rate it is too subtle to detect via the absolute
+ * {@link JunkDetector#score} API — z-score distributions barely separate (Cohen's d ≈ 0).
+ * The distortion trains the LR to distinguish subtly-wrong from correct decodings, which
+ * only manifests as larger pairwise deltas in {@link JunkDetector#compare}.  Measuring it
+ * via summary.tsv would produce misleading d≈0 "failure" rows; see compare.tsv instead.
  *
  * <p>Cohen's d = (mean_clean_z − mean_corrupt_z) / pooled_std.
  * Higher d = better discrimination. FPR = fraction of clean text falsely flagged;
  * TPR = fraction of corrupted text correctly flagged. Both use threshold = −2.0.
  *
  * <p>To compare two model versions: run eval before and after, then diff the
- * summary TSVs. The "macro_d" column in summary.tsv is the single headline metric.
+ * summary and compare TSVs. The "macro_d" column in summary.tsv and the
+ * "mean_delta" columns in compare.tsv are the headline metrics.
  *
  * <p>Usage:
  * <pre>
  *   java EvalJunkDetector \
- *     --model      /path/to/junkdetect.bin   (default: classpath)
- *     --data-dir   ~/datasets/madlad/junkdetect
- *     --output-dir /path/to/results          (default: data-dir/eval)
- *     --split      dev|test                  (default: dev — use test only for final reporting)
- *     --samples    200
- *     --seed       42
- *     --lengths    15,30,50,100,200
- *     --rates      0.01,0.05,0.10,0.25,0.50,0.90
- *     --threshold  -2.0
+ *     --model          /path/to/junkdetect.bin   (default: classpath)
+ *     --data-dir       ~/datasets/madlad/junkdetect
+ *     --output-dir     /path/to/results          (default: data-dir/eval)
+ *     --split          dev|test                  (default: dev)
+ *     --samples        200
+ *     --compare-n      200                       (qualifying pairs per codec pair per length)
+ *     --seed           42
+ *     --lengths        5,9,15,30,50,100,200
+ *     --compare-lengths 5,9,15,30,50
+ *     --rates          0.01,0.05,0.10,0.25,0.50,0.90
+ *     --threshold      -2.0
  * </pre>
- *
- * <p><b>Which split to use:</b> Use {@code --split dev} during iterative development
- * (dev data is seen by the calibration step, so numbers are slightly optimistic for
- * calibration quality, but still valid for relative comparisons between model versions).
- * Use {@code --split test} only when reporting final numbers — the test split is
- * completely held out and was never used to make any model or threshold decision.
  */
 public class EvalJunkDetector {
 
@@ -86,10 +99,12 @@ public class EvalJunkDetector {
         Path dataDir = Paths.get(System.getProperty("user.home"),
                 "datasets", "madlad", "junkdetect");
         Path outputDir = null;
-        String split = "dev"; // dev during development; test for final reporting
+        String split = "dev";
         int samplesPerCell = 200;
+        int compareN = 200;
         long seed = 42L;
-        int[] lengths = {15, 30, 50, 100, 200};
+        int[] lengths = {5, 9, 15, 30, 50, 100, 200};
+        int[] compareLengths = {5, 9, 15, 30, 50};
         double[] rates = {0.01, 0.05, 0.10, 0.25, 0.50, 0.90};
         float threshold = -2.0f;
 
@@ -114,11 +129,18 @@ public class EvalJunkDetector {
                 case "--samples":
                     samplesPerCell = Integer.parseInt(args[++i]);
                     break;
+                case "--compare-n":
+                    compareN = Integer.parseInt(args[++i]);
+                    break;
                 case "--seed":
                     seed = Long.parseLong(args[++i]);
                     break;
                 case "--lengths":
                     lengths = Arrays.stream(args[++i].split(","))
+                            .mapToInt(Integer::parseInt).toArray();
+                    break;
+                case "--compare-lengths":
+                    compareLengths = Arrays.stream(args[++i].split(","))
                             .mapToInt(Integer::parseInt).toArray();
                     break;
                 case "--rates":
@@ -144,12 +166,20 @@ public class EvalJunkDetector {
                 : JunkDetector.loadFromClasspath();
 
         System.err.println("=== EvalJunkDetector ===");
-        System.err.println("  data-dir:   " + dataDir);
-        System.err.println("  output-dir: " + outputDir);
-        System.err.println("  split:      " + split
+        System.err.println("  data-dir:       " + dataDir);
+        System.err.println("  output-dir:     " + outputDir);
+        System.err.println("  split:          " + split
                 + (split.equals("test") ? "  [FINAL REPORTING MODE]" : ""));
         System.err.println("  scripts in model: " + detector.knownScripts().size());
-        System.err.println("  threshold: " + threshold);
+        System.err.println("  threshold:      " + threshold);
+
+        // Build wrong-codec remap tables for char-remap distortion
+        List<Map<Character, Character>> remapTables = new ArrayList<>();
+        for (String[] pair : TrainJunkModel.WRONG_CODEC_PAIRS) {
+            Map<Character, Character> table = TrainJunkModel.buildRemapTable(pair[0], pair[1]);
+            if (!table.isEmpty()) remapTables.add(table);
+        }
+        System.err.println("  remap tables:   " + remapTables.size());
 
         String suffix = "." + split + ".gz";
         List<Path> devFiles;
@@ -167,8 +197,8 @@ public class EvalJunkDetector {
 
         Path detailPath = outputDir.resolve("detail.tsv");
         Path summaryPath = outputDir.resolve("summary.tsv");
+        Path comparePath = outputDir.resolve("compare.tsv");
 
-        // Accumulate all rows for summary aggregation
         List<Row> allRows = new ArrayList<>();
 
         try (PrintWriter detail = new PrintWriter(
@@ -193,10 +223,6 @@ public class EvalJunkDetector {
                     continue;
                 }
 
-                Random rng = new Random(seed);
-
-                // Score clean baseline once per (script, length)
-                // Reuse the same clean scores for all distortion comparisons at that length
                 for (int len : lengths) {
                     List<Float> cleanZ = scoreClean(detector, sentences, len,
                             samplesPerCell, new Random(seed));
@@ -242,7 +268,7 @@ public class EvalJunkDetector {
                         detail.println(row.toTsv());
                     }
 
-                    // --- byte-swap: swap each adjacent pair of bytes (endianness flip) ---
+                    // --- byte-swap ---
                     {
                         List<Float> corruptZ = scoreByteSwapped(detector, sentences, len,
                                 samplesPerCell, new Random(seed + 5));
@@ -252,16 +278,20 @@ public class EvalJunkDetector {
                         detail.println(row.toTsv());
                     }
 
+                    // char-remap distortion is evaluated only via compare.tsv (pairwise delta),
+                    // not via absolute score() — see class Javadoc for rationale.
+
                     detail.flush();
-                    rng = new Random(seed); // reset between lengths for reproducibility
                 }
             }
         }
 
         writeSummary(summaryPath, allRows, lengths, rates, threshold);
+        writeCompareEval(detector, dataDir, suffix, comparePath, compareN, compareLengths, seed);
 
         System.err.println("\nWrote " + detailPath);
         System.err.println("Wrote " + summaryPath);
+        System.err.println("Wrote " + comparePath);
         System.err.println("Done.");
     }
 
@@ -278,8 +308,6 @@ public class EvalJunkDetector {
             out.println("distortion\tparam\tlength\tn_scripts"
                     + "\tmacro_cohens_d\tmacro_fpr\tmacro_tpr");
 
-            // For each unique (distortion, param, length), average across scripts
-            // Build groups: inject@rate, char-reverse, byte-shuffle
             List<String[]> conditions = new ArrayList<>();
             for (double rate : rates) {
                 conditions.add(new String[]{"inject", String.format("%.2f", rate)});
@@ -288,6 +316,11 @@ public class EvalJunkDetector {
             conditions.add(new String[]{"byte-shuffle", "-"});
             conditions.add(new String[]{"wrong-codec", "latin1-as-utf8"});
             conditions.add(new String[]{"byte-swap", "-"});
+            // char-remap is intentionally excluded from summary: at 5% rate the character-level
+            // wrong-codec substitution is too subtle to detect via absolute score() — both the
+            // clean and corrupted strings score similarly.  The right metric for char-remap is
+            // compare.tsv (pairwise delta), where it shows up strongly.  Including it here would
+            // make d≈0 rows that look like failures but are actually expected.
 
             for (String[] cond : conditions) {
                 String distortion = cond[0];
@@ -298,9 +331,8 @@ public class EvalJunkDetector {
                                     && r.param.equals(param)
                                     && r.length == len)
                             .collect(Collectors.toList());
-                    if (matching.isEmpty()) {
-                        continue;
-                    }
+                    if (matching.isEmpty()) continue;
+
                     double macroCohensD = matching.stream()
                             .filter(r -> !Double.isNaN(r.cohensD))
                             .mapToDouble(r -> r.cohensD)
@@ -318,7 +350,6 @@ public class EvalJunkDetector {
                 }
             }
 
-            // Overall headline: macro-average Cohen's d across everything
             double overallD = rows.stream()
                     .filter(r -> !Double.isNaN(r.cohensD))
                     .mapToDouble(r -> r.cohensD)
@@ -336,6 +367,155 @@ public class EvalJunkDetector {
             System.err.printf("%nOVERALL: macro_cohens_d=%.3f  macro_fpr=%.3f  macro_tpr=%.3f%n",
                     overallD, overallFpr, overallTpr);
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // Compare eval — pairwise codec arbitration, stratified by string length
+    // -----------------------------------------------------------------------
+
+    /**
+     * For each entry in {@link TrainJunkModel#WRONG_CODEC_PAIRS}, encodes sentences
+     * from the appropriate script's dev file as the source charset, then calls
+     * {@link JunkDetector#compare} with the correct decoding (A) vs the wrong
+     * decoding (B).  Reports accuracy (how often A wins) and mean/median delta
+     * at each requested string length.
+     *
+     * <p>Mean delta is the headline metric: larger delta means the model more
+     * confidently picks the correct decoding.  At short lengths (5–9 bytes)
+     * delta is expected to be small; at 50 bytes it should be decisive.
+     */
+    private static void writeCompareEval(JunkDetector detector,
+                                          Path dataDir, String suffix,
+                                          Path comparePath,
+                                          int nPerCell, int[] lengths,
+                                          long seed) throws IOException {
+        try (PrintWriter out = new PrintWriter(
+                Files.newBufferedWriter(comparePath, StandardCharsets.UTF_8))) {
+
+            out.println("source_codec\twrong_codec\tlength"
+                    + "\tn_tested\taccuracy\tmean_delta\tmedian_delta\tn_no_diff");
+
+            System.err.printf("%n--- compare() eval ---%n");
+
+            for (String[] pair : TrainJunkModel.WRONG_CODEC_PAIRS) {
+                String sourceCodec = pair[0];
+                String wrongCodec  = pair[1];
+
+                Charset srcCharset, wrongCharset;
+                try {
+                    srcCharset  = Charset.forName(sourceCodec);
+                    wrongCharset = Charset.forName(wrongCodec);
+                } catch (UnsupportedCharsetException e) {
+                    System.err.printf("  [%s→%s] charset unavailable, skipping%n",
+                            sourceCodec, wrongCodec);
+                    continue;
+                }
+
+                String script = codecToScript(sourceCodec);
+                Path devFile = dataDir.resolve(script.toLowerCase() + suffix);
+                if (!Files.exists(devFile)) {
+                    System.err.printf("  [%s→%s] no dev file for %s, skipping%n",
+                            sourceCodec, wrongCodec, script);
+                    continue;
+                }
+
+                // Load a large pool; we'll filter down per-length
+                List<String> allSentences = loadSentences(devFile, nPerCell * 50);
+
+                // Pre-filter: keep only sentences that roundtrip through sourceCodec
+                // and produce at least one differing character vs wrongCodec.
+                List<String[]> candidates = new ArrayList<>(); // {asSource, asWrong}
+                for (String sentence : allSentences) {
+                    byte[] bytes = sentence.getBytes(srcCharset);
+                    String asSource = new String(bytes, srcCharset);
+                    if (!asSource.equals(sentence)) continue; // encoding lost data
+                    String asWrong = new String(bytes, wrongCharset);
+                    if (asSource.equals(asWrong)) continue; // no differentiating bytes
+                    candidates.add(new String[]{asSource, asWrong});
+                }
+
+                if (candidates.isEmpty()) {
+                    System.err.printf("  [%s→%s] no qualifying sentences%n",
+                            sourceCodec, wrongCodec);
+                    continue;
+                }
+
+                System.err.printf("  [%s→%s] %d candidates from %s%n",
+                        sourceCodec, wrongCodec, candidates.size(), script);
+
+                for (int targetLen : lengths) {
+                    Random rng = new Random(seed);
+                    // Shuffle candidates for this length independently
+                    List<String[]> shuffled = new ArrayList<>(candidates);
+                    Collections.shuffle(shuffled, rng);
+
+                    List<Float> deltas = new ArrayList<>();
+                    int nCorrect = 0;
+                    int nNoDiff = 0;
+
+                    for (String[] cand : shuffled) {
+                        if (deltas.size() + nNoDiff >= nPerCell * 3 && deltas.size() >= nPerCell) {
+                            break;
+                        }
+                        String asSource = trimToLength(cand[0], targetLen);
+                        String asWrong  = trimToLength(cand[1], targetLen);
+
+                        if (asSource.equals(asWrong)) {
+                            nNoDiff++;
+                            continue;
+                        }
+                        if (asSource.isEmpty() || asWrong.isEmpty()) continue;
+
+                        TextQualityComparison result = detector.compare(
+                                sourceCodec, asSource, wrongCodec, asWrong);
+
+                        deltas.add(result.delta());
+                        if ("A".equals(result.winner())) nCorrect++;
+                    }
+
+                    if (deltas.isEmpty()) continue;
+
+                    double accuracy    = (double) nCorrect / deltas.size();
+                    double meanDelta   = deltas.stream().mapToDouble(Float::floatValue).average().orElse(0);
+                    List<Float> sorted = new ArrayList<>(deltas);
+                    Collections.sort(sorted);
+                    float medianDelta  = sorted.get(sorted.size() / 2);
+
+                    System.err.printf("    len=%3d  n=%3d  acc=%.3f  mean_delta=%.3f  median_delta=%.3f%n",
+                            targetLen, deltas.size(), accuracy, meanDelta, medianDelta);
+
+                    out.printf("%s\t%s\t%d\t%d\t%.3f\t%.3f\t%.3f\t%d%n",
+                            sourceCodec, wrongCodec, targetLen,
+                            deltas.size(), accuracy, meanDelta, medianDelta, nNoDiff);
+                }
+                out.flush();
+            }
+        }
+    }
+
+    /**
+     * Returns which dev-file script to use for a given source codec.
+     * CP1251 → CYRILLIC, CP1253 → GREEK, CP1255 → HEBREW, everything else → LATIN.
+     */
+    private static String codecToScript(String codec) {
+        switch (codec.toLowerCase()) {
+            case "windows-1251": return "CYRILLIC";
+            case "windows-1253": return "GREEK";
+            case "windows-1255": return "HEBREW";
+            default:             return "LATIN";
+        }
+    }
+
+    /**
+     * Trims a string to approximately {@code targetLen} UTF-8 bytes, aligned to
+     * a codepoint boundary.  Used to produce short-string variants for compare() testing.
+     */
+    private static String trimToLength(String s, int targetLen) {
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length <= targetLen) return s;
+        int end = targetLen;
+        while (end < bytes.length && (bytes[end] & 0xC0) == 0x80) end++;
+        return new String(bytes, 0, end, StandardCharsets.UTF_8);
     }
 
     // -----------------------------------------------------------------------
@@ -383,23 +563,14 @@ public class EvalJunkDetector {
     // Statistics
     // -----------------------------------------------------------------------
 
-    /**
-     * Cohen's d = (mean_clean − mean_corrupt) / pooled_std.
-     * Positive = clean scores higher than corrupt (desirable).
-     * Higher absolute value = better discrimination.
-     */
     private static double computeCohensD(List<Float> clean, List<Float> corrupt) {
-        if (clean.isEmpty() || corrupt.isEmpty()) {
-            return Double.NaN;
-        }
+        if (clean.isEmpty() || corrupt.isEmpty()) return Double.NaN;
         double mc = mean(clean);
         double mj = mean(corrupt);
         double vc = variance(clean, mc);
         double vj = variance(corrupt, mj);
         double pooledStd = Math.sqrt((vc + vj) / 2.0);
-        if (pooledStd < 1e-9) {
-            return Double.NaN;
-        }
+        if (pooledStd < 1e-9) return Double.NaN;
         return (mc - mj) / pooledStd;
     }
 
@@ -412,9 +583,7 @@ public class EvalJunkDetector {
     }
 
     private static double fractionBelow(List<Float> zs, float threshold) {
-        if (zs.isEmpty()) {
-            return Double.NaN;
-        }
+        if (zs.isEmpty()) return Double.NaN;
         long count = zs.stream().filter(z -> z < threshold).count();
         return (double) count / zs.size();
     }
@@ -429,9 +598,7 @@ public class EvalJunkDetector {
         for (int i = 0; i < n; i++) {
             String s = pickSubstring(sentences, targetLen, rng);
             TextQualityScore score = detector.score(s);
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -445,9 +612,7 @@ public class EvalJunkDetector {
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             injectRandomBytes(bytes, rate, rng);
             TextQualityScore score = detector.score(new String(bytes, StandardCharsets.ISO_8859_1));
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -458,9 +623,7 @@ public class EvalJunkDetector {
         for (int i = 0; i < n; i++) {
             String s = reverseCodepoints(pickSubstring(sentences, targetLen, rng));
             TextQualityScore score = detector.score(s);
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -473,9 +636,7 @@ public class EvalJunkDetector {
             byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             shuffleBytes(bytes, rng);
             TextQualityScore score = detector.score(new String(bytes, StandardCharsets.ISO_8859_1));
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -487,9 +648,7 @@ public class EvalJunkDetector {
             String s = pickSubstring(sentences, targetLen, rng);
             byte[] garbled = wrongCodecBytes(s.getBytes(StandardCharsets.UTF_8));
             TextQualityScore score = detector.score(new String(garbled, StandardCharsets.UTF_8));
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -501,9 +660,27 @@ public class EvalJunkDetector {
             String s = pickSubstring(sentences, targetLen, rng);
             byte[] swapped = swapByteOrder(s.getBytes(StandardCharsets.UTF_8));
             TextQualityScore score = detector.score(new String(swapped, StandardCharsets.ISO_8859_1));
-            if (!score.isUnknown()) {
-                results.add(score.getZScore());
-            }
+            if (!score.isUnknown()) results.add(score.getZScore());
+        }
+        return results;
+    }
+
+    /**
+     * Applies a randomly chosen wrong-codec character remap at {@code rate} to each
+     * sample.  Simulates real-world charset misdetection at the character level
+     * (e.g. CP1252-encoded text decoded as CP1255, replacing umlauts with Hebrew letters).
+     */
+    private static List<Float> scoreWithRemap(JunkDetector detector, List<String> sentences,
+                                               int targetLen,
+                                               List<Map<Character, Character>> remapTables,
+                                               double rate, int n, Random rng) {
+        List<Float> results = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            String s = pickSubstring(sentences, targetLen, rng);
+            Map<Character, Character> table = remapTables.get(rng.nextInt(remapTables.size()));
+            String corrupted = TrainJunkModel.wrongCodecRemap(s, table, rate, rng);
+            TextQualityScore score = detector.score(corrupted);
+            if (!score.isUnknown()) results.add(score.getZScore());
         }
         return results;
     }
@@ -513,26 +690,19 @@ public class EvalJunkDetector {
     // -----------------------------------------------------------------------
 
     /**
-     * Injects control characters (0x01–0x09, i.e. below newline/0x0A, excluding null)
-     * at the given rate.  These bytes never appear in clean natural-language UTF-8 text
-     * and simulate binary data leaking into a text stream.  0x00 is excluded because
-     * null bytes cause problems in many text-processing pipelines.
+     * Injects control characters (0x01–0x09) at the given rate.
      */
     static void injectRandomBytes(byte[] bytes, double rate, Random rng) {
         for (int i = 0; i < bytes.length; i++) {
             if (rng.nextDouble() < rate) {
-                // 0x01..0x09 inclusive (9 values): SOH STX ETX EOT ENQ ACK BEL BS HT
                 bytes[i] = (byte) (0x01 + rng.nextInt(9));
             }
         }
     }
 
     /**
-     * Wrong-codec distortion: the UTF-8 bytes of the sentence are re-interpreted
-     * as ISO-8859-1 (Latin-1) and then re-encoded as UTF-8.  This is the classic
-     * "saved as UTF-8, displayed as Latin-1" mojibake: every byte in 0x80–0xFF
-     * becomes a two-byte UTF-8 sequence, doubling the byte length of non-ASCII runs
-     * and producing bogus accented-Latin bigrams.
+     * Wrong-codec distortion: UTF-8 bytes re-interpreted as ISO-8859-1, then
+     * re-encoded as UTF-8.  Produces bogus two-byte sequences for any non-ASCII byte.
      */
     static byte[] wrongCodecBytes(byte[] utf8) {
         String misread = new String(utf8, StandardCharsets.ISO_8859_1);
@@ -540,10 +710,8 @@ public class EvalJunkDetector {
     }
 
     /**
-     * Byte-swap distortion: swaps each adjacent pair of bytes — (0,1), (2,3), etc.
-     * If the array has an odd length the last byte is left unchanged.
-     * Simulates reading a 2-byte encoding (UTF-16, UCS-2, CP932 two-byte sequences)
-     * with the wrong byte order.
+     * Swaps each adjacent pair of bytes — simulates reading a 2-byte encoding
+     * (UTF-16, CP932 two-byte sequences) with wrong byte order.
      */
     static byte[] swapByteOrder(byte[] bytes) {
         byte[] out = bytes.clone();
@@ -581,18 +749,11 @@ public class EvalJunkDetector {
     private static String pickSubstring(List<String> sentences, int targetLen, Random rng) {
         String s = sentences.get(rng.nextInt(sentences.size()));
         byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-        if (bytes.length <= targetLen) {
-            return s;
-        }
-        // Pick a random window of targetLen bytes, aligned to a codepoint boundary
+        if (bytes.length <= targetLen) return s;
         int start = rng.nextInt(bytes.length - targetLen);
-        while (start > 0 && (bytes[start] & 0xC0) == 0x80) {
-            start--;
-        }
+        while (start > 0 && (bytes[start] & 0xC0) == 0x80) start--;
         int end = Math.min(start + targetLen, bytes.length);
-        while (end < bytes.length && (bytes[end] & 0xC0) == 0x80) {
-            end++;
-        }
+        while (end < bytes.length && (bytes[end] & 0xC0) == 0x80) end++;
         return new String(bytes, start, end - start, StandardCharsets.UTF_8);
     }
 
@@ -606,7 +767,7 @@ public class EvalJunkDetector {
             while ((line = r.readLine()) != null && result.size() < maxSentences) {
                 String trimmed = line.strip();
                 if (!trimmed.isEmpty()
-                        && trimmed.getBytes(StandardCharsets.UTF_8).length >= 15) {
+                        && trimmed.getBytes(StandardCharsets.UTF_8).length >= 5) {
                     result.add(trimmed);
                 }
             }

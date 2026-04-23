@@ -22,16 +22,21 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -41,7 +46,7 @@ import java.util.zip.GZIPOutputStream;
  * {@link BuildJunkTrainingData}.
  *
  * <p>For each script group (identified by a {@code {script}.train.gz} file),
- * three features are trained and then combined by a per-script logistic
+ * four features are trained and then combined by a per-script logistic
  * regression classifier:
  * <ol>
  *   <li><b>Byte-bigram log-probability</b>: 256×256 table of log P(b|a) over
@@ -54,30 +59,42 @@ import java.util.zip.GZIPOutputStream;
  *       ranges ([0x01–0x08, 0x0B, 0x0C, 0x0E–0x1F, 0x7F]).  Stored as
  *       {@code −fraction} so the z-score convention matches the other features
  *       (higher = cleaner).</li>
+ *   <li><b>Script-transition log-probability</b>: global table of log P(script_b | script_a)
+ *       over raw {@link Character.UnicodeScript} values (excluding COMMON, INHERITED, UNKNOWN),
+ *       pooled across all training scripts (z4).</li>
  * </ol>
  *
- * <p>All three features are calibrated (mu/sigma) on the dev split so their
+ * <p>All four features are calibrated (mu/sigma) on the dev split so their
  * z-scores are on a common scale.  A per-script binary logistic regression
- * classifier is then fit on (z1, z2, z3) using clean dev windows and corrupted
+ * classifier is then fit on (z1, z2, z3, z4) using clean dev windows and corrupted
  * versions (inject@5%, char-shuffle) as training examples.  The learned weights
  * replace the fixed equal-weight average, allowing the model to automatically
  * downweight noisy features (e.g. high-variance block transitions for MYANMAR)
  * and upweight informative ones (e.g. control-byte fraction for inject@0.01).
  *
  * <p>At inference, the final score is the linear combination
- * {@code w1*z1 + w2*z2 + w3*z3 + bias}; positive values indicate clean text.
+ * {@code w1*z1 + w2*z2 + w3*z3 + w4*z4 + bias}; positive values indicate clean text.
  * The natural threshold is 0 (probability 0.5); use a negative threshold for
  * more conservative junk detection.
  *
- * <p>Output format: {@code JUNKDET1} gzipped binary, <b>version 3</b>.
- * Version 1 (bigrams only) and version 2 (equal-weight average) files can
+ * <p>Output format: {@code JUNKDET1} gzipped binary, <b>version 4</b>.
+ * Version 1 (bigrams only), version 2 (equal-weight average), and version 3 files can
  * still be loaded by {@code JunkDetector}.
  *
  * <pre>
  *   [8 bytes]  magic "JUNKDET1" (ASCII)
- *   [1 byte]   version = 3
+ *   [1 byte]   version = 4
  *   [4 bytes]  num_scripts (big-endian int)
  *   [2 bytes]  block_N — number of distinct named Unicode blocks + 1 (unassigned)
+ *   // Global script-transition section (version 4+)
+ *   [1 byte]   num_script_buckets
+ *   for each bucket:
+ *     [2 bytes]     name length (big-endian ushort)
+ *     [name bytes]  bucket name (UnicodeScript.name() or "OTHER")
+ *   [num_script_buckets² × 4 bytes]  script-transition log-prob table
+ *   [4 bytes]  mu4   (float32 big-endian)
+ *   [4 bytes]  sigma4 (float32 big-endian)
+ *   // Per-script data (same as v3 but num_features = 4)
  *   for each script (sorted by name):
  *     [2 bytes]       name length (big-endian ushort)
  *     [name bytes]    script name (UTF-8)
@@ -93,17 +110,18 @@ import java.util.zip.GZIPOutputStream;
  *     [4 bytes]       mu3   (float32 big-endian)
  *     [4 bytes]       sigma3 (float32 big-endian)
  *     // Linear classifier weights
- *     [1 byte]        num_features (= 3)
+ *     [1 byte]        num_features (= 4 for v4)
  *     [4 bytes]       w1   (float32 big-endian)
  *     [4 bytes]       w2   (float32 big-endian)
  *     [4 bytes]       w3   (float32 big-endian)
+ *     [4 bytes]       w4   (float32 big-endian)
  *     [4 bytes]       bias (float32 big-endian)
  * </pre>
  */
 public class TrainJunkModel {
 
     static final String MAGIC = "JUNKDET1";
-    static final byte VERSION = 3;
+    static final byte VERSION = 4;
 
     /** Number of clean (and corrupted) windows used to train the per-script classifier. */
     static final int NUM_CLASSIFIER_SAMPLES = 500;
@@ -120,6 +138,28 @@ public class TrainJunkModel {
      * approximately z = −2, providing meaningful signal.
      */
     static final float CONTROL_BYTE_MIN_SIGMA = 0.005f;
+
+    /**
+     * Codec pairs used to build wrong-codec remap tables for training.
+     * Each entry is {sourceCodec, wrongCodec}: text encoded in sourceCodec but
+     * decoded as wrongCodec.  Pairs within the same script family (e.g. CP1250↔CP1252)
+     * produce wrong-accent distortions that shift characters between Unicode blocks
+     * while staying in LATIN.  Cross-script pairs (CP1252↔CP1255) additionally change
+     * the Unicode script, which z4 also detects.
+     */
+    static final String[][] WRONG_CODEC_PAIRS = {
+        {"windows-1252", "windows-1250"}, // Western ↔ Central European (wrong accents)
+        {"windows-1250", "windows-1252"}, // reverse
+        {"windows-1252", "windows-1257"}, // Western ↔ Baltic (wrong accents)
+        {"windows-1257", "windows-1252"}, // reverse
+        {"windows-1252", "windows-1254"}, // Western ↔ Turkish (wrong accents)
+        {"windows-1251", "windows-1252"}, // Cyrillic → Latin (cross-script)
+        {"windows-1252", "windows-1251"}, // Latin → Cyrillic (cross-script)
+        {"windows-1253", "windows-1252"}, // Greek → Latin (cross-script)
+        {"windows-1252", "windows-1253"}, // Latin → Greek (cross-script)
+        {"windows-1255", "windows-1252"}, // Hebrew → Latin (cross-script)
+        {"windows-1252", "windows-1255"}, // Latin → Hebrew (the German vcard case)
+    };
 
     /**
      * Target byte-lengths used for calibration sampling, matching the evaluator defaults.
@@ -151,7 +191,7 @@ public class TrainJunkModel {
             }
         }
 
-        System.out.println("=== TrainJunkModel ===");
+        System.out.println("=== TrainJunkModel (v4) ===");
         System.out.println("  data-dir: " + dataDir);
         System.out.println("  output:   " + output);
 
@@ -163,7 +203,7 @@ public class TrainJunkModel {
         System.out.print("Building Unicode named-block index... ");
         long t0 = System.currentTimeMillis();
         Map<Character.UnicodeBlock, Integer> blockIndex = buildBlockIndex();
-        int blockN = blockIndex.size() + 1; // +1 for unassigned bucket
+        int blockN = blockIndex.size() + 1;
         System.out.printf("%d named blocks → table size %d×%d (%dms)%n",
                 blockIndex.size(), blockN, blockN, System.currentTimeMillis() - t0);
 
@@ -173,87 +213,153 @@ public class TrainJunkModel {
         TreeMap<String, float[]> blockCalibrations   = new TreeMap<>();
         TreeMap<String, float[]> controlCalibrations = new TreeMap<>();
         TreeMap<String, float[]> classifierWeights   = new TreeMap<>();
+        TreeMap<String, Path>    devFilePaths        = new TreeMap<>();
+        List<Path>               allTrainFiles       = new ArrayList<>();
+        List<Path>               allDevFiles         = new ArrayList<>();
 
+        List<Path> trainFiles;
         try (var stream = Files.list(dataDir)) {
-            List<Path> trainFiles = stream
+            trainFiles = stream
                     .filter(p -> p.getFileName().toString().endsWith(".train.gz"))
                     .sorted()
                     .toList();
-
-            if (trainFiles.isEmpty()) {
-                System.err.println("ERROR: no *.train.gz files found in " + dataDir);
-                System.exit(1);
-            }
-
-            for (Path trainFile : trainFiles) {
-                String filename = trainFile.getFileName().toString();
-                String script = filename.substring(0, filename.length() - ".train.gz".length())
-                        .toUpperCase();
-                Path devFile = trainFile.getParent().resolve(
-                        filename.replace(".train.gz", ".dev.gz"));
-
-                System.out.printf("%n--- %s ---%n", script);
-
-                t0 = System.currentTimeMillis();
-                System.out.print("  Training byte-bigram table...      ");
-                float[] bigramTable = trainBigramTable(trainFile);
-                System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
-
-                t0 = System.currentTimeMillis();
-                System.out.print("  Training named-block table...      ");
-                float[] blockTable = trainBlockTable(trainFile, blockIndex, blockN);
-                System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
-
-                float[] bigramCal  = new float[]{0f, 1f};
-                float[] blockCal   = new float[]{0f, 1f};
-                float[] controlCal = new float[]{0f, 1f};
-                // Default: equal-weight average (w=[1/3,1/3,1/3], bias=0)
-                float[] weights    = new float[]{1f / 3, 1f / 3, 1f / 3, 0f};
-
-                if (Files.exists(devFile)) {
-                    t0 = System.currentTimeMillis();
-                    System.out.print("  Calibrating byte bigrams on dev... ");
-                    bigramCal = computeBigramCalibration(devFile, bigramTable);
-                    System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
-                            bigramCal[0], bigramCal[1], System.currentTimeMillis() - t0);
-
-                    t0 = System.currentTimeMillis();
-                    System.out.print("  Calibrating named blocks on dev... ");
-                    blockCal = computeBlockCalibration(devFile, blockTable, blockIndex, blockN);
-                    System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
-                            blockCal[0], blockCal[1], System.currentTimeMillis() - t0);
-
-                    t0 = System.currentTimeMillis();
-                    System.out.print("  Calibrating control bytes on dev... ");
-                    controlCal = computeControlByteCalibration(devFile);
-                    System.out.printf("done — mu=%.6f sigma=%.6f (%dms)%n",
-                            controlCal[0], controlCal[1], System.currentTimeMillis() - t0);
-
-                    t0 = System.currentTimeMillis();
-                    System.out.print("  Training linear classifier...      ");
-                    weights = trainClassifier(devFile, bigramTable, bigramCal,
-                            blockTable, blockCal, controlCal, blockIndex, blockN);
-                    System.out.printf("done — w=[%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
-                            weights[0], weights[1], weights[2], weights[3],
-                            System.currentTimeMillis() - t0);
-                } else {
-                    System.out.println("  WARNING: no dev file found, using uncalibrated defaults");
-                }
-
-                bigramTables.put(script, bigramTable);
-                bigramCalibrations.put(script, bigramCal);
-                blockTables.put(script, blockTable);
-                blockCalibrations.put(script, blockCal);
-                controlCalibrations.put(script, controlCal);
-                classifierWeights.put(script, weights);
-            }
         }
 
-        System.out.printf("%nWriting model (%d scripts, blockN=%d) → %s%n",
-                bigramTables.size(), blockN, output);
+        if (trainFiles.isEmpty()) {
+            System.err.println("ERROR: no *.train.gz files found in " + dataDir);
+            System.exit(1);
+        }
+
+        // -----------------------------------------------------------------------
+        // Phase 1 — per-script bigram tables, block tables, calibrations
+        // -----------------------------------------------------------------------
+        System.out.println("\n--- Phase 1: per-script tables and calibrations ---");
+        for (Path trainFile : trainFiles) {
+            String filename = trainFile.getFileName().toString();
+            String script = filename.substring(0, filename.length() - ".train.gz".length())
+                    .toUpperCase();
+            Path devFile = trainFile.getParent().resolve(
+                    filename.replace(".train.gz", ".dev.gz"));
+
+            System.out.printf("%n  [%s]%n", script);
+            allTrainFiles.add(trainFile);
+
+            t0 = System.currentTimeMillis();
+            System.out.print("    Training byte-bigram table...      ");
+            float[] bigramTable = trainBigramTable(trainFile);
+            System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
+
+            t0 = System.currentTimeMillis();
+            System.out.print("    Training named-block table...      ");
+            float[] blockTable = trainBlockTable(trainFile, blockIndex, blockN);
+            System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
+
+            float[] bigramCal  = new float[]{0f, 1f};
+            float[] blockCal   = new float[]{0f, 1f};
+            float[] controlCal = new float[]{0f, 1f};
+
+            if (Files.exists(devFile)) {
+                t0 = System.currentTimeMillis();
+                System.out.print("    Calibrating byte bigrams on dev... ");
+                bigramCal = computeBigramCalibration(devFile, bigramTable);
+                System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
+                        bigramCal[0], bigramCal[1], System.currentTimeMillis() - t0);
+
+                t0 = System.currentTimeMillis();
+                System.out.print("    Calibrating named blocks on dev... ");
+                blockCal = computeBlockCalibration(devFile, blockTable, blockIndex, blockN);
+                System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
+                        blockCal[0], blockCal[1], System.currentTimeMillis() - t0);
+
+                t0 = System.currentTimeMillis();
+                System.out.print("    Calibrating control bytes on dev...");
+                controlCal = computeControlByteCalibration(devFile);
+                System.out.printf("done — mu=%.6f sigma=%.6f (%dms)%n",
+                        controlCal[0], controlCal[1], System.currentTimeMillis() - t0);
+
+                devFilePaths.put(script, devFile);
+                allDevFiles.add(devFile);
+            } else {
+                System.out.println("    WARNING: no dev file found, using uncalibrated defaults");
+            }
+
+            bigramTables.put(script, bigramTable);
+            bigramCalibrations.put(script, bigramCal);
+            blockTables.put(script, blockTable);
+            blockCalibrations.put(script, blockCal);
+            controlCalibrations.put(script, controlCal);
+            // Placeholder — set in phase 3
+            classifierWeights.put(script, new float[]{1f / 4, 1f / 4, 1f / 4, 1f / 4, 0f});
+        }
+
+        // -----------------------------------------------------------------------
+        // Phase 2 — global script-transition table
+        // -----------------------------------------------------------------------
+        System.out.println("\n--- Phase 2: global script-transition table ---");
+        List<String> scriptBuckets = buildScriptBuckets();
+        int numScriptBuckets = scriptBuckets.size();
+        Map<String, Integer> scriptBucketMap = new LinkedHashMap<>();
+        for (int i = 0; i < numScriptBuckets; i++) {
+            scriptBucketMap.put(scriptBuckets.get(i), i);
+        }
+        System.out.printf("  %d script buckets (including OTHER)%n", numScriptBuckets);
+
+        t0 = System.currentTimeMillis();
+        System.out.print("  Training script-transition table... ");
+        float[] scriptTransTable = trainScriptTransitionTable(allTrainFiles, scriptBucketMap, numScriptBuckets);
+        System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
+
+        t0 = System.currentTimeMillis();
+        System.out.print("  Calibrating script transitions...   ");
+        float[] scriptTransCal = calibrateScriptTransitions(allDevFiles, scriptTransTable,
+                scriptBucketMap, numScriptBuckets);
+        System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
+                scriptTransCal[0], scriptTransCal[1], System.currentTimeMillis() - t0);
+
+        t0 = System.currentTimeMillis();
+        System.out.print("  Collecting per-script codepoint pools... ");
+        Map<String, List<Integer>> scriptCodepoints = collectScriptCodepoints(allTrainFiles, 200);
+        System.out.printf("done — %d scripts (%dms)%n",
+                scriptCodepoints.size(), System.currentTimeMillis() - t0);
+
+        System.out.print("  Building wrong-codec remap tables...    ");
+        List<Map<Character, Character>> remapTables = new ArrayList<>();
+        for (String[] pair : WRONG_CODEC_PAIRS) {
+            Map<Character, Character> table = buildRemapTable(pair[0], pair[1]);
+            if (!table.isEmpty()) remapTables.add(table);
+        }
+        System.out.printf("%d tables built%n", remapTables.size());
+
+        // -----------------------------------------------------------------------
+        // Phase 3 — per-script linear classifiers (now with z4)
+        // -----------------------------------------------------------------------
+        System.out.println("\n--- Phase 3: per-script linear classifiers (z1,z2,z3,z4) ---");
+        for (String script : bigramTables.keySet()) {
+            Path devFile = devFilePaths.get(script);
+            if (devFile == null) {
+                System.out.printf("  [%s] WARNING: no dev file, keeping equal-weight defaults%n", script);
+                continue;
+            }
+            t0 = System.currentTimeMillis();
+            System.out.printf("  [%s] training classifier... ", script);
+            float[] weights = trainClassifier(devFile,
+                    bigramTables.get(script), bigramCalibrations.get(script),
+                    blockTables.get(script), blockCalibrations.get(script),
+                    controlCalibrations.get(script), blockIndex, blockN,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets,
+                    scriptCodepoints, remapTables);
+            classifierWeights.put(script, weights);
+            System.out.printf("done — w=[%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
+                    weights[0], weights[1], weights[2], weights[3], weights[4],
+                    System.currentTimeMillis() - t0);
+        }
+
+        System.out.printf("%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
+                bigramTables.size(), blockN, numScriptBuckets, output);
         saveModel(bigramTables, bigramCalibrations,
                   blockTables, blockCalibrations,
-                  controlCalibrations, classifierWeights, blockN, output);
+                  controlCalibrations, classifierWeights,
+                  blockN, scriptBuckets, scriptTransTable, scriptTransCal, output);
         System.out.printf("Model size: %,d bytes (%.1f MB)%n",
                 Files.size(output), Files.size(output) / 1_000_000.0);
         System.out.println("Done.");
@@ -496,64 +602,98 @@ public class TrainJunkModel {
     // -----------------------------------------------------------------------
 
     /**
-     * Trains a per-script binary logistic regression classifier on (z1, z2, z3).
+     * Trains a per-script binary logistic regression classifier on (z1, z2, z3, z4).
      *
      * <p>Clean examples: {@link #NUM_CLASSIFIER_SAMPLES} random dev windows (seed 100).
-     * Corrupted examples: same count, alternating inject@5% (seed 102, even indices)
-     * and char-shuffle (odd indices) applied to windows sampled with seed 101.
+     * Corrupted examples: same count, cycling through four distortions (seed 102):
+     * <ol>
+     *   <li>inject@5% control chars</li>
+     *   <li>char-shuffle</li>
+     *   <li>cross-script substitution — replaces ~5% of characters with codepoints from
+     *       foreign scripts, simulating charset encoding errors such as German umlauts
+     *       becoming Hebrew letters when CP1252 text is decoded as CP1255</li>
+     *   <li>wrong-codec remap — replaces ~5% of characters using a random pre-computed
+     *       charset remap table (e.g. CP1252→CP1250 for wrong accents, CP1252→CP1255
+     *       for script crossings), simulating real-world charset misdetection</li>
+     * </ol>
      *
-     * @return float[4] = {w1, w2, w3, bias} — classifier weights; positive logit = clean
+     * @param remapTables list of pre-built wrong-codec remap tables from {@link #buildRemapTable}
+     * @return float[5] = {w1, w2, w3, w4, bias} — classifier weights; positive logit = clean
      */
     static float[] trainClassifier(Path devGz,
                                     float[] bigramTable, float[] bigramCal,
                                     float[] blockTable, float[] blockCal,
                                     float[] controlCal,
                                     Map<Character.UnicodeBlock, Integer> blockIndex,
-                                    int blockN) throws IOException {
+                                    int blockN,
+                                    float[] scriptTransTable, float[] scriptTransCal,
+                                    Map<String, Integer> scriptBucketMap, int numScriptBuckets,
+                                    Map<String, List<Integer>> scriptCodepoints,
+                                    List<Map<Character, Character>> remapTables)
+            throws IOException {
         int nEach = NUM_CLASSIFIER_SAMPLES;
 
         // Clean windows
         List<String> cleanWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 100);
 
         // Corrupted windows: sample base windows (seed 101), then distort
+        // Four-way rotation: inject / shuffle / cross-script / wrong-codec remap
         List<String> baseWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 101);
         Random rng = new Random(102);
         List<String> corruptedWindows = new ArrayList<>(nEach);
         for (int i = 0; i < baseWindows.size(); i++) {
             String w = baseWindows.get(i);
-            if (i % 2 == 0) {
-                corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
-            } else {
-                corruptedWindows.add(shuffleChars(w, rng));
+            switch (i % 4) {
+                case 0:
+                    corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
+                    break;
+                case 1:
+                    corruptedWindows.add(shuffleChars(w, rng));
+                    break;
+                case 2:
+                    corruptedWindows.add(injectCrossScriptChars(w, CLASSIFIER_INJECT_RATE, rng,
+                            scriptCodepoints));
+                    break;
+                default:
+                    if (!remapTables.isEmpty()) {
+                        Map<Character, Character> table =
+                                remapTables.get(rng.nextInt(remapTables.size()));
+                        corruptedWindows.add(wrongCodecRemap(w, table, CLASSIFIER_INJECT_RATE, rng));
+                    } else {
+                        corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
+                    }
+                    break;
             }
         }
 
-        // Build (z1, z2, z3) feature matrix
+        // Build (z1, z2, z3, z4) feature matrix
         List<float[]> features = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
         List<Integer> labels   = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
 
         for (String w : cleanWindows) {
             features.add(extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex));
+                    blockTable, blockCal, blockN, controlCal, blockIndex,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
             labels.add(1); // clean
         }
         for (String w : corruptedWindows) {
             features.add(extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex));
+                    blockTable, blockCal, blockN, controlCal, blockIndex,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
             labels.add(0); // corrupted
         }
 
-        float[] weights = fitLogisticRegression(features, labels, 3);
+        float[] weights = fitLogisticRegression(features, labels, 4);
 
         // Calibrate bias using only short (len=15) windows so that FPR ≤ 2.5%
-        // even at the worst-case (shortest) window length.  Longer windows have
-        // lower logit variance and will score well above this threshold naturally.
+        // even at the worst-case (shortest) window length.
         List<String> shortWindows = sampleSubstrings(devGz, nEach, new int[]{15}, 200);
         List<Float> shortLogits = new ArrayList<>(shortWindows.size());
         int nFeat = weights.length - 1;
         for (String w : shortWindows) {
             float[] x = extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex);
+                    blockTable, blockCal, blockN, controlCal, blockIndex,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets);
             float logit = weights[nFeat];
             for (int j = 0; j < nFeat; j++) logit += weights[j] * x[j];
             shortLogits.add(logit);
@@ -562,22 +702,24 @@ public class TrainJunkModel {
             Collections.sort(shortLogits);
             int pIdx = (int) (0.025 * shortLogits.size());
             float p025 = shortLogits.get(Math.max(0, pIdx));
-            weights[nFeat] -= p025; // shift bias so p2.5 of len=15 logits = 0
+            weights[nFeat] -= p025;
         }
 
         return weights;
     }
 
     /**
-     * Extracts calibrated z-scores (z1, z2, z3) for a single text window.
+     * Extracts calibrated z-scores (z1, z2, z3, z4) for a single text window.
      *
-     * @return float[3] = {z1_bigram, z2_block, z3_control}
+     * @return float[4] = {z1_bigram, z2_block, z3_control, z4_scriptTrans}
      */
     static float[] extractFeatures(String window,
                                     float[] bigramTable, float[] bigramCal,
                                     float[] blockTable, float[] blockCal,
                                     int blockN, float[] controlCal,
-                                    Map<Character.UnicodeBlock, Integer> blockIndex) {
+                                    Map<Character.UnicodeBlock, Integer> blockIndex,
+                                    float[] scriptTransTable, float[] scriptTransCal,
+                                    Map<String, Integer> scriptBucketMap, int numScriptBuckets) {
         byte[] utf8 = window.getBytes(StandardCharsets.UTF_8);
 
         // z1: byte-bigram mean log-prob
@@ -626,7 +768,17 @@ public class TrainJunkModel {
             z3 = (score - controlCal[0]) / controlCal[1];
         }
 
-        return new float[]{z1, z2, z3};
+        // z4: script-transition mean log-prob (raw UnicodeScript, no model fallback)
+        float z4 = 0f;
+        if (scriptTransTable != null && scriptTransCal != null) {
+            double raw = rawScriptTransitionLogProb(window, scriptTransTable,
+                    scriptBucketMap, numScriptBuckets, numScriptBuckets - 1);
+            if (!Double.isNaN(raw)) {
+                z4 = ((float) raw - scriptTransCal[0]) / scriptTransCal[1];
+            }
+        }
+
+        return new float[]{z1, z2, z3, z4};
     }
 
     /**
@@ -738,13 +890,16 @@ public class TrainJunkModel {
     // -----------------------------------------------------------------------
 
     /**
-     * Writes the trained model (version 3) to a gzipped binary file.
+     * Writes the trained model (version 4) to a gzipped binary file.
      *
      * <p>Format documented in the class Javadoc.  All multi-byte integers are
      * big-endian; floats are IEEE 754 big-endian.
      *
-     * @param classifierWeights per-script float[4] = {w1, w2, w3, bias}
+     * @param classifierWeights per-script float[5] = {w1, w2, w3, w4, bias}
      * @param blockN the block table dimension (blockIndex.size() + 1)
+     * @param scriptBuckets ordered list of script bucket names (last = "OTHER")
+     * @param scriptTransTable global script-transition log-prob table
+     * @param scriptTransCal float[2] = {mu, sigma} for script-transition feature
      */
     static void saveModel(TreeMap<String, float[]> bigramTables,
                           TreeMap<String, float[]> bigramCalibrations,
@@ -753,6 +908,9 @@ public class TrainJunkModel {
                           TreeMap<String, float[]> controlCalibrations,
                           TreeMap<String, float[]> classifierWeights,
                           int blockN,
+                          List<String> scriptBuckets,
+                          float[] scriptTransTable,
+                          float[] scriptTransCal,
                           Path output) throws IOException {
         try (DataOutputStream dos = new DataOutputStream(
                 new GZIPOutputStream(Files.newOutputStream(output)))) {
@@ -760,7 +918,19 @@ public class TrainJunkModel {
             dos.write(MAGIC.getBytes(StandardCharsets.UTF_8));
             dos.writeByte(VERSION);
             dos.writeInt(bigramTables.size());
-            dos.writeShort(blockN); // global: block table dimension
+            dos.writeShort(blockN);
+
+            // Global script-transition section (v4+)
+            int numBuckets = scriptBuckets.size();
+            dos.writeByte(numBuckets);
+            for (String bucketName : scriptBuckets) {
+                byte[] nameBytes = bucketName.getBytes(StandardCharsets.UTF_8);
+                dos.writeShort(nameBytes.length);
+                dos.write(nameBytes);
+            }
+            dos.write(toBytes(scriptTransTable));
+            dos.writeFloat(scriptTransCal[0]); // mu
+            dos.writeFloat(scriptTransCal[1]); // sigma
 
             for (var entry : bigramTables.entrySet()) {
                 String script = entry.getKey();
@@ -770,28 +940,24 @@ public class TrainJunkModel {
                 float[] blockCal     = blockCalibrations.getOrDefault(script, new float[]{0f, 1f});
                 float[] controlCal   = controlCalibrations.getOrDefault(script, new float[]{0f, 1f});
                 float[] weights      = classifierWeights.getOrDefault(script,
-                        new float[]{1f / 3, 1f / 3, 1f / 3, 0f});
+                        new float[]{1f / 4, 1f / 4, 1f / 4, 1f / 4, 0f});
 
                 byte[] nameBytes = script.getBytes(StandardCharsets.UTF_8);
                 dos.writeShort(nameBytes.length);
                 dos.write(nameBytes);
 
-                // Feature 1: byte bigrams
                 dos.writeFloat(bigramCal[0]);
                 dos.writeFloat(bigramCal[1]);
                 dos.write(toBytes(bigramTable));
 
-                // Feature 2: named-block transitions
                 dos.writeFloat(blockCal[0]);
                 dos.writeFloat(blockCal[1]);
                 dos.write(toBytes(blockTable));
 
-                // Feature 3: control-byte fraction
                 dos.writeFloat(controlCal[0]);
                 dos.writeFloat(controlCal[1]);
 
-                // Classifier weights: num_features (1 byte) + weights + bias
-                int numFeatures = weights.length - 1; // last element is bias
+                int numFeatures = weights.length - 1;
                 dos.writeByte(numFeatures);
                 for (float v : weights) dos.writeFloat(v);
             }
@@ -838,6 +1004,278 @@ public class TrainJunkModel {
                 new InputStreamReader(
                         new GZIPInputStream(Files.newInputStream(path)),
                         StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Returns an ordered list of all recognized {@link Character.UnicodeScript} names
+     * (excluding COMMON, INHERITED, UNKNOWN pseudo-scripts), sorted alphabetically,
+     * with "OTHER" appended as the final fallback bucket.
+     *
+     * <p>Using raw UnicodeScript names (not the SCRIPT_MODEL_FALLBACK-mapped names)
+     * preserves discrimination power: clean Japanese text has characteristic
+     * KANJI→HIRAGANA→KATAKANA transitions that char-shuffle disrupts, which would
+     * be lost if all three were merged into "HAN".
+     */
+    static List<String> buildScriptBuckets() {
+        List<String> buckets = new ArrayList<>();
+        for (Character.UnicodeScript s : Character.UnicodeScript.values()) {
+            if (s != Character.UnicodeScript.COMMON
+                    && s != Character.UnicodeScript.INHERITED
+                    && s != Character.UnicodeScript.UNKNOWN) {
+                buckets.add(s.name());
+            }
+        }
+        Collections.sort(buckets);
+        buckets.add("OTHER");
+        return buckets;
+    }
+
+    /**
+     * Trains a global {@code numBuckets×numBuckets} script-transition log-probability
+     * table by pooling all training files.  Uses raw {@link Character.UnicodeScript}
+     * values (not the SCRIPT_MODEL_FALLBACK mapping) so that HIRAGANA, KATAKANA, and
+     * HAN remain distinct buckets.
+     *
+     * @return float[numBuckets * numBuckets] where index {@code a*numBuckets+b} = log P(script_b | script_a)
+     */
+    static float[] trainScriptTransitionTable(List<Path> trainFiles,
+                                               Map<String, Integer> scriptBucketMap,
+                                               int numBuckets) throws IOException {
+        long[] counts = new long[numBuckets * numBuckets];
+        int otherBucket = numBuckets - 1;
+        long totalTransitions = 0;
+
+        for (Path trainFile : trainFiles) {
+            try (BufferedReader r = openGzipped(trainFile)) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    int prev = -1;
+                    for (int i = 0; i < line.length(); ) {
+                        int cp = line.codePointAt(i);
+                        i += Character.charCount(cp);
+                        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+                        if (s == Character.UnicodeScript.COMMON
+                                || s == Character.UnicodeScript.INHERITED
+                                || s == Character.UnicodeScript.UNKNOWN) {
+                            continue;
+                        }
+                        int bucket = scriptBucketMap.getOrDefault(s.name(), otherBucket);
+                        if (prev >= 0) {
+                            counts[prev * numBuckets + bucket]++;
+                            totalTransitions++;
+                        }
+                        prev = bucket;
+                    }
+                }
+            }
+        }
+        System.out.printf("%,d script transitions across %d files%n", totalTransitions, trainFiles.size());
+        return laplaceSmoothLogProb(counts, numBuckets);
+    }
+
+    /**
+     * Calibrates the script-transition feature by computing mu and sigma over pooled
+     * dev windows from all scripts.
+     *
+     * @return float[2] = {mu, sigma}
+     */
+    static float[] calibrateScriptTransitions(List<Path> devFiles,
+                                               float[] scriptTransTable,
+                                               Map<String, Integer> scriptBucketMap,
+                                               int numBuckets) throws IOException {
+        List<Double> scores = new ArrayList<>();
+        int otherBucket = numBuckets - 1;
+        for (Path devFile : devFiles) {
+            List<String> windows = sampleSubstrings(devFile, 200, CALIB_LENGTHS, 45);
+            for (String window : windows) {
+                double raw = rawScriptTransitionLogProb(window, scriptTransTable,
+                        scriptBucketMap, numBuckets, otherBucket);
+                if (!Double.isNaN(raw)) {
+                    scores.add(raw);
+                }
+            }
+        }
+        System.out.printf("%,d dev windows pooled%n", scores.size());
+        return muSigma(scores);
+    }
+
+    /**
+     * Returns the mean script-transition log-probability for a string, or
+     * {@link Double#NaN} if there are fewer than two non-neutral codepoints.
+     * Uses raw {@link Character.UnicodeScript} values (no SCRIPT_MODEL_FALLBACK).
+     */
+    private static double rawScriptTransitionLogProb(String text, float[] table,
+                                                      Map<String, Integer> bucketMap,
+                                                      int numBuckets, int otherBucket) {
+        int prev = -1;
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s == Character.UnicodeScript.COMMON
+                    || s == Character.UnicodeScript.INHERITED
+                    || s == Character.UnicodeScript.UNKNOWN) {
+                continue;
+            }
+            int bucket = bucketMap.getOrDefault(s.name(), otherBucket);
+            if (prev >= 0) {
+                sum += table[prev * numBuckets + bucket];
+                count++;
+            }
+            prev = bucket;
+        }
+        return count > 0 ? sum / count : Double.NaN;
+    }
+
+    /**
+     * Builds a character→character remap table for a (sourceCodec, wrongCodec) pair.
+     * For every byte 0x80–0xFF, if the two codecs decode it to different characters
+     * (and neither produces the replacement character U+FFFD), the source character
+     * maps to the wrong-codec character.
+     *
+     * <p>Returns an empty map if either codec is unavailable on this JVM.
+     */
+    static Map<Character, Character> buildRemapTable(String sourceCodec, String wrongCodec) {
+        Charset src, wrong;
+        try {
+            src  = Charset.forName(sourceCodec);
+            wrong = Charset.forName(wrongCodec);
+        } catch (UnsupportedCharsetException e) {
+            return Collections.emptyMap();
+        }
+        Map<Character, Character> table = new HashMap<>();
+        byte[] singleByte = new byte[1];
+        for (int b = 0x80; b <= 0xFF; b++) {
+            singleByte[0] = (byte) b;
+            String fromSrc  = new String(singleByte, src);
+            String fromWrong = new String(singleByte, wrong);
+            if (fromSrc.length() == 1 && fromWrong.length() == 1
+                    && fromSrc.charAt(0) != '\uFFFD' && fromWrong.charAt(0) != '\uFFFD'
+                    && fromSrc.charAt(0) != fromWrong.charAt(0)) {
+                table.put(fromSrc.charAt(0), fromWrong.charAt(0));
+            }
+        }
+        return table;
+    }
+
+    /**
+     * Replaces characters using a pre-computed wrong-codec remap table, simulating
+     * the effect of encoding text in one charset and decoding it in another.
+     * Only characters present in the remap table are candidates for replacement.
+     *
+     * <p>This produces realistic mojibake: German umlauts becoming Hebrew letters,
+     * Polish characters becoming Western accents, Cyrillic becoming Latin symbols, etc.
+     *
+     * @param remapTable source-char → wrong-char substitution table (from {@link #buildRemapTable})
+     * @param rate       fraction of remappable characters to replace [0, 1]
+     */
+    static String wrongCodecRemap(String text, Map<Character, Character> remapTable,
+                                   double rate, Random rng) {
+        if (text.isEmpty() || remapTable.isEmpty()) {
+            return text;
+        }
+        int[] codepoints = text.codePoints().toArray();
+        for (int i = 0; i < codepoints.length; i++) {
+            if (codepoints[i] < 0x10000 && rng.nextDouble() < rate) {
+                Character replacement = remapTable.get((char) codepoints[i]);
+                if (replacement != null) {
+                    codepoints[i] = replacement;
+                }
+            }
+        }
+        return new String(codepoints, 0, codepoints.length);
+    }
+
+    /**
+     * Collects a sample of codepoints from each raw {@link Character.UnicodeScript}
+     * found across all training files.  Used to build the foreign-script codepoint
+     * pools for the cross-script substitution distortion.
+     *
+     * @param maxPerScript maximum distinct codepoints to collect per script
+     * @return map from raw UnicodeScript name → list of sampled codepoints
+     */
+    static Map<String, List<Integer>> collectScriptCodepoints(List<Path> trainFiles,
+                                                               int maxPerScript)
+            throws IOException {
+        Map<String, Set<Integer>> collected = new HashMap<>();
+        for (Path trainFile : trainFiles) {
+            try (BufferedReader r = openGzipped(trainFile)) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    for (int i = 0; i < line.length(); ) {
+                        int cp = line.codePointAt(i);
+                        i += Character.charCount(cp);
+                        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+                        if (s == Character.UnicodeScript.COMMON
+                                || s == Character.UnicodeScript.INHERITED
+                                || s == Character.UnicodeScript.UNKNOWN) {
+                            continue;
+                        }
+                        Set<Integer> pool = collected.computeIfAbsent(
+                                s.name(), k -> new HashSet<>());
+                        if (pool.size() < maxPerScript) {
+                            pool.add(cp);
+                        }
+                    }
+                }
+            }
+        }
+        Map<String, List<Integer>> result = new HashMap<>(collected.size() * 2);
+        for (Map.Entry<String, Set<Integer>> e : collected.entrySet()) {
+            result.put(e.getKey(), new ArrayList<>(e.getValue()));
+        }
+        return result;
+    }
+
+    /**
+     * Replaces a random fraction of characters with codepoints drawn from scripts
+     * that do NOT appear in the source text.  Simulates real-world charset encoding
+     * errors where accented characters in one script are misread as characters from
+     * a completely different script — e.g., German umlauts (ä, ö, ü) becoming
+     * Hebrew letters when CP1252-encoded text is decoded as CP1255.
+     *
+     * @param rate            fraction of characters to replace [0, 1]
+     * @param scriptCodepoints map from raw UnicodeScript name → pool of codepoints
+     */
+    static String injectCrossScriptChars(String text, double rate, Random rng,
+                                          Map<String, List<Integer>> scriptCodepoints) {
+        if (text.isEmpty() || scriptCodepoints.isEmpty()) {
+            return text;
+        }
+
+        // Identify which scripts appear in the source text
+        Set<String> sourceScripts = new HashSet<>();
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s != Character.UnicodeScript.COMMON
+                    && s != Character.UnicodeScript.INHERITED
+                    && s != Character.UnicodeScript.UNKNOWN) {
+                sourceScripts.add(s.name());
+            }
+        }
+
+        // Build pool of codepoints from all other scripts
+        List<Integer> foreignPool = new ArrayList<>();
+        for (Map.Entry<String, List<Integer>> e : scriptCodepoints.entrySet()) {
+            if (!sourceScripts.contains(e.getKey())) {
+                foreignPool.addAll(e.getValue());
+            }
+        }
+        if (foreignPool.isEmpty()) {
+            return text;
+        }
+
+        int[] codepoints = text.codePoints().toArray();
+        for (int i = 0; i < codepoints.length; i++) {
+            if (rng.nextDouble() < rate) {
+                codepoints[i] = foreignPool.get(rng.nextInt(foreignPool.size()));
+            }
+        }
+        return new String(codepoints, 0, codepoints.length);
     }
 
     private static void printUsage() {

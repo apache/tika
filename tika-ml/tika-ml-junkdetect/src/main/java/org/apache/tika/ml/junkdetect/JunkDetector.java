@@ -105,6 +105,14 @@ public final class JunkDetector implements TextQualityDetector {
     // float[numFeatures+1] = {w1, ..., wN, bias}; positive logit = clean
     private final Map<String, float[]> classifierWeights;
 
+    // Feature 4: global script-transition (version 4+); null for v1/v2/v3 models
+    // One global table: float[numScriptBuckets * numScriptBuckets] log P(script_b | script_a)
+    // Uses raw UnicodeScript names (not SCRIPT_MODEL_FALLBACK) to distinguish HIRAGANA/KATAKANA/HAN.
+    private final float[] scriptTransitionTable;
+    private final float[] scriptTransitionCalibration; // float[2] = {mu, sigma}
+    private final Map<String, Integer> scriptBucketIndex; // raw UnicodeScript name → bucket ID
+    private final int numScriptBuckets;                  // 0 for v1/v2/v3
+
     // Shared block index for v2+ models: UnicodeBlock → index [0, blockN-1)
     // Index blockN-1 is the "unassigned" bucket (null UnicodeBlock).
     private final Map<Character.UnicodeBlock, Integer> blockIndex;
@@ -117,7 +125,11 @@ public final class JunkDetector implements TextQualityDetector {
                          int blockN,
                          Map<String, float[]> controlCalibrations,
                          Map<String, float[]> classifierWeights,
-                         Map<Character.UnicodeBlock, Integer> blockIndex) {
+                         Map<Character.UnicodeBlock, Integer> blockIndex,
+                         float[] scriptTransitionTable,
+                         float[] scriptTransitionCalibration,
+                         Map<String, Integer> scriptBucketIndex,
+                         int numScriptBuckets) {
         this.modelVersion = modelVersion;
         this.tables = Collections.unmodifiableMap(tables);
         this.calibrations = Collections.unmodifiableMap(calibrations);
@@ -131,6 +143,11 @@ public final class JunkDetector implements TextQualityDetector {
         this.classifierWeights = classifierWeights != null
                 ? Collections.unmodifiableMap(classifierWeights) : null;
         this.blockIndex = blockIndex;
+        this.scriptTransitionTable = scriptTransitionTable;
+        this.scriptTransitionCalibration = scriptTransitionCalibration;
+        this.scriptBucketIndex = scriptBucketIndex != null
+                ? Collections.unmodifiableMap(scriptBucketIndex) : null;
+        this.numScriptBuckets = numScriptBuckets;
     }
 
     // -----------------------------------------------------------------------
@@ -184,7 +201,7 @@ public final class JunkDetector implements TextQualityDetector {
                 throw new IOException("Not a JunkDetector model file (bad magic)");
             }
             int version = dis.readUnsignedByte();
-            if (version < 1 || version > 3) {
+            if (version < 1 || version > 4) {
                 throw new IOException("Unsupported model version: " + version);
             }
 
@@ -211,6 +228,26 @@ public final class JunkDetector implements TextQualityDetector {
             Map<String, float[]> blockCalibrations   = version >= 2 ? new HashMap<>(numScripts * 2) : null;
             Map<String, float[]> controlCalibrations = version >= 2 ? new HashMap<>(numScripts * 2) : null;
             Map<String, float[]> classifierWeights   = version >= 3 ? new HashMap<>(numScripts * 2) : null;
+
+            // Version 4+: global script-transition section
+            float[] scriptTransitionTable = null;
+            float[] scriptTransitionCalibration = null;
+            Map<String, Integer> scriptBucketIndex = null;
+            int numScriptBuckets = 0;
+
+            if (version >= 4) {
+                numScriptBuckets = dis.readUnsignedByte();
+                scriptBucketIndex = new LinkedHashMap<>(numScriptBuckets * 2);
+                for (int i = 0; i < numScriptBuckets; i++) {
+                    int nameLen = dis.readUnsignedShort();
+                    String bucketName = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
+                    scriptBucketIndex.put(bucketName, i);
+                }
+                scriptTransitionTable = readFloatTable(dis, numScriptBuckets * numScriptBuckets);
+                float mu4 = dis.readFloat();
+                float sigma4 = dis.readFloat();
+                scriptTransitionCalibration = new float[]{mu4, sigma4};
+            }
 
             for (int s = 0; s < numScripts; s++) {
                 int nameLen = dis.readUnsignedShort();
@@ -248,7 +285,9 @@ public final class JunkDetector implements TextQualityDetector {
 
             return new JunkDetector(version, tables, calibrations,
                     blockTables, blockCalibrations, blockN,
-                    controlCalibrations, classifierWeights, blockIndex);
+                    controlCalibrations, classifierWeights, blockIndex,
+                    scriptTransitionTable, scriptTransitionCalibration,
+                    scriptBucketIndex, numScriptBuckets);
         }
     }
 
@@ -341,6 +380,10 @@ public final class JunkDetector implements TextQualityDetector {
     private TextQualityScore scoreText(String text) {
         List<ScriptRun> runs = buildScriptRuns(text);
 
+        // Global z4: script-transition feature over the whole input string.
+        // Computed before chunking because it captures document-level script mixing.
+        float z4 = computeScriptTransitionZ(text);
+
         // Score each run against its own model; aggregate weighted by byte count.
         float totalBytes = 0;
         float weightedLogit = 0;
@@ -357,7 +400,7 @@ public final class JunkDetector implements TextQualityDetector {
             if (runUtf8.length < 2) {
                 continue; // too short to score
             }
-            float logit = scoreChunk(runUtf8, run.text, run.script);
+            float logit = scoreChunk(runUtf8, run.text, run.script, z4);
             int n = runUtf8.length;
             weightedLogit += logit * n;
             totalBytes += n;
@@ -370,14 +413,12 @@ public final class JunkDetector implements TextQualityDetector {
         }
 
         if (totalBytes == 0 || dominantScript == null) {
-            // No scoreable runs; return UNKNOWN keyed on the first run's script (for debug)
             String label = runs.isEmpty() ? "LATIN" : runs.get(0).script;
             return unknownScore(label);
         }
 
         float zScore = weightedLogit / totalBytes;
 
-        // CI: standard error of the weighted mean, approximated via dominant script's sigma
         float uncertainty = (dominantCal1 != null && totalBigramCount > 0)
                 ? (float) (1.96 * dominantCal1[1] / Math.sqrt(totalBigramCount)) : 0f;
         float ciLow = zScore - uncertainty;
@@ -392,7 +433,7 @@ public final class JunkDetector implements TextQualityDetector {
      * Positive = clean, negative = junk.  Returns 0 (neutral) if the chunk
      * has no model or is too short.
      */
-    private float scoreChunk(byte[] utf8, String text, String script) {
+    private float scoreChunk(byte[] utf8, String text, String script, float z4) {
         float[] bigramTable = tables.get(script);
         if (bigramTable == null || utf8.length < 2) {
             return 0f;
@@ -448,15 +489,62 @@ public final class JunkDetector implements TextQualityDetector {
 
         if (modelVersion >= 3 && classifierWeights != null) {
             float[] cw = classifierWeights.get(script);
-            if (cw != null && cw.length >= 4) {
-                return cw[0] * z1 + cw[1] * z2 + cw[2] * z3 + cw[cw.length - 1];
+            if (cw != null) {
+                int nFeat = cw.length - 1; // bias is last
+                float logit = cw[nFeat];   // bias
+                if (nFeat >= 1) logit += cw[0] * z1;
+                if (nFeat >= 2) logit += cw[1] * z2;
+                if (nFeat >= 3) logit += cw[2] * z3;
+                if (nFeat >= 4) logit += cw[3] * z4;
+                return logit;
             }
-            return (z1 + z2 + z3) / 3.0f;
+            return (z1 + z2 + z3) / 4.0f; // fallback: equal weight including z4
         } else if (modelVersion >= 2 && blockTables != null) {
             return (z1 + z2 + z3) / 3.0f;
         } else {
             return z1;
         }
+    }
+
+    /**
+     * Computes the global script-transition z-score for the whole input string.
+     * Uses raw {@link Character.UnicodeScript} values — NOT {@link #SCRIPT_MODEL_FALLBACK} —
+     * so that HIRAGANA, KATAKANA, and HAN remain distinct, preserving the
+     * characteristic script-mixing pattern of Japanese text.
+     *
+     * <p>Returns 0 if no v4 model is loaded or the string has fewer than two
+     * non-neutral codepoints.
+     */
+    private float computeScriptTransitionZ(String text) {
+        if (scriptTransitionTable == null || scriptBucketIndex == null
+                || scriptTransitionCalibration == null || numScriptBuckets == 0) {
+            return 0f;
+        }
+        int otherBucket = numScriptBuckets - 1;
+        int prev = -1;
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s == Character.UnicodeScript.COMMON
+                    || s == Character.UnicodeScript.INHERITED
+                    || s == Character.UnicodeScript.UNKNOWN) {
+                continue;
+            }
+            int bucket = scriptBucketIndex.getOrDefault(s.name(), otherBucket);
+            if (prev >= 0) {
+                sum += scriptTransitionTable[prev * numScriptBuckets + bucket];
+                count++;
+            }
+            prev = bucket;
+        }
+        if (count == 0) {
+            return 0f;
+        }
+        float mean = (float) (sum / count);
+        return (mean - scriptTransitionCalibration[0]) / scriptTransitionCalibration[1];
     }
 
     /**
