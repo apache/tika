@@ -156,7 +156,7 @@ public class BuildCharsetTrainingData {
         CHARSET_JAVA.put("x-MacRoman",     "x-MacRoman");
         // EBCDIC — all variants are generated into the training corpus so a future
         // EBCDIC specialist can be trained against them.  Today's main SBCS model
-        // consumes only a subset of these (see TrainCharsetModel's hardcoded
+        // consumes only a subset of these (see TrainNaiveBayesBigram's hardcoded
         // exclusion list): IBM424 (Hebrew) and IBM420 (Arabic) live entirely in
         // the 0x41–0x6A range, below the 0x80 threshold our feature extractor
         // considers, so excluding them from today's model avoids training on a
@@ -282,7 +282,7 @@ public class BuildCharsetTrainingData {
      * Charsets whose encoded bytes are all {@literal <} 0x80, so the ML model
      * would see zero features.  Only devtest/test files are generated; train
      * is skipped.  These charsets are detected by structural gates in
-     * {@code MojibusterEncodingDetector} before the model is ever called.
+     * {@code NaiveBayesPipelineEncodingDetector} before the model is ever called.
      */
     private static final Set<String> STRUCTURAL_ONLY = new HashSet<>(Arrays.asList(
             "US-ASCII", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN", "x-ISO-2022-CN-CNS"

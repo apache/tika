@@ -34,47 +34,24 @@ import org.apache.tika.parser.ParseContext;
  * Regression test for the sparse-Latin vCard / config-file detection
  * class.
  *
- * <p>Before the {@link StructuralEncodingRules#isEbcdicLikely(byte[])}
- * gate and the {@link MojibusterEncodingDetector.Rule#LATIN_FALLBACK_WIN1252}
- * post-rule, a predominantly-ASCII probe with a small number of
+ * <p>Historically a predominantly-ASCII probe with a small number of
  * Latin-supplement high bytes (e.g. a vCard containing a German
- * business name) detected as {@code IBM424} (Hebrew EBCDIC) at 0.99
- * confidence — producing complete mojibake with dice=0 vs the 3.x
- * baseline.</p>
- *
- * <p>After the fixes, the same probe detects as {@code windows-1252},
- * preserving content fidelity.  The assertion exercises the full
- * detector chain ({@link DefaultEncodingDetector}) rather than
- * {@code MojibusterEncodingDetector} alone — correct sparse-Latin
- * discrimination depends on {@code CharSoupEncodingDetector} arbitrating
- * among Mojibuster's top candidates by language-scoring the decoded
- * string ("Bäckerei" scores as German; IBM852-decoded "Bńckerei" does
- * not).  Requires {@code tika-encoding-detector-charsoup} on the test
- * classpath (declared in the module POM as a test-scope dep).</p>
+ * business name) could detect as {@code IBM424} (Hebrew EBCDIC) at
+ * 0.99 confidence — producing complete mojibake.  The combination of
+ * structural IBM424 gating, Latin-sibling → windows-1252 fallback in
+ * {@code NaiveBayesPipelineEncodingDetector}, and CharSoup's
+ * language-signal arbitration prevents that.  This test exercises
+ * the full detector chain via {@link DefaultEncodingDetector} and
+ * asserts the non-catastrophic property: not IBM424.</p>
  */
 public class SparseLatinVcardRegressionTest {
 
     /**
-     * Regression assertion for the <em>original</em> failure class
-     * documented in this file's javadoc: sparse-Latin vCard probes must
-     * NOT detect as {@code IBM424} (Hebrew EBCDIC) — that was the
-     * catastrophic mojibake (dice=0 vs 3.x baseline) that motivated the
-     * {@link StructuralEncodingRules#isEbcdicLikely(byte[])} gate and the
-     * {@link MojibusterEncodingDetector.Rule#LATIN_FALLBACK_WIN1252}
-     * post-rule.  Dropping IBM424 from the main SBCS training set (see
-     * {@code TrainCharsetModel.TODAY_SBCS_INCLUDE}) also contributes.
-     *
-     * <p>Ideally the probe detects as {@code windows-1252} specifically.
-     * On the current retrained (no-stride-2) model the sibling-Latin
-     * arbitration among windows-1252 / windows-1255 / IBM852 on a
-     * 3-high-byte probe is not reliable — both discriminative and
-     * generative CharSoup scorers have been observed to pick siblings
-     * (windows-1255, IBM852) with roughly equal confidence, and neither
-     * is a silver bullet.  This is a documented limitation (see Part 5.5
-     * of {@code ~/Desktop/claude-todo/charset-detection.md} and the
-     * post-ship TODO in {@code charset-20260417-plan.md}).  The
-     * assertion therefore enforces only the non-catastrophic property:
-     * not IBM424.</p>
+     * Sparse-Latin vCard probes must NOT detect as {@code IBM424}
+     * (Hebrew EBCDIC).  Whether they detect specifically as
+     * {@code windows-1252} vs a byte-identical Latin sibling
+     * (windows-1257, IBM852, etc.) is a documented sibling-arbitration
+     * limitation; only the catastrophic case is asserted here.
      */
     @Test
     public void sparseLatinVcardDoesNotDetectAsIbm424() throws Exception {

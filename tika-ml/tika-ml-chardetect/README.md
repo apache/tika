@@ -1,12 +1,13 @@
 # tika-ml-chardetect — Charset Detection
 
-A lightweight, production-ready charset/encoding detector for Apache Tika built
-on multinomial logistic regression over byte n-gram features.
+A byte-bigram Naive Bayes charset/encoding detector for Apache Tika,
+shipped alongside dedicated structural detectors for UTF-32 (codepoint
+validity) and UTF-16 (column-histogram maxent specialist).
 
 ## Documentation
 
-Architecture, algorithm details, accuracy numbers, and comparison with ICU4J /
-juniversalchardet are in the main Tika docs:
+Architecture, algorithm details, accuracy numbers, and comparison with
+ICU4J / juniversalchardet are in the main Tika docs:
 
 **`docs/modules/ROOT/pages/advanced/charset-detection-design.adoc`**
 
@@ -16,7 +17,7 @@ juniversalchardet are in the main Tika docs:
 
 * Java 17+
 * MADLAD-400 corpus (`sentences_madlad.txt` per language, one sentence per line)
-* Cantonese Wikipedia sentences for Big5/Big5-HKSCS (see adoc above)
+* Cantonese Wikipedia sentences for Big5-HKSCS (see adoc above)
 
 ### Step 1 — Build training data
 
@@ -33,19 +34,20 @@ java -cp $JAR \
     --output-dir  ~/datasets/charset-detect
 ```
 
-### Step 2 — Train
+### Step 2 — Train the NB model
 
 ```bash
 java -cp $JAR \
-    org.apache.tika.ml.chardetect.tools.TrainCharsetModel \
-    --data    ~/datasets/charset-detect/train \
-    --output  ~/datasets/chardetect.bin \
-    --buckets 16384 \
-    --epochs  5
+    org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram \
+    --data      ~/datasets/charset-detect/train \
+    --output    ~/datasets/nb-bigram.bin \
+    --coverage  0.999 \
+    --alpha-base 1.0 \
+    --max-samples-per-class 50000
 
 # Install as the bundled model
-cp ~/datasets/chardetect.bin \
-   tika-encoding-detectors/tika-encoding-detector-mojibuster/src/main/resources/org/apache/tika/ml/chardetect/chardetect.bin
+cp ~/datasets/nb-bigram.bin \
+   tika-encoding-detectors/tika-encoding-detector-mojibuster/src/main/resources/org/apache/tika/ml/chardetect/nb-bigram.bin
 ```
 
 ### Step 3 — Evaluate
@@ -53,10 +55,24 @@ cp ~/datasets/chardetect.bin \
 ```bash
 java -cp $JAR \
     org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors \
-    --model   ~/datasets/chardetect.bin \
-    --data    ~/datasets/charset-detect/test \
-    --lengths 20,50,100,200,full \
-    --confusion
+    --nb-model ~/datasets/nb-bigram.bin \
+    --data     ~/datasets/charset-detect/devtest \
+    --lengths  20,100,256,full
+```
+
+Compares NB pipeline against ICU4J and juniversalchardet at each probe
+length.
+
+### Retraining the UTF-16 specialist (optional)
+
+The UTF-16 specialist uses stride-2 column-histogram features and is
+trained separately:
+
+```bash
+java -cp $JAR \
+    org.apache.tika.ml.chardetect.tools.TrainUtf16Specialist \
+    --data    ~/datasets/charset-detect/train \
+    --output  tika-encoding-detectors/tika-encoding-detector-mojibuster/src/main/resources/org/apache/tika/ml/chardetect/utf16-specialist.bin
 ```
 
 ## Data sources
@@ -64,13 +80,16 @@ java -cp $JAR \
 | Source | Usage |
 |---|---|
 | [MADLAD-400](https://arxiv.org/abs/2309.04662) | Primary training corpus (400+ languages, CC licensed) |
-| Cantonese Wikipedia (`zh_yuewiki`) | Big5 / Big5-HKSCS training data (Traditional Chinese) |
+| Cantonese Wikipedia (`zh_yuewiki`) | Big5-HKSCS training data (Traditional Chinese) |
 
 ## Supported charsets
 
-37 direct model labels covering CJK multibyte, Unicode (UTF-8/16/32),
-EBCDIC variants (IBM500/1047/424/420/850/852/855/866), Cyrillic (KOI8-R/U,
-windows-1251, IBM855, x-mac-cyrillic), Arabic (windows-1256), Thai (TIS-620),
-Vietnamese (windows-1258), and all major Windows-12XX / ISO-8859-X families.
-ISO-2022-JP/KR/CN and HZ-GB-2312 are detected via structural rules before the
-model runs.
+33 direct NB labels covering CJK multi-byte (Big5-HKSCS, EUC-JP,
+GB18030, Shift_JIS, x-EUC-TW, x-windows-949), EBCDIC variants
+(IBM420/424-ltr/rtl, IBM500, IBM1047), DOS OEM (IBM850/852/855/866),
+Cyrillic (KOI8-R/U), Windows single-byte (1250-1258, 874),
+ISO-8859-3/16, Mac (x-MacRoman, x-mac-cyrillic), and UTF-8.
+
+UTF-32 is detected by `WideUnicodeDetector` (codepoint validity) and
+UTF-16 by `Utf16SpecialistEncodingDetector`.  ISO-2022-JP / KR / CN /
+HZ-GB-2312 are detected via structural rules.

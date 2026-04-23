@@ -145,7 +145,7 @@ public final class CharsetConfusables {
      * in positions the family agrees on — e.g. 0xE4='ä' in every member).
      *
      * <p>Used by the Latin-windows-1252 fallback rule in
-     * {@link MojibusterEncodingDetector}: if the top candidate is a member
+     * {@code NaiveBayesPipelineEncodingDetector}: if the top candidate is a member
      * of this set AND the probe decodes byte-identically under windows-1252,
      * swap to windows-1252 as the unmarked Latin default.  This is a
      * narrower replacement for an earlier general "decode-equivalence
