@@ -91,6 +91,7 @@
           <inputExcludes>
             <inputExclude>**/*.bin</inputExclude>
             <inputExclude>**/*.bin.gz</inputExclude>
+            <inputExclude>docs/performance/*.txt</inputExclude>
           </inputExcludes>
         </configuration>
       </plugin>
