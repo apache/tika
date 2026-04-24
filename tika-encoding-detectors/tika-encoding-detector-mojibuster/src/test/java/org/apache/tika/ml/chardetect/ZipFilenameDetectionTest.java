@@ -71,7 +71,7 @@ public class ZipFilenameDetectionTest {
         ctx.addResult(List.of(
                 new EncodingResult(big5,     0.9f, "Big5-HKSCS", EncodingResult.ResultType.STATISTICAL),
                 new EncodingResult(shiftJis, 0.3f, "Shift_JIS",  EncodingResult.ResultType.STATISTICAL)
-        ), "NaiveBayesPipelineEncodingDetector");
+        ), "MojibusterEncodingDetector");
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(EncodingDetectorContext.class, ctx);

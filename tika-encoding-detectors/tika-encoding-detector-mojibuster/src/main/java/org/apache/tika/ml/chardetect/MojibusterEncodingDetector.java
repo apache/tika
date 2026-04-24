@@ -64,8 +64,8 @@ import org.apache.tika.parser.ParseContext;
  * candidate.  Conservative: only return at a layer when that layer's
  * structural check is clean.</p>
  */
-@TikaComponent(name = "naive-bayes-pipeline-encoding-detector")
-public class NaiveBayesPipelineEncodingDetector implements EncodingDetector {
+@TikaComponent(name = "mojibuster-encoding-detector")
+public class MojibusterEncodingDetector implements EncodingDetector {
 
     /** Default NB bigram model on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
@@ -132,18 +132,18 @@ public class NaiveBayesPipelineEncodingDetector implements EncodingDetector {
      * classpath at {@link #DEFAULT_MODEL_RESOURCE}.  The UTF-16
      * specialist loads its own model the same way.
      */
-    public NaiveBayesPipelineEncodingDetector() throws IOException {
+    public MojibusterEncodingDetector() throws IOException {
         this.nb = loadFromClasspath();
         this.utf16 = new Utf16SpecialistEncodingDetector();
     }
 
-    public NaiveBayesPipelineEncodingDetector(Path nbModelPath) throws IOException {
+    public MojibusterEncodingDetector(Path nbModelPath) throws IOException {
         this.nb = new NaiveBayesBigramEncodingDetector(nbModelPath);
         this.utf16 = new Utf16SpecialistEncodingDetector();
     }
 
     private static NaiveBayesBigramEncodingDetector loadFromClasspath() throws IOException {
-        InputStream in = NaiveBayesPipelineEncodingDetector.class
+        InputStream in = MojibusterEncodingDetector.class
                 .getResourceAsStream(DEFAULT_MODEL_RESOURCE);
         if (in == null) {
             throw new IOException(

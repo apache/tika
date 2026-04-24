@@ -45,7 +45,7 @@ import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
 
 /**
- * Compares {@code NaiveBayesPipelineEncodingDetector} against ICU4J and juniversalchardet.
+ * Compares {@code MojibusterEncodingDetector} against ICU4J and juniversalchardet.
  *
  * <p>Supports:
  * <ul>
@@ -149,7 +149,7 @@ public class EvalCharsetDetectors {
         // gate + NB bigram classifier.  This is the ship candidate;
         // compared here against ICU4J and juniversalchardet.
         EncodingDetector nbDetector = nbModelPath != null
-                ? new org.apache.tika.ml.chardetect.NaiveBayesPipelineEncodingDetector(nbModelPath)
+                ? new org.apache.tika.ml.chardetect.MojibusterEncodingDetector(nbModelPath)
                 : new NoopDetector();
 
         EncodingDetector[] detectors = {

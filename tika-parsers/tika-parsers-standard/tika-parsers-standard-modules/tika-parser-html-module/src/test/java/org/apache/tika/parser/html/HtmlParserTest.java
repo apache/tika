@@ -294,7 +294,7 @@ public class HtmlParserTest extends TikaTest {
      * {@code <html><head><title>\u017d</title></head><body></body></html>}
      * — 56 bytes of markup with exactly 2 non-ASCII bytes ({@code c5 bd}
      * = {@code Ž} in UTF-8).  After HTML stripping the probe reduces to
-     * 2 bytes (the title body).  {@code NaiveBayesPipelineEncodingDetector}
+     * 2 bytes (the title body).  {@code MojibusterEncodingDetector}
      * correctly returns UTF-8 as a {@code STRUCTURAL} candidate via the
      * UTF-8 grammar gate.  However {@code CharSoupEncodingDetector} then
      * arbitrates across all base-detector candidates by language-signal

@@ -42,7 +42,7 @@ Emits DECLARATIVE.
 (populated from an HTTP response header or similar).  Emits DECLARATIVE.
 
 |3
-|`naive-bayes-pipeline-encoding-detector`
+|`mojibuster-encoding-detector`
 |A structural UTF-32 check, structural UTF-16 specialist, UTF-8 grammar
 gate, and 33-class byte-bigram Naive Bayes classifier.  STRUCTURAL for
 structural hits; STATISTICAL for NB predictions.
@@ -87,7 +87,7 @@ referenced by their SPI name in JSON configuration.
 the `Metadata` object.  Applies WHATWG label normalization
 (ISO-8859-1 and US-ASCII → windows-1252).  In the default chain.
 
-|`naive-bayes-pipeline-encoding-detector`
+|`mojibuster-encoding-detector`
 |`tika-encoding-detector-mojibuster`
 |Byte-bigram Naive Bayes classifier plus structural detectors for UTF-32
 and UTF-16 and a UTF-8 grammar gate.  33 classes including CJK
@@ -159,7 +159,7 @@ behaviour), omit CharSoup:
     {"bom-detector": {}},
     {"metadata-charset-detector": {}},
     {"html-encoding-detector": {}},
-    {"naive-bayes-pipeline-encoding-detector": {}}
+    {"mojibuster-encoding-detector": {}}
   ]
 }
 ----
@@ -187,7 +187,7 @@ large `<script>` blocks before the meta tag (TIKA-2485):
         "markLimit": 131072
       }
     },
-    {"naive-bayes-pipeline-encoding-detector": {}},
+    {"mojibuster-encoding-detector": {}},
     {"charsoup-encoding-detector": {}}
   ]
 }

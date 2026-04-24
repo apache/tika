@@ -1,7 +1,7 @@
 {
   "encoding-detectors": [
     {
-      "naive-bayes-pipeline-encoding-detector": {}
+      "mojibuster-encoding-detector": {}
     },
     {
       "html-encoding-detector": {

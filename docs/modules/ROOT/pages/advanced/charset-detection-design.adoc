@@ -51,7 +51,7 @@ results are collected into an `EncodingDetectorContext` on the
   US-ASCII → windows-1252).  DECLARATIVE.
 
 | 3
-| `NaiveBayesPipelineEncodingDetector`
+| `MojibusterEncodingDetector`
 | `tika-encoding-detector-mojibuster`
 | Structural UTF-32 and UTF-16 detection, UTF-8 grammar gate, HTML
   attribute-aware stripping, then a 33-class byte-bigram NB
@@ -90,7 +90,7 @@ See <<opting-out-of-arbitration>> for HTML5-spec-compliant behavior that
 honours declarations without second-guessing.
 
 [[nb-pipeline]]
-== NaiveBayesPipelineEncodingDetector
+== MojibusterEncodingDetector
 
 The pipeline runs layers in order and returns the first confident
 structural answer when one fires; otherwise it falls through to NB.
@@ -286,7 +286,7 @@ then runs in first-match-wins mode:
     { "bom-detector": {} },
     { "metadata-charset-detector": {} },
     { "standard-html-encoding-detector": {} },
-    { "naive-bayes-pipeline-encoding-detector": {} }
+    { "mojibuster-encoding-detector": {} }
   ]
 }
 ----
