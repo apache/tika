@@ -33,25 +33,18 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * An encoding detector that respects the HTML5 encoding-sniff algorithm
- * (https://html.spec.whatwg.org/multipage/parsing.html#the-input-byte-stream):
- * BOM → HTTP Content-Type header → {@code <meta charset>} / {@code <meta http-equiv>} tag.
+ * Full WHATWG prescan charset detector for HTML: HTTP Content-Type header →
+ * {@code <meta charset>} / {@code <meta http-equiv>} tag, per
+ * https://html.spec.whatwg.org/multipage/parsing.html#the-input-byte-stream.
  *
- * <p>By default, BOM detection is skipped ({@code skipBOM=true}) because
- * {@code BOMDetector} handles that as a separate step in the chain, producing its own
- * DECLARATIVE result that {@code CharSoupEncodingDetector} can arbitrate against a
- * contradicting {@code <meta charset>} declaration.
+ * <p>BOM detection is <em>not</em> performed here; {@code BOMDetector} handles
+ * that as a separate, earlier step in the detector chain.
  *
- * <p>When used standalone (outside a {@link org.apache.tika.detect.CompositeEncodingDetector}
- * chain without {@code BOMDetector}), set {@code skipBOM=false} to get the full HTML5
- * spec algorithm including BOM detection.
- *
- * <p>HTTP/MIME Content-Type and Content-Encoding metadata are always read here for
- * standalone compatibility; in the chain they will already have been returned by
- * {@code MetadataCharsetDetector} and {@code CharSoup} will handle the duplication
- * gracefully (identical DECLARATIVE results agree, so no harm done).
+ * <p>Opt-in: register explicitly in a {@code <encodingDetectors>} config to use
+ * this detector in place of the lenient {@link org.apache.tika.parser.html.HtmlEncodingDetector}
+ * default.
  */
-@TikaComponent(name = "standard-html-encoding-detector")
+@TikaComponent(name = "standard-html-encoding-detector", spi = false)
 public final class StandardHtmlEncodingDetector implements EncodingDetector {
     /**
      * Default number of bytes to scan for a {@code <meta charset>} declaration.
@@ -64,21 +57,6 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
 
     private int markLimit = META_TAG_BUFFER_SIZE;
 
-    /**
-     * When {@code true}, the BOM check is skipped and the detector goes directly to
-     * the Content-Type header and {@code <meta>} scan.  This is the default because
-     * {@code BOMDetector} handles BOM detection as a separate step in the chain,
-     * allowing {@code CharSoupEncodingDetector} to arbitrate between a BOM declaration
-     * and a contradicting {@code <meta charset>} rather than having the BOM silently
-     * short-circuit the meta-tag scan.
-     *
-     * <p>Set to {@code false} only when using this detector standalone (without
-     * {@code BOMDetector} in the chain) to get full HTML5 spec-compliant behaviour.</p>
-     *
-     * <p>Default: {@code true}.</p>
-     */
-    private boolean skipBOM = true;
-
     @Override
     public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
                                        ParseContext context) throws IOException {
@@ -88,17 +66,7 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
                 .setInputStream(tis).setMaxCount(limit).get();
         PreScanner preScanner = new PreScanner(limitedStream);
 
-        Charset detectedCharset = null;
-
-        if (!skipBOM) {
-            // HTML5 spec: BOM overrides everything.  When used standalone this
-            // detector is responsible for BOM detection; when used in the chain with
-            // BOMDetector, setting skipBOM=true lets CharSoup arbitrate.
-            detectedCharset = preScanner.detectBOM();
-        }
-        if (detectedCharset == null) {
-            detectedCharset = MetadataCharsetDetector.charsetFromContentType(metadata);
-        }
+        Charset detectedCharset = MetadataCharsetDetector.charsetFromContentType(metadata);
         if (detectedCharset == null) {
             detectedCharset = MetadataCharsetDetector.charsetFromContentEncoding(metadata);
         }
@@ -124,19 +92,5 @@ public final class StandardHtmlEncodingDetector implements EncodingDetector {
      */
     public void setMarkLimit(int markLimit) {
         this.markLimit = markLimit;
-    }
-
-    public boolean isSkipBOM() {
-        return skipBOM;
-    }
-
-    /**
-     * When {@code true}, skip the BOM check and rely on {@code BOMDetector} in the
-     * chain.  This allows {@code CharSoupEncodingDetector} to arbitrate between a
-     * BOM and a contradicting {@code <meta charset>} declaration.
-     * Default is {@code true}.
-     */
-    public void setSkipBOM(boolean skipBOM) {
-        this.skipBOM = skipBOM;
     }
 }

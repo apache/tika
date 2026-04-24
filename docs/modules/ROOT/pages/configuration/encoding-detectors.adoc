@@ -40,9 +40,9 @@ The default chain when `tika-charset-detectors-core` is on the classpath:
 |A UTF-8, UTF-16 LE/BE, or UTF-32 LE/BE byte-order mark is present.
 
 |3
-|`standard-html-encoding-detector`
+|`html-encoding-detector`
 |An HTML `<meta charset="…">` or `Content-Type` http-equiv tag is found
-(WHATWG spec prescan algorithm).
+(fast lenient regex matcher, curated WHATWG label aliases).
 
 |4
 |`ml-encoding-detector`
@@ -100,9 +100,10 @@ referenced by name in JSON configuration.
 |`tika-charset-detectors-core`
 |Byte-order mark detection (UTF-8/16/32).  In the default chain.
 
-|`standard-html-encoding-detector`
+|`html-encoding-detector`
 |`tika-charset-detectors-core`
-|WHATWG-spec HTML charset prescan.  In the default chain.
+|Fast lenient regex matcher for `<meta charset>` / `http-equiv` tags, with a
+curated subset of WHATWG label aliases.  In the default chain.
 
 |`ml-encoding-detector`
 |`tika-charset-detectors-core`
@@ -114,10 +115,11 @@ In the default chain.
 |State-machine structural prober; wraps the `com.github.albfernandez:juniversalchardet`
 fork.  Auto-registers when the module jar is on the classpath.
 
-|`html-encoding-detector`
+|`standard-html-encoding-detector`
 |`tika-charset-detectors-core`
-|Older regex-based HTML meta-charset detector.  Not in the default chain
-(use `standard-html-encoding-detector` instead).
+|Spec-strict WHATWG prescan algorithm.  Not in the default chain — opt in
+explicitly if you need strict WHATWG tokenisation (e.g. ignoring charset
+declarations inside comments or other contexts the lenient regex may match).
 
 |`icu4j-encoding-detector`
 |`tika-charset-detectors-icu4j`
@@ -159,7 +161,7 @@ statistical chain:
   "encoding-detectors": [
     {"http-header-encoding-detector": {}},
     {"bom-encoding-detector": {}},
-    {"standard-html-encoding-detector": {}},
+    {"html-encoding-detector": {}},
     {"ml-encoding-detector": {}}
   ]
 }
@@ -177,7 +179,7 @@ large `<script>` blocks before the `<meta charset>` declaration.
     {"http-header-encoding-detector": {}},
     {"bom-encoding-detector": {}},
     {
-      "standard-html-encoding-detector": {
+      "html-encoding-detector": {
         "markLimit": 65536
       }
     },

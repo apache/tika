@@ -60,12 +60,13 @@ every detector runs regardless of what the others returned, and the
   (≤ 50 bytes).
 
 | 4
-| `StandardHtmlEncodingDetector`
+| `HtmlEncodingDetector`
 | `tika-encoding-detector-html`
-| Scans HTML `<meta charset>` / `<meta http-equiv=Content-Type>` tags.
-  Returns a DECLARATIVE result.  Skips BOM detection by default
-  (`skipBOM=true`) so that `BOMDetector` owns that signal; set `skipBOM=false`
-  for standalone use without `BOMDetector`.
+| Scans HTML `<meta charset>` / `<meta http-equiv=Content-Type>` tags with a
+  fast lenient regex matcher.  Returns a DECLARATIVE result.  Applies a
+  curated subset of WHATWG label aliases (see <<html-charset-aliases>>).
+  An alternative, spec-strict implementation — `StandardHtmlEncodingDetector`
+  — is available opt-in for users who need the full WHATWG prescan algorithm.
 
 | 5
 | `CharSoupEncodingDetector`
@@ -503,10 +504,10 @@ Reads the first 4 bytes and detects:
 | `FE FF` | UTF-16-BE
 |===
 
-Returns a DECLARATIVE result.  `StandardHtmlEncodingDetector` skips BOM
-detection by default (`skipBOM=true`) so that `BOMDetector` is the sole source
-of BOM evidence.  This separation allows `CharSoupEncodingDetector` to
-arbitrate when a BOM and a `<meta charset>` tag disagree.
+Returns a DECLARATIVE result.  The HTML detectors do not handle BOMs on their
+own: `BOMDetector` is the sole source of BOM evidence, which lets
+`CharSoupEncodingDetector` arbitrate when a BOM and a `<meta charset>` tag
+disagree.
 
 == Performance and accuracy
 

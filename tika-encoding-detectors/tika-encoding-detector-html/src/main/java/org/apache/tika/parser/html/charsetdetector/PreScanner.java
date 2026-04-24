@@ -20,7 +20,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.BitSet;
 import java.util.Map;
@@ -50,9 +49,6 @@ class PreScanner {
     private static final BitSet SPACE_OR_SLASH = bitSet(WHITESPACE, SLASH);
     private static final BitSet SPECIAL_TAGS = bitSet('!', '/', '?');
 
-    private static final byte[] UTF8_BOM = {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF};
-    private static final byte[] UTF16_BE_BOM = {(byte) 0xFE, (byte) 0xFF};
-    private static final byte[] UTF16_LE_BOM = {(byte) 0xFF, (byte) 0xFE};
     private static final byte LOWER_A = (byte) 'a';
     private static final byte LOWER_Z = (byte) 'z';
     private static final byte UPPER_A = (byte) 'A';
@@ -94,19 +90,6 @@ class PreScanner {
                 return detectedCharset.getCharset();
             }
         }
-        return null;
-    }
-
-    Charset detectBOM() {
-        try {
-            if (expect(UTF8_BOM)) {
-                return StandardCharsets.UTF_8;
-            } else if (expect(UTF16_BE_BOM)) {
-                return StandardCharsets.UTF_16BE;
-            } else if (expect(UTF16_LE_BOM)) {
-                return StandardCharsets.UTF_16LE;
-            }
-        } catch (IOException e) { /* stream could not be read, also return null */ }
         return null;
     }
 

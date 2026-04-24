@@ -1,9 +1,0 @@
-{
-  "encoding-detectors": [
-    {
-      "standard-html-encoding-detector": {
-        "skipBOM": false
-      }
-    }
-  ]
-}
