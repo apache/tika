@@ -56,15 +56,11 @@ import org.apache.tika.quality.TextQualityScore;
  * <p>All features are calibrated (mu/sigma) on held-out dev text so their z-scores
  * are on a common scale.
  *
- * <ul>
- *   <li><b>Version 1</b>: bigrams only; z-score = z1.</li>
- *   <li><b>Version 2</b>: equal-weight average: {@code (z1 + z2 + z3) / 3}.</li>
- *   <li><b>Version 3</b>: per-script learned linear combination:
- *       {@code w1*z1 + w2*z2 + w3*z3 + bias}, where weights are fit by logistic
- *       regression on clean vs. corrupted dev windows.  The natural junk threshold
- *       is 0 (positive logit = clean); use a negative threshold for conservative
- *       detection (e.g., {@code score < -1}).</li>
- * </ul>
+ * <p>Features are combined by a per-script logistic regression classifier:
+ * {@code w1*z1 + w2*z2 + w3*z3 + w4*z4 + bias}, where weights are fit on
+ * clean vs. corrupted dev windows.  The natural junk threshold is 0 (positive
+ * logit = clean); use a negative threshold for conservative detection
+ * (e.g., {@code score &lt; -1}).</p>
  *
  * <p>Instances are immutable and thread-safe after construction.
  *
@@ -182,7 +178,7 @@ public final class JunkDetector implements TextQualityDetector {
 
     /**
      * Loads a model from an {@link InputStream}.  Gzip-detection is automatic.
-     * Supports model versions 1, 2, and 3.
+     * Supports model versions 1 through 5.
      */
     public static JunkDetector load(InputStream rawIs) throws IOException {
         byte[] peek = rawIs.readNBytes(2);
@@ -201,86 +197,62 @@ public final class JunkDetector implements TextQualityDetector {
                 throw new IOException("Not a JunkDetector model file (bad magic)");
             }
             int version = dis.readUnsignedByte();
-            if (version < 1 || version > 4) {
-                throw new IOException("Unsupported model version: " + version);
+            if (version != 5) {
+                throw new IOException("Unsupported model version: " + version
+                        + ". Only version 5 is supported. Retrain the model with TrainJunkModel.");
             }
 
             int numScripts = dis.readInt();
 
-            // Version 2+: read global block table dimension
-            int blockN = 0;
-            Map<Character.UnicodeBlock, Integer> blockIndex = null;
-            if (version >= 2) {
-                blockN = dis.readUnsignedShort();
-                blockIndex = buildBlockIndex();
-                int expectedN = blockIndex.size() + 1;
-                if (blockN != expectedN) {
-                    throw new IOException(String.format(
-                            "Block table dimension mismatch: model has %d but JVM gives %d. "
-                            + "Model was trained with a different Java version.", blockN, expectedN));
-                }
+            // Block names (v5): stored in model for JVM-independence
+            int blockN = dis.readUnsignedShort();
+            String[] blockNames = new String[blockN - 1];
+            for (int i = 0; i < blockN - 1; i++) {
+                int nameLen = dis.readUnsignedShort();
+                blockNames[i] = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
             }
+            Map<Character.UnicodeBlock, Integer> blockIndex = buildBlockIndexFromNames(blockNames);
 
-            Map<String, float[]> tables       = new HashMap<>(numScripts * 2);
-            Map<String, float[]> calibrations = new HashMap<>(numScripts * 2);
-
-            Map<String, float[]> blockTables         = version >= 2 ? new HashMap<>(numScripts * 2) : null;
-            Map<String, float[]> blockCalibrations   = version >= 2 ? new HashMap<>(numScripts * 2) : null;
-            Map<String, float[]> controlCalibrations = version >= 2 ? new HashMap<>(numScripts * 2) : null;
-            Map<String, float[]> classifierWeights   = version >= 3 ? new HashMap<>(numScripts * 2) : null;
-
-            // Version 4+: global script-transition section
-            float[] scriptTransitionTable = null;
-            float[] scriptTransitionCalibration = null;
-            Map<String, Integer> scriptBucketIndex = null;
-            int numScriptBuckets = 0;
-
-            if (version >= 4) {
-                numScriptBuckets = dis.readUnsignedByte();
-                scriptBucketIndex = new LinkedHashMap<>(numScriptBuckets * 2);
-                for (int i = 0; i < numScriptBuckets; i++) {
-                    int nameLen = dis.readUnsignedShort();
-                    String bucketName = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
-                    scriptBucketIndex.put(bucketName, i);
-                }
-                scriptTransitionTable = readFloatTable(dis, numScriptBuckets * numScriptBuckets);
-                float mu4 = dis.readFloat();
-                float sigma4 = dis.readFloat();
-                scriptTransitionCalibration = new float[]{mu4, sigma4};
+            // Global script-transition section
+            int numScriptBuckets = dis.readUnsignedByte();
+            Map<String, Integer> scriptBucketIndex = new LinkedHashMap<>(numScriptBuckets * 2);
+            for (int i = 0; i < numScriptBuckets; i++) {
+                int nameLen = dis.readUnsignedShort();
+                String bucketName = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
+                scriptBucketIndex.put(bucketName, i);
             }
+            float[] scriptTransitionTable = readFloatTable(dis, numScriptBuckets * numScriptBuckets);
+            float[] scriptTransitionCalibration = new float[]{dis.readFloat(), dis.readFloat()};
+
+            Map<String, float[]> tables              = new HashMap<>(numScripts * 2);
+            Map<String, float[]> calibrations        = new HashMap<>(numScripts * 2);
+            Map<String, float[]> blockTables         = new HashMap<>(numScripts * 2);
+            Map<String, float[]> blockCalibrations   = new HashMap<>(numScripts * 2);
+            Map<String, float[]> controlCalibrations = new HashMap<>(numScripts * 2);
+            Map<String, float[]> classifierWeights   = new HashMap<>(numScripts * 2);
 
             for (int s = 0; s < numScripts; s++) {
                 int nameLen = dis.readUnsignedShort();
                 String script = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
 
                 // Feature 1: byte bigrams
-                float mu1 = dis.readFloat();
-                float sigma1 = dis.readFloat();
-                calibrations.put(script, new float[]{mu1, sigma1});
+                calibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
                 tables.put(script, readFloatTable(dis, 65536));
 
-                if (version >= 2) {
-                    // Feature 2: named-block transitions
-                    float mu2 = dis.readFloat();
-                    float sigma2 = dis.readFloat();
-                    blockCalibrations.put(script, new float[]{mu2, sigma2});
-                    blockTables.put(script, readFloatTable(dis, blockN * blockN));
+                // Feature 2: named-block transitions
+                blockCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
+                blockTables.put(script, readFloatTable(dis, blockN * blockN));
 
-                    // Feature 3: control-byte fraction
-                    float mu3 = dis.readFloat();
-                    float sigma3 = dis.readFloat();
-                    controlCalibrations.put(script, new float[]{mu3, sigma3});
+                // Feature 3: control-byte fraction
+                controlCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
 
-                    if (version >= 3) {
-                        // Classifier weights: num_features (1 byte) + num_features floats + 1 bias
-                        int numFeatures = dis.readUnsignedByte();
-                        float[] weights = new float[numFeatures + 1]; // last = bias
-                        for (int j = 0; j <= numFeatures; j++) {
-                            weights[j] = dis.readFloat();
-                        }
-                        classifierWeights.put(script, weights);
-                    }
+                // Classifier weights: num_features (1 byte) + num_features floats + 1 bias
+                int numFeatures = dis.readUnsignedByte();
+                float[] weights = new float[numFeatures + 1]; // last = bias
+                for (int j = 0; j <= numFeatures; j++) {
+                    weights[j] = dis.readFloat();
                 }
+                classifierWeights.put(script, weights);
             }
 
             return new JunkDetector(version, tables, calibrations,
@@ -302,12 +274,38 @@ public final class JunkDetector implements TextQualityDetector {
     /**
      * Builds the stable ordered mapping from {@link Character.UnicodeBlock} to index.
      * This must produce the same ordering as {@link TrainJunkModel#buildBlockIndex()}.
+     * Used for v2/v3/v4 models only; v5+ models store block names in the file.
      */
     static Map<Character.UnicodeBlock, Integer> buildBlockIndex() {
         LinkedHashMap<Character.UnicodeBlock, Integer> index = new LinkedHashMap<>();
         for (int cp = 0; cp <= 0x10FFFF; cp++) {
             Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
             if (b != null) index.putIfAbsent(b, index.size());
+        }
+        return Collections.unmodifiableMap(index);
+    }
+
+    /**
+     * Builds a block index from an ordered array of block names stored in a v5+ model.
+     * Resolves each name via {@link Character.UnicodeBlock#forName(String)}.
+     * Throws {@link IOException} if any name is not recognised by the current JVM —
+     * this means the model was trained on a newer JVM; retrain on the minimum
+     * supported JVM (Java 17) to produce a compatible model.
+     *
+     * @param blockNames ordered array of block names (index = position in block table)
+     * @return unmodifiable map from UnicodeBlock to table index
+     */
+    static Map<Character.UnicodeBlock, Integer> buildBlockIndexFromNames(String[] blockNames)
+            throws IOException {
+        Map<Character.UnicodeBlock, Integer> index = new HashMap<>(blockNames.length * 2);
+        for (int i = 0; i < blockNames.length; i++) {
+            try {
+                Character.UnicodeBlock b = Character.UnicodeBlock.forName(blockNames[i]);
+                index.put(b, i);
+            } catch (IllegalArgumentException e) {
+                throw new IOException("Unicode block not known to this JVM: " + blockNames[i]
+                        + ". Model was trained on a newer JVM; retrain on Java 17.", e);
+            }
         }
         return Collections.unmodifiableMap(index);
     }
@@ -450,60 +448,53 @@ public final class JunkDetector implements TextQualityDetector {
         float[] cal1 = calibrations.get(script);
         float z1 = (meanBigramLogProb - cal1[0]) / cal1[1];
 
-        float z2 = 0f, z3 = 0f;
-        if (modelVersion >= 2 && blockTables != null) {
-            // Feature 2: named-block transition mean log-prob
-            float[] blockTable = blockTables.get(script);
-            if (blockTable != null) {
-                int nullId = blockN - 1;
-                int prev = -1;
-                double blockSum = 0;
-                int blockCount = 0;
-                for (int i = 0; i < text.length(); ) {
-                    int cp = text.codePointAt(i);
-                    Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
-                    int blockId = b != null ? blockIndex.getOrDefault(b, nullId) : nullId;
-                    if (prev >= 0) {
-                        blockSum += blockTable[prev * blockN + blockId];
-                        blockCount++;
-                    }
-                    prev = blockId;
-                    i += Character.charCount(cp);
+        // Feature 2: named-block transition mean log-prob
+        float z2 = 0f;
+        float[] blockTable = blockTables.get(script);
+        if (blockTable != null) {
+            int nullId = blockN - 1;
+            int prev = -1;
+            double blockSum = 0;
+            int blockCount = 0;
+            for (int i = 0; i < text.length(); ) {
+                int cp = text.codePointAt(i);
+                Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
+                int blockId = b != null ? blockIndex.getOrDefault(b, nullId) : nullId;
+                if (prev >= 0) {
+                    blockSum += blockTable[prev * blockN + blockId];
+                    blockCount++;
                 }
-                if (blockCount > 0) {
-                    float meanBlockLogProb = (float) (blockSum / blockCount);
-                    float[] cal2 = blockCalibrations.get(script);
-                    z2 = cal2 != null ? (meanBlockLogProb - cal2[0]) / cal2[1] : 0f;
-                }
+                prev = blockId;
+                i += Character.charCount(cp);
             }
-
-            // Feature 3: control-byte fraction (stored as −fraction, so higher = cleaner)
-            long controlCount = 0;
-            for (byte b : utf8) {
-                if (isControlByte(b & 0xFF)) controlCount++;
+            if (blockCount > 0) {
+                float meanBlockLogProb = (float) (blockSum / blockCount);
+                float[] cal2 = blockCalibrations.get(script);
+                z2 = cal2 != null ? (meanBlockLogProb - cal2[0]) / cal2[1] : 0f;
             }
-            float controlScore = -(float) controlCount / utf8.length;
-            float[] cal3 = controlCalibrations.get(script);
-            z3 = cal3 != null ? (controlScore - cal3[0]) / cal3[1] : 0f;
         }
 
-        if (modelVersion >= 3 && classifierWeights != null) {
-            float[] cw = classifierWeights.get(script);
-            if (cw != null) {
-                int nFeat = cw.length - 1; // bias is last
-                float logit = cw[nFeat];   // bias
-                if (nFeat >= 1) logit += cw[0] * z1;
-                if (nFeat >= 2) logit += cw[1] * z2;
-                if (nFeat >= 3) logit += cw[2] * z3;
-                if (nFeat >= 4) logit += cw[3] * z4;
-                return logit;
-            }
-            return (z1 + z2 + z3) / 4.0f; // fallback: equal weight including z4
-        } else if (modelVersion >= 2 && blockTables != null) {
-            return (z1 + z2 + z3) / 3.0f;
-        } else {
-            return z1;
+        // Feature 3: control-byte fraction (stored as −fraction, so higher = cleaner)
+        long controlCount = 0;
+        for (byte b : utf8) {
+            if (isControlByte(b & 0xFF)) controlCount++;
         }
+        float controlScore = -(float) controlCount / utf8.length;
+        float[] cal3 = controlCalibrations.get(script);
+        float z3 = cal3 != null ? (controlScore - cal3[0]) / cal3[1] : 0f;
+
+        // Per-script linear classifier: w1*z1 + w2*z2 + w3*z3 + w4*z4 + bias
+        float[] cw = classifierWeights.get(script);
+        if (cw != null) {
+            int nFeat = cw.length - 1; // bias is last
+            float logit = cw[nFeat];   // bias
+            if (nFeat >= 1) logit += cw[0] * z1;
+            if (nFeat >= 2) logit += cw[1] * z2;
+            if (nFeat >= 3) logit += cw[2] * z3;
+            if (nFeat >= 4) logit += cw[3] * z4;
+            return logit;
+        }
+        return (z1 + z2 + z3 + z4) / 4.0f; // fallback: equal weight
     }
 
     /**
@@ -512,8 +503,7 @@ public final class JunkDetector implements TextQualityDetector {
      * so that HIRAGANA, KATAKANA, and HAN remain distinct, preserving the
      * characteristic script-mixing pattern of Japanese text.
      *
-     * <p>Returns 0 if no v4 model is loaded or the string has fewer than two
-     * non-neutral codepoints.
+     * <p>Returns 0 if the string has fewer than two non-neutral codepoints.
      */
     private float computeScriptTransitionZ(String text) {
         if (scriptTransitionTable == null || scriptBucketIndex == null

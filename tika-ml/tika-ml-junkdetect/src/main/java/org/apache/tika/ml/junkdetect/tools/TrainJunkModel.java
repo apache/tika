@@ -77,15 +77,18 @@ import java.util.zip.GZIPOutputStream;
  * The natural threshold is 0 (probability 0.5); use a negative threshold for
  * more conservative junk detection.
  *
- * <p>Output format: {@code JUNKDET1} gzipped binary, <b>version 4</b>.
- * Version 1 (bigrams only), version 2 (equal-weight average), and version 3 files can
- * still be loaded by {@code JunkDetector}.
+ * <p>Output format: {@code JUNKDET1} gzipped binary, <b>version 5</b>.
+ * Version 1–4 files can still be loaded by {@code JunkDetector} on the JVM they were trained on.
  *
  * <pre>
  *   [8 bytes]  magic "JUNKDET1" (ASCII)
  *   [1 byte]   version = 4
  *   [4 bytes]  num_scripts (big-endian int)
  *   [2 bytes]  block_N — number of distinct named Unicode blocks + 1 (unassigned)
+ *   // Block names section (version 5+): block_N-1 entries for JVM-independence
+ *   for i in [0, block_N-1):
+ *     [2 bytes]     name length (big-endian ushort)
+ *     [name bytes]  Unicode block name (Character.UnicodeBlock.toString())
  *   // Global script-transition section (version 4+)
  *   [1 byte]   num_script_buckets
  *   for each bucket:
@@ -121,7 +124,7 @@ import java.util.zip.GZIPOutputStream;
 public class TrainJunkModel {
 
     static final String MAGIC = "JUNKDET1";
-    static final byte VERSION = 4;
+    static final byte VERSION = 5;
 
     /** Number of clean (and corrupted) windows used to train the per-script classifier. */
     static final int NUM_CLASSIFIER_SAMPLES = 500;
@@ -191,7 +194,7 @@ public class TrainJunkModel {
             }
         }
 
-        System.out.println("=== TrainJunkModel (v4) ===");
+        System.out.println("=== TrainJunkModel (v5) ===");
         System.out.println("  data-dir: " + dataDir);
         System.out.println("  output:   " + output);
 
@@ -359,7 +362,7 @@ public class TrainJunkModel {
         saveModel(bigramTables, bigramCalibrations,
                   blockTables, blockCalibrations,
                   controlCalibrations, classifierWeights,
-                  blockN, scriptBuckets, scriptTransTable, scriptTransCal, output);
+                  blockIndex, blockN, scriptBuckets, scriptTransTable, scriptTransCal, output);
         System.out.printf("Model size: %,d bytes (%.1f MB)%n",
                 Files.size(output), Files.size(output) / 1_000_000.0);
         System.out.println("Done.");
@@ -915,6 +918,7 @@ public class TrainJunkModel {
                           TreeMap<String, float[]> blockCalibrations,
                           TreeMap<String, float[]> controlCalibrations,
                           TreeMap<String, float[]> classifierWeights,
+                          Map<Character.UnicodeBlock, Integer> blockIndex,
                           int blockN,
                           List<String> scriptBuckets,
                           float[] scriptTransTable,
@@ -927,6 +931,17 @@ public class TrainJunkModel {
             dos.writeByte(VERSION);
             dos.writeInt(bigramTables.size());
             dos.writeShort(blockN);
+
+            // Block names section (v5+): write ordered block names for JVM-independence
+            String[] blockNames = new String[blockN - 1];
+            for (Map.Entry<Character.UnicodeBlock, Integer> e : blockIndex.entrySet()) {
+                blockNames[e.getValue()] = e.getKey().toString();
+            }
+            for (String name : blockNames) {
+                byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
+                dos.writeShort(nameBytes.length);
+                dos.write(nameBytes);
+            }
 
             // Global script-transition section (v4+)
             int numBuckets = scriptBuckets.size();
