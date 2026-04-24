@@ -1,0 +1,428 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Building the Junk Detector
+
+This page documents the training pipeline, model format, evaluation methodology,
+and guidance for improving the junk detector model.  For usage, see
+xref:advanced/junk-detection.adoc[Text Quality Scoring (Junk Detection)].
+
+== Overview
+
+The junk detector is a per-script byte-bigram language model.  For each
+Unicode script (Latin, Cyrillic, Arabic, Han, etc.) it maintains a 256×256
+table of `log P(byte_b | byte_a)` values — the probability of seeing byte `b`
+immediately after byte `a` in clean UTF-8 text of that script.
+
+The pipeline has three stages:
+
+[source]
+----
+1. BuildJunkTrainingData   — collect and split corpus per script group
+2. TrainJunkModel          — train bigram tables and calibrate z-scores
+3. EvalJunkDetector        — measure discrimination quality
+----
+
+All three tools are packaged as a fat JAR via the `train` Maven profile:
+
+[source,bash]
+----
+mvn -pl tika-ml/tika-ml-junkdetect package -Ptrain -DskipTests
+----
+
+The resulting JAR is `tika-ml-junkdetect-*-train.jar`.
+
+== Stage 1: Corpus collection (`BuildJunkTrainingData`)
+
+This tool collects clean UTF-8 sentences from language-specific source files,
+groups them by Unicode script, allocates a byte budget proportional to
+per-script bigram entropy, and writes 80/10/10 train/dev/test splits.
+
+=== Data format
+
+Source data lives in one directory per language (ISO 639 code), each containing
+up to two files:
+
+`sentences_wikipedia.txt`::
+  Line-numbered Wikipedia sentences: `{lineNum}{TAB}{text}`.
+  One sentence per line.
+
+`sentences_madlad.txt`::
+  Line-numbered MADLAD-400 documents: `{lineNum}{TAB}{text}`.
+  Documents contain literal two-character `\n` escape sequences as
+  sub-sentence separators.  The tool splits on these before processing.
+
+=== Script group detection
+
+For each language directory the dominant Unicode script is detected by
+sampling up to 2,000 lines and histogramming `Character.UnicodeScript` over
+all codepoints.  The `COMMON`, `INHERITED`, and `UNKNOWN` pseudo-scripts are
+excluded.  The plurality script (with a 1% minimum floor to suppress spurious
+wins on mixed-script text) determines which group that language belongs to.
+
+Languages that share the same dominant script are pooled together into one
+training group.  No script groups are hardcoded — the set of groups is derived
+entirely from the data.
+
+=== Entropy-proportional byte budget
+
+All scripts are not equal: CJK text has thousands of distinct 3-byte UTF-8
+codepoints producing high byte-bigram entropy (~10.4 bits), while Arabic text
+clusters in a narrow 0xD8–0xDB high-byte range (~7.2 bits).  A naïve
+sentence-count budget would badly over-represent low-entropy scripts.
+
+Instead the tool allocates a **total byte budget** (default 50 MB) across
+script groups in proportion to their empirical byte-bigram Shannon entropy,
+estimated from a 200 KB sample per group:
+
+[source]
+----
+H(script) = -Σ p(a,b) · log₂ p(a,b)   over all observed bigrams (a,b)
+
+budget(script) = totalBudget × H(script) / Σ H(all scripts)
+----
+
+Within each script group the budget is distributed evenly across its member
+languages, ensuring no single language dominates the training data.
+
+=== Train/dev/test split
+
+After collecting and shuffling sentences, the tool writes three gzipped files
+per script:
+
+[cols="1,1,3"]
+|===
+| File | Split | Purpose
+
+| `{script}.train.gz`
+| 80%
+| Bigram count accumulation in `TrainJunkModel`.
+
+| `{script}.dev.gz`
+| 10%
+| Calibration (mu/sigma estimation) in `TrainJunkModel`.
+  Also used for iterative evaluation during development.
+
+| `{script}.test.gz`
+| 10%
+| **Held out completely.**  Use only for final reported evaluation numbers.
+  Never use to make model or threshold decisions.
+|===
+
+=== Running corpus collection
+
+[source,bash]
+----
+java -cp tika-ml-junkdetect-*-train.jar \
+  org.apache.tika.ml.junkdetect.tools.BuildJunkTrainingData \
+  --data-dir   ~/datasets/madlad/data \
+  --output-dir ~/datasets/madlad/junkdetect \
+  --total-budget-bytes 50000000
+----
+
+Key options:
+
+[cols="2,1,3"]
+|===
+| Option | Default | Description
+
+| `--data-dir`
+| `~/datasets/madlad/data`
+| Root directory containing per-language subdirectories.
+
+| `--output-dir`
+| `~/datasets/madlad/junkdetect`
+| Where to write `{script}.train.gz`, `.dev.gz`, `.test.gz`, and `manifest.tsv`.
+
+| `--total-budget-bytes`
+| `50000000`
+| Total UTF-8 byte budget across all scripts.  Increase for production runs.
+
+| `--min-bytes`
+| `50`
+| Minimum UTF-8 byte length for a sentence to be accepted.
+
+| `--max-punc-frac`
+| `0.30`
+| Maximum fraction of codepoints that may be ASCII punctuation or digits.
+  Filters out bullet lists, code snippets, and other non-prose content.
+
+| `--seed`
+| `42`
+| Random seed for reproducible shuffles.
+
+| `--dry-run`
+| `false`
+| Print script detection and entropy results without writing files.
+|===
+
+== Stage 2: Training (`TrainJunkModel`)
+
+For each script, this tool reads the `.train.gz` file, accumulates
+byte-bigram counts, applies Laplace smoothing, computes log-probabilities,
+then calibrates z-score statistics from the `.dev.gz` file.
+
+=== Bigram table training
+
+[source]
+----
+for each sentence in {script}.train.gz:
+    utf8 = sentence.getBytes(UTF-8)
+    for each consecutive pair (a, b) in utf8:
+        counts[a * 256 + b]++
+
+for each row a in 0..255:
+    rowTotal = Σ (counts[a * 256 + b] + 1)  for b in 0..255   // Laplace add-1
+    for each b in 0..255:
+        table[a * 256 + b] = log((counts[a * 256 + b] + 1) / rowTotal)
+----
+
+Laplace (add-1) smoothing is applied per row: every possible next byte is
+given a pseudocount of 1, preventing log(0) for unseen bigrams and providing
+a small but nonzero probability for novel byte sequences.
+
+=== Calibration
+
+For each sentence in `{script}.dev.gz`:
+
+[source]
+----
+meanLogProb = Σ table[bigram] / (bytes - 1)
+----
+
+The calibration statistics are the mean (μ) and standard deviation (σ) of
+`meanLogProb` across all dev sentences.  At inference:
+
+[source]
+----
+zScore = (meanLogProb - μ) / σ
+----
+
+A z-score of 0 means "exactly as likely as average clean text for this script."
+Negative scores indicate text that is less likely than clean — i.e., garbled.
+
+=== Running training
+
+[source,bash]
+----
+java -cp tika-ml-junkdetect-*-train.jar \
+  org.apache.tika.ml.junkdetect.tools.TrainJunkModel \
+  --data-dir ~/datasets/madlad/junkdetect \
+  --output   ~/datasets/madlad/junkdetect/junkdetect.bin
+----
+
+After training, copy the model to the classpath resource location:
+
+[source,bash]
+----
+cp ~/datasets/madlad/junkdetect/junkdetect.bin \
+   tika-ml/tika-ml-junkdetect/src/main/resources/org/apache/tika/ml/junkdetect/junkdetect.bin
+----
+
+== Stage 3: Evaluation (`EvalJunkDetector`)
+
+The evaluator measures how well the model separates clean text from
+corrupted text across scripts, distortion types, and string lengths.
+
+=== Distortion modes
+
+[cols="1,3"]
+|===
+| Mode | Description
+
+| `inject`
+| Random bytes (0x80–0xFF) are substituted at rate `r` of positions.
+  Tests from 1% injection (subtle corruption) to 90% (nearly all garbage).
+
+| `char-reverse`
+| Codepoints are reversed (Unicode-aware, preserving surrogate pairs).
+  Produces valid UTF-8 but in nonsensical reading order.
+  Most meaningful for RTL scripts (Arabic, Hebrew) where reversed text
+  is a realistic failure mode; LTR script bigrams are nearly symmetric,
+  so detection is harder.
+
+| `byte-shuffle`
+| All bytes are randomly shuffled (Fisher-Yates).
+  The most extreme corruption — destroys all sequential structure.
+|===
+
+=== Output files
+
+`detail.tsv`::
+  One row per `(script, distortion, param, length)` cell, with columns:
+  `script`, `distortion`, `param`, `length`, `n_clean`, `n_corrupt`,
+  `mean_clean_z`, `mean_corrupt_z`, `cohens_d`, `fpr`, `tpr`.
+
+`summary.tsv`::
+  Macro-averaged across scripts per `(distortion, param, length)`.
+  The `macro_cohens_d` column is the headline comparison metric.
+
+=== Key metrics
+
+**Cohen's d** (primary metric)::
+  Effect size separating clean from corrupted z-scores:
++
+[source]
+----
+d = (mean_clean_z - mean_corrupt_z) / pooled_std
+----
++
+Higher is better.  A value of 1.0 means the distributions are separated by
+one pooled standard deviation.  Values above 2.0 indicate strong, reliable
+discrimination.
+
+**True positive rate (TPR)**::
+  Fraction of corrupted samples with z < threshold (−2.0 by default).
+  Higher is better.
+
+**False positive rate (FPR)**::
+  Fraction of clean samples with z < threshold.  Should stay near 2–5%.
+  A well-calibrated model will have FPR ≈ 2.5% (since z < −2.0 corresponds
+  to the left tail of the standard normal for clean text).
+
+=== Running evaluation
+
+[source,bash]
+----
+# During development: use the dev split
+java -cp tika-ml-junkdetect-*-train.jar \
+  org.apache.tika.ml.junkdetect.tools.EvalJunkDetector \
+  --data-dir ~/datasets/madlad/junkdetect \
+  --split    dev \
+  --output-dir ~/datasets/madlad/junkdetect/eval
+
+# Final reporting only: use the held-out test split
+java -cp tika-ml-junkdetect-*-train.jar \
+  org.apache.tika.ml.junkdetect.tools.EvalJunkDetector \
+  --data-dir ~/datasets/madlad/junkdetect \
+  --split    test \
+  --output-dir ~/datasets/madlad/junkdetect/eval-final
+----
+
+IMPORTANT: Use `--split test` only once, for final reporting.  The test split
+is completely held out and should never inform model or threshold decisions.
+
+=== Tracking improvement
+
+To compare two model versions:
+
+1. Train model A, run `EvalJunkDetector --split dev`, save `summary.tsv` as
+   `summary-A.tsv`.
+2. Retrain as model B, run eval again, save as `summary-B.tsv`.
+3. Diff the `macro_cohens_d` column.  Positive change = improvement.
+
+The `# OVERALL` line at the bottom of `summary.tsv` gives a single-number
+summary of model quality.
+
+== Model binary format (JUNKDET1)
+
+The model is stored as a gzipped binary file.  Auto-detection of the gzip
+wrapper is done by inspecting the first two bytes (magic `0x1f 0x8b`).
+
+[source]
+----
+[8 bytes]  magic "JUNKDET1" (ASCII)
+[1 byte]   version = 1
+[4 bytes]  num_scripts (int32 big-endian)
+
+For each script (sorted by name):
+  [2 bytes]  name length (uint16 big-endian)
+  [N bytes]  script name (UTF-8)
+  [4 bytes]  μ — mean of dev-set mean_bigram_logprob (float32 big-endian)
+  [4 bytes]  σ — std deviation (float32 big-endian)
+  [65536×4 bytes]  log-prob table (float32 big-endian, index = a*256+b)
+----
+
+The default classpath resource is
+`org/apache/tika/ml/junkdetect/junkdetect.bin`.
+
+== Known limitations and improvement paths
+
+=== Baltic and closely related Latin scripts
+
+The LATIN script pools ~322 languages from Latin, Basic Latin, and extended
+Latin alphabets.  Baltic languages (Lithuanian, Latvian) use distinctive
+diacritics encoded differently in cp1257 vs. cp1252, but these bigrams are
+diluted by the large shared Latin vocabulary.  The model correctly identifies
+the winner but with low delta (< 0.5), below the production confidence
+threshold of 1.0.
+
+**Possible improvements:**
+
+* Retrain with Baltic languages weighted more heavily within the LATIN group.
+* Split LATIN into LATIN-WEST and LATIN-EAST sub-models, where LATIN-EAST
+  receives its own dedicated bigram table trained primarily on Baltic, Slavic
+  Latin (Polish, Czech, Slovak), and Romanian.
+
+=== RTL script reversal
+
+For Arabic and Hebrew, codepoint-reversal is a realistic failure mode (text
+stored in the wrong visual order).  The model detects this with moderate
+Cohen's d at lengths ≥ 50 characters.  Shorter strings (15–30 characters)
+show weaker separation because there are too few bigrams to be statistically
+reliable.
+
+**Possible improvement:** train a secondary short-text specialist model for
+RTL scripts using finer-grained features (trigrams or unigram frequency
+distributions).
+
+=== Scaling up
+
+The default 50 MB byte budget is a proof-of-concept setting.  For production:
+
+* Increase `--total-budget-bytes` to 500 MB or more.
+* Larger budgets improve calibration quality (tighter σ, more accurate μ)
+  and reduce variance on infrequent bigrams.
+* The model binary grows only slightly (the 256×256 table is the same size
+  regardless of training set size) — only calibration quality improves.
+
+== Smoke tests
+
+Five smoke tests in `JunkDetectorSmokeTest` verify the bundled model.
+All tests use the `TextQualityDetector` interface and return `TextQualityScore`
+or `TextQualityComparison` from `tika-core`.
+
+[cols="1,3"]
+|===
+| Test | What it checks
+
+| `cleanVsGarbage`
+| Clean English `TextQualityScore` z-score > random high-byte garbage z-score.
+  Garbage is decoded from ISO-8859-1 to produce a scoreable string.
+
+| `forwardVsReversedArabic`
+| Forward Arabic z-score > codepoint-reversed Arabic z-score.
+  Reversal is done at codepoint (not byte) granularity, preserving valid Unicode.
+
+| `cp1252VsCp1257OnBalticText`
+| `compare()` returns `TextQualityComparison` picking cp1257 for Lithuanian text.
+  Delta > 0.1 (weak; Baltic limitation documented above).
+
+| `cp1252VsCp1251OnRussianText`
+| `compare()` picks cp1251 for Russian text.  Delta > 1.0 (strong; Cyrillic
+  bigrams are highly distinctive).
+
+| `cleanVsShuffledCjk`
+| Clean Japanese z-score > byte-shuffled Japanese z-score.
+  Shuffled bytes are decoded as ISO-8859-1 to produce a scoreable string.
+|===
+
+NOTE: Codepoint reversal of LTR scripts (Russian, Latin) is **not** a useful
+smoke test — LTR byte-bigram distributions are nearly symmetric, so the model
+cannot reliably distinguish forward from reversed text.  The Russian test uses
+codec comparison (cp1251 vs. cp1252) instead, which is the actual real-world
+failure mode for Cyrillic text.
