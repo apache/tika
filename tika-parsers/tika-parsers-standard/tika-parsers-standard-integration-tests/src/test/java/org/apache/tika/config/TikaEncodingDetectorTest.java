@@ -62,7 +62,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
         EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
-        // 4 base detectors (BOM, Metadata, ML, StandardHtml) + CharSoupEncodingDetector (MetaEncodingDetector)
+        // 4 base detectors (BOM, Metadata, ML, HtmlEncodingDetector) + CharSoupEncodingDetector (MetaEncodingDetector)
         assertEquals(5, detectors.size());
         // meta detector is always last (partitioned by CompositeEncodingDetector)
         assertTrue(detectors.get(4) instanceof MetaEncodingDetector);
@@ -72,7 +72,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(baseClasses.contains(BOMDetector.class));
         assertTrue(baseClasses.contains(MetadataCharsetDetector.class));
         assertTrue(baseClasses.contains(NaiveBayesPipelineEncodingDetector.class));
-        assertTrue(baseClasses.contains(StandardHtmlEncodingDetector.class));
+        assertTrue(baseClasses.contains(HtmlEncodingDetector.class));
     }
 
     @Test
@@ -284,14 +284,14 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors =
                 ((CompositeEncodingDetector) detector).getDetectors();
-        // 4 base detectors (BOM + Metadata + ML + StandardHtml), no MetaEncodingDetector
+        // 4 base detectors (BOM + Metadata + ML + HtmlEncodingDetector), no MetaEncodingDetector
         assertEquals(4, detectors.size());
         Set<Class<?>> excludedCharSoupClasses = detectors.stream()
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(excludedCharSoupClasses.contains(BOMDetector.class));
         assertTrue(excludedCharSoupClasses.contains(MetadataCharsetDetector.class));
         assertTrue(excludedCharSoupClasses.contains(NaiveBayesPipelineEncodingDetector.class));
-        assertTrue(excludedCharSoupClasses.contains(StandardHtmlEncodingDetector.class));
+        assertTrue(excludedCharSoupClasses.contains(HtmlEncodingDetector.class));
         for (EncodingDetector d : detectors) {
             assertNotContained("CharSoup", d.getClass().getSimpleName());
         }
@@ -339,41 +339,6 @@ public class TikaEncodingDetectorTest extends TikaTest {
         // Verify extracted text contains readable Arabic, not mojibake
         // \u0627\u0644\u0639\u0631\u0628\u064a\u0629 = "العربية" (Arabic)
         assertContains("\u0627\u0644\u0639\u0631\u0628\u064a\u0629", result.xml);
-    }
-
-    /**
-     * Demonstrates loading a config file that sets {@code skipBOM=false} on
-     * {@code StandardHtmlEncodingDetector} for standalone use (without
-     * {@code BOMDetector} in the chain).  With this config, the HTML detector
-     * handles BOM detection itself, so BOM takes precedence over
-     * {@code <meta charset>} per the HTML5 spec.
-     *
-     * @see configs/tika-config-html-standalone-bom.json
-     */
-    @Test
-    public void testStandaloneHtmlBomConfig() throws Exception {
-        TikaLoader tikaLoader =
-                TikaLoaderHelper.getLoader("tika-config-html-standalone-bom.json");
-        EncodingDetector detector = tikaLoader.loadEncodingDetectors();
-        assertTrue(detector instanceof CompositeEncodingDetector);
-        List<EncodingDetector> detectors =
-                ((CompositeEncodingDetector) detector).getDetectors();
-        assertEquals(1, detectors.size());
-        assertTrue(detectors.get(0) instanceof StandardHtmlEncodingDetector);
-        assertFalse(((StandardHtmlEncodingDetector) detectors.get(0)).isSkipBOM(),
-                "skipBOM should be false for standalone use");
-
-        // BOM-prefixed HTML with a contradicting <meta charset>:
-        // with skipBOM=false the BOM wins (HTML5 spec behaviour).
-        byte[] html = "\ufeff<meta charset='WINDOWS-1252'>"
-                .getBytes(StandardCharsets.UTF_8);
-        try (TikaInputStream tis = TikaInputStream.get(html)) {
-            List<EncodingResult> results =
-                    detector.detect(tis, new Metadata(), new ParseContext());
-            assertFalse(results.isEmpty());
-            assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset(),
-                    "standalone skipBOM=false: BOM should override <meta charset>");
-        }
     }
 
     private void findEncodingDetectionParsers(Parser p, List<Parser> encodingDetectionParsers) {

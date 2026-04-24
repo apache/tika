@@ -55,6 +55,64 @@ public class HtmlEncodingDetectorTest {
     }
 
     @Test
+    public void iso88591IsWindows1252() throws IOException {
+        // WHATWG: iso-8859-1 is an alias for windows-1252.
+        assertWindows1252("<meta charset='iso-8859-1'>");
+    }
+
+    @Test
+    public void usAsciiIsWindows1252() throws IOException {
+        assertWindows1252("<meta charset='us-ascii'>");
+    }
+
+    @Test
+    public void iso88599IsWindows1254() throws IOException {
+        assertCharset("<meta charset='iso-8859-9'>", Charset.forName("windows-1254"));
+    }
+
+    @Test
+    public void tis620IsWindows874() throws IOException {
+        assertCharset("<meta charset='tis-620'>", Charset.forName("windows-874"));
+    }
+
+    @Test
+    public void gb2312IsGbk() throws IOException {
+        assertCharset("<meta charset='gb2312'>", Charset.forName("GBK"));
+    }
+
+    @Test
+    public void ms932IsShiftJis() throws IOException {
+        assertCharset("<meta charset='ms932'>", Charset.forName("Shift_JIS"));
+    }
+
+    @Test
+    public void ms949IsXWindows949() throws IOException {
+        // Tika convention (differs from WHATWG which downgrades to EUC-KR):
+        // route MS949 labels to x-windows-949 to preserve extension bytes.
+        assertCharset("<meta charset='ms949'>", Charset.forName("x-windows-949"));
+        assertCharset("<meta charset='windows-949'>", Charset.forName("x-windows-949"));
+    }
+
+    @Test
+    public void nakedUtf16IsUtf16Le() throws IOException {
+        // WHATWG: naked 'utf-16' (no BOM) defaults to UTF-16LE.
+        assertCharset("<meta charset='utf-16'>", StandardCharsets.UTF_16LE);
+    }
+
+    @Test
+    public void hebrewLabelIsIso88598() throws IOException {
+        assertCharset("<meta charset='hebrew'>", Charset.forName("ISO-8859-8"));
+    }
+
+    @Test
+    public void iso2022KrIsNotReplaced() throws IOException {
+        // WHATWG replaces iso-2022-kr with a dummy "replacement" decoder;
+        // Tika keeps the real ISO-2022-KR charset because we want to extract
+        // text, not block attacks.
+        assertCharset("<meta charset='iso-2022-kr'>", Charset.forName("ISO-2022-KR"));
+    }
+
+    @Test
     public void withSlash() throws IOException {
         assertWindows1252("<meta/charset='WINDOWS-1252'>");
     }

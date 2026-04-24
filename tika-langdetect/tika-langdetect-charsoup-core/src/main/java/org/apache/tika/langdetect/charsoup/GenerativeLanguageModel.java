@@ -310,38 +310,22 @@ public class GenerativeLanguageModel {
         }
     }
 
-    /**
-     * Score {@code text} against all languages and return the best match.
-     */
-    public Map.Entry<String, Float> bestMatch(String text) {
-        String best = null;
-        float  bestScore = Float.NEGATIVE_INFINITY;
-        for (String lang : langIds) {
-            float s = score(text, lang);
-            if (!Float.isNaN(s) && s > bestScore) {
-                bestScore = s;
-                best = lang;
-            }
-        }
-        return best == null ? null : Map.entry(best, bestScore);
-    }
-
-    /**
-     * Average raw score of {@code text} across all CJK languages in the model.
-     */
-    public float avgCjkScore(String text) {
-        double sum = 0;
-        int count = 0;
-        for (int i = 0; i < langIds.size(); i++) {
-            if (!isCjk[i]) continue;
-            float s = score(text, langIds.get(i));
-            if (!Float.isNaN(s)) {
-                sum += s;
-                count++;
-            }
-        }
-        return count == 0 ? Float.NaN : (float) (sum / count);
-    }
+    // Cross-language score comparison was removed (formerly bestMatch /
+    // avgCjkScore).  The per-class raw scores are not comparable across
+    // languages: each language's per-bucket log-probabilities are
+    // normalised by that language's own training-corpus total, so
+    // small-corpus languages produce systematically higher per-bucket
+    // log-probs than large-corpus languages on out-of-class input.
+    // In practice a real Chinese probe scored as {@code zho} would return
+    // a raw score around -8 while scoring the same probe against a small
+    // minor-language model would return a raw score around -3 to -5 just
+    // from the smoothing-denominator artefact.  The GLM is designed to
+    // answer "given it is language X, how natural is this text as
+    // language X?" — not "which language is this?".  Callers that need
+    // to pick a language first must do so with the discriminative
+    // classifier (CharSoupLanguageDetector), then pass that language
+    // explicitly to {@link #score}, {@link #zScore}, or
+    // {@link #zScoreLengthAdjusted}.
 
     // ---- Z-score API ----
 

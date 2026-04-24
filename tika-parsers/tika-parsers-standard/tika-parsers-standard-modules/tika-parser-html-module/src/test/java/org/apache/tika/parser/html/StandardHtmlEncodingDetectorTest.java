@@ -190,21 +190,10 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     @Test
-    public void bomStandalone() throws IOException {
-        // When used standalone (skipBOM=false), BOM has precedence over meta per HTML5 spec.
-        // In the default chain, BOMDetector handles BOM separately so this detector
-        // skips it (skipBOM=true) and focuses on <meta charset>.
-        // See TikaEncodingDetectorTest.testStandaloneHtmlBomConfig() for a config-file example.
-        StandardHtmlEncodingDetector standalone = standaloneDetector();
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8, standalone);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE, standalone);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE, standalone);
-    }
-
-    @Test
-    public void bomSkippedByDefault() throws IOException {
-        // With default skipBOM=true, BOM is ignored and meta tag wins.
-        // BOMDetector in the chain handles BOM as a separate context entry.
+    public void bomIgnoredMetaWins() throws IOException {
+        // This detector no longer handles BOMs; BOMDetector is a separate detector
+        // in the chain. If the stream happens to start with BOM bytes, the prescan
+        // still finds <meta charset>.
         assertCharset("\ufeff<meta charset='WINDOWS-1252'>",
                 Charset.forName("WINDOWS-1252"));
     }
@@ -306,11 +295,6 @@ public class StandardHtmlEncodingDetectorTest {
         assertWindows1252("");
         assertWindows1252("<meta charset='UTF-8'>");
         assertWindows1252("<meta http-equiv='content-type' content='charset=utf-8'>");
-        // With skipBOM=false (standalone), BOM has precedence over transport layer info
-        StandardHtmlEncodingDetector standalone = standaloneDetector();
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_8, standalone);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16LE, standalone);
-        assertCharset("\ufeff<meta charset='WINDOWS-1252'>", StandardCharsets.UTF_16BE, standalone);
     }
 
     @Test
@@ -347,12 +331,6 @@ public class StandardHtmlEncodingDetectorTest {
         // The stream should still be readable from the beginning after detection
         inStream.read(outBytes);
         assertArrayEquals(inBytes, outBytes);
-    }
-
-    private static StandardHtmlEncodingDetector standaloneDetector() {
-        StandardHtmlEncodingDetector d = new StandardHtmlEncodingDetector();
-        d.setSkipBOM(false);
-        return d;
     }
 
     private void assertWindows1252(String html) throws IOException {

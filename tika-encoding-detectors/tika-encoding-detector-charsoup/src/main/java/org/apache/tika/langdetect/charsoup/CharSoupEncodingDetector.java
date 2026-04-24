@@ -290,13 +290,32 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
     }
 
     /**
-     * Generative-model tiebreaker: for each candidate charset's decoded text,
-     * detect the most likely language then compute its z-score. The charset
-     * producing the highest z-score (closest to "real language") wins, provided
-     * it exceeds {@link #MIN_GENERATIVE_ZSCORE}.
+     * Generative-model tiebreaker: for each candidate charset's decoded
+     * text, let the discriminative language classifier pick the most
+     * likely language, then ask the generative model how natural the
+     * decoded text is UNDER THAT LANGUAGE. The charset producing the
+     * highest length-adjusted z-score wins, provided it exceeds
+     * {@link #MIN_GENERATIVE_ZSCORE}.
      *
-     * @return the winning charset, or {@code null} if no candidate passes the
-     *         threshold or all candidates decode to identical text
+     * <p>The chaining matters. An earlier revision used
+     * {@code GLM.bestMatch(text)} to pick the language, which compares
+     * raw scores across all ~200 languages. That comparison is
+     * unreliable because out-of-class inputs can produce hash-collision
+     * scores that exceed in-class scores for another language — the
+     * classic pathology where real Chinese prose ranks at position 20
+     * under zho while Sakizaya, Amis, Min-Dong-romanization, and other
+     * unrelated languages rank ahead of it. The GLM's raw scores were
+     * never meant for across-language comparison. The discriminative
+     * classifier was trained explicitly for that job and is far more
+     * reliable at picking the language. Once a language is picked, the
+     * GLM's per-language calibrated z-score answers the question it
+     * actually was designed for: "is this decoded text natural text in
+     * language X?"
+     *
+     * @return the winning charset, or {@code null} if no candidate
+     *         passes the z-score threshold, no candidate yields a
+     *         discriminative language prediction, or all candidates
+     *         decode to identical text
      */
     private static <K> K generativeTiebreak(Map<K, String> candidates) {
         if (candidates.isEmpty()) {
@@ -323,13 +342,20 @@ public class CharSoupEncodingDetector implements MetaEncodingDetector {
             if (CharSoupLanguageDetector.junkRatio(text) > 0.10f) {
                 continue;
             }
-            Map.Entry<String, Float> match = GLM.bestMatch(text);
-            if (match == null) {
+            // Chain: discriminative classifier picks the language,
+            // GLM scores under that language (not bestMatch across all langs).
+            List<String> topLangs =
+                    CharSoupLanguageDetector.topShortTextLanguages(text, 1);
+            if (topLangs.isEmpty()) {
                 continue;
             }
-            float z = GLM.zScoreLengthAdjusted(text, match.getKey());
-            LOG.debug("generativeTiebreak: {} -> lang={} z={}",
-                    entry.getKey(), match.getKey(), z);
+            String discLang = topLangs.get(0);
+            if (discLang == null || discLang.isEmpty()) {
+                continue;
+            }
+            float z = GLM.zScoreLengthAdjusted(text, discLang);
+            LOG.debug("generativeTiebreak: {} -> discLang={} z={}",
+                    entry.getKey(), discLang, z);
             if (!Float.isNaN(z) && z > bestZ) {
                 bestZ = z;
                 bestKey = entry.getKey();

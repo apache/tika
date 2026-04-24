@@ -48,9 +48,10 @@ gate, and 33-class byte-bigram Naive Bayes classifier.  STRUCTURAL for
 structural hits; STATISTICAL for NB predictions.
 
 |4
-|`standard-html-encoding-detector`
+|`html-encoding-detector`
 |An HTML `<meta charset="…">` or `<meta http-equiv="Content-Type">` tag
-is found (WHATWG spec prescan).  Emits DECLARATIVE.
+is found (fast lenient regex matcher, curated WHATWG label aliases).
+Emits DECLARATIVE.
 
 |5
 |`charsoup-encoding-detector`
@@ -94,15 +95,16 @@ multi-byte, EBCDIC variants, DOS code pages, Cyrillic, Windows single-byte,
 ISO-8859-3/16, Mac, and UTF-8.  In the default chain.  See
 xref:../advanced/charset-detection-design.adoc[the design doc].
 
-|`standard-html-encoding-detector`
-|`tika-encoding-detector-html`
-|WHATWG-spec HTML charset prescan.  In the default chain.
-
 |`html-encoding-detector`
 |`tika-encoding-detector-html`
-|Older regex-based HTML meta-charset detector.  Not auto-registered; opt
-in explicitly if you need tolerance for malformed `<meta>` tags the
-spec-compliant prescan would reject.
+|Fast lenient regex matcher for `<meta charset>` / `http-equiv` tags, with a
+curated subset of WHATWG label aliases.  In the default chain.
+
+|`standard-html-encoding-detector`
+|`tika-encoding-detector-html`
+|Spec-strict WHATWG prescan algorithm.  Not in the default chain — opt in
+explicitly if you need strict WHATWG tokenisation (e.g. ignoring charset
+declarations inside comments or other contexts the lenient regex may match).
 
 |`charsoup-encoding-detector`
 |`tika-encoding-detector-charsoup`
@@ -156,7 +158,7 @@ behaviour), omit CharSoup:
   "encoding-detectors": [
     {"bom-detector": {}},
     {"metadata-charset-detector": {}},
-    {"standard-html-encoding-detector": {}},
+    {"html-encoding-detector": {}},
     {"naive-bayes-pipeline-encoding-detector": {}}
   ]
 }
@@ -170,7 +172,7 @@ for details.
 
 === Configure the HTML detector's read limit
 
-`standard-html-encoding-detector` reads up to 65 536 bytes by default when
+`html-encoding-detector` reads up to 65 536 bytes by default when
 scanning for the `<meta charset>` tag.  Raise it if your documents embed
 large `<script>` blocks before the meta tag (TIKA-2485):
 
@@ -181,7 +183,7 @@ large `<script>` blocks before the meta tag (TIKA-2485):
     {"bom-detector": {}},
     {"metadata-charset-detector": {}},
     {
-      "standard-html-encoding-detector": {
+      "html-encoding-detector": {
         "markLimit": 131072
       }
     },
@@ -202,7 +204,7 @@ latency — but available for regression testing or comparison:
   "encoding-detectors": [
     {"bom-detector": {}},
     {"metadata-charset-detector": {}},
-    {"standard-html-encoding-detector": {}},
+    {"html-encoding-detector": {}},
     {"icu4j-encoding-detector": {}},
     {"universal-encoding-detector": {}}
   ]

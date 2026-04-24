@@ -59,10 +59,13 @@ results are collected into an `EncodingDetectorContext` on the
   predictions.  See <<nb-pipeline>>.
 
 | 4
-| `StandardHtmlEncodingDetector`
+| `HtmlEncodingDetector`
 | `tika-encoding-detector-html`
-| Scans HTML `<meta charset>` / `<meta http-equiv=Content-Type>`.
-  DECLARATIVE.
+| Scans HTML `<meta charset>` / `<meta http-equiv=Content-Type>` tags with a
+  fast lenient regex matcher.  Returns a DECLARATIVE result.  Applies a
+  curated subset of WHATWG label aliases (see <<html-charset-aliases>>).
+  An alternative, spec-strict implementation — `StandardHtmlEncodingDetector`
+  — is available opt-in for users who need the full WHATWG prescan algorithm.
 
 | 5
 | `CharSoupEncodingDetector`
@@ -299,7 +302,188 @@ Evaluated on a held-out 37-charset devtest corpus (~1.22M probes per
 probe length).  Raw outputs are preserved in
 `tika-encoding-detectors/tika-encoding-detector-mojibuster/docs/performance/`.
 
-=== Strict accuracy (top-1 charset name match)
+Conversely, the default chain (with CharSoup) tolerates lying
+declarations at the cost of occasionally overriding a correct one when
+the language signal is ambiguous.  Pick the trade-off that matches your
+deployment.
+
+[[thai-gbk-case-study]]
+=== Case study: why top-N limiting and the generative model matter
+
+Consider the GBK-encoded ZIP entry name `审计压缩包文件检索测试/` (23 bytes).
+The byte-ngram model correctly ranks *GB18030 at #1 with 0.99 confidence*.
+But without top-N limiting, the model also returns lower-ranked candidates
+including `windows-874` (Thai) at #8 with 0.15 confidence:
+
+----
+#1  GB18030     conf=0.99  → "审计压缩包文件检索测试/"  (correct Chinese)
+#2  EUC-JP      conf=0.36  → "蕪柴儿抹淫猟周殊沫霞編/"  (Japanese gibberish)
+#3  Big5-HKSCS  conf=0.31  → "机數揤坫婦恅璃潰坰聆彸/"  (CJK gibberish)
+  ...
+#8  windows-874 conf=0.15  → "ษ๓ผฦันห๕ฐ�ฮฤผ�ผ์ห๗ฒโสิ/"  (Thai-looking text)
+----
+
+The GBK bytes happen to land in Thai character ranges when decoded as
+`windows-874`.  CharSoup's discriminative language model scores Thai text
+confidently (it recognises Thai character patterns), while the Chinese text
+decoded from GB18030 may score lower on a 23-byte probe.  Without top-N
+limiting, CharSoup overrides the model's correct high-confidence #1 pick
+with the wrong #8 pick — returning `x-windows-874` instead of `GB18030`.
+
+The fix has two parts:
+
+. **Top-N limiting**: on short probes (≤ 50 bytes), only the top 3 candidates
+  are passed to CharSoup.  `windows-874` at #8 never enters the candidate set.
+  CharSoup arbitrates among {GB18030, EUC-JP, Big5-HKSCS} — all CJK encodings
+  where the generative model can meaningfully compare text quality.
+
+. **Generative language model**: even within the top 3, the discriminative
+  language model can be fooled by coincidental character patterns on short
+  probes.  The generative model provides a second check: it scores _how
+  language-like_ each decoded text is for its detected language, rather than
+  just _which language_ it looks like.  Genuine Chinese text ("审计压缩包文件
+  检索测试") scores well under the Chinese generative model; CJK gibberish
+  from wrong-charset decoding scores poorly.
+
+This example illustrates a fundamental limitation of discriminative language
+models for charset arbitration: their logits are not comparable across scripts.
+A discriminative model answers "_which_ language is this?" — but when the same
+bytes decode as Chinese under one charset and Thai under another, the model
+produces two confident answers in two unrelated scripts.  Comparing the Thai
+logit to the Chinese logit is meaningless; the model was never trained to rank
+"real Chinese" against "fake Thai" on an absolute scale.  This cross-script
+incomparability is not a rare edge case — it will happen whenever wrong-charset
+decoding maps bytes into a different script's character range, which is common
+for CJK encodings whose byte values overlap with Thai, Arabic, Cyrillic, and
+other single-byte encodings.
+
+The generative model solves this by asking a different question: not "_which_
+language is this?" but "_how language-like_ is this text for language L?"
+Genuine Chinese text ("审计压缩包文件检索测试") scores well under the Chinese
+generative model because its character n-gram statistics match real Chinese.
+Thai-looking gibberish from a wrong-charset decode scores poorly under the
+Thai generative model because — despite using Thai characters — it doesn't
+follow Thai character co-occurrence patterns.  This quality signal is
+comparable across scripts, making it safe to use for cross-script arbitration.
+
+=== junkRatio
+
+The junk ratio filters out clearly wrong-charset decodings before language
+scoring runs.  Currently counts:
+
+* U+FFFD replacement characters (wrong-charset multi-byte decode)
+* U+FFFE (the "wrong-endian BOM" / Unicode noncharacter — produced when a
+  UTF-16 BOM is decoded with the wrong byte order)
+* ISO C1 control characters 0x00–0x08, 0x0E–0x1F, 0x80–0x9F (excluding TAB,
+  LF, VT, FF, CR which appear in source code and structured documents)
+
+Ordinary whitespace is not junk.  Non-ASCII non-alphabetic punctuation
+(e.g. `•` U+2022, `¶` U+00B6) is also not junk — while these can indicate a
+wrong-charset single-byte decoding of multi-byte lead bytes, they also appear
+legitimately in windows-125x documents (bullet lists, legal symbols).  The
+language model already handles this discrimination correctly.
+
+=== Why "positive logit" is the only threshold
+
+Earlier versions used two thresholds: a minimum absolute confidence
+(`sigmoid ≥ 0.88`) and a minimum relative margin between best and runner-up.
+Both were removed.  Rationale:
+
+* If the language model gives a positive logit for any language in the decoded
+  text, it has a real signal.  The best-logit candidate is better than all the
+  alternatives by definition — requiring an additional margin just delays the
+  correct answer.
+* The margin threshold was sensitive to which other charsets happened to be in
+  the candidate set.  A third candidate with a strong (but wrong) language
+  signal could narrow the margin below threshold and force a fallback to the
+  model's top statistical pick, which might be wrong.
+
+== MetadataCharsetDetector
+
+A lightweight detector in `tika-core` that reads declarative charset hints from
+the `Metadata` object before any byte analysis:
+
+* `Content-Type` charset parameter (e.g. `text/html; charset=windows-1251`)
+* `Content-Encoding` (used by `RFC822Parser` and similar MIME-aware parsers)
+
+Applies WHATWG label normalization: `ISO-8859-1` and `US-ASCII` are mapped to
+`windows-1252` because browsers (and the HTML5 spec) treat them as aliases for
+windows-1252 in practice.
+
+Returns a DECLARATIVE result, so `CharSoupEncodingDetector` will treat it with
+preference over statistical candidates.
+
+== BOMDetector
+
+Reads the first 4 bytes and detects:
+
+[cols="1,1", options="header"]
+|===
+| Byte sequence | Encoding
+
+| `EF BB BF` | UTF-8
+| `FF FE 00 00` | UTF-32-LE
+| `00 00 FE FF` | UTF-32-BE
+| `FF FE` | UTF-16-LE
+| `FE FF` | UTF-16-BE
+|===
+
+Returns a DECLARATIVE result.  The HTML detectors do not handle BOMs on their
+own: `BOMDetector` is the sole source of BOM evidence, which lets
+`CharSoupEncodingDetector` arbitrate when a BOM and a `<meta charset>` tag
+disagree.
+
+== Performance and accuracy
+
+Numbers are from the held-out MADLAD-400 + Wikipedia devtest set (model v6).
+1 469 647 samples across 41 charsets including structural-only charsets
+(US-ASCII, ISO-2022-JP/KR/CN, UTF-32-BE/LE).
+
+"All" = ML model + structural pre-filters + all post-processing rules — this
+is the production configuration.  UTF-32 is detected by a structural
+pre-filter (validity-only codepoint check inspired by ICU4J's
+`CharsetRecog_UTF_32`); UTF-16 uses a combination of structural phases
+(null-column, low-block-prefix) and the ML model for CJK cases.  The ML model
+has 35 classes (UTF-32 labels are excluded from training since they are handled
+structurally).
+
+Raw eval output: `eval-v6-no-utf32.txt` in this directory.
+
+=== Overall accuracy
+
+[cols="2,1,1,1", options="header"]
+|===
+| Metric | Mojibuster (All) | ICU4J | juniversalchardet
+
+| Strict accuracy (full probe) | **95.0%** | 45.5% | 33.5%
+| Soft accuracy (full probe)   | **97.3%** | 67.0% | 42.0%
+| Decode-match (full probe)    | **99.4%** | 54.8% | 41.2%
+| Alpha-match (full probe)     | **99.8%** | 55.3% | 43.5%
+| Latency (full probe)         | **~13 µs** | ~147 µs | ~16 µs
+|===
+
+**Strict accuracy** = exact charset name match. +
+**Soft accuracy** = exact or confusable-group match (e.g. predicting IBM500 for
+an IBM1047 file counts as soft-correct since they share 247 of 256 byte
+mappings). +
+**Decode-match** = the predicted charset decodes the probe bytes to the same
+string as the true charset (the prediction is functionally correct even if the
+label differs). +
+**Alpha-match** = same as decode-match but ignoring non-alphanumeric characters.
+
+=== Accuracy by probe length
+
+[cols="1,1,1,1,1,1", options="header"]
+|===
+| Probe length | Strict% | Soft% | Top-3% | Decode% | Alpha%
+
+| 8 bytes   | 59.1 | 62.6 | 70.2 | 83.2 | 83.4
+| 32 bytes  | 80.8 | 83.6 | 86.3 | 93.4 | 93.5
+| 128 bytes | 91.4 | 93.8 | 94.2 | 97.4 | 97.5
+| full      | 95.0 | 97.3 | 97.3 | 99.4 | 99.8
+|===
+
+=== Strict accuracy vs baseline detectors (by probe length)
 
 [cols="1,1,1,1", options="header"]
 |===
