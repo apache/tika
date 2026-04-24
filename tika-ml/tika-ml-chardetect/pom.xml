@@ -57,6 +57,11 @@
       <artifactId>tika-encoding-detector-universal</artifactId>
       <version>${revision}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-charsoup</artifactId>
+      <version>${revision}</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -114,7 +119,7 @@
           ./mvnw package -pl tika-ml/tika-ml-chardetect -am -Ptrain -DskipTests \
               -Dmaven.repo.local=.local_m2_repo
           java -jar tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-              [TrainCharsetModel|EvalCharsetDetectors|BenchmarkCharsetDetectors|DiagnoseCharsetDetector] \
+              [TrainNaiveBayesBigram|EvalCharsetDetectors|BenchmarkCharsetDetectors|TrainUtf16Specialist] \
               [args...]
       -->
       <id>train</id>
@@ -132,7 +137,7 @@
                   <shadedClassifierName>tools</shadedClassifierName>
                   <transformers>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.apache.tika.ml.chardetect.tools.TrainCharsetModel</mainClass>
+                      <mainClass>org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram</mainClass>
                     </transformer>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>

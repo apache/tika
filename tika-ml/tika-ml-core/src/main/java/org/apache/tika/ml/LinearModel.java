@@ -335,6 +335,35 @@ public class LinearModel {
     }
 
     /**
+     * Compute logits for a <em>dense</em> float feature vector.  Unlike
+     * {@link #predictLogits(int[])}, which assumes sparse integer counts
+     * and applies per-bucket clipping to suppress single-feature dominance
+     * in hashed representations, this method just performs a plain
+     * dot product — appropriate for adjudicator / meta-model feature
+     * vectors where each slot is already a calibrated quantity
+     * (specialist logit, z-score, one-hot flag, etc.).
+     *
+     * @param features float array of length {@code numBuckets}
+     * @return float array of length {@code numClasses} (raw logits)
+     */
+    public float[] predictLogitsDense(float[] features) {
+        if (features.length != numBuckets) {
+            throw new IllegalArgumentException(
+                    "features.length " + features.length + " != numBuckets " + numBuckets);
+        }
+        float[] logits = new float[numClasses];
+        for (int c = 0; c < numClasses; c++) {
+            float dot = 0f;
+            float sc = scales[c];
+            for (int i = 0; i < numBuckets; i++) {
+                dot += sc * flatWeights[i * numClasses + c] * features[i];
+            }
+            logits[c] = biases[c] + dot;
+        }
+        return logits;
+    }
+
+    /**
      * Compute softmax probabilities for the given feature vector.
      *
      * @param features int array of size {@code numBuckets}

@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.ml.chardetect.MojibusterEncodingDetector;
+import org.apache.tika.ml.chardetect.NaiveBayesPipelineEncodingDetector;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
@@ -88,11 +88,11 @@ public class BenchmarkCharsetDetectors {
                 samples.size(), totalBytes, (double) totalBytes / samples.size());
 
         EncodingDetector[] detectors = {
-            new MojibusterEncodingDetector(),
+            new NaiveBayesPipelineEncodingDetector(),
             new Icu4jEncodingDetector(),
             new UniversalEncodingDetector(),
         };
-        String[] names = {"MojibusterEncodingDetector", "Icu4jEncodingDetector", "UniversalEncodingDetector"};
+        String[] names = {"NaiveBayesPipelineEncodingDetector", "Icu4jEncodingDetector", "UniversalEncodingDetector"};
 
         System.out.printf(Locale.ROOT, "%-28s  %8s  %10s  %10s%n",
                 "Detector", "Rounds", "MB/s", "µs/call");

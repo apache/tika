@@ -19,20 +19,19 @@
 :toc:
 :toc-placement: left
 
-Tika 4.x introduces a new charset detection pipeline built from scratch.
-It combines structural byte-pattern rules, a purpose-trained ML classifier
-covering 35 charset classes, and language-signal arbitration into an
-integrated _collect all candidates, then arbitrate_ architecture.
+Tika 4.x ships a charset detection pipeline built around a purpose-trained
+byte-bigram Naive Bayes (NB) classifier, small dedicated structural detectors
+for UTF-16 and UTF-32, and language-signal arbitration.  The design is
+_"collect candidates from every layer, then arbitrate"_ rather than
+first-detector-wins.
 
 == Pipeline overview
 
-The default `EncodingDetector` chain registered via SPI runs five detectors in
-order.  All results are collected into an `EncodingDetectorContext` stored in
-the `ParseContext`.  When a `MetaEncodingDetector` (currently only
-`CharSoupEncodingDetector`) is present in the chain,
-`CompositeEncodingDetector` switches into _collect-all-then-arbitrate_ mode:
-every detector runs regardless of what the others returned, and the
-`MetaEncodingDetector` makes the final call using the full picture.
+The default `EncodingDetector` chain is assembled via the Java SPI.  All
+results are collected into an `EncodingDetectorContext` on the
+`ParseContext`; when a `MetaEncodingDetector` (currently
+`CharSoupEncodingDetector`) is present,
+`CompositeEncodingDetector` switches into collect-all-then-arbitrate mode.
 
 [cols="1,2,1,2", options="header"]
 |===
@@ -41,23 +40,23 @@ every detector runs regardless of what the others returned, and the
 | 1
 | `BOMDetector`
 | `tika-core`
-| Definitive — reads the first 4 bytes and returns a DECLARATIVE result when a
-  UTF-8, UTF-16, or UTF-32 BOM is present.  Returns empty otherwise.
+| Reads the first 4 bytes.  Returns a DECLARATIVE result when a
+  UTF-8 / UTF-16 / UTF-32 BOM is present.
 
 | 2
 | `MetadataCharsetDetector`
 | `tika-core`
-| Reads `Content-Type` (charset parameter) and `Content-Encoding` from
-  `Metadata`.  Applies WHATWG label normalization (ISO-8859-1 and US-ASCII →
-  windows-1252).  Returns a DECLARATIVE result when a charset is found.
+| Reads `Content-Type` charset parameter and `Content-Encoding` from
+  `Metadata`.  Applies WHATWG label normalization (ISO-8859-1 and
+  US-ASCII → windows-1252).  DECLARATIVE.
 
 | 3
-| `MojibusterEncodingDetector`
+| `NaiveBayesPipelineEncodingDetector`
 | `tika-encoding-detector-mojibuster`
-| Structural pre-filters (UTF-32, UTF-16, ISO-2022, UTF-8) + ML byte-ngram
-  classifier (35 classes including UTF-16, CJK, EBCDIC, and single-byte
-  encodings).  Returns 1 candidate for long probes, up to 3 for short probes
-  (≤ 50 bytes).
+| Structural UTF-32 and UTF-16 detection, UTF-8 grammar gate, HTML
+  attribute-aware stripping, then a 33-class byte-bigram NB
+  classifier.  STRUCTURAL for structural hits; STATISTICAL for NB
+  predictions.  See <<nb-pipeline>>.
 
 | 4
 | `HtmlEncodingDetector`
@@ -71,284 +70,214 @@ every detector runs regardless of what the others returned, and the
 | 5
 | `CharSoupEncodingDetector`
 | `tika-encoding-detector-charsoup`
-| `MetaEncodingDetector`.  Receives all candidates from the context and
-  arbitrates using language scoring (see <<charsoup>>).
+| `MetaEncodingDetector`.  Arbitrates across all base-detector
+  candidates using language scoring.  See <<charsoup>>.
 |===
 
 === EncodingResult and ResultType
 
-Detectors return `List<EncodingResult>` instead of a single `Charset`.
-Each `EncodingResult` carries:
+Detectors return `List<EncodingResult>`.  Each carries:
 
-* `charset` — the detected `java.nio.charset.Charset`
-* `confidence` — 0.0–1.0 float
-* `label` — the detector's original internal label (e.g. `IBM424-ltr`,
-  `UTF-16-BE`) which may be finer-grained than the Java charset name
-* `resultType` — one of:
+* `charset` — the detected `java.nio.charset.Charset`.
+* `confidence` — 0.0 to 1.0.
+* `label` — the detector's internal label (may be finer than the Java
+  charset name, e.g. `IBM424-ltr`, `UTF-16-BE`).
+* `resultType` — one of `DECLARATIVE`, `STRUCTURAL`, `STATISTICAL`.
 
-[cols="1,3", options="header"]
-|===
-| ResultType | Meaning
+In the default chain, CharSoup arbitrates across all three tiers by
+language signal — declared charsets are not automatically authoritative.
+See <<opting-out-of-arbitration>> for HTML5-spec-compliant behavior that
+honours declarations without second-guessing.
 
-| `DECLARATIVE`
-| Explicit charset declaration: BOM, HTML `<meta>` tag, HTTP Content-Type
-  header, or metadata hint.
-+
-*Important — declared charsets are NOT trusted by default.* When
-`CharSoupEncodingDetector` is in the chain (the default configuration),
-DECLARATIVE candidates are treated as one input among several and are
-arbitrated by language signal alongside STATISTICAL and STRUCTURAL
-candidates.  This is deliberate: real-world declarations are notoriously
-unreliable — sites serve `windows-1252` and declare `ISO-8859-1`, serve
-`UTF-8` and declare `ASCII`, copy-paste templates from other regions
-without updating the meta tag, and so on.  Tika's stance is that
-language signal over the actual decoded bytes is more trustworthy than
-a declaration on the wire.
-+
-If you want declared charsets to be authoritative (e.g. you trust your
-input pipeline, or you specifically want HTML5-spec-compliant behaviour),
-configure your detector chain *without* `CharSoupEncodingDetector` —
-see <<opting-out-of-arbitration>>.
+[[nb-pipeline]]
+== NaiveBayesPipelineEncodingDetector
 
-| `STRUCTURAL`
-| Derived from byte-level structure (UTF-8 validity, EBCDIC space distribution).
-  More reliable than statistics but less authoritative than an explicit
-  declaration.
+The pipeline runs layers in order and returns the first confident
+structural answer when one fires; otherwise it falls through to NB.
 
-| `STATISTICAL`
-| ML model output.  Plausible but not certain; subject to arbitration by
-  `CharSoupEncodingDetector`.
-|===
+=== Layer 1 — UTF-32 structural (`WideUnicodeDetector`)
 
-=== Default encoding for pure ASCII
+Every 4-byte group is interpreted as a 32-bit codepoint in both BE and
+LE order and checked for Unicode validity (0x000000 – 0x10FFFF,
+excluding surrogates).  Valid codepoints occupy only ~0.004% of the
+32-bit space, so non-UTF-32 bytes almost always produce out-of-range
+values within the first 8 bytes.
 
-When no bytes ≥ 0x80 are present, `MojibusterEncodingDetector` returns
-`windows-1252` (not `US-ASCII` or `UTF-8`).  Rationale:
+=== Layer 2 — UTF-16 specialist (`Utf16SpecialistEncodingDetector`)
 
-* US-ASCII is a strict subset of windows-1252, UTF-8, ISO-8859-1, and every
-  other single-byte encoding — calling it US-ASCII would be the most specific
-  correct answer, but it is also unactionable: a decoder for ASCII cannot
-  safely decode a file that turns out to have high bytes beyond the probe depth.
-* `windows-1252` is the HTML5 / WHATWG default for the Western web.  It is the
-  least surprising fallback for text that looks ASCII but may have typographic
-  characters (smart quotes, em-dash) beyond the probe window.
-* A CRLF heuristic further refines the default: CR+LF line endings are
-  a strong Windows signal, reinforcing `windows-1252` over `UTF-8`.
+A maxent classifier trained on stride-2 column-histogram features.
+The model sees "byte distribution at even positions" vs "byte
+distribution at odd positions" — the structural property that
+distinguishes UTF-16 from legacy byte encodings.
 
-== MojibusterEncodingDetector
+An external column-asymmetry evidence gate blocks the specialist on
+probes that look unambiguously single-stream (e.g. legacy CJK).  When
+the specialist has a confident LE-vs-BE winner, the pipeline
+short-circuits.
 
-A multinomial logistic regression classifier trained on byte n-gram features
-extracted from the MADLAD-400 corpus, Wikipedia dumps (including Traditional
-Chinese and Cantonese), with 100 MB per charset byte-balanced training data.
-The model has 35 charset classes — UTF-16 LE/BE, all EBCDIC variants, and all
-major single-byte and multi-byte CJK encodings.  UTF-32 is handled by the
-structural `WideUnicodeDetector` (see below), which achieves 100% accuracy.
+Byte bigrams (stride-1) cannot reliably discriminate UTF-16 of CJK
+content from legacy CJK encodings, because CJK characters encode to
+byte pairs that alias common ASCII byte patterns (e.g. U+6572 is
+`72 65` in UTF-16-LE — same bytes as ASCII "re").  That's why UTF-16
+lives outside the main NB classifier.
 
-=== Feature extraction
+=== Layer 3 — UTF-8 grammar gate (`StructuralEncodingRules.checkUtf8`)
 
-Only bytes ≥ 0x80 contribute features, so HTML/XML markup (pure ASCII) is
-ignored without stripping.
+Walks the probe looking for valid UTF-8 lead + continuation byte
+sequences.  Three outcomes:
 
-* **Unigrams** — each high byte hashed individually; encodes byte-frequency
-  distributions separating single-byte encodings.
-* **Bigrams** — consecutive pair `(b[i], b[i+1])` where `b[i] ≥ 0x80`;
-  captures multi-byte character structure (Shift_JIS, EUC-*, Big5, GB18030).
-* **Stride-2 bigrams** — pairs sampled at even positions `(b[2i], b[2i+1])`;
-  gives the model structural visibility into UTF-16 null-column patterns.
+* `LIKELY_UTF8` — grammar is valid and at least one complete multi-byte
+  sequence is present.  Pipeline emits UTF-8 as a STRUCTURAL candidate
+  alongside NB's output (safety net for short probes where NB could
+  be fooled by a single coincidental bigram).
+* `NOT_UTF8` — grammar is violated.  UTF-8 is filtered out of NB's
+  output as a post-pass disqualifier.
+* `AMBIGUOUS` — no complete multi-byte sequence (pure ASCII, or only
+  a truncated lead at probe-end).  No emission.
 
-Features are FNV-1a hashed into **16 384 buckets** with int8 quantisation.
+=== Layer 4 — HTML stripping (content-type aware)
 
-=== Structural rules (run before the model)
+When the probe looks like HTML/XML (explicit content-type or unknown),
+`HtmlByteStripper` performs a byte-level state-machine strip to leave
+just content bytes for NB feature extraction.  Optimizations:
 
-Structural rules run first and produce `STRUCTURAL` results with 1.0
-confidence.  When a structural rule fires, the model is not consulted.
+* **Script / style / comment bodies** are dropped entirely — they
+  contribute no natural-language signal.
+* **Text-bearing attribute values** (`alt`, `title`, `placeholder`,
+  `aria-label`, `summary`, `label`) are preserved, separated by
+  spaces.  These attributes carry user-visible text in the document's
+  charset and provide meaningful signal on pages whose body is sparse
+  (Arabic forums with navigation in `title=...`, CJK sites with
+  screen-reader `aria-label=...`, etc.).
+* **Tag-count backoff** — if stripping produces zero well-formed tags,
+  the original bytes are used (the probe wasn't really HTML; common
+  for plain text with stray `<` bytes or EBCDIC-encoded content).
 
-[cols="2,3", options="header"]
-|===
-| Rule | Trigger
+=== Layer 5 — Naive Bayes byte-bigram classifier
 
-| `WideUnicodeDetector` (UTF-32)
-| Every 4-byte group is decoded as a 32-bit integer in both BE and LE order
-  and checked for Unicode validity (0x000000–0x10FFFF, excluding surrogates).
-  Only 0.004% of the 32-bit space is valid, so non-UTF-32 data almost always
-  produces an out-of-range value within the first 8 bytes.  Inspired by ICU4J's
-  `CharsetRecog_UTF_32`.  *100.0% accuracy at all probe lengths, zero false
-  positives.*
+33 classes: CJK multibyte (Big5-HKSCS, EUC-JP, GB18030, Shift_JIS,
+x-EUC-TW, x-windows-949), EBCDIC family (IBM420/424-ltr/rtl, IBM500,
+IBM1047), DOS OEM (IBM850/852/855/866), Cyrillic (KOI8-R, KOI8-U),
+Windows single-byte (1250-1258, 874), ISO-8859-3/16, Mac (x-MacRoman,
+x-mac-cyrillic), and UTF-8.
 
-| `WideUnicodeDetector` (UTF-16 Phase 1: null-column)
-| Latin/ASCII BMP content in UTF-16 produces alternating null bytes.  One byte
-  column (even or odd positions at stride-2) has a high null rate.  No legacy
-  encoding produces alternating nulls, so this is safe.
+Features are **stride-1 byte bigrams** — for probe bytes `b[0..N]`,
+feature value for bigram `b[i] << 8 | b[i+1]` counts how many times
+it occurs.  No hashing: each bigram is directly an index into a
+65 536-entry table.
 
-| `WideUnicodeDetector` (UTF-16 Phase 2: low-block-prefix)
-| Scripts whose UTF-16 high byte is below 0x20 (Cyrillic 0x04, Arabic 0x06,
-  Hebrew 0x05, Devanagari 0x09, Thai 0x0E, etc.): the constrained column has
-  all non-null values below 0x20, the other column is more diverse.  Safe
-  because Big5/Shift-JIS/GBK lead bytes are always ≥ 0x81.
+==== Per-class vocabulary
 
-| `WideUnicodeDetector` (UTF-16 surrogate invalidity)
-| Even when no positive UTF-16 detection fires, the detector tracks whether
-  the probe contains structurally invalid UTF-16 surrogate sequences (unpaired
-  high/low surrogates).  These invalidity flags are passed downstream to
-  suppress UTF-16 model predictions for probes that cannot be valid UTF-16.
+Each class has its own vocabulary sized to the top bigrams covering
+99.9% of its training marginal distribution.  Latin/EBCDIC classes
+need ~4-9 K bigrams; CJK classes ~15-37 K.  Uniform top-K would
+either waste slots on SBCS classes (noise) or starve CJK classes.
 
-| `detectIso2022` | ESC designation sequences → ISO-2022-JP / KR / CN
-| `checkAscii` | No bytes ≥ 0x80 → `windows-1252` (pure ASCII default)
-| `checkUtf8` | Structurally valid UTF-8 multi-byte sequences → `UTF-8`;
-  provably invalid sequences exclude UTF-8 from model candidates.
-  Truncated multi-byte sequences at the end of the probe are tolerated
-  (not treated as invalid)
-| `checkIbm424` | EBCDIC space (0x40) dominance + Hebrew-range bytes → IBM424-ltr/rtl
-|===
+==== Per-class Laplace smoothing α
 
-CJK UTF-16 (CJK Unified block prefix 0x4E–0x9F, Hangul 0xAC–0xD7) is handled
-by the statistical model rather than structurally — stride-2 bigram features
-give the model direct visibility into UTF-16 code-unit structure, and the model
-learns to distinguish CJK UTF-16 from legacy CJK encodings whose lead bytes
-overlap with these block prefixes.
+`α(c) = α_base / V(c)`.  Peaky Latin classes get tight smoothing
+(observed frequencies are trustworthy); diffuse CJK classes get
+flatter smoothing (no single bigram is strong evidence).
 
-=== Candidate selection and top-N limiting
+==== Shared reference denominator
 
-After the model scores all 35 classes, candidate selection works in two steps:
+The Laplace denominator uses `N_ref = max(total_c)` across classes,
+not per-class totals.  Without this, classes with smaller training
+corpora (Mac variants trained on 10M bigrams vs 30M for the main
+classes) end up with milder unseen-log-probabilities, giving them a
+systematic free-lift on sparse-evidence probes.  Shared `N_ref`
+eliminates the disparity while preserving relative within-class
+frequencies.
 
-. **Logit-gap window** (`selectByLogitGap`) — include all candidates whose
-  logit is within `LOGIT_GAP` (5.0) of the top logit.
-. **Short-probe floor** — for probes shorter than 50 bytes, if the gap window
-  returns fewer than `MIN_CANDIDATES` (3) results, `selectAtLeast(3)` extends
-  the window to the top 3 candidates by raw logit rank.
+==== IDF reweighting
 
-The number of candidates returned to CharSoup is probe-length-dependent:
+A global `float[65_536]` IDF table multiplies each bigram's contribution
+to every class score:
+`idf[b] = log((C + 1) / (df[b] + 1))` where `df[b]` is the number of
+classes in which bigram `b` has non-zero training count.  Bigrams
+appearing in every class (common ASCII) contribute near zero;
+class-specific bigrams (CJK signal bytes, EBCDIC-unique patterns)
+carry full weight.  Bigrams with IDF quantized to zero skip the
+inner class loop entirely.
 
-* **Short probes** (≤ 50 bytes): return the top 3 candidates.  Short byte
-  sequences (e.g. ZIP entry filenames) are ambiguous enough that the model's
-  top pick may be wrong, but the correct answer is usually in the top 3.
-  Passing too many candidates to CharSoup is dangerous — see
-  <<thai-gbk-case-study>> below.
-* **Long probes** (> 50 bytes): return only the top 1 candidate.  At longer
-  probe lengths the model is confident enough that additional candidates are
-  just noise.
+==== Int8 quantization
 
-These results are added to `EncodingDetectorContext` alongside results from
-`BOMDetector`, `MetadataCharsetDetector`, and `StandardHtmlEncodingDetector`.
-CharSoup arbitrates across all of them.
+Weights and IDF are int8-quantized with per-class scales.  Inner loop
+is pure integer multiply-accumulate; a single per-class dequant
+multiplication happens at end-of-probe.  Memory: 2 MB on disk (NBB3
+format), ~2 MB in memory.  Accuracy: byte-exact-match with float at
+every probe length we've measured.
 
-BOM bytes are stripped from the probe before feature extraction so that the
-BOM itself does not bias the byte-ngram features.
+==== Post-NB fallbacks
 
-=== Post-model corrections
-
-**ISO-8859-X → Windows-12XX upgrade** +
-C1 bytes (`0x80–0x9F`) are control characters in every ISO-8859-X standard but
-printable in every Windows-12XX encoding.  A single C1 byte is definitive proof
-the content is not ISO-8859-X.  `upgradeIsoToWindows()` replaces ISO-8859-X
-results with their Windows-12XX equivalent, preserving the model's confidence.
-
-**GB18030 4-byte upgrade** +
-GB18030-specific 4-byte sequences have digit trail bytes (`0x30–0x39`)
-impossible in GBK/GB2312.  A single matching 4-tuple upgrades a GBK/GB2312
-model result to GB18030.
-
-=== CJK grammar filter
-
-After the model nominates CJK candidates, `CjkEncodingRules` validates each
-against the encoding's formal byte grammar (Shift_JIS, EUC-JP, EUC-KR, Big5,
-GB18030).  The filter is conservative:
-
-* **Score 0** — grammar rejects the candidate (the probe contains byte sequences
-  that are structurally impossible in this encoding).  The candidate is
-  **dropped** from the result list.
-* **Score > 0** — grammar passes.  The candidate keeps its **model sigmoid
-  confidence** unchanged so all candidates remain on the same scale for
-  `CharSoupEncodingDetector` to compare.
-
-The grammar filter acts as a gatekeeper, not a scorer — candidates keep their
-original model confidence so all candidates remain on the same sigmoid scale
-for downstream arbitration by `CharSoupEncodingDetector`.
-
-=== EBCDIC variants as direct model labels
-
-All IBM EBCDIC variants are direct labels in the 35-class model —
-there is no separate EBCDIC routing step or sub-model.  The model handles:
-
-* `IBM500` / `IBM1047` — Latin international EBCDIC (confusable pair, differ in 9 of 256 byte positions)
-* `IBM424-ltr` / `IBM424-rtl` — EBCDIC Hebrew (ltr/rtl are the same code page; `checkIbm424` fires first for clear cases)
-* `IBM420-ltr` / `IBM420-rtl` — EBCDIC Arabic (training data requires the `cp420` Python codec)
-* `IBM850` / `IBM852` / `IBM855` / `IBM866` — DOS/OEM code pages (not true EBCDIC; byte layouts follow the ASCII/Latin convention)
-
-NOTE: `IBM855` and `IBM866` are DOS Cyrillic code pages, not EBCDIC.  Their
-byte layouts are entirely different from EBCDIC and they are classified directly
-alongside `windows-1251`, `KOI8-R`, and `x-mac-cyrillic`.
+* **Empty / near-empty probes (< 2 bytes)** → windows-1252 @ 0.1
+  confidence.  WHATWG default; never returns empty result.
+* **Pure ASCII probes** (no bytes ≥ 0x80, no nulls) → windows-1252.
+  Bigram NB cannot discriminate Latin code pages on pure-ASCII
+  content; return the HTML5-canonical answer directly.
+* **Latin-sibling → windows-1252 rewrite** — on low-evidence probes
+  (< 5 high bytes), if the top NB candidate is a non-1252 member of
+  the Latin family and the probe decodes byte-identically under
+  windows-1252, rewrite to windows-1252.
+* **MIN_EMIT_CONFIDENCE = 0.01** — noise candidates below this
+  threshold are not emitted into the pool.  Prevents CharSoup from
+  promoting language-coincidence picks over NB's confident top.
 
 [[charsoup]]
 == CharSoupEncodingDetector — language-signal arbitration
 
-`CharSoupEncodingDetector` is a `MetaEncodingDetector`.  Its presence in the
-chain switches `CompositeEncodingDetector` into collect-all mode.  After all
-other detectors run, CharSoup receives the full `EncodingDetectorContext` and
+`CharSoupEncodingDetector` is a `MetaEncodingDetector`.  Its presence
+switches the composite detector into collect-all mode.  After all
+base detectors run, CharSoup receives the full candidate set and
 arbitrates.
 
 [IMPORTANT]
 ====
-*CharSoup intentionally arbitrates over ALL candidates, including
-DECLARATIVE ones.*  A `<meta charset>` tag, HTTP `Content-Type` charset
-parameter, or other declared charset is treated as one input among many
-— not as authoritative.  Real-world declarations on the legacy web are
-notoriously unreliable (sites declare ASCII while serving UTF-8, declare
-ISO-8859-1 while serving windows-1252, copy-paste templates from other
-regions and forget to update the meta tag, etc.).  CharSoup's stance:
-language signal over the actual decoded bytes is more trustworthy than
-the wire declaration.
+*CharSoup arbitrates over ALL candidate tiers, including
+DECLARATIVE.*  A `<meta charset>` tag or Content-Type header is
+treated as one input among several — not as authoritative.  Real-world
+declarations on the legacy web are notoriously unreliable (sites
+declare ASCII while serving UTF-8, copy-paste templates from other
+regions, etc.).  CharSoup trusts language signal over decoded bytes
+more than wire declarations.
 
-If you want declared charsets to be authoritative — for example because
-you trust your input pipeline, or you specifically need HTML5
-spec-compliant behaviour — *opt out of CharSoup* (see
-<<opting-out-of-arbitration>>).  This is a configuration choice, not a
-limitation.
+If you want declared charsets to be authoritative — because you trust
+your input pipeline, or you specifically need HTML5-spec behaviour —
+opt out of CharSoup (see <<opting-out-of-arbitration>>).
 ====
 
-Before any charset decoding, CharSoup strips leading BOM bytes from the raw
-probe.  This ensures every candidate charset decodes the same content bytes,
-preventing the BOM itself from skewing language scores.
+=== Arbitration outline
 
-=== Arbitration rules (in priority order)
+. **Unanimous** — all detectors agree (or only one result exists) →
+  return directly.
+. **Language scoring** — for each unique candidate charset, decode
+  the probe with that charset and score the decoded text via
+  `CharSoupLanguageDetector` (a character-bigram language model
+  covering ~165 languages).  Candidates exceeding a junk-character
+  threshold are discarded.  The candidate whose decoded text produces
+  the highest positive top-language logit wins.
+. **DECLARATIVE preference fallback** — when language scoring is
+  inconclusive, a DECLARATIVE candidate whose decoded text is as
+  clean as the statistical winner wins.
 
-. **Unanimous** — if all detectors agree (or only one result exists), return it
-  directly without language scoring.
+=== Known limitation: lonely-script margin
 
-. **Language scoring** — for each unique candidate charset, the BOM-stripped
-  bytes are decoded using that charset and fed to `CharSoupLanguageDetector`
-  (a character-bigram language model covering ~165 languages).  Candidates
-  whose decoded text exceeds a junk-character threshold (`MAX_JUNK_RATIO = 0.10`)
-  are discarded before scoring.  The charset whose decoded text produces the
-  **highest maximum logit** across all languages wins, provided that logit is
-  **positive** (sigmoid > 0.5).
-
-. **DECLARATIVE preference** — after language scoring, if the winner is not a
-  DECLARATIVE result but a DECLARATIVE candidate exists, the DECLARATIVE result
-  is preferred when both of the following hold:
-  * Its decoded text has junk ratio ≤ the language winner's junk ratio (it
-    decodes at least as cleanly).
-  * Its decoded text has a positive language signal (max logit > 0).
-+
-This handles the case where a valid BOM (e.g. `UTF-16BE`) is overridden by a
-wrong-endian decoding that happens to look like CJK text, which the language
-model scores more confidently than short Latin text.  The junk guard prevents
-false positives from truly lying BOMs or wrong `<meta charset>` tags.
-
-. **Inconclusive** — if no candidate's logit is positive (all decodings are too
-  ambiguous for the language model to distinguish), CharSoup falls back to the
-  DECLARATIVE result if one exists and its decoding is at least as clean as the
-  statistical winner; otherwise it returns the first candidate from the
-  highest-confidence statistical detector.
+CharSoup's discriminative language model scores by the margin between
+the top class and runners-up.  Scripts with no sibling language in the
+model (Hebrew, Thai, Hangul, Arabic) have inherently larger margins on
+correct-decoding.  This can produce wrong answers on probes where
+wrong-charset decoding happens to land in a lonely-script character
+range — a short Latin probe decoded as Korean via x-windows-949 scores
+with a large Korean margin because no other class competes on Korean
+script.  Mitigation in the pipeline: `MIN_EMIT_CONFIDENCE` limits the
+noise candidates CharSoup sees.  A proper fix (trust-type weighting in
+CharSoup itself) is tracked separately.
 
 [[opting-out-of-arbitration]]
 === Opting out — strict declared-charset honoring
 
-If your application needs declared charsets to be authoritative, omit
-`CharSoupEncodingDetector` from the encoding-detector chain.  Without
-CharSoup, `CompositeEncodingDetector` runs in classic
-"first-detector-with-a-result wins" mode.  A typical declared-charset-honoring
-configuration:
+Omit `CharSoupEncodingDetector` from the chain.  The composite detector
+then runs in first-match-wins mode:
 
 [source,json]
 ----
@@ -357,26 +286,21 @@ configuration:
     { "bom-detector": {} },
     { "metadata-charset-detector": {} },
     { "standard-html-encoding-detector": {} },
-    { "mojibuster-encoding-detector": {} }
+    { "naive-bayes-pipeline-encoding-detector": {} }
   ]
 }
 ----
 
-In this chain:
+BOM / metadata / meta-tag declarations are honoured authoritatively;
+NB only runs when no declaration is present.  This matches HTML5-spec
+behaviour on declared documents.  Trade-off: lying declarations
+(common on the legacy web) propagate unfiltered.
 
-* `BOMDetector` returns DECLARATIVE on a recognised BOM.
-* `MetadataCharsetDetector` returns DECLARATIVE from HTTP/MIME headers.
-* `StandardHtmlEncodingDetector` returns DECLARATIVE from `<meta charset>` /
-  `<meta http-equiv>` tags.
-* `MojibusterEncodingDetector` runs only when none of the above produced a
-  declaration, and its STATISTICAL result is final (no language-signal
-  arbitration to second-guess it).
+== Performance
 
-This is HTML5-spec-compliant for the declaration cases and matches the
-behaviour callers familiar with Tika 2.x and earlier expect.  The
-trade-off is that lying declarations (e.g. a Korean MS949 page that
-declares `Windows-949` correctly but where Mojibuster's statistical
-output would have rescued a misdeclaration) propagate unfiltered.
+Evaluated on a held-out 37-charset devtest corpus (~1.22M probes per
+probe length).  Raw outputs are preserved in
+`tika-encoding-detectors/tika-encoding-detector-mojibuster/docs/performance/`.
 
 Conversely, the default chain (with CharSoup) tolerates lying
 declarations at the cost of occasionally overriding a correct one when
@@ -559,179 +483,106 @@ label differs). +
 | full      | 95.0 | 97.3 | 97.3 | 99.4 | 99.8
 |===
 
-=== Latency by probe length (µs/sample)
+=== Strict accuracy vs baseline detectors (by probe length)
 
 [cols="1,1,1,1", options="header"]
 |===
-| Probe length | Mojibuster | ICU4J | juniversalchardet
+| Probe length | NB pipeline | ICU4J | juniversalchardet
 
-| 8 bytes   |  6 |   5 |  2
-| 32 bytes  |  8 |  14 |  3
-| 128 bytes |  8 |  40 |  6
-| full      | 13 | 147 | 16
+| 20 bytes  | **70.8%** | 20.5% | 22.1%
+| 100 bytes | **86.0%** | 37.4% | 27.8%
+| 256 bytes | **89.8%** | 40.5% | 28.2%
+| full probe | **91.6%** | 43.0% | 28.4%
 |===
 
-Mojibuster latency scales sub-linearly with probe length (feature extraction
-is O(probe length) but the model forward pass is constant).  ICU4J and
-juniversalchardet use different architectures with different scaling
-characteristics.
+=== Latency (µs per probe)
 
-=== Per-charset highlights (full probe, All detector)
-
-[cols="2,1,1,1", options="header"]
+[cols="1,1,1,1", options="header"]
 |===
-| Charset | Mojibuster | ICU4J | juniversalchardet
+| Probe length | NB pipeline | ICU4J | juniversalchardet
 
-| UTF-8                | **100.0%** | 100.0% | 99.6%
-| UTF-32-BE / UTF-32-LE | **100.0%** | 100.0% | 0%
-| UTF-16-BE            | **98.8%** | 68.6% | 0%
-| UTF-16-LE            | **99.4%** | 68.8% | 0%
-| Shift_JIS            | **100.0%** | 100.0% | 99.9%
-| EUC-JP               | **99.8%** | 99.9% | 99.6%
-| EUC-KR               | **99.9%** | 100.0% | 100.0%
-| GB18030              | **100.0%** | 99.5% | 99.7%
-| Big5-HKSCS           | **100.0%** | 0% | 0%
-| windows-1252         | **99.7%** | 46.5% | 0%
-| x-EUC-TW             | **99.9%** | 0% | 0%
-| IBM424 / IBM420       | **99.9–100%** | 0–99.5% | 0%
-| IBM500 / IBM1047      | **89–99.7% (soft: 99.7–99.8%)** | 75–76% | 0%
+| 20 bytes   | 2.5  | 31   | 8
+| 100 bytes  | 5.8  | 86   | 14
+| 256 bytes  | 7.9  | 136  | 19
+| full probe | 14.6 | 270  | 34
 |===
 
-Mojibuster covers 35 charset classes — including EBCDIC variants, DOS code
-pages (IBM850/852/855), x-EUC-TW, Big5-HKSCS, x-mac-cyrillic, and all
-windows-125x encodings.  Each detector targets a different charset repertoire,
-so the numbers above reflect those differences as much as algorithmic accuracy.
+NB's inner loop is pure int8 multiply-accumulate with a direct-indexed
+bigram table; no hashing, no feature extraction pass.  Approximately
+1 order of magnitude faster than ICU4J and 2-3× faster than
+juniversalchardet at every probe length, with better accuracy.
 
-=== Training data
+== Training
 
-The model is trained on 100 MB of byte-balanced data per charset (80/10/10
-train/devtest/test split), sourced from:
-
-* **MADLAD-400** (clean split) — multilingual web text covering 188 languages
-  for Unicode charsets and targeted language subsets for legacy charsets.
-* **Wikipedia dumps** — Cantonese (yue) and Traditional Chinese (zhwiki) for
-  Big5-HKSCS and x-EUC-TW coverage.
-
-Training data preparation applies charset-specific normalisation to maximise
-data volume for legacy charsets:
-
-* **windows-1256**: maps Farsi Yeh → Arabic Yeh, Extended Arabic-Indic digits →
-  Arabic-Indic digits, strips bidi control characters.
-* **IBM424**: strips Hebrew nikkud (vowel points).
-* **All legacy charsets**: replaces typographic punctuation (curly quotes,
-  em/en-dash, ellipsis) with ASCII equivalents _only_ when the target charset
-  cannot encode the original character.  Charsets that can encode these
-  characters (e.g. windows-1252) keep them as discriminative features.
-
-An ambiguity gate drops SBCS samples that encode identically under any rival
-charset (e.g. pure-Latin text identical under windows-1250 and windows-1252),
-ensuring the model learns genuinely discriminative byte patterns.
-
-=== Notes on specific charsets
-
-**IBM500 / IBM1047**: these share 247 of 256 byte mappings — the 9 positions
-that differ are mostly below 0x80 and invisible to high-byte features.  For
-normal Latin prose they are genuinely indistinguishable.  Both are listed in
-`CharsetConfusables` as a soft-confusable group; predicting either counts as a
-soft hit, and either charset decodes the other's content correctly for the vast
-majority of text.
-
-**windows-1252**: achieves 99.7% strict accuracy.  The model learns
-discriminative features in the 0x80–0x9F range (smart quotes, em-dash, Euro
-sign) which are unique to windows-1252 vs ISO-8859-1.  ISO-8859-1 and
-ISO-8859-15 are treated as confusable peers of windows-1252.
-
-**x-EUC-TW**: training data comes exclusively from Traditional Chinese
-Wikipedia.  The model achieves 99.9% accuracy.
-
-== Configuration
-
-=== Using ICU4J or juniversalchardet instead
-
-ICU4J and juniversalchardet remain available as optional modules.  To use them
-instead of the default pipeline, configure Tika explicitly via JSON:
-
-[source,json]
-----
-{
-  "encodingDetectors": [
-    { "type": "icu4j-encoding-detector" },
-    { "type": "universal-encoding-detector" }
-  ]
-}
-----
-
-Both detectors are available in their respective modules
-(`tika-encoding-detector-icu4j` and `tika-encoding-detector-universal`).
-
-=== Changing the HTML meta scan depth
-
-`StandardHtmlEncodingDetector` reads up to 65 536 bytes by default when
-scanning for `<meta charset>` tags.  This can be tuned via `tika-config.json`
-(see TIKA-2485):
-
-[source,json]
-----
-{
-  "encodingDetectors": [
-    { "type": "standard-html-encoding-detector",
-      "params": { "markLimit": 131072 } }
-  ]
-}
-----
-
-== Model training and evaluation
-
-Data preparation scripts live in `tika-ml/tika-ml-chardetect/scripts/` and the
-Java tools are in `org.apache.tika.ml.chardetect.tools`.
-
-=== Prerequisites
-
-* MADLAD-400 clean data downloaded via `scripts/download_madlad.py` into
-  `~/datasets/madlad/data/<lang>/sentences_madlad.txt`.
-* Wikipedia data (optional but recommended for CJK) converted via
-  `scripts/convert_wiki_to_madlad.py` into
-  `~/datasets/madlad/data/<lang>/sentences_wikipedia.txt`.
-* A `unicode_langs.txt` file in the MADLAD data directory listing languages
-  for Unicode charset training (generated by `scripts/select_unicode_langs.py`).
-
-=== Build, train, evaluate
+Training tools live in `org.apache.tika.ml.chardetect.tools`.  Core
+flow:
 
 [source,bash]
 ----
-# 1. Build training data (100 MB per charset, 80/10/10 split)
-mvn -pl tika-ml/tika-ml-chardetect exec:java \
-  -Dexec.mainClass="org.apache.tika.ml.chardetect.tools.BuildCharsetTrainingData" \
-  -Dexec.args="--output-dir ~/datasets/madlad/charset-detect4" \
-  -Dexec.classpathScope=compile -DskipTests \
-  "-Dexec.vmArgs=-Xmx32g"
-
-# 2. Build the tools jar (requires -Ptrain profile for the shaded jar)
-mvn package -pl tika-ml/tika-ml-chardetect -Ptrain -DskipTests \
-  -Dforbiddenapis.skip=true -Dcheckstyle.skip=true
-
-# 3. Train (SGD, 3 epochs, 16384 hash buckets, int8 quantised)
-#    --exclude UTF-32-BE,UTF-32-LE: UTF-32 is handled structurally
-#    --no-tri: trigrams add no accuracy over unigrams+bigrams+stride-2
+# 1. Train (bigram Naive Bayes, per-class V99.9% vocab, int8 quantized)
 java -cp tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
-  org.apache.tika.ml.chardetect.tools.TrainCharsetModel \
-  --data ~/datasets/madlad/charset-detect4/train \
-  --output ~/datasets/madlad/charset-detect4/chardetect-v6-no-utf32.bin \
-  --exclude UTF-32-BE,UTF-32-LE \
-  --no-tri --buckets 16384 --epochs 3 --lr 0.05
+  org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram \
+  --data ~/datasets/charset-detect/train \
+  --output nb-bigram.bin \
+  --coverage 0.999 \
+  --alpha-base 1.0 \
+  --max-samples-per-class 50000
 
-# 4. Copy model into production resources and rebuild
-cp ~/datasets/madlad/charset-detect4/chardetect-v6-no-utf32.bin \
+# 2. Install model into the mojibuster module resources
+cp nb-bigram.bin \
   tika-encoding-detectors/tika-encoding-detector-mojibuster/src/main/resources/\
-org/apache/tika/ml/chardetect/chardetect-v6-no-utf32.bin
-mvn install -pl tika-ml/tika-ml-core,tika-encoding-detectors/tika-encoding-detector-mojibuster \
-  -DskipTests -Dforbiddenapis.skip=true -Dcheckstyle.skip=true
-mvn package -pl tika-ml/tika-ml-chardetect -Ptrain -DskipTests \
-  -Dforbiddenapis.skip=true -Dcheckstyle.skip=true
+org/apache/tika/ml/chardetect/nb-bigram.bin
 
-# 5. Evaluate on devtest (not test — reserve test for final sign-off)
+# 3. Rebuild
+mvn install -pl tika-encoding-detectors/tika-encoding-detector-mojibuster \
+  -DskipTests
+
+# 4. Evaluate against ICU4J and juniversalchardet on devtest
 java -cp tika-ml/tika-ml-chardetect/target/tika-ml-chardetect-*-tools.jar \
   org.apache.tika.ml.chardetect.tools.EvalCharsetDetectors \
-  --data ~/datasets/madlad/charset-detect4/devtest \
-  --lengths 8,32,128,full --confusion
+  --nb-model nb-bigram.bin \
+  --data ~/datasets/charset-detect/devtest \
+  --lengths 20,100,256,full
 ----
+
+Training data is sourced from MADLAD-400 (multilingual web text) and
+Wikipedia dumps, encoded to each target charset with charset-specific
+normalization (Arabic Yeh forms for windows-1256, Hebrew nikkud
+stripping for IBM424, punctuation mapping for legacy charsets that
+can't encode typographic characters).
+
+== On-disk model format
+
+`.bin` files use magic `NBB3` and store:
+
+* IDF scale + quantized IDF table (65 536 bytes).
+* Per class: label, dequantization scale, quantized unseen-floor
+  value, vocabulary size, and each trained bigram as
+  `(uint16 bigram, int8 logP)` pairs.
+
+Files for the shipped 33-class model are ~1 MB on disk.  Loader
+materializes a dense `logP8[65 536 × numClasses]` array filled with
+per-class unseen floors, overwritten by trained pairs.  Working-set
+memory: ~2 MB.
+
+== Why Naive Bayes
+
+Earlier Tika versions used multinomial logistic regression (maxent)
+with feature hashing.  The move to NB was driven by:
+
+* **Speed**: direct bigram indexing removes the hash + bucket-lookup
+  cost.  Inner loop is `score[c] += logP[b × numClasses + c] × idf[b]`
+  with no branching (zero-IDF bigrams are skipped before the class
+  loop).  Measured ~15 µs on a full 1 KB probe for 33 classes.
+* **Memory layout**: bigram-major byte arrays fit in L3 cache for the
+  full table.  Sequential access through the hot loop is cache-line
+  efficient.
+* **Interpretability**: per-class training totals, vocabulary sizes,
+  and per-class α are all visible in the saved model.  Makes
+  calibration issues (class bias from training size, smoothing spread,
+  etc.) diagnosable.
+
+== See also
+
+* Configuration: xref:../configuration/encoding-detectors.adoc[Configuring Encoding Detectors]
+* Language detection: xref:language-detection.adoc[Language Detection]

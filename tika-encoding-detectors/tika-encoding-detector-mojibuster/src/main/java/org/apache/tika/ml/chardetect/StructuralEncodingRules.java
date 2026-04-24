@@ -641,7 +641,7 @@ public final class StructuralEncodingRules {
      * Validates the UTF-8 byte grammar of the sample and returns one of three
      * outcomes:
      * <ul>
-     *   <li>{@link Utf8Result#DEFINITIVE_UTF8}: all multi-byte sequences are
+     *   <li>{@link Utf8Result#LIKELY_UTF8}: all multi-byte sequences are
      *       valid <em>and</em> the sample contains enough high bytes to be
      *       informative. Use UTF-8.</li>
      *   <li>{@link Utf8Result#NOT_UTF8}: at least one invalid byte sequence was
@@ -657,6 +657,11 @@ public final class StructuralEncodingRules {
 
     public static Utf8Result checkUtf8(byte[] bytes, int offset, int length) {
         int highByteCount = 0;
+        // Count only multi-byte sequences whose continuations are all
+        // present in the probe.  A truncated lead at probe-end is
+        // valid-so-far but provides no structural evidence — a single
+        // 0xC3 byte alone should not be enough to claim UTF-8.
+        int completeHighSeqCount = 0;
         int i = offset;
         int end = offset + length;
 
@@ -724,17 +729,22 @@ public final class StructuralEncodingRules {
                         return Utf8Result.NOT_UTF8;
                     }
                 }
+                completeHighSeqCount++;
             }
 
             i += seqLen;
         }
 
-        // Grammar is valid. Even a single valid multi-byte sequence is
-        // structural proof of UTF-8 — no single-byte encoding produces valid
-        // lead+continuation patterns by coincidence at any meaningful rate.
-        if (highByteCount > 0) {
-            return Utf8Result.DEFINITIVE_UTF8;
+        // Grammar is valid.  Require at least one COMPLETE multi-byte
+        // sequence (not just a truncated lead at probe-end) to claim
+        // LIKELY.  A lone 0xC3 at the end of a 1-byte probe is
+        // valid-so-far but provides no structural evidence.
+        if (completeHighSeqCount > 0) {
+            return Utf8Result.LIKELY_UTF8;
         }
+        // highByteCount > 0 but completeHighSeqCount == 0 means every
+        // high byte we saw was the start of a truncated sequence at
+        // probe-end.  That's not enough evidence — treat as ambiguous.
         // Zero high bytes = pure ASCII; caller handles this separately.
         return Utf8Result.AMBIGUOUS;
     }
@@ -747,25 +757,39 @@ public final class StructuralEncodingRules {
      * Outcome of the UTF-8 structural check.
      */
     public enum Utf8Result {
-        /** Sample is structurally valid UTF-8 with enough high bytes to be sure. */
-        DEFINITIVE_UTF8,
+        /**
+         * Sample is grammatically valid UTF-8 and contains at least one
+         * complete multi-byte sequence.  Not a guarantee — short CJK probes
+         * occasionally pass UTF-8 grammar by coincidence (on our training
+         * corpus, FP is ≤ 0.77% at 16B, ≤ 0.05% at 256B, ≤ 0.01% at 4KB).
+         * Callers should add UTF-8 as a candidate to the pool, not treat it
+         * as a hard winner — let downstream language-signal arbitration
+         * resolve genuine FPs.
+         */
+        LIKELY_UTF8,
         /** Sample contains at least one invalid UTF-8 sequence. */
         NOT_UTF8,
         /**
-         * Sample is structurally valid but nearly all-ASCII. Cannot confirm or
-         * deny; pass to the statistical model.
+         * Sample is structurally valid but contains no complete multi-byte
+         * sequence (pure ASCII, or only a truncated lead at probe-end).
+         * Cannot confirm or deny UTF-8; pass to the statistical model.
          */
         AMBIGUOUS;
 
-        public boolean isDefinitive() {
+        /**
+         * Returns true when the grammar check produced a directional
+         * answer (either LIKELY_UTF8 or NOT_UTF8).  AMBIGUOUS means the
+         * probe carries no UTF-8-specific evidence.
+         */
+        public boolean isDecisive() {
             return this != AMBIGUOUS;
         }
 
         public Charset toCharset() {
-            if (this == DEFINITIVE_UTF8) {
+            if (this == LIKELY_UTF8) {
                 return StandardCharsets.UTF_8;
             }
-            throw new IllegalStateException("Only DEFINITIVE_UTF8 has a Charset: " + this);
+            throw new IllegalStateException("Only LIKELY_UTF8 has a Charset: " + this);
         }
     }
 }

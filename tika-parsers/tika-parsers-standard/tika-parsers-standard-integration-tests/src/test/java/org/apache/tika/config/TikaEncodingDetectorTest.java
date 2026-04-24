@@ -45,7 +45,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.langdetect.charsoup.CharSoupEncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.ml.chardetect.MojibusterEncodingDetector;
+import org.apache.tika.ml.chardetect.NaiveBayesPipelineEncodingDetector;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -71,7 +71,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(baseClasses.contains(BOMDetector.class));
         assertTrue(baseClasses.contains(MetadataCharsetDetector.class));
-        assertTrue(baseClasses.contains(MojibusterEncodingDetector.class));
+        assertTrue(baseClasses.contains(NaiveBayesPipelineEncodingDetector.class));
         assertTrue(baseClasses.contains(HtmlEncodingDetector.class));
     }
 
@@ -95,7 +95,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(innerClasses.contains(BOMDetector.class));
         assertTrue(innerClasses.contains(MetadataCharsetDetector.class));
-        assertTrue(innerClasses.contains(MojibusterEncodingDetector.class));
+        assertTrue(innerClasses.contains(NaiveBayesPipelineEncodingDetector.class));
         assertTrue(detectors1Children.get(3) instanceof MetaEncodingDetector);
 
         assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
@@ -124,7 +124,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
     @Test
     public void testEncodingDetectorConfigurability() throws Exception {
-        // CP500 (EBCDIC) is now detected by MojibusterEncodingDetector's structural IBM500 rule.
+        // CP500 (EBCDIC) is now detected by NaiveBayesPipelineEncodingDetector's structural IBM500 rule.
         // We must hint Content-Type=text/plain so that TXTParser is selected; without the filename
         // extension the byte-level MIME sniffer classifies the EBCDIC data as octet-stream.
         Metadata md = new Metadata();
@@ -219,7 +219,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     ((CompositeEncodingDetector) encodingDetector).getDetectors();
             // 3 base detectors + 1 MetaEncodingDetector (CharSoup) = 4 total
             assertEquals(4, children.size(), childParser.getClass().toString());
-            assertTrue(children.get(0) instanceof MojibusterEncodingDetector,
+            assertTrue(children.get(0) instanceof NaiveBayesPipelineEncodingDetector,
                     childParser.getClass().toString());
             HtmlEncodingDetector htmlDet = (HtmlEncodingDetector) children.get(1);
             assertEquals(100000, htmlDet.getDefaultConfig().getMarkLimit(),
@@ -290,7 +290,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(excludedCharSoupClasses.contains(BOMDetector.class));
         assertTrue(excludedCharSoupClasses.contains(MetadataCharsetDetector.class));
-        assertTrue(excludedCharSoupClasses.contains(MojibusterEncodingDetector.class));
+        assertTrue(excludedCharSoupClasses.contains(NaiveBayesPipelineEncodingDetector.class));
         assertTrue(excludedCharSoupClasses.contains(HtmlEncodingDetector.class));
         for (EncodingDetector d : detectors) {
             assertNotContained("CharSoup", d.getClass().getSimpleName());

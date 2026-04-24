@@ -17,6 +17,6 @@
 # It must be loaded last; DefaultEncodingDetector's class-name sort puts
 # org.apache.tika.parser.* after org.apache.tika.ml.* after
 # org.apache.tika.detect.*, which guarantees the correct order:
-#   MojibusterEncodingDetector →
+#   NaiveBayesPipelineEncodingDetector →
 #   StandardHtmlEncodingDetector → CharSoupEncodingDetector
 org.apache.tika.langdetect.charsoup.CharSoupEncodingDetector

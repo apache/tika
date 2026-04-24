@@ -26,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,14 +40,12 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.CharsetConfusables;
-import org.apache.tika.ml.chardetect.MojibusterEncodingDetector;
-import org.apache.tika.ml.chardetect.MojibusterEncodingDetector.Rule;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.parser.txt.UniversalEncodingDetector;
 
 /**
- * Compares {@link MojibusterEncodingDetector} against ICU4J and juniversalchardet.
+ * Compares {@code NaiveBayesPipelineEncodingDetector} against ICU4J and juniversalchardet.
  *
  * <p>Supports:
  * <ul>
@@ -81,10 +78,11 @@ public class EvalCharsetDetectors {
             "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN"
     );
 
-    private static final String[] COL_NAMES = {"Stat", "+ISO", "+CJK", "All", "ICU4J", "juniv"};
+    private static final String[] COL_NAMES = {"ICU4J", "juniv", "NB"};
     private static final int NUM_DETECTORS = COL_NAMES.length;
-    // Index of the "All" detector — used for confusion matrix and score-only output
-    private static final int IDX_ALL = 3;
+    // Primary detector used for the length-sweep summary and confusion matrix.
+    private static final int IDX_NB  = 2;
+    private static final int IDX_ALL = IDX_NB;
 
     private static final int TOP_K = 3;
 
@@ -101,6 +99,8 @@ public class EvalCharsetDetectors {
 
     public static void main(String[] args) throws Exception {
         Path modelPath = null;
+        Path moeModelPath = null;
+        Path nbModelPath = null;
         Path dataDir   = null;
         int[] probeLengths = {8, 16, 32, 64, 128, 256, FULL_LENGTH};
         boolean showConfusion = false;
@@ -111,6 +111,12 @@ public class EvalCharsetDetectors {
             switch (args[i]) {
                 case "--model":
                     modelPath = Paths.get(args[++i]);
+                    break;
+                case "--moe-model":
+                    moeModelPath = Paths.get(args[++i]);
+                    break;
+                case "--nb-model":
+                    nbModelPath = Paths.get(args[++i]);
                     break;
                 case "--data":
                     dataDir = Paths.get(args[++i]);
@@ -139,17 +145,17 @@ public class EvalCharsetDetectors {
             System.exit(1);
         }
 
-        MojibusterEncodingDetector base = modelPath != null
-                ? new MojibusterEncodingDetector(modelPath)
-                : new MojibusterEncodingDetector();
+        // NB pipeline: BOM + UTF-32 + UTF-16 structural prefix + UTF-8
+        // gate + NB bigram classifier.  This is the ship candidate;
+        // compared here against ICU4J and juniversalchardet.
+        EncodingDetector nbDetector = nbModelPath != null
+                ? new org.apache.tika.ml.chardetect.NaiveBayesPipelineEncodingDetector(nbModelPath)
+                : new NoopDetector();
 
         EncodingDetector[] detectors = {
-            base.withRules(EnumSet.noneOf(Rule.class)),
-            base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.ISO_TO_WINDOWS)),
-            base.withRules(EnumSet.of(Rule.STRUCTURAL_GATES, Rule.CJK_GRAMMAR)),
-            base,
             new Icu4jEncodingDetector(),
-            new UniversalEncodingDetector()
+            new UniversalEncodingDetector(),
+            nbDetector
         };
 
         List<Path> testFiles = Files.list(dataDir)
@@ -517,4 +523,20 @@ public class EvalCharsetDetectors {
         }
         return out;
     }
+
+    /**
+     * Placeholder detector for the MoE column when {@code --moe-model} is
+     * not supplied — always returns empty so the column shows 0% and the
+     * eval still runs for the other detectors.
+     */
+    private static final class NoopDetector implements EncodingDetector {
+        @Override
+        public List<org.apache.tika.detect.EncodingResult> detect(
+                org.apache.tika.io.TikaInputStream tis,
+                org.apache.tika.metadata.Metadata metadata,
+                org.apache.tika.parser.ParseContext context) {
+            return java.util.Collections.emptyList();
+        }
+    }
+
 }
