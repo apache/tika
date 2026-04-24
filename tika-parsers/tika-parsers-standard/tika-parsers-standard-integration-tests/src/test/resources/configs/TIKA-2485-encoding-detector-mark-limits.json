@@ -12,6 +12,9 @@
       "standard-html-encoding-detector": {
         "markLimit": 100000
       }
+    },
+    {
+      "junk-filter-encoding-detector": {}
     }
   ]
 }

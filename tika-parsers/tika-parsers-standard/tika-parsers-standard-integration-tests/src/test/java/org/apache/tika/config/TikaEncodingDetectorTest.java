@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
@@ -38,6 +37,7 @@ import org.apache.tika.detect.BOMDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.detect.MetadataCharsetDetector;
 import org.apache.tika.detect.OverrideEncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
@@ -61,10 +61,12 @@ public class TikaEncodingDetectorTest extends TikaTest {
         EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
-        // 4 base detectors (BOM, Metadata, ML, HtmlEncodingDetector); no MetaEncodingDetector in default chain
-        assertEquals(4, detectors.size());
+        // 4 base detectors (BOM, Metadata, ML, HtmlEncodingDetector) + JunkFilter (MetaEncodingDetector)
+        assertEquals(5, detectors.size());
+        // meta detector is always last (partitioned by CompositeEncodingDetector)
+        assertTrue(detectors.get(4) instanceof MetaEncodingDetector);
         // base detectors — sorted by full class name; check by type
-        Set<Class<?>> baseClasses = detectors.stream()
+        Set<Class<?>> baseClasses = detectors.subList(0, 4).stream()
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(baseClasses.contains(BOMDetector.class));
         assertTrue(baseClasses.contains(MetadataCharsetDetector.class));
@@ -85,13 +87,14 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector1 instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors1Children =
                 ((CompositeEncodingDetector) detector1).getDetectors();
-        // BOM + Metadata + ML base detectors (html excluded, no meta)
-        assertEquals(3, detectors1Children.size());
-        Set<Class<?>> innerClasses = detectors1Children.stream()
+        // BOM + Metadata + ML base detectors + JunkFilter meta (html excluded)
+        assertEquals(4, detectors1Children.size());
+        Set<Class<?>> innerClasses = detectors1Children.subList(0, 3).stream()
                 .map(Object::getClass).collect(Collectors.toSet());
         assertTrue(innerClasses.contains(BOMDetector.class));
         assertTrue(innerClasses.contains(MetadataCharsetDetector.class));
         assertTrue(innerClasses.contains(MojibusterEncodingDetector.class));
+        assertTrue(detectors1Children.get(3) instanceof MetaEncodingDetector);
 
         assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
 
@@ -183,9 +186,9 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     ((AbstractEncodingDetectorParser) encodingDetectingParser)
                             .getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
-            // BOM, Metadata, ML, Html base detectors
-            // (ICU4J is excluded but was already not in the default chain; no meta)
-            assertEquals(4, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
+            // BOM, Metadata, ML, Html base detectors + JunkFilter meta
+            // (ICU4J is excluded but was already not in the default chain)
+            assertEquals(5, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
             for (EncodingDetector child : ((CompositeEncodingDetector) encodingDetector)
                     .getDetectors()) {
                 assertNotContained("cu4j", child.getClass().getCanonicalName());
@@ -212,8 +215,8 @@ public class TikaEncodingDetectorTest extends TikaTest {
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
             List<EncodingDetector> children =
                     ((CompositeEncodingDetector) encodingDetector).getDetectors();
-            // 3 base detectors, no meta
-            assertEquals(3, children.size(), childParser.getClass().toString());
+            // 3 base detectors + 1 MetaEncodingDetector (JunkFilter)
+            assertEquals(4, children.size(), childParser.getClass().toString());
             assertTrue(children.get(0) instanceof MojibusterEncodingDetector,
                     childParser.getClass().toString());
             HtmlEncodingDetector htmlDet = (HtmlEncodingDetector) children.get(1);
@@ -221,12 +224,11 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     childParser.getClass().toString());
             assertTrue(children.get(2) instanceof StandardHtmlEncodingDetector,
                     childParser.getClass().toString());
+            assertTrue(children.get(3) instanceof MetaEncodingDetector,
+                    childParser.getClass().toString());
         }
     }
 
-    @Disabled("TIKA-4720: needs JunkFilterEncodingDetector meta-arbiter so the "
-            + "mark-limit-raised HTML detector's DECLARATIVE UTF-8 beats NB's "
-            + "STATISTICAL windows-1252")
     @Test
     public void testMarkLimitIntegration() throws Exception {
         StringBuilder sb = new StringBuilder();
@@ -279,14 +281,10 @@ public class TikaEncodingDetectorTest extends TikaTest {
     /**
      * ASCII HTML with an explicit {@code <meta charset="UTF-8">} must be
      * detected as UTF-8.  The HTML detector produces a DECLARATIVE UTF-8
-     * result which outranks the statistical windows-1252 fallback.
-     *
-     * <p>Disabled pending reinstatement of a {@code MetaEncodingDetector}
-     * (TIKA-4720): without one in the chain, Mojibuster's STATISTICAL
-     * windows-1252 beats the HTML detector's DECLARATIVE UTF-8. Re-enable
-     * once {@code JunkFilterEncodingDetector} lands.
+     * result; {@code JunkFilterEncodingDetector} arbitrates the tie in its
+     * favour (pure-ASCII bytes decode identically as UTF-8 and windows-1252,
+     * so the DECLARATIVE hint wins).
      */
-    @Disabled("TIKA-4720: needs JunkFilterEncodingDetector meta-arbiter")
     @Test
     public void testAsciiHtmlWithMetaIsDetectedAsUtf8() throws Exception {
         byte[] bytes =
