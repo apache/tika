@@ -50,7 +50,7 @@ import org.apache.tika.utils.CharsetUtils;
  *
  * @since Apache Tika 1.2
  */
-@TikaComponent(spi = false)
+@TikaComponent(name = "html-encoding-detector")
 public class HtmlEncodingDetector implements EncodingDetector {
 
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
@@ -191,10 +191,10 @@ public class HtmlEncodingDetector implements EncodingDetector {
                 if (CHARSETS_UNSUPPORTED_BY_IANA.contains(candCharset.toLowerCase(Locale.US))) {
                     continue;
                 }
-                if ("x-user-defined".equalsIgnoreCase(candCharset)) {
-                    candCharset = "windows-1252";
+                Charset aliased = TikaHtmlCharsetAliases.resolve(candCharset);
+                if (aliased != null) {
+                    return aliased;
                 }
-
                 if (CharsetUtils.isSupported(candCharset)) {
                     try {
                         return CharsetUtils.forName(candCharset);
