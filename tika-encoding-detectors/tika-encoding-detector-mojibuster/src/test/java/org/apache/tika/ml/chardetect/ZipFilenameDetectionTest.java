@@ -16,19 +16,15 @@
  */
 package org.apache.tika.ml.chardetect;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.charset.Charset;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.DefaultEncodingDetector;
-import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.langdetect.charsoup.CharSoupEncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -37,8 +33,8 @@ import org.apache.tika.parser.ParseContext;
  * ZIP entry names — a particularly hard case because the probes are tiny (6-23
  * bytes) and structurally valid in several encodings simultaneously.
  *
- * Detection strategy: Mojibuster ranks candidates by raw logit; CharSoup
- * arbitrates using language signal (positive max-logit wins).
+ * Mojibuster emits structural + top-N statistical candidates; a downstream
+ * meta-arbiter (e.g. {@code JunkFilterEncodingDetector}) resolves ties.
  */
 public class ZipFilenameDetectionTest {
 
@@ -58,35 +54,7 @@ public class ZipFilenameDetectionTest {
     }
 
     /**
-     * CharSoup should confirm Shift-JIS even when Mojibuster ranks Big5-HKSCS first,
-     * because the language model gives a higher logit to the Japanese text decoded
-     * from the same bytes.
-     */
-    @Test
-    public void charSoupOverridesModelRankingForShiftJis() throws Exception {
-        Charset big5 = Charset.forName("Big5-HKSCS");
-        Charset shiftJis = Charset.forName("Shift_JIS");
-
-        EncodingDetectorContext ctx = new EncodingDetectorContext();
-        ctx.addResult(List.of(
-                new EncodingResult(big5,     0.9f, "Big5-HKSCS", EncodingResult.ResultType.STATISTICAL),
-                new EncodingResult(shiftJis, 0.3f, "Shift_JIS",  EncodingResult.ResultType.STATISTICAL)
-        ), "MojibusterEncodingDetector");
-
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(EncodingDetectorContext.class, ctx);
-
-        CharSoupEncodingDetector charSoup = new CharSoupEncodingDetector();
-        try (TikaInputStream tis = TikaInputStream.get(SJIS_RAW)) {
-            List<EncodingResult> result = charSoup.detect(tis, new Metadata(), parseContext);
-            assertTrue(!result.isEmpty(), "CharSoup should return a result");
-            assertEquals(shiftJis, result.get(0).getCharset(),
-                    "CharSoup should pick Shift-JIS (文章) over Big5-HKSCS via language signal");
-        }
-    }
-
-    /**
-     * Full pipeline (BOM → Metadata → Mojibuster → StandardHtml → CharSoup) run
+     * Full pipeline (BOM → Metadata → Mojibuster → HtmlEncodingDetector) run
      * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
      * what ZipParser does when iterating entries with the same ParseContext.
      */

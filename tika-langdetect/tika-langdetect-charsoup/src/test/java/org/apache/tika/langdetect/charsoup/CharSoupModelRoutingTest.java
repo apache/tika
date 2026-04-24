@@ -18,20 +18,14 @@ package org.apache.tika.langdetect.charsoup;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.parser.ParseContext;
 
 /**
  * Correctness and strategy-routing tests for {@link CharSoupLanguageDetector}.
@@ -82,71 +76,6 @@ public class CharSoupModelRoutingTest {
         assertTrue(results.size() > 0, "detectAll returned no results");
         assertNotEquals("eng", results.get(0).getLanguage(),
                 "UCAS text must not be classified as English");
-    }
-
-    // -----------------------------------------------------------------------
-    // Strategy tests
-    // -----------------------------------------------------------------------
-
-    @Test
-    public void testStrategyStandardNoGlm() {
-        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-                Map.of("strategy", "STANDARD"));
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
-        detector.addText("The children are playing");
-        List<LanguageResult> results = detector.detectAll();
-        assertTrue(results.size() > 0);
-        Set<String> labels = Arrays.stream(CharSoupLanguageDetector.MODEL.getLabels())
-                .collect(Collectors.toSet());
-        assertTrue(labels.contains(results.get(0).getLanguage()),
-                "STANDARD strategy must return a label from the discriminative model");
-    }
-
-    @Test
-    public void testStrategyGlm() {
-        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-                Map.of("strategy", "GLM"));
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
-        detector.addText("The children are playing in the park on a sunny afternoon");
-        List<LanguageResult> results = detector.detectAll();
-        assertTrue(results.size() > 0);
-        Set<String> labels = Arrays.stream(CharSoupLanguageDetector.MODEL.getLabels())
-                .collect(Collectors.toSet());
-        assertTrue(labels.contains(results.get(0).getLanguage()),
-                "GLM strategy must return a label from the discriminative model");
-    }
-
-    @Test
-    public void testStrategyAutomatic() {
-        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-                Map.of("strategy", "AUTOMATIC"));
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
-        detector.addText("The children are playing in the park on a sunny afternoon");
-        List<LanguageResult> results = detector.detectAll();
-        assertTrue(results.size() > 0);
-    }
-
-    @Test
-    public void testParseContextConfigInjection() {
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
-
-        ParseContext ctx = new ParseContext();
-        ctx.set(CharSoupDetectorConfig.class,
-                CharSoupDetectorConfig.fromMap(Map.of("strategy", "STANDARD")));
-        detector.reset(ctx);
-
-        detector.addText("The children are playing in the park");
-        List<LanguageResult> results = detector.detectAll();
-        assertTrue(results.size() > 0);
-
-        Set<String> generalLabels = Arrays.stream(CharSoupLanguageDetector.MODEL.getLabels())
-                .collect(Collectors.toSet());
-        assertTrue(generalLabels.contains(results.get(0).getLanguage()),
-                "ParseContext-injected STANDARD config must use general model");
-
-        detector.reset();
-        detector.addText("The children are playing in the park");
-        assertNotNull(detector.detectAll());
     }
 
     // -----------------------------------------------------------------------

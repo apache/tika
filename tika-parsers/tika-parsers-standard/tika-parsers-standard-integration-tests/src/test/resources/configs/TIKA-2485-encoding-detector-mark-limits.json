@@ -12,9 +12,6 @@
       "standard-html-encoding-detector": {
         "markLimit": 100000
       }
-    },
-    {
-      "charsoup-encoding-detector": {}
     }
   ]
 }

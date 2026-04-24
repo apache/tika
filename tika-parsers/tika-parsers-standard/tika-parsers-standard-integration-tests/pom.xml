@@ -85,12 +85,6 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-charsoup</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
       <artifactId>tika-encoding-detector-icu4j</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
