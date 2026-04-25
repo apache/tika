@@ -282,7 +282,7 @@ public class BuildCharsetTrainingData {
      * Charsets whose encoded bytes are all {@literal <} 0x80, so the ML model
      * would see zero features.  Only devtest/test files are generated; train
      * is skipped.  These charsets are detected by structural gates in
-     * {@code NaiveBayesPipelineEncodingDetector} before the model is ever called.
+     * {@code MojibusterEncodingDetector} before the model is ever called.
      */
     private static final Set<String> STRUCTURAL_ONLY = new HashSet<>(Arrays.asList(
             "US-ASCII", "ISO-2022-JP", "ISO-2022-KR", "ISO-2022-CN", "x-ISO-2022-CN-CNS"

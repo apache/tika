@@ -35,7 +35,6 @@ import org.apache.tika.config.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
-import org.apache.tika.parser.ParseContext;
 
 /**
  * CharSoup language detector using INT8-quantized multinomial logistic regression
@@ -64,21 +63,6 @@ import org.apache.tika.parser.ParseContext;
 @TikaComponent(name = "charsoup-language-detector")
 public class CharSoupLanguageDetector extends LanguageDetector implements SelfConfiguring {
 
-    /**
-     * Detection strategy.
-     * <ul>
-     *   <li>{@link #STANDARD} — discriminative model only, no GLM adjudication</li>
-     *   <li>{@link #AUTOMATIC} — discriminative model, with GLM adjudication
-     *       when sigmoid(margin) is below {@link #GLM_ADJUDICATE_THRESHOLD}</li>
-     *   <li>{@link #GLM} — discriminative model + GLM adjudication on every input</li>
-     * </ul>
-     */
-    public enum Strategy {
-        STANDARD,
-        AUTOMATIC,
-        GLM
-    }
-
     private static final Logger LOG =
             LoggerFactory.getLogger(CharSoupLanguageDetector.class);
 
@@ -88,18 +72,6 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      */
     private static final String MODEL_RESOURCE =
             "/org/apache/tika/langdetect/charsoup/langdetect-20260320.bin";
-
-    /**
-     * Sigmoid(margin) threshold below which the GLM adjudicator is invoked
-     * in {@link Strategy#AUTOMATIC} mode.  0.70 ≈ margin 0.85 — the
-     * discriminative model has a moderate but not decisive lead.
-     */
-    static final float GLM_ADJUDICATE_THRESHOLD = 0.70f;
-
-    /**
-     * Number of top discriminative candidates to score with the GLM.
-     */
-    static final int GLM_TOP_N = 5;
 
     /**
      * Size (in chars) of each independent chunk evaluated during detection.
@@ -158,9 +130,6 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     private static final FeatureExtractor EXTRACTOR;
     private static final Set<String> SUPPORTED_LANGUAGES;
 
-    /** Generative language model for adjudication — {@code null} if not on classpath. */
-    static final GenerativeLanguageModel GLM_MODEL;
-
     static {
         try {
             MODEL = CharSoupModel.loadFromClasspath(MODEL_RESOURCE);
@@ -176,17 +145,6 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
                     e);
         }
 
-        GenerativeLanguageModel glm = null;
-        try {
-            glm = GenerativeLanguageModel.loadFromClasspath(
-                    GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
-            LOG.info("Generative language model loaded ({} languages)",
-                    glm.getLanguages().size());
-        } catch (IOException e) {
-            LOG.debug("Generative language model not found ({}); GLM adjudication disabled",
-                    GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE);
-        }
-        GLM_MODEL = glm;
     }
 
     /**
@@ -430,28 +388,17 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     private final StringBuilder buffer = new StringBuilder();
     private int maxLength = CharSoupFeatureExtractor.MAX_TEXT_LENGTH;
 
-    /** Constructed (default) config — never null. */
-    private final CharSoupDetectorConfig config;
-
     /**
      * Instance-level model fields.  When constructed via the default constructor
      * these point to the static classpath-loaded singletons.  When constructed
-     * via {@link #CharSoupLanguageDetector(CharSoupDetectorConfig, CharSoupModel)}
-     * they point to the caller-supplied model, ensuring evaluations always use
-     * the intended model.
+     * via {@link #CharSoupLanguageDetector(CharSoupModel)} they point to the
+     * caller-supplied model, ensuring evaluations always use the intended
+     * model.
      */
     private final CharSoupModel model;
     private final FeatureExtractor extractor;
     private final int[][] groupIndices;
     private final int[] classScript;
-
-    /**
-     * Per-document effective config, set in {@link #reset(ParseContext)}.
-     * May differ from {@link #config} when a caller injects a
-     * {@link CharSoupDetectorConfig} via {@link ParseContext}.
-     * Starts equal to {@link #config} and is reset to it on every {@link #reset()}.
-     */
-    private CharSoupDetectorConfig activeConfig;
 
     /**
      * Entropy (in bits) of the probability distribution from the most recent
@@ -466,33 +413,8 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      */
     private float lastEntropy = Float.NaN;
 
-    /**
-     * Returns the set of ISO 639-3 language codes supported by the given strategy.
-     * All strategies use the same discriminative model; the GLM adjudicator
-     * re-ranks but does not add new languages.
-     */
-    public static Set<String> getSupportedLanguages(Strategy strategy) {
-        return new java.util.HashSet<>(java.util.Arrays.asList(MODEL.getLabels()));
-    }
-
-    /** Constructs a detector with default configuration ({@link Strategy#AUTOMATIC}). */
+    /** Constructs a detector using the default classpath-loaded model. */
     public CharSoupLanguageDetector() {
-        this(CharSoupDetectorConfig.DEFAULT);
-    }
-
-    /**
-     * Constructs a detector with the supplied configuration.
-     * Use {@link CharSoupDetectorConfig#fromMap(java.util.Map)} to build a config
-     * from JSON-decoded values read out of a ParseContext.
-     *
-     * @param config immutable configuration; must not be null
-     */
-    public CharSoupLanguageDetector(CharSoupDetectorConfig config) {
-        if (config == null) {
-            throw new IllegalArgumentException("config must not be null");
-        }
-        this.config = config;
-        this.activeConfig = config;
         this.model = MODEL;
         this.extractor = EXTRACTOR;
         this.groupIndices = GROUP_INDICES;
@@ -505,18 +427,12 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
      * against the intended model binary — not whatever happens to be on the
      * classpath.
      *
-     * @param config immutable configuration; must not be null
      * @param customModel the model to use for all predictions
      */
-    public CharSoupLanguageDetector(CharSoupDetectorConfig config, CharSoupModel customModel) {
-        if (config == null) {
-            throw new IllegalArgumentException("config must not be null");
-        }
+    public CharSoupLanguageDetector(CharSoupModel customModel) {
         if (customModel == null) {
             throw new IllegalArgumentException("customModel must not be null");
         }
-        this.config = config;
-        this.activeConfig = config;
         this.model = customModel;
         this.extractor = customModel.createExtractor();
         verifyFlagsMatch(customModel, this.extractor, "custom-model");
@@ -540,7 +456,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     /**
      * Score threshold below which the result is {@link LanguageConfidence#NONE}.
      * Sigmoid(margin) &gt; 0.50 means the top class leads the runner-up by any
-     * positive margin at all.  The GLM adjudicator handles uncertain cases.
+     * positive margin at all.
      */
     private static final float SCORE_FLOOR = 0.50f;
 
@@ -785,35 +701,6 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     public void reset() {
         buffer.setLength(0);
         lastEntropy = Float.NaN;
-        activeConfig = config;
-    }
-
-    /**
-     * Reset for a new document, applying any {@link CharSoupDetectorConfig} found
-     * in {@code context}. A context config overrides the instance config for the
-     * duration of this document only; the next {@link #reset()} or
-     * {@link #reset(ParseContext)} call restores the baseline.
-     * <p>
-     * Also bridges the legacy {@link #shortText} boolean: if no context config is
-     * present but {@code shortText == true}, {@link Strategy#GLM} is applied.
-     *
-     * @param context parse context for the current document; may be {@code null}
-     */
-    @Override
-    public void reset(ParseContext context) {
-        reset();
-        if (context != null) {
-            CharSoupDetectorConfig ctxConfig = context.get(CharSoupDetectorConfig.class);
-            if (ctxConfig != null) {
-                activeConfig = ctxConfig;
-                return;
-            }
-        }
-        // Bridge legacy shortText hint when no explicit context config is present
-        if (shortText && activeConfig.getStrategy() == Strategy.AUTOMATIC) {
-            activeConfig = CharSoupDetectorConfig.fromMap(
-                    Map.of("strategy", Strategy.GLM.name()));
-        }
     }
 
     @Override
@@ -867,19 +754,7 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
             }
         }
 
-        List<LanguageResult> results = buildResults(bestLogits, bestEntropy);
-
-        Strategy strategy = activeConfig.getStrategy();
-        if (strategy != Strategy.STANDARD && GLM_MODEL != null
-                && !results.isEmpty() && !results.get(0).getLanguage().isEmpty()) {
-            boolean shouldAdjudicate = strategy == Strategy.GLM
-                    || results.get(0).getRawScore() < GLM_ADJUDICATE_THRESHOLD;
-            if (shouldAdjudicate) {
-                results = adjudicateWithGlm(bestChunk, results);
-            }
-        }
-
-        return results;
+        return buildResults(bestLogits, bestEntropy);
     }
 
     /**
@@ -954,62 +829,4 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
         return results;
     }
 
-    /**
-     * Minimum z-score advantage the GLM candidate must have over the
-     * discriminative winner before we switch.  Prevents the GLM from
-     * flipping between closely-related varieties (e.g. nld/lim) where
-     * both have similar generative plausibility.
-     */
-    static final float GLM_MIN_Z_GAP = 0.5f;
-
-    /**
-     * Minimum discriminative rawScore a GLM candidate must have to be
-     * considered for promotion.  Candidates with very low disc scores
-     * (e.g. 0.13) should not be promoted even if the GLM likes them.
-     */
-    static final float GLM_MIN_DISC_SCORE = 0.30f;
-
-    /**
-     * Re-rank the top discriminative candidates using the generative language
-     * model.  Scores each of the top {@link #GLM_TOP_N} candidates via
-     * {@link GenerativeLanguageModel#zScoreLengthAdjusted} and promotes the
-     * best-scoring candidate to the front — but only if it beats the
-     * discriminative winner's z-score by at least {@link #GLM_MIN_Z_GAP}
-     * and has a disc rawScore above {@link #GLM_MIN_DISC_SCORE}.
-     */
-    private List<LanguageResult> adjudicateWithGlm(String text,
-                                                    List<LanguageResult> discResults) {
-        int n = Math.min(GLM_TOP_N, discResults.size());
-        float[] zScores = new float[n];
-        float bestZ = Float.NEGATIVE_INFINITY;
-        int bestIdx = 0;
-
-        for (int i = 0; i < n; i++) {
-            String lang = discResults.get(i).getLanguage();
-            if (lang.isEmpty() || discResults.get(i).getRawScore() < GLM_MIN_DISC_SCORE) {
-                zScores[i] = Float.NaN;
-                continue;
-            }
-            float z = GLM_MODEL.zScoreLengthAdjusted(text, lang);
-            zScores[i] = z;
-            if (!Float.isNaN(z) && z > bestZ) {
-                bestZ = z;
-                bestIdx = i;
-            }
-        }
-
-        if (bestIdx == 0) {
-            return discResults;
-        }
-
-        float discWinnerZ = zScores[0];
-        if (Float.isNaN(discWinnerZ) || bestZ - discWinnerZ >= GLM_MIN_Z_GAP) {
-            List<LanguageResult> reranked = new ArrayList<>(discResults);
-            LanguageResult glmWinner = reranked.remove(bestIdx);
-            reranked.add(0, glmWinner);
-            return reranked;
-        }
-
-        return discResults;
-    }
 }

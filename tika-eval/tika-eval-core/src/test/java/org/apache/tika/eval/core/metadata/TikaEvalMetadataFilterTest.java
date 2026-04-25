@@ -64,10 +64,13 @@ public class TikaEvalMetadataFilterTest {
                     metadata.get(TikaEvalMetadataFilter.LANGUAGE_CONFIDENCE));
             assertEquals(1.0, langConf, 0.1);
 
+            // Junk-detector z-score: clean English should score above the
+            // "obvious junk" threshold.
             double languageness = Double.parseDouble(
                     metadata.get(TikaEvalMetadataFilter.LANGUAGENESS));
             assertTrue(languageness > -5.0,
-                    "Expected reasonable languageness z-score for English text, got " + languageness);
+                    "Expected reasonable languageness z-score for English text, got "
+                            + languageness);
         }
     }
 }

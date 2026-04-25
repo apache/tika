@@ -16,7 +16,6 @@
  */
 package org.apache.tika.eval.core.metadata;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,16 +29,15 @@ import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 import org.apache.tika.eval.core.tokens.TokenCounts;
-import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.filter.MetadataFilterBase;
+import org.apache.tika.ml.junkdetect.JunkDetector;
+import org.apache.tika.quality.TextQualityScore;
 
 public class TikaEvalMetadataFilter extends MetadataFilterBase {
-
-    private static final String GLM_RESOURCE = GenerativeLanguageModel.DEFAULT_MODEL_RESOURCE;
 
     public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
@@ -67,7 +65,7 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
     public static Property LANGUAGENESS = Property.externalReal(TIKA_EVAL_NS + "languageness");
 
     static CompositeTextStatsCalculator TEXT_STATS_CALCULATOR;
-    private static GenerativeLanguageModel GLM;
+    private static final JunkDetector JUNK_DETECTOR;
 
     static {
         List<TextStatsCalculator> calcs = new ArrayList<>();
@@ -75,21 +73,18 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         calcs.add(new CommonTokens());
         TEXT_STATS_CALCULATOR = new CompositeTextStatsCalculator(calcs);
 
+        JunkDetector jd = null;
         try {
-            GLM = GenerativeLanguageModel.loadFromClasspath(GLM_RESOURCE);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to load generative language model: "
-                    + GLM_RESOURCE, e);
+            jd = JunkDetector.loadFromClasspath();
+        } catch (Throwable t) {
+            // Model load failure → languageness no-op, not pipeline failure.
         }
+        JUNK_DETECTOR = jd;
     }
 
-
-    /**
-     * Returns the shared generative language model, or {@code null} if
-     * the model binary is not on the classpath.
-     */
-    public static GenerativeLanguageModel getGenerativeModel() {
-        return GLM;
+    /** Shared {@link JunkDetector}, or {@code null} if the model failed to load. */
+    public static JunkDetector getJunkDetector() {
+        return JUNK_DETECTOR;
     }
 
     @Override
@@ -123,16 +118,16 @@ public class TikaEvalMetadataFilter extends MetadataFilterBase {
         //languages
         List<LanguageResult> probabilities =
                 (List<LanguageResult>) results.get(LanguageIDWrapper.class);
-        String detectedLang = null;
         if (probabilities.size() > 0) {
-            detectedLang = probabilities.get(0).getLanguage();
-            metadata.set(LANGUAGE, detectedLang);
+            metadata.set(LANGUAGE, probabilities.get(0).getLanguage());
             metadata.set(LANGUAGE_CONFIDENCE, probabilities.get(0).getRawScore());
         }
 
-        if (detectedLang != null) {
-            float z = GLM.zScoreLengthAdjusted(content, detectedLang);
-            metadata.set(LANGUAGENESS, Float.isNaN(z) ? -99.0f : z);
+        // Junk-detector z-score: + clean, − mojibake / wrong-encoding.
+        // Replaces the GLM-based languageness removed in TIKA-4720.
+        if (JUNK_DETECTOR != null) {
+            TextQualityScore q = JUNK_DETECTOR.score(content);
+            metadata.set(LANGUAGENESS, q.isUnknown() ? -99.0f : q.getZScore());
         } else {
             metadata.set(LANGUAGENESS, -99.0f);
         }

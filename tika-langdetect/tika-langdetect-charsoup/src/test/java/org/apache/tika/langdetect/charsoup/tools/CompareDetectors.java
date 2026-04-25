@@ -40,7 +40,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.tika.langdetect.charsoup.CharSoupDetectorConfig;
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
 import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.ConfusableGroups;
@@ -139,7 +138,7 @@ public class CompareDetectors {
         if (args.length < 1) {
             System.err.println(
                     "Usage: CompareDetectors <testSplitFile>"
-                            + " [--strategy STANDARD|AUTOMATIC|GLM]"
+                            + ""
                             + " [outputReport] [threads]");
             System.err.println("  Legacy: CompareDetectors <testSplitFile> <charSoupModelFile>"
                             + " [outputReport] [threads]");
@@ -148,23 +147,12 @@ public class CompareDetectors {
 
         Path testFile = Paths.get(args[0]);
 
-        // Parse --strategy flag (new mode) vs positional model file (legacy mode)
-        CharSoupLanguageDetector.Strategy strategy = CharSoupLanguageDetector.Strategy.STANDARD;
         Path modelFile = null;
         Path reportFile = null;
         int numThreads = Runtime.getRuntime().availableProcessors();
 
         List<String> remaining = new ArrayList<>(Arrays.asList(args).subList(1, args.length));
-        for (int i = 0; i < remaining.size(); i++) {
-            if ("--strategy".equals(remaining.get(i)) && i + 1 < remaining.size()) {
-                strategy = CharSoupLanguageDetector.Strategy.valueOf(
-                        remaining.get(i + 1).toUpperCase(Locale.ROOT));
-                remaining.remove(i + 1);
-                remaining.remove(i);
-                i--;
-            }
-        }
-        // Remaining positional args: [modelFile] [reportFile] [threads]
+        // Positional args: [modelFile] [reportFile] [threads]
         if (!remaining.isEmpty() && !remaining.get(0).matches("\\d+")
                 && !remaining.get(0).endsWith(".log") && !remaining.get(0).endsWith(".txt")
                 && Paths.get(remaining.get(0)).toFile().exists()) {
@@ -177,7 +165,6 @@ public class CompareDetectors {
             numThreads = Integer.parseInt(remaining.get(0));
         }
 
-        System.out.println("CharSoup strategy: " + strategy);
         System.out.println("Evaluation threads: " + numThreads);
 
         // ---- Load test data ----
@@ -226,10 +213,10 @@ public class CompareDetectors {
             bigramLangs = new HashSet<>(Arrays.asList(customModel.getLabels()));
         } else {
             customModel = null;
-            bigramLangs = CharSoupLanguageDetector.getSupportedLanguages(strategy);
+            bigramLangs = CharSoupLanguageDetector.getSupportedLanguages();
             System.out.printf(Locale.US,
-                    "%nCharSoup supported languages (%s strategy): %d%n",
-                    strategy, bigramLangs.size());
+                    "%nCharSoup supported languages: %d%n",
+                    bigramLangs.size());
             bigramHeapBytes = 0L;
         }
         System.out.println("  Evaluation routes through CharSoupLanguageDetector"
@@ -283,11 +270,9 @@ public class CompareDetectors {
 
         // ---- Warm up JIT ----
         System.out.println("\nWarming up (" + WARMUP_ITERS + " iterations)...");
-        CharSoupDetectorConfig warmupCfg = CharSoupDetectorConfig.fromMap(
-                java.util.Map.of("strategy", strategy.name()));
         CharSoupLanguageDetector warmupDetector = customModel != null
-                ? new CharSoupLanguageDetector(warmupCfg, customModel)
-                : new CharSoupLanguageDetector(warmupCfg);
+                ? new CharSoupLanguageDetector(customModel)
+                : new CharSoupLanguageDetector();
         CharSoupModel activeModel = warmupDetector.getModel();
         System.out.printf(Locale.US,
                 "  VERIFY: predictions use %d classes, %,d buckets, flags=0x%03X%s%n",
@@ -377,7 +362,7 @@ public class CompareDetectors {
 
             LengthEval ae = new LengthEval(maxLen);
             ae.bigram    = evaluateBigramParallel(
-                    tAll, "bigram-" + tag, numThreads, bigramLangs, strategy, customModel);
+                    tAll, "bigram-" + tag, numThreads, bigramLangs, customModel);
             ae.opennlp   = evaluateOpenNLPParallel(opennlpPool, tAll, "opennlp-" + tag,
                     opennlpAllLangs);
             ae.lingua    = evaluateLingua(lingua, tAll, "lingua-" + tag, linguaLangs);
@@ -386,17 +371,17 @@ public class CompareDetectors {
             allEvals.add(ae);
 
             LengthEval oe = new LengthEval(maxLen);
-            oe.bigram  = evaluateBigramParallel(tOnn, "bigram-onn-" + tag, numThreads, null, strategy, customModel);
+            oe.bigram  = evaluateBigramParallel(tOnn, "bigram-onn-" + tag, numThreads, null, customModel);
             oe.opennlp = evaluateOpenNLPParallel(opennlpPool, tOnn, "opennlp-onn-" + tag);
             opennlpEvals.add(oe);
 
             LengthEval le = new LengthEval(maxLen);
-            le.bigram  = evaluateBigramParallel(tLin, "bigram-lin-" + tag, numThreads, null, strategy, customModel);
+            le.bigram  = evaluateBigramParallel(tLin, "bigram-lin-" + tag, numThreads, null, customModel);
             le.lingua  = evaluateLingua(lingua, tLin, "lingua-lin-" + tag);
             linguaEvals.add(le);
 
             LengthEval pe = new LengthEval(maxLen);
-            pe.bigram    = evaluateBigramParallel(tOpt, "bigram-opt-" + tag, numThreads, null, strategy, customModel);
+            pe.bigram    = evaluateBigramParallel(tOpt, "bigram-opt-" + tag, numThreads, null, customModel);
             pe.optimaize = evaluateOptimaizeParallel(optimaizePool, tOpt, "optimaize-opt-" + tag);
             optimaizeEvals.add(pe);
 
@@ -517,33 +502,28 @@ public class CompareDetectors {
 
     /**
      * Evaluate CharSoup via the full production pipeline in parallel.
-     * Each thread gets its own {@link CharSoupLanguageDetector} instance configured
-     * with the given strategy.
+     * Each thread gets its own {@link CharSoupLanguageDetector} instance.
      *
      * @param supportedLangs if non-null, sentences whose true label is NOT in this set are
      *                       skipped entirely — not counted in accuracy, F1, or confusion.
      */
     static EvalResult evaluateBigramParallel(List<LabeledSentence> data, String name,
-                                             int numThreads, Set<String> supportedLangs,
-                                             CharSoupLanguageDetector.Strategy strategy)
+                                             int numThreads, Set<String> supportedLangs)
             throws Exception {
-        return evaluateBigramParallel(data, name, numThreads, supportedLangs, strategy, null);
+        return evaluateBigramParallel(data, name, numThreads, supportedLangs, null);
     }
 
     static EvalResult evaluateBigramParallel(List<LabeledSentence> data, String name,
                                              int numThreads, Set<String> supportedLangs,
-                                             CharSoupLanguageDetector.Strategy strategy,
                                              CharSoupModel customModel)
             throws Exception {
-        CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-                java.util.Map.of("strategy", strategy.name()));
         if (data.isEmpty()) {
             return new EvalResult(name);
         }
         if (numThreads <= 1) {
             CharSoupLanguageDetector det = customModel != null
-                    ? new CharSoupLanguageDetector(cfg, customModel)
-                    : new CharSoupLanguageDetector(cfg);
+                    ? new CharSoupLanguageDetector(customModel)
+                    : new CharSoupLanguageDetector();
             return evaluateBigramChunk(det, data, name, supportedLangs);
         }
 
@@ -556,8 +536,8 @@ public class CompareDetectors {
                 final List<LabeledSentence> chunk = chunks.get(i);
                 final String chunkName = name + "-t" + i;
                 final CharSoupLanguageDetector detector = customModel != null
-                        ? new CharSoupLanguageDetector(cfg, customModel)
-                        : new CharSoupLanguageDetector(cfg);
+                        ? new CharSoupLanguageDetector(customModel)
+                        : new CharSoupLanguageDetector();
                 futures.add(pool.submit(
                         () -> evaluateBigramChunk(detector, chunk, chunkName, supportedLangs)));
             }

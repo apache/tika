@@ -44,8 +44,8 @@ import org.apache.tika.parser.ParseContext;
  *
  * <p>This detector is SPI-loaded in {@code tika-core} and therefore always present
  * in the default encoding-detector chain.  Its DECLARATIVE result is visible to
- * {@code CharSoupEncodingDetector}, which can weigh it against structural or
- * statistical evidence from other detectors.</p>
+ * {@code JunkFilterEncodingDetector}, which honours it when its decoding is
+ * byte-identical to at least one other candidate's.</p>
  *
  * @since Apache Tika 4.0
  */

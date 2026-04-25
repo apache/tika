@@ -37,9 +37,10 @@ import org.apache.tika.parser.ParseContext;
  * and takes priority over all statistical or structural inference.
  *
  * <p>SPI-loaded first in the default encoding-detector chain so that BOM evidence
- * reaches {@code CharSoupEncodingDetector} before any statistical detector runs.
- * {@code NaiveBayesPipelineEncodingDetector} strips the BOM from its own probe independently
- * to ensure consistent model inference (BOMs are excluded from training data).</p>
+ * reaches the meta arbiter ({@code JunkFilterEncodingDetector}) before any
+ * statistical detector runs.  {@code MojibusterEncodingDetector} strips the BOM
+ * from its own probe independently to ensure consistent model inference (BOMs are
+ * excluded from training data).</p>
  *
  * @since Apache Tika 0.x (moved to org.apache.tika.detect in 4.0)
  */

@@ -28,7 +28,7 @@
   <artifactId>tika-encoding-detector-mojibuster</artifactId>
   <name>Apache Tika ML charset encoding detector</name>
   <description>
-    ML-based charset encoding detector.  NaiveBayesPipelineEncodingDetector
+    ML-based charset encoding detector.  MojibusterEncodingDetector
     runs structural detectors for UTF-32 / UTF-16 / UTF-8 and then a
     33-class byte-bigram Naive Bayes classifier covering CJK multi-byte,
     EBCDIC, DOS OEM, Cyrillic, Windows single-byte, ISO-8859, and Mac
@@ -52,12 +52,6 @@
       <artifactId>tika-annotation-processor</artifactId>
       <version>${revision}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-charsoup</artifactId>
-      <version>${revision}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

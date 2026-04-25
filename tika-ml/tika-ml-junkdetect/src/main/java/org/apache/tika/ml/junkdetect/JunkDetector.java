@@ -168,6 +168,24 @@ public final class JunkDetector implements TextQualityDetector {
     }
 
     /**
+     * {@link java.util.ServiceLoader} provider hook (Java 9+).  Allows
+     * {@code JunkDetector} to be registered as a
+     * {@link org.apache.tika.quality.TextQualityDetector} SPI implementation
+     * even though its construction goes through
+     * {@link #loadFromClasspath()} rather than a public no-arg constructor.
+     *
+     * @throws UncheckedIOException if the bundled model cannot be loaded
+     */
+    public static JunkDetector provider() {
+        try {
+            return loadFromClasspath();
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(
+                    "Failed to load bundled JunkDetector model", e);
+        }
+    }
+
+    /**
      * Loads a model from the given file path.  The file may be gzipped or raw.
      */
     public static JunkDetector loadFromPath(Path path) throws IOException {

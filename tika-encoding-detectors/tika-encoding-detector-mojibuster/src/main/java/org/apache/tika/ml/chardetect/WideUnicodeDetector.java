@@ -20,7 +20,7 @@ import java.nio.charset.Charset;
 
 /**
  * Structural analysis for UTF-32 LE/BE, plus UTF-16 surrogate validity
- * flags. This is an internal component of {@code NaiveBayesPipelineEncodingDetector}'s
+ * flags. This is an internal component of {@code MojibusterEncodingDetector}'s
  * pipeline — not a standalone {@code EncodingDetector}. Requires upstream
  * BOM stripping.
  *
@@ -178,7 +178,7 @@ final class WideUnicodeDetector {
      * {@code offset}.  Does not attempt UTF-16 positive detection — that is
      * the job of {@link Utf16SpecialistEncodingDetector}.  Returns only
      * surrogate-invalidity flags under each endianness, used by
-     * {@code NaiveBayesPipelineEncodingDetector} to suppress UTF-16 labels from
+     * {@code MojibusterEncodingDetector} to suppress UTF-16 labels from
      * the main statistical model on probes that cannot be valid UTF-16.
      */
     private static Result tryUtf16(byte[] bytes, int offset, int length) {

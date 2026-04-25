@@ -45,7 +45,18 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-annotation-processor</artifactId>
+      <version>${revision}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-ml-core</artifactId>
+      <version>${revision}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
       <version>${revision}</version>
     </dependency>
 

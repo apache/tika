@@ -131,8 +131,7 @@ public class LangIdRegressionTest {
     }
 
     private static void assertDetects(String expectedLang, String text) {
-        CharSoupLanguageDetector detector = new CharSoupLanguageDetector(
-                CharSoupDetectorConfig.fromMap(java.util.Map.of("strategy", "STANDARD")));
+        CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
         detector.addText(text);
         List<LanguageResult> results = detector.detectAll();
 

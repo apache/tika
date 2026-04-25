@@ -39,7 +39,7 @@ import org.apache.tika.parser.ParseContext;
  * business name) could detect as {@code IBM424} (Hebrew EBCDIC) at
  * 0.99 confidence — producing complete mojibake.  The combination of
  * structural IBM424 gating, Latin-sibling → windows-1252 fallback in
- * {@code NaiveBayesPipelineEncodingDetector}, and CharSoup's
+ * {@code MojibusterEncodingDetector}, and CharSoup's
  * language-signal arbitration prevents that.  This test exercises
  * the full detector chain via {@link DefaultEncodingDetector} and
  * asserts the non-catastrophic property: not IBM424.</p>

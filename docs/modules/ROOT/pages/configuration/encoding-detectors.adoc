@@ -42,7 +42,7 @@ Emits DECLARATIVE.
 (populated from an HTTP response header or similar).  Emits DECLARATIVE.
 
 |3
-|`naive-bayes-pipeline-encoding-detector`
+|`mojibuster-encoding-detector`
 |A structural UTF-32 check, structural UTF-16 specialist, UTF-8 grammar
 gate, and 33-class byte-bigram Naive Bayes classifier.  STRUCTURAL for
 structural hits; STATISTICAL for NB predictions.
@@ -54,19 +54,16 @@ is found (fast lenient regex matcher, curated WHATWG label aliases).
 Emits DECLARATIVE.
 
 |5
-|`charsoup-encoding-detector`
-|`MetaEncodingDetector` — arbitrates across all base-detector candidates
-using a character-bigram language model.  When one or more base detectors
-return a result, CharSoup decodes the probe with each candidate charset
-and picks the one whose decoded text scores best for any supported
-language.  Always runs last.
+|`junk-filter-encoding-detector`
+|`MetaEncodingDetector` — strips HTML/XML markup, decodes the probe under
+each candidate charset, and picks the cleanest decoding via a script-aware
+text-quality model.  Honours a declaration when its decoding is
+byte-identical to at least one other candidate's.  Always runs last.
 |===
 
-NOTE: `charsoup-encoding-detector` is supplied by
-`tika-encoding-detector-charsoup` and loads automatically via SPI when
-the module jar is present.  Omit it to get strict first-match-wins
-behaviour that honours declarations authoritatively — see
-<<opting-out-of-charsoup>>.
+NOTE: `junk-filter-encoding-detector` is supplied by `tika-ml-junkdetect`
+and SPI-loads when the module jar is on the classpath.  Omit it for plain
+first-match-wins — see <<opting-out-of-arbitration>>.
 
 == Available Detectors
 
@@ -87,7 +84,7 @@ referenced by their SPI name in JSON configuration.
 the `Metadata` object.  Applies WHATWG label normalization
 (ISO-8859-1 and US-ASCII → windows-1252).  In the default chain.
 
-|`naive-bayes-pipeline-encoding-detector`
+|`mojibuster-encoding-detector`
 |`tika-encoding-detector-mojibuster`
 |Byte-bigram Naive Bayes classifier plus structural detectors for UTF-32
 and UTF-16 and a UTF-8 grammar gate.  33 classes including CJK
@@ -106,15 +103,10 @@ curated subset of WHATWG label aliases.  In the default chain.
 explicitly if you need strict WHATWG tokenisation (e.g. ignoring charset
 declarations inside comments or other contexts the lenient regex may match).
 
-|`charsoup-encoding-detector`
-|`tika-encoding-detector-charsoup`
-|Language-aware arbitrator (`MetaEncodingDetector`).  In the default
-chain when the module jar is on the classpath; always runs last.
-
-|`mojibuster-encoding-detector`
-|`tika-encoding-detector-mojibuster`
-|Legacy maxent charset classifier.  Still available for explicit opt-in;
-not auto-registered.
+|`junk-filter-encoding-detector`
+|`tika-ml-junkdetect`
+|Text-quality arbitrator (`MetaEncodingDetector`).  In the default chain
+when the module jar is on the classpath; always runs last.
 
 |`icu4j-encoding-detector`
 |`tika-encoding-detector-icu4j`
@@ -144,13 +136,11 @@ auto-registered; opt in if you specifically need it.
 }
 ----
 
-[[opting-out-of-charsoup]]
-=== Strict declared-charset honoring (no CharSoup arbitration)
+[[opting-out-of-arbitration]]
+=== Strict first-match-wins (no JunkFilter arbitration)
 
-By default, CharSoup arbitrates across all candidates including DECLARATIVE
-ones — which means a `<meta charset>` tag is not automatically
-authoritative.  If you want declarations to win unconditionally (HTML5-spec
-behaviour), omit CharSoup:
+Omit JunkFilter to get plain first-match-wins (each base detector's top
+result wins in registration order):
 
 [source,json]
 ----
@@ -159,16 +149,15 @@ behaviour), omit CharSoup:
     {"bom-detector": {}},
     {"metadata-charset-detector": {}},
     {"html-encoding-detector": {}},
-    {"naive-bayes-pipeline-encoding-detector": {}}
+    {"mojibuster-encoding-detector": {}}
   ]
 }
 ----
 
-Without CharSoup, `CompositeEncodingDetector` runs in first-match-wins
-mode.  Trade-off: lying declarations (common on the legacy web)
-propagate unfiltered.  See
-xref:../advanced/charset-detection-design.adoc#opting-out-of-arbitration[the design doc]
-for details.
+Trade-off: lying declarations propagate unfiltered, and Mojibuster's
+statistical guess wins ties without any text-quality cross-check.
+See
+xref:../advanced/charset-detection-design.adoc#opting-out-of-arbitration[the design doc].
 
 === Configure the HTML detector's read limit
 
@@ -187,8 +176,8 @@ large `<script>` blocks before the meta tag (TIKA-2485):
         "markLimit": 131072
       }
     },
-    {"naive-bayes-pipeline-encoding-detector": {}},
-    {"charsoup-encoding-detector": {}}
+    {"mojibuster-encoding-detector": {}},
+    {"junk-filter-encoding-detector": {}}
   ]
 }
 ----

@@ -57,11 +57,6 @@
       <artifactId>tika-encoding-detector-universal</artifactId>
       <version>${revision}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-charsoup</artifactId>
-      <version>${revision}</version>
-    </dependency>
 
     <!-- Test dependencies -->
     <dependency>

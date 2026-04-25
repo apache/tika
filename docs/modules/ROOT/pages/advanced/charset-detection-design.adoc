@@ -19,18 +19,17 @@
 :toc:
 :toc-placement: left
 
-Tika 4.x ships a charset detection pipeline built around a purpose-trained
-byte-bigram Naive Bayes (NB) classifier, small dedicated structural detectors
-for UTF-16 and UTF-32, and language-signal arbitration.  The design is
-_"collect candidates from every layer, then arbitrate"_ rather than
-first-detector-wins.
+Tika 4.x charset detection: byte-bigram NB classifier, structural
+detectors for UTF-16/UTF-32, and a script-aware text-quality arbitrator.
+Design: collect candidates from every layer, then arbitrate by decode
+quality — not first-detector-wins.
 
 == Pipeline overview
 
 The default `EncodingDetector` chain is assembled via the Java SPI.  All
 results are collected into an `EncodingDetectorContext` on the
 `ParseContext`; when a `MetaEncodingDetector` (currently
-`CharSoupEncodingDetector`) is present,
+`JunkFilterEncodingDetector`) is present,
 `CompositeEncodingDetector` switches into collect-all-then-arbitrate mode.
 
 [cols="1,2,1,2", options="header"]
@@ -51,7 +50,7 @@ results are collected into an `EncodingDetectorContext` on the
   US-ASCII → windows-1252).  DECLARATIVE.
 
 | 3
-| `NaiveBayesPipelineEncodingDetector`
+| `MojibusterEncodingDetector`
 | `tika-encoding-detector-mojibuster`
 | Structural UTF-32 and UTF-16 detection, UTF-8 grammar gate, HTML
   attribute-aware stripping, then a 33-class byte-bigram NB
@@ -68,10 +67,10 @@ results are collected into an `EncodingDetectorContext` on the
   — is available opt-in for users who need the full WHATWG prescan algorithm.
 
 | 5
-| `CharSoupEncodingDetector`
-| `tika-encoding-detector-charsoup`
+| `JunkFilterEncodingDetector`
+| `tika-ml-junkdetect`
 | `MetaEncodingDetector`.  Arbitrates across all base-detector
-  candidates using language scoring.  See <<charsoup>>.
+  candidates using a script-aware text-quality model.  See <<junk-filter>>.
 |===
 
 === EncodingResult and ResultType
@@ -84,13 +83,14 @@ Detectors return `List<EncodingResult>`.  Each carries:
   charset name, e.g. `IBM424-ltr`, `UTF-16-BE`).
 * `resultType` — one of `DECLARATIVE`, `STRUCTURAL`, `STATISTICAL`.
 
-In the default chain, CharSoup arbitrates across all three tiers by
-language signal — declared charsets are not automatically authoritative.
-See <<opting-out-of-arbitration>> for HTML5-spec-compliant behavior that
-honours declarations without second-guessing.
+In the default chain, JunkFilter arbitrates across all tiers by
+decode-quality scoring.  Declared charsets aren't automatically
+authoritative, but a declared charset whose decoding is byte-identical
+to at least one other candidate's wins.  See
+<<opting-out-of-arbitration>> for plain first-match-wins.
 
 [[nb-pipeline]]
-== NaiveBayesPipelineEncodingDetector
+== MojibusterEncodingDetector
 
 The pipeline runs layers in order and returns the first confident
 structural answer when one fires; otherwise it falls through to NB.
@@ -220,64 +220,80 @@ every probe length we've measured.
   the Latin family and the probe decodes byte-identically under
   windows-1252, rewrite to windows-1252.
 * **MIN_EMIT_CONFIDENCE = 0.01** — noise candidates below this
-  threshold are not emitted into the pool.  Prevents CharSoup from
-  promoting language-coincidence picks over NB's confident top.
+  threshold are not emitted into the pool.  Prevents JunkFilter from
+  scoring weak coincidence picks against NB's confident top.
 
-[[charsoup]]
-== CharSoupEncodingDetector — language-signal arbitration
+[[junk-filter]]
+== JunkFilterEncodingDetector — text-quality arbitration
 
-`CharSoupEncodingDetector` is a `MetaEncodingDetector`.  Its presence
-switches the composite detector into collect-all mode.  After all
-base detectors run, CharSoup receives the full candidate set and
-arbitrates.
+`JunkFilterEncodingDetector` is a `MetaEncodingDetector` backed by
+`JunkDetector`, a script-aware text-quality scorer that distinguishes
+clean text from mojibake / wrong-codec / corrupted decodings.  Its
+presence switches the composite into collect-all mode.
 
 [IMPORTANT]
 ====
-*CharSoup arbitrates over ALL candidate tiers, including
-DECLARATIVE.*  A `<meta charset>` tag or Content-Type header is
-treated as one input among several — not as authoritative.  Real-world
-declarations on the legacy web are notoriously unreliable (sites
-declare ASCII while serving UTF-8, copy-paste templates from other
-regions, etc.).  CharSoup trusts language signal over decoded bytes
-more than wire declarations.
+*JunkFilter arbitrates over ALL candidate tiers, including
+DECLARATIVE.*  Real-world web declarations are unreliable, so a
+`<meta charset>` tag is one input among several.
 
-If you want declared charsets to be authoritative — because you trust
-your input pipeline, or you specifically need HTML5-spec behaviour —
-opt out of CharSoup (see <<opting-out-of-arbitration>>).
+A declared charset wins when its decoding is byte-identical to at
+least one other candidate's — text quality can't distinguish the two,
+so honouring the declaration ensures downstream divergent bytes
+(e.g. 0xA4 = € in ISO-8859-15, ¤ in windows-1252) are decoded as the
+author intended.
+
+For plain first-match-wins, omit JunkFilter (see <<opting-out-of-arbitration>>).
 ====
 
 === Arbitration outline
 
-. **Unanimous** — all detectors agree (or only one result exists) →
-  return directly.
-. **Language scoring** — for each unique candidate charset, decode
-  the probe with that charset and score the decoded text via
-  `CharSoupLanguageDetector` (a character-bigram language model
-  covering ~165 languages).  Candidates exceeding a junk-character
-  threshold are discarded.  The candidate whose decoded text produces
-  the highest positive top-language logit wins.
-. **DECLARATIVE preference fallback** — when language scoring is
-  inconclusive, a DECLARATIVE candidate whose decoded text is as
-  clean as the statistical winner wins.
+. **One unique candidate** — abstain; composite default ordering wins.
+. **HTML byte-stripping** — `HtmlByteStripper` removes well-formed
+  HTML/XML markup before decoding so the score reflects body text, not
+  tags.  Falls back to the raw probe if no tags are detected.
+. **Decode under each candidate** — insertion-ordered for deterministic
+  tournament seeding.
+. **Declarative-equivalent-decode preference** — if a DECLARATIVE
+  candidate's decoded output equals at least one other candidate's, it
+  wins immediately.
+. **All decodings identical, no DECLARATIVE** — abstain.
+. **Pairwise tournament** — first candidate seeds champion; each
+  challenger compared via `JunkDetector.compare`; higher z-score wins.
 
-=== Known limitation: lonely-script margin
+=== JunkDetector scoring
 
-CharSoup's discriminative language model scores by the margin between
-the top class and runners-up.  Scripts with no sibling language in the
-model (Hebrew, Thai, Hangul, Arabic) have inherently larger margins on
-correct-decoding.  This can produce wrong answers on probes where
-wrong-charset decoding happens to land in a lonely-script character
-range — a short Latin probe decoded as Korean via x-windows-949 scores
-with a large Korean margin because no other class competes on Korean
-script.  Mitigation in the pipeline: `MIN_EMIT_CONFIDENCE` limits the
-noise candidates CharSoup sees.  A proper fix (trust-type weighting in
-CharSoup itself) is tracked separately.
+`JunkDetector` partitions decoded text into maximal Unicode-script runs
+(COMMON / INHERITED / UNKNOWN attach to the preceding run).  Each run
+is scored against its own per-script model (byte-bigram log-prob table
++ named-Unicode-block transitions + control-byte fraction) into a
+per-run logit.  Logits are combined into an overall z-score weighted by
+run byte count, so mixed-script text is scored fairly.
+
+Scripts not in the trained model are treated as neutral (z = 0), not
+junk — this prevents a garbled-but-recognisable decoding from beating
+a correct decoding whose script is unknown to the model.
+
+=== Why HTML stripping is essential
+
+The score is a byte-weighted average over script runs.  An unstripped
+HTML probe with 10 KB of whitespace + tags and 24 bytes of body gives
+the body a weight of ~0.0024 — invisible.  Stripping gets the probe to
+a content-only byte budget where scripts compete on comparable footing.
+
+`HtmlByteStripper` operates on raw bytes (ASCII tag delimiters survive
+every charset Tika cares about).  `<script>`, `<style>`, and comment
+bodies are dropped; text-bearing attribute values (`alt`, `title`,
+`placeholder`, `aria-label`, `summary`, `label`) are preserved.
 
 [[opting-out-of-arbitration]]
-=== Opting out — strict declared-charset honoring
+=== Opting out — first-match-wins
 
-Omit `CharSoupEncodingDetector` from the chain.  The composite detector
-then runs in first-match-wins mode:
+This is *not* the default chain — it's a custom configuration.
+By default, JunkFilter arbitrates across all candidates as described
+above.  To opt out, omit `JunkFilterEncodingDetector` from the chain;
+the composite detector then runs in plain first-match-wins mode (each
+base detector's top result is taken in registration order):
 
 [source,json]
 ----
@@ -286,15 +302,16 @@ then runs in first-match-wins mode:
     { "bom-detector": {} },
     { "metadata-charset-detector": {} },
     { "standard-html-encoding-detector": {} },
-    { "naive-bayes-pipeline-encoding-detector": {} }
+    { "mojibuster-encoding-detector": {} }
   ]
 }
 ----
 
-BOM / metadata / meta-tag declarations are honoured authoritatively;
-NB only runs when no declaration is present.  This matches HTML5-spec
-behaviour on declared documents.  Trade-off: lying declarations
-(common on the legacy web) propagate unfiltered.
+In this opt-out chain, BOM / metadata / meta-tag declarations are
+honoured authoritatively when present, and NB only runs when no
+declaration fires.  Trade-off: lying declarations propagate
+unfiltered, and Mojibuster's top statistical guess is taken without
+any text-quality cross-check.
 
 == Performance
 
@@ -302,101 +319,9 @@ Evaluated on a held-out 37-charset devtest corpus (~1.22M probes per
 probe length).  Raw outputs are preserved in
 `tika-encoding-detectors/tika-encoding-detector-mojibuster/docs/performance/`.
 
-Conversely, the default chain (with CharSoup) tolerates lying
-declarations at the cost of occasionally overriding a correct one when
-the language signal is ambiguous.  Pick the trade-off that matches your
-deployment.
-
-[[thai-gbk-case-study]]
-=== Case study: why top-N limiting and the generative model matter
-
-Consider the GBK-encoded ZIP entry name `审计压缩包文件检索测试/` (23 bytes).
-The byte-ngram model correctly ranks *GB18030 at #1 with 0.99 confidence*.
-But without top-N limiting, the model also returns lower-ranked candidates
-including `windows-874` (Thai) at #8 with 0.15 confidence:
-
-----
-#1  GB18030     conf=0.99  → "审计压缩包文件检索测试/"  (correct Chinese)
-#2  EUC-JP      conf=0.36  → "蕪柴儿抹淫猟周殊沫霞編/"  (Japanese gibberish)
-#3  Big5-HKSCS  conf=0.31  → "机數揤坫婦恅璃潰坰聆彸/"  (CJK gibberish)
-  ...
-#8  windows-874 conf=0.15  → "ษ๓ผฦันห๕ฐ�ฮฤผ�ผ์ห๗ฒโสิ/"  (Thai-looking text)
-----
-
-The GBK bytes happen to land in Thai character ranges when decoded as
-`windows-874`.  CharSoup's discriminative language model scores Thai text
-confidently (it recognises Thai character patterns), while the Chinese text
-decoded from GB18030 may score lower on a 23-byte probe.  Without top-N
-limiting, CharSoup overrides the model's correct high-confidence #1 pick
-with the wrong #8 pick — returning `x-windows-874` instead of `GB18030`.
-
-The fix has two parts:
-
-. **Top-N limiting**: on short probes (≤ 50 bytes), only the top 3 candidates
-  are passed to CharSoup.  `windows-874` at #8 never enters the candidate set.
-  CharSoup arbitrates among {GB18030, EUC-JP, Big5-HKSCS} — all CJK encodings
-  where the generative model can meaningfully compare text quality.
-
-. **Generative language model**: even within the top 3, the discriminative
-  language model can be fooled by coincidental character patterns on short
-  probes.  The generative model provides a second check: it scores _how
-  language-like_ each decoded text is for its detected language, rather than
-  just _which language_ it looks like.  Genuine Chinese text ("审计压缩包文件
-  检索测试") scores well under the Chinese generative model; CJK gibberish
-  from wrong-charset decoding scores poorly.
-
-This example illustrates a fundamental limitation of discriminative language
-models for charset arbitration: their logits are not comparable across scripts.
-A discriminative model answers "_which_ language is this?" — but when the same
-bytes decode as Chinese under one charset and Thai under another, the model
-produces two confident answers in two unrelated scripts.  Comparing the Thai
-logit to the Chinese logit is meaningless; the model was never trained to rank
-"real Chinese" against "fake Thai" on an absolute scale.  This cross-script
-incomparability is not a rare edge case — it will happen whenever wrong-charset
-decoding maps bytes into a different script's character range, which is common
-for CJK encodings whose byte values overlap with Thai, Arabic, Cyrillic, and
-other single-byte encodings.
-
-The generative model solves this by asking a different question: not "_which_
-language is this?" but "_how language-like_ is this text for language L?"
-Genuine Chinese text ("审计压缩包文件检索测试") scores well under the Chinese
-generative model because its character n-gram statistics match real Chinese.
-Thai-looking gibberish from a wrong-charset decode scores poorly under the
-Thai generative model because — despite using Thai characters — it doesn't
-follow Thai character co-occurrence patterns.  This quality signal is
-comparable across scripts, making it safe to use for cross-script arbitration.
-
-=== junkRatio
-
-The junk ratio filters out clearly wrong-charset decodings before language
-scoring runs.  Currently counts:
-
-* U+FFFD replacement characters (wrong-charset multi-byte decode)
-* U+FFFE (the "wrong-endian BOM" / Unicode noncharacter — produced when a
-  UTF-16 BOM is decoded with the wrong byte order)
-* ISO C1 control characters 0x00–0x08, 0x0E–0x1F, 0x80–0x9F (excluding TAB,
-  LF, VT, FF, CR which appear in source code and structured documents)
-
-Ordinary whitespace is not junk.  Non-ASCII non-alphabetic punctuation
-(e.g. `•` U+2022, `¶` U+00B6) is also not junk — while these can indicate a
-wrong-charset single-byte decoding of multi-byte lead bytes, they also appear
-legitimately in windows-125x documents (bullet lists, legal symbols).  The
-language model already handles this discrimination correctly.
-
-=== Why "positive logit" is the only threshold
-
-Earlier versions used two thresholds: a minimum absolute confidence
-(`sigmoid ≥ 0.88`) and a minimum relative margin between best and runner-up.
-Both were removed.  Rationale:
-
-* If the language model gives a positive logit for any language in the decoded
-  text, it has a real signal.  The best-logit candidate is better than all the
-  alternatives by definition — requiring an additional margin just delays the
-  correct answer.
-* The margin threshold was sensitive to which other charsets happened to be in
-  the candidate set.  A third candidate with a strong (but wrong) language
-  signal could narrow the margin below threshold and force a fallback to the
-  model's top statistical pick, which might be wrong.
+The default chain trades occasional overrides of correct declarations
+on short probes for resilience against lying declarations and wrong-codec
+decodings.
 
 == MetadataCharsetDetector
 
@@ -410,8 +335,8 @@ Applies WHATWG label normalization: `ISO-8859-1` and `US-ASCII` are mapped to
 `windows-1252` because browsers (and the HTML5 spec) treat them as aliases for
 windows-1252 in practice.
 
-Returns a DECLARATIVE result, so `CharSoupEncodingDetector` will treat it with
-preference over statistical candidates.
+Returns a DECLARATIVE result, which `JunkFilterEncodingDetector` honours when
+its decoding is byte-identical to at least one other candidate's.
 
 == BOMDetector
 
@@ -430,7 +355,7 @@ Reads the first 4 bytes and detects:
 
 Returns a DECLARATIVE result.  The HTML detectors do not handle BOMs on their
 own: `BOMDetector` is the sole source of BOM evidence, which lets
-`CharSoupEncodingDetector` arbitrate when a BOM and a `<meta charset>` tag
+`JunkFilterEncodingDetector` arbitrate when a BOM and a `<meta charset>` tag
 disagree.
 
 == Performance and accuracy

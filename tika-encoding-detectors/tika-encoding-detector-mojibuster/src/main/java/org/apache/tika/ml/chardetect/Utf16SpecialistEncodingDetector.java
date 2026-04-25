@@ -53,13 +53,13 @@ import org.apache.tika.parser.ParseContext;
  *
  * <h3>Stage 1 of the MoE migration</h3>
  *
- * <p>Runs alongside the existing {@code NaiveBayesPipelineEncodingDetector}
+ * <p>Runs alongside the existing {@code MojibusterEncodingDetector}
  * rather than replacing any piece of it.  Emits a single
- * {@link EncodingResult.ResultType#STATISTICAL} candidate for CharSoup to
- * arbitrate against the other detectors in the chain.  The existing
- * {@code WideUnicodeDetector}-based structural UTF-16 detection inside
- * Mojibuster is not removed yet — both can operate in parallel during
- * Stage 1 validation.</p>
+ * {@link EncodingResult.ResultType#STATISTICAL} candidate for the meta
+ * arbiter ({@code JunkFilterEncodingDetector}) to weigh against the other
+ * detectors in the chain.  The existing {@code WideUnicodeDetector}-based
+ * structural UTF-16 detection inside Mojibuster is not removed yet — both
+ * can operate in parallel during Stage 1 validation.</p>
  *
  * <h3>Model loading</h3>
  *
@@ -113,9 +113,8 @@ public class Utf16SpecialistEncodingDetector
 
     /**
      * Maximum confidence emitted on {@code STATISTICAL} results.  Kept
-     * below 1.0 so {@code CharSoupEncodingDetector} never mistakes a
-     * model output for a {@code DECLARATIVE} / {@code STRUCTURAL}
-     * result.
+     * below 1.0 so the meta arbiter never mistakes a model output for a
+     * {@code DECLARATIVE} / {@code STRUCTURAL} result.
      */
     private static final float MAX_STATISTICAL_CONFIDENCE = 0.99f;
 
@@ -258,7 +257,7 @@ public class Utf16SpecialistEncodingDetector
 
     /**
      * Byte-array entry point for callers that already hold a probe
-     * (e.g. {@code NaiveBayesPipelineEncodingDetector}'s pipeline).  Returns an
+     * (e.g. {@code MojibusterEncodingDetector}'s pipeline).  Returns an
      * empty list for probes below {@link #MIN_PROBE_BYTES} or when the
      * winning class has margin &lt; {@link #MIN_LOGIT_MARGIN}.
      */
@@ -315,7 +314,7 @@ public class Utf16SpecialistEncodingDetector
     /**
      * Map training-label charset names (e.g. {@code "UTF-16-LE"} with
      * hyphens) to Java's canonical charset names ({@code "UTF-16LE"} no
-     * hyphen).  Mirrors the mapping in {@code NaiveBayesPipelineEncodingDetector}.
+     * hyphen).  Mirrors the mapping in {@code MojibusterEncodingDetector}.
      */
     private static String toJavaCharsetName(String label) {
         switch (label) {
