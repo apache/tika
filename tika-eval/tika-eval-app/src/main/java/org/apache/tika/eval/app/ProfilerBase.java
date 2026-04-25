@@ -65,14 +65,15 @@ import org.apache.tika.eval.core.util.ContentTagParser;
 import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.eval.core.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.langdetect.charsoup.GenerativeLanguageModel;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.quality.TextQualityScore;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
@@ -465,19 +466,17 @@ public abstract class ProfilerBase {
         }
         Map<Class, Object> results = compositeTextStatsCalculator.calculate(content);
 
-        GenerativeLanguageModel glm = TikaEvalMetadataFilter.getGenerativeModel();
-        if (glm != null && !content.isEmpty()) {
-            List<LanguageResult> langs =
-                    (List<LanguageResult>) results.get(LanguageIDWrapper.class);
-            if (langs != null && !langs.isEmpty()) {
-                float z = glm.zScoreLengthAdjusted(content, langs.get(0).getLanguage());
-                results.put(LanguagenessMarker.class, z);
+        JunkDetector jd = TikaEvalMetadataFilter.getJunkDetector();
+        if (jd != null && !content.isEmpty()) {
+            TextQualityScore q = jd.score(content);
+            if (!q.isUnknown()) {
+                results.put(LanguagenessMarker.class, q.getZScore());
             }
         }
         return results;
     }
 
-    /** Map-key sentinel so we can stash the z-score in the textStats map. */
+    /** Sentinel key for the junk-detector z-score in the textStats map. */
     static final class LanguagenessMarker { }
 
     /**

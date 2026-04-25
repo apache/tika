@@ -35,6 +35,7 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.ml.chardetect.HtmlByteStripper;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.quality.TextQualityComparison;
 import org.apache.tika.quality.TextQualityDetector;
@@ -80,19 +81,14 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     private int readLimit = DEFAULT_READ_LIMIT;
 
     public JunkFilterEncodingDetector() {
-        // The junk detector is hardcoded rather than ServiceLoader-discovered
-        // so construction cannot silently fail to register a quality detector
-        // and leave this meta detector as a no-op.  JunkDetector lives in the
-        // same module and loads its bundled model from the classpath.
+        // JunkDetector is hardcoded rather than ServiceLoader-discovered so
+        // construction never silently leaves this meta detector as a no-op.
+        // A model-load failure (e.g. block-table dimension mismatch across
+        // JVM Unicode versions) is logged and the detector becomes a no-op.
         TextQualityDetector q = null;
         try {
             q = JunkDetector.loadFromClasspath();
-            LOG.debug("Loaded JunkDetector: {}", q.getClass().getName());
         } catch (Throwable t) {
-            // A broken model binary (e.g. block-table dimension mismatch
-            // across JVM Unicode versions) would otherwise propagate and
-            // prevent this meta detector from registering at all.  Fail safe:
-            // log and operate as a no-op.
             LOG.warn("Failed to load JunkDetector; JunkFilterEncodingDetector "
                     + "will operate as a no-op: {}", t.toString());
         }
@@ -145,11 +141,23 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         }
         bytes = stripBomBytes(bytes);
 
+        // Strip HTML/XML markup before decoding so the quality score reflects
+        // body text, not whitespace and tags.  Falls back to the raw probe
+        // when no well-formed tags are detected.
+        byte[] forDecode = bytes;
+        byte[] stripDst = new byte[bytes.length];
+        HtmlByteStripper.Result stripped =
+                HtmlByteStripper.strip(bytes, 0, bytes.length, stripDst, 0);
+        if (stripped.tagCount > 0 && stripped.length > 0) {
+            forDecode = new byte[stripped.length];
+            System.arraycopy(stripDst, 0, forDecode, 0, stripped.length);
+        }
+
         // Decode probe under each candidate, preserving insertion order so
         // tournament seeding is deterministic.
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset cs : uniqueCharsets) {
-            String decoded = safeDecode(bytes, cs);
+            String decoded = safeDecode(forDecode, cs);
             if (decoded != null && !decoded.isEmpty()) {
                 candidates.put(cs, decoded);
             }
@@ -158,19 +166,21 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             // One or zero candidates produced usable text; nothing to compare.
             return Collections.emptyList();
         }
+        // When a DECLARATIVE candidate decodes byte-identically to at least
+        // one other candidate, honour the declaration — text quality cannot
+        // distinguish equivalent decodings, and a downstream divergent byte
+        // (e.g. 0xA4 = € in ISO-8859-15, ¤ in windows-1252) will then be
+        // decoded as the author intended.
+        Charset declared = pickDeclarativeWithEquivalentDecode(context, candidates);
+        if (declared != null) {
+            float conf = context.getTopConfidenceFor(declared);
+            context.setArbitrationInfo("junk-filter-prefer-declarative");
+            return List.of(new EncodingResult(declared, conf));
+        }
         if (allDecodingsIdentical(candidates)) {
-            // Byte-identical decodings (typical on pure-ASCII probes).
-            // Text quality cannot distinguish them.  Prefer an author
-            // declaration (BOM / HTML meta charset / HTTP Content-Type)
-            // over statistical or structural candidates: if the document
-            // tells us what it is and the bytes are compatible with that
-            // claim, honour it.
-            Charset declared = pickDeclarative(context, candidates.keySet());
-            if (declared != null) {
-                float conf = context.getTopConfidenceFor(declared);
-                context.setArbitrationInfo("junk-filter-prefer-declarative");
-                return List.of(new EncodingResult(declared, conf));
-            }
+            // All decodings are byte-identical but no DECLARATIVE candidate
+            // is present.  Text quality cannot distinguish them; defer to
+            // the composite's default ordering.
             context.setArbitrationInfo("junk-filter-identical-decodings");
             return Collections.emptyList();
         }
@@ -195,18 +205,25 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     }
 
     /**
-     * Return the first DECLARATIVE charset in {@code context} whose charset
-     * is also in {@code eligible}, or {@code null} if no declarative result
-     * matches an eligible candidate.  "Eligible" = present in the candidates
-     * we actually decoded (i.e. excludes candidates that failed to decode).
+     * Return the first DECLARATIVE charset whose decoded output equals at
+     * least one other candidate's, or {@code null}.
      */
-    private static Charset pickDeclarative(EncodingDetectorContext context,
-                                           Set<Charset> eligible) {
+    private static Charset pickDeclarativeWithEquivalentDecode(
+            EncodingDetectorContext context, Map<Charset, String> candidates) {
         for (EncodingDetectorContext.Result r : context.getResults()) {
             for (EncodingResult er : r.getEncodingResults()) {
-                if (er.getResultType() == EncodingResult.ResultType.DECLARATIVE
-                        && eligible.contains(er.getCharset())) {
-                    return er.getCharset();
+                if (er.getResultType() != EncodingResult.ResultType.DECLARATIVE) {
+                    continue;
+                }
+                String declaredDecoded = candidates.get(er.getCharset());
+                if (declaredDecoded == null) {
+                    continue; // declared charset failed to decode the probe
+                }
+                for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
+                    if (!entry.getKey().equals(er.getCharset())
+                            && declaredDecoded.equals(entry.getValue())) {
+                        return er.getCharset();
+                    }
                 }
             }
         }

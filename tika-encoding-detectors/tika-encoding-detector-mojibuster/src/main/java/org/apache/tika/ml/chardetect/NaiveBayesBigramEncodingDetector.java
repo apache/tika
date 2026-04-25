@@ -60,14 +60,14 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     private static final int BIGRAM_SPACE = 65_536;
 
     /**
-     * Cap probe scanning at 1 KB.  Bigram-based identification
+     * Cap probe scanning at 10 KB.  Bigram-based identification
      * saturates quickly — beyond the first 500-1000 bytes every
      * additional bigram nudges scores by &lt; 0.1 log-likelihood and
      * doesn't change the argmax.  Reducing the cap from 4 KB to 1 KB
      * quartes the inner-loop work on long probes at no measurable
      * accuracy cost.
      */
-    private static final int MAX_PROBE_BYTES = 1024;
+    private static final int MAX_PROBE_BYTES = 16 * 1024;
 
     /**
      * Default number of top candidates to return.  Most callers only
@@ -302,7 +302,7 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             // Always emit top-1 (even if tiny — at least one result
             // keeps the pipeline from going empty).  For the rest,
             // drop below MIN_EMIT_CONFIDENCE: those are noise and
-            // cause CharSoup to pick cross-script decodings.
+            // cause downstream arbiters to pick cross-script decodings.
             if (i > 0 && conf < MIN_EMIT_CONFIDENCE) {
                 break;
             }

@@ -59,6 +59,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-ml-junkdetect</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-handler-boilerpipe</artifactId>
       <version>${project.version}</version>
     </dependency>

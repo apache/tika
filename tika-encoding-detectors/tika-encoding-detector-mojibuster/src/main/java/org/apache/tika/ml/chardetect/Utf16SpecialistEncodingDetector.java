@@ -55,11 +55,11 @@ import org.apache.tika.parser.ParseContext;
  *
  * <p>Runs alongside the existing {@code MojibusterEncodingDetector}
  * rather than replacing any piece of it.  Emits a single
- * {@link EncodingResult.ResultType#STATISTICAL} candidate for CharSoup to
- * arbitrate against the other detectors in the chain.  The existing
- * {@code WideUnicodeDetector}-based structural UTF-16 detection inside
- * Mojibuster is not removed yet — both can operate in parallel during
- * Stage 1 validation.</p>
+ * {@link EncodingResult.ResultType#STATISTICAL} candidate for the meta
+ * arbiter ({@code JunkFilterEncodingDetector}) to weigh against the other
+ * detectors in the chain.  The existing {@code WideUnicodeDetector}-based
+ * structural UTF-16 detection inside Mojibuster is not removed yet — both
+ * can operate in parallel during Stage 1 validation.</p>
  *
  * <h3>Model loading</h3>
  *
@@ -113,9 +113,8 @@ public class Utf16SpecialistEncodingDetector
 
     /**
      * Maximum confidence emitted on {@code STATISTICAL} results.  Kept
-     * below 1.0 so {@code CharSoupEncodingDetector} never mistakes a
-     * model output for a {@code DECLARATIVE} / {@code STRUCTURAL}
-     * result.
+     * below 1.0 so the meta arbiter never mistakes a model output for a
+     * {@code DECLARATIVE} / {@code STRUCTURAL} result.
      */
     private static final float MAX_STATISTICAL_CONFIDENCE = 0.99f;
 

@@ -140,6 +140,11 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-ml-junkdetect</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-langdetect-test-commons</artifactId>
         <version>${revision}</version>
       </dependency>

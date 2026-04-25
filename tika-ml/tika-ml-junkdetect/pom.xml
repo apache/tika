@@ -54,6 +54,11 @@
       <artifactId>tika-ml-core</artifactId>
       <version>${revision}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${revision}</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>

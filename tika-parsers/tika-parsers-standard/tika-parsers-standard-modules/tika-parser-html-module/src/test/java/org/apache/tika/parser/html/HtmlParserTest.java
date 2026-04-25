@@ -28,12 +28,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -270,47 +268,18 @@ public class HtmlParserTest extends TikaTest {
         assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
-    /**
-     * Test case for TIKA-892
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-892">TIKA-892</a>
-     */
-    @Test
-    public void testHtml5Charset() throws Exception {
-        String test = "<html><head><meta charset=\"ISO-8859-15\" />" +
-                "<title>the name is \u00e1ndre</title>" + "</head><body></body></html>";
-        Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(test.getBytes(ISO_8859_1))) {
-            new JSoupParser().parse(tis,
-                    new BodyContentHandler(), metadata, new ParseContext());
-        }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
-    }
+    // testHtml5Charset (TIKA-892) → HtmlEncodingDetectionTest in
+    // tika-parsers-standard-integration-tests (needs the full default chain).
+
 
     /**
-     * Test case for TIKA-334.
-     *
-     * <p>Currently disabled.  The probe is
-     * {@code <html><head><title>\u017d</title></head><body></body></html>}
-     * — 56 bytes of markup with exactly 2 non-ASCII bytes ({@code c5 bd}
-     * = {@code Ž} in UTF-8).  After HTML stripping the probe reduces to
-     * 2 bytes (the title body).  {@code MojibusterEncodingDetector}
-     * correctly returns UTF-8 as a {@code STRUCTURAL} candidate via the
-     * UTF-8 grammar gate.  However {@code CharSoupEncodingDetector} then
-     * arbitrates across all base-detector candidates by language-signal
-     * margin and picks {@code x-windows-949} (bytes {@code c5 bd} decode
-     * to the Hangul syllable 탐, which scores a large Korean-language
-     * margin because Korean is a lonely script in the language model).
-     * CharSoup currently ignores {@code ResultType} when arbitrating,
-     * so the STRUCTURAL UTF-8 signal is lost.
-     *
-     * <p>Re-enable once CharSoup respects STRUCTURAL / DECLARATIVE
-     * candidates (trust-type weighting — see
-     * {@code 20260421-charsoup-improvements.md}).
+     * TIKA-334.  After HTML stripping the probe is 2 bytes (the title body)
+     * — too short for the meta arbiter to score reliably.  Re-enable once
+     * an arbiter trusting STRUCTURAL over short-probe statistical lands.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>
      */
-    @Disabled("blocked on CharSoup trust-type weighting; see javadoc")
+    @Disabled("blocked on short-probe arbitration; see javadoc")
     @Test
     public void testDetectOfCharset() throws Exception {
         String test = "<html><head><title>\u017d</title></head><body></body></html>";
@@ -392,34 +361,8 @@ public class HtmlParserTest extends TikaTest {
         assertEquals("en", metadata.get(Metadata.CONTENT_LANGUAGE));
     }
 
-    /**
-     * Test case for TIKA-349
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-349">TIKA-349</a>
-     */
-    @Test
-    public void testHttpEquivCharsetFunkyAttributes() throws Exception {
-        String test1 = "<html><head><meta http-equiv=\"content-type\"" +
-                " content=\"text/html; charset=ISO-8859-15; charset=iso-8859-15\" />" +
-                "<title>the name is \u00e1ndre</title>" + "</head><body></body></html>";
-        Metadata metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(test1.getBytes(ISO_8859_1))) {
-            new JSoupParser().parse(tis,
-                    new BodyContentHandler(), metadata, new ParseContext());
-        }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
+    // testHttpEquivCharsetFunkyAttributes (TIKA-349) → HtmlEncodingDetectionTest.
 
-        // Some HTML pages have errors like ';;' versus '; ' as separator
-        String test2 = "<html><head><meta http-equiv=\"content-type\"" +
-                " content=\"text/html;;charset=ISO-8859-15\" />" +
-                "<title>the name is \u00e1ndre</title>" + "</head><body></body></html>";
-        metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
-            new JSoupParser().parse(tis,
-                    new BodyContentHandler(), metadata, new ParseContext());
-        }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
-    }
 
     /**
      * Test case for TIKA-350
@@ -450,20 +393,8 @@ public class HtmlParserTest extends TikaTest {
     }
 
 
-    /**
-     * Test case for TIKA-357
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-357">TIKA-357</a>
-     */
-    @Test
-    public void testMetaHttpEquivWithLotsOfPreambleText() throws Exception {
-        String path = "/test-documents/big-preamble.html";
-        Metadata metadata = new Metadata();
-        new JSoupParser().parse(getResourceAsStream(path), new BodyContentHandler(), metadata,
-                new ParseContext());
+    // testMetaHttpEquivWithLotsOfPreambleText (TIKA-357) → HtmlEncodingDetectionTest.
 
-        assertEquals("windows-1251", metadata.get(Metadata.CONTENT_ENCODING));
-    }
 
     /**
      * Test case for TIKA-478. Don't emit <head> sub-elements inside of <body>.
@@ -904,18 +835,8 @@ public class HtmlParserTest extends TikaTest {
         assertNotNull(content);
     }
 
-    //TIKA-1001
-    @Test
-    public void testNoisyMetaCharsetHeaders() throws Exception {
-        Tika tika = new Tika();
-        String hit = "\u0623\u0639\u0631\u0628";
+    // testNoisyMetaCharsetHeaders (TIKA-1001) → HtmlEncodingDetectionTest.
 
-        for (int i = 1; i <= 4; i++) {
-            String fileName = "/test-documents/testHTMLNoisyMetaEncoding_" + i + ".html";
-            String content = tika.parseToString(getResourceAsStream(fileName));
-            assertTrue(content.contains(hit), "testing: " + fileName);
-        }
-    }
 
     /**
      * Test case for TIKA-820:  Locator is unset for HTML parser
@@ -1133,54 +1054,10 @@ public class HtmlParserTest extends TikaTest {
         assertEquals(url, links.get(0));
     }
 
-    @Test
-    public void testAllHeadElements() throws Exception {
-        //TIKA-1980
-        // IdentityHtmlMapper is needed to extract <script> tags
-        ParseContext context = new ParseContext();
-        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+    // testAllHeadElements (TIKA-1980) → HtmlEncodingDetectionTest (tag
+    // counts depend on detected charset).
+    // testSkippingCommentsInEncodingDetection → HtmlEncodingDetectionTest.
 
-        final Map<String, Integer> tagFrequencies = new HashMap<>();
-
-        String path = "/test-documents/testHTML_head.html";
-        try (TikaInputStream tis = getResourceAsStream(path)) {
-            ContentHandler tagCounter = new DefaultHandler() {
-                @Override
-                public void startElement(String uri, String local, String name,
-                                         Attributes attributes) throws SAXException {
-                    int count = tagFrequencies.getOrDefault(name, 0);
-                    tagFrequencies.put(name, count + 1);
-                }
-            };
-            new JSoupParser().parse(tis, tagCounter, metadata, context);
-        }
-
-        assertEquals(1, (int) tagFrequencies.get("title"));
-        assertEquals(12, (int) tagFrequencies.get("meta"));
-        assertEquals(12, (int) tagFrequencies.get("link"));
-        assertEquals(6, (int) tagFrequencies.get("script"));
-    }
-
-    @Test
-    public void testSkippingCommentsInEncodingDetection() throws Exception {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 10000; i++) {
-            sb.append(" ");
-        }
-        byte[] bytes = new String("<html><head>" +
-                "<!--<meta http-equiv=\"Content-Type\" " +
-                "content=\"text/html; charset=ISO-8859-1\"> -->\n" +
-                "   <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />" +
-                "</head>" + sb.toString() + "<body>" + "有什么需要我帮你的" + "</body></html>")
-                .getBytes(StandardCharsets.UTF_8);
-        XMLResult r;
-        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-            r = getXML(tis, AUTO_DETECT_PARSER, new Metadata());
-        }
-        assertContains("有什么需要我帮你的", r.xml);
-    }
 
     @Test
     @Disabled("until we fix TIKA-1896")

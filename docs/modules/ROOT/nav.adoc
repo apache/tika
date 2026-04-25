@@ -47,7 +47,6 @@
 * xref:advanced/index.adoc[Advanced]
 ** xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]
 ** xref:advanced/language-detection.adoc[Language Detection]
-** xref:advanced/generative-language-model.adoc[Generative Language Model]
 ** xref:advanced/language-detection-build.adoc[Building the Language Detector]
 ** xref:advanced/junk-detection.adoc[Text Quality Scoring (Junk Detection)]
 ** xref:advanced/junk-detection-build.adoc[Building the Junk Detector]
