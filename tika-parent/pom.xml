@@ -329,7 +329,6 @@
     <bouncycastle.version>1.84</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <c3p0.version>0.13.0</c3p0.version>
     <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.22.0</commons.codec.version>
     <commons.collections4.version>4.5.0</commons.collections4.version>
@@ -412,7 +411,6 @@
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
-    <mchange.version>0.4.0</mchange.version>
     <metadata.extractor.version>2.20.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <micronaut.version>3.10.5</micronaut.version>
@@ -649,16 +647,6 @@
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
         <version>${woodstox.core.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.mchange</groupId>
-        <artifactId>c3p0</artifactId>
-        <version>${c3p0.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.mchange</groupId>
-        <artifactId>mchange-commons-java</artifactId>
-        <version>${mchange.version}</version>
       </dependency>
       <dependency>
         <groupId>com.beust</groupId>
