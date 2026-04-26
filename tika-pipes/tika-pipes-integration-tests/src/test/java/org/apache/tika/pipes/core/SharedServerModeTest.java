@@ -191,7 +191,7 @@ public class SharedServerModeTest {
     @Test
     public void testGracefulShutdown(@TempDir Path tmp) throws Exception {
         Path inputDir = setupInputDir(tmp);
-        Files.writeString(inputDir.resolve("test.xml"), MOCK_SLOW, StandardCharsets.UTF_8);
+        Files.writeString(inputDir.resolve("test.xml"), MOCK_OK, StandardCharsets.UTF_8);
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
                 "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
