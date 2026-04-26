@@ -397,6 +397,7 @@ public class PipesClientTest {
             long elapsed = System.currentTimeMillis() - startTime;
 
             // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMs)
+            // fails with FAILED_TO_INITIALIZE when using mchange-commons-java 0.5.0
             assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, pipesResult.status(),
                     "Should timeout when socket times out");
 
