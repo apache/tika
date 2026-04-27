@@ -49,7 +49,8 @@ RUN set -eux \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN chmod +x "/tika/bin/start-tika-grpc.sh"
+RUN chmod +x "/tika/bin/start-tika-grpc.sh" \
+    && chown -R ${UID_GID} /tika
 
 USER $UID_GID
 
