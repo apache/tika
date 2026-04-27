@@ -255,8 +255,8 @@ public class PipesServer implements AutoCloseable {
             serverSocket.setReuseAddress(true);
             serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), numConnections);
 
-            // Signal readiness to the parent process via stdout
-            System.out.println("READY:" + port);
+            // Signal readiness to the parent process via stdout, reporting the actual bound port
+            System.out.println("READY:" + serverSocket.getLocalPort());
             System.out.flush();
 
             LOG.info("Shared server ready, accepting connections");
