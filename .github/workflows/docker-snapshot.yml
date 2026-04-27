@@ -81,18 +81,24 @@ jobs:
 
       - name: Smoke test tika-server minimal image
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs tika-server-minimal-smoke || true
+            fi
+            docker rm -f tika-server-minimal-smoke >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           docker run -d --name tika-server-minimal-smoke -p 9998:9998 tika-server-minimal-smoke:ci
           for i in $(seq 1 20); do
             if docker logs tika-server-minimal-smoke 2>&1 | grep -q "Started Apache Tika server"; then
               echo "tika-server minimal started successfully"
-              docker stop tika-server-minimal-smoke
               exit 0
             fi
             sleep 2
           done
           echo "ERROR: tika-server minimal did not start within 40 seconds"
-          docker logs tika-server-minimal-smoke
-          docker stop tika-server-minimal-smoke
           exit 1
 
       - name: Build and push tika-server minimal snapshot
@@ -127,18 +133,24 @@ jobs:
 
       - name: Smoke test tika-server full image
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs tika-server-full-smoke || true
+            fi
+            docker rm -f tika-server-full-smoke >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           docker run -d --name tika-server-full-smoke -p 9999:9998 tika-server-full-smoke:ci
           for i in $(seq 1 20); do
             if docker logs tika-server-full-smoke 2>&1 | grep -q "Started Apache Tika server"; then
               echo "tika-server full started successfully"
-              docker stop tika-server-full-smoke
               exit 0
             fi
             sleep 2
           done
           echo "ERROR: tika-server full did not start within 40 seconds"
-          docker logs tika-server-full-smoke
-          docker stop tika-server-full-smoke
           exit 1
 
       - name: Build and push tika-server full snapshot
@@ -202,18 +214,26 @@ jobs:
 
       - name: Smoke test tika-grpc image
         run: |
+          cleanup() {
+            status=$?
+            if [ "$status" -ne 0 ]; then
+              docker logs tika-grpc-smoke || true
+              docker ps -a --filter "name=^tika-grpc-smoke$" || true
+              docker inspect -f '{{.State.ExitCode}}' tika-grpc-smoke || true
+            fi
+            docker rm -f tika-grpc-smoke >/dev/null 2>&1 || true
+            exit "$status"
+          }
+          trap cleanup EXIT
           docker run -d --name tika-grpc-smoke -p 9090:9090 tika-grpc-smoke:ci
           for i in $(seq 1 15); do
             if docker logs tika-grpc-smoke 2>&1 | grep -q "Server started, listening on"; then
               echo "tika-grpc started successfully"
-              docker stop tika-grpc-smoke
               exit 0
             fi
             sleep 2
           done
           echo "ERROR: tika-grpc did not start within 30 seconds"
-          docker logs tika-grpc-smoke
-          docker stop tika-grpc-smoke
           exit 1
 
       - name: Build and push tika-grpc snapshot
