@@ -474,7 +474,7 @@
             <manifest>
               <mainClass>org.apache.tika.pipes.grpc.TikaGrpcServer</mainClass>
               <addClasspath>true</addClasspath>
-              <classpathPrefix>lib/</classpathPrefix>
+              <classpathPrefix>tika-grpc/</classpathPrefix>
             </manifest>
           </archive>
         </configuration>

@@ -25,7 +25,7 @@
 
   <dependencySets>
     <dependencySet>
-      <outputDirectory>lib</outputDirectory>
+      <outputDirectory>tika-grpc</outputDirectory>
       <useProjectArtifact>false</useProjectArtifact>
       <unpack>false</unpack>
       <scope>runtime</scope>

@@ -112,9 +112,12 @@ jobs:
           TIKA_VERSION="${{ steps.version.outputs.tag }}"
           OUT_DIR=target/tika-grpc-docker
 
-          mkdir -p "${OUT_DIR}/libs" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
+          mkdir -p "${OUT_DIR}/libs/tika-grpc" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
 
           cp "tika-grpc/target/tika-grpc-${TIKA_VERSION}.jar" "${OUT_DIR}/libs/"
+          mvn -pl tika-grpc dependency:copy-dependencies \
+            -DoutputDirectory="${PWD}/${OUT_DIR}/libs/tika-grpc" \
+            -DincludeScope=runtime -q -B
 
           # Copy tika-pipes plugin zip files
           for dir in tika-pipes/tika-pipes-plugins/*/; do
