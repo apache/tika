@@ -404,7 +404,7 @@
     <junrar.version>7.5.10</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
-    <kotlin-stdlib.version>2.3.20</kotlin-stdlib.version>
+    <kotlin-stdlib.version>2.3.21</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.25.4</log4j2.version>
     <lombok.version>1.18.46</lombok.version>
