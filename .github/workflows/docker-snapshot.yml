@@ -69,6 +69,32 @@ jobs:
           tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/minimal/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
+      - name: Build tika-server minimal image for smoke test
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: target/tika-server-minimal-docker
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+          tags: tika-server-minimal-smoke:ci
+
+      - name: Smoke test tika-server minimal image
+        run: |
+          docker run -d --name tika-server-minimal-smoke -p 9998:9998 tika-server-minimal-smoke:ci
+          for i in $(seq 1 20); do
+            if docker logs tika-server-minimal-smoke 2>&1 | grep -q "Started Apache Tika server"; then
+              echo "tika-server minimal started successfully"
+              docker stop tika-server-minimal-smoke
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: tika-server minimal did not start within 40 seconds"
+          docker logs tika-server-minimal-smoke
+          docker stop tika-server-minimal-smoke
+          exit 1
+
       - name: Build and push tika-server minimal snapshot
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
@@ -88,6 +114,32 @@ jobs:
           mkdir -p "${OUT_DIR}/tika-server"
           tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/full/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
+
+      - name: Build tika-server full image for smoke test
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: target/tika-server-full-docker
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+          tags: tika-server-full-smoke:ci
+
+      - name: Smoke test tika-server full image
+        run: |
+          docker run -d --name tika-server-full-smoke -p 9999:9998 tika-server-full-smoke:ci
+          for i in $(seq 1 20); do
+            if docker logs tika-server-full-smoke 2>&1 | grep -q "Started Apache Tika server"; then
+              echo "tika-server full started successfully"
+              docker stop tika-server-full-smoke
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: tika-server full did not start within 40 seconds"
+          docker logs tika-server-full-smoke
+          docker stop tika-server-full-smoke
+          exit 1
 
       - name: Build and push tika-server full snapshot
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
