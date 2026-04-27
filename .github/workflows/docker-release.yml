@@ -107,18 +107,17 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Collect tika-grpc runtime dependencies
-        run: mvn -pl tika-grpc dependency:copy-dependencies -DoutputDirectory=target/lib -DincludeScope=runtime -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-
       - name: Prepare tika-grpc Docker build context
         run: |
           TIKA_VERSION="${{ steps.version.outputs.tag }}"
           OUT_DIR=target/tika-grpc-docker
 
-          mkdir -p "${OUT_DIR}/libs/lib" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
+          mkdir -p "${OUT_DIR}/libs/tika-grpc" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
 
           cp "tika-grpc/target/tika-grpc-${TIKA_VERSION}.jar" "${OUT_DIR}/libs/"
-          cp tika-grpc/target/lib/*.jar "${OUT_DIR}/libs/lib/"
+          mvn -pl tika-grpc dependency:copy-dependencies \
+            -DoutputDirectory="${PWD}/${OUT_DIR}/libs/tika-grpc" \
+            -DincludeScope=runtime -q -B
 
           # Copy tika-pipes plugin zip files
           for dir in tika-pipes/tika-pipes-plugins/*/; do

@@ -101,18 +101,17 @@ jobs:
             apache/tika:${{ steps.version.outputs.tika_version }}-full
 
       # --- tika-grpc ---
-      - name: Collect tika-grpc runtime dependencies
-        run: mvn -pl tika-grpc dependency:copy-dependencies -DoutputDirectory=target/lib -DincludeScope=runtime -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
-
       - name: Prepare tika-grpc Docker build context
         run: |
           TIKA_VERSION="${{ steps.version.outputs.tika_version }}"
           OUT_DIR=target/tika-grpc-docker
 
-          mkdir -p "${OUT_DIR}/libs/lib" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
+          mkdir -p "${OUT_DIR}/libs/tika-grpc" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
 
           cp "tika-grpc/target/tika-grpc-${TIKA_VERSION}.jar" "${OUT_DIR}/libs/"
-          cp tika-grpc/target/lib/*.jar "${OUT_DIR}/libs/lib/"
+          mvn -pl tika-grpc dependency:copy-dependencies \
+            -DoutputDirectory="${PWD}/${OUT_DIR}/libs/tika-grpc" \
+            -DincludeScope=runtime -q -B
 
           # Copy tika-pipes plugin zip files
           for dir in tika-pipes/tika-pipes-plugins/*/; do
@@ -138,6 +137,32 @@ jobs:
 
           cp "tika-grpc/docker-build/start-tika-grpc.sh" "${OUT_DIR}/bin/"
           cp "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
+
+      - name: Build tika-grpc image for smoke test
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        with:
+          context: target/tika-grpc-docker
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            VERSION=${{ steps.version.outputs.tika_version }}
+          tags: tika-grpc-smoke:ci
+
+      - name: Smoke test tika-grpc image
+        run: |
+          docker run -d --name tika-grpc-smoke -p 9090:9090 tika-grpc-smoke:ci
+          for i in $(seq 1 15); do
+            if docker logs tika-grpc-smoke 2>&1 | grep -q "Server started, listening on"; then
+              echo "tika-grpc started successfully"
+              docker stop tika-grpc-smoke
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "ERROR: tika-grpc did not start within 30 seconds"
+          docker logs tika-grpc-smoke
+          docker stop tika-grpc-smoke
+          exit 1
 
       - name: Build and push tika-grpc snapshot
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
