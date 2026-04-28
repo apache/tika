@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -75,6 +76,13 @@ public class SharedServerModeTest {
             "<metadata action=\"add\" name=\"dc:creator\">Timeout Author</metadata>" +
             "<write element=\"p\">Timeout content</write>" +
             "<fakeload millis=\"60000\" cpu=\"1\" mb=\"10\"/>" +
+            "</mock>";
+
+    private static final String MOCK_INFLIGHT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+            "<mock>" +
+            "<metadata action=\"add\" name=\"dc:creator\">In-flight Author</metadata>" +
+            "<write element=\"p\">In-flight content</write>" +
+            "<fakeload millis=\"3000\" cpu=\"1\" mb=\"10\"/>" +
             "</mock>";
 
     @Test
@@ -191,7 +199,7 @@ public class SharedServerModeTest {
     @Test
     public void testGracefulShutdown(@TempDir Path tmp) throws Exception {
         Path inputDir = setupInputDir(tmp);
-        Files.writeString(inputDir.resolve("test.xml"), MOCK_SLOW, StandardCharsets.UTF_8);
+        Files.writeString(inputDir.resolve("test.xml"), MOCK_OK, StandardCharsets.UTF_8);
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
                 "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
@@ -213,6 +221,78 @@ public class SharedServerModeTest {
                         "Parse should succeed on iteration " + iteration);
             }
             // PipesParser closed - server should shut down cleanly
+        }
+    }
+
+    /**
+     * Verifies that close() unblocks an in-flight parse and returns promptly when
+     * the parser is shut down at a randomized point in the parse lifecycle.
+     * <p>
+     * After a warmup parse to ensure the shared server is fully started, this picks
+     * a random sleep in [0, 4000]ms before calling close(). Given the inflight
+     * fakeload runs ~3000ms, the chosen delay can land in init, mid-parse, near the
+     * tail of parse, or post-completion. The seed is logged and included in every
+     * assertion message so a CI failure can be reproduced via
+     * {@code -DcloseInFlightSeed=<seed>}.
+     */
+    @Test
+    public void testCloseAtRandomPhase(@TempDir Path tmp) throws Exception {
+        long seed = Long.getLong("closeInFlightSeed", System.nanoTime());
+        java.util.Random rng = new java.util.Random(seed);
+        long sleepBeforeCloseMs = rng.nextInt(4001); // [0, 4000]
+        String repro = "[seed=" + seed + ", sleep=" + sleepBeforeCloseMs + "ms]";
+        System.out.println("testCloseAtRandomPhase " + repro);
+
+        Path inputDir = setupInputDir(tmp);
+        Files.writeString(inputDir.resolve("warmup.xml"), MOCK_OK, StandardCharsets.UTF_8);
+        Files.writeString(inputDir.resolve("inflight.xml"), MOCK_INFLIGHT, StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // Warmup so the shared server is fully started; without this, short
+            // sleeps would always land in init rather than reaching mid-parse.
+            PipesResult warmup = pipesParser.parse(new FetchEmitTuple(
+                    "warmup.xml",
+                    new FetchKey(FETCHER_NAME, "warmup.xml"),
+                    new EmitKey(EMITTER_NAME, ""),
+                    new Metadata(),
+                    new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertTrue(warmup.isSuccess(), "Warmup parse must succeed " + repro);
+
+            Future<PipesResult> future = executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
+                    "inflight.xml",
+                    new FetchKey(FETCHER_NAME, "inflight.xml"),
+                    new EmitKey(EMITTER_NAME, ""),
+                    new Metadata(),
+                    new ParseContext(),
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP)));
+
+            if (sleepBeforeCloseMs > 0) {
+                Thread.sleep(sleepBeforeCloseMs);
+            }
+
+            long closeStart = System.currentTimeMillis();
+            pipesParser.close();
+            long closeDuration = System.currentTimeMillis() - closeStart;
+
+            assertTrue(closeDuration < 15000,
+                    "close() should return promptly even with in-flight work; took " +
+                            closeDuration + "ms " + repro);
+
+            // The in-flight request must return - not deadlock waiting on a closed socket
+            PipesResult result = future.get(15, TimeUnit.SECONDS);
+            assertNotNull(result, "In-flight parse should return a result, not hang " + repro);
+            // Result may be SUCCESS (parse finished before close) or a crash/init-failure
+            // status (close tore down the socket mid-flight) - both are acceptable.
+        } finally {
+            executor.shutdownNow();
         }
     }
 
