@@ -334,7 +334,11 @@ public class SharedServerManager implements ServerManager {
                     String line = reader.readLine();
                     if (line != null && line.startsWith("READY:")) {
                         String portStr = line.substring("READY:".length()).trim();
-                        return Integer.parseInt(portStr);
+                        int port = Integer.parseInt(portStr);
+                        if (port <= 0 || port > 65535) {
+                            throw new IOException("Server reported invalid port: " + port);
+                        }
+                        return port;
                     }
                 } else {
                     // No data available, sleep briefly
