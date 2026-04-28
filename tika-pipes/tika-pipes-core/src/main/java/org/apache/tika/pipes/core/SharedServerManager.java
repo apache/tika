@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -242,14 +241,6 @@ public class SharedServerManager implements ServerManager {
             shutdownUnsafe();
         }
 
-        // Find a free port for the server to listen on
-        int port;
-        try (ServerSocket tempSocket = new ServerSocket()) {
-            tempSocket.setReuseAddress(true);
-            tempSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
-            port = tempSocket.getLocalPort();
-        }
-
         // Generate auth token for this server instance
         byte[] token = new byte[PipesServer.AUTH_TOKEN_LENGTH_BYTES];
         new SecureRandom().nextBytes(token);
@@ -287,7 +278,10 @@ public class SharedServerManager implements ServerManager {
         // Pass port and auth token via environment variables so they are not
         // visible in /proc/<pid>/cmdline. The token is only readable via
         // /proc/<pid>/environ which requires same-uid access.
-        pb.environment().put("TIKA_PIPES_PORT", Integer.toString(port));
+        // Pass port=0 so the server binds to any available ephemeral port.
+        // The actual port is read back from the READY:{port} stdout signal,
+        // eliminating the TOCTOU race between probing a free port and binding it.
+        pb.environment().put("TIKA_PIPES_PORT", "0");
         pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
         // Redirect stderr to inherit, capture stdout to read the READY signal
         pb.redirectErrorStream(false);
@@ -306,13 +300,12 @@ public class SharedServerManager implements ServerManager {
             throw new ServerInitializationException(msg, e);
         }
 
-        // Wait for the server to signal it's ready by printing the port
-        waitForServerReady(port);
-        serverPort = port;
-        LOG.info("Shared server started successfully");
+        // Wait for the server to signal it's ready and report the port it actually bound to
+        serverPort = waitForServerReady();
+        LOG.info("Shared server started successfully on port {}", serverPort);
     }
 
-    private void waitForServerReady(int expectedPort) throws IOException, ServerInitializationException {
+    private int waitForServerReady() throws IOException, ServerInitializationException {
         long startTime = System.currentTimeMillis();
 
         try (BufferedReader reader = new BufferedReader(
@@ -340,13 +333,12 @@ public class SharedServerManager implements ServerManager {
                 if (reader.ready()) {
                     String line = reader.readLine();
                     if (line != null && line.startsWith("READY:")) {
-                        // Server is ready, parse the port
                         String portStr = line.substring("READY:".length()).trim();
-                        int actualPort = Integer.parseInt(portStr);
-                        if (actualPort != expectedPort) {
-                            LOG.warn("Server reported different port {} than expected {}", actualPort, expectedPort);
+                        int port = Integer.parseInt(portStr);
+                        if (port <= 0 || port > 65535) {
+                            throw new IOException("Server reported invalid port: " + port);
                         }
-                        return;
+                        return port;
                     }
                 } else {
                     // No data available, sleep briefly
