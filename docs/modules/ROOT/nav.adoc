@@ -30,6 +30,7 @@
 ** xref:pipes/parse-modes.adoc[Parse Modes]
 ** xref:pipes/unpack-config.adoc[Extracting Embedded Bytes]
 ** xref:pipes/timeouts.adoc[Timeouts]
+** xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing]
 * xref:configuration/index.adoc[Configuration]
 ** xref:configuration/parsers/pdf-parser.adoc[PDF Parser]
 ** xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]

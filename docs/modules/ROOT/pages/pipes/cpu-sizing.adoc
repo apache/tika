@@ -1,0 +1,134 @@
+= Forked-JVM CPU Sizing
+
+Tika Pipes runs multiple forked JVMs in per-client mode (one per `numClients`).
+Each JVM independently sizes its garbage collector, JIT compiler, and common
+`ForkJoinPool` based on the host CPU count. Without intervention, this causes
+thread-pool blowup at high `numClients`: e.g., 4 forks on a 16-core host
+default to ~16 GC threads × 4 = ~64 GC threads, all competing for the same 16
+cores.
+
+To fix this, Tika Pipes auto-injects `-XX:ActiveProcessorCount` into each
+forked JVM's command line, sizing each fork's view of the CPU count to a fair
+slice of the host. This is on by default in per-client mode (`numClients > 1`)
+when the user has not already supplied `-XX:ActiveProcessorCount` in
+`forkedJvmArgs`.
+
+== Mental model
+
+----
+pod_cpus  =  parent_overhead (≈ 2)  +  numClients × per_fork_slice
+----
+
+Where `per_fork_slice ≥ 2`:
+
+* 1 CPU for the parser thread
+* 1 CPU for everything else the JVM does (GC concurrent worker, JIT,
+  protocol heartbeat, socket I/O thread)
+
+The parent JVM (the one running `tika-async-cli` / `tika-app -a`) is light
+on CPU — it just serializes requests, deserializes responses, and runs
+the heartbeat — but it must not be CPU-starved. A starved parent shows up
+as pathological tail latency on small operations like `socket.write()`,
+because the calling thread gets preempted between clock reads. We reserve
+2 cores for the parent by default.
+
+== Formula
+
+[source]
+----
+slice = (hostCores - PARENT_RESERVED_CORES) / numClients
+
+PARENT_RESERVED_CORES = 2
+MIN_AUTO_CAP_SLICE    = 2
+----
+
+If `slice ≥ 2`, Tika injects `-XX:ActiveProcessorCount=<slice>` into each
+forked JVM. If `slice < 2`, the auto-cap is *skipped* and a `WARN` is
+logged advising the operator to lower `numClients`. Skipping is intentional:
+at `slice=1` the fork's only CPU is fully consumed by parsing, so its
+socket-reader thread cannot run and the parent's writes block on
+receiver-side back-pressure — measurably worse than no cap at all.
+
+== Recommended sizing
+
+For typical cloud-VM core counts:
+
+[cols="1,1,1,3"]
+|===
+|hostCores |numClients |slice |Notes
+
+|2  |1 |n/a    |Tight; auto-cap not applied (single fork). Acceptable for low throughput.
+|4  |1 |n/a    |Comfortable single-fork deployment.
+|4  |2 |1 → skipped |Auto-cap declines; consider `numClients=1`.
+|8  |1 |n/a    |Lots of headroom; single-fork lifecycle isolation is fine.
+|8  |3 |2      |Sweet spot for medium pods.
+|16 |4 |3      |Sweet spot for 16-core hosts. Measured winner in benchmarks.
+|16 |6 |2      |Higher concurrency; tighter per-fork breathing room.
+|16 |8 |1 → skipped |Doesn't fit 16 cores. Keep at 4 or 6.
+|32 |8 |3      |Same shape as 16/4.
+|===
+
+The general rule is: pick the largest `numClients` that satisfies
+`numClients × 2 + 2 ≤ hostCores`. Beyond that point, adding workers
+starts hurting throughput.
+
+== Diagnostics
+
+Every `PipesParser` startup emits a one-shot summary line on its main
+logger so operators can see what was decided:
+
+[source]
+----
+INFO  pipes-cpu-sizing: hostCores=16, numClients=4, parentReserved=2, autoCap=slice=3
+----
+
+The `autoCap` field is one of:
+
+* `slice=N` — the auto-cap fired; each fork sees N CPUs.
+* `skipped (slice<2)` — over-provisioned; operator should reduce `numClients`.
+* `n/a (single fork; not capped)` — `numClients=1`; fork sees the whole host.
+* `user-set in forkedJvmArgs` — operator set `-XX:ActiveProcessorCount` themselves.
+
+Two `WARN`-level messages call out clearly-bad provisioning:
+
+* `hostCores < 2` — the host has no room for the parser plus background JVM threads.
+* `numClients × 2 + 2 > hostCores` — the host is too small for the requested concurrency.
+
+`grep pipes-cpu-sizing` on the parent's logs surfaces all sizing-related output.
+
+== Disabling or overriding
+
+If you want to manage `ActiveProcessorCount` yourself (e.g., to allocate a
+different slice based on workload knowledge), just include it in your config:
+
+[source,json]
+----
+"pipes": {
+  "numClients": 4,
+  "forkedJvmArgs": ["-Xmx512m", "-XX:ActiveProcessorCount=4"]
+}
+----
+
+When Tika sees an explicit `-XX:ActiveProcessorCount` in `forkedJvmArgs`, it
+respects your value and skips the auto-injection — the sizing summary will
+report `autoCap=user-set in forkedJvmArgs`.
+
+== Container & cgroup behavior
+
+The formula uses `Runtime.availableProcessors()` for the host CPU count,
+which on JDK 17+ honors cgroup CPU limits. So in Kubernetes:
+
+* If a pod has `resources.limits.cpu` set, the JVM sees that limit and the
+  formula sizes accordingly.
+* If a pod runs without an explicit `limits.cpu`, the JVM sees the *node's*
+  full CPU count, which may not match what the pod can actually use. **Always
+  set explicit CPU limits on pipes pods.**
+
+== Shared-server mode
+
+This document only covers per-client (forked-JVM) mode, which is the
+default. In shared-server mode (`useSharedServer=true`) all clients use a
+single forked JVM, so the multi-process thread-blowup problem doesn't
+apply and the auto-cap is not applied. See
+xref:pipes/shared-server-mode.adoc[Shared Server Mode] for that mode's
+trade-offs.

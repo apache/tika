@@ -42,11 +42,11 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`numClients`
 |`4`
-|Number of parallel forked JVM processes. Each processes one document at a time.
+|Number of parallel forked JVM processes. Each processes one document at a time. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for guidance on choosing this value relative to host CPU count.
 
 |`forkedJvmArgs`
 |`[]`
-|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`).
+|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). When `numClients > 1`, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools unless you provide your own; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing].
 
 |`javaPath`
 |`java`

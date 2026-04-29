@@ -51,6 +51,17 @@ public class PerClientServerManager implements ServerManager {
     private static final Logger LOG = LoggerFactory.getLogger(PerClientServerManager.class);
     private static final long WAIT_ON_DESTROY_MS = 10000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
+    /** Cores reserved for the parent JVM when auto-sizing forked JVMs'
+     *  -XX:ActiveProcessorCount. The parent has client-side serialization,
+     *  response deserialization, and heartbeat bookkeeping; if it's CPU-starved
+     *  small operations like socket flush show pathological tail latency. */
+    private static final int PARENT_RESERVED_CORES = 2;
+    /** Don't auto-cap below this many CPUs per fork. At cap=1 the fork's only
+     *  CPU is fully consumed by parsing, so its socket-reader thread can't run
+     *  and the parent's writes block on receiver-side back-pressure -- worse
+     *  than no cap at all. This guard matters for small k8s pods where the
+     *  formula could otherwise produce slice=1. */
+    private static final int MIN_AUTO_CAP_SLICE = 2;
 
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
@@ -67,6 +78,62 @@ public class PerClientServerManager implements ServerManager {
         this.pipesConfig = pipesConfig;
         this.tikaConfigPath = tikaConfigPath;
         this.clientId = clientId;
+        // Emit CPU-sizing diagnostics once per PipesParser (only on the first client).
+        if (clientId == 0) {
+            logCpuSizing();
+        }
+    }
+
+    /**
+     * Emits a one-shot summary of how the auto-cap will behave for this PipesParser,
+     * plus warnings for clearly-pathological provisioning. Grep for "pipes-cpu-sizing"
+     * in logs to see the decision the JVM made.
+     */
+    private void logCpuSizing() {
+        int hostCores = Runtime.getRuntime().availableProcessors();
+        int numClients = pipesConfig.getNumClients();
+        boolean userSetCap = pipesConfig.getForkedJvmArgs().stream()
+                .anyMatch(a -> a.startsWith("-XX:ActiveProcessorCount="));
+
+        // Hostile environment: fewer than 2 cores means the parser thread, GC, JIT,
+        // and protocol heartbeat all share one CPU. Pipes will run but tail latency
+        // will be poor regardless of numClients.
+        if (hostCores < 2) {
+            LOG.warn("pipes-cpu-sizing: hostCores={} is below the practical minimum. " +
+                    "Each fork JVM needs roughly 2 CPUs (1 for parsing, 1 for GC/JIT/" +
+                    "protocol heartbeat); on a single-CPU host these contend with each " +
+                    "other and performance will be poor.", hostCores);
+        }
+
+        // Over-provisioned: numClients packed too tightly given the host's cores.
+        // Triggers earlier than the slice<MIN guard so the user is warned even
+        // when they explicitly set -XX:ActiveProcessorCount themselves.
+        if (numClients > 1 && numClients * MIN_AUTO_CAP_SLICE + PARENT_RESERVED_CORES > hostCores) {
+            int recommendedMax = Math.max(1,
+                    (hostCores - PARENT_RESERVED_CORES) / MIN_AUTO_CAP_SLICE);
+            LOG.warn("pipes-cpu-sizing: numClients={} is over-provisioned for {}-core " +
+                    "host. Recommended max for this host: numClients={}. Forks need at " +
+                    "least {} CPUs each plus {} reserved for the parent JVM; otherwise " +
+                    "GC/JIT/protocol threads contend with parser threads across forks.",
+                    numClients, hostCores, recommendedMax,
+                    MIN_AUTO_CAP_SLICE, PARENT_RESERVED_CORES);
+        }
+
+        // Always-on summary so ops can see what was decided. Grep for "pipes-cpu-sizing".
+        String capDecision;
+        if (userSetCap) {
+            capDecision = "user-set in forkedJvmArgs";
+        } else if (numClients <= 1) {
+            capDecision = "n/a (single fork; not capped)";
+        } else {
+            int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
+            int slice = budget / numClients;
+            capDecision = (slice >= MIN_AUTO_CAP_SLICE)
+                    ? "slice=" + slice
+                    : "skipped (slice<" + MIN_AUTO_CAP_SLICE + ")";
+        }
+        LOG.info("pipes-cpu-sizing: hostCores={}, numClients={}, parentReserved={}, " +
+                "autoCap={}", hostCores, numClients, PARENT_RESERVED_CORES, capDecision);
     }
 
     @Override
@@ -305,6 +372,7 @@ public class PerClientServerManager implements ServerManager {
         boolean hasHeadless = false;
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
+        boolean hasActiveProcessorCount = false;
         String origGCString = null;
         String newGCLogString = null;
 
@@ -321,9 +389,42 @@ public class PerClientServerManager implements ServerManager {
             if (arg.startsWith("-Dlog4j.configuration") || arg.startsWith("-Dlog4j2.configuration")) {
                 hasLog4j = true;
             }
+            if (arg.startsWith("-XX:ActiveProcessorCount=")) {
+                hasActiveProcessorCount = true;
+            }
             if (arg.startsWith("-Xloggc:")) {
                 origGCString = arg;
                 newGCLogString = arg.replace("${pipesClientId}", "id-" + clientId);
+            }
+        }
+
+        // If the user hasn't explicitly set -XX:ActiveProcessorCount, size each
+        // forked JVM's view of CPUs to a fair slice of the host. Otherwise each
+        // JVM defaults its GC, JIT, and common ForkJoinPool to "all cores", which
+        // means N forked JVMs collectively spawn N x cores GC threads etc. and
+        // fight each other. We also reserve PARENT_RESERVED_CORES so the parent
+        // JVM (which serializes requests, deserializes responses, runs heartbeat
+        // bookkeeping) isn't starved for CPU.
+        // Skip the auto-cap when the computed slice would drop below
+        // MIN_AUTO_CAP_SLICE -- below that, the fork can't keep its socket
+        // reader responsive and back-pressures the parent.
+        if (!hasActiveProcessorCount && pipesConfig.getNumClients() > 1) {
+            int hostCores = Runtime.getRuntime().availableProcessors();
+            int forkBudget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
+            int slice = forkBudget / pipesConfig.getNumClients();
+            if (slice >= MIN_AUTO_CAP_SLICE) {
+                configArgs.add("-XX:ActiveProcessorCount=" + slice);
+                LOG.debug("clientId={}: auto-injected -XX:ActiveProcessorCount={} " +
+                        "(hostCores={}, parentReserved={}, numClients={})",
+                        clientId, slice, hostCores, PARENT_RESERVED_CORES,
+                        pipesConfig.getNumClients());
+            } else {
+                LOG.info("clientId={}: skipping -XX:ActiveProcessorCount auto-cap " +
+                        "(would yield slice={} < MIN_AUTO_CAP_SLICE={}; " +
+                        "hostCores={}, parentReserved={}, numClients={}). " +
+                        "Consider lowering numClients on this host.",
+                        clientId, slice, MIN_AUTO_CAP_SLICE, hostCores,
+                        PARENT_RESERVED_CORES, pipesConfig.getNumClients());
             }
         }
 
