@@ -475,6 +475,21 @@ public class ZipParser extends AbstractArchiveParser {
             return;
         }
 
+        // Defensive: mirror the streaming path's canReadEntryData gate so a
+        // truncated / unsupported entry in a salvaged ZipFile records an
+        // embedded-stream exception (caller-visible signal) instead of
+        // silently disappearing when getInputStream/parseEmbedded fail
+        // partway through.
+        if (!zipFile.canReadEntryData(entry)) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                    new TikaException("Can't read archive stream (" + name + ")"),
+                    parentMetadata);
+            if (name != null && !name.isEmpty()) {
+                xhtml.element("p", name);
+            }
+            return;
+        }
+
         Metadata entryMetadata = buildEntryMetadata(entry, name, context);
 
         writeEntryXhtml(name, xhtml);
