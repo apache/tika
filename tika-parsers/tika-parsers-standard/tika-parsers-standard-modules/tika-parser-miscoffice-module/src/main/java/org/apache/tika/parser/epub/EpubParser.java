@@ -37,6 +37,8 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -67,6 +69,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 @TikaComponent
 public class EpubParser implements Parser {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EpubParser.class);
 
     /**
      * Serial version UID
@@ -155,12 +159,24 @@ public class EpubParser implements Parser {
             throws IOException, TikaException, SAXException {
 
         String rootOPF = getRoot(zipFile, context);
+        LOG.trace("epub bufferedParseZipFile: rootOPF={}", rootOPF);
         if (rootOPF == null) {
-            return Collections.EMPTY_SET;
+            // No container.xml and no .opf — typical of truncated epubs where
+            // the OPF lives past the truncation point.  Fall back to iterating
+            // the recoverable HTML/XHTML entries in stored order so we still
+            // emit partial content (matching 3.x's streamingParse contract),
+            // then throw to signal the result is incomplete.
+            LOG.trace("epub fallback: rootOPF=null, streaming all html entries");
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+                    "no OPF found in (possibly truncated) container");
         }
         ZipArchiveEntry zae = zipFile.getEntry(rootOPF);
+        LOG.trace("epub OPF entry: zae={} canReadEntryData={}",
+                zae, zae == null ? "n/a" : zipFile.canReadEntryData(zae));
         if (zae == null || !zipFile.canReadEntryData(zae)) {
-            return Collections.EMPTY_SET;
+            LOG.trace("epub fallback: OPF entry missing/unreadable, streaming all html entries");
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+                    "OPF entry missing or unreadable in (possibly truncated) container");
         }
         try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
             opf.parse(tis, new DefaultHandler(), metadata, context);
@@ -170,8 +186,13 @@ public class EpubParser implements Parser {
         try (InputStream is = zipFile.getInputStream(zae)) {
             XMLReaderUtils.parseSAX(is, contentOrderScraper, context);
         }
+        LOG.trace("epub OPF parsed: spine items={}, manifest entries={}",
+                contentOrderScraper.contentItems.size(),
+                contentOrderScraper.locationMap.size());
         if (contentOrderScraper.contentItems.isEmpty()) {
-            return Collections.EMPTY_SET;
+            LOG.trace("epub fallback: empty spine, streaming all html entries");
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+                    "OPF declared no spine items in (possibly truncated) container");
         }
         String relativePath = "";
         if (rootOPF.lastIndexOf("/") > -1) {
@@ -182,7 +203,9 @@ public class EpubParser implements Parser {
         Set<String> encryptedItems = checkForDRM(zipFile);
         Set<String> processed = new HashSet<>();
         Set<SAXException> saxExceptions = new HashSet<>();
+        int spineSeen = 0, spineParsed = 0, spineMissing = 0, spineNonHtml = 0;
         for (String id : contentOrderScraper.contentItems) {
+            spineSeen++;
             HRefMediaPair hRefMediaPair = contentOrderScraper.locationMap.get(id);
             if (hRefMediaPair != null && hRefMediaPair.href != null) {
                 //we need to test for xhtml/xml because the content parser
@@ -207,18 +230,29 @@ public class EpubParser implements Parser {
                     if (zae != null) {
                         try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
                             content.parse(tis, bodyHandler, metadata, context);
+                            spineParsed++;
                         } catch (SAXException e) {
                             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                                 throw e;
                             }
                             saxExceptions.add(e);
+                        } catch (IOException ioe) {
+                            LOG.trace("epub spine read IOException on {}: {}", path, ioe.toString());
+                            throw ioe;
                         } finally {
                             processed.add(id);
                         }
+                    } else {
+                        spineMissing++;
+                        LOG.trace("epub spine: getEntry({}) returned null (truncated?)", path);
                     }
+                } else {
+                    spineNonHtml++;
                 }
             }
         }
+        LOG.trace("epub spine summary: seen={} parsed={} missing={} non-html={}",
+                spineSeen, spineParsed, spineMissing, spineNonHtml);
 
         //now handle embedded files
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
@@ -240,7 +274,79 @@ public class EpubParser implements Parser {
         for (SAXException e : saxExceptions) {
             throw e;
         }
+        // If spine items referenced entries not in the (possibly salvaged)
+        // zip — typical of truncated epubs where the OPF survived but later
+        // chapters didn't — throw IOException so the outer parse() flushes
+        // the partial content already in xhtml and signals incompleteness.
+        // This restores 3.x's partial-content-plus-exception contract.
+        if (spineMissing > 0) {
+            throw new IOException("EPUB: " + spineMissing + " of "
+                    + spineSeen + " spine items missing from (possibly truncated) "
+                    + "container; emitted " + spineParsed + " recovered chapters");
+        }
         return encryptedItems;
+    }
+
+    /**
+     * Fallback used when the OPF can't be located or parsed (typically a
+     * truncated epub where the OPF lives past the truncation point).
+     * Iterates the zip's entries in stored order and parses any HTML/XHTML/XML
+     * entry, mirroring 3.x's {@code streamingParse} behaviour.  Throws
+     * IOException at the end so the outer parse() flushes the partial content
+     * and the caller learns that extraction was incomplete.
+     */
+    private Set<String> fallbackParseAllHtmlEntries(ZipFile zipFile,
+                                                   ContentHandler bodyHandler,
+                                                   Metadata metadata,
+                                                   ParseContext context,
+                                                   String reason)
+            throws IOException, TikaException, SAXException {
+        // Try to recover mimetype + metadata.xml even in the fallback path,
+        // since they may be present even when the OPF isn't.
+        try {
+            extractMetadata(zipFile, metadata, context);
+        } catch (Exception e) {
+            LOG.trace("epub fallback: extractMetadata threw {}", e.toString());
+        }
+        int parsed = 0;
+        int failed = 0;
+        Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+            String name = entry.getName().toLowerCase(Locale.US);
+            if (!(name.endsWith(".xhtml") || name.endsWith(".html")
+                    || name.endsWith(".htm") || name.endsWith(".xml"))) {
+                continue;
+            }
+            // Skip the OPF file if we somehow have one but it didn't parse
+            // upstream — body handler isn't the right place for it.
+            if (name.endsWith(".opf")) {
+                continue;
+            }
+            if (!zipFile.canReadEntryData(entry)) {
+                continue;
+            }
+            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                content.parse(tis, bodyHandler, metadata, context);
+                parsed++;
+            } catch (SAXException e) {
+                if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                    throw e;
+                }
+                failed++;
+                LOG.trace("epub fallback: SAX failure on {}: {}", entry.getName(), e.toString());
+            } catch (IOException e) {
+                failed++;
+                LOG.trace("epub fallback: IO failure on {}: {}", entry.getName(), e.toString());
+            }
+        }
+        LOG.trace("epub fallback summary: parsed={} failed={}", parsed, failed);
+        // Always throw — the caller asked for an EPUB and we couldn't follow
+        // the spine.  Partial content was emitted to xhtml; outer parse()
+        // flushes it.
+        throw new IOException("EPUB: fallback recovery (" + reason
+                + "); recovered " + parsed + " HTML/XHTML entries"
+                + (failed > 0 ? " (" + failed + " failed)" : ""));
     }
 
     private Set<String> checkForDRM(ZipFile zipFile) throws IOException, TikaException,
