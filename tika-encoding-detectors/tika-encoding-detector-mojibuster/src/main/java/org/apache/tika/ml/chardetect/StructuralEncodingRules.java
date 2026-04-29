@@ -749,6 +749,114 @@ public final class StructuralEncodingRules {
         return Utf8Result.AMBIGUOUS;
     }
 
+    /**
+     * Counts the number of malformed UTF-8 <em>sequences</em> in the sample —
+     * one event per bad lead, orphaned continuation, overlong, surrogate, or
+     * out-of-range codepoint, regardless of how many bytes the bad sequence
+     * spans.  Unlike {@link #checkUtf8}, this does not early-exit on the
+     * first bad sequence; it scans the entire range, resyncing after each
+     * error.  Returns 0 for a clean UTF-8 stream.
+     *
+     * <p>Useful for "tolerant" UTF-8 acceptance: a real-world UTF-8 file with
+     * a few corrupted sequences (copy-paste artefact, truncated upstream,
+     * MIME transport flip) should still be recognized as UTF-8 rather than
+     * rejected outright.  Caller decides what error count is tolerable
+     * (typically as a fraction of probe length).</p>
+     *
+     * <p>The count matches Java's {@code new String(bytes, UTF_8)}'s
+     * U+FFFD-per-error semantics (one replacement per malformed sequence).</p>
+     *
+     * @return number of malformed UTF-8 sequence events
+     */
+    public static int countUtf8Errors(byte[] bytes) {
+        return countUtf8Errors(bytes, 0, bytes.length);
+    }
+
+    public static int countUtf8Errors(byte[] bytes, int offset, int length) {
+        int errors = 0;
+        int i = offset;
+        int end = offset + length;
+        while (i < end) {
+            int b = bytes[i] & 0xFF;
+            if (b < 0x80) {
+                i++;
+                continue;
+            }
+            int seqLen;
+            if (b >= 0xF8) {
+                // 5-/6-byte sequences are not valid Unicode
+                errors++;
+                i++;
+                continue;
+            } else if (b >= 0xF0) {
+                seqLen = 4;
+            } else if (b >= 0xE0) {
+                seqLen = 3;
+            } else if (b >= 0xC0) {
+                seqLen = 2;
+            } else {
+                // continuation byte without a lead
+                errors++;
+                i++;
+                continue;
+            }
+            if (seqLen == 2 && b <= 0xC1) {
+                // overlong
+                errors++;
+                i++;
+                continue;
+            }
+            int kEnd = Math.min(seqLen, end - i);
+            // Truncated at probe-end is not an error — just stop here.
+            if (kEnd < seqLen) {
+                i = end;
+                break;
+            }
+            // Verify continuations are well-formed
+            boolean bad = false;
+            for (int k = 1; k < seqLen; k++) {
+                int cb = bytes[i + k] & 0xFF;
+                if (cb < 0x80 || cb > 0xBF) {
+                    bad = true;
+                    break;
+                }
+            }
+            if (bad) {
+                errors++;
+                // Skip the whole intended sequence. Advancing byte-by-byte
+                // would re-count the orphaned continuations as additional
+                // errors and inflate the count above Java's UTF-8 decoder's
+                // U+FFFD-per-event semantics, which is the convention we
+                // match for caller threshold comparisons.
+                i += seqLen;
+                continue;
+            }
+            // Codepoint range / surrogate checks
+            if (seqLen == 3) {
+                int cp = ((b & 0x0F) << 12)
+                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 6
+                        | ((bytes[i + 2] & 0xFF) & 0x3F);
+                if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
+                    errors++;
+                    i += seqLen;
+                    continue;
+                }
+            } else if (seqLen == 4) {
+                int cp = ((b & 0x07) << 18)
+                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 12
+                        | ((bytes[i + 2] & 0xFF) & 0x3F) << 6
+                        | ((bytes[i + 3] & 0xFF) & 0x3F);
+                if (cp < 0x10000 || cp > 0x10FFFF) {
+                    errors++;
+                    i += seqLen;
+                    continue;
+                }
+            }
+            i += seqLen;
+        }
+        return errors;
+    }
+
     // -----------------------------------------------------------------------
     //  Result type
     // -----------------------------------------------------------------------

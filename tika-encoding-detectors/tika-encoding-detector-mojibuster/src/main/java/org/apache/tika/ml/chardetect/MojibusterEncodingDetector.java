@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
@@ -66,6 +68,9 @@ import org.apache.tika.parser.ParseContext;
  */
 @TikaComponent(name = "mojibuster-encoding-detector")
 public class MojibusterEncodingDetector implements EncodingDetector {
+
+    private static final Logger LOG =
+            LoggerFactory.getLogger(MojibusterEncodingDetector.class);
 
     /** Default NB bigram model on the classpath. */
     public static final String DEFAULT_MODEL_RESOURCE =
@@ -121,6 +126,24 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes. */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
+    /**
+     * Maximum fraction of malformed-UTF-8 bytes we tolerate before
+     * disqualifying NB's UTF-8 pick.  Real-world UTF-8 files often contain
+     * one or two corrupted bytes (copy-paste accidents, truncation,
+     * transport flips) — rejecting them outright would force the detector
+     * to drop a high-confidence UTF-8 classification on otherwise-valid
+     * text and fall through to {@code AutoDetectReader.detect}, which
+     * raises {@code TikaException} when the chain returns no candidates.
+     * 0.5% (1 byte per 200) accommodates "tiny corruption" while still
+     * rejecting genuinely-non-UTF-8 streams (which would have many more
+     * malformed bytes).
+     *
+     * <p>TACTICAL: remove or revisit when Mojibuster's UTF-8 grammar
+     * check is replaced with a probabilistic decoder that returns a
+     * confidence score directly.</p>
+     */
+    private static final double UTF8_MALFORMED_TOLERANCE = 0.005;
+
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
     private static final String WIN1252 = "windows-1252";
 
@@ -173,12 +196,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * structural checks, which need byte alignment intact.
      */
     public List<EncodingResult> detect(byte[] probe, Metadata metadata) {
+        if (LOG.isTraceEnabled()) {
+            int probeLen = probe == null ? 0 : probe.length;
+            int highBytes = probe == null ? 0 : countHighBytes(probe);
+            LOG.trace("mojibuster enter probe={}B highBytes={}", probeLen, highBytes);
+        }
         // Empty / near-empty probes: return the WHATWG default so
         // downstream callers don't see an empty list (which propagates
         // up as "Failed to detect the character encoding of a
         // document" in TXTParser / RFC822Parser / etc).  windows-1252
         // at low confidence lets any declarative hint override.
         if (probe == null || probe.length < 2) {
+            LOG.trace("mojibuster -> windows-1252 fallback (probe<2B)");
             return windows1252Fallback();
         }
 
@@ -190,6 +219,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // consulting NB so we don't hand back a bias-driven x-MacRoman
         // or IBM850 pick.
         if (isPureAscii(probe)) {
+            LOG.trace("mojibuster -> windows-1252 fallback (pure ASCII)");
             return windows1252Fallback();
         }
 
@@ -207,6 +237,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // UTF-32 codepoint validity — structural candidate.  Also
         // collects UTF-16 surrogate invalidity flags used below.
         WideUnicodeDetector.Result wide = WideUnicodeDetector.analyze(probe);
+        LOG.trace("mojibuster wideUnicode charset={} invalidLE={} invalidBE={}",
+                wide.charset, wide.invalidUtf16Le, wide.invalidUtf16Be);
         if (wide.charset != null) {
             pool.add(new EncodingResult(wide.charset, UTF32_STRUCTURAL_CONF,
                     wide.charset.name(), EncodingResult.ResultType.STRUCTURAL));
@@ -222,14 +254,19 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // discriminate UTF-16 reliably (see
         // why-stride1-bigrams-dont-work-for-utf16.md), so we keep
         // UTF-16 out of NB training and delegate to the specialist.
-        if (StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe)) {
+        boolean utf16Gate = StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe);
+        LOG.trace("mojibuster utf16Gate={}", utf16Gate);
+        if (utf16Gate) {
             List<EncodingResult> utf16Results = utf16.detect(probe);
+            LOG.trace("mojibuster utf16Specialist returned {} candidates", utf16Results.size());
             for (EncodingResult r : utf16Results) {
                 String name = r.getCharset().name();
                 boolean invalid =
                         ("UTF-16LE".equals(name) && wide.invalidUtf16Le)
                         || ("UTF-16BE".equals(name) && wide.invalidUtf16Be);
+                LOG.trace("mojibuster utf16Specialist candidate={} invalid={}", name, invalid);
                 if (!invalid) {
+                    LOG.trace("mojibuster -> utf16 short-circuit {}", name);
                     return List.of(new EncodingResult(r.getCharset(),
                             UTF32_STRUCTURAL_CONF, r.getLabel(),
                             EncodingResult.ResultType.STRUCTURAL));
@@ -251,6 +288,29 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         //   • AMBIGUOUS (pure ASCII or only truncated lead): no
         //     emission; NB + fallbacks handle it.
         StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
+        // TACTICAL: tolerate small corruption.  If the grammar check returned
+        // NOT_UTF8 but the malformed-byte fraction is tiny, treat as UTF-8 —
+        // a single bad continuation byte in 2KB of CJK is nearly always
+        // corruption, not "this isn't UTF-8".  Remove when grammar check is
+        // replaced with a probabilistic decoder.
+        boolean utf8Tolerated = false;
+        if (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
+            int errors = StructuralEncodingRules.countUtf8Errors(probe);
+            if (errors > 0
+                    && (double) errors / probe.length <= UTF8_MALFORMED_TOLERANCE) {
+                utf8Tolerated = true;
+                LOG.trace("mojibuster utf8 NOT_UTF8 tolerated: {} error events in {}B ({}%)",
+                        errors, probe.length,
+                        String.format(Locale.ROOT, "%.3f",
+                                100.0 * errors / probe.length));
+            } else if (errors > 0) {
+                LOG.trace("mojibuster utf8 NOT_UTF8 NOT tolerated: {} error events in {}B ({}%)",
+                        errors, probe.length,
+                        String.format(Locale.ROOT, "%.3f",
+                                100.0 * errors / probe.length));
+            }
+        }
+        LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
         if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8) {
             pool.add(new EncodingResult(
                     java.nio.charset.StandardCharsets.UTF_8,
@@ -267,11 +327,22 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
         // Naive-Bayes top-K candidates — statistical.
         List<EncodingResult> nbResults = nb.detect(nbInput);
+        if (LOG.isTraceEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            for (EncodingResult r : nbResults) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(r.getCharset().name())
+                  .append("@").append(String.format(Locale.ROOT, "%.2f", r.getConfidence()));
+            }
+            LOG.trace("mojibuster nb({}B input) -> [{}]", nbInput.length, sb);
+        }
         for (EncodingResult r : nbResults) {
             String name = r.getCharset().name();
-            // NOT_UTF8 disqualifier.
+            // NOT_UTF8 disqualifier — applied unless the malformed-byte
+            // fraction is tiny (see UTF8_MALFORMED_TOLERANCE).
             if ("UTF-8".equals(name)
-                    && utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
+                    && utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8
+                    && !utf8Tolerated) {
                 continue;
             }
             pool.add(r);
@@ -281,7 +352,30 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // Low-evidence Latin-sibling → windows-1252 rewrite.  Runs
         // after sort so only the final top candidate is considered
         // for the rewrite, preserving lower-ranked siblings.
-        return applyLatinSiblingFallback(probe, ranked);
+        List<EncodingResult> finalResults = applyLatinSiblingFallback(probe, ranked);
+        // Never return an empty list.  An empty result propagates up as
+        // "Failed to detect the character encoding of a document" in
+        // AutoDetectReader.detect, which kills parsing entirely.  When
+        // every layer has rejected its candidates (NOT_UTF8 disqualifier
+        // dropped NB's only pick, NB returned no candidates at all,
+        // wide-Unicode and UTF-16 specialists abstained), fall back to
+        // the WHATWG default.  Downstream JunkFilter / declarative
+        // candidates can still override at low confidence.
+        if (finalResults.isEmpty()) {
+            LOG.trace("mojibuster pool empty -> windows-1252 fallback");
+            return windows1252Fallback();
+        }
+        if (LOG.isTraceEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            for (EncodingResult r : finalResults) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(r.getCharset().name())
+                  .append("[").append(r.getResultType()).append("]")
+                  .append("@").append(String.format(Locale.ROOT, "%.2f", r.getConfidence()));
+            }
+            LOG.trace("mojibuster exit ({} results) [{}]", finalResults.size(), sb);
+        }
+        return finalResults;
     }
 
     /**
