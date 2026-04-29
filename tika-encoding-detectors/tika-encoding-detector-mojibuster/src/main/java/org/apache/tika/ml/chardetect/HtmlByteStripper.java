@@ -61,6 +61,11 @@ public final class HtmlByteStripper {
     private static final int RAW_BODY = 7;
     private static final int ATTR_NAME = 8;
     private static final int ATTR_AFTER_EQUALS = 9;
+    /** Inside a markup declaration like {@code <!DOCTYPE html ...>} or
+     *  a processing instruction like {@code <?xml version="1.0"?>}. Both
+     *  end at the next {@code >}. Internal subsets ({@code <!DOCTYPE foo [ ... ]>})
+     *  are rare; we'd stop at the first nested {@code >}. Acceptable. */
+    private static final int DECL_OR_PI = 10;
 
     private static final byte[] SCRIPT = {'s', 'c', 'r', 'i', 'p', 't'};
     private static final byte[] STYLE = {'s', 't', 'y', 'l', 'e'};
@@ -158,6 +163,11 @@ public final class HtmlByteStripper {
                         state = COMMENT;
                         tagCount++;
                         i += 2;
+                    } else if (b == '!' || b == '?') {
+                        // <!DOCTYPE ...>, <!ATTLIST ...>, <?xml ...?>, etc.
+                        // Consume bytes up to the next '>'.
+                        state = DECL_OR_PI;
+                        tagCount++;
                     } else if (b == '/' || isAsciiLetter(b)) {
                         state = TAG_NAME;
                         nameStart = i;
@@ -170,6 +180,12 @@ public final class HtmlByteStripper {
                             state = TEXT;
                         }
                         // if b == '<', stay in LT
+                    }
+                    break;
+
+                case DECL_OR_PI:
+                    if (b == '>') {
+                        state = TEXT;
                     }
                     break;
 

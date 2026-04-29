@@ -109,18 +109,22 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
                                                   ParseContext parseContext)
             throws IOException {
         for (EncodingDetector detector : getDetectors()) {
+            String name = detector.getClass().getSimpleName();
+            LOG.trace("chardet enter {}", name);
             List<EncodingResult> results = detector.detect(tis, metadata, parseContext);
             if (!results.isEmpty()) {
                 Charset detected = results.get(0).getCharset();
+                LOG.trace("chardet hit  {} -> {} [{}] conf={}", name, detected.name(),
+                        results.get(0).getResultType(), results.get(0).getConfidence());
                 metadata.set(TikaCoreProperties.DETECTED_ENCODING, detected.name());
-                if (!detector.getClass().getSimpleName()
-                        .equals("CompositeEncodingDetector")) {
-                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                            detector.getClass().getSimpleName());
+                if (!name.equals("CompositeEncodingDetector")) {
+                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR, name);
                 }
                 return results;
             }
+            LOG.trace("chardet miss {} (empty)", name);
         }
+        LOG.trace("chardet no detector returned a result");
         return Collections.emptyList();
     }
 
@@ -142,16 +146,35 @@ public class CompositeEncodingDetector implements EncodingDetector, Serializable
 
         try {
             for (EncodingDetector detector : baseDetectors) {
+                String name = detector.getClass().getSimpleName();
+                LOG.trace("chardet enter {}", name);
                 List<EncodingResult> detected = detector.detect(tis, metadata, parseContext);
                 if (!detected.isEmpty()) {
+                    LOG.trace("chardet emit {} -> {} [{}] conf={}", name,
+                            detected.get(0).getCharset().name(),
+                            detected.get(0).getResultType(),
+                            detected.get(0).getConfidence());
                     context.addResult(detected, detector.getClass().getSimpleName());
+                } else {
+                    LOG.trace("chardet miss {} (empty)", name);
                 }
             }
 
             // Each base detector handles its own mark/reset, so the stream is
             // back at the start here. CharSoup handles its own mark/reset too.
+            String metaName = metaDetector.getClass().getSimpleName();
+            LOG.trace("chardet meta enter {} (candidates={})", metaName,
+                    context.getUniqueCharsets());
             List<EncodingResult> metaResults =
                     metaDetector.detect(tis, metadata, parseContext);
+            if (!metaResults.isEmpty()) {
+                LOG.trace("chardet meta {} -> {} (arbitration={})", metaName,
+                        metaResults.get(0).getCharset().name(),
+                        context.getArbitrationInfo());
+            } else {
+                LOG.trace("chardet meta {} abstained (arbitration={})", metaName,
+                        context.getArbitrationInfo());
+            }
 
             List<EncodingResult> finalResults;
             String detectorName;
