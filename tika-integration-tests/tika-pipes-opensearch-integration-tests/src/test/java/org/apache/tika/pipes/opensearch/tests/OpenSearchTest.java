@@ -497,7 +497,8 @@ public class OpenSearchTest {
     private void createTestHtmlFiles(String bodyContent, int numHtmlDocs, Path testDocDirectory) throws Exception {
         Files.createDirectories(testDocDirectory);
         for (int i = 0; i < numHtmlDocs; ++i) {
-            String html = "<html><body>" + bodyContent +  "</body></html>";
+            String html = "<html><head><meta charset=\"UTF-8\"></head><body>" + bodyContent +
+                    "</body></html>";
             Path p = testDocDirectory.resolve( "test-" + i + ".html");
             writeStringToPath(p, html);
         }
