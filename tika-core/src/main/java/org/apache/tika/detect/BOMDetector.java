@@ -44,7 +44,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 0.x (moved to org.apache.tika.detect in 4.0)
  */
-@TikaComponent
+@TikaComponent(spi = false)
 public class BOMDetector implements EncodingDetector {
 
     private static final ByteOrderMark[] BOMS =

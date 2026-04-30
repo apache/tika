@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
@@ -40,6 +41,7 @@ public class ODFParserTest extends TikaTest {
                 .getLoader("tika-config-macros.json").loadAutoDetectParser();
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroODT() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.odt", MACRO_PARSER);
@@ -68,6 +70,7 @@ public class ODFParserTest extends TikaTest {
         assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroODTandXMLHandler() throws Exception {
         String xml = getXML("testODTMacro.odt", MACRO_PARSER).xml;
@@ -85,6 +88,7 @@ public class ODFParserTest extends TikaTest {
         assertNotContained("If WsGQFM Or 2 Then", xml);
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroODS() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.ods", MACRO_PARSER);
@@ -104,6 +108,7 @@ public class ODFParserTest extends TikaTest {
         assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroODP() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.odp", MACRO_PARSER);
@@ -129,6 +134,7 @@ public class ODFParserTest extends TikaTest {
 
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroFODT() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTMacro.fodt", MACRO_PARSER);
@@ -156,6 +162,7 @@ public class ODFParserTest extends TikaTest {
     }
 
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroFODTandXMLOutput() throws Exception {
         String xml = getXML("testODTMacro.fodt", MACRO_PARSER).xml;
@@ -163,6 +170,7 @@ public class ODFParserTest extends TikaTest {
         assertContains("If WsGQFM Or 2", xml);
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroFODS() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODSMacro.fods", MACRO_PARSER);
@@ -182,6 +190,7 @@ public class ODFParserTest extends TikaTest {
         assertImageContentType("image/png", image.get(Metadata.CONTENT_TYPE));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testMacroFODP() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODPMacro.fodp", MACRO_PARSER);

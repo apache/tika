@@ -64,7 +64,7 @@ import org.apache.tika.parser.ParseContext;
  * candidate.  Conservative: only return at a layer when that layer's
  * structural check is clean.</p>
  */
-@TikaComponent(name = "mojibuster-encoding-detector")
+@TikaComponent(spi = false, name = "mojibuster-encoding-detector")
 public class MojibusterEncodingDetector implements EncodingDetector {
 
     /** Default NB bigram model on the classpath. */

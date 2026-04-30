@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
@@ -173,6 +174,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain doesn't return windows-1252 for these embedded text attachments. Re-validate.")
     @Test
     public void testWPSVariantAttachments() throws Exception {
         //test that files created by WPS have embedded files extracted

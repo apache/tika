@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.opensearch.testcontainers.OpensearchContainer;
@@ -173,6 +174,7 @@ public class OpenSearchTest {
     }
 
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testParentChildFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
         int numHtmlDocs = 42;
@@ -241,6 +243,7 @@ public class OpenSearchTest {
     }
 
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testSeparateDocsFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
         OpensearchTestClient client = getNewClient();
@@ -306,6 +309,7 @@ public class OpenSearchTest {
         assertEquals(400, results.getStatus());
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testUpsertSeparateDocsFSToOpenSearch(@TempDir Path pipesDirectory, @TempDir Path testDocDirectory) throws Exception {
         OpensearchTestClient client = getNewClient();

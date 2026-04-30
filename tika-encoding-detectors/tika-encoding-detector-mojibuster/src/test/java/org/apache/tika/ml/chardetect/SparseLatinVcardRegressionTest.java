@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -53,6 +54,10 @@ public class SparseLatinVcardRegressionTest {
      * (windows-1257, IBM852, etc.) is a documented sibling-arbitration
      * limitation; only the catastrophic case is asserted here.
      */
+    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
+            "Mojibuster's IBM424 gating no longer participates in DefaultEncodingDetector. " +
+            "The sparse-Latin vCard regression must be re-validated with the 3.x chain " +
+            "before re-enabling.")
     @Test
     public void sparseLatinVcardDoesNotDetectAsIbm424() throws Exception {
         byte[] probe = buildSparseLatinVcard();

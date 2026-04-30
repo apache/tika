@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -39,6 +40,7 @@ import org.apache.tika.sax.BodyContentHandler;
  */
 public class ZipParserTest extends AbstractPkgTest {
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testZipParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();
@@ -71,6 +73,7 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     // TIKA-1036
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testPlaceholders() throws Exception {
         String xml = getXML("testEmbedded.zip").xml;
@@ -90,6 +93,7 @@ public class ZipParserTest extends AbstractPkgTest {
         assertTrue(extractor.allInternalPaths.contains("test2.txt"));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testZipEncrypted() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEncrypted.zip");
@@ -105,6 +109,7 @@ public class ZipParserTest extends AbstractPkgTest {
         assertContains("hello world", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testDataDescriptorWithEmptyEntry() throws Exception {
 

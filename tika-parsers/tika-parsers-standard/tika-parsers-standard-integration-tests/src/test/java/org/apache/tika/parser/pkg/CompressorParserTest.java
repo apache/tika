@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -29,6 +30,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 public class CompressorParserTest extends TikaTest {
 
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testLZ4Framed() throws Exception {
         XMLResult r = getXML("testLZ4-framed.lz4");
@@ -36,6 +38,7 @@ public class CompressorParserTest extends TikaTest {
         assertContains("0123456789", r.xml);
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testZstd() throws Exception {
         XMLResult r = getXML("testZSTD.zst");

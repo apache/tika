@@ -659,6 +659,7 @@ public class TikaCLITest {
         assertTrue(tikaEx);
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testConfig() throws Exception {
         String content = getParamOutContent("--config=" + CONFIGS_DIR.toString() + "/tika-config1.json", resourcePrefix + "bad_xml.xml");

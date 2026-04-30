@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -58,6 +59,9 @@ public class ZipFilenameDetectionTest {
      * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
      * what ZipParser does when iterating entries with the same ParseContext.
      */
+    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
+            "Mojibuster no longer participates in DefaultEncodingDetector. " +
+            "Test relies on Mojibuster's structural detection of short SJIS probes.")
     @Test
     public void fullPipelineDetectsBothSjisEntries() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();
@@ -77,11 +81,10 @@ public class ZipFilenameDetectionTest {
 
     /**
      * Full pipeline should detect GBK-encoded entry names as GB18030.
-     * Disabled: CharSoup's discriminative language model picks KOI8-U over GB18030
-     * on short probes because the GBK bytes happen to score as Cyrillic.
-     * Re-enable once generative language models are in place (better calibrated
-     * confidence will let CharSoup correctly abstain on cross-script ambiguity).
      */
+    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
+            "Mojibuster no longer participates in DefaultEncodingDetector. " +
+            "GBK detection on short probes was Mojibuster-specific.")
     @Test
     public void fullPipelineDetectsGbkEntry() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();

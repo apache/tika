@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.xml.sax.InputSource;
@@ -30,9 +31,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.CharsetUtils;
 
 /**
  * An input stream reader that automatically detects the character encoding
@@ -108,24 +107,35 @@ public class AutoDetectReader extends BufferedReader {
             return detected;
         }
 
-        // Try determining the encoding based on hints in document metadata
-        MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
-        if (type != null) {
-            String charsetParam = type.getParameters().get("charset");
-            if (charsetParam != null) {
-                try {
-                    Charset cs = CharsetUtils.forName(charsetParam);
-                    metadata.set(TikaCoreProperties.DETECTED_ENCODING, cs.name());
-                    metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
-                            "AutoDetectReader-charset-metadata-fallback");
-                    return cs;
-                } catch (IllegalArgumentException e) {
-                    // ignore
-                }
-            }
+        // Try determining the encoding based on hints in document metadata.
+        // Two metadata keys are honoured (TIKA-4683 — restoring 3.x parser-layer
+        // behaviour that consulted both): the charset parameter of CONTENT_TYPE
+        // (e.g. "text/html; charset=UTF-8") and a bare charset label in
+        // CONTENT_ENCODING (set by parsers such as RFC822Parser).
+        Charset metaCharset = MetadataCharsetDetector.charsetFromContentType(metadata);
+        if (metaCharset == null) {
+            metaCharset = MetadataCharsetDetector.charsetFromContentEncoding(metadata);
+        }
+        if (metaCharset != null) {
+            metadata.set(TikaCoreProperties.DETECTED_ENCODING, metaCharset.name());
+            metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
+                    "AutoDetectReader-charset-metadata-fallback");
+            return metaCharset;
         }
 
-        throw new TikaException("Failed to detect the character encoding of a document");
+        // Final fallback (TIKA-4683): when the rolled-back 3.x-style chain
+        // (Html, Universal, Icu4j) abstains on short/pure-ASCII inputs and
+        // metadata carries no charset hint, default to ISO-8859-1 rather
+        // than throwing.  This matches 3.x's default-charset behaviour:
+        // pre-TIKA-4685 the chain effectively returned ISO-8859-1 for
+        // ASCII-only content, and tests assert that.  4.x's TIKA-4685
+        // refactor moved to windows-1252 via WHATWG normalisation; we
+        // explicitly opt out of that here.
+        Charset fallback = StandardCharsets.ISO_8859_1;
+        metadata.set(TikaCoreProperties.DETECTED_ENCODING, fallback.name());
+        metadata.set(TikaCoreProperties.ENCODING_DETECTOR,
+                "AutoDetectReader-default-fallback");
+        return fallback;
     }
 
     private static TikaInputStream getTikaInputStream(InputStream stream) {

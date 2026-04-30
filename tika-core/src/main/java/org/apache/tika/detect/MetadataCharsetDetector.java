@@ -49,7 +49,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 4.0
  */
-@TikaComponent(name = "metadata-charset-detector")
+@TikaComponent(spi = false, name = "metadata-charset-detector")
 public class MetadataCharsetDetector implements EncodingDetector {
 
     @Override

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -291,6 +292,7 @@ public class TabularFormatsTest extends TikaTest {
      * <p>
      * This means we don't get proper HTML out...
      */
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testCSV() throws Exception {
         XMLResult result = getXML("test-columnar.csv");

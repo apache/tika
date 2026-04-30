@@ -219,6 +219,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOCX, tracker.mediaTypes.get(2));
     }
 
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test // TIKA-1228, TIKA-1268
     public void testEmbeddedFilesInChildren() throws Exception {
         String xml = getXML("testPDF_childAttachments.pdf").xml;

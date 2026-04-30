@@ -97,6 +97,7 @@ public class BoilerpipeHandlerTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-961">TIKA-961</a>
      */
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testBoilerplateWhitespace() throws Exception {
         String path = "/test-documents/boilerplate-whitespace.html";

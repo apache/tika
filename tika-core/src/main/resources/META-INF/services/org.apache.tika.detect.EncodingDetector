@@ -13,10 +13,9 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# org.apache.tika.detect.* sorts before other detector namespaces so BOM and
-# HTTP/MIME DECLARATIVE evidence reaches JunkFilterEncodingDetector before any
-# statistical detector runs.  Class-name order: BOMDetector first, then
-# MetadataCharsetDetector.
-org.apache.tika.detect.BOMDetector
-org.apache.tika.detect.MetadataCharsetDetector
+# Intentionally empty: tika-core itself does not register any default
+# EncodingDetector implementations. The default chain is provided by the
+# tika-encoding-detector-html, tika-encoding-detector-universal, and
+# tika-encoding-detector-icu4j modules and is sequenced by
+# DefaultEncodingDetector.
 

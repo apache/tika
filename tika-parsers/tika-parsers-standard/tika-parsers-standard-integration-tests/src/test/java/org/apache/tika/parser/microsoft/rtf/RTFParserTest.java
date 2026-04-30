@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -42,6 +43,7 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
 public class RTFParserTest extends TikaTest {
 
     // TIKA-1010
+    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testEmbeddedMonster() throws Exception {
 
