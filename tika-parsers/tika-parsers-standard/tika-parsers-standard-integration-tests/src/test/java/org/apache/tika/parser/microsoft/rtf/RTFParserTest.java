@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FilenameUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -43,12 +42,11 @@ import org.apache.tika.sax.RecursiveParserWrapperHandler;
 public class RTFParserTest extends TikaTest {
 
     // TIKA-1010
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testEmbeddedMonster() throws Exception {
 
         Map<Integer, Pair> expected = new HashMap<>();
-        expected.put(3, new Pair("Hw.txt", "text/plain; charset=windows-1252"));
+        expected.put(3, new Pair("Hw.txt", "text/plain; charset=ISO-8859-1"));
         expected.put(4, new Pair("embedded-0.doc", "application/msword"));
         expected.put(7, new Pair("embedded-1.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));

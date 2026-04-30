@@ -54,10 +54,7 @@ public class SparseLatinVcardRegressionTest {
      * (windows-1257, IBM852, etc.) is a documented sibling-arbitration
      * limitation; only the catastrophic case is asserted here.
      */
-    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
-            "Mojibuster's IBM424 gating no longer participates in DefaultEncodingDetector. " +
-            "The sparse-Latin vCard regression must be re-validated with the 3.x chain " +
-            "before re-enabling.")
+    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void sparseLatinVcardDoesNotDetectAsIbm424() throws Exception {
         byte[] probe = buildSparseLatinVcard();

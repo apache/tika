@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -60,7 +59,6 @@ public class RFC822ParserTest extends TikaTest {
      * Test TIKA-1028 - Ensure we can get the contents of an
      * un-encrypted zip file
      */
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testNormalZipAttachment() throws Exception {
         Metadata metadata = new Metadata();
@@ -94,7 +92,6 @@ public class RFC822ParserTest extends TikaTest {
      * an attachment that others triggers an error), parsing should carry
      * on for the remainder regardless
      */
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testEncryptedZipAttachment() throws Exception {
         Metadata metadata = new Metadata();

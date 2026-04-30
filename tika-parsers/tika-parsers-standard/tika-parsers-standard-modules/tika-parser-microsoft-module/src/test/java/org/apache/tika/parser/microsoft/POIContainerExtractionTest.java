@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
@@ -174,7 +173,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
     }
 
-    @Disabled("TIKA-4683: rolled-back chain doesn't return windows-1252 for these embedded text attachments. Re-validate.")
     @Test
     public void testWPSVariantAttachments() throws Exception {
         //test that files created by WPS have embedded files extracted
@@ -188,8 +186,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         expected.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
         expected.add("application/pdf");
         expected.add("application/xml");
-        // CRLF line endings in this embedded text file trigger the ISO→Windows upgrade heuristic
-        expected.add("text/plain; charset=windows-1252");
+        expected.add("text/plain; charset=ISO-8859-1");
         //test that we're correctly handling attachment variants for
         // files created by WPS 表格 (https://www.wps.cn/)
         for (String suffix : new String[]{

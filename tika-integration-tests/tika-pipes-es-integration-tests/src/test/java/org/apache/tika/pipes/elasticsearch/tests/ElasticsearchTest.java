@@ -44,7 +44,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.testcontainers.containers.GenericContainer;
@@ -195,7 +194,6 @@ public class ElasticsearchTest {
         return sum;
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testParentChildFSToElasticsearch(
             @TempDir Path pipesDirectory,
@@ -276,7 +274,6 @@ public class ElasticsearchTest {
         assertReporterCounts(client, numHtmlDocs + numTestDocs);
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testSeparateDocsFSToElasticsearch(
             @TempDir Path pipesDirectory,

@@ -18,7 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -33,7 +32,6 @@ public class PackageParserTest extends TikaTest {
         assertContains("审计压缩", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void handleEntryNameWithCharsetShiftJIS() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testZipEntryNameCharsetShiftSJIS.zip");

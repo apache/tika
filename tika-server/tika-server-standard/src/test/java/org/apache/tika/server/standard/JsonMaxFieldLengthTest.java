@@ -31,7 +31,6 @@ import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -71,7 +70,6 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
         return getClass().getResourceAsStream("/configs/tika-config-json.json");
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testLargeJson(@TempDir Path dir) throws Exception {
         //TIKA-4154

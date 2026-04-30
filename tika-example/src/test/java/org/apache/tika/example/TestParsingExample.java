@@ -24,7 +24,6 @@ import java.io.StringReader;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
@@ -66,7 +65,6 @@ public class TestParsingExample extends TikaTest {
         assertNotContained("When in the Course", result);
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testRecursiveParseExample() throws IOException, SAXException, TikaException {
         String result = parsingExample.parseEmbeddedExample();
@@ -76,7 +74,6 @@ public class TestParsingExample extends TikaTest {
         assertContains("When in the Course", result);
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testRecursiveParserWrapperExample() throws IOException, SAXException, TikaException {
         List<Metadata> metadataList = parsingExample.recursiveParserWrapperExample();

@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.ClosedInputStream;
 import org.apache.commons.io.input.ProxyInputStream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaLoaderHelper;
@@ -331,7 +330,6 @@ public class RecursiveParserWrapperTest extends TikaTest {
     }
 
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testEmbeddedResourcePath() throws Exception {
 
@@ -435,7 +433,6 @@ public class RecursiveParserWrapperTest extends TikaTest {
         assertEquals("embeddedAuthor", embeddedMetadata.get("author"));
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testDigesters() throws Exception {
         Metadata metadata = new Metadata();

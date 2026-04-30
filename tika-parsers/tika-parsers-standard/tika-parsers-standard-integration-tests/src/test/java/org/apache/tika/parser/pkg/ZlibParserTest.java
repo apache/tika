@@ -18,7 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
@@ -31,7 +30,6 @@ import org.apache.tika.sax.BodyContentHandler;
  */
 public class ZlibParserTest extends AbstractPkgTest {
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testZlibParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();

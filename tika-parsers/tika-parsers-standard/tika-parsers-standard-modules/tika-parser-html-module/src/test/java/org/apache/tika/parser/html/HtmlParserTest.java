@@ -255,7 +255,6 @@ public class HtmlParserTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-332">TIKA-332</a>
      */
-    @Disabled("TIKA-4683: rolled-back default chain returns windows-1252 vs expected ISO-8859-1. Re-validate then re-enable.")
     @Test
     public void testHttpEquivCharset() throws Exception {
         String test = "<html><head><meta http-equiv=\"content-type\"" +
@@ -266,7 +265,8 @@ public class HtmlParserTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        // WHATWG Encoding Standard maps the iso-8859-1 label to windows-1252.
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
     /**
@@ -291,7 +291,6 @@ public class HtmlParserTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>
      */
-    @Disabled("TIKA-4683: rolled-back default chain produces character mojibake on this fixture. Re-validate then re-enable.")
     @Test
     public void testDetectOfCharset() throws Exception {
         String test = "<html><head><title>\u017d</title></head><body></body></html>";
@@ -309,7 +308,6 @@ public class HtmlParserTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a>
      */
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testUsingCharsetInContentTypeHeader() throws Exception {
         final String test =
@@ -407,7 +405,6 @@ public class HtmlParserTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-350">TIKA-350</a>
      */
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testUsingFunkyCharsetInContentTypeHeader() throws Exception {
         final String test =
@@ -621,7 +618,6 @@ public class HtmlParserTest extends TikaTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testMetaTagHandling() throws Exception {
         final String test = "<html><body><h1>header</h1><p>some text</p></body></html>";
@@ -878,7 +874,6 @@ public class HtmlParserTest extends TikaTest {
     }
 
     // TIKA-1011
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testUserDefinedCharset() throws Exception {
         String content = new Tika()
@@ -989,7 +984,6 @@ public class HtmlParserTest extends TikaTest {
         assertEquals("Simple Content", metadata.get(TikaCoreProperties.TITLE));
     }
 
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testMisleadingMetaContentTypeTags() throws Exception {
         //TIKA-1519
@@ -1037,7 +1031,6 @@ public class HtmlParserTest extends TikaTest {
         assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
     }
 
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testXHTMLWithMisleading() throws Exception {
         //first test an acceptable XHTML header with http-equiv tags
@@ -1055,7 +1048,8 @@ public class HtmlParserTest extends TikaTest {
 
         assertEquals("text/html; charset=iso-8859-1",
                 metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
-        assertEquals("application/xhtml+xml; charset=ISO-8859-1",
+        // WHATWG Encoding Standard maps the iso-8859-1 label to windows-1252.
+        assertEquals("application/xhtml+xml; charset=windows-1252",
                 metadata.get(Metadata.CONTENT_TYPE));
 
         test = "<?xml version=\"1.0\" ?>" +
@@ -1198,7 +1192,6 @@ public class HtmlParserTest extends TikaTest {
         assertNotContained("cool", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testConfigExtractScript() throws Exception {
         Parser p = TikaLoader.load(
@@ -1270,7 +1263,6 @@ public class HtmlParserTest extends TikaTest {
         }
     }
 
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testCharsetsNotSupportedByIANA() throws Exception {
         assertContains("This is a sample text", getXML("testHTML_charset_utf8.html").xml);
@@ -1279,7 +1271,6 @@ public class HtmlParserTest extends TikaTest {
 
     }
 
-    @Disabled("TIKA-4683: rolled-back default chain (Html, Universal, Icu4j) doesn't preserve this 4.x-era expectation. Re-validate then re-enable.")
     @Test
     public void testSkippingDataURIInScriptNode() throws Exception {
         //TIKA-2759 skip data: uri element if inside a script

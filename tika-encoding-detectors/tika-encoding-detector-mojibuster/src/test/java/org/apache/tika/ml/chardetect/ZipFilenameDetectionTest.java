@@ -59,9 +59,7 @@ public class ZipFilenameDetectionTest {
      * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
      * what ZipParser does when iterating entries with the same ParseContext.
      */
-    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
-            "Mojibuster no longer participates in DefaultEncodingDetector. " +
-            "Test relies on Mojibuster's structural detection of short SJIS probes.")
+    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void fullPipelineDetectsBothSjisEntries() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();
@@ -82,9 +80,7 @@ public class ZipFilenameDetectionTest {
     /**
      * Full pipeline should detect GBK-encoded entry names as GB18030.
      */
-    @Disabled("TIKA-4683 rolled the default chain back to (Html, Universal, Icu4j); " +
-            "Mojibuster no longer participates in DefaultEncodingDetector. " +
-            "GBK detection on short probes was Mojibuster-specific.")
+    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void fullPipelineDetectsGbkEntry() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();

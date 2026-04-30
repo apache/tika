@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -44,7 +43,6 @@ public class OOXMLDocxSAXPackageTest extends TikaTest {
                 metadataList.get(2).get(TikaCoreProperties.TIKA_CONTENT));
     }
 
-    @Disabled("TIKA-4683: rolled-back chain; re-validate.")
     @Test
     public void testAltFileHTMLChunk() throws Exception {
         List<Metadata> metadataList =
