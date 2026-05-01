@@ -223,6 +223,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
                 parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
             }
+            String parseContextJson = request.getParseContextJson();
+            if (StringUtils.isNotBlank(parseContextJson)) {
+                com.fasterxml.jackson.databind.JsonNode contextNode = OBJECT_MAPPER.readTree(parseContextJson);
+                contextNode.fields().forEachRemaining(entry ->
+                        parseContext.setJsonConfig(entry.getKey(), entry.getValue().toString()));
+            }
             PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
