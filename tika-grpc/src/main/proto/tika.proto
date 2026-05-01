@@ -100,6 +100,11 @@ message FetchAndParseRequest {
   string additional_fetch_config_json = 3;
   // The ID of the emitter to use (optional). If not provided, no emitter will be used.
   string emitter_id = 4;
+  // Optional JSON object to configure the ParseContext for this request, overriding server defaults.
+  // Keys are parse-context component names; values are their JSON configs.
+  // Example: {"basic-content-handler-factory": {"type": "HTML"}, "timeout-limits": {"progressTimeoutMillis": 30000}}
+  // See the parse-context.idx component registry for available component names.
+  string parse_context_json = 5;
 }
 
 message FetchAndParseReply {
