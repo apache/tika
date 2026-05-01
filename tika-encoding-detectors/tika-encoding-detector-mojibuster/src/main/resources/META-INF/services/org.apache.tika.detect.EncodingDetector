@@ -13,4 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-org.apache.tika.ml.chardetect.MojibusterEncodingDetector
+# Intentionally empty: MojibusterEncodingDetector is no longer part of the
+# default Tika encoding-detection chain. Users who want it must register it
+# explicitly via tika-config.

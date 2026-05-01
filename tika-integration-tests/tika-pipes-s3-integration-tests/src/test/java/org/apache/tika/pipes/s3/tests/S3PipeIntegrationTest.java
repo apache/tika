@@ -88,8 +88,9 @@ class S3PipeIntegrationTest {
         for (int i = 0; i < numDocs; ++i) {
             String nextFileName = "test-" + i + ".html";
             testFiles.add(nextFileName);
-            String s = "<html><body>body-of-" + nextFileName + "</body></html>";
-            byte[] bytes = s.getBytes(StandardCharsets.US_ASCII);
+            String s = "<html><head><meta charset=\"UTF-8\"></head><body>body-of-" +
+                    nextFileName + "</body></html>";
+            byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
             PutObjectRequest request = PutObjectRequest.builder().bucket(FETCH_BUCKET).key(nextFileName).build();
             RequestBody requestBody = RequestBody.fromBytes(bytes);
             s3Client.putObject(request, requestBody);

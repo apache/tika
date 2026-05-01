@@ -46,7 +46,7 @@ public class RTFParserTest extends TikaTest {
     public void testEmbeddedMonster() throws Exception {
 
         Map<Integer, Pair> expected = new HashMap<>();
-        expected.put(3, new Pair("Hw.txt", "text/plain; charset=windows-1252"));
+        expected.put(3, new Pair("Hw.txt", "text/plain; charset=ISO-8859-1"));
         expected.put(4, new Pair("embedded-0.doc", "application/msword"));
         expected.put(7, new Pair("embedded-1.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));

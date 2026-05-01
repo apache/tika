@@ -18,7 +18,9 @@ package org.apache.tika.detect;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
@@ -28,28 +30,36 @@ import org.apache.tika.config.ServiceLoader;
  * implementations available through the
  * {@link ServiceRegistry service provider mechanism}.
  *
- * <p>Loaded detectors are sorted in two tiers:
+ * <p>The default chain (Tika 3.x style) runs three detectors in order, with
+ * the first non-empty result winning:
  * <ol>
- *   <li>Base detectors (non-{@link MetaEncodingDetector}) sorted by full
- *       class name (non-Tika before Tika, then ascending alphabetically).
- *       The package ordering guarantees:
- *       {@code org.apache.tika.ml.*} (Mojibuster) →
- *       {@code org.apache.tika.parser.*} (HTML).</li>
- *   <li>{@link MetaEncodingDetector} instances always run last, after all
- *       base detectors have collected their candidates into
- *       {@link EncodingDetectorContext}.</li>
- * </ol></p>
+ *   <li>{@code org.apache.tika.parser.html.HtmlEncodingDetector}</li>
+ *   <li>{@code org.apache.tika.parser.txt.UniversalEncodingDetector}</li>
+ *   <li>{@code org.apache.tika.parser.txt.Icu4jEncodingDetector}</li>
+ * </ol>
+ * Any other {@link EncodingDetector} discovered via SPI (e.g.,
+ * user-supplied detectors) runs after the three blessed detectors,
+ * preserving back-compat for callers who add their own.</p>
  *
  * <p>If you need to control the order of the Detectors explicitly, construct
  * your own {@link CompositeEncodingDetector} and pass in the list in the
  * required order.</p>
  *
- * <p>{@link MetaEncodingDetector} handling (collect-all-then-arbitrate)
- * is provided by {@link CompositeEncodingDetector}.</p>
- *
  * @since Apache Tika 1.15
  */
 public class DefaultEncodingDetector extends CompositeEncodingDetector {
+
+    /** Pinned ordering for the 3.x-style default chain. Detectors not on this
+     *  map keep their natural SPI load order behind the three blessed ones. */
+    private static final Map<String, Integer> PRIORITY = buildPriority();
+
+    private static Map<String, Integer> buildPriority() {
+        Map<String, Integer> p = new HashMap<>();
+        p.put("org.apache.tika.parser.html.HtmlEncodingDetector", 0);
+        p.put("org.apache.tika.parser.txt.UniversalEncodingDetector", 1);
+        p.put("org.apache.tika.parser.txt.Icu4jEncodingDetector", 2);
+        return p;
+    }
 
     public DefaultEncodingDetector() {
         this(new ServiceLoader(DefaultEncodingDetector.class.getClassLoader()));
@@ -67,11 +77,13 @@ public class DefaultEncodingDetector extends CompositeEncodingDetector {
     }
 
     private static List<EncodingDetector> sorted(List<EncodingDetector> detectors) {
-        // Two-key sort: base detectors first (meta=0) then MetaEncodingDetectors (meta=1),
-        // within each tier sorted by full class name for stability across JARs.
+        // Pin the 3.x default chain (html, universal, icu4j) to fixed
+        // positions; other detectors fall to the end with stable secondary
+        // ordering by class name.
         detectors.sort(Comparator
                 .<EncodingDetector, Integer>comparing(
-                        d -> (d instanceof MetaEncodingDetector) ? 1 : 0)
+                        d -> PRIORITY.getOrDefault(
+                                d.getClass().getName(), Integer.MAX_VALUE))
                 .thenComparing(d -> d.getClass().getName()));
         return detectors;
     }

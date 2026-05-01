@@ -64,7 +64,7 @@ import org.apache.tika.quality.TextQualityScore;
  *
  * @since Apache Tika 4.0.0 (TIKA-4720)
  */
-@TikaComponent(name = "junk-filter-encoding-detector")
+@TikaComponent(spi = false, name = "junk-filter-encoding-detector")
 public class JunkFilterEncodingDetector implements MetaEncodingDetector {
 
     private static final long serialVersionUID = 1L;
