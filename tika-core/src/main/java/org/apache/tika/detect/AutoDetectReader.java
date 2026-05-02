@@ -47,8 +47,11 @@ public class AutoDetectReader extends BufferedReader {
     private static final EncodingDetector DEFAULT_DETECTOR;
 
     static {
-        DEFAULT_DETECTOR = new CompositeEncodingDetector(
-                DEFAULT_LOADER.loadServiceProviders(EncodingDetector.class));
+        // Use DefaultEncodingDetector so SPI-discovered detectors are run in the
+        // pinned order (HtmlEncodingDetector, UniversalEncodingDetector, Icu4jEncodingDetector,
+        // then anything else by class name). Otherwise the order would be whatever
+        // ServiceLoader yields from classpath/jar order, which is fragile.
+        DEFAULT_DETECTOR = new DefaultEncodingDetector(DEFAULT_LOADER);
     }
 
     private final Charset charset;
@@ -79,8 +82,7 @@ public class AutoDetectReader extends BufferedReader {
 
     public AutoDetectReader(InputStream stream, Metadata metadata, ServiceLoader loader)
             throws IOException, TikaException {
-        this(getTikaInputStream(stream), metadata,
-                new CompositeEncodingDetector(loader.loadServiceProviders(EncodingDetector.class)));
+        this(getTikaInputStream(stream), metadata, new DefaultEncodingDetector(loader));
     }
 
     public AutoDetectReader(InputStream stream, Metadata metadata)
