@@ -80,8 +80,12 @@ public class DigestHelper {
 
         Digester digester = digesterFactory.build();
 
-        // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's open container)
+        // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's
+        // open container). The translator consumes `tis` to produce the translated bytes that get
+        // digested, so we enableRewind() before and rewind() after — otherwise the caller (typically
+        // AutoDetectParser) would see an exhausted stream and fail its zero-byte probe (TIKA-XXXX).
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
+            tis.enableRewind();
             try (TemporaryResources tmp = new TemporaryResources()) {
                 Path tmpBytes = tmp.createTempFile();
                 try (OutputStream os = Files.newOutputStream(tmpBytes)) {
@@ -90,6 +94,8 @@ public class DigestHelper {
                 try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
                     digester.digest(translated, metadata, context);
                 }
+            } finally {
+                tis.rewind();
             }
         } else {
             digester.digest(tis, metadata, context);
