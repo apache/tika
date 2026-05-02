@@ -104,7 +104,8 @@ public class OleObjectRegressionTest extends TikaTest {
             assertTrue(m != null, "expected " + n + " to be present; items=" + contentTypes);
             String ct = m.get(Metadata.CONTENT_TYPE);
             assertTrue(ct != null
-                            && !ct.toLowerCase().contains("openxmlformats-officedocument.oleobject"),
+                            && !ct.toLowerCase(java.util.Locale.ROOT)
+                                    .contains("openxmlformats-officedocument.oleobject"),
                     "expected " + n + " to be detected as its inner POIFS type, not "
                             + "as the dead-end oleobject mime; ct=" + ct);
             assertNull(m.get("X-TIKA:EXCEPTION:embedded_exception"),
