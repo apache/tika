@@ -69,6 +69,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String STRIKE = "strike";
     private final static String NUM_PR = "numPr";
     private final static String BR = "br";
+    private final static String NO_BREAK_HYPHEN = "noBreakHyphen";
+    private final static String SOFT_HYPHEN = "softHyphen";
     private final static String HYPERLINK = "hyperlink";
     private final static String HLINK_CLICK = "hlinkClick"; //pptx hlink
     private final static String TBL = "tbl";
@@ -305,6 +307,12 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         } else if (BR.equals(localName)) {
             runBuffer.append(NEWLINE);
+        } else if (NO_BREAK_HYPHEN.equals(localName)) {
+            // <w:noBreakHyphen/> — emit U+2011 NON-BREAKING HYPHEN
+            runBuffer.append('\u2011');
+        } else if (SOFT_HYPHEN.equals(localName)) {
+            // <w:softHyphen/> — emit U+00AD SOFT HYPHEN (invisible hyphenation hint)
+            runBuffer.append('\u00AD');
         } else if (BOOKMARK_START.equals(localName)) {
             String name = atts.getValue(W_NS, "name");
             String id = atts.getValue(W_NS, "id");
