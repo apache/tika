@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.67.0</google.cloud.version>
-    <aws2.version>2.43.2</aws2.version>
+    <aws2.version>2.44.0</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -414,14 +414,14 @@
     <metadata.extractor.version>2.20.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <micronaut.version>3.10.6</micronaut.version>
-    <mime4j.version>0.8.13</mime4j.version>
+    <mime4j.version>0.8.14</mime4j.version>
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.12.Final</netty.version>
     <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.8</opennlp.version>
+    <opennlp.version>2.5.9</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
@@ -461,7 +461,7 @@
     <woodstox.core.version>7.1.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
-    <zstd.version>1.5.7-7</zstd.version>
+    <zstd.version>1.5.7-8</zstd.version>
     <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
@@ -834,7 +834,7 @@
       <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.14.1</version>
+        <version>2.14.2</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -1218,7 +1218,7 @@
       <dependency>
         <groupId>io.swagger.core.v3</groupId>
         <artifactId>swagger-annotations</artifactId>
-        <version>2.2.48</version>
+        <version>2.2.49</version>
       </dependency>
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
