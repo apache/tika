@@ -51,7 +51,6 @@
     <connection>scm:git:https://github.com/apache/tika.git</connection>
     <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>
-    <tag>4.0.0-alpha-1-rc1</tag>
   </scm>
 
   <distributionManagement>

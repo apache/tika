@@ -134,9 +134,9 @@
                     <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                       <mainClass>org.apache.tika.ml.chardetect.tools.TrainNaiveBayesBigram</mainClass>
                     </transformer>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                   </transformers>
                   <filters>
                     <filter>
@@ -158,6 +158,6 @@
   </profiles>
 
   <scm>
-    <tag>4.0.0-alpha-1-rc1</tag>
+    <tag>3.0.0-rc1</tag>
   </scm>
 </project>

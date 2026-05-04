@@ -15,7 +15,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <artifactId>tika-server</artifactId>
     <groupId>org.apache.tika</groupId>
@@ -250,7 +251,7 @@
                 </restFramework>
               </restModel>
               <output>
-                <html />
+                <html/>
               </output>
               <!-- Free Miredot license key, valid until Jan 31st(?), 2025
               https://issues.apache.org/jira/browse/TIKA-2253
@@ -267,6 +268,6 @@
   </profiles>
 
   <scm>
-    <tag>4.0.0-alpha-1-rc1</tag>
+    <tag>3.0.0-rc1</tag>
   </scm>
 </project>

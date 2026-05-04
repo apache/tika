@@ -19,14 +19,15 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>37</version>
-    <relativePath />
+    <relativePath/>
   </parent>
 
   <groupId>org.apache.tika</groupId>
@@ -139,7 +140,7 @@
       <organization>NASA Jet Propulsion Laboratory</organization>
       <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
       <timezone>-8</timezone>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -149,7 +150,7 @@
       <id>mikemccand</id>
       <email>mikemccand@apache.org</email>
       <organization>IBM</organization>
-      <properties />
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
@@ -281,14 +282,14 @@
   </contributors>
 
   <properties>
-    <revision>4.0.0-alpha-1</revision>
+    <revision>4.0.0-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-05-04T22:59:23Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-02-01T00:00:00Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
@@ -466,12 +467,12 @@
     <maven.exec.version>3.6.3</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
-    <addmod />
+    <addmod/>
     <!-- This is a default value to avoid problems when running single tests
           see also https://stackoverflow.com/a/28695766/535646
           https://maven.apache.org/surefire/maven-surefire-plugin/faq.html#late-property-evaluation
     -->
-    <surefireArgLine />
+    <surefireArgLine/>
   </properties>
 
   <dependencyManagement>
@@ -1522,7 +1523,7 @@
             <id>enforce-maven</id>
             <configuration>
               <rules>
-                <dependencyConvergence />
+                <dependencyConvergence/>
                 <requireMavenVersion>
                   <version>3.5</version>
                 </requireMavenVersion>
@@ -1606,7 +1607,7 @@
               <spaces>true</spaces>
               <spacesPerTab>4</spacesPerTab>
             </indent>
-            <removeUnusedImports />
+            <removeUnusedImports/>
             <importOrder>
               <order>\#,java|javax,,org.apache.tika</order>
             </importOrder>
@@ -1772,7 +1773,7 @@
 
   </profiles>
   <scm>
-    <tag>4.0.0-alpha-1-rc1</tag>
+    <tag>3.0.0-rc1</tag>
     <connection>scm:git:https://github.com/apache/tika.git</connection>
     <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>
