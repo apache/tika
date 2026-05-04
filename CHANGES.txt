@@ -1,8 +1,8 @@
-Release 4.0.0-BETA1 - ???
+Release 4.0.0-alpha-1 - 5/4/2026
 
   BREAKING CHANGES
 
-   * Moved towards default json based configuration (TIKA-4544 and many others).
+   * Move from xml to json based configuration (TIKA-4544 and many others).
 
    * tika-pipes implementation modules have been reorganized by
      resource (tika-pipes-solr) vs task (tika-pipes-fetcher-solr)
@@ -39,9 +39,14 @@ Release 4.0.0-BETA1 - ???
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393)
 
-Release 3.3.0 - ???
+Release 3.3.0 - 3/18/2026
 
-  * Various fixes based on regression testing (TIKA-4563).
+  * Switch to poi-ooxml-full (TIKA-4563).
+
+  * Users need to add "allowAbsolutePaths=true" for the FileSystemFetcher to fetch
+    an absolute path (TIKA-4649).
+
+  * Add a markdown option for content handlers (TIKA-4563).
 
   * Improve zip parsing (TIKA-4650).
 
@@ -57,13 +62,14 @@ Release 3.3.0 - ???
 
   * Improve extraction of Javascript from PDFs (TIKA-4465).
 
-Release 3.2.3 - ???
+Release 3.2.3 - 9/11/2025
 
   * Allow backwards compatibility with versions of commons-compress before 1.28.0 (TIKA-4469).
 
   * Fix XFA parsing within PDFs when woodstox is on the classpath as in tika-server (TIKA-4482).
 
   * Dependency updates.
+
 
 Release 3.2.2 - 8/6/2025
 
