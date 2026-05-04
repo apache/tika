@@ -108,12 +108,12 @@
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-validation</artifactId>
-                <version>3.10.6</version>
+                <version>${micronaut.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.micronaut</groupId>
                 <artifactId>micronaut-http</artifactId>
-                <version>3.10.6</version>
+                <version>${micronaut.version}</version>
             </dependency>
 
             <!-- Lombok -->
