@@ -281,14 +281,14 @@
   </contributors>
 
   <properties>
-    <revision>4.0.0-alpha-1</revision>
+    <revision>4.0.0-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-05-04T23:21:04Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-05-04T23:37:57Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
@@ -1772,7 +1772,7 @@
 
   </profiles>
   <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
-    <tag>4.0.0-alpha-1-rc1</tag>
+    <tag>3.0.0-rc1</tag>
     <connection>scm:git:https://github.com/apache/tika.git</connection>
     <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>
