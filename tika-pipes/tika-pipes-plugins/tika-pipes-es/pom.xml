@@ -98,7 +98,7 @@
               <Plugin-Class>org.apache.tika.pipes.plugin.es.ESPipesPlugin</Plugin-Class>
               <Plugin-Provider>ES Emitter</Plugin-Provider>
               <Plugin-Description>ES emitter (plain HTTP, no ES client)</Plugin-Description>
-              <Plugin-Dependencies></Plugin-Dependencies>
+              <Plugin-Dependencies />
             </manifestEntries>
           </archive>
         </configuration>
@@ -134,6 +134,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-rc1</tag>
+    <tag>4.0.0-alpha-1-rc1</tag>
   </scm>
 </project>
