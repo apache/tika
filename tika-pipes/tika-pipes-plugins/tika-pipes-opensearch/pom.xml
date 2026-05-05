@@ -99,7 +99,7 @@
               <Plugin-Provider>OpenSearch Emitter</Plugin-Provider>
               <Plugin-Description>OpenSearch emitter</Plugin-Description>
               <!--              <Plugin-Requires>1.0.0</Plugin-Requires> -->
-              <Plugin-Dependencies></Plugin-Dependencies>
+              <Plugin-Dependencies />
             </manifestEntries>
           </archive>
         </configuration>
