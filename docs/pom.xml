@@ -64,7 +64,85 @@ under the License.
                     </filesets>
                 </configuration>
             </plugin>
-            <!-- Maven Assembly plugin to create tar.gz -->
+            <!-- Stamp the current git commit and build date onto a
+                 sibling copy of antora-playbook.yml so the docs home
+                 page shows which commit produced the site. The copy
+                 lives next to the original so Antora's relative-path
+                 resolution (e.g. ./supplemental-ui) still works. The
+                 generated file is gitignored. -->
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>stamp-antora-playbook</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <exec executable="git" outputproperty="git.commit.short" failonerror="true">
+                                    <arg value="rev-parse"/>
+                                    <arg value="--short"/>
+                                    <arg value="HEAD"/>
+                                </exec>
+                                <tstamp>
+                                    <format property="build.date" pattern="yyyy-MM-dd"/>
+                                </tstamp>
+                                <copy file="${project.basedir}/antora-playbook.yml"
+                                      tofile="${project.basedir}/antora-playbook-stamped.yml"
+                                      overwrite="true"/>
+                                <replaceregexp file="${project.basedir}/antora-playbook-stamped.yml"
+                                               match="(tika-stable-version:.*)"
+                                               replace="\1${line.separator}    git-commit: '${git.commit.short} (${build.date})'"
+                                               byline="true"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Antora plugin for building the documentation site.
+                 Bound to prepare-package so target/site/ exists before
+                 the assembly runs.
+
+                 nodeInstallDirectory is moved out of target/ so 'mvn
+                 clean' does not nuke the downloaded Node.js. First
+                 build per machine downloads ~100MB once; subsequent
+                 builds reuse it. The plugin's nodeExecutable param
+                 cannot reuse a system Node on distros where npm and
+                 node packages aren't co-located (Debian/Ubuntu), so
+                 caching the plugin-managed install is the practical
+                 alternative. -->
+            <plugin>
+                <groupId>org.antora</groupId>
+                <artifactId>antora-maven-plugin</artifactId>
+                <version>${antora.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <nodeInstallDirectory>${user.home}/.cache/tika-antora</nodeInstallDirectory>
+                    <playbook>antora-playbook-stamped.yml</playbook>
+                    <packages>
+                        <package>@antora/lunr-extension@1.0.0-alpha.8</package>
+                    </packages>
+                    <options>
+                        <!-- Use 'fatal' for development to ignore broken links, 'error' for CI -->
+                        <option>--log-failure-level=fatal</option>
+                    </options>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>build-antora-site</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>antora</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Maven Assembly plugin to package the built site into a
+                 tar.gz for release distribution. Runs after Antora. -->
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
@@ -82,24 +160,6 @@ under the License.
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <!-- Antora plugin for building the documentation site -->
-            <plugin>
-                <groupId>org.antora</groupId>
-                <artifactId>antora-maven-plugin</artifactId>
-                <version>${antora.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <playbook>antora-playbook.yml</playbook>
-                    <packages>
-                        <package>@antora/lunr-extension@1.0.0-alpha.8</package>
-                    </packages>
-                    <options>
-                        <!-- Use 'fatal' for development to ignore broken links, 'error' for CI -->
-                        <option>--log-failure-level=fatal</option>
-                    </options>
-                </configuration>
             </plugin>
         </plugins>
     </build>

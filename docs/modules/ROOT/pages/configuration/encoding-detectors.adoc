@@ -18,52 +18,44 @@
 = Configuring Encoding Detectors
 
 Tika uses a chain of _encoding detectors_ to determine the character encoding
-of plain text and HTML content.  `DefaultEncodingDetector` loads detectors
-via the Java service-provider interface (SPI) and runs them in registration
-order.  See xref:../advanced/charset-detection-design.adoc[Charset Detection Pipeline]
-for design details.
+of plain text and HTML content.  `DefaultEncodingDetector` loads detectors via
+the Java service-provider interface (SPI) and runs them in registration order;
+the first non-null result wins.
+
+The default chain is `html-encoding-detector`, `universal-encoding-detector`,
+and `icu4j-encoding-detector`.
 
 == Default Detection Chain
 
-With the stock dependencies on the classpath:
+With the stock dependencies on the classpath (the modules
+`tika-encoding-detector-html`, `tika-encoding-detector-universal`, and
+`tika-encoding-detector-icu4j`):
 
-[cols="1,2,2"]
+[cols="1,2,3"]
 |===
 |Step |Detector |Returns non-null when…
 
 |1
-|`bom-detector`
-|A UTF-8, UTF-16 LE/BE, or UTF-32 LE/BE byte-order mark is present.
-Emits DECLARATIVE.
+|`html-encoding-detector`
+|An HTML `<meta charset="…">` or `<meta http-equiv="Content-Type">` tag is
+found.  Fast lenient regex matcher with a curated subset of WHATWG label
+aliases.
 
 |2
-|`metadata-charset-detector`
-|A `charset=` parameter is present in the `Content-Type` metadata field
-(populated from an HTTP response header or similar).  Emits DECLARATIVE.
+|`universal-encoding-detector`
+|A state-machine structural prober (juniversalchardet fork) recognises the
+byte pattern as a known encoding (UTF-8, GB18030, Big5, EUC-JP, several
+ISO-8859 variants, etc.).
 
 |3
-|`mojibuster-encoding-detector`
-|A structural UTF-32 check, structural UTF-16 specialist, UTF-8 grammar
-gate, and 33-class byte-bigram Naive Bayes classifier.  STRUCTURAL for
-structural hits; STATISTICAL for NB predictions.
-
-|4
-|`html-encoding-detector`
-|An HTML `<meta charset="…">` or `<meta http-equiv="Content-Type">` tag
-is found (fast lenient regex matcher, curated WHATWG label aliases).
-Emits DECLARATIVE.
-
-|5
-|`junk-filter-encoding-detector`
-|`MetaEncodingDetector` — strips HTML/XML markup, decodes the probe under
-each candidate charset, and picks the cleanest decoding via a script-aware
-text-quality model.  Honours a declaration when its decoding is
-byte-identical to at least one other candidate's.  Always runs last.
+|`icu4j-encoding-detector`
+|ICU4J's `CharsetDetector` returns a match.  Catches additional single-byte
+encodings (Windows code pages, IBM/EBCDIC variants, etc.).
 |===
 
-NOTE: `junk-filter-encoding-detector` is supplied by `tika-ml-junkdetect`
-and SPI-loads when the module jar is on the classpath.  Omit it for plain
-first-match-wins — see <<opting-out-of-arbitration>>.
+The chain is permissive — first-match-wins.  A declared charset
+(e.g. from a `<meta charset>` tag) wins over later structural or statistical
+detectors.
 
 == Available Detectors
 
@@ -74,54 +66,57 @@ referenced by their SPI name in JSON configuration.
 |===
 |Name |Module |Description
 
-|`bom-detector`
-|`tika-core`
-|Reads the first 4 bytes for BOM signatures.  In the default chain.
-
-|`metadata-charset-detector`
-|`tika-core`
-|Reads declarative hints (`Content-Type` charset, `Content-Encoding`) from
-the `Metadata` object.  Applies WHATWG label normalization
-(ISO-8859-1 and US-ASCII → windows-1252).  In the default chain.
-
-|`mojibuster-encoding-detector`
-|`tika-encoding-detector-mojibuster`
-|Byte-bigram Naive Bayes classifier plus structural detectors for UTF-32
-and UTF-16 and a UTF-8 grammar gate.  33 classes including CJK
-multi-byte, EBCDIC variants, DOS code pages, Cyrillic, Windows single-byte,
-ISO-8859-3/16, Mac, and UTF-8.  In the default chain.  See
-xref:../advanced/charset-detection-design.adoc[the design doc].
-
 |`html-encoding-detector`
 |`tika-encoding-detector-html`
 |Fast lenient regex matcher for `<meta charset>` / `http-equiv` tags, with a
-curated subset of WHATWG label aliases.  In the default chain.
+curated subset of WHATWG label aliases.  Auto-registered (in default chain).
+
+|`universal-encoding-detector`
+|`tika-encoding-detector-universal`
+|State-machine structural prober (juniversalchardet fork).  Auto-registered
+(in default chain).
+
+|`icu4j-encoding-detector`
+|`tika-encoding-detector-icu4j`
+|Wraps ICU4J's `CharsetDetector`.  Auto-registered (in default chain).
 
 |`standard-html-encoding-detector`
 |`tika-encoding-detector-html`
 |Spec-strict WHATWG prescan algorithm.  Not in the default chain — opt in
 explicitly if you need strict WHATWG tokenisation (e.g. ignoring charset
-declarations inside comments or other contexts the lenient regex may match).
+declarations inside HTML comments or other contexts the lenient regex may
+match).
+
+|`mojibuster-encoding-detector`
+|`tika-encoding-detector-mojibuster`
+|Byte-bigram Naive Bayes classifier plus structural detectors for UTF-32
+and UTF-16 and a UTF-8 grammar gate.  Not in the default chain — opt in
+explicitly.
 
 |`junk-filter-encoding-detector`
 |`tika-ml-junkdetect`
-|Text-quality arbitrator (`MetaEncodingDetector`).  In the default chain
-when the module jar is on the classpath; always runs last.
+|Text-quality arbitrator (`MetaEncodingDetector`) that picks among other
+detectors' candidates by decode quality.  Not in the default chain — opt in
+explicitly.
 
-|`icu4j-encoding-detector`
-|`tika-encoding-detector-icu4j`
-|Wraps ICU4J `CharsetDetector`.  Legacy — the NB pipeline supersedes it
-for most cases.  Not auto-registered.
+|`bom-detector`
+|`tika-core`
+|Reads the first 4 bytes for BOM signatures.  Helper component, used
+internally by `AutoDetectReader`.  Not normally added to the SPI chain.
 
-|`universal-encoding-detector`
-|`tika-encoding-detector-universal`
-|State-machine structural prober (juniversalchardet fork).  Not
-auto-registered; opt in if you specifically need it.
+|`metadata-charset-detector`
+|`tika-core`
+|Reads declarative hints (`Content-Type` charset, `Content-Encoding`) from
+the `Metadata` object.  Helper component, used by parsers that consult
+`Content-Type` directly.  Not normally added to the SPI chain.
 |===
 
 == Configuration Examples
 
 === Exclude a detector from the default chain
+
+Use `default-encoding-detector` with an `exclude` list to drop one or more
+auto-registered detectors:
 
 [source,json]
 ----
@@ -129,73 +124,83 @@ auto-registered; opt in if you specifically need it.
   "encoding-detectors": [
     {
       "default-encoding-detector": {
-        "exclude": ["bom-detector"]
+        "exclude": ["icu4j-encoding-detector"]
       }
     }
   ]
 }
 ----
 
-[[opting-out-of-arbitration]]
-=== Strict first-match-wins (no JunkFilter arbitration)
+=== Specify the chain explicitly
 
-Omit JunkFilter to get plain first-match-wins (each base detector's top
-result wins in registration order):
+To replace the SPI-discovered chain with an explicit ordered list:
 
 [source,json]
 ----
 {
   "encoding-detectors": [
-    {"bom-detector": {}},
-    {"metadata-charset-detector": {}},
     {"html-encoding-detector": {}},
-    {"mojibuster-encoding-detector": {}}
+    {"universal-encoding-detector": {}}
   ]
 }
 ----
 
-Trade-off: lying declarations propagate unfiltered, and Mojibuster's
-statistical guess wins ties without any text-quality cross-check.
-See
-xref:../advanced/charset-detection-design.adoc#opting-out-of-arbitration[the design doc].
-
 === Configure the HTML detector's read limit
 
-`html-encoding-detector` reads up to 65 536 bytes by default when
-scanning for the `<meta charset>` tag.  Raise it if your documents embed
-large `<script>` blocks before the meta tag (TIKA-2485):
+`html-encoding-detector` reads up to 65 536 bytes by default when scanning
+for the `<meta charset>` tag.  Raise it if your documents embed large
+`<script>` blocks before the meta tag (TIKA-2485):
 
 [source,json]
 ----
 {
   "encoding-detectors": [
-    {"bom-detector": {}},
-    {"metadata-charset-detector": {}},
     {
       "html-encoding-detector": {
         "markLimit": 131072
       }
     },
+    {"universal-encoding-detector": {}},
+    {"icu4j-encoding-detector": {}}
+  ]
+}
+----
+
+=== Use the spec-strict WHATWG HTML detector
+
+If your input HTML has charset declarations inside comments (or other
+contexts where the lenient regex would false-match), opt in to the
+spec-strict prescan:
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {"standard-html-encoding-detector": {}},
+    {"universal-encoding-detector": {}},
+    {"icu4j-encoding-detector": {}}
+  ]
+}
+----
+
+=== Add the Mojibuster + JunkFilter chain (opt-in)
+
+The byte-bigram NB classifier (`mojibuster-encoding-detector`) and the
+text-quality arbitrator (`junk-filter-encoding-detector`) are available as
+opt-in components.  They require the `tika-encoding-detector-mojibuster`
+and `tika-ml-junkdetect` modules on the classpath:
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    {"html-encoding-detector": {}},
     {"mojibuster-encoding-detector": {}},
     {"junk-filter-encoding-detector": {}}
   ]
 }
 ----
 
-=== Legacy chain (ICU4J + juniversalchardet)
-
-Not recommended — the NB pipeline is strictly better on accuracy and
-latency — but available for regression testing or comparison:
-
-[source,json]
-----
-{
-  "encoding-detectors": [
-    {"bom-detector": {}},
-    {"metadata-charset-detector": {}},
-    {"html-encoding-detector": {}},
-    {"icu4j-encoding-detector": {}},
-    {"universal-encoding-detector": {}}
-  ]
-}
-----
+`junk-filter-encoding-detector` is a `MetaEncodingDetector` — it collects
+candidates from the other detectors and picks the cleanest decoding via a
+script-aware text-quality model.  It must run last.

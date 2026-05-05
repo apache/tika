@@ -27,6 +27,8 @@ Before starting the release process, ensure you have:
 * A valid GPG key published to a public keyserver
 * Maven credentials configured in `~/.m2/settings.xml`
 * Access to Apache's Nexus repository manager
+* SVN client (`svn`) — release candidates upload to `dist.apache.org` via SVN, not scp
+* Internet access on first build — the Antora docs build downloads Node.js into `~/.cache/tika-antora/` on first run (~100 MB, one-time per machine; reused across clean builds)
 
 == Pre-Release Checks
 
@@ -125,8 +127,15 @@ Execute the Maven release perform goal:
 
 [source,bash]
 ----
-mvn release:perform
+mvn release:perform -Darguments="-DskipITs"
 ----
+
+`-DskipITs` skips integration tests during the inner build.  Tests already
+ran in `release:prepare`'s `verify` phase; re-running them during perform is
+belt-and-suspenders, and some pipes/elasticsearch chaos-monkey tests are
+timing-sensitive enough to flake on a tagged build.
+
+If `release:perform` fails partway through, see <<troubleshooting>>.
 
 Ensure you have valid Maven credentials in `~/.m2/settings.xml`:
 
@@ -152,24 +161,40 @@ Ensure you have valid Maven credentials in `~/.m2/settings.xml`:
 
 === Step 10: Upload Distribution Artifacts
 
-Upload artifacts to `dist.apache.org`:
+The release-plugin's antrun task assembles a dist directory at
+`target/checkout/target/X.Y.Z/` containing the source zip, app jar, server
+tarballs, and parser-package jars (each with `.asc` and `.sha512`).
+
+WARNING: At the end of `release:perform` you will see an echo telling you
+to `scp -r ... people.apache.org:public_html/tika/`.  *Ignore that.*  It
+is stale — the current ASF release distribution channel is the SVN repo
+under `dist.apache.org`, not `people.apache.org`.
+
+Check out the dist dev SVN repo and copy the prepared dist directory in:
 
 [source,bash]
 ----
 svn co https://dist.apache.org/repos/dist/dev/tika tika-dist-dev
+cp -r target/checkout/target/X.Y.Z tika-dist-dev/
 cd tika-dist-dev
+svn add X.Y.Z
+svn commit -m "Stage Apache Tika X.Y.Z RC<n>"
 ----
 
-Upload the following files with their signatures (.asc) and checksums (.sha512):
+Verify the directory contains all expected artifacts (each with `.asc` and
+`.sha512`):
 
 * `tika-X.Y.Z-src.zip`
 * `tika-app-X.Y.Z.jar`
-* `tika-server-standard-X.Y.Z.jar`
+* `tika-server-standard-X.Y.Z.jar` (and `-bin.tgz`, `-bin.zip`)
+* `tika-parser-scientific-package-X.Y.Z.jar`
+* `tika-parser-sqlite3-package-X.Y.Z.jar`
+* `tika-parser-nlp-package-X.Y.Z.jar`
 
 Also:
 
-* Rename `CHANGES.txt` to `CHANGES-X.Y.Z.txt`
-* Ensure the `KEYS` file contains all contributor signatures
+* `CHANGES.txt` (already in the dist directory; rename to `CHANGES-X.Y.Z.txt` if your local copy hasn't been)
+* Ensure the `KEYS` file at the parent directory contains your GPG key
 
 === Step 11: Call the Vote
 
@@ -213,6 +238,92 @@ svn mv https://dist.apache.org/repos/dist/dev/tika/X.Y.Z \
        https://dist.apache.org/repos/dist/release/tika/X.Y.Z \
        -m "Release Apache Tika X.Y.Z"
 ----
+
+[[troubleshooting]]
+== Troubleshooting `release:perform`
+
+The `release:perform` build can fail mid-way for reasons unrelated to the
+release itself.  This section captures the recoveries learned during recent
+releases.  Once these get fixed in the build (tracked in the to-fix-before-
+beta punch list), this section can be slimmed down.
+
+=== `tika-docs` assembly fails: "archive cannot be empty"
+
+[source]
+----
+[ERROR] Failed to create assembly: Error creating assembly archive docs:
+        archive cannot be empty
+----
+
+Cause: the Antora plugin is not auto-bound to the `package` phase, so
+`target/site/` is empty when `maven-assembly-plugin` runs.
+
+Recovery (resume from `tika-docs`):
+
+[source,bash]
+----
+cd target/checkout
+mvn deploy -Papache-release -rf :tika-docs -DskipITs
+----
+
+If the antora binding (the recommended fix in the to-fix-before-beta punch
+list) hasn't yet landed, you may need to manually build the site first:
+
+[source,bash]
+----
+cd target/checkout/docs
+mvn antora:antora
+cd ..
+mvn deploy -Papache-release -rf :tika-docs -DskipITs
+----
+
+=== Antrun error from a child module: "Could not find file ... -src.zip"
+
+[source]
+----
+Could not find file .../docs/target/X.Y.Z/tika-X.Y.Z-src.zip
+to generate checksum for.
+----
+
+Cause: the root-pom antrun execution lacks `<inherited>false</inherited>`,
+so it fires from each child module on a resumed deploy with `$\{basedir}`
+pointing at the wrong directory.
+
+Recovery (run the antrun once at the root):
+
+[source,bash]
+----
+cd target/checkout
+mvn deploy --non-recursive -Papache-release -Dmaven.deploy.skip=true
+----
+
+`--non-recursive` runs only the root pom; `-Dmaven.deploy.skip=true`
+prevents re-uploading the root pom artifact (already uploaded earlier).
+The antrun fires in the correct basedir and `target/X.Y.Z/` gets
+populated.
+
+=== Nexus staging repository: only one repo when I expected two
+
+If `release:perform` fails partway and you re-run it, you may see only one
+open staging repository on `repository.apache.org` even though both
+invocations uploaded artifacts.  This is normal: while the staging repo is
+*open*, redeploys overwrite earlier artifacts.  Confirm by checking the
+`Last Modified` timestamp on a representative artifact (e.g.
+`tika-core-X.Y.Z.jar`) — it should match the most recent run.
+
+When in doubt, drop the staging repo and run `release:perform` cleanly
+from scratch.  It costs ~1 hour but yields a guaranteed single-build set
+of artifacts.
+
+=== gRPC distribution zip is huge (~600+ MB)
+
+The `tika-grpc-X.Y.Z.zip` artifact bundles every pipes plugin with its full
+transitive closure (microsoft-graph, gcs, az-blob, s3, kafka, etc.) plus
+multi-platform native libs (rocksdbjni, netty natives).  Several hundred MB
+of that is duplication of dependencies already in the root `lib/`
+directory.  This is a known issue tracked for cleanup before beta — see
+the to-fix-before-4.0.0-beta punch list.  The release can ship as-is; the
+zip is correct, just bloated.
 
 == Post-Release
 

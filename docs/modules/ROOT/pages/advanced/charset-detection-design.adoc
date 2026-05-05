@@ -510,4 +510,4 @@ with feature hashing.  The move to NB was driven by:
 == See also
 
 * Configuration: xref:../configuration/encoding-detectors.adoc[Configuring Encoding Detectors]
-* Language detection: xref:language-detection.adoc[Language Detection]
+* Language detection: xref:advanced/language-detection.adoc[Language Detection]

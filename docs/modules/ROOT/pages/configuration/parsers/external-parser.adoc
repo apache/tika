@@ -37,7 +37,7 @@ independent handler (any Tika parser):
 
 * **`stdoutHandler`** -- processes stdout
 * **`stderrHandler`** -- processes stderr
-* **`outputFileHandler`** -- processes the output file (when `${OUTPUT_FILE}` is used)
+* **`outputFileHandler`** -- processes the output file (when `$\{OUTPUT_FILE}` is used)
 
 Handlers extract metadata, content, or both. `regex-capture-parser` is the
 most common choice for extracting metadata via regex patterns.
@@ -46,8 +46,8 @@ most common choice for extracting metadata via regex patterns.
 
 The `contentSource` field controls which stream provides the XHTML text content:
 
-* `"stdout"` -- default when no `${OUTPUT_FILE}` in the command
-* `"outputFile"` -- default when `${OUTPUT_FILE}` is in the command
+* `"stdout"` -- default when no `$\{OUTPUT_FILE}` in the command
+* `"outputFile"` -- default when `$\{OUTPUT_FILE}` is in the command
 * `"stderr"` -- use stderr as the content source
 * `"none"` -- metadata-only mode, no text content extracted
 
@@ -63,7 +63,7 @@ configured, the raw bytes are written as text.
 
 |`commandLine`
 |`List<String>`
-|The command and arguments to run. Use `${INPUT_FILE}` and `${OUTPUT_FILE}` tokens for file paths.
+|The command and arguments to run. Use `$\{INPUT_FILE}` and `$\{OUTPUT_FILE}` tokens for file paths.
 
 |`checkCommandLine`
 |`List<String>`
