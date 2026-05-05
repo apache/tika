@@ -58,11 +58,11 @@ Source data lives in one directory per language (ISO 639 code), each containing
 up to two files:
 
 `sentences_wikipedia.txt`::
-  Line-numbered Wikipedia sentences: `{lineNum}{TAB}{text}`.
+  Line-numbered Wikipedia sentences: `\{lineNum}\{TAB}\{text}`.
   One sentence per line.
 
 `sentences_madlad.txt`::
-  Line-numbered MADLAD-400 documents: `{lineNum}{TAB}{text}`.
+  Line-numbered MADLAD-400 documents: `\{lineNum}\{TAB}\{text}`.
   Documents contain literal two-character `\n` escape sequences as
   sub-sentence separators.  The tool splits on these before processing.
 
@@ -108,16 +108,16 @@ per script:
 |===
 | File | Split | Purpose
 
-| `{script}.train.gz`
+| `\{script}.train.gz`
 | 80%
 | Bigram count accumulation in `TrainJunkModel`.
 
-| `{script}.dev.gz`
+| `\{script}.dev.gz`
 | 10%
 | Calibration (mu/sigma estimation) in `TrainJunkModel`.
   Also used for iterative evaluation during development.
 
-| `{script}.test.gz`
+| `\{script}.test.gz`
 | 10%
 | **Held out completely.**  Use only for final reported evaluation numbers.
   Never use to make model or threshold decisions.
@@ -146,7 +146,7 @@ Key options:
 
 | `--output-dir`
 | `~/datasets/madlad/junkdetect`
-| Where to write `{script}.train.gz`, `.dev.gz`, `.test.gz`, and `manifest.tsv`.
+| Where to write `\{script}.train.gz`, `.dev.gz`, `.test.gz`, and `manifest.tsv`.
 
 | `--total-budget-bytes`
 | `50000000`
@@ -178,7 +178,7 @@ then calibrates z-score statistics from the `.dev.gz` file.
 
 === Bigram table training
 
-[source]
+[source,subs="-attributes"]
 ----
 for each sentence in {script}.train.gz:
     utf8 = sentence.getBytes(UTF-8)
@@ -197,7 +197,7 @@ a small but nonzero probability for novel byte sequences.
 
 === Calibration
 
-For each sentence in `{script}.dev.gz`:
+For each sentence in `\{script}.dev.gz`:
 
 [source]
 ----

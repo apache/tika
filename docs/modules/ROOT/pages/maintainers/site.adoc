@@ -28,30 +28,26 @@ The site supports multiple versions through Git branches and includes client-sid
 
 * Maven 3.9+
 * Git
+* Internet access on first build — the Antora plugin downloads Node.js into `~/.cache/tika-antora/` (~100 MB, one-time per machine; reused across clean builds and across worktrees)
 
 == Building the Site Locally
 
-To build the documentation locally:
+The `docs` module is only included in the reactor under the `apache-release` profile. Build the site from the repo root:
 
 [source,bash]
 ----
-cd docs
-mvn antora:antora
+./mvnw package -Papache-release -pl :tika-docs -DskipTests
 ----
 
-The generated site will be at `docs/target/site/`.
+The generated site will be at `docs/target/site/`. The current git commit and date are stamped automatically onto the home page (a generated copy of the playbook lives at `docs/antora-playbook-stamped.yml` — gitignored).
 
-To stamp the build with the current commit hash (shown on the home page),
-add `git-commit` to the attributes in `antora-playbook.yml`:
+To skip the stamping or override the playbook:
 
-[source,yaml]
+[source,bash]
 ----
-asciidoc:
-  attributes:
-    git-commit: 'abc1234'
+# build directly with the unstamped playbook
+cd docs && mvn antora:antora -Dplaybook=antora-playbook.yml
 ----
-
-Or pass it on the command line when you have a playbook that supports CLI attributes.
 
 === Previewing the Site
 
@@ -113,12 +109,13 @@ The playbook (`antora-playbook.yml`) is configured to build all `docs/*` branche
 
 === Publishing to the Site
 
-Use `build-docs.sh` with the `--publish` flag to build and copy to the site SVN checkout:
+Build the docs with Maven, then run `publish-docs.sh` to copy the output to a tika-site SVN checkout (with URL flattening so `/docs/tika/X.Y.Z/...` becomes `/docs/X.Y.Z/...`):
 
 [source,bash]
 ----
+./mvnw package -Papache-release -pl :tika-docs -DskipTests
 cd docs
-./build-docs.sh --publish /path/to/tika-site/publish
+./publish-docs.sh /path/to/tika-site/publish
 
 # Then in the SVN checkout:
 cd /path/to/tika-site
@@ -126,8 +123,9 @@ svn add publish/docs publish/_ --force
 svn commit -m "Publish 4.0.0-SNAPSHOT docs"
 ----
 
-This builds the Antora site, stamps the git commit on the home page, and copies
-the output to the site with the correct directory layout:
+The Maven `package` step builds the Antora site (stamping the current git
+commit and date on the home page); `publish-docs.sh` copies the output to
+the site checkout with the correct directory layout:
 
 * `publish/docs/4.0.0-SNAPSHOT/` -- the documentation pages
 * `publish/_/` -- CSS, JS, fonts (shared across versions)
@@ -151,8 +149,9 @@ git commit -am "Set docs version to 4.0.0"
 git push origin docs/4.0.0
 
 # 4. Build and publish
+./mvnw package -Papache-release -pl :tika-docs -DskipTests
 cd docs
-./build-docs.sh --publish /path/to/tika-site/publish
+./publish-docs.sh /path/to/tika-site/publish
 
 # 5. Commit to SVN
 cd /path/to/tika-site
@@ -177,8 +176,9 @@ git commit -am "Fix PDF parser example"
 git push origin docs/4.0.0
 
 # 4. Rebuild and republish
+./mvnw package -Papache-release -pl :tika-docs -DskipTests
 cd docs
-./build-docs.sh --publish /path/to/tika-site/publish
+./publish-docs.sh /path/to/tika-site/publish
 cd /path/to/tika-site
 svn commit -m "Update 4.0.0 docs"
 ----
