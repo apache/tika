@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.67.0</google.cloud.version>
+    <google.cloud.version>2.68.0</google.cloud.version>
     <azure.version>1.3.6</azure.version>
     <aws.version>1.12.797</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -383,7 +383,7 @@
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.12.Final</netty.version>
+    <netty.version>4.2.13.Final</netty.version>
     <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
