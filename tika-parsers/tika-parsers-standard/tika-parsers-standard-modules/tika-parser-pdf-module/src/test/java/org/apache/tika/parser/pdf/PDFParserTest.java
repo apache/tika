@@ -1509,6 +1509,30 @@ public class PDFParserTest extends TikaTest {
         assertArrayEquals(expectedSubjectVals, m.getValues(TikaCoreProperties.SUBJECT));
     }
 
+    @Test
+    public void testMaxPages() throws Exception {
+        PDFParser parser = new PDFParser();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setMaxPages(3);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        // testJournalParser.pdf has 10 pages; limiting to 3 must yield less content
+        String truncated = getText("testJournalParser.pdf", parser, new Metadata(), context);
+        String full = getText("testJournalParser.pdf", parser);
+        assertTrue(full.length() > truncated.length(),
+                "Full parse should yield more content than a 3-page-limited parse");
+    }
+
+    @Test
+    public void testMaxPagesInvalidValue() {
+        PDFParserConfig config = new PDFParserConfig();
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxPages(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxPages(-2));
+        config.setMaxPages(-1);
+        config.setMaxPages(1);
+    }
+
     /**
     @Test
     public void testWriteLimit() throws Exception {

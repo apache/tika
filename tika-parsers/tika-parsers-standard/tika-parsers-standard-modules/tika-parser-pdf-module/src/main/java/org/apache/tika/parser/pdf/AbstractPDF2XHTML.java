@@ -1486,7 +1486,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     @Override
     protected void processPages(PDPageTree pages) throws IOException {
+        int maxPages = config.getMaxPages();
         for (PDPage page : pages) {
+            if (maxPages > 0 && getCurrentPageNo() > maxPages) {
+                break;
+            }
             if (getCurrentPageNo() >= getStartPage() && getCurrentPageNo() <= getEndPage()) {
                 processPage(page);
             }
