@@ -116,6 +116,7 @@
           </descriptors>
           <finalName>${project.artifactId}-${project.version}</finalName>
           <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
         </configuration>
         <executions>
           <execution>

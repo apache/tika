@@ -66,7 +66,7 @@
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>${lombok.version}</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <!-- Test dependencies -->
     <dependency>
