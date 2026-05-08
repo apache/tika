@@ -25,6 +25,7 @@
         "imageStrategy": "NONE",
         "maxIncrementalUpdates": 10,
         "maxMainMemoryBytes": 536870912,
+        "maxPages": -1,
         "ocr": {
           "dpi": 300,
           // Options: PNG, TIFF, JPEG

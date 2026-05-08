@@ -147,6 +147,8 @@ public class PDFParserConfig implements Serializable {
 
     int maxIncrementalUpdates = 10;
 
+    private int maxPages = -1;
+
     private boolean throwOnEncryptedPayload = false;
 
     /**
@@ -768,6 +770,28 @@ public class PDFParserConfig implements Serializable {
      */
     public void setMaxIncrementalUpdates(int maxIncrementalUpdates) {
         this.maxIncrementalUpdates = maxIncrementalUpdates;
+    }
+
+    /**
+     * @return maximum number of pages to process, or -1 for no limit
+     */
+    public int getMaxPages() {
+        return maxPages;
+    }
+
+    /**
+     * Set the maximum number of pages to process per document.
+     * Use -1 (the default) for no limit.
+     *
+     * @param maxPages must be -1 or &gt;= 1
+     * @throws IllegalArgumentException if the value is 0 or less than -1
+     */
+    public void setMaxPages(int maxPages) {
+        if (maxPages != -1 && maxPages < 1) {
+            throw new IllegalArgumentException(
+                    "maxPages must be -1 (no limit) or >= 1, got: " + maxPages);
+        }
+        this.maxPages = maxPages;
     }
 
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
