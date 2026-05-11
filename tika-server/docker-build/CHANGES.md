@@ -1,15 +1,34 @@
 # Changes
 
-As of 2.5.0.1, we started adding a digit for Docker versions.  Going forward, we'll include
-a four digit version, where the first three are the Tika version and the last one is the docker version.
-As of 2.5.0.2, we started tagging release commits in our github repo.
+Tag convention:
+* 2.5.0.1 through 4.0.0-alpha-1.0 used `<tika-version>.<docker-build-number>`
+  (e.g. `3.3.0.0`, `4.0.0-alpha-1.0`). Each rebuild bumped the last digit.
+* Starting with **4.0.0-alpha-1 (rebuild 1)**, we publish three tags per image:
+  - `<tika-version>` — rolling, moves on each rebuild
+  - `<tika-version>-<N>` — immutable, never reassigned (`N=1,2,3,...`)
+  - `latest` — rolling, newest stable only (prereleases never displace it)
 
-* 4.0.0-alpha-1.0 (9 May 2026)
-  * First 4.0.0-alpha-1 release (preview; not tagged `latest`)
+The legacy 3.x patch flow in the external `apache/tika-docker` repo still uses
+the `.N` convention until 4.0.0 GA.
+
+* 4.0.0-alpha-1 (11 May 2026, rebuild 1)
+  * Tag scheme changed to `<tika-version>` + `<tika-version>-<N>` + `latest`.
+  * Migrated build out of the external `apache/tika-docker` repo into
+    `tika-server/docker-build/` in `apache/tika`.
+  * Switched server packaging to the unpacked `tika-server-standard-bin.zip`
+    (`/opt/tika-server/`). Bundles the `tika-pipes-file-system` plugin from
+    the upstream bin.zip. Pipes-mode endpoints (`/pipes`, `/async`) with
+    other fetchers/emitters need plugins mounted into
+    `/opt/tika-server/plugins/`.
+  * Upgraded base to Ubuntu 26.04 (resolute) and JRE to OpenJDK 25.
   * Dropped `linux/arm/v7` from the published platforms. 32-bit ARM emulated
-    builds on Ubuntu 26.04 (resolute) hit a qemu chown-overflow in
-    `update-notifier-common`'s postinst, which is pulled in by
-    `ttf-mscorefonts-installer`. `linux/arm64/v8` covers modern ARM.
+    builds on resolute hit a qemu chown-overflow in `update-notifier-common`'s
+    postinst (pulled in by `ttf-mscorefonts-installer`). `linux/arm64/v8`
+    covers modern ARM.
+
+* 4.0.0-alpha-1.0 (9 May 2026) — frozen legacy tag
+  * First 4.0.0-alpha-1 release using the old `.N` convention. Retagged
+    afterward so `4.0.0-alpha-1` (no `.0`) points at the same digest.
 
 * 3.3.0.0 (23 Mar 2026)
   * First 3.3.0 release

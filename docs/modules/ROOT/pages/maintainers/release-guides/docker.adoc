@@ -78,27 +78,64 @@ dist/release hasn't propagated yet — wait a few minutes.
 The workflow is intentionally `workflow_dispatch`-only — it won't auto-fire on
 tag push. Trigger it manually after the vote, against the release tag.
 
+The workflow takes two inputs:
+
+`tag`::
+The Tika release tag, e.g. `4.0.0-alpha-1`. Must already exist as a git tag
+(created by `release:prepare`). The workflow checks out at this ref and uses
+it for both the `TIKA_VERSION` build-arg and the published Docker tag.
+
+`build_number`::
+The Docker build number for this Tika tag. *Use `1` for the initial publish.*
+Increment when re-publishing the same Tika version with Docker-only changes
+(CVE fixes in the base image, refreshed apt packages, etc.). Each rebuild
+publishes an immutable `<tag>-<N>` tag alongside the rolling `<tag>` tag.
+
 *Via the GitHub UI:*
 
 . Open https://github.com/apache/tika/actions
 . Select *Docker release - tika-server and tika-grpc* in the left sidebar
 . Click *Run workflow* (top-right)
-. Under *Use workflow from*, switch from the default branch to *Tags* and pick
-  the release tag (e.g. `4.0.0-alpha-1`)
+. Fill in `tag` (e.g. `4.0.0-alpha-1`) and `build_number` (e.g. `1`)
 . Click *Run workflow*
 
 *Via the `gh` CLI:*
 
 [source,bash]
 ----
-gh workflow run docker-release.yml --ref <TAG>
-# e.g.
-gh workflow run docker-release.yml --ref 4.0.0-alpha-1
+gh workflow run docker-release.yml \
+  -f tag=4.0.0-alpha-1 \
+  -f build_number=1
 ----
 
-The `--ref` argument selects the git ref to check out. The workflow extracts
-the tag name from `GITHUB_REF` (`refs/tags/<TAG>`) and uses it for both the
-`TIKA_VERSION` build-arg and the published Docker tag.
+=== Tag scheme
+
+Each workflow run publishes three tags per image, all pointing at the same
+manifest digest:
+
+[cols="1,3,1", options="header"]
+|===
+|Tag |Meaning |Moves on rebuild?
+
+|`apache/tika:<tag>`
+|Mutable rolling tag for this Tika version (e.g. `apache/tika:4.0.0-alpha-1`).
+|Yes — retagged to the new digest
+
+|`apache/tika:<tag>-<N>`
+|Immutable build pin (e.g. `apache/tika:4.0.0-alpha-1-1` for the first build).
+Pin by this if you need stability across rebuilds.
+|No — never reassigned
+
+|`apache/tika:latest`
+|Mutable rolling tag for the newest stable Tika release. Pushed only for
+non-prerelease tags (i.e., no `-alpha`, `-BETA`, `-RC`). Stays on 3.x until
+4.0.0 GA.
+|Yes — for stable releases only
+|===
+
+The `-full` variants (`<tag>-full`, `<tag>-<N>-full`, `latest-full`) follow
+the same scheme. `apache/tika-grpc` also publishes the three-tag pattern, but
+its `:latest` is pushed unconditionally (no 3.x incumbent to protect).
 
 === Step 3: Watch the run
 

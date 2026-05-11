@@ -38,7 +38,9 @@ while getopts ":h" opt; do
       echo "    docker-tool.sh test <TIKA_DOCKER_VERSION>     Tests images for <TIKA_DOCKER_VERSION>."
       echo "    docker-tool.sh test-uat <TIKA_DOCKER_VERSION> Runs the tika-server REST UAT against images for <TIKA_DOCKER_VERSION>."
       echo "                                                  Requires TIKA_MAIN env var or sibling tika-main checkout (../tika-main)."
-      echo "    docker-tool.sh publish <TIKA_DOCKER_VERSION> <TIKA_VERSION> Builds multi-arch images for <TIKA_DOCKER_VERSION> and pushes to Docker Hub."
+      echo "    docker-tool.sh publish <TIKA_VERSION> <BUILD_NUMBER>      Builds multi-arch images and pushes three tags per image:"
+      echo "                                                  <TIKA_VERSION> (mutable), <TIKA_VERSION>-<BUILD_NUMBER> (immutable),"
+      echo "                                                  and latest (for non-prerelease tags only)."
       exit 0
       ;;
    \? )
@@ -162,12 +164,42 @@ case "$subcommand" in
     ;;
 
   publish)
+    # publish <tika_version> <build_number>
+    # Tag scheme:
+    #   apache/tika:<tika_version>            (mutable; moves on each rebuild)
+    #   apache/tika:<tika_version>-<N>        (immutable; one per rebuild)
+    #   apache/tika:latest                    (only for non-prerelease tags; tracks newest stable)
+    # (plus the matching -full variants for the full image).
+    publish_tika_version=$tika_docker_version  # first positional arg
+    publish_build_number=$tika_version          # second positional arg
+    if [[ -z "$publish_tika_version" || -z "$publish_build_number" ]]; then
+      die "Usage: $0 publish <tika_version> <build_number>"
+    fi
+    # Only move :latest for non-prerelease tags. Preview releases never displace
+    # the latest-stable pointer.
+    push_latest=true
+    case "$publish_tika_version" in
+      *-alpha*|*-BETA*|*-RC*|*-SNAPSHOT*) push_latest=false ;;
+    esac
+
+    minimal_tags=( --tag "${image_name}:${publish_tika_version}" \
+                   --tag "${image_name}:${publish_tika_version}-${publish_build_number}" )
+    full_tags=(    --tag "${image_name}:${publish_tika_version}-full" \
+                   --tag "${image_name}:${publish_tika_version}-${publish_build_number}-full" )
+    if $push_latest; then
+      minimal_tags+=( --tag "${image_name}:latest" )
+      full_tags+=(    --tag "${image_name}:latest-full" )
+    else
+      echo "Skipping :latest for prerelease tag: $publish_tika_version"
+    fi
+
     docker buildx create --use --name tika-builder || die "couldn't create builder"
-    # Build multi-arch with buildx and push
     docker buildx build --platform linux/arm64/v8,linux/amd64,linux/s390x --output "type=image,push=true" \
-      --tag ${image_name}:${tika_docker_version} --build-arg TIKA_VERSION=${tika_version} --no-cache --builder tika-builder minimal || stop_and_die "couldn't build multi-arch minimal"
+      "${minimal_tags[@]}" --build-arg TIKA_VERSION=${publish_tika_version} --no-cache --builder tika-builder minimal \
+      || stop_and_die "couldn't build multi-arch minimal"
     docker buildx build --platform linux/arm64/v8,linux/amd64,linux/s390x --output "type=image,push=true" \
-      --tag ${image_name}:${tika_docker_version}-full --build-arg TIKA_VERSION=${tika_version} --no-cache --builder tika-builder full || stop_and_die "couldn't build multi-arch full"
+      "${full_tags[@]}" --build-arg TIKA_VERSION=${publish_tika_version} --no-cache --builder tika-builder full \
+      || stop_and_die "couldn't build multi-arch full"
     docker buildx rm tika-builder || die "couldn't stop builder -- make sure to stop the builder manually! "
     ;;
 

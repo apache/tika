@@ -16,12 +16,26 @@ To install more languages, set the build argument `LANGUAGES` or include your ow
 
 ## Available Tags
 
-Below are the most recent tags. The `latest` tags track the 3.x stable line;
-4.x preview releases are published as version-specific tags only.
-- `latest`, `3.3.0.0`: Apache Tika Server 3.3.0.0 (Minimal)
-- `latest-full`, `3.3.0.0-full`: Apache Tika Server 3.3.0.0 (Full)
-- `4.0.0-alpha-1.0`: Apache Tika Server 4.0.0-alpha-1.0 (Minimal, 4.x preview)
-- `4.0.0-alpha-1.0-full`: Apache Tika Server 4.0.0-alpha-1.0 (Full, 4.x preview)
+Each 4.x release publishes three tags per image, all pointing at the same
+manifest digest:
+
+- `apache/tika:<version>` — mutable, rolls forward on Docker-only rebuilds for the same Tika version.
+- `apache/tika:<version>-<N>` — immutable, never reassigned. Pin to this if you want stability across rebuilds. `N=1` is the initial build; `N=2,3,...` for subsequent rebuilds (CVE fixes, base-image refresh, etc.).
+- `apache/tika:latest` — rolling pointer to the newest **stable** release. Stays on 3.x until 4.0.0 GA; preview tags (`-alpha`, `-BETA`, `-RC`) do **not** displace it.
+
+(Same scheme applies to the `-full` variants and to `apache/tika-grpc`, with
+the caveat that `apache/tika-grpc:latest` always tracks the newest 4.x release
+since there's no 3.x incumbent.)
+
+Most recent tags:
+- `latest`, `latest-full`: Apache Tika Server 3.3.0 (currently — moves to 4.0.0 at GA)
+- `4.0.0-alpha-1`, `4.0.0-alpha-1-1`: Apache Tika Server 4.0.0-alpha-1 (Minimal, 4.x preview)
+- `4.0.0-alpha-1-full`, `4.0.0-alpha-1-1-full`: Apache Tika Server 4.0.0-alpha-1 (Full, 4.x preview)
+
+Legacy 3.x and earlier tags use the `<version>.<docker-build-number>`
+convention (e.g. `3.3.0.0`, `3.2.3.0`). Those tags are immutable and still
+pullable.
+
 - `3.3.0.0`, `3.3.0.0`: Apache Tika Server 3.3.0.0 (Minimal)
 - `3.3.0.0`, `3.3.0.0-full`: Apache Tika Server 3.3.0.0 (Full)
 - `3.2.3.0`, `3.2.3.0`: Apache Tika Server 3.2.3.0 (Minimal)
@@ -88,8 +102,11 @@ You can see a full set of tags for historical versions [here](https://hub.docker
 
 ## 4.x Preview Notes
 
-The `4.0.0-alpha-1.0` images are a preview of the upcoming Tika 4.x line and are
-not tagged `latest`.
+The `4.0.0-alpha-1` images are a preview of the upcoming Tika 4.x line and are
+not tagged `latest`. Tag scheme is `<tika-version>` (rolling) plus
+`<tika-version>-<N>` (immutable) — see Available Tags above. The legacy `.N`
+suffix (`4.0.0-alpha-1.0`) is retained as a frozen pointer to the first build
+but is no longer the active convention.
 
 Tika 4.x changed the `tika-server-standard` packaging: the published jar is now
 a thin top-level jar that resolves its dependencies from a sibling `lib/`
