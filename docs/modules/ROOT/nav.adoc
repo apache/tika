@@ -33,6 +33,7 @@
 ** xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing]
 ** xref:pipes/plugins/index.adoc[Plugins]
 *** xref:pipes/plugins/filesystem.adoc[File System]
+*** xref:pipes/plugins/s3.adoc[Amazon S3]
 * xref:configuration/index.adoc[Configuration]
 ** xref:configuration/parsers/pdf-parser.adoc[PDF Parser]
 ** xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]

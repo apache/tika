@@ -1,0 +1,242 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Amazon S3 Plugin
+:toc:
+:toclevels: 3
+
+The Amazon S3 plugin (`tika-pipes-s3`) provides fetcher, emitter, and iterator interfaces for objects in S3 (or any S3-compatible service such as MinIO).
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`s3-fetcher`
+|`S3Fetcher`
+
+|Emitter
+|`s3-emitter`
+|`S3Emitter`
+
+|Iterator
+|`s3-pipes-iterator`
+|`S3PipesIterator`
+|===
+
+[#credentials]
+== Credentials
+
+All three components share the same `credentialsProvider` selector:
+
+* `profile` — reads credentials from the local AWS profile named by `profile` (e.g., `default`).
+* `instance` — uses the instance/container role attached to the host (EC2 IAM role, ECS task role, etc.). No additional fields needed.
+* `key_secret` — reads `accessKey` and `secretKey` from the config. Avoid checking these into source control; prefer environment-variable substitution or one of the other providers.
+
+The emitter's `validate()` enforces these values, but the fetcher and iterator do not — they fail later when the AWS SDK tries to resolve credentials.
+
+[#s3-fetcher]
+== S3 Fetcher (`s3-fetcher`)
+
+Reads objects from an S3 bucket. The fetch key is the S3 key under `prefix` (if set).
+
+[source,json]
+----
+include::example$pipes-s3-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|S3 bucket name.
+
+|`region`
+|_required_
+|AWS region (e.g., `us-east-1`).
+
+|`prefix`
+|_no default_
+|Optional key prefix. Fetch keys are resolved underneath this prefix.
+
+|`credentialsProvider`
+|_required_
+|One of `profile`, `instance`, `key_secret`. See <<credentials>>.
+
+|`profile` / `accessKey` / `secretKey`
+|_conditional_
+|Required by the matching `credentialsProvider`.
+
+|`spoolToTemp`
+|`true`
+|If `true`, the fetched object is spooled to a temp file before being parsed.
+
+|`extractUserMetadata`
+|`true`
+|If `true`, S3 user-metadata is copied into the parsed `Metadata`.
+
+|`maxConnections`
+|`0`
+|Maximum HTTP connections in the S3 client pool. `0` lets the SDK pick a default.
+
+|`maxLength`
+|`-1`
+|Maximum object size, in bytes. `-1` means no limit.
+
+|`endpointConfigurationService`
+|_no default_
+|Custom S3 endpoint, for S3-compatible services such as MinIO or LocalStack.
+
+|`pathStyleAccessEnabled`
+|`false`
+|Force path-style URLs (e.g., `https://endpoint/bucket/key`). Required by some S3-compatible services.
+
+|`throttleSeconds`
+|_no default_
+|Optional rate-limit array; consecutive failures sleep for the corresponding number of seconds.
+|===
+
+[#s3-emitter]
+== S3 Emitter (`s3-emitter`)
+
+Writes parsed results back to an S3 bucket. The emit key (relative to `prefix`) is derived from the `FetchEmitTuple`.
+
+[source,json]
+----
+include::example$pipes-s3-emitter.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|Destination S3 bucket name (validated non-blank).
+
+|`region`
+|_required_
+|AWS region (validated non-blank).
+
+|`credentialsProvider`
+|_required_
+|One of `profile`, `instance`, `key_secret` (validated). See <<credentials>>.
+
+|`profile` / `accessKey` / `secretKey`
+|_conditional_
+|Required by the matching `credentialsProvider` (validated).
+
+|`prefix`
+|_no default_
+|Optional key prefix. A trailing `/` is stripped automatically.
+
+|`fileExtension`
+|`json`
+|Extension appended to each emitted key.
+
+|`spoolToTemp`
+|`true`
+|If `true`, output is spooled locally before being uploaded.
+
+|`maxConnections`
+|`50`
+|Maximum HTTP connections in the S3 client pool.
+
+|`endpointConfigurationService`
+|_no default_
+|Custom S3 endpoint, for S3-compatible services.
+
+|`pathStyleAccessEnabled`
+|`false`
+|Force path-style URLs.
+|===
+
+[#s3-iterator]
+== S3 Iterator (`s3-pipes-iterator`)
+
+Lists objects under a bucket/prefix and emits one `FetchEmitTuple` per object found.
+
+[source,json]
+----
+include::example$pipes-s3-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|S3 bucket to enumerate.
+
+|`region`
+|_required_
+|AWS region.
+
+|`prefix`
+|`""`
+|Key prefix to scope the listing.
+
+|`credentialsProvider`
+|_optional_
+|One of `profile`, `instance`, `key_secret`. See <<credentials>>.
+
+|`profile` / `accessKey` / `secretKey` / `endpointConfigurationService`
+|_conditional_
+|Auth fields, mirroring the fetcher and emitter.
+
+|`fileNamePattern`
+|_no default_
+|Optional regex; only keys whose name matches are emitted.
+
+|`maxConnections`
+|`50`
+|Maximum HTTP connections in the S3 client pool.
+
+|`pathStyleAccessEnabled`
+|`false`
+|Force path-style URLs.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#s3-pipeline]
+== Complete Pipeline Example
+
+The example below wires the S3 fetcher, emitter, and iterator into a complete pipeline that lists `s3://my-tika-input/incoming/` and writes results to `s3://my-tika-output/results/`.
+
+[source,json]
+----
+include::example$pipes-s3-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* The fetcher, emitter, and iterator each maintain their own S3 client. Auth and endpoint settings need to be configured per component, not globally.
+* The S3 SDK enforces TLS 1.2+ by default; in-flight encryption is on. For at-rest encryption, configure bucket-level SSE on the AWS side.
+* When using `endpointConfigurationService` against MinIO or LocalStack, you almost always need `pathStyleAccessEnabled: true`.

@@ -125,7 +125,7 @@ Many plugins implement more than one (e.g., the S3 plugin provides fetcher, emit
 
 == Interface Overviews
 
-For descriptions of the interfaces themselves — their contracts, the shared concepts (`FetchKey`, `FetchEmitTuple`, `baseConfig`, etc.), and how they fit into a pipeline — see:
+For descriptions of the interfaces themselves — their contracts, the shared concepts (`FetchKey`, `FetchEmitTuple`, `fetcherId`/`emitterId` wiring, etc.), and how they fit into a pipeline — see:
 
 * xref:pipes/fetchers.adoc[Fetchers]
 * xref:pipes/emitters.adoc[Emitters]
