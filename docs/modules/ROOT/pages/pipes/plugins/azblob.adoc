@@ -1,0 +1,185 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Azure Blob Storage Plugin
+:toc:
+:toclevels: 3
+
+The Azure Blob Storage plugin (`tika-pipes-az-blob`) provides fetcher, emitter, and iterator interfaces for blobs in Azure Storage containers.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`az-blob-fetcher`
+|`AZBlobFetcher`
+
+|Emitter
+|`az-blob-emitter`
+|`AZBlobEmitter`
+
+|Iterator
+|`az-blob-pipes-iterator`
+|`AZBlobPipesIterator`
+|===
+
+[#credentials]
+== Credentials
+
+All three components authenticate with a SAS (shared-access-signature) token. There are no other auth modes — managed identity, account keys, and AD-based auth are not currently exposed.
+
+* `endpoint` — base URL of the storage account, e.g., `https://myaccount.blob.core.windows.net`.
+* `sasToken` — the URL query-string portion of a generated SAS, without a leading `?`. Permissions in the token must match the operations the component will perform (read for fetchers/iterators, read+write for emitters).
+
+The emitter's `validate()` enforces that `sasToken`, `endpoint`, and `container` are all non-blank, but does not parse the SAS itself — invalid or expired tokens fail later when the Azure SDK makes a request.
+
+[#az-blob-fetcher]
+== Azure Blob Fetcher (`az-blob-fetcher`)
+
+Reads blobs from an Azure Storage container. The fetch key is the blob name.
+
+[source,json]
+----
+include::example$pipes-azblob-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`endpoint`
+|_required_
+|Storage account URL.
+
+|`container`
+|_required_
+|Container name.
+
+|`sasToken`
+|_required_
+|SAS token granting read access to the container.
+
+|`spoolToTemp`
+|`true`
+|If `true`, the fetched blob is spooled to a temp file before parsing.
+
+|`extractUserMetadata`
+|`true`
+|If `true`, blob user-metadata is copied into the parsed `Metadata`.
+|===
+
+[#az-blob-emitter]
+== Azure Blob Emitter (`az-blob-emitter`)
+
+Writes parsed results to an Azure Storage container. The emit key (relative to `prefix`) is derived from the `FetchEmitTuple`.
+
+[source,json]
+----
+include::example$pipes-azblob-emitter.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`endpoint`
+|_required_
+|Storage account URL (validated non-blank).
+
+|`container`
+|_required_
+|Destination container name (validated non-blank).
+
+|`sasToken`
+|_required_
+|SAS token granting read+write access (validated non-blank).
+
+|`prefix`
+|_no default_
+|Optional blob-name prefix. A trailing `/` is stripped automatically.
+
+|`fileExtension`
+|`json`
+|Extension appended to each emitted blob name.
+
+|`overwriteExisting`
+|`false`
+|If `true`, an existing blob with the same name is overwritten; otherwise the emit fails.
+|===
+
+[#az-blob-iterator]
+== Azure Blob Iterator (`az-blob-pipes-iterator`)
+
+Lists blobs under a container/prefix and emits one `FetchEmitTuple` per blob.
+
+[source,json]
+----
+include::example$pipes-azblob-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`endpoint`
+|_required_
+|Storage account URL.
+
+|`container`
+|_required_
+|Container to enumerate.
+
+|`sasToken`
+|_required_
+|SAS token granting list+read access.
+
+|`prefix`
+|`""`
+|Blob-name prefix to scope the listing.
+
+|`timeoutMillis`
+|`360000`
+|Per-request timeout, in milliseconds (6 minutes by default).
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#az-blob-pipeline]
+== Complete Pipeline Example
+
+The example below wires the Azure Blob fetcher, emitter, and iterator together into a container-to-container pipeline.
+
+[source,json]
+----
+include::example$pipes-azblob-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* SAS tokens have an expiration baked in. For long-running pipelines, rotate the SAS or use a token that outlives the pipeline window.
+* Avoid checking real SAS tokens into source control — the strings in the examples above are placeholders.
+* Each component creates its own `BlobServiceClient`. The Azure SDK pools HTTP connections per client.

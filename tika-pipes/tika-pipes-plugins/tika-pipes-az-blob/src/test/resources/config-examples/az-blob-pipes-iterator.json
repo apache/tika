@@ -1,0 +1,13 @@
+{
+  "pipes-iterator": {
+    "az-blob-pipes-iterator": {
+      "endpoint": "https://myaccount.blob.core.windows.net",
+      "container": "tika-input",
+      "sasToken": "sv=2024-11-04&ss=b&srt=sco&sp=rl&se=2030-01-01T00:00:00Z&st=2024-01-01T00:00:00Z&spr=https&sig=REDACTED",
+      "prefix": "incoming/",
+      "timeoutMillis": 360000,
+      "fetcherId": "azf",
+      "emitterId": "aze"
+    }
+  }
+}

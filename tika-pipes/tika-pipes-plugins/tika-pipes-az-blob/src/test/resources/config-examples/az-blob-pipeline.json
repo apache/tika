@@ -1,0 +1,45 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "azf": {
+      "az-blob-fetcher": {
+        "endpoint": "https://myaccount.blob.core.windows.net",
+        "container": "tika-input",
+        "sasToken": "sv=2024-11-04&ss=b&srt=sco&sp=rl&se=2030-01-01T00:00:00Z&st=2024-01-01T00:00:00Z&spr=https&sig=REDACTED",
+        "extractUserMetadata": true
+      }
+    }
+  },
+  "emitters": {
+    "aze": {
+      "az-blob-emitter": {
+        "endpoint": "https://myaccount.blob.core.windows.net",
+        "container": "tika-output",
+        "sasToken": "sv=2024-11-04&ss=b&srt=sco&sp=rwl&se=2030-01-01T00:00:00Z&st=2024-01-01T00:00:00Z&spr=https&sig=REDACTED",
+        "prefix": "results/",
+        "fileExtension": "json"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "az-blob-pipes-iterator": {
+      "endpoint": "https://myaccount.blob.core.windows.net",
+      "container": "tika-input",
+      "sasToken": "sv=2024-11-04&ss=b&srt=sco&sp=rl&se=2030-01-01T00:00:00Z&st=2024-01-01T00:00:00Z&spr=https&sig=REDACTED",
+      "prefix": "incoming/",
+      "fetcherId": "azf",
+      "emitterId": "aze"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "emitters": {
+    "aze": {
+      "az-blob-emitter": {
+        "endpoint": "https://myaccount.blob.core.windows.net",
+        "container": "tika-output",
+        "sasToken": "sv=2024-11-04&ss=b&srt=sco&sp=rwl&se=2030-01-01T00:00:00Z&st=2024-01-01T00:00:00Z&spr=https&sig=REDACTED",
+        "prefix": "results/",
+        "fileExtension": "json",
+        "overwriteExisting": false
+      }
+    }
+  }
+}
