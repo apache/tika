@@ -1,0 +1,19 @@
+{
+  "_comment": [
+    "Vision-Language Model parsing via an OpenAI-compatible endpoint.",
+    "Works with self-hosted backends (vLLM, Ollama, a local FastAPI wrapper)",
+    "or against OpenAI's own chat-completions API. Set baseUrl to wherever",
+    "the OpenAI-compatible endpoint is reachable from the tika container.",
+    "If the endpoint requires authentication, also set apiKey.",
+    "See docs: configuration/parsers/vlm-parsers."
+  ],
+  "parsers": [
+    {
+      "openai-vlm-parser": {
+        "baseUrl": "http://vlm-server:8000",
+        "model": "jinaai/jina-vlm",
+        "timeoutSeconds": 300
+      }
+    }
+  ]
+}

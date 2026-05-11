@@ -17,10 +17,17 @@
 
 name: Docker release - tika-server and tika-grpc
 
+# Auto-trigger on tag push is disabled (TIKA-4725). The official tika-docker
+# images on Docker Hub (apache/tika) are published from the apache/tika-docker
+# repository using its own Dockerfiles and tagging conventions. When this
+# workflow ran on the 4.0.0-alpha-1 source tag it pushed an image built from
+# the stale Dockerfiles under tika-server/docker-build/ to
+# apache/tika:4.0.0-alpha-1, which collided with the tika-docker-managed tag
+# and ran with the pre-4.x bare-jar entrypoint (broken plugin loading). Re-enable
+# only after the in-repo Dockerfiles are kept in sync with (or replaced by a
+# pointer to) apache/tika-docker.
 on:
-  push:
-    tags:
-      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
 
 jobs:
   release-tika-server:
@@ -52,25 +59,27 @@ jobs:
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           file: tika-server/docker-build/minimal/Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/s390x
+          platforms: linux/amd64,linux/arm64,linux/s390x
           push: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tag }}
+          # :latest is intentionally NOT pushed. It stays on 3.x (published from
+          # the external apache/tika-docker repo) until 4.0.0 GA, at which point
+          # add `apache/tika:latest` back here.
           tags: |
             apache/tika:${{ steps.version.outputs.tag }}
-            apache/tika:latest
 
       - name: Build and push tika-server full
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           file: tika-server/docker-build/full/Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/s390x
+          platforms: linux/amd64,linux/arm64,linux/s390x
           push: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tag }}
+          # :latest-full stays on 3.x until 4.0.0 GA; see note above.
           tags: |
             apache/tika:${{ steps.version.outputs.tag }}-full
-            apache/tika:latest-full
 
   release-tika-grpc:
     runs-on: ubuntu-latest
@@ -152,6 +161,10 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ steps.version.outputs.tag }}
+          # apache/tika-grpc is new in 4.x with no prior `:latest` to protect, so
+          # we track latest from the start. Unlike apache/tika (the server image)
+          # where :latest stays on 3.x until 4.0.0 GA, the grpc image has no 3.x
+          # incumbent.
           tags: |
             apache/tika-grpc:${{ steps.version.outputs.tag }}
             apache/tika-grpc:latest

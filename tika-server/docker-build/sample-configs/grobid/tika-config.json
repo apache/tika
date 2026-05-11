@@ -1,0 +1,10 @@
+{
+  "_comment": "Route PDFs through GROBID (via JournalParser) for journal-article extraction.",
+  "parsers": [
+    {
+      "journal-parser": {
+        "_mime-include": ["application/pdf"]
+      }
+    }
+  ]
+}

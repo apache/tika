@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Vision-Language Model parsing via Anthropic's Claude API.",
+    "Claude can handle OCR images and PDFs natively (no rasterization needed).",
+    "Set apiKey to your Anthropic API key — DO NOT commit a real key.",
+    "Prefer passing it via the ANTHROPIC_API_KEY env var and substituting it",
+    "at container start, e.g. via an entrypoint shim or sidecar that templates",
+    "this file. See docs: configuration/parsers/vlm-parsers."
+  ],
+  "parsers": [
+    {
+      "claude-vlm-parser": {
+        "apiKey": "${ANTHROPIC_API_KEY}",
+        "model": "claude-sonnet-4-20250514"
+      }
+    }
+  ]
+}

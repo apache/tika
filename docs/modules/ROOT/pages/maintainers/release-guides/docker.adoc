@@ -17,117 +17,179 @@
 
 = Releasing Tika Docker Images
 
-This guide covers the process for releasing Apache Tika Docker images.
+This guide covers releasing the official Apache Tika Docker images
+(`apache/tika` and `apache/tika-grpc` on Docker Hub).
+
+== Where the Dockerfiles live
+
+Starting with 4.0.0-alpha-1, the Dockerfiles and the GitHub Actions workflow
+that publishes them live in this repository:
+
+* `tika-server/docker-build/{minimal,full}/Dockerfile` — `apache/tika` (server) release builds
+* `tika-server/docker-build/{minimal,full}/Dockerfile.snapshot` — nightly snapshot builds
+* `tika-grpc/docker-build/Dockerfile` — `apache/tika-grpc` release builds
+* `.github/workflows/docker-release.yml` — the release publishing workflow
+* `.github/workflows/docker-snapshot.yml` — the snapshot publishing workflow (auto on push to `main`)
+
+NOTE: The legacy https://github.com/apache/tika-docker[apache/tika-docker]
+repository is still used for 3.x patch releases — see <<3x-patches>> below. New
+4.x work happens here.
+
+== Image types
+
+minimal::
+Apache Tika server with base dependencies (Java + the unpacked
+`tika-server-standard-bin.zip`).
+
+full::
+Adds Tesseract OCR, GDAL, ImageMagick, and Microsoft fonts.
+
+`apache/tika-grpc`::
+The gRPC server packaged with parser-package jars and pipes plugin zips.
 
 == Prerequisites
 
-=== DockerHub Access
+* You have committer permission on `apache/tika` (the GitHub repo). The Docker
+  release workflow is gated to maintainers via the standard repo permission
+  model — no separate Docker Hub credential is needed at trigger time; Docker
+  Hub auth is held by the workflow as a secret.
+* The Tika release vote has passed and the artifacts have been moved from
+  `dist/dev` to `dist/release` (i.e., the bin.zip and parser-package jars are
+  already on `dlcdn.apache.org`/`downloads.apache.org`). The workflow
+  downloads those artifacts during the build, so they must be live first.
+* The release tag (e.g. `4.0.0-alpha-1`) exists in the repo. `release:perform`
+  creates it during the upstream release.
 
-You need permissions on the `apache/tika` repository on DockerHub. To obtain access,
-create an INFRA JIRA ticket with the "Docker" label.
+== Release process
 
-=== Repository Access
+=== Step 1: Verify the upstream artifacts are live
 
-Clone the tika-docker repository:
+[source,bash]
+----
+curl -sLI https://downloads.apache.org/tika/<TAG>/tika-server-standard-<TAG>-bin.zip \
+  | head -1
+----
+
+If you get a 200, you're ready. If 404, the SVN move from dist/dev to
+dist/release hasn't propagated yet — wait a few minutes.
+
+=== Step 2: Trigger the Docker release workflow
+
+The workflow is intentionally `workflow_dispatch`-only — it won't auto-fire on
+tag push. Trigger it manually after the vote, against the release tag.
+
+*Via the GitHub UI:*
+
+. Open https://github.com/apache/tika/actions
+. Select *Docker release - tika-server and tika-grpc* in the left sidebar
+. Click *Run workflow* (top-right)
+. Under *Use workflow from*, switch from the default branch to *Tags* and pick
+  the release tag (e.g. `4.0.0-alpha-1`)
+. Click *Run workflow*
+
+*Via the `gh` CLI:*
+
+[source,bash]
+----
+gh workflow run docker-release.yml --ref <TAG>
+# e.g.
+gh workflow run docker-release.yml --ref 4.0.0-alpha-1
+----
+
+The `--ref` argument selects the git ref to check out. The workflow extracts
+the tag name from `GITHUB_REF` (`refs/tags/<TAG>`) and uses it for both the
+`TIKA_VERSION` build-arg and the published Docker tag.
+
+=== Step 3: Watch the run
+
+A successful run takes ~30–45 minutes (multi-arch builds across `linux/amd64`,
+`linux/arm64`, `linux/s390x` are slow under qemu emulation, especially the
+full image).
+
+* GitHub UI: the Actions run page streams logs.
+* CLI: `gh run watch` will tail the latest run.
+
+The workflow does three things:
+
+. Builds and pushes `apache/tika:<TAG>` (minimal, multi-arch).
+. Builds and pushes `apache/tika:<TAG>-full` (full, multi-arch).
+. Builds and pushes `apache/tika-grpc:<TAG>` (multi-arch).
+
+=== Step 4: Verify the published images
+
+[source,bash]
+----
+# Confirm the manifest landed:
+curl -sL "https://hub.docker.com/v2/repositories/apache/tika/tags/<TAG>/" \
+  | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('tag_last_pushed'), d.get('digest'))"
+
+# Smoke-test the image locally:
+docker pull apache/tika:<TAG>
+docker run --rm -d --name tika-uat -p 127.0.0.1:9998:9998 apache/tika:<TAG>
+sleep 12
+curl -s http://localhost:9998/version
+docker rm -f tika-uat
+----
+
+For a deeper smoke test that exercises the full REST surface, run the
+xref:advanced/integration-testing/run-uat-script.adoc[REST UAT script]
+(the same one tied into the e2e tests):
+
+[source,bash]
+----
+release-tools/uat/run-uat.sh http://localhost:9998
+----
+
+Both `apache/tika:<TAG>` and `apache/tika:<TAG>-full` should pass.
+
+== `:latest` tag policy
+
+The `apache/tika:latest` and `apache/tika:latest-full` tags currently still
+point at the 3.x stable image (the `latest`-tagged 3.3.0 image published from
+the external apache/tika-docker repo).
+
+The release workflow *deliberately does not push `:latest`* for 4.x
+alpha/beta/RC builds — those tags stay on 3.x until 4.0.0 GA. When 4.0.0 GA
+ships, edit `docker-release.yml` to re-add `apache/tika:latest` and
+`apache/tika:latest-full` to the tag lists.
+
+`apache/tika-grpc:latest` *is* pushed on every 4.x release — the grpc image is
+new in 4.x and has no 3.x incumbent to protect.
+
+[[3x-patches]]
+== 3.x patch releases (legacy path)
+
+Until 4.0.0 GA, any 3.x patch release (e.g. a 3.3.0.1 with a CVE fix) is
+still published from the legacy https://github.com/apache/tika-docker[apache/tika-docker]
+repository using its `docker-tool.sh`:
 
 [source,bash]
 ----
 git clone https://github.com/apache/tika-docker
 cd tika-docker
-----
 
-== Image Types
+# Edit README.md (Available Tags), CHANGES.md, .env (TAG=...)
+# Then commit + push
 
-The tika-docker repository produces two types of images:
+./docker-tool.sh build <DOCKER_VERSION> <TIKA_VERSION>
+./docker-tool.sh test <DOCKER_VERSION>
+./docker-tool.sh publish <DOCKER_VERSION> <TIKA_VERSION>
 
-Minimal::
-Apache Tika with base dependencies (Java only)
-
-Full::
-Apache Tika plus Tesseract OCR and GDAL
-
-== Helper Tools
-
-docker-tool.sh::
-Automates building, testing, and publishing Docker images
-
-republish-images.sh::
-Legacy script for batch republishing images
-
-NOTE: The repository also contains Docker Compose files for advanced scenarios
-(Vision, Grobid, OCR, NER), but these are not used for official releases.
-
-== Release Process
-
-=== Step 1: Update README
-
-Update the "Available Tags" section in `README.md` to include the new version.
-
-=== Step 2: Update Version
-
-Increment the TAG version in the `.env` file.
-
-=== Step 3: Update Changelog
-
-Update `CHANGES.md` with release information and date.
-
-=== Step 4: Test Locally
-
-Test the release locally before publishing:
-
-[source,bash]
-----
-./docker-tool.sh build <docker-version> <tika-version>
-./docker-tool.sh test <docker-version>
-----
-
-=== Step 5: Commit Changes
-
-Commit all changes:
-
-[source,bash]
-----
-git add README.md .env CHANGES.md
-git commit -m "Prepare for Docker release <docker-version>"
-git push
-----
-
-=== Step 6: Build and Publish
-
-Build and publish the images using the docker-tool script.
-
-Example for version 3.1.0.0 based on Tika 3.1.0:
-
-[source,bash]
-----
-# Build the images
-./docker-tool.sh build 3.1.0.0 3.1.0
-
-# Test the images
-./docker-tool.sh test 3.1.0.0
-
-# Publish to DockerHub
-./docker-tool.sh publish 3.1.0.0 3.1.0
-----
-
-NOTE: Multi-architecture building takes time. The publish step automatically
-updates the `-latest` tag on DockerHub.
-
-=== Step 7: Tag the Release
-
-Create and push a git tag for the release:
-
-[source,bash]
-----
-git tag -a 3.1.0.0 -m "New release for 3.1.0.0"
+git tag -a <DOCKER_VERSION> -m "New release for <DOCKER_VERSION>"
 git push --tags
 ----
 
-== Post-Release
+Use the 3.x convention `<TIKA_VERSION>.<DOCKER_BUILD_NUMBER>` (e.g.
+`3.3.0.1` for the first Docker rebuild on top of Tika 3.3.0). 4.x releases
+drop that scheme and publish bare `<TIKA_VERSION>` only.
 
-After publishing the Docker images:
+== Post-release
 
-* Verify the images are available on DockerHub at https://hub.docker.com/r/apache/tika
-* Test pulling and running the new images
-* Update the main Tika website if needed
-* Proceed to release the link:helm.html[Helm charts] if applicable
+After the workflow completes:
+
+* Verify both images on https://hub.docker.com/r/apache/tika and
+  https://hub.docker.com/r/apache/tika-grpc.
+* Test pulling and running the new images from a clean machine.
+* If applicable, proceed to xref:maintainers/release-guides/helm.adoc[release the Helm charts].
+* Update news/announcement copy on the main Tika website if it references the
+  Docker images.

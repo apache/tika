@@ -1,0 +1,62 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Vision-Language Model parsing for tika-server (Tika 4.x).
+#
+# The pre-4.x inception-rest / Im2txt / inception-video services and the
+# org.apache.tika.parser.recognition.ObjectRecognitionParser they served
+# have been removed (TIKA-4499 / TIKA-4500). The 4.x replacement is a
+# family of VLM parsers (OpenAI-compatible, Anthropic Claude, Google
+# Gemini). See:
+#
+#   docs/modules/ROOT/pages/configuration/parsers/vlm-parsers.adoc
+#
+# This compose demonstrates the OpenAI-compatible variant pointing at a
+# locally-hosted Ollama instance. To use a different VLM:
+#   - Swap the mounted tika-config.* for vlm-claude.json or vlm-gemini.json
+#     and pass the relevant API key via env (ANTHROPIC_API_KEY /
+#     GEMINI_API_KEY).
+#   - Drop the vlm-server service block below.
+
+services:
+
+  ## Apache Tika Server
+  tika:
+    image: apache/tika:latest-full
+    command: -c /tika-config.json
+    restart: on-failure
+    ports:
+      - "9998:9998"
+    volumes:
+      - ./sample-configs/vision/vlm-openai.json:/tika-config.json
+      # - ./sample-configs/vision/vlm-claude.json:/tika-config.json
+      # - ./sample-configs/vision/vlm-gemini.json:/tika-config.json
+    depends_on:
+      - vlm-server
+
+  ## Local OpenAI-compatible VLM endpoint.
+  ## Replace with vLLM, your own FastAPI wrapper, or remove and point
+  ## baseUrl in vlm-openai.json at OpenAI's real API.
+  vlm-server:
+    image: ollama/ollama:latest
+    ports:
+      - "8000:11434"
+    # Volumes for pulled models. Uncomment and pull a vision-capable model
+    # (e.g. `docker exec <container> ollama pull llava`) before first use.
+    # volumes:
+    #   - ollama-models:/root/.ollama
+
+# volumes:
+#   ollama-models:
