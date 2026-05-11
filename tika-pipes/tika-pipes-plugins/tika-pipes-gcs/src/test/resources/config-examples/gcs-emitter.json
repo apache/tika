@@ -1,0 +1,12 @@
+{
+  "emitters": {
+    "gcse": {
+      "gcs-emitter": {
+        "projectId": "my-gcp-project",
+        "bucket": "my-tika-output",
+        "prefix": "results/",
+        "fileExtension": "json"
+      }
+    }
+  }
+}

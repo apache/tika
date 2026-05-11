@@ -1,0 +1,12 @@
+{
+  "fetchers": {
+    "gcsf": {
+      "gcs-fetcher": {
+        "projectId": "my-gcp-project",
+        "bucket": "my-tika-input",
+        "extractUserMetadata": true,
+        "spoolToTemp": true
+      }
+    }
+  }
+}
