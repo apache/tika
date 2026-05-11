@@ -98,7 +98,7 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 
 |`parseMode`
 |`RMETA`
-|How embedded documents are handled: `RMETA` (recursive metadata list), `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`. See xref:pipes/parse-modes.adoc[Parse Modes].
+|How embedded documents are handled: `RMETA` (recursive metadata list), `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`. See xref:pipes/parse-modes.adoc[Parse Modes].
 
 |`onParseException`
 |`EMIT`
