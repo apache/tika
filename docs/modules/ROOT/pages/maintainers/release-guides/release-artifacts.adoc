@@ -48,22 +48,25 @@ keep each ecosystem clean.
 
 == Per-artifact matrix
 
-[cols="1,1,1,1", options="header"]
+[cols="1,1,1,1,1", options="header"]
 |===
-|Artifact |Maven Central |Apache dist |Docker
+|Artifact |Maven Central |Apache dist |Docker `apache/tika` |Docker `apache/tika-grpc`
 
 |`tika-core`, `tika-parsers-*` jars (each module)
 |✓ slim jar (Maven-native)
 |—
 |inside the image
+|inside the image
 
 |`tika-app-<v>.zip` (CLI + GUI)
 |✓ slim jar
-|✓ shaded zip
+|✓ assembly zip (slim jar + `lib/` deps)
+|—
 |—
 
-|`tika-server-standard-<v>.jar` (thin runtime jar)
-|✓ thin jar
+|`tika-server-standard-<v>.jar` (slim runtime jar)
+|✓ slim jar
+|—
 |—
 |—
 
@@ -71,35 +74,42 @@ keep each ecosystem clean.
 |—
 |✓
 |extracted into image
+|—
 
-|`tika-eval-app-<v>` (eval CLI)
+|`tika-eval-app-<v>.zip` (eval CLI)
 |✓ slim jar
-|✓ shaded zip
+|✓ assembly zip (slim jar + `lib/` deps)
+|—
 |—
 
 |`tika-parser-scientific-package`, `tika-parser-sqlite3-package`, `tika-parser-nlp-package`
 |✓ slim jar (~10 KB, metadata)
 |✓ `-shaded.jar` (~20–25 MB, full deps)
 |inside the image
+|inside the image
 
 |`tika-pipes-<plugin>` (each — solr, http, s3, kafka, …)
 |✓ slim jar
 |✓ pf4j zip distribution
 |inside the image
+|inside the image
 
 |`tika-grpc-<v>.jar` (slim)
 |✓
 |—
+|—
 |inside the image
 
-|`tika-grpc-<v>.zip` (400 MB fat distro)
-|✗ never (TIKA-4723: `<attach>false</attach>`)
+|`tika-grpc-<v>.zip` (Docker build artifact)
+|✗ not attached (TIKA-4723: `<attach>false</attach>`)
 |—
-|build context for Docker
+|—
+|build context for the image
 
 |`src.zip`, `KEYS`, `CHANGES-<v>.txt`
 |—
 |✓
+|—
 |—
 |===
 
@@ -137,35 +147,40 @@ plugin pom (TIKA-4723).
 
 === tika-grpc
 
-The 400 MB fat tika-grpc zip exists *only* as a Docker build artifact. Not
-published anywhere. The Docker workflow runs `mvn -Pdocker -pl tika-grpc
-package`, which produces the zip locally; the workflow then either consumes
-it directly or via the bespoke "Prepare tika-grpc Docker build context"
-step. Either way, the zip itself never leaves the build host.
+tika-grpc is a standalone gRPC server, parallel to tika-server — not built
+on top of `tika-server-core`. It depends directly on `tika-core` and the
+parser modules (via `tika-parsers-standard-package`).
 
 Maven Central gets the slim `tika-grpc.jar` for users embedding the gRPC
-server. Apache dist gets nothing for tika-grpc — users either pull the
-Docker image or add tika-grpc as a Maven dep.
+server in a Maven build. Apache dist publishes nothing for tika-grpc.
+Users either pull `apache/tika-grpc` from Docker Hub or add `tika-grpc`
+as a Maven dep.
+
+The Docker image is built by the release workflow from a `-Pdocker`
+Maven invocation that produces a runnable layout (jar + deps + bundled
+plugins) locally; that build output is the build context for the
+`apache/tika-grpc` image and isn't published as a release artifact in its
+own right.
 
 tika-grpc requires at least one pf4j plugin to be loaded at startup; an
 empty `plugins/` directory triggers a `TikaConfigException` with a
 download URL pointing at Apache dist.
 
-=== Server: thin jar on Central, bin.zip on dist
+=== Server: slim jar on Central, bin.zip on dist
 
-`tika-server-standard-<v>.jar` is the *thin* runtime jar — its manifest
+`tika-server-standard-<v>.jar` is the *slim* runtime jar — its manifest
 declares `Class-Path: lib/*` and it expects to be run from a directory
 that also contains a populated `lib/` (and `plugins/`). Standalone the
-thin jar can't run. Maven Central publishes it for embedders who'll
+slim jar can't run. Maven Central publishes it for embedders who'll
 resolve `lib/*` via Maven dep resolution.
 
 `tika-server-standard-<v>-bin.zip` is the full assembled distribution:
-the thin jar + `lib/` + the bundled `tika-pipes-file-system` plugin + a
+the slim jar + `lib/` + the bundled `tika-pipes-file-system` plugin + a
 startup script. Apache dist publishes this for sysadmins who want
 `unzip + java -jar`.
 
 The 4.0.0-alpha-1 release published *both* on dist; 4.x onwards drops the
-thin jar from dist (only on Central) and drops the `-bin.tgz` variant
+slim jar from dist (only on Central) and drops the `-bin.tgz` variant
 (`.zip` is universally readable).
 
 === App / eval-app
