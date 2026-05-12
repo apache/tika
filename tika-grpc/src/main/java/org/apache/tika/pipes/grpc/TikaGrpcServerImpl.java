@@ -130,6 +130,22 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             pluginManager = new org.pf4j.DefaultPluginManager();
         }
 
+        // Fail fast if no plugins were loaded. tika-grpc requires at least one
+        // pf4j plugin (a fetcher and typically an emitter) to be useful;
+        // starting up with an empty plugins state leaves the server running
+        // but every RPC would fail with "fetcher type unknown". Better to
+        // refuse to start and tell the user exactly what to do.
+        if (pluginManager.getPlugins().isEmpty()) {
+            throw new TikaConfigException(
+                    "tika-grpc requires at least one tika-pipes plugin to be loaded, "
+                            + "but none were found. Place "
+                            + "tika-pipes-<plugin>-" + getClass().getPackage().getImplementationVersion()
+                            + ".zip files in a `plugins/` directory next to tika-grpc.jar "
+                            + "(or configure `plugin-roots` in your tika config). "
+                            + "Plugin zips are published at "
+                            + "https://downloads.apache.org/tika/<version>/.");
+        }
+
         this.configStore = createConfigStore();
 
         fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, this.configStore);

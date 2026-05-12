@@ -118,14 +118,13 @@
                       <fileset dir="${basedir}">
                         <include name="CHANGES.txt" />
                         <include name="target/*-src.zip*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-package/target/tika-parser-scientific-package-${project.version}.jar*" />
-                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-package/target/tika-parser-sqlite3-package-${project.version}.jar*" />
-                        <include name="tika-parsers/tika-parsers-ml/tika-parser-nlp-package/target/tika-parser-nlp-package-${project.version}.jar*" />
-                        <include name="tika-app/target/tika-app-${project.version}.jar*" />
-                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.jar*" />
-                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.tgz*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-scientific-package/target/tika-parser-scientific-package-${project.version}-shaded.jar*" />
+                        <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-package/target/tika-parser-sqlite3-package-${project.version}-shaded.jar*" />
+                        <include name="tika-parsers/tika-parsers-ml/tika-parser-nlp-package/target/tika-parser-nlp-package-${project.version}-shaded.jar*" />
+                        <include name="tika-app/target/tika-app-${project.version}.zip*" />
                         <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*" />
-                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.jar*" />
+                        <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.zip*" />
+                        <include name="tika-pipes/tika-pipes-plugins/*/target/tika-pipes-*-${project.version}.zip*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="SHA-512" fileext=".sha512">
