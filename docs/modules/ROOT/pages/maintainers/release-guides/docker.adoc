@@ -75,21 +75,44 @@ dist/release hasn't propagated yet — wait a few minutes.
 
 === Step 2: Trigger the Docker release workflow
 
-The workflow is intentionally `workflow_dispatch`-only — it won't auto-fire on
-tag push. Trigger it manually after the vote, against the release tag.
+The workflow has two trigger sources:
 
-The workflow takes two inputs:
+*Auto-trigger on GA tag push.* When the release manager pushes a
+digit-only-with-dots tag (e.g. `4.0.0`, `10.20.30`), the workflow fires
+automatically. Prerelease tags (`4.0.0-rc1`, `4.0.0-alpha-1`, anything with
+a hyphen) and branch-style tags (`branch_4x`, anything with an underscore)
+are filtered out by `tags-ignore: ['*-*', '*_*']` and stay silent.
+
+The standard ASF release flow looks like:
+
+. `release:prepare` creates `X.Y.Z-rcN` for the vote → workflow does *not*
+  fire (hyphenated tag).
+. Vote passes.
+. The release manager creates the GA tag, e.g.
+  `git tag X.Y.Z X.Y.Z-rcN && git push origin X.Y.Z`.
+. *That push triggers the Docker workflow*. `build_number` defaults to `1`.
+
+*Manual trigger via `workflow_dispatch`.* Use this for any preview release
+(the auto-trigger ignores prerelease tags), or for any Docker-only rebuild
+where you need to bump `build_number`.
+
+The workflow takes two inputs in this mode:
 
 `tag`::
-The Tika release tag, e.g. `4.0.0-alpha-1`. Must already exist as a git tag
-(created by `release:prepare`). The workflow checks out at this ref and uses
-it for both the `TIKA_VERSION` build-arg and the published Docker tag.
+The Tika release tag, e.g. `4.0.0-alpha-1`. Must already exist as a git tag.
 
 `build_number`::
-The Docker build number for this Tika tag. *Use `1` for the initial publish.*
-Increment when re-publishing the same Tika version with Docker-only changes
-(CVE fixes in the base image, refreshed apt packages, etc.). Each rebuild
-publishes an immutable `<tag>-<N>` tag alongside the rolling `<tag>` tag.
+The Docker build number for this Tika tag. Use `1` for the initial publish;
+increment when re-publishing the same Tika version with Docker-only changes
+(CVE fixes in the base image, refreshed apt packages, etc.). See
+<<republishing>> below for the full rebuild flow.
+
+`source_ref`::
+Optional. Git ref to build from. Defaults to the value of `tag`. Override only
+for Docker-only rebuilds where the Dockerfile or other build inputs have
+changed since the original `tag` was cut — for example, when you've made
+Dockerfile updates on `main` after the GA release and want build 2 to pick
+them up.
 
 *Via the GitHub UI:*
 
@@ -136,6 +159,60 @@ non-prerelease tags (i.e., no `-alpha`, `-BETA`, `-RC`). Stays on 3.x until
 The `-full` variants (`<tag>-full`, `<tag>-<N>-full`, `latest-full`) follow
 the same scheme. `apache/tika-grpc` also publishes the three-tag pattern, but
 its `:latest` is pushed unconditionally (no 3.x incumbent to protect).
+
+[[republishing]]
+=== Re-publishing an existing Tika version (Docker-only rebuild)
+
+When the Tika source hasn't changed but you need a new Docker image — base
+image CVE, refreshed apt packages, Dockerfile fix — bump `build_number`
+instead of cutting a new Tika version.
+
+The Tika git tag (e.g. `4.0.0`) stays put. The `-<N>` suffix in
+`apache/tika:4.0.0-2` is a *Docker Hub tag only*, never a git tag pushed by
+hand. The workflow auto-creates a `4.0.0-2` git tag at the same SHA it built
+from for provenance.
+
+*Case 1: pure base-image refresh* (no Dockerfile changes — `FROM ubuntu:resolute`
+just picks up newer upstream layers).
+
+[source,bash]
+----
+gh workflow run docker-release.yml \
+  -f tag=4.0.0 \
+  -f build_number=2
+----
+
+`source_ref` defaults to the `tag`, so the workflow checks out at the
+original `4.0.0` source state.
+
+*Case 2: Dockerfile changes since the original release.* Land the
+Dockerfile changes on `main` first (or on a branch). Then point the
+workflow at that ref:
+
+[source,bash]
+----
+gh workflow run docker-release.yml \
+  -f tag=4.0.0 \
+  -f build_number=2 \
+  -f source_ref=main
+----
+
+In either case, the workflow:
+
+. Builds from `inputs.source_ref` (or the original `tag` if unset).
+. Publishes `apache/tika:4.0.0-2` (immutable), retags `apache/tika:4.0.0`
+  and `apache/tika:latest` to the new digest, plus the matching `-full` and
+  `tika-grpc` tags.
+. Pushes a git tag `4.0.0-2` pointing at the source SHA used. The
+  `tags-ignore: ['*-*']` rule means this provenance tag does not re-trigger
+  the workflow.
+
+Six months later, `git show 4.0.0-2` shows the exact source state for that
+build and `docker pull apache/tika:4.0.0-2` returns the image built from it.
+
+NOTE: The provenance-tag step runs only when `build_number != 1`. The
+initial build's source state is already marked by the original Tika git tag
+(e.g. `4.0.0`); no need to duplicate it as `4.0.0-1`.
 
 === Step 3: Watch the run
 

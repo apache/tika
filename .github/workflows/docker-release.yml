@@ -17,16 +17,22 @@
 
 name: Docker release - tika-server and tika-grpc
 
-# Auto-trigger on tag push is disabled (TIKA-4725). The official tika-docker
-# images on Docker Hub (apache/tika) are published from the apache/tika-docker
-# repository using its own Dockerfiles and tagging conventions. When this
-# workflow ran on the 4.0.0-alpha-1 source tag it pushed an image built from
-# the stale Dockerfiles under tika-server/docker-build/ to
-# apache/tika:4.0.0-alpha-1, which collided with the tika-docker-managed tag
-# and ran with the pre-4.x bare-jar entrypoint (broken plugin loading). Re-enable
-# only after the in-repo Dockerfiles are kept in sync with (or replaced by a
-# pointer to) apache/tika-docker.
+# Auto-trigger only on GA-style version tags (digit.digit.digit with no
+# hyphen). Prerelease tags (`4.0.0-rc1`, `4.0.0-alpha-1`, `4.0.0-BETA`,
+# `4.0.0-SNAPSHOT`) and branch-style tags (`branch_4x`) intentionally do not
+# fire — the convention is:
+#   release:prepare creates `X.Y.Z-rcN` for the vote (workflow stays silent),
+#   vote passes, the release manager pushes a separate `X.Y.Z` tag pointing
+#   at the same commit, and *that* push triggers this workflow.
+# Manual rebuilds (CVE in base image, plugin refresh) use workflow_dispatch
+# with an explicit build_number.
 on:
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'   # 4.0.0, 10.20.30, etc.
+    tags-ignore:
+      - '*-*'                     # anything with a hyphen is a prerelease/non-GA tag
+      - '*_*'                     # anything with an underscore is a branch/non-version tag
   workflow_dispatch:
     inputs:
       tag:
@@ -36,6 +42,16 @@ on:
         description: 'Docker build number for this Tika tag (1 for first build, increment on rebuilds).'
         required: true
         default: '1'
+      source_ref:
+        description: 'Git ref to build from. Defaults to `tag`. Override only for Dockerfile-update rebuilds where the source has changed since the original tag was cut.'
+        required: false
+
+# Resolve the effective tag and build number from either trigger source.
+# `inputs.*` is populated only by workflow_dispatch; on a tag push, fall
+# back to the tag's short name (e.g. `4.0.0`) and build_number=1.
+env:
+  TAG:   ${{ inputs.tag          || github.ref_name }}
+  BUILD: ${{ inputs.build_number || '1' }}
 
 jobs:
   release-tika-server:
@@ -45,7 +61,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.source_ref || env.TAG }}
+          fetch-depth: 0   # full history so we can push a provenance tag at the end
 
       # Compute the tag set for each image. Three tags per image at minimum:
       #   apache/tika:<tag>            (mutable; moves on each rebuild)
@@ -55,8 +72,8 @@ jobs:
       - name: Compute tags
         id: tags
         run: |
-          tag='${{ inputs.tag }}'
-          build='${{ inputs.build_number }}'
+          tag='${{ env.TAG }}'
+          build='${{ env.BUILD }}'
           minimal="apache/tika:${tag}
           apache/tika:${tag}-${build}"
           full="apache/tika:${tag}-full
@@ -64,8 +81,11 @@ jobs:
           grpc="apache/tika-grpc:${tag}
           apache/tika-grpc:${tag}-${build}
           apache/tika-grpc:latest"
+          # Any hyphen in the tag = prerelease (alpha/beta/rc/SNAPSHOT/etc.,
+          # in any case). Mirrors the `tags-ignore: ['*-*']` rule on the
+          # auto-trigger so manual workflow_dispatch behaves the same way.
           case "$tag" in
-            *-alpha*|*-BETA*|*-RC*)
+            *-*)
               echo "Prerelease tag $tag — skipping :latest for apache/tika."
               ;;
             *)
@@ -100,7 +120,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/s390x
           push: true
           build-args: |
-            TIKA_VERSION=${{ inputs.tag }}
+            TIKA_VERSION=${{ env.TAG }}
           tags: ${{ steps.tags.outputs.minimal }}
 
       - name: Build and push tika-server full
@@ -110,8 +130,22 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/s390x
           push: true
           build-args: |
-            TIKA_VERSION=${{ inputs.tag }}
+            TIKA_VERSION=${{ env.TAG }}
           tags: ${{ steps.tags.outputs.full }}
+
+      # After a successful publish, push a `<tag>-<build_number>` git tag for
+      # provenance. Skipped on build_number=1 because the original `<tag>` already
+      # marks the source state of build 1. Lives in the server job (not the grpc
+      # job) to avoid both jobs racing to push the same tag.
+      - name: Push provenance git tag
+        if: ${{ env.BUILD != '1' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${TAG}-${BUILD}"
+          git push origin "${TAG}-${BUILD}"
 
   release-tika-grpc:
     runs-on: ubuntu-latest
@@ -120,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.source_ref || env.TAG }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -147,8 +181,8 @@ jobs:
       - name: Compute grpc tags
         id: grpc_tags
         run: |
-          tag='${{ inputs.tag }}'
-          build='${{ inputs.build_number }}'
+          tag='${{ env.TAG }}'
+          build='${{ env.BUILD }}'
           {
             echo "tags<<EOF"
             echo "apache/tika-grpc:${tag}"
@@ -159,7 +193,7 @@ jobs:
 
       - name: Prepare tika-grpc Docker build context
         run: |
-          TIKA_VERSION='${{ inputs.tag }}'
+          TIKA_VERSION='${{ env.TAG }}'
           OUT_DIR=target/tika-grpc-docker
 
           mkdir -p "${OUT_DIR}/libs/tika-grpc" "${OUT_DIR}/plugins" "${OUT_DIR}/config" "${OUT_DIR}/bin"
@@ -201,7 +235,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
-            VERSION=${{ inputs.tag }}
+            VERSION=${{ env.TAG }}
           # apache/tika-grpc is new in 4.x with no prior `:latest` to protect, so
           # we track latest from the start (unlike apache/tika the server image,
           # whose :latest stays on 3.x until 4.0.0 GA).
