@@ -1,0 +1,14 @@
+{
+  "pipes-iterator": {
+    "kafka-pipes-iterator": {
+      "topic": "tika-fetch-requests",
+      "bootstrapServers": "kafka1.example.com:9092,kafka2.example.com:9092",
+      "groupId": "tika-pipes-iterator",
+      "autoOffsetReset": "earliest",
+      "pollDelayMs": 100,
+      "emitMax": -1,
+      "fetcherId": "fsf",
+      "emitterId": "kafe"
+    }
+  }
+}

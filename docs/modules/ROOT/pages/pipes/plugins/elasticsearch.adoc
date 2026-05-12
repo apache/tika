@@ -1,0 +1,196 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Elasticsearch Plugin
+:toc:
+:toclevels: 3
+
+The Elasticsearch plugin (`tika-pipes-es`) provides an emitter (writes parsed docs to an Elasticsearch index) and a reporter (writes per-document processing status to Elasticsearch).
+
+It mirrors the xref:pipes/plugins/opensearch.adoc[OpenSearch plugin] in structure. The field names differ — `esUrl` instead of `openSearchUrl` — and ES adds an `apiKey` field for ApiKey-based auth in addition to basic auth.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Emitter
+|`es-emitter`
+|`ESEmitter`
+
+|Reporter
+|`es-pipes-reporter`
+|`ESPipesReporter`
+|===
+
+[#credentials]
+== Authentication
+
+Two auth modes are supported, in this priority order:
+
+1. **ApiKey** — set the top-level `apiKey` field to the Base64-encoded `id:api_key` string Elasticsearch generates. Sent as `Authorization: ApiKey <value>`.
+2. **Basic** — leave `apiKey` null/empty and set `userName` + `password` inside `httpClientConfig`. Sent as `Authorization: Basic ...`.
+
+The emitter overrides `toString()` to redact the `apiKey` value, so it does not leak into logs.
+
+[#http-client-config]
+== Shared HTTP Client Settings
+
+Both the emitter and the reporter accept a nested `httpClientConfig` block with these fields:
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`userName` / `password`
+|_optional_
+|Basic-auth credentials. Used only when `apiKey` is unset.
+
+|`authScheme`
+|_optional_
+|Set to `basic` to send credentials preemptively.
+
+|`connectionTimeoutMillis`
+|_no default_
+|HTTP connect timeout, in milliseconds.
+
+|`socketTimeoutMillis`
+|_no default_
+|HTTP socket read timeout, in milliseconds.
+
+|`proxyHost` / `proxyPort`
+|_optional_
+|Optional outbound HTTP proxy.
+|===
+
+[#es-emitter]
+== Elasticsearch Emitter (`es-emitter`)
+
+Writes parsed documents to an Elasticsearch index.
+
+[source,json]
+----
+include::example$pipes-elasticsearch-emitter.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`esUrl`
+|_required_
+|Full URL of the target Elasticsearch index, e.g., `https://es.example.com:9200/tika-docs`.
+
+|`idField`
+|_required_
+|Field in the emitted JSON document that holds the Elasticsearch `_id`.
+
+|`attachmentStrategy`
+|_no default_
+|How attached/embedded documents are indexed. One of:
+
+* `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document.
+* `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation.
+
+|`updateStrategy`
+|_no default_
+|How existing documents are handled. One of:
+
+* `OVERWRITE` — replaces an existing document at `_id`.
+* `UPSERT` — merges into an existing document.
+
+|`commitWithin`
+|_no default_
+|Kept for API parity with the OpenSearch emitter. ES does not consume this value.
+
+|`embeddedFileFieldName`
+|_no default_
+|Name of the field used to hold embedded-file content (used by `PARENT_CHILD`).
+
+|`apiKey`
+|_optional_
+|Base64-encoded `id:api_key`. See <<credentials>>.
+
+|`httpClientConfig`
+|_optional_
+|See <<http-client-config>>.
+|===
+
+[#es-reporter]
+== Elasticsearch Reporter (`es-pipes-reporter`)
+
+Writes per-document processing status records to an Elasticsearch index. Useful for building dashboards over pipeline activity.
+
+[source,json]
+----
+include::example$pipes-elasticsearch-reporter.json[]
+----
+
+`pipes-reporters` accepts multiple reporters keyed by type name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`esUrl`
+|_required_
+|Full URL of the status index, e.g., `https://es.example.com:9200/tika-status`.
+
+|`includes`
+|_optional_
+|Set of `RESULT_STATUS` names to include (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`). If unset, all are reported.
+
+|`excludes`
+|_optional_
+|Set of `RESULT_STATUS` names to skip. Applied after `includes`.
+
+|`keyPrefix`
+|_optional_
+|Prefix prepended to status field names in the emitted documents.
+
+|`includeRouting`
+|`false`
+|If `true`, include ES routing info in each status record.
+
+|`apiKey`
+|_optional_
+|Base64-encoded `id:api_key`. See <<credentials>>.
+
+|`httpClientConfig`
+|_optional_
+|See <<http-client-config>>.
+|===
+
+[#es-pipeline]
+== Complete Pipeline Example
+
+The example below combines a filesystem iterator/fetcher with the Elasticsearch emitter and reporter — a common pattern for ingesting a directory of documents into ES.
+
+[source,json]
+----
+include::example$pipes-elasticsearch-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* The ES plugin's HTTP client is REST-based; it does not depend on the Elasticsearch transport client.
+* For OpenSearch deployments, use the parallel xref:pipes/plugins/opensearch.adoc[OpenSearch plugin] instead — the field names differ (`openSearchUrl` vs. `esUrl`).
+* Don't check real credentials into source control — the `apiKey` and `password` values in the examples above are placeholders.

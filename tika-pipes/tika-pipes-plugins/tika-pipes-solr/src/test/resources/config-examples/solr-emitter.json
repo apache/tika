@@ -1,0 +1,17 @@
+{
+  "emitters": {
+    "solre": {
+      "solr-emitter": {
+        "solrCollection": "tika-docs",
+        "solrUrls": ["http://solr1.example.com:8983/solr", "http://solr2.example.com:8983/solr"],
+        "idField": "id",
+        "commitWithin": 1000,
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "ADD",
+        "embeddedFileFieldName": "embedded",
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
+      }
+    }
+  }
+}

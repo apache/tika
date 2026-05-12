@@ -16,205 +16,94 @@
 //
 
 = Emitters
+:toc:
 
-Emitters write parsed results to a destination. Each emitter is identified by
-its component name and an `id` that is referenced by the pipes iterator.
+An *emitter* writes parse results to a destination — a file on disk, a row in a database, a document in a search index, a message on a queue, etc.
 
-== File System Emitter (`file-system-emitter`)
+[#contract]
+== The Emitter Contract
 
-Writes parsed metadata as JSON files to a local or mounted filesystem.
+Each emitter implements `Emitter#emit(EmitData emitData)`, where `EmitData` carries the emit key, the parsed `Metadata`, and (for content-emitting strategies) the extracted content.
 
-**Module:** `tika-pipes-file-system`
+The emit key is supplied by the iterator on each `FetchEmitTuple` and tells the emitter where to put the result. Its shape depends on the emitter:
 
-[source,json,subs=none]
+* file-system / S3 / GCS / Azure Blob — a key/path relative to `basePath` or `prefix`.
+* OpenSearch / Elasticsearch / Solr — the `_id` field value, taken from the metadata field named by the emitter's `idField`.
+* JDBC — the value bound to the first `?` placeholder in the `insert` template.
+* Kafka — the Kafka record key.
+
+Emitters are intended to be safe under concurrent use; the pipeline's worker pool may call `emit()` from many threads.
+
+[#wiring]
+== Wiring Emitters Into a Pipeline
+
+Emitters live under the top-level `emitters` key. Each emitter gets an ID (the outer map key) and a type-name (the inner map key); the iterator references the ID through its `emitterId` field.
+
+[source,json]
 ----
-include::example$pipes-fs-emitter.json[]
+{
+  "emitters": {
+    "output": {
+      "file-system-emitter": {
+        "basePath": "/data/output",
+        "fileExtension": "json"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "fetcherId": "...",
+      "emitterId": "output"
+    }
+  }
+}
 ----
 
-[cols="1,1,3"]
+A pipeline may declare multiple emitters and choose between them at iterator-config time. Within a single iterator, each emitted `FetchEmitTuple` carries exactly one emitter ID.
+
+[#plugins]
+== Available Emitters
+
+[cols="2,2,3"]
 |===
-|Field |Default |Description
+|Plugin |Component name |Notes
 
-|`basePath`
-|_required_
-|Base output directory.
+|xref:pipes/plugins/filesystem.adoc[File System]
+|`file-system-emitter`
+|Local / mounted filesystem.
 
-|`fileExtension`
-|`json`
-|Extension for output files.
+|xref:pipes/plugins/s3.adoc[Amazon S3]
+|`s3-emitter`
+|S3 or S3-compatible.
 
-|`onExists`
-|`EXCEPTION`
-|Behavior when output file exists: `SKIP`, `REPLACE`, `EXCEPTION`.
+|xref:pipes/plugins/gcs.adoc[Google Cloud Storage]
+|`gcs-emitter`
+|GCS via ADC.
 
-|`prettyPrint`
-|`false`
-|Pretty-print JSON output.
-|===
+|xref:pipes/plugins/azblob.adoc[Azure Blob Storage]
+|`az-blob-emitter`
+|SAS-token auth.
 
-== Elasticsearch Emitter (`es-emitter`)
+|xref:pipes/plugins/opensearch.adoc[OpenSearch]
+|`opensearch-emitter`
+|REST-based bulk indexing.
 
-Sends parsed documents to Elasticsearch via the `_bulk` API. Uses plain HTTP --
-no dependency on the ES Java client.
+|xref:pipes/plugins/elasticsearch.adoc[Elasticsearch]
+|`es-emitter`
+|REST-based bulk indexing; ApiKey or basic auth.
 
-**Module:** `tika-pipes-es`
+|xref:pipes/plugins/solr.adoc[Apache Solr]
+|`solr-emitter`
+|SolrCloud (URLs or ZooKeeper).
 
-[cols="1,1,3"]
-|===
-|Field |Default |Description
+|xref:pipes/plugins/jdbc.adoc[JDBC]
+|`jdbc-emitter`
+|Any RDBMS with a JDBC driver.
 
-|`esUrl`
-|_required_
-|Full URL including index (e.g., `https://localhost:9200/my-index`).
-
-|`idField`
-|`_id`
-|Metadata field used as the document `_id`.
-
-|`apiKey`
-|_none_
-|Base64-encoded `id:api_key` for authentication.
-
-|`attachmentStrategy`
-|`SEPARATE_DOCUMENTS`
-|`SEPARATE_DOCUMENTS` or `PARENT_CHILD`.
-
-|`updateStrategy`
-|`OVERWRITE`
-|`OVERWRITE` (full replace) or `UPSERT` (field-level merge).
-
-|`embeddedFileFieldName`
-|`embedded`
-|Join-field name for `PARENT_CHILD` mode.
+|xref:pipes/plugins/kafka.adoc[Apache Kafka]
+|`kafka-emitter`
+|Standard Kafka producer.
 |===
 
-== OpenSearch Emitter (`opensearch-emitter`)
-
-Sends documents to OpenSearch. Configured identically to the ES emitter
-but uses `openSearchUrl` instead of `esUrl`.
-
-**Module:** `tika-pipes-opensearch`
-
-== S3 Emitter (`s3-emitter`)
-
-Writes parsed metadata as JSON objects to Amazon S3.
-
-**Module:** `tika-pipes-s3`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`bucket`
-|_required_
-|S3 bucket name.
-
-|`region`
-|_required_
-|AWS region.
-
-|`prefix`
-|_none_
-|S3 key prefix for output objects.
-
-|`credentialsProvider`
-|`profile`
-|Credentials type: `profile`, `static`, `instance`.
-
-|`fileExtension`
-|`json`
-|File extension for output keys.
-|===
-
-== GCS Emitter (`gcs-emitter`)
-
-Writes parsed metadata to Google Cloud Storage.
-
-**Module:** `tika-pipes-gcs`
-
-== Azure Blob Emitter (`az-blob-emitter`)
-
-Writes parsed metadata to Azure Blob Storage.
-
-**Module:** `tika-pipes-az-blob`
-
-== Solr Emitter (`solr-emitter`)
-
-Indexes parsed documents into Apache Solr.
-
-**Module:** `tika-pipes-solr`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`solrCollection`
-|_required_
-|Solr collection name.
-
-|`solrUrls`
-|_required_
-|List of Solr URLs.
-
-|`idField`
-|`id`
-|Field name for document ID.
-
-|`commitWithin`
-|`-1`
-|Milliseconds before auto-commit (-1 = server default).
-
-|`attachmentStrategy`
-|`SEPARATE_DOCUMENTS`
-|How to handle embedded documents.
-|===
-
-== JDBC Emitter (`jdbc-emitter`)
-
-Writes parsed metadata to a SQL database via JDBC.
-
-**Module:** `tika-pipes-jdbc`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`connection`
-|_required_
-|JDBC connection string.
-
-|`insert`
-|_required_
-|SQL INSERT statement with `?` placeholders.
-
-|`keys`
-|_required_
-|Ordered list of metadata keys to bind to placeholders.
-|===
-
-== Kafka Emitter (`kafka-emitter`)
-
-Sends parsed metadata as messages to Apache Kafka.
-
-**Module:** `tika-pipes-kafka`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`topic`
-|_required_
-|Kafka topic name.
-
-|`bootstrapServers`
-|_required_
-|Kafka broker addresses.
-
-|`acks`
-|`all`
-|Acknowledgment requirement.
-
-|`lingerMs`
-|`0`
-|Batch wait time in milliseconds.
-|===
+For the full plugin / interface matrix, see xref:pipes/plugins/index.adoc[Plugins].

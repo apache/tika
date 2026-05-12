@@ -1,0 +1,60 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "ese": {
+      "es-emitter": {
+        "esUrl": "https://es.example.com:9200/tika-docs",
+        "idField": "doc_id",
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "OVERWRITE",
+        "commitWithin": 1000,
+        "embeddedFileFieldName": "embedded",
+        "apiKey": "REDACTED_BASE64_ID_AND_KEY",
+        "httpClientConfig": {
+          "connectionTimeoutMillis": 10000,
+          "socketTimeoutMillis": 60000
+        }
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "ese"
+    }
+  },
+  "pipes-reporters": {
+    "es-pipes-reporter": {
+      "esUrl": "https://es.example.com:9200/tika-status",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "keyPrefix": "tika_",
+      "includeRouting": true,
+      "apiKey": "REDACTED_BASE64_ID_AND_KEY",
+      "httpClientConfig": {
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
+      }
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

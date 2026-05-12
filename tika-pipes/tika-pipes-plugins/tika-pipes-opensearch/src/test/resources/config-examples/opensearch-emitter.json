@@ -1,0 +1,21 @@
+{
+  "emitters": {
+    "ose": {
+      "opensearch-emitter": {
+        "openSearchUrl": "https://opensearch.example.com:9200/tika-docs",
+        "idField": "doc_id",
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "OVERWRITE",
+        "commitWithin": 1000,
+        "embeddedFileFieldName": "embedded",
+        "httpClientConfig": {
+          "userName": "admin",
+          "password": "REDACTED",
+          "authScheme": "basic",
+          "connectionTimeoutMillis": 10000,
+          "socketTimeoutMillis": 60000
+        }
+      }
+    }
+  }
+}

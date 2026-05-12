@@ -1,0 +1,132 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= HTTP Plugin
+:toc:
+:toclevels: 3
+
+The HTTP plugin (`tika-pipes-http`) provides a fetcher that downloads documents over HTTP(S). It is fetcher-only — pair it with another emitter and iterator.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`http-fetcher`
+|`HttpFetcher`
+|===
+
+[#http-fetcher]
+== HTTP Fetcher (`http-fetcher`)
+
+Fetches document bytes from an HTTP(S) URL. The fetch key is the URL.
+
+[source,json]
+----
+include::example$pipes-http-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`userName` / `password`
+|_optional_
+|Basic-auth credentials.
+
+|`ntDomain`
+|_optional_
+|NT domain for NTLM auth.
+
+|`authScheme`
+|_optional_
+|Auth scheme hint: `basic`, `digest`, `ntlm`, or unset.
+
+|`proxyHost` / `proxyPort`
+|_optional_
+|Outbound HTTP proxy.
+
+|`userAgent`
+|_no default_
+|`User-Agent` header sent on each request.
+
+|`maxConnections`
+|`2000`
+|HTTP connection-pool size.
+
+|`maxConnectionsPerRoute`
+|`1000`
+|Per-route connection-pool size.
+
+|`connectTimeoutMillis`
+|`120000`
+|TCP connect timeout.
+
+|`socketTimeoutMillis`
+|`120000`
+|Socket read timeout.
+
+|`requestTimeoutMillis`
+|`120000`
+|Connection-manager request timeout.
+
+|`overallTimeoutMillis`
+|`120000`
+|Hard cap on total time for a single fetch operation.
+
+|`maxRedirects`
+|`0`
+|Maximum number of redirects to follow. `0` means follow none.
+
+|`maxSpoolSize`
+|`-1`
+|Maximum bytes to spool locally before failing. `-1` means no limit.
+
+|`maxErrMsgSize`
+|`10000000`
+|Maximum bytes of error response body to capture into the exception.
+
+|`httpHeaders`
+|_empty_
+|Extra HTTP headers, formatted as `"Header: value"` strings (list).
+
+|`httpRequestHeaders`
+|_empty_
+|Structured per-request headers as a `Header → [values]` map. Used when a header has multiple values.
+
+|`jwtIssuer` / `jwtSubject` / `jwtExpiresInSeconds`
+|_optional_
+|JWT claims, for endpoints that accept JWT-bearer auth.
+
+|`jwtSecret`
+|_optional_
+|HMAC secret for symmetric-key JWT signing.
+
+|`jwtPrivateKeyBase64`
+|_optional_
+|Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
+|===
+
+[#notes]
+== Notes
+
+* Both basic auth and JWT auth may be configured at the same time, but only one will apply per request (JWT takes precedence when present).
+* For zero-redirect crawling, leave `maxRedirects` at `0`. The fetcher returns the redirect response as-is so the caller can decide what to do.
+* `overallTimeoutMillis` is enforced by the fetcher itself, not the HTTP client — it covers slow drains and zombie connections that the lower-level timeouts may miss.
+* For Atlassian Cloud endpoints that require an Atlassian Connect JWT, use the dedicated xref:pipes/plugins/atlassian-jwt.adoc[Atlassian JWT fetcher] instead — it has the correct claim layout baked in.

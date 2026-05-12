@@ -1,0 +1,15 @@
+{
+  "fetchers": {
+    "msgf": {
+      "microsoft-graph-fetcher": {
+        "clientSecretCredentialsConfig": {
+          "tenantId": "REDACTED-TENANT-UUID",
+          "clientId": "REDACTED-CLIENT-UUID",
+          "clientSecret": "REDACTED"
+        },
+        "scopes": ["https://graph.microsoft.com/.default"],
+        "spoolToTemp": true
+      }
+    }
+  }
+}
