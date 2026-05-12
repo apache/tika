@@ -1,0 +1,241 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= JDBC Plugin
+:toc:
+:toclevels: 3
+
+The JDBC plugin (`tika-pipes-jdbc`) provides emitter, iterator, and reporter interfaces for relational databases. The plugin is JDBC-driver-agnostic: any database with a working JDBC driver on the plugin's classpath should work.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Emitter
+|`jdbc-emitter`
+|`JDBCEmitter`
+
+|Iterator
+|`jdbc-pipes-iterator`
+|`JDBCPipesIterator`
+
+|Reporter
+|`jdbc-reporter`
+|`JDBCPipesReporter`
+|===
+
+[#drivers]
+== JDBC Drivers
+
+The plugin does not bundle drivers. Drop the JDBC driver JAR for your database into the plugin's `lib/` directory alongside `tika-pipes-jdbc.jar` so the plugin class loader can find it. Tested drivers include H2, PostgreSQL, MySQL, SQLite, and SQL Server.
+
+[#jdbc-emitter]
+== JDBC Emitter (`jdbc-emitter`)
+
+Writes parsed documents into a relational table. The emitter uses a prepared statement built from the `insert` template; the emit key is always the first bound parameter, followed by one parameter per entry in `keys`.
+
+[source,json]
+----
+include::example$pipes-jdbc-emitter.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`connection`
+|_required_
+|JDBC connection URL (validated non-blank). Example: `jdbc:postgresql://db.example.com:5432/tika`.
+
+|`insert`
+|_required_
+|Prepared-statement `INSERT` template. Must use `?` placeholders. The first placeholder receives the emit key; subsequent placeholders receive values from `keys` in order.
+
+|`createTable`
+|_optional_
+|DDL executed once at startup. Use this to create the destination table if it does not already exist.
+
+|`alterTable`
+|_optional_
+|DDL executed once at startup, after `createTable`. Use for indexes or migrations.
+
+|`postConnection`
+|_optional_
+|SQL executed every time a new connection is opened (e.g., pragma statements for SQLite).
+
+|`maxRetries`
+|`0`
+|Number of times to retry a failed insert before giving up.
+
+|`maxStringLength`
+|`64000`
+|String columns longer than this are truncated. Set to `-1` to disable.
+
+|`keys`
+|_required_
+|Ordered map of metadata-field-name → SQL-type. Types: `string`, `int`, `long`, `bigint`, `boolean`, `timestamp`. The order matters — it must match the order of `?` placeholders in `insert`.
+
+|`attachmentStrategy`
+|`FIRST_ONLY`
+|How embedded documents are written. One of:
+
+* `FIRST_ONLY` — only the parent document is inserted; attachments are dropped.
+* `ALL` — every document (parent and attachments) gets its own row.
+
+|`multivaluedFieldStrategy`
+|`CONCATENATE`
+|How multi-valued metadata fields are handled. One of:
+
+* `FIRST_ONLY` — keep only the first value.
+* `CONCATENATE` — join values with `multivaluedFieldDelimiter`.
+
+|`multivaluedFieldDelimiter`
+|`", "`
+|Separator used by `CONCATENATE`.
+|===
+
+[#jdbc-iterator]
+== JDBC Iterator (`jdbc-pipes-iterator`)
+
+Walks rows returned by a SELECT statement, emitting one `FetchEmitTuple` per row.
+
+[source,json]
+----
+include::example$pipes-jdbc-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`connection`
+|_required_
+|JDBC connection URL.
+
+|`select`
+|_required_
+|SELECT statement to enumerate.
+
+|`idColumn`
+|_optional_
+|Column whose value becomes the iterator's row identifier.
+
+|`fetchKeyColumn`
+|_optional_
+|Column whose value becomes the fetch key on each emitted tuple.
+
+|`emitKeyColumn`
+|_optional_
+|Column whose value becomes the emit key on each emitted tuple.
+
+|`fetchKeyRangeStartColumn` / `fetchKeyRangeEndColumn`
+|_optional_
+|Columns for range-based fetch keys (advanced).
+
+|`fetchSize`
+|`-1`
+|JDBC `fetchSize` hint. `-1` lets the driver choose.
+
+|`queryTimeoutSeconds`
+|`-1`
+|JDBC statement timeout. `-1` means no timeout.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#jdbc-reporter]
+== JDBC Reporter (`jdbc-reporter`)
+
+Writes per-document processing status to a SQL table. Records are buffered in memory and flushed periodically.
+
+[source,json]
+----
+include::example$pipes-jdbc-reporter.json[]
+----
+
+`pipes-reporters` accepts multiple reporters keyed by type name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`connectionString`
+|_required_
+|JDBC connection URL for the status database.
+
+|`includes`
+|_empty (all reported)_
+|Set of `RESULT_STATUS` names to include (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`).
+
+|`excludes`
+|_empty_
+|Set of `RESULT_STATUS` names to skip. Applied after `includes`.
+
+|`tableName`
+|`tika_status`
+|Status table name.
+
+|`createTable`
+|`true`
+|If `true`, drop the existing status table (if any) and recreate it on startup. Set to `false` to preserve an existing table.
+
+|`reportSql`
+|_no default_
+|Custom prepared-statement template for inserting/updating status rows. If unset, the reporter uses `insert into <tableName> (id, status, timestamp) values (?,?,?)`. Coordinate with `reportVariables` when overriding.
+
+|`postConnectionSql`
+|_no default_
+|SQL executed each time a connection is opened (e.g., SQLite pragmas).
+
+|`reportVariables`
+|_empty_
+|Names of the variables to bind to each `?` placeholder in `reportSql`, in order. Available names: `id`, `status`, `timestamp`. Only needed when overriding `reportSql`.
+
+|`reportWithinMs`
+|`10000`
+|Milliseconds between batched flushes from the in-memory cache to the database.
+
+|`cacheSize`
+|`100`
+|Maximum in-memory cache size before a flush is forced.
+|===
+
+[#jdbc-pipeline]
+== Complete Pipeline Example
+
+The example below combines a JDBC iterator (reading work items from one table), a filesystem fetcher (reading the actual document bytes), a JDBC emitter (writing parsed metadata to a results table), and a JDBC reporter (recording per-document outcomes).
+
+[source,json]
+----
+include::example$pipes-jdbc-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* H2 (`jdbc:h2:mem:...`) is convenient for testing — no setup required — but the schema is lost when the process exits.
+* The emitter's `keys` map preserves insertion order (it's a `LinkedHashMap` in Java). When writing the JSON, list the keys in the same order as the `?` placeholders in `insert`.
+* For high-throughput inserts, point `maxRetries` at a small positive number so transient connection failures don't drop documents.
+* Bind variables are typed by the SQL type declared in `keys`, not by the metadata value's Java type. Mismatches between SQL type and column type cause inserts to fail — coordinate `createTable` with `keys`.

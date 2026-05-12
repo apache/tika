@@ -1,0 +1,14 @@
+{
+  "emitters": {
+    "s3e": {
+      "s3-emitter": {
+        "bucket": "my-tika-output",
+        "region": "us-east-1",
+        "prefix": "results/",
+        "fileExtension": "json",
+        "credentialsProvider": "profile",
+        "profile": "default"
+      }
+    }
+  }
+}

@@ -98,7 +98,7 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 
 |`parseMode`
 |`RMETA`
-|How embedded documents are handled: `RMETA` (recursive metadata list), `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`. See xref:pipes/parse-modes.adoc[Parse Modes].
+|How embedded documents are handled: `RMETA` (recursive metadata list), `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`. See xref:pipes/parse-modes.adoc[Parse Modes].
 
 |`onParseException`
 |`EMIT`
@@ -150,3 +150,54 @@ These settings control how parsed results are batched before sending to emitters
 |===
 
 See xref:pipes/shared-server-mode.adoc[Shared Server Mode] for details.
+
+[#complete-examples]
+== Complete examples
+
+Worked-out end-to-end configs from the test tree. Each is loaded by an automated test, so the syntax stays current.
+
+[#fs-pipeline]
+=== Filesystem-to-filesystem pipeline
+
+[source,json,subs=none]
+----
+include::example$pipes-fs-pipeline.json[]
+----
+
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
+
+Tokens (`FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`) are substituted by the test harness — replace them with real paths in production configs.
+
+[#emit-all]
+=== Emit-all variant
+
+[source,json,subs=none]
+----
+include::example$pipes-emit-all.json[]
+----
+
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-emit-all.json[View source on GitHub]
+
+[#shared-server-example]
+=== Shared-server (YOLO) mode
+
+[source,json,subs=none]
+----
+include::example$pipes-shared-server.json[]
+----
+
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-shared-server.json[View source on GitHub]
+
+See xref:pipes/shared-server-mode.adoc[Shared Server Mode] for the trade-offs.
+
+[#config-template]
+=== `tika-async-cli` config template
+
+[source,json,subs=none]
+----
+include::example$pipes-config-template.json[]
+----
+
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-async-cli/src/main/resources/config-template.json[View source on GitHub]
+
+For per-plugin pipeline examples (S3, OpenSearch, JDBC, Kafka, etc.), see the relevant page under xref:pipes/plugins/index.adoc[Plugins].

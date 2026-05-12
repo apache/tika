@@ -1,0 +1,133 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Pipes Plugins
+
+Tika Pipes is extensible through plugins. Each plugin lives in its own Maven module and can implement one or more of the four pipes extension points:
+
+* **Fetcher** — retrieves document bytes from a source.
+* **Emitter** — writes parsed results to a destination.
+* **Iterator** (`PipesIterator`) — enumerates documents to process as `FetchEmitTuple` records.
+* **Reporter** (`PipesReporter`) — records per-document processing status.
+
+Many plugins implement more than one (e.g., the S3 plugin provides fetcher, emitter, and iterator). The pages below document each plugin once, with one section per implemented interface.
+
+== Plugin / Interface Matrix
+
+[cols="2,1,1,1,1"]
+|===
+|Plugin |Fetcher |Emitter |Iterator |Reporter
+
+|xref:pipes/plugins/filesystem.adoc[File System]
+|✓
+|✓
+|✓
+|✓
+
+|xref:pipes/plugins/s3.adoc[Amazon S3]
+|✓
+|✓
+|✓
+|—
+
+|xref:pipes/plugins/gcs.adoc[Google Cloud Storage]
+|✓
+|✓
+|✓
+|—
+
+|xref:pipes/plugins/azblob.adoc[Azure Blob Storage]
+|✓
+|✓
+|✓
+|—
+
+|xref:pipes/plugins/opensearch.adoc[OpenSearch]
+|—
+|✓
+|—
+|✓
+
+|xref:pipes/plugins/elasticsearch.adoc[Elasticsearch]
+|—
+|✓
+|—
+|✓
+
+|xref:pipes/plugins/solr.adoc[Solr]
+|—
+|✓
+|✓
+|—
+
+|xref:pipes/plugins/jdbc.adoc[JDBC]
+|—
+|✓
+|✓
+|✓
+
+|xref:pipes/plugins/kafka.adoc[Kafka]
+|—
+|✓
+|✓
+|—
+
+|xref:pipes/plugins/http.adoc[HTTP]
+|✓
+|—
+|—
+|—
+
+|xref:pipes/plugins/google-drive.adoc[Google Drive]
+|✓
+|—
+|—
+|—
+
+|xref:pipes/plugins/microsoft-graph.adoc[Microsoft Graph]
+|✓
+|—
+|—
+|—
+
+|xref:pipes/plugins/atlassian-jwt.adoc[Atlassian JWT]
+|✓
+|—
+|—
+|—
+
+|xref:pipes/plugins/csv.adoc[CSV]
+|—
+|—
+|✓
+|—
+
+|xref:pipes/plugins/json.adoc[JSON]
+|—
+|—
+|✓
+|—
+|===
+
+== Interface Overviews
+
+For descriptions of the interfaces themselves — their contracts, the shared concepts (`FetchKey`, `FetchEmitTuple`, `fetcherId`/`emitterId` wiring, etc.), and how they fit into a pipeline — see:
+
+* xref:pipes/fetchers.adoc[Fetchers]
+* xref:pipes/emitters.adoc[Emitters]
+* xref:pipes/iterators.adoc[Pipes Iterators]
+* xref:pipes/reporters.adoc[Pipes Reporters]

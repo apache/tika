@@ -1,0 +1,85 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Microsoft Graph Plugin
+:toc:
+:toclevels: 3
+
+The Microsoft Graph plugin (`tika-pipes-microsoft-graph`) provides a fetcher that retrieves files from OneDrive, SharePoint, and other Graph-accessible sources. It is fetcher-only — pair it with another emitter and iterator.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`microsoft-graph-fetcher`
+|`MicrosoftGraphFetcher`
+|===
+
+[#credentials]
+== Credentials
+
+The fetcher authenticates against Microsoft Entra (Azure AD) using one of two credential modes — set exactly one:
+
+* **Client secret** (`clientSecretCredentialsConfig`) — easiest to set up; client secrets rotate manually.
+* **Client certificate** (`clientCertificateCredentialsConfig`) — for environments that require certificate-based auth.
+
+Both modes need the same three identity fields: `tenantId`, `clientId`, plus either `clientSecret` or `certificate`.
+
+[#microsoft-graph-fetcher]
+== Microsoft Graph Fetcher (`microsoft-graph-fetcher`)
+
+Fetches files via the Microsoft Graph API. The fetch key encodes the Graph object identifier.
+
+[source,json]
+----
+include::example$pipes-microsoft-graph-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`clientSecretCredentialsConfig`
+|_required (XOR)_
+|Nested object with `tenantId`, `clientId`, `clientSecret`. See <<credentials>>.
+
+|`clientCertificateCredentialsConfig`
+|_required (XOR)_
+|Nested object with `tenantId`, `clientId`, `certificate`. See <<credentials>>.
+
+|`scopes`
+|_empty_
+|OAuth scopes to request. Typical: `["https://graph.microsoft.com/.default"]` (application permissions).
+
+|`spoolToTemp`
+|`false`
+|If `true`, files are spooled to a temp file before being parsed.
+
+|`throttleSeconds`
+|_optional_
+|Rate-limit array — consecutive failures sleep for the corresponding number of seconds.
+|===
+
+[#notes]
+== Notes
+
+* The plugin uses the official `microsoft-graph` SDK.
+* For most service-to-service workflows, use application permissions (`https://graph.microsoft.com/.default` scope) — delegated permissions require an interactive flow that the fetcher does not support.
+* Client secrets are sensitive — use environment-variable substitution or external secret stores rather than inlining them in source control.

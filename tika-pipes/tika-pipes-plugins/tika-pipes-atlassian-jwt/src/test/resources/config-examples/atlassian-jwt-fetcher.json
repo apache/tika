@@ -1,0 +1,19 @@
+{
+  "fetchers": {
+    "ajwt": {
+      "atlassian-jwt-fetcher": {
+        "issuer": "tika-pipes-app-key",
+        "sharedSecret": "REDACTED_SHARED_SECRET",
+        "subject": "service-account@example.com",
+        "jwtExpiresInSeconds": 3600,
+        "maxConnections": 2000,
+        "maxConnectionsPerRoute": 1000,
+        "connectTimeoutMillis": 30000,
+        "socketTimeoutMillis": 60000,
+        "requestTimeoutMillis": 60000,
+        "overallTimeoutMillis": 120000,
+        "userAgent": "tika-pipes/1.0"
+      }
+    }
+  }
+}

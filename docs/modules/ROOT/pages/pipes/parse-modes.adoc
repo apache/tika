@@ -16,6 +16,8 @@
 //
 
 = Parse Modes
+:toc:
+:toclevels: 3
 
 Tika Pipes uses `ParseMode` to control how documents are parsed and how results are emitted.
 The parse mode is set on the `ParseContext` or configured in `PipesConfig`.
@@ -27,91 +29,30 @@ The parse mode is set on the `ParseContext` or configured in `PipesConfig`.
 |Mode |Description
 
 |`RMETA`
-|Default mode. Each embedded document produces a separate `Metadata` object.
-Results are returned as a JSON array of metadata objects.
+|Default mode. Each embedded document produces its own `Metadata` object.
+Results are returned as a JSON array of metadata objects, preserving per-embedded metadata.
 
 |`CONCATENATE`
-|All content from embedded documents is concatenated into a single content field.
-Results are returned as a single `Metadata` object with all metadata preserved.
+|All embedded-document text is concatenated into a single content field on the **container's** `Metadata` object.
+Per-embedded metadata is **not** retained in the result. See <<concatenate-mode>>.
 
 |`CONTENT_ONLY`
-|Parses like `CONCATENATE` but emits only the raw extracted content — no JSON wrapper,
-no metadata fields. Useful when you want just the text, markdown, or HTML output.
+|Same parsing as `CONCATENATE`, but emitters write only the raw content — no JSON wrapper,
+no metadata fields. See <<content-only-mode>>.
 
 |`NO_PARSE`
-|Skip parsing entirely. Useful for pipelines that only need to fetch and emit raw bytes.
+|Skips parsing. Container-level MIME detection and digesting (if configured) still run.
+See <<no-parse-mode>>.
 
 |`UNPACK`
 |Extract raw bytes from embedded documents. See xref:pipes/unpack-config.adoc[Extracting Embedded Bytes].
 |===
 
-== CONCATENATE Mode
+== Content Handler Types
 
-`CONCATENATE` merges all content from embedded documents into a single content field
-while preserving all metadata from parsing:
-
-[source,json]
-----
-{
-  "parseContext": {
-    "parseMode": "CONCATENATE"
-  }
-}
-----
-
-The result is a single `Metadata` object containing the concatenated content in
-`X-TIKA:content` along with all other metadata fields (title, author, content type, etc.).
-
-== CONTENT_ONLY Mode
-
-`CONTENT_ONLY` is designed for use cases where you want just the extracted content
-written to storage — no JSON wrapping, no metadata overhead. This is particularly
-useful for:
-
-* Extracting markdown files from a document corpus
-* Building plain text search indexes
-* Generating HTML versions of documents
-
-[source,json]
-----
-{
-  "parseContext": {
-    "parseMode": "CONTENT_ONLY"
-  }
-}
-----
-
-=== How It Works
-
-1. Documents are parsed identically to `CONCATENATE` mode — all embedded content is
-   merged into a single content field.
-2. A metadata filter automatically strips all metadata except `X-TIKA:content` and
-   `X-TIKA:CONTAINER_EXCEPTION` (for error tracking).
-3. When the emitter is a `StreamEmitter` (such as the filesystem or S3 emitter), the
-   raw content string is written directly as bytes — no JSON serialization.
-
-=== Metadata Filtering
-
-By default, `CONTENT_ONLY` mode applies an `IncludeFieldMetadataFilter` that retains
-only `X-TIKA:content` and `X-TIKA:CONTAINER_EXCEPTION`. If you set your own
-`MetadataFilter` on the `ParseContext`, your filter takes priority.
-
-=== CLI Usage
-
-The `tika-async-cli` batch processor supports `CONTENT_ONLY` via the `--content-only`
-flag:
-
-[source,bash]
-----
-java -jar tika-async-cli.jar -i /input -o /output -h m --content-only
-----
-
-This produces `.md` files (when using the `m` handler type) containing only the
-extracted markdown content.
-
-=== Content Handler Types
-
-The content format depends on the configured handler type:
+The content handler type determines the format of the extracted text. It is set on the
+`ContentHandlerFactory` configured in `parseContext` (or via the CLI `-h` flag), and applies
+to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`).
 
 [cols="1,1,2"]
 |===
@@ -135,5 +76,123 @@ The content format depends on the configured handler type:
 
 |`b` (body)
 |`.txt`
-|Body content handler output
+|Body content handler output (text from the document body only)
 |===
+
+[#concatenate-mode]
+== CONCATENATE Mode
+
+`CONCATENATE` merges all extracted text — from the container and all embedded documents — into a single content field on the container's `Metadata` object.
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "CONCATENATE"
+  }
+}
+----
+
+=== What's in the result
+
+* A **single** `Metadata` object (the container's).
+* `X-TIKA:content` contains the concatenated text of the container and all reachable embedded documents.
+* Container-level metadata fields (title, author, content type, etc.) are present.
+* The handler type used is recorded in `X-TIKA:content_handler_type`.
+
+=== What's NOT in the result
+
+* **Per-embedded-document metadata is discarded.** If an embedded PDF has its own title and author, those values are not in the output. Only the container's metadata is returned. Use `RMETA` if you need per-embedded metadata.
+* Individual embedded-document parse exceptions are not surfaced as separate entries. They are handled by Tika's embedded document extractor and may appear as embedded-exception fields on the container metadata, but there is no per-embedded `Metadata` object to inspect.
+
+=== Container-level exceptions
+
+If the container parse fails (`SAXException`, `EncryptedDocumentException`, or any other `Exception`), the stack trace is caught, logged, and stored on the container metadata as `X-TIKA:container_exception`. The parse continues to a return value rather than throwing — callers must check this field if they need to detect failure.
+
+If the configured write limit is reached during concatenation, `X-TIKA:write_limit_reached` is set to `true`.
+
+[#content-only-mode]
+== CONTENT_ONLY Mode
+
+`CONTENT_ONLY` is designed for cases where you want just the extracted content
+written to storage — no JSON wrapping, no metadata overhead. This is particularly
+useful for:
+
+* Extracting markdown files from a document corpus
+* Building plain text search indexes
+* Generating HTML versions of documents
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "CONTENT_ONLY"
+  }
+}
+----
+
+=== How it works
+
+1. Documents are parsed identically to `CONCATENATE` mode — all embedded text is merged into the container's content field, and the same caveats around per-embedded metadata apply.
+2. A metadata filter automatically strips all metadata except `X-TIKA:content` and `X-TIKA:container_exception` (for error tracking).
+3. When the emitter is a `StreamEmitter` (such as the filesystem or S3 emitter), the
+   raw content string is written directly as bytes — no JSON serialization.
+
+=== Metadata filtering
+
+By default, `CONTENT_ONLY` mode applies an `IncludeFieldMetadataFilter` that retains
+only `X-TIKA:content` and `X-TIKA:container_exception`. If you set your own
+`MetadataFilter` on the `ParseContext`, your filter takes priority.
+
+=== CLI usage
+
+The `tika-async-cli` batch processor supports `CONTENT_ONLY` via the `--content-only`
+flag:
+
+[source,bash]
+----
+java -jar tika-async-cli.jar -i /input -o /output -h m --content-only
+----
+
+This produces `.md` files (when using the `m` handler type) containing only the
+extracted markdown content. See <<_content_handler_types>> for the available handler types.
+
+[#no-parse-mode]
+== NO_PARSE Mode
+
+`NO_PARSE` skips parsing entirely. The container's content type is still detected, and any configured digester still runs against the raw bytes. No text is extracted, no embedded documents are recursed into.
+
+[source,json]
+----
+{
+  "parseContext": {
+    "parseMode": "NO_PARSE"
+  }
+}
+----
+
+=== What still runs
+
+* **MIME detection.** The configured `Detector` runs against the input stream and populates `Content-Type` and `X-TIKA:content_type_parser_override` on the container metadata.
+* **Digesting.** If a `DigesterFactory` is configured on the `ParseContext`, it runs against the raw bytes and writes the digest fields (e.g., `X-TIKA:digest:SHA256`) to the container metadata before the parse-mode check.
+
+=== What does NOT run
+
+* No parser is invoked. `X-TIKA:content` is empty.
+* No embedded documents are extracted.
+* No content handler is constructed (handler-type configuration is ignored for this mode).
+
+=== When to use
+
+* **Fetch-and-emit pipelines** that move bytes from one store to another and need only the content type and a fixed-bytes digest for downstream routing or deduplication.
+* **Hash-only inventories** of large corpora where parsing every document is too expensive but a stable digest per file is required.
+* **MIME triage**: detect content types across a large set so a downstream pipeline can pick the right parser, parse mode, or skip rule.
+
+Because digest and detection run in `_preParse` regardless of parse mode, switching between `NO_PARSE` and the parsing modes leaves digest values stable for the same input — useful for cross-stage joins.
+
+[#unpack-mode]
+== UNPACK Mode
+
+`UNPACK` extracts the raw bytes of embedded documents (rather than their parsed text) and emits them via the configured emitter. See xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] for the full configuration model.
+
+The recursive parsing pass for `UNPACK` uses the same code path as `RMETA`; the difference is at setup and emit time, where mandatory byte extraction is enabled and emitted bytes are routed through the `UnpackHandler`.

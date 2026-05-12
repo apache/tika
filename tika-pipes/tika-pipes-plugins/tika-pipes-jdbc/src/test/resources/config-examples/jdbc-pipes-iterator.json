@@ -1,0 +1,15 @@
+{
+  "pipes-iterator": {
+    "jdbc-pipes-iterator": {
+      "connection": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+      "select": "select id, source_path, output_path from docs_to_parse where status = 'PENDING'",
+      "idColumn": "id",
+      "fetchKeyColumn": "source_path",
+      "emitKeyColumn": "output_path",
+      "fetchSize": 1000,
+      "queryTimeoutSeconds": 60,
+      "fetcherId": "fsf",
+      "emitterId": "jdbce"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "pipes-iterator": {
+    "gcs-pipes-iterator": {
+      "projectId": "my-gcp-project",
+      "bucket": "my-tika-input",
+      "prefix": "incoming/",
+      "fetcherId": "gcsf",
+      "emitterId": "gcse"
+    }
+  }
+}

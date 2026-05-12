@@ -1,0 +1,64 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "ose": {
+      "opensearch-emitter": {
+        "openSearchUrl": "https://opensearch.example.com:9200/tika-docs",
+        "idField": "doc_id",
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "OVERWRITE",
+        "commitWithin": 1000,
+        "embeddedFileFieldName": "embedded",
+        "httpClientConfig": {
+          "userName": "admin",
+          "password": "REDACTED",
+          "authScheme": "basic",
+          "connectionTimeoutMillis": 10000,
+          "socketTimeoutMillis": 60000
+        }
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "ose"
+    }
+  },
+  "pipes-reporters": {
+    "opensearch-pipes-reporter": {
+      "openSearchUrl": "https://opensearch.example.com:9200/tika-status",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "keyPrefix": "tika_",
+      "includeRouting": true,
+      "httpClientConfig": {
+        "userName": "admin",
+        "password": "REDACTED",
+        "authScheme": "basic",
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
+      }
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

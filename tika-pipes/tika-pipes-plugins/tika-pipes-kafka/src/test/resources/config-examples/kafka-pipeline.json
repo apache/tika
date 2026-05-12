@@ -1,0 +1,43 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "kafe": {
+      "kafka-emitter": {
+        "topic": "tika-parsed-docs",
+        "bootstrapServers": "kafka1.example.com:9092",
+        "acks": "all",
+        "compressionType": "lz4",
+        "enableIdempotence": true
+      }
+    }
+  },
+  "pipes-iterator": {
+    "kafka-pipes-iterator": {
+      "topic": "tika-fetch-requests",
+      "bootstrapServers": "kafka1.example.com:9092",
+      "groupId": "tika-pipes-iterator",
+      "autoOffsetReset": "earliest",
+      "fetcherId": "fsf",
+      "emitterId": "kafe"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "emitters": {
+    "jdbce": {
+      "jdbc-emitter": {
+        "connection": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+        "createTable": "create table parsed_docs (path varchar(512) primary key, title varchar(1024), author varchar(512), content_length bigint, modified timestamp)",
+        "insert": "insert into parsed_docs (path, title, author, content_length, modified) values (?,?,?,?,?)",
+        "keys": {
+          "dc:title": "string",
+          "dc:creator": "string",
+          "Content-Length": "long",
+          "dcterms:modified": "timestamp"
+        },
+        "maxRetries": 0,
+        "maxStringLength": 64000,
+        "attachmentStrategy": "FIRST_ONLY",
+        "multivaluedFieldStrategy": "CONCATENATE",
+        "multivaluedFieldDelimiter": ", "
+      }
+    }
+  }
+}

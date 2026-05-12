@@ -48,7 +48,7 @@ against problematic files.
 * xref:pipes/iterators.adoc[Iterators] -- document enumeration (directory walk, S3 listing, CSV, JDBC, Kafka, etc.)
 * xref:pipes/reporters.adoc[Reporters] -- track per-document processing status
 * xref:pipes/configuration.adoc[Pipeline Configuration] -- numClients, timeouts, JVM args, parse modes, emit batching
-* xref:pipes/parse-modes.adoc[Parse Modes] -- control how documents are parsed and emitted (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`)
+* xref:pipes/parse-modes.adoc[Parse Modes] -- control how documents are parsed and emitted (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`)
 * xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] -- extract raw bytes from embedded documents
 * xref:pipes/timeouts.adoc[Timeouts] -- two-tier timeout system for handling long-running and hung parsers
 

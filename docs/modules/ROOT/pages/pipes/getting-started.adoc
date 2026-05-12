@@ -64,7 +64,9 @@ pipeline:
 ----
 include::example$pipes-fs-pipeline.json[]
 ----
-icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-plugins/tika-pipes-file-system/src/test/resources/config-examples/file-system-pipeline.json[View source on GitHub]
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
+
+NOTE: The values shown like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, and `PLUGINS_PATHS` are placeholders the integration tests substitute at runtime. Replace them with real paths in your own config.
 
 Run it with:
 

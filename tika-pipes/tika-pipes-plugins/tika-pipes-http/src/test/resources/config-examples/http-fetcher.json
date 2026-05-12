@@ -1,0 +1,21 @@
+{
+  "fetchers": {
+    "httpf": {
+      "http-fetcher": {
+        "userName": "tika",
+        "password": "REDACTED",
+        "authScheme": "basic",
+        "userAgent": "tika-pipes/1.0",
+        "maxConnections": 2000,
+        "maxConnectionsPerRoute": 1000,
+        "connectTimeoutMillis": 30000,
+        "socketTimeoutMillis": 60000,
+        "requestTimeoutMillis": 60000,
+        "overallTimeoutMillis": 120000,
+        "maxRedirects": 5,
+        "maxSpoolSize": -1,
+        "httpHeaders": ["Accept: application/octet-stream"]
+      }
+    }
+  }
+}

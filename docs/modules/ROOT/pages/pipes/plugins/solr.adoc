@@ -1,0 +1,202 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Apache Solr Plugin
+:toc:
+:toclevels: 3
+
+The Apache Solr plugin (`tika-pipes-solr`) provides an emitter (writes parsed docs to a Solr collection) and an iterator (enumerates documents already in Solr for re-processing).
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Emitter
+|`solr-emitter`
+|`SolrEmitter`
+
+|Iterator
+|`solr-pipes-iterator`
+|`SolrPipesIterator`
+|===
+
+[#connection-modes]
+== Connection Modes
+
+Both components support two ways of locating a Solr cluster — pick exactly one:
+
+* **Direct URLs (`solrUrls`)** — list one or more node URLs. Use this for standalone Solr or for SolrCloud when you want to bypass ZooKeeper for routing.
+* **ZooKeeper (`solrZkHosts` + `solrZkChroot`)** — list the ZooKeeper ensemble; Solr discovers nodes via ZK. Use this for SolrCloud deployments.
+
+The emitter's `validate()` enforces the XOR: setting neither or both raises `TikaConfigException`.
+
+[#solr-emitter]
+== Solr Emitter (`solr-emitter`)
+
+Writes parsed documents to a Solr collection.
+
+[source,json]
+----
+include::example$pipes-solr-emitter.json[]
+----
+
+For SolrCloud with ZooKeeper-based routing, use `solrZkHosts` (and optionally `solrZkChroot`) instead of `solrUrls`:
+
+[source,json]
+----
+include::example$pipes-solr-emitter-zk.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`solrCollection`
+|_required_
+|Solr collection (or core) name (validated non-blank).
+
+|`solrUrls`
+|_required (XOR)_
+|List of node URLs, e.g., `["http://solr1.example.com:8983/solr"]`. Mutually exclusive with `solrZkHosts`.
+
+|`solrZkHosts`
+|_required (XOR)_
+|List of ZooKeeper hosts, e.g., `["zk1.example.com:2181"]`. Mutually exclusive with `solrUrls`.
+
+|`solrZkChroot`
+|_optional_
+|ZooKeeper chroot, when using `solrZkHosts`.
+
+|`idField`
+|`id`
+|Field in the emitted JSON document that holds the Solr `_id`.
+
+|`commitWithin`
+|`1000`
+|Solr `commitWithin` value, in milliseconds.
+
+|`connectionTimeoutMillis`
+|`10000`
+|HTTP connect timeout.
+
+|`socketTimeoutMillis`
+|`60000`
+|HTTP socket read timeout.
+
+|`attachmentStrategy`
+|`PARENT_CHILD`
+|How attached/embedded documents are indexed. One of:
+
+* `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document.
+* `PARENT_CHILD` — attachments are nested under the parent.
+
+|`updateStrategy`
+|`ADD`
+|How existing documents are handled. One of:
+
+* `ADD` — replaces any existing document at the same `_id`.
+* `UPDATE_MUST_EXIST` — fails if no document exists at that `_id`.
+* `UPDATE_MUST_NOT_EXIST` — fails if a document already exists at that `_id`.
+
+|`embeddedFileFieldName`
+|`embedded`
+|Field name used to hold embedded-file content (used by `PARENT_CHILD`).
+
+|`userName` / `password` / `authScheme`
+|_optional_
+|HTTP basic auth credentials.
+
+|`proxyHost` / `proxyPort`
+|_optional_
+|Optional outbound HTTP proxy.
+|===
+
+[#solr-iterator]
+== Solr Iterator (`solr-pipes-iterator`)
+
+Enumerates documents already in a Solr collection and emits one `FetchEmitTuple` per matching document. Useful for re-parsing existing documents — e.g., after a parser bug fix or a Tika upgrade.
+
+[source,json]
+----
+include::example$pipes-solr-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`solrCollection`
+|_required_
+|Solr collection to iterate.
+
+|`solrUrls` / `solrZkHosts` / `solrZkChroot`
+|_required (XOR)_
+|Connection mode — see <<connection-modes>>.
+
+|`filters`
+|_empty_
+|List of Solr filter queries to scope the iteration (e.g., `["status:NEEDS_REPARSE"]`).
+
+|`idField`
+|_no default_
+|Solr field used as the iterator's row identifier.
+
+|`parsingIdField` / `failCountField` / `sizeFieldName` / `additionalFields`
+|_optional_
+|Extra Solr fields surfaced into the `FetchEmitTuple` metadata. Advanced; usually unset.
+
+|`rows`
+|`5000`
+|Page size for the underlying Solr query.
+
+|`connectionTimeoutMillis`
+|`10000`
+|HTTP connect timeout.
+
+|`socketTimeoutMillis`
+|`60000`
+|HTTP socket read timeout.
+
+|`userName` / `password` / `authScheme` / `proxyHost` / `proxyPort`
+|_optional_
+|Same as the emitter.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#solr-pipeline]
+== Complete Pipeline Example
+
+The example below combines a filesystem iterator/fetcher with the Solr emitter — the common pattern for ingesting a directory of documents into Solr.
+
+[source,json]
+----
+include::example$pipes-solr-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* The Solr plugin uses SolrJ (`solr-solrj`). HTTP/2 transport is used when available.
+* For re-parsing workflows, point a `solr-pipes-iterator` at the same collection a `solr-emitter` writes to, but use `UPDATE_MUST_EXIST` on the emitter to avoid creating phantom rows.
+* `commitWithin` is a soft guarantee — Solr may delay commits under load. For strict ordering, configure auto-commits on the Solr side and leave `commitWithin` at its default.

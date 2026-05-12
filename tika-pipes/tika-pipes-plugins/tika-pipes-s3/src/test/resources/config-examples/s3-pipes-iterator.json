@@ -1,0 +1,13 @@
+{
+  "pipes-iterator": {
+    "s3-pipes-iterator": {
+      "bucket": "my-tika-input",
+      "region": "us-east-1",
+      "prefix": "incoming/",
+      "credentialsProvider": "profile",
+      "profile": "default",
+      "fetcherId": "s3f",
+      "emitterId": "s3e"
+    }
+  }
+}

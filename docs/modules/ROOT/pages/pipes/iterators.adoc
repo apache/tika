@@ -16,197 +16,85 @@
 //
 
 = Pipes Iterators
+:toc:
 
-Pipes iterators enumerate the documents to be processed. Each iterator
-produces fetch/emit tuples that the pipeline consumes.
+A *pipes iterator* enumerates the documents to be processed. It emits one `FetchEmitTuple` per document; the pipeline workers then call the bound fetcher (to get the bytes), the parser, and the bound emitter (to write the result).
 
-All iterators share a `baseConfig` block that specifies which fetcher and emitter
-to use:
+[#contract]
+== The Iterator Contract
+
+A `PipesIterator` produces a stream of `FetchEmitTuple` records. Each tuple carries:
+
+* the *fetch key* — passed to the fetcher to retrieve the document bytes
+* the *emit key* — passed to the emitter to decide where to write results
+* an optional `id` and arbitrary metadata fields
+
+The iterator runs on its own thread; the pipeline reads tuples as fast as the worker pool can keep up.
+
+[#wiring]
+== Wiring an Iterator Into a Pipeline
+
+The iterator lives under the singular top-level `pipes-iterator` key. The inner map key is the iterator's component name. `fetcherId` and `emitterId` are *flat fields* on the iterator config — they are not wrapped in a `baseConfig` block.
 
 [source,json]
 ----
-"baseConfig": {
-  "fetcherId": "my-fetcher-id",
-  "emitterId": "my-emitter-id"
+{
+  "fetchers": { "fsf": { "file-system-fetcher": { "basePath": "/data/in" } } },
+  "emitters": { "fse": { "file-system-emitter": { "basePath": "/data/out" } } },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/in",
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  }
 }
 ----
 
-== File System Iterator (`file-system-pipes-iterator`)
+Only one iterator is active per pipeline. To process multiple sources in parallel, run multiple pipelines.
 
-Recursively walks a directory tree.
+[#plugins]
+== Available Iterators
 
-**Module:** `tika-pipes-file-system`
-
-[cols="1,1,3"]
+[cols="2,2,3"]
 |===
-|Field |Default |Description
+|Plugin |Component name |Notes
 
-|`basePath`
-|_required_
-|Directory to walk.
+|xref:pipes/plugins/filesystem.adoc[File System]
+|`file-system-pipes-iterator`
+|Recursively walks a directory tree.
 
-|`countTotal`
-|`false`
-|Count total files before processing (enables progress reporting).
+|xref:pipes/plugins/s3.adoc[Amazon S3]
+|`s3-pipes-iterator`
+|Lists S3 objects under a prefix.
 
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
-|===
+|xref:pipes/plugins/gcs.adoc[Google Cloud Storage]
+|`gcs-pipes-iterator`
+|Lists GCS objects under a prefix.
 
-== S3 Iterator (`s3-pipes-iterator`)
+|xref:pipes/plugins/azblob.adoc[Azure Blob Storage]
+|`az-blob-pipes-iterator`
+|Lists blobs under a prefix.
 
-Lists objects in an S3 bucket.
+|xref:pipes/plugins/solr.adoc[Apache Solr]
+|`solr-pipes-iterator`
+|Queries a Solr collection (useful for re-parsing).
 
-**Module:** `tika-pipes-s3`
+|xref:pipes/plugins/jdbc.adoc[JDBC]
+|`jdbc-pipes-iterator`
+|Walks rows from a SELECT query.
 
-[cols="1,1,3"]
-|===
-|Field |Default |Description
+|xref:pipes/plugins/kafka.adoc[Apache Kafka]
+|`kafka-pipes-iterator`
+|Consumes fetch-request messages from a topic.
 
-|`bucket`
-|_required_
-|S3 bucket name.
+|xref:pipes/plugins/csv.adoc[CSV]
+|`csv-pipes-iterator`
+|Reads work items from a CSV file.
 
-|`region`
-|_required_
-|AWS region.
-
-|`prefix`
-|_none_
-|Key prefix to filter objects.
-
-|`credentialsProvider`
-|`profile`
-|Credentials type.
-
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
+|xref:pipes/plugins/json.adoc[JSON]
+|`json-pipes-iterator`
+|Reads work items from a JSON-lines file.
 |===
 
-== GCS Iterator (`gcs-pipes-iterator`)
-
-Lists objects in a Google Cloud Storage bucket.
-
-**Module:** `tika-pipes-gcs`
-
-== Azure Blob Iterator (`az-blob-pipes-iterator`)
-
-Lists blobs in an Azure Blob Storage container.
-
-**Module:** `tika-pipes-az-blob`
-
-== CSV Iterator (`csv-pipes-iterator`)
-
-Reads rows from a CSV file to generate fetch/emit tuples.
-
-**Module:** `tika-pipes-csv`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`csvPath`
-|_required_
-|Path to the CSV file.
-
-|`fetchKeyColumn`
-|_required_
-|Column name containing the fetch key (file path, S3 key, etc.).
-
-|`emitKeyColumn`
-|_none_
-|Column name for the emit key. If omitted, uses the fetch key.
-
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
-|===
-
-== JDBC Iterator (`jdbc-pipes-iterator`)
-
-Executes a SQL query and uses each row as a fetch/emit tuple.
-
-**Module:** `tika-pipes-jdbc`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`connection`
-|_required_
-|JDBC connection string.
-
-|`select`
-|_required_
-|SQL SELECT query.
-
-|`fetchKeyColumn`
-|_required_
-|Column containing the fetch key.
-
-|`idColumn`
-|_none_
-|Column containing the document ID.
-
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
-|===
-
-== Solr Iterator (`solr-pipes-iterator`)
-
-Queries a Solr collection and uses each document as a fetch/emit tuple.
-
-**Module:** `tika-pipes-solr`
-
-== JSON Iterator (`json-pipes-iterator`)
-
-Reads an array of objects from a JSON file.
-
-**Module:** `tika-pipes-json`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`jsonPath`
-|_required_
-|Path to the JSON file.
-
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
-|===
-
-== Kafka Iterator (`kafka-pipes-iterator`)
-
-Consumes messages from a Kafka topic as fetch/emit tuples.
-
-**Module:** `tika-pipes-kafka`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`topic`
-|_required_
-|Kafka topic.
-
-|`bootstrapServers`
-|_required_
-|Kafka broker addresses.
-
-|`groupId`
-|_required_
-|Consumer group ID.
-
-|`autoOffsetReset`
-|`earliest`
-|Where to start reading: `earliest` or `latest`.
-
-|`baseConfig`
-|_required_
-|Fetcher/emitter IDs.
-|===
+For the full plugin / interface matrix, see xref:pipes/plugins/index.adoc[Plugins].

@@ -1,0 +1,121 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Atlassian JWT Plugin
+:toc:
+:toclevels: 3
+
+The Atlassian JWT plugin (`tika-pipes-atlassian-jwt`) provides a fetcher specifically for Atlassian Connect endpoints (Jira Cloud, Confluence Cloud) that require an Atlassian-style JWT bearer token. It is fetcher-only — pair it with another emitter and iterator.
+
+For generic HTTP fetching, use the xref:pipes/plugins/http.adoc[HTTP plugin] instead.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`atlassian-jwt-fetcher`
+|`AtlassianJwtFetcher`
+|===
+
+[#atlassian-jwt-fetcher]
+== Atlassian JWT Fetcher (`atlassian-jwt-fetcher`)
+
+Fetches resources from an Atlassian Cloud endpoint, generating a fresh JWT for each request signed with the app's shared secret.
+
+[source,json]
+----
+include::example$pipes-atlassian-jwt-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`issuer`
+|_required_
+|Atlassian Connect app key (the `iss` claim).
+
+|`sharedSecret`
+|_required_
+|Shared secret from the app installation, used as the JWT signing key.
+
+|`subject`
+|_optional_
+|JWT `sub` claim — typically an account ID for user-context calls.
+
+|`jwtExpiresInSeconds`
+|`3600`
+|JWT validity window. Each request gets a freshly-signed token.
+
+|`userAgent`
+|_no default_
+|`User-Agent` header sent on each request.
+
+|`maxConnections`
+|`2000`
+|HTTP connection-pool size.
+
+|`maxConnectionsPerRoute`
+|`1000`
+|Per-route connection-pool size.
+
+|`connectTimeoutMillis`
+|`120000`
+|TCP connect timeout.
+
+|`socketTimeoutMillis`
+|`120000`
+|Socket read timeout.
+
+|`requestTimeoutMillis`
+|`120000`
+|Connection-manager request timeout.
+
+|`overallTimeoutMillis`
+|`120000`
+|Hard cap on total time for a single fetch operation.
+
+|`maxRedirects`
+|`0`
+|Maximum number of redirects to follow.
+
+|`maxSpoolSize`
+|`-1`
+|Maximum bytes to spool locally. `-1` means no limit.
+
+|`maxErrMsgSize`
+|`10000000`
+|Maximum bytes of error response body to capture into the exception.
+
+|`httpHeaders`
+|_empty_
+|Extra HTTP headers, formatted as `"Header: value"` strings (list).
+
+|`httpRequestHeaders`
+|_empty_
+|Structured per-request headers as a `Header → [values]` map.
+|===
+
+[#notes]
+== Notes
+
+* The JWT is computed per request — the `qsh` claim is derived from the request method and URL, as required by Atlassian Connect.
+* `sharedSecret` is sensitive; use environment-variable substitution or external secret stores rather than inlining it in source control.
+* For Jira Server / Data Center (not Cloud) endpoints, use the xref:pipes/plugins/http.adoc[HTTP plugin] with basic or token auth instead — those endpoints do not accept Atlassian Connect JWTs.

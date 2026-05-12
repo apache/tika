@@ -101,6 +101,8 @@ When using shared mode, size the JVM heap for worst-case concurrent load:
 
 In per-client mode, the same workload would use 4 x 500MB = 2GB total, but distributed across 4 isolated JVMs where one OOM only affects one request.
 
+For the per-worker `-Xmx` rule of thumb that informs both modes, see xref:pipes/cpu-sizing.adoc#heap-per-worker[Heap per worker].
+
 == Recovery Behavior
 
 When a fatal error occurs (OOM, timeout, or crash):
