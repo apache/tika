@@ -1,0 +1,207 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Release Artifacts: What Goes Where
+
+A 4.x Tika release publishes to three channels, each with a different
+audience:
+
+[cols="1,2,2", options="header"]
+|===
+|Channel |URL |Audience
+
+|*Maven Central*
+|`https://repo1.maven.org/maven2/org/apache/tika/`
+|Java consumers adding Tika to a Maven / Gradle build. Get lean basic jars
+plus pom + sources-jar + javadoc-jar. Maven resolves transitive deps for
+them.
+
+|*Apache dist*
+|`https://downloads.apache.org/tika/<version>/`
+|Humans downloading runnable archives or drop-in plugin zips. No Maven
+involved. Want fat / self-contained artifacts.
+
+|*Docker Hub*
+|`apache/tika`, `apache/tika-grpc`
+|Container deployers. Get a ready-to-run image with parsers + plugins
+bundled (the "kitchen sink" by default).
+|===
+
+The driving principle: *fat distribution artifacts (zips, shaded jars,
+runnable bundles) do not go to Maven Central; basic Maven artifacts (slim
+jars + pom) do not need to clutter Apache dist.* Channel-specific shapes
+keep each ecosystem clean.
+
+== Per-artifact matrix
+
+[cols="1,1,1,1", options="header"]
+|===
+|Artifact |Maven Central |Apache dist |Docker
+
+|`tika-core`, `tika-parsers-*` jars (each module)
+|✓ slim jar (Maven-native)
+|—
+|inside the image
+
+|`tika-app-<v>.zip` (CLI + GUI)
+|✓ slim jar
+|✓ shaded zip
+|—
+
+|`tika-server-standard-<v>.jar` (thin runtime jar)
+|✓ thin jar
+|—
+|—
+
+|`tika-server-standard-<v>-bin.zip` (full distribution)
+|—
+|✓
+|extracted into image
+
+|`tika-eval-app-<v>` (eval CLI)
+|✓ slim jar
+|✓ shaded zip
+|—
+
+|`tika-parser-scientific-package`, `tika-parser-sqlite3-package`, `tika-parser-nlp-package`
+|✓ slim jar (~10 KB, metadata)
+|✓ `-shaded.jar` (~20–25 MB, full deps)
+|inside the image
+
+|`tika-pipes-<plugin>` (each — solr, http, s3, kafka, …)
+|✓ slim jar
+|✓ pf4j zip distribution
+|inside the image
+
+|`tika-grpc-<v>.jar` (slim)
+|✓
+|—
+|inside the image
+
+|`tika-grpc-<v>.zip` (400 MB fat distro)
+|✗ never (TIKA-4723: `<attach>false</attach>`)
+|—
+|build context for Docker
+
+|`src.zip`, `KEYS`, `CHANGES-<v>.txt`
+|—
+|✓
+|—
+|===
+
+== Why each shape
+
+=== Slim vs shaded jars (parser packages)
+
+`tika-parser-scientific-package` (and `sqlite3`, `nlp`) are
+"drop-in classpath" artifacts. Sysadmins running `tika-server` who want a
+parser added to its classpath grab one fat jar and `cp` it into
+`/tika-extras/`. That's the use case the *shaded* jar serves on Apache dist.
+
+A Maven consumer wanting the same parsers does *not* want a 25 MB jar
+shaded over their classpath — Maven's transitive dep resolution gives them
+the same classes via the module jar + its deps. So Central gets the slim
+(~10 KB) metadata jar; `pom` transitive deps do the work.
+
+Mechanism: `maven-shade-plugin` configured with
+`<outputFile>${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar</outputFile>`
+and `<shadedArtifactAttached>false</shadedArtifactAttached>`. Shade writes
+the fat jar to a separate file on disk but does not attach it to the
+Maven artifact set, so `mvn deploy` only uploads the slim main jar.
+
+=== pf4j plugin zips (`tika-pipes-*`)
+
+The `.zip` for each pipes plugin is the runtime drop-in form: unzip into
+`<server>/plugins/<plugin-name>/` and pf4j discovers it at startup. That's
+an Apache dist artifact, not a Maven artifact.
+
+The plugin's *jar* is on Maven Central for users building atop the plugin
+API or embedding it programmatically.
+
+Mechanism: `maven-assembly-plugin` with `<attach>false</attach>` in each
+plugin pom (TIKA-4723).
+
+=== tika-grpc
+
+The 400 MB fat tika-grpc zip exists *only* as a Docker build artifact. Not
+published anywhere. The Docker workflow runs `mvn -Pdocker -pl tika-grpc
+package`, which produces the zip locally; the workflow then either consumes
+it directly or via the bespoke "Prepare tika-grpc Docker build context"
+step. Either way, the zip itself never leaves the build host.
+
+Maven Central gets the slim `tika-grpc.jar` for users embedding the gRPC
+server. Apache dist gets nothing for tika-grpc — users either pull the
+Docker image or add tika-grpc as a Maven dep.
+
+tika-grpc requires at least one pf4j plugin to be loaded at startup; an
+empty `plugins/` directory triggers a `TikaConfigException` with a
+download URL pointing at Apache dist.
+
+=== Server: thin jar on Central, bin.zip on dist
+
+`tika-server-standard-<v>.jar` is the *thin* runtime jar — its manifest
+declares `Class-Path: lib/*` and it expects to be run from a directory
+that also contains a populated `lib/` (and `plugins/`). Standalone the
+thin jar can't run. Maven Central publishes it for embedders who'll
+resolve `lib/*` via Maven dep resolution.
+
+`tika-server-standard-<v>-bin.zip` is the full assembled distribution:
+the thin jar + `lib/` + the bundled `tika-pipes-file-system` plugin + a
+startup script. Apache dist publishes this for sysadmins who want
+`unzip + java -jar`.
+
+The 4.0.0-alpha-1 release published *both* on dist; 4.x onwards drops the
+thin jar from dist (only on Central) and drops the `-bin.tgz` variant
+(`.zip` is universally readable).
+
+=== App / eval-app
+
+Same pattern as the parser packages — Central gets the slim jar (Maven
+consumers); dist gets the assembled zip with deps under `lib/`.
+
+== Where this is configured in the source tree
+
+*The Apache dist staging include list:* `pom.xml`, `apache-release`
+profile, the `<copy>` step inside the antrun task (look for `tika-app`
+near the top). One `<include>` line per artifact pattern. The
+`tika-pipes-plugins/*/target/*-shaded.jar*` and similar globs cover the
+sets.
+
+*Per-module shaping:* each module's pom decides what shape its `target/`
+produces (assembly with `<attach>false</attach>` for plugin zips and
+app zips; shade with `outputFile` + `<shadedArtifactAttached>false</shadedArtifactAttached>`
+for parser packages).
+
+*Maven Central deployment:* happens via `mvn deploy` (or
+`mvn release:perform`). Any artifact that's *attached* to the Maven project
+gets uploaded. The whole point of the `<attach>false</attach>` /
+`<shadedArtifactAttached>false</shadedArtifactAttached>` pattern is to
+keep the fat distribution shapes off Central without disrupting the
+build process.
+
+*Docker image contents:* `.github/workflows/docker-release.yml` (the
+release publish workflow). The `release-tika-grpc` job currently
+assembles a custom build context from per-module outputs (
+`dependency:copy-dependencies`, per-plugin `cp`, parser-package `cp`).
+The `release-tika-server` job builds from `tika-server-standard-bin.zip`
+(unpacked into `/opt/tika-server/`).
+
+== Cross-references
+
+* xref:maintainers/release-guides/tika.adoc[Releasing Apache Tika]
+* xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images]
+* xref:maintainers/release-guides/site-updates.adoc[Updating the Website After a Release]
