@@ -1,0 +1,13 @@
+{
+  "fetchers": {
+    "gdf": {
+      "google-drive-fetcher": {
+        "applicationName": "tika-pipes",
+        "serviceAccountKeyBase64": "REDACTED_BASE64_SERVICE_ACCOUNT_JSON",
+        "subjectUser": "user@example.com",
+        "scopes": ["https://www.googleapis.com/auth/drive.readonly"],
+        "spoolToTemp": true
+      }
+    }
+  }
+}

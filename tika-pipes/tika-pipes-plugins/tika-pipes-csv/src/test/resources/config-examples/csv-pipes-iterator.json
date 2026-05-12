@@ -1,0 +1,12 @@
+{
+  "pipes-iterator": {
+    "csv-pipes-iterator": {
+      "csvPath": "/data/work-items.csv",
+      "idColumn": "doc_id",
+      "fetchKeyColumn": "source_path",
+      "emitKeyColumn": "output_path",
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  }
+}

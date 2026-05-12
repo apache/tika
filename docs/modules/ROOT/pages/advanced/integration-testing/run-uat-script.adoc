@@ -1,0 +1,124 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Tika-Server REST UAT Script
+
+A portable shell script that exercises the tika-server REST surface against an
+already-running server. The same script is used as the docker image smoke
+test, the e2e integration test, and as part of the source-release
+verification.
+
+== Where it lives
+
+[source]
+----
+release-tools/uat/
+├── run-uat.sh            # the script
+└── test-files/
+    ├── testPDF.pdf
+    ├── testHTML.html
+    └── test_recursive_embedded.docx
+----
+
+== What it covers
+
+Roughly 25 REST endpoint checks across the default-mode endpoints, header
+behavior, and error handling — the same surface enumerated in the manual
+walkthrough at xref:advanced/integration-testing/tika-server.adoc[Tika-Server
+Integration Testing], translated to bash + curl assertions.
+
+Coverage includes:
+
+* `/version`, `/parsers`, `/detectors`, `/mime-types` (introspection)
+* `/detect/stream` (mime detection)
+* `/tika`, `/tika/text`, `/tika/xml`, `/tika/json` (parse)
+* `/meta`, `/meta/{field}` (metadata)
+* `/rmeta`, `/rmeta/text` (recursive metadata)
+* `/unpack/all` (embedded extraction; verifies the response is a valid zip)
+* `/language/stream`
+* `/meta/form`, `/rmeta/form` (multipart variants)
+* `enableUnsecureFeatures=false` gating: `/meta/config`, `/rmeta/config`,
+  `/tika/config` all return 403
+* `X-Tika-OCRskipOcr` header, `Content-Disposition` filename
+* 404 / 405 error handling
+
+Two checks (T18d, T27) are currently disabled with inline comments pointing
+at tika-core behavior anomalies that need fixing — re-enable them when those
+land.
+
+== Running it
+
+The script takes a URL pointing at a running tika-server. It does *not* start
+or stop the server itself.
+
+[source,bash]
+----
+release-tools/uat/run-uat.sh [host]
+# default host: http://localhost:9998
+----
+
+Exit code: `0` on all-pass, `1` on any failure. Failed checks print the
+expected pattern and a truncated response body.
+
+=== Against the unpacked bin.zip distribution
+
+[source,bash]
+----
+unzip tika-server-standard-<VERSION>-bin.zip -d /tmp/tika-server-dist
+cd /tmp/tika-server-dist
+java -jar tika-server.jar -p 9998 -h localhost &
+sleep 12
+~/path/to/tika/release-tools/uat/run-uat.sh
+----
+
+=== Against the Docker image
+
+The `docker-tool.sh test-uat` subcommand wraps starting the container, waiting
+for `/version`, running the UAT, and stopping the container:
+
+[source,bash]
+----
+cd tika-server/docker-build
+./docker-tool.sh test-uat <DOCKER_VERSION>
+----
+
+=== As part of the e2e tests (CI)
+
+The Maven module `tika-e2e-tests/tika-server` unpacks the bin.zip, forks
+`java -jar tika-server.jar`, and invokes this script via
+`org.apache.tika.server.e2e.RunUatSmokeTest`. The CI workflow
+`.github/workflows/main-jdk17-build.yml` runs this automatically on every PR
+via `mvn -pl tika-e2e-tests -am clean verify -Pe2e`.
+
+== When to use it
+
+* *Pre-vote release verification.* Unpack
+  `tika-server-standard-<VERSION>-bin.zip` from `dist/dev` and run the UAT
+  against it. Catches packaging regressions before the vote thread starts.
+* *Pre-publish docker verification.* Run via `docker-tool.sh test-uat` after
+  building a new image and before tagging it for release.
+* *Local development sanity check.* When changing anything in
+  `tika-server-core` or the bin.zip assembly descriptor, run the UAT against
+  the build output to confirm you didn't regress endpoint behavior.
+* *Adding new endpoints.* When a new REST endpoint lands, add a corresponding
+  check to the script so future regressions get caught.
+
+== Platform notes
+
+The script is bash + curl + unzip. It's skipped automatically on Windows by
+the e2e test (no bash). On Linux/macOS it runs as-is. No external dependencies
+beyond the standard tooling.

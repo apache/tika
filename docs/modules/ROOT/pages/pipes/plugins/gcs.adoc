@@ -1,0 +1,166 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Google Cloud Storage Plugin
+:toc:
+:toclevels: 3
+
+The Google Cloud Storage plugin (`tika-pipes-gcs`) provides fetcher, emitter, and iterator interfaces for objects in GCS buckets.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`gcs-fetcher`
+|`GCSFetcher`
+
+|Emitter
+|`gcs-emitter`
+|`GCSEmitter`
+
+|Iterator
+|`gcs-pipes-iterator`
+|`GCSPipesIterator`
+|===
+
+[#credentials]
+== Credentials
+
+The GCS plugin relies on Google's Application Default Credentials chain — there are no credential fields in the JSON config itself. Set credentials by:
+
+* Running on a GCP service (GCE/GKE/Cloud Run) — uses the attached service account automatically.
+* Setting the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of a service-account JSON key.
+* Running `gcloud auth application-default login` for local development.
+
+The `projectId` field in each component selects which GCP project to bill the API calls against; the service account or user must have storage access to the named bucket.
+
+[#gcs-fetcher]
+== GCS Fetcher (`gcs-fetcher`)
+
+Reads objects from a GCS bucket. The fetch key is the object name.
+
+[source,json]
+----
+include::example$pipes-gcs-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`projectId`
+|_required_
+|GCP project ID for billing/authentication.
+
+|`bucket`
+|_required_
+|GCS bucket name.
+
+|`spoolToTemp`
+|`true`
+|If `true`, the fetched object is spooled to a temp file before parsing.
+
+|`extractUserMetadata`
+|`true`
+|If `true`, GCS custom metadata is copied into the parsed `Metadata`.
+|===
+
+[#gcs-emitter]
+== GCS Emitter (`gcs-emitter`)
+
+Writes parsed results to a GCS bucket. The emit key (relative to `prefix`) is derived from the `FetchEmitTuple`.
+
+[source,json]
+----
+include::example$pipes-gcs-emitter.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`projectId`
+|_required_
+|GCP project ID (validated non-blank).
+
+|`bucket`
+|_required_
+|Destination GCS bucket (validated non-blank).
+
+|`prefix`
+|_no default_
+|Optional object-name prefix. A trailing `/` is stripped automatically.
+
+|`fileExtension`
+|`json`
+|Extension appended to each emitted object name.
+|===
+
+[#gcs-iterator]
+== GCS Iterator (`gcs-pipes-iterator`)
+
+Lists objects under a bucket/prefix and emits one `FetchEmitTuple` per object.
+
+[source,json]
+----
+include::example$pipes-gcs-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`bucket`
+|_required_
+|GCS bucket to enumerate.
+
+|`projectId`
+|`""`
+|GCP project ID for the listing API call.
+
+|`prefix`
+|`""`
+|Object-name prefix to scope the listing.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#gcs-pipeline]
+== Complete Pipeline Example
+
+The example below wires the GCS fetcher, emitter, and iterator together for a bucket-to-bucket pipeline.
+
+[source,json]
+----
+include::example$pipes-gcs-pipeline.json[]
+----
+
+[#notes]
+== Notes
+
+* The GCS plugin uses the official `google-cloud-storage` SDK. Set `GOOGLE_APPLICATION_CREDENTIALS` (or rely on workload identity / metadata server) to authenticate.
+* Each component creates its own `Storage` client. Heavy throughput should be balanced against your project's per-second request quota.
+* Unlike S3, there is no `path-style` toggle — GCS uses a single global endpoint.

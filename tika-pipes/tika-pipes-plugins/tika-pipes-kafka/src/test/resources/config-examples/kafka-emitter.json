@@ -1,0 +1,19 @@
+{
+  "emitters": {
+    "kafe": {
+      "kafka-emitter": {
+        "topic": "tika-parsed-docs",
+        "bootstrapServers": "kafka1.example.com:9092,kafka2.example.com:9092",
+        "acks": "all",
+        "lingerMs": 5000,
+        "batchSize": 16384,
+        "compressionType": "lz4",
+        "enableIdempotence": true,
+        "maxRequestSize": 1048576,
+        "requestTimeoutMs": 30000,
+        "deliveryTimeoutMs": 120000,
+        "clientId": "tika-pipes-emitter"
+      }
+    }
+  }
+}

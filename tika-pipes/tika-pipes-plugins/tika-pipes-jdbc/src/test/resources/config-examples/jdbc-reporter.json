@@ -1,0 +1,12 @@
+{
+  "pipes-reporters": {
+    "jdbc-reporter": {
+      "connectionString": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "tableName": "tika_reporter_status",
+      "createTable": false,
+      "reportWithinMs": 5000,
+      "cacheSize": 500
+    }
+  }
+}

@@ -1,0 +1,45 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+version: "3.8"
+services:
+ 
+  ## Apache Tika Server 
+  tika:
+    image: apache/tika:${TAG}-full
+    # Override default so we can add the /grobid dir on the classpath
+    # (for the bundled GrobidExtractor.properties). The 4.x image layout
+    # places the thin server jar at /opt/tika-server/tika-server.jar and its
+    # deps at /opt/tika-server/lib/*. working_dir=/opt/tika-server matters for
+    # tika-server's plugin-roots fallback.
+    entrypoint: [ "/bin/sh", "-c", "exec java -cp \"/grobid:/opt/tika-server/tika-server.jar:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $$0 $$@"]
+    working_dir: /opt/tika-server
+    # Kept command as example but could be added to entrypoint too
+    command: -c /grobid/tika-config.json
+    restart: on-failure
+    ports:
+      - "9998:9998"
+    volumes:
+      -  ./sample-configs/grobid:/grobid
+    depends_on:
+      - grobid
+
+  ## Grobid Service
+  grobid:
+    image: lfoppiano/grobid:0.6.1
+    ports:
+      - "8070:8070"
+      - "8071:8071"
+

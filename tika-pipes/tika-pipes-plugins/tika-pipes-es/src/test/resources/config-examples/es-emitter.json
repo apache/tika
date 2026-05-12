@@ -1,0 +1,19 @@
+{
+  "emitters": {
+    "ese": {
+      "es-emitter": {
+        "esUrl": "https://es.example.com:9200/tika-docs",
+        "idField": "doc_id",
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "OVERWRITE",
+        "commitWithin": 1000,
+        "embeddedFileFieldName": "embedded",
+        "apiKey": "REDACTED_BASE64_ID_AND_KEY",
+        "httpClientConfig": {
+          "connectionTimeoutMillis": 10000,
+          "socketTimeoutMillis": 60000
+        }
+      }
+    }
+  }
+}

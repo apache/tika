@@ -1,0 +1,56 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "jdbce": {
+      "jdbc-emitter": {
+        "connection": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+        "createTable": "create table parsed_docs (path varchar(512) primary key, title varchar(1024), author varchar(512), content_length bigint, modified timestamp)",
+        "insert": "insert into parsed_docs (path, title, author, content_length, modified) values (?,?,?,?,?)",
+        "keys": {
+          "dc:title": "string",
+          "dc:creator": "string",
+          "Content-Length": "long",
+          "dcterms:modified": "timestamp"
+        },
+        "attachmentStrategy": "FIRST_ONLY",
+        "multivaluedFieldStrategy": "CONCATENATE"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "jdbc-pipes-iterator": {
+      "connection": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+      "select": "select id, source_path, output_path from docs_to_parse where status = 'PENDING'",
+      "idColumn": "id",
+      "fetchKeyColumn": "source_path",
+      "emitKeyColumn": "output_path",
+      "fetcherId": "fsf",
+      "emitterId": "jdbce"
+    }
+  },
+  "pipes-reporters": {
+    "jdbc-reporter": {
+      "connectionString": "jdbc:h2:mem:tika;DB_CLOSE_DELAY=-1",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"]
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

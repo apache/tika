@@ -1,0 +1,49 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "s3f": {
+      "s3-fetcher": {
+        "bucket": "my-tika-input",
+        "region": "us-east-1",
+        "prefix": "incoming/",
+        "credentialsProvider": "profile",
+        "profile": "default",
+        "extractUserMetadata": true
+      }
+    }
+  },
+  "emitters": {
+    "s3e": {
+      "s3-emitter": {
+        "bucket": "my-tika-output",
+        "region": "us-east-1",
+        "prefix": "results/",
+        "fileExtension": "json",
+        "credentialsProvider": "profile",
+        "profile": "default"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "s3-pipes-iterator": {
+      "bucket": "my-tika-input",
+      "region": "us-east-1",
+      "prefix": "incoming/",
+      "credentialsProvider": "profile",
+      "profile": "default",
+      "fetcherId": "s3f",
+      "emitterId": "s3e"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

@@ -24,6 +24,28 @@ This section covers using Apache Tika via gRPC.
 Tika gRPC provides a high-performance gRPC interface for parsing documents.
 This is useful for microservices architectures and polyglot environments.
 
+The service definition lives in `tika-grpc/src/main/proto/tika.proto`.  Clients
+register a fetcher (`SaveFetcher`) and then submit `FetchAndParseRequest`
+messages, each of which returns a `FetchAndParseReply` with extracted
+metadata and content.
+
+== Per-Request `ParseContext`
+
+`FetchAndParseRequest.parse_context_json` lets the caller override the
+server's default `ParseContext` on a per-request basis.  Keys are
+parse-context component names; values are their JSON configs.
+
+[source,json]
+----
+{
+  "basic-content-handler-factory": {"type": "HTML"},
+  "timeout-limits": {"progressTimeoutMillis": 30000}
+}
+----
+
+See `META-INF/tika/parse-context.idx` (generated at build time from
+`@TikaComponent` annotations) for the available component names.
+
 == Topics
 
 // Add links to specific topics as they are created

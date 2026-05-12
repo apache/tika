@@ -1,0 +1,17 @@
+{
+  "_comment": [
+    "Vision-Language Model parsing via Google's Gemini generateContent API.",
+    "Gemini can handle OCR images and PDFs natively (no rasterization needed).",
+    "Set apiKey to your Google AI Studio API key — DO NOT commit a real key.",
+    "Prefer GEMINI_API_KEY env var + a templating entrypoint, similar to the",
+    "Claude config. See docs: configuration/parsers/vlm-parsers."
+  ],
+  "parsers": [
+    {
+      "gemini-vlm-parser": {
+        "apiKey": "${GEMINI_API_KEY}",
+        "model": "gemini-2.5-flash"
+      }
+    }
+  ]
+}

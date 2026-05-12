@@ -1,0 +1,42 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "gcsf": {
+      "gcs-fetcher": {
+        "projectId": "my-gcp-project",
+        "bucket": "my-tika-input",
+        "extractUserMetadata": true
+      }
+    }
+  },
+  "emitters": {
+    "gcse": {
+      "gcs-emitter": {
+        "projectId": "my-gcp-project",
+        "bucket": "my-tika-output",
+        "prefix": "results/",
+        "fileExtension": "json"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "gcs-pipes-iterator": {
+      "projectId": "my-gcp-project",
+      "bucket": "my-tika-input",
+      "prefix": "incoming/",
+      "fetcherId": "gcsf",
+      "emitterId": "gcse"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

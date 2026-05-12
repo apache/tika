@@ -1,0 +1,63 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= JSON Plugin
+:toc:
+:toclevels: 3
+
+The JSON plugin (`tika-pipes-json`) provides an iterator that reads work items from a JSON-lines file (one JSON object per line). It is iterator-only — pair it with a fetcher and emitter.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Iterator
+|`json-pipes-iterator`
+|`JsonPipesIterator`
+|===
+
+[#json-iterator]
+== JSON Iterator (`json-pipes-iterator`)
+
+Reads each line of a JSONL file as a work item and emits one `FetchEmitTuple` per object.
+
+[source,json]
+----
+include::example$pipes-json-iterator.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`jsonPath`
+|_required_
+|Path to the JSONL file on disk.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+[#notes]
+== Notes
+
+* The file format is JSON-lines (also called NDJSON) — one valid JSON object per line, no surrounding array brackets.
+* Each line's JSON object is parsed and its fields become the metadata of the emitted `FetchEmitTuple`. The keys used for fetch / emit identification come from the tuple-shaped fields (e.g., `fetchKey`, `emitKey`).
+* For columnar work items in a CSV, use the xref:pipes/plugins/csv.adoc[CSV iterator] instead.

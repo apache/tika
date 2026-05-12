@@ -1,0 +1,17 @@
+{
+  "pipes-reporters": {
+    "opensearch-pipes-reporter": {
+      "openSearchUrl": "https://opensearch.example.com:9200/tika-status",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "keyPrefix": "tika_",
+      "includeRouting": true,
+      "httpClientConfig": {
+        "userName": "admin",
+        "password": "REDACTED",
+        "authScheme": "basic",
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
+      }
+    }
+  }
+}

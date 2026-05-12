@@ -1,0 +1,255 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= File System Plugin
+:toc:
+:toclevels: 3
+
+The File System plugin (`tika-pipes-file-system`) is the most common starting point for Tika Pipes. It provides all four interfaces — fetcher, emitter, iterator, and reporter — backed by the local (or mounted) filesystem.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`file-system-fetcher`
+|`FileSystemFetcher`
+
+|Emitter
+|`file-system-emitter`
+|`FileSystemEmitter`
+
+|Iterator
+|`file-system-pipes-iterator`
+|`FileSystemPipesIterator`
+
+|Reporter
+|`file-system-reporter`
+|`FileSystemStatusReporter`
+|===
+
+== Complete Pipeline Example
+
+The example below is the canonical filesystem-to-filesystem integration test config. Tokens like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, and `PLUGINS_PATHS` are placeholders the test harness substitutes; replace them with real paths in your own config.
+
+[source,json,subs=none]
+----
+include::example$pipes-fs-pipeline.json[]
+----
+
+icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
+
+[#file-system-fetcher]
+== File System Fetcher (`file-system-fetcher`)
+
+Reads files from a local or mounted filesystem. Fetch keys are resolved relative to `basePath`.
+
+[source,json]
+----
+{
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": true
+      }
+    }
+  }
+}
+----
+
+The outer key (`fsf`) is the fetcher ID — referenced by `pipesIterator.fetcherId` elsewhere in the config.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Base directory for fetch operations. Fetch keys are resolved relative to this path.
+
+|`extractFileSystemMetadata`
+|`false`
+|When `true`, attach file size, created, and modified timestamps to the metadata of each fetched document.
+
+|`allowAbsolutePaths`
+|`false`
+|When `true`, fetch keys may be absolute paths and `basePath` may be omitted. Use sparingly — see <<security-notes>>.
+|===
+
+[#file-system-emitter]
+== File System Emitter (`file-system-emitter`)
+
+Writes parsed results as files under `basePath`. The relative output path is derived from the emit key of each `FetchEmitTuple`.
+
+[source,json]
+----
+{
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "/data/output",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION",
+        "prettyPrint": false
+      }
+    }
+  }
+}
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Base output directory. The emit key is resolved relative to this path.
+
+|`fileExtension`
+|`json`
+|Extension appended to each output file. For `CONTENT_ONLY` mode, set this to match the handler type (`txt`, `html`, `md`, `xml`).
+
+|`onExists`
+|`EXCEPTION`
+|Behavior when the output file already exists: `SKIP` (do nothing), `REPLACE` (overwrite), `EXCEPTION` (fail loudly).
+
+|`prettyPrint`
+|`false`
+|Pretty-print JSON output. Has no effect in `CONTENT_ONLY` mode (raw bytes are written).
+|===
+
+[#file-system-iterator]
+== File System Iterator (`file-system-pipes-iterator`)
+
+Recursively walks a directory tree, emitting one `FetchEmitTuple` per file found.
+
+[source,json]
+----
+{
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "fse"
+    }
+  }
+}
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`basePath`
+|_required_
+|Root directory to walk.
+
+|`countTotal`
+|`true`
+|If `true`, walks the tree once to count files before processing begins. Enables progress reporting at the cost of an extra scan over the tree.
+
+|`fetcherId` / `emitterId`
+|_required_
+|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|===
+
+=== Notes
+
+* Walk order is filesystem-dependent and not guaranteed stable across runs.
+* The relative path of each file (from `basePath`) becomes the fetch key, and by default also the emit key.
+* Symbolic links are followed.
+
+[#file-system-reporter]
+== File System Reporter (`file-system-reporter`)
+
+Maintains a JSON status file that summarizes pipeline progress. The reporter writes the file periodically on a background thread; per-record `report()` calls only update in-memory counters.
+
+[source,json]
+----
+{
+  "pipes-reporters": {
+    "file-system-reporter": {
+      "statusFile": "/var/log/tika/status.json",
+      "reportUpdateMs": 1000
+    }
+  }
+}
+----
+
+`pipes-reporters` accepts multiple reporters keyed by type name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`statusFile`
+|_required_
+|Path of the JSON status file. The file is created on first write and overwritten in place.
+
+|`reportUpdateMs`
+|_no default_
+|Interval in milliseconds between status-file writes. Typical values: `1000` for a low-overhead heartbeat, `100` for near-real-time updates. There is no built-in default — always set this explicitly.
+|===
+
+=== Status file schema
+
+The reporter serializes an `AsyncStatus` object to JSON, containing:
+
+* `asyncStatus` — current pipeline phase (`STARTED`, `COMPLETED`, `CRASHED`).
+* `counts` — map of `RESULT_STATUS` to count (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`, `TIMEOUT`, `OOM`).
+* `totalCountResult` — total documents processed and whether the enumeration is complete.
+* `timestamp` — when the file was last written.
+* `crashMessage` — populated only on fatal pipeline failure.
+
+The file is rewritten in full on each tick, not appended.
+
+[#watching]
+=== Live status for watching applications
+
+The reporter is designed to support external "watchers" — UIs, dashboards, or monitoring scripts that poll the status file to display pipeline progress. To use it that way, set `reportUpdateMs` to match your desired refresh rate:
+
+[source,json]
+----
+"reportUpdateMs": 250
+----
+
+The watcher polls `statusFile` on its own interval and reads the most recent snapshot. Because the file is rewritten in full with the latest status, watchers do not need to handle partial reads.
+
+This pattern is used by `tika-gui-v2` to drive its progress UI: the GUI starts a pipeline subprocess, points the reporter at a temp file, and polls that file every few hundred milliseconds.
+
+Tradeoffs:
+
+* Smaller `reportUpdateMs` values mean more disk writes. On a fast SSD this is negligible, but on a slow disk (or NFS) the writer thread can become a bottleneck.
+* The reporter thread sleeps between writes, so the worst-case staleness of the file is `reportUpdateMs` milliseconds plus serialization time.
+* Per-record `report()` calls are cheap (counter increment only). The cost of "watching" is bounded by the periodic write, not by document throughput.
+
+[#security-notes]
+== Security Notes
+
+* **`basePath` is a sandbox boundary.** The fetcher and emitter reject fetch/emit keys that resolve outside `basePath`. Do not set `allowAbsolutePaths=true` unless the source of fetch keys is fully trusted — an attacker-controlled fetch key could otherwise read arbitrary files.
+* **Symlinks are followed.** A symlink under `basePath` pointing outside `basePath` may still be readable. If you need strict containment, do not allow symlinks in your input tree.
+* **Output directories are created automatically.** The emitter creates intermediate directories as needed. Make sure the process's umask is appropriate for the data being written.

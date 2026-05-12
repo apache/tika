@@ -31,6 +31,8 @@ See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
 
 * xref:migration-to-4x/design-notes-4x.adoc[Design Notes] - Architectural decisions and design rationale
 * xref:migration-to-4x/serialization-4x.adoc[Serialization] - JSON serialization design and implementation details
+* xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies] - Chunk emission to Elasticsearch/OpenSearch from the inference pipeline
+* xref:migration-to-4x/inference-handler-requirements.adoc[Inference Handler Requirements] - Why inference filters require MARKDOWN content handler
 
 == TODOs / Missing Features in 4.x
 

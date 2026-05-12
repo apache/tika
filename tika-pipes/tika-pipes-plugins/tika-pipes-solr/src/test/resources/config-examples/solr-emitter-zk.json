@@ -1,0 +1,15 @@
+{
+  "emitters": {
+    "solre": {
+      "solr-emitter": {
+        "solrCollection": "tika-docs",
+        "solrZkHosts": ["zk1.example.com:2181", "zk2.example.com:2181", "zk3.example.com:2181"],
+        "solrZkChroot": "/solr",
+        "idField": "id",
+        "commitWithin": 1000,
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "ADD"
+      }
+    }
+  }
+}

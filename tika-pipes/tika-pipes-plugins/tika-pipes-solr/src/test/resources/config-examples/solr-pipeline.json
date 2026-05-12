@@ -1,0 +1,42 @@
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT",
+      "writeLimit": -1,
+      "throwOnWriteLimitReached": true
+    }
+  },
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "/data/input",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "solre": {
+      "solr-emitter": {
+        "solrCollection": "tika-docs",
+        "solrUrls": ["http://solr1.example.com:8983/solr"],
+        "idField": "id",
+        "commitWithin": 1000,
+        "attachmentStrategy": "PARENT_CHILD",
+        "updateStrategy": "ADD"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "countTotal": true,
+      "fetcherId": "fsf",
+      "emitterId": "solre"
+    }
+  },
+  "pipes": {
+    "parseMode": "RMETA",
+    "onParseException": "EMIT",
+    "numClients": 4
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "pipes-reporters": {
+    "es-pipes-reporter": {
+      "esUrl": "https://es.example.com:9200/tika-status",
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "keyPrefix": "tika_",
+      "includeRouting": true,
+      "apiKey": "REDACTED_BASE64_ID_AND_KEY",
+      "httpClientConfig": {
+        "connectionTimeoutMillis": 10000,
+        "socketTimeoutMillis": 60000
+      }
+    }
+  }
+}

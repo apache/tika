@@ -16,230 +16,82 @@
 //
 
 = Fetchers
+:toc:
 
-Fetchers retrieve document bytes from a source. Each fetcher is identified by
-its component name and an `id` that is referenced by the pipes iterator.
+A *fetcher* retrieves the bytes of a document from a source — a local filesystem, an S3 bucket, an HTTP URL, etc. — and returns them as an `InputStream` to the parser.
 
-== File System Fetcher (`file-system-fetcher`)
+[#contract]
+== The Fetcher Contract
 
-Reads files from a local or mounted filesystem.
+Each fetcher implements `Fetcher#fetch(String fetchKey, Metadata metadata, ParseContext parseContext)` and returns an `InputStream` for the named document. The shape of the fetch key depends on the fetcher: for the file-system fetcher it is a path relative to `basePath`; for the S3 fetcher it is an object key relative to `prefix`; for the HTTP fetcher it is the URL itself.
 
-**Module:** `tika-pipes-file-system`
+Fetchers are stateless from the pipeline's perspective — every `fetch()` call resolves the key independently, so iterators are free to parallelize fetches.
 
-[source,json,subs=none]
+[#wiring]
+== Wiring Fetchers Into a Pipeline
+
+Fetchers live under the top-level `fetchers` key. Each fetcher gets an ID (the outer map key) and a type-name (the inner map key); the iterator then references the ID through its `fetcherId` field.
+
+[source,json]
 ----
-include::example$pipes-fs-fetcher.json[]
+{
+  "fetchers": {
+    "primary": {
+      "file-system-fetcher": {
+        "basePath": "/data/input"
+      }
+    }
+  },
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "fetcherId": "primary",
+      "emitterId": "..."
+    }
+  }
+}
 ----
 
-[cols="1,1,3"]
+A single pipes config may declare multiple fetchers with different IDs and use them in different iterators or pipelines.
+
+[#plugins]
+== Available Fetchers
+
+[cols="2,2,3"]
 |===
-|Field |Default |Description
+|Plugin |Component name |Notes
 
-|`basePath`
-|_required_
-|Base directory. Fetch keys are resolved relative to this path.
+|xref:pipes/plugins/filesystem.adoc[File System]
+|`file-system-fetcher`
+|Local / mounted filesystem.
 
-|`extractFileSystemMetadata`
-|`false`
-|Extract file created/modified timestamps and size into metadata.
+|xref:pipes/plugins/s3.adoc[Amazon S3]
+|`s3-fetcher`
+|S3 or S3-compatible (MinIO, LocalStack).
 
-|`allowAbsolutePaths`
-|`false`
-|Allow absolute fetch keys when `basePath` is not set.
-|===
+|xref:pipes/plugins/gcs.adoc[Google Cloud Storage]
+|`gcs-fetcher`
+|GCS via Application Default Credentials.
 
-== S3 Fetcher (`s3-fetcher`)
+|xref:pipes/plugins/azblob.adoc[Azure Blob Storage]
+|`az-blob-fetcher`
+|SAS-token auth.
 
-Fetches objects from Amazon S3.
+|xref:pipes/plugins/http.adoc[HTTP]
+|`http-fetcher`
+|HTTP(S) with basic / JWT auth.
 
-**Module:** `tika-pipes-s3`
+|xref:pipes/plugins/google-drive.adoc[Google Drive]
+|`google-drive-fetcher`
+|Drive API with service-account auth.
 
-[cols="1,1,3"]
-|===
-|Field |Default |Description
+|xref:pipes/plugins/microsoft-graph.adoc[Microsoft Graph]
+|`microsoft-graph-fetcher`
+|OneDrive / SharePoint via Graph.
 
-|`bucket`
-|_required_
-|S3 bucket name.
-
-|`region`
-|_required_
-|AWS region (e.g., `us-east-1`).
-
-|`credentialsProvider`
-|`profile`
-|Credentials type: `profile`, `static`, `instance`.
-
-|`profile`
-|`default`
-|AWS profile name (when using `profile` credentials).
-
-|`accessKey` / `secretKey`
-|_none_
-|Static credentials (when using `static` credentials).
-
-|`prefix`
-|_none_
-|S3 key prefix.
-
-|`spoolToTemp`
-|`false`
-|Spool object to a temp file before parsing.
-
-|`extractUserMetadata`
-|`false`
-|Extract S3 user metadata.
-
-|`maxLength`
-|_unlimited_
-|Maximum object size to fetch.
+|xref:pipes/plugins/atlassian-jwt.adoc[Atlassian JWT]
+|`atlassian-jwt-fetcher`
+|Atlassian Connect (Jira/Confluence Cloud).
 |===
 
-== HTTP Fetcher (`http-fetcher`)
-
-Fetches documents from HTTP/HTTPS URLs.
-
-**Module:** `tika-pipes-http`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`userName`
-|_none_
-|Basic auth username.
-
-|`password`
-|_none_
-|Basic auth password.
-
-|`connectTimeoutMillis`
-|`30000`
-|Connection timeout.
-
-|`socketTimeoutMillis`
-|`120000`
-|Socket read timeout.
-
-|`maxConnections`
-|`200`
-|Maximum concurrent connections.
-
-|`userAgent`
-|_default_
-|HTTP User-Agent header.
-|===
-
-== GCS Fetcher (`gcs-fetcher`)
-
-Fetches objects from Google Cloud Storage.
-
-**Module:** `tika-pipes-gcs`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`projectId`
-|_required_
-|GCP project ID.
-
-|`bucket`
-|_required_
-|GCS bucket name.
-
-|`prefix`
-|_none_
-|Key prefix.
-
-|`spoolToTemp`
-|`false`
-|Spool to temp file before parsing.
-
-|`extractUserMetadata`
-|`false`
-|Extract GCS user metadata.
-|===
-
-== Azure Blob Fetcher (`az-blob-fetcher`)
-
-Fetches blobs from Azure Blob Storage.
-
-**Module:** `tika-pipes-az-blob`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`sasToken`
-|_required_
-|Shared Access Signature token.
-
-|`endpoint`
-|_required_
-|Azure storage endpoint URL.
-
-|`container`
-|_required_
-|Container name.
-
-|`prefix`
-|_none_
-|Blob prefix.
-
-|`extractUserMetadata`
-|`false`
-|Extract Azure user metadata.
-|===
-
-== Google Drive Fetcher (`google-drive-fetcher`)
-
-Fetches files from Google Drive via the Drive API.
-
-**Module:** `tika-pipes-google-drive`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`serviceAccountCredentialsPath`
-|_required_
-|Path to GCP service account JSON key file.
-
-|`impersonatedUser`
-|_none_
-|User email to impersonate (for domain-wide delegation).
-|===
-
-== Microsoft Graph Fetcher (`microsoft-graph-fetcher`)
-
-Fetches files from Microsoft 365 (OneDrive, SharePoint) via the Graph API.
-
-**Module:** `tika-pipes-microsoft-graph`
-
-== Atlassian JWT Fetcher (`atlassian-jwt-fetcher`)
-
-Fetches content from Atlassian products using JWT authentication.
-
-**Module:** `tika-pipes-atlassian-jwt`
-
-[cols="1,1,3"]
-|===
-|Field |Default |Description
-
-|`sharedSecret`
-|_required_
-|JWT shared secret.
-
-|`issuer`
-|_required_
-|JWT issuer / app key.
-
-|`connectTimeoutMillis`
-|`30000`
-|Connection timeout.
-
-|`socketTimeoutMillis`
-|`120000`
-|Socket read timeout.
-|===
+For the full plugin / interface matrix, see xref:pipes/plugins/index.adoc[Plugins].

@@ -1,3 +1,19 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 = Forked-JVM CPU Sizing
 
 Tika Pipes runs multiple forked JVMs in per-client mode (one per `numClients`).
@@ -112,6 +128,23 @@ different slice based on workload knowledge), just include it in your config:
 When Tika sees an explicit `-XX:ActiveProcessorCount` in `forkedJvmArgs`, it
 respects your value and skips the auto-injection — the sizing summary will
 report `autoCap=user-set in forkedJvmArgs`.
+
+[#heap-per-worker]
+== Heap per worker — rule of thumb
+
+A reasonable starting point is **~2 GB of heap per forked worker** (passed via `-Xmx2g` in `forkedJvmArgs`). The number falls out of three independent constraints any of which can dominate:
+
+* **Worst-case PDF parsing.** A handful of pathological PDFs in any reasonably large corpus will allocate hundreds of MB of intermediate object data per document — large image streams, deeply nested form fields, big embedded fonts. Smaller heaps OOM on those documents; larger heaps just let GC clean up between docs.
+* **Embedded-document explosion.** A zip-bomb-shaped office document with thousands of embedded objects multiplies per-doc allocation by the embedding count. The `maxEmbeddedResources` setting caps the count, but each retained object still lives in the heap until the whole tree finishes parsing.
+* **GC headroom.** G1GC behaves poorly above ~85% occupancy. A `-Xmx2g` worker comfortably handles documents that allocate up to ~1.5 GB of live data; below that you start trading throughput for memory.
+
+This is a default — not a tuning recommendation. To right-size for your specific corpus:
+
+. Measure peak per-worker live-heap with `-Xlog:gc*` (look at the post-GC working set, not the peak before GC).
+. Pick `-Xmx` ≈ `1.5 × peakLiveHeap` to leave GC headroom.
+. Re-measure under your real concurrency. Embedded-doc-heavy formats (PowerPoint, complex Word) shift this number up; flat text or PDF-text-only shifts it down.
+
+The pod-level heap budget is `numClients × per-worker-Xmx + parent-overhead`. On a 16 GB node running `numClients=4`, that's about `4 × 2 GB + 1 GB ≈ 9 GB` — comfortably below the node limit, leaving room for kernel, IO buffers, and a non-saturated pod.
 
 == Container & cgroup behavior
 

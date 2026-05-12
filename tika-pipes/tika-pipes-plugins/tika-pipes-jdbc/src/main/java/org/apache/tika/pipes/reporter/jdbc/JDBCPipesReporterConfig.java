@@ -64,12 +64,27 @@ public record JDBCPipesReporterConfig(String connectionString, Set<String> inclu
     }
 
     @JsonCreator
-    public JDBCPipesReporterConfig(@JsonProperty("connectionString") String connectionString,
-                                   @JsonProperty("includes") Set<String> includes,
-                                   @JsonProperty("excludes") Set<String> excludes) {
-        this(connectionString,
+    public static JDBCPipesReporterConfig fromJson(
+            @JsonProperty("connectionString") String connectionString,
+            @JsonProperty("includes") Set<String> includes,
+            @JsonProperty("excludes") Set<String> excludes,
+            @JsonProperty("reportSql") String reportSql,
+            @JsonProperty("tableName") String tableName,
+            @JsonProperty("createTable") Boolean createTable,
+            @JsonProperty("postConnectionSql") String postConnectionSql,
+            @JsonProperty("reportVariables") List<String> reportVariables,
+            @JsonProperty("reportWithinMs") Long reportWithinMs,
+            @JsonProperty("cacheSize") Integer cacheSize) {
+        return new JDBCPipesReporterConfig(
+                connectionString,
                 includes == null ? Set.of() : includes,
-                excludes == null ? Set.of() : excludes, null, JDBCPipesReporter.TABLE_NAME, true,
-                null, List.of(), JDBCPipesReporter.DEFAULT_REPORT_WITHIN_MS, JDBCPipesReporter.DEFAULT_CACHE_SIZE);
+                excludes == null ? Set.of() : excludes,
+                reportSql,
+                tableName == null ? JDBCPipesReporter.TABLE_NAME : tableName,
+                createTable == null ? true : createTable,
+                postConnectionSql,
+                reportVariables == null ? List.of() : reportVariables,
+                reportWithinMs == null ? JDBCPipesReporter.DEFAULT_REPORT_WITHIN_MS : reportWithinMs,
+                cacheSize == null ? JDBCPipesReporter.DEFAULT_CACHE_SIZE : cacheSize);
     }
 }

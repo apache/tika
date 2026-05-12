@@ -1,0 +1,79 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Google Drive Plugin
+:toc:
+:toclevels: 3
+
+The Google Drive plugin (`tika-pipes-google-drive`) provides a fetcher that retrieves files from a Google Drive. It is fetcher-only — pair it with another emitter and iterator.
+
+[cols="2,1,3"]
+|===
+|Interface |Component name |Class
+
+|Fetcher
+|`google-drive-fetcher`
+|`GoogleDriveFetcher`
+|===
+
+[#google-drive-fetcher]
+== Google Drive Fetcher (`google-drive-fetcher`)
+
+Fetches files from Google Drive by file ID. The fetch key is the Drive file ID.
+
+[source,json]
+----
+include::example$pipes-google-drive-fetcher.json[]
+----
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`applicationName`
+|`tika-pipes`
+|Application name sent to the Google API for logging/quota tracking.
+
+|`serviceAccountKeyBase64`
+|_optional_
+|Base64-encoded service-account JSON key. If absent, the SDK falls back to Application Default Credentials (env var `GOOGLE_APPLICATION_CREDENTIALS` or workload identity).
+
+|`subjectUser`
+|_optional_
+|For domain-wide delegation: the user to impersonate (e.g., `user@example.com`).
+
+|`scopes`
+|_empty_
+|OAuth scopes to request. Typical: `["https://www.googleapis.com/auth/drive.readonly"]`.
+
+|`spoolToTemp`
+|`false`
+|If `true`, files are spooled to a temp file before being parsed.
+
+|`throttleSeconds`
+|_optional_
+|Rate-limit array — consecutive failures sleep for the corresponding number of seconds.
+|===
+
+[#notes]
+== Notes
+
+* The plugin uses Google's official `google-api-services-drive` SDK.
+* For domain-wide delegation, the service account must have been granted that scope in the Google Workspace admin console — Tika config alone is not enough.
+* Service-account credentials in `serviceAccountKeyBase64` are sensitive — use environment-variable substitution or external secret stores rather than checking the encoded JSON into source control.

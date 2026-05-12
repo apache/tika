@@ -1,0 +1,15 @@
+{
+  "pipes-iterator": {
+    "solr-pipes-iterator": {
+      "solrCollection": "tika-docs",
+      "solrUrls": ["http://solr1.example.com:8983/solr"],
+      "filters": ["status:NEEDS_REPARSE"],
+      "idField": "id",
+      "rows": 5000,
+      "connectionTimeoutMillis": 10000,
+      "socketTimeoutMillis": 60000,
+      "fetcherId": "fsf",
+      "emitterId": "solre"
+    }
+  }
+}

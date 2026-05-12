@@ -1,0 +1,15 @@
+{
+  "fetchers": {
+    "s3f": {
+      "s3-fetcher": {
+        "bucket": "my-tika-input",
+        "region": "us-east-1",
+        "prefix": "incoming/",
+        "credentialsProvider": "profile",
+        "profile": "default",
+        "extractUserMetadata": true,
+        "spoolToTemp": true
+      }
+    }
+  }
+}
