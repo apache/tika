@@ -143,7 +143,15 @@ The plugin's *jar* is on Maven Central for users building atop the plugin
 API or embedding it programmatically.
 
 Mechanism: `maven-assembly-plugin` with `<attach>false</attach>` in each
-plugin pom (TIKA-4723).
+plugin pom (TIKA-4723). Because `<attach>false</attach>` also skips the
+local-repo install, each plugin pom additionally runs
+`maven-install-plugin:install-file` during the `install` phase, writing
+the zip into the local repo at canonical coordinates
+(`<groupId>:<artifactId>:zip:<version>`). Sibling modules
+(`tika-pipes-fork-parser`, `tika-server-*`, `tika-grpc`, integration
+tests) declare the zip as a test-scope Maven dep and rely on this
+mechanism to resolve it from the local repo without ever publishing it
+to Central.
 
 === tika-grpc
 
