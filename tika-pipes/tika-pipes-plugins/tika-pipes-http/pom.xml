@@ -185,6 +185,10 @@
             deployed to Maven Central. Sibling modules declare this plugin zip
             as a test-scope Maven dep, so we install-file it locally to satisfy
             reactor resolution without making it part of the project artifacts.
+
+            tika-pipes-http writes its zip to target/plugins/ (not target/) so
+            that its own self-tests can load the plugin via PF4J in deployment
+            mode; reflect that path here.
           -->
           <execution>
             <id>install-plugin-zip-locally</id>
@@ -193,7 +197,7 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+              <file>${project.build.directory}/plugins/${project.artifactId}-${project.version}.zip</file>
               <groupId>${project.groupId}</groupId>
               <artifactId>${project.artifactId}</artifactId>
               <version>${project.version}</version>
