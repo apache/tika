@@ -121,6 +121,20 @@ This will prompt you to confirm:
 * The SCM tag name
 * The next development version
 
+[IMPORTANT]
+====
+*Always enter `X.Y.Z-rcN` as the SCM tag name — never the bare `X.Y.Z`.*
+
+Pushing a tag of the form `X.Y.Z` (digit.digit.digit, no hyphen) immediately
+auto-triggers the Docker release workflow, which publishes images to Docker
+Hub and moves `apache/tika:latest`. If you enter bare `X.Y.Z` here, those
+images go live *before the vote has even started.*
+
+For the first vote: enter `X.Y.Z-rc1`. For a second RC: `X.Y.Z-rc2`. Etc. The
+bare `X.Y.Z` tag is created later in Step 12 after the vote passes, and
+that push is what triggers the Docker release.
+====
+
 === Step 8: Perform the Release
 
 Execute the Maven release perform goal:
@@ -231,13 +245,27 @@ Upon successful vote (at least 3 +1 votes from PMC members):
 
 . Release the Nexus staging repository (click "Release" button)
 . Move artifacts from dev to release distribution:
-
++
 [source,bash]
 ----
 svn mv https://dist.apache.org/repos/dist/dev/tika/X.Y.Z \
        https://dist.apache.org/repos/dist/release/tika/X.Y.Z \
        -m "Release Apache Tika X.Y.Z"
 ----
+. Create the GA git tag from the winning RC and push it. *This auto-triggers
+  the Docker release workflow* (see xref:maintainers/release-guides/docker.adoc[Releasing
+  Tika Docker Images]):
++
+[source,bash]
+----
+git tag X.Y.Z X.Y.Z-rcN     # point GA tag at the same commit as the winning RC
+git push origin X.Y.Z
+----
++
+For a prerelease (`X.Y.Z-alpha-N`, `X.Y.Z-beta-N`, etc.) where you don't
+want `:latest` to move and don't want the workflow to auto-fire, skip this
+substep. Trigger the Docker release manually via `workflow_dispatch` instead;
+see the Docker guide.
 
 [[troubleshooting]]
 == Troubleshooting `release:perform`
@@ -341,10 +369,19 @@ Refresh the website documentation to reflect the new release:
 
 === Release Docker and Helm Images
 
-Follow the separate guides for releasing:
+For a GA release, the Docker images publish automatically when the
+`X.Y.Z` tag is pushed in Step 12 above — no manual step needed. Watch the
+"Docker release - tika-server and tika-grpc" workflow run in the Actions
+tab to confirm. See xref:maintainers/release-guides/docker.adoc[Releasing
+Tika Docker Images] for the tag scheme, verification steps, and how to
+publish a manual rebuild (CVE in base image, etc.).
 
-* link:docker.html[Docker images]
-* link:helm.html[Helm charts]
+For a prerelease (`X.Y.Z-alpha-N`, `X.Y.Z-beta-N`, RC variants), the Docker
+workflow does *not* auto-fire — trigger it manually via `workflow_dispatch`
+per the Docker guide.
+
+Helm charts are released separately via xref:maintainers/release-guides/helm.adoc[Releasing
+Tika Helm Charts].
 
 === Send Announcements
 

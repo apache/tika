@@ -1670,6 +1670,7 @@
                 <inputExclude>nbactions.xml</inputExclude> <!-- local netbeans -->
                 <inputExclude>**/test-documents/**</inputExclude>
                 <inputExclude>**/target/**</inputExclude> <!-- generated files -->
+                <inputExclude>**/sample-configs/**/*.json</inputExclude> <!-- JSON has no comment syntax for headers -->
               </inputExcludes>
             </configuration>
             <executions>
