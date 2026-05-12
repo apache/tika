@@ -27,6 +27,7 @@ step-by-step guides for releasing the various Tika components.
 == Topics
 
 * xref:maintainers/release-guides/tika.adoc[Releasing Apache Tika] - Main Tika project release process
+* xref:maintainers/release-guides/release-artifacts.adoc[Release Artifacts: What Goes Where] - Maven Central vs Apache dist vs Docker matrix
 * xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images] - Docker image release process
 * xref:maintainers/release-guides/helm.adoc[Releasing Tika Helm Charts] - Helm chart release process
 * xref:maintainers/release-guides/grpc.adoc[Releasing Tika gRPC] - gRPC component release process

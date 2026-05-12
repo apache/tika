@@ -80,3 +80,8 @@
 * xref:maintainers/index.adoc[Maintainers]
 ** xref:maintainers/site.adoc[Publishing the Site]
 ** xref:maintainers/release-guides/index.adoc[Release Guides]
+*** xref:maintainers/release-guides/tika.adoc[Releasing Apache Tika]
+*** xref:maintainers/release-guides/release-artifacts.adoc[Release Artifacts: What Goes Where]
+*** xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images]
+*** xref:maintainers/release-guides/helm.adoc[Releasing Tika Helm Charts]
+*** xref:maintainers/release-guides/grpc.adoc[Releasing Tika gRPC]

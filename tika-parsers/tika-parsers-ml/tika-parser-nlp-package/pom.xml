@@ -64,6 +64,16 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <!--
+                Direct the shaded jar to a `-shaded.jar` filename so the slim
+                main artifact stays intact for Maven Central, and
+                shadedArtifactAttached=false keeps the fat jar out of the
+                Maven artifact set entirely. The fat jar exists on disk for
+                Apache dist staging only. Same Central/dist separation
+                TIKA-4723 set up for tika-pipes plugin zips.
+              -->
+              <outputFile>${project.build.directory}/${project.artifactId}-${project.version}-shaded.jar</outputFile>
+              <shadedArtifactAttached>false</shadedArtifactAttached>
               <createDependencyReducedPom>
                 false
               </createDependencyReducedPom>

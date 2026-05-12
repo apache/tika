@@ -116,6 +116,7 @@
           </descriptors>
           <finalName>${project.artifactId}-${project.version}</finalName>
           <appendAssemblyId>false</appendAssemblyId>
+              <attach>false</attach>
         </configuration>
         <executions>
           <execution>
@@ -135,6 +136,34 @@
             <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
           </annotationProcessors>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <!--
+            The assembly attaches the zip with <attach>false</attach> (TIKA-4723)
+            so it is not added to the Maven artifact set and therefore is not
+            deployed to Maven Central. Sibling modules declare this plugin zip
+            as a test-scope Maven dep, so we install-file it locally to satisfy
+            reactor resolution without making it part of the project artifacts.
+          -->
+          <execution>
+            <id>install-plugin-zip-locally</id>
+            <phase>install</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>${project.artifactId}</artifactId>
+              <version>${project.version}</version>
+              <packaging>zip</packaging>
+              <generatePom>false</generatePom>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
