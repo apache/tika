@@ -17,22 +17,25 @@
 
 name: Docker release - tika-server and tika-grpc
 
-# Auto-trigger only on GA-style version tags (digit.digit.digit with no
-# hyphen). Prerelease tags (`4.0.0-rc1`, `4.0.0-alpha-1`, `4.0.0-BETA`,
-# `4.0.0-SNAPSHOT`) and branch-style tags (`branch_4x`) intentionally do not
-# fire — the convention is:
+# Auto-trigger on tag push for GA-style version tags only. The convention is:
 #   release:prepare creates `X.Y.Z-rcN` for the vote (workflow stays silent),
 #   vote passes, the release manager pushes a separate `X.Y.Z` tag pointing
 #   at the same commit, and *that* push triggers this workflow.
 # Manual rebuilds (CVE in base image, plugin refresh) use workflow_dispatch
 # with an explicit build_number.
+#
+# GH Actions doesn't allow combining `tags` (include) and `tags-ignore` on
+# a single event, so the filter is expressed as `tags-ignore` only. Any tag
+# without a hyphen or underscore fires the workflow; this rejects prerelease
+# tags (`4.0.0-rc1`, `4.0.0-alpha-1`, `4.0.0-BETA`) and branch-style tags
+# (`branch_4x`). The `Compute tags` step has a separate prerelease check
+# (`*-*`) that gates `:latest` defense-in-depth for the workflow_dispatch
+# path where the auto-trigger filter isn't in play.
 on:
   push:
-    tags:
-      - '[0-9]*.[0-9]*.[0-9]*'   # 4.0.0, 10.20.30, etc.
     tags-ignore:
-      - '*-*'                     # anything with a hyphen is a prerelease/non-GA tag
-      - '*_*'                     # anything with an underscore is a branch/non-version tag
+      - '*-*'   # anything with a hyphen is a prerelease/non-GA tag
+      - '*_*'   # anything with an underscore is a branch/non-version tag
   workflow_dispatch:
     inputs:
       tag:
@@ -54,7 +57,33 @@ env:
   BUILD: ${{ inputs.build_number || '1' }}
 
 jobs:
+  # Gating job for push triggers: refuse to publish if the tag isn't shaped
+  # like a GA version (digit+ . digit+ . digit+). The `tags-ignore` filter at
+  # the `on:` level already blocks anything with `-` or `_`, but it doesn't
+  # reject other oddities like `wip`, `foo`, or `test`. This job is the
+  # belt-and-suspenders to those (which were the suspenders).
+  #
+  # workflow_dispatch trigger is permissive — humans pick the tag (which can
+  # be alpha/beta/RC) — so the strict check is push-only.
+  validate-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject non-GA-style tags on push triggers
+        run: |
+          if [[ "${{ github.event_name }}" != "push" ]]; then
+            echo "workflow_dispatch trigger — skipping strict tag-shape validation."
+            exit 0
+          fi
+          tag='${{ github.ref_name }}'
+          if [[ ! "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error title=Non-GA tag::Refusing to publish: tag '$tag' is not a GA-style X.Y.Z."
+            echo "::error::For prerelease publishes (alpha/BETA/RC), use workflow_dispatch with an explicit tag and build_number."
+            exit 1
+          fi
+          echo "Tag '$tag' is GA-style. Proceeding."
+
   release-tika-server:
+    needs: validate-tag
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -148,6 +177,7 @@ jobs:
           git push origin "${TAG}-${BUILD}"
 
   release-tika-grpc:
+    needs: validate-tag
     runs-on: ubuntu-latest
     timeout-minutes: 120
 

@@ -83,6 +83,13 @@ automatically. Prerelease tags (`4.0.0-rc1`, `4.0.0-alpha-1`, anything with
 a hyphen) and branch-style tags (`branch_4x`, anything with an underscore)
 are filtered out by `tags-ignore: ['*-*', '*_*']` and stay silent.
 
+A second `validate-tag` gating job enforces strict `X.Y.Z` shape on push
+triggers (defense-in-depth against odd tag names like `wip` that bypass the
+`tags-ignore` filter). It fails fast with a clear error before any build
+starts. It's skipped for `workflow_dispatch` triggers, which are intentionally
+permissive — that path is used for prerelease publishes where the tag name
+won't be GA-shaped.
+
 The standard ASF release flow looks like:
 
 . `release:prepare` creates `X.Y.Z-rcN` for the vote → workflow does *not*
