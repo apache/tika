@@ -143,7 +143,7 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
                         i, Math.min(i + batchSize, chunks.size()));
                 embed(batch, defaultConfig);
             }
-            ChunkSerializer.mergeInto(metadata, chunks);
+            ChunkSerializer.mergeInto(metadata, chunks, defaultConfig.getOutputField());
         } catch (IOException e) {
             throw new TikaException(
                     "Embedding inference failed: " + e.getMessage(), e);
