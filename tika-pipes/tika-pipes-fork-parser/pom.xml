@@ -61,6 +61,17 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-langdetect-charsoup</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- tika-eval: TikaEvalMetadataFilter (tokens, OOV, lang, languageness) -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-eval-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>

@@ -127,7 +127,9 @@ public class ComponentInstantiator {
                 Constructor<?> constructor = componentClass.getConstructor(JsonConfig.class);
                 String jsonString = configNode != null ? configNode.toString() : "{}";
                 JsonConfig jsonConfig = () -> jsonString;
-                return (T) constructor.newInstance(jsonConfig);
+                T component = (T) constructor.newInstance(jsonConfig);
+                initializeIfNeeded(component);
+                return component;
             } catch (NoSuchMethodException e) {
                 // No JsonConfig constructor, fall back to other methods
             }

@@ -68,6 +68,12 @@
       <artifactId>tika-ml-junkdetect</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- tika-eval: TikaEvalMetadataFilter (tokens, OOV, lang, languageness) -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-eval-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-xmp</artifactId>
