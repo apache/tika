@@ -21,14 +21,19 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -41,7 +46,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -206,17 +213,27 @@ public class OpenDocumentParser implements Parser {
         //  rest of the file afterwards (TIKA-1353)
         // Only possible to guarantee that when opened from a file not a stream
 
+        // Pre-scan content.xml to build a picture→draw:page map.  We need
+        // this before the main loop because the Pictures/ entries are
+        // emitted lazily in zip-iteration order, and we want each emitted
+        // picture's metadata to carry the set of slides on which it
+        // appears.  The map is best-effort: if the scan fails, embedded
+        // pictures simply go out without TikaPagedText metadata.
+        Map<String, Set<Integer>> picturePages = scanPicturePages(zipFile, context);
+
         ZipArchiveEntry entry = zipFile.getEntry(MANIFEST_NAME);
         if (entry != null) {
             try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                handleZipArchiveEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
+                handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
+                        embeddedDocumentUtil, picturePages);
             }
         }
 
         entry = zipFile.getEntry(META_NAME);
         if (entry != null) {
             try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                handleZipArchiveEntry(entry, tisZip, metadata, context, handler, embeddedDocumentUtil);
+                handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
+                        embeddedDocumentUtil, picturePages);
             }
         }
 
@@ -225,15 +242,41 @@ public class OpenDocumentParser implements Parser {
             entry = entries.nextElement();
             if (!META_NAME.equals(entry.getName())) {
                 try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                    handleZipArchiveEntry(entry, tis, metadata, context, handler, embeddedDocumentUtil);
+                    handleZipArchiveEntry(entry, tis, metadata, context, handler,
+                            embeddedDocumentUtil, picturePages);
                 }
             }
         }
     }
 
+    /**
+     * Pre-scans {@code content.xml} for {@code draw:page} and
+     * {@code draw:image[xlink:href]} elements, returning a map from
+     * picture href (typically {@code "Pictures/<name>"}, matching the
+     * picture's zip entry name) to the set of 1-based draw:page indices
+     * referencing it.  Returns an empty map if {@code content.xml} is
+     * missing or cannot be parsed; per-page metadata is best-effort
+     * enrichment, not load-bearing for the parse itself.
+     */
+    private static Map<String, Set<Integer>> scanPicturePages(ZipFile zipFile,
+                                                              ParseContext context) {
+        ZipArchiveEntry contentEntry = zipFile.getEntry("content.xml");
+        if (contentEntry == null) {
+            return Collections.emptyMap();
+        }
+        PicturePageHandler scan = new PicturePageHandler();
+        try (InputStream is = zipFile.getInputStream(contentEntry)) {
+            XMLReaderUtils.parseSAX(is, scan, context);
+        } catch (IOException | SAXException | TikaException e) {
+            return Collections.emptyMap();
+        }
+        return scan.getPicturePages();
+    }
+
     private void handleZipArchiveEntry(ZipArchiveEntry entry, TikaInputStream tisZip, Metadata metadata,
                                 ParseContext context, ContentHandler handler,
-                                EmbeddedDocumentUtil embeddedDocumentUtil)
+                                EmbeddedDocumentUtil embeddedDocumentUtil,
+                                Map<String, Set<Integer>> picturePages)
             throws IOException, SAXException, TikaException {
 
         if (entry.isDirectory()) {
@@ -284,6 +327,15 @@ public class OpenDocumentParser implements Parser {
                             embeddedMetadata.set(Metadata.CONTENT_TYPE, embeddedMimeType.toString());
                         }
                         tisZip.reset();
+                        // Tag the picture with the draw:page indices it
+                        // appears on (set populated by scanPicturePages).
+                        // A null lookup means "not referenced by any
+                        // draw:page" — leaves PAGE_NUMBERS unset, matching
+                        // the "unknown" branch of the convention.
+                        Collection<Integer> pages = picturePages.get(embeddedName);
+                        if (pages != null) {
+                            PageAnchoring.applyPageMetadata(embeddedMetadata, pages);
+                        }
                     }
 
                 if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
@@ -350,5 +402,48 @@ public class OpenDocumentParser implements Parser {
         return false;
     }
 
+    /**
+     * SAX handler that pre-scans an ODP {@code content.xml} to record which
+     * {@code draw:page} elements reference each {@code draw:image}.  The
+     * result is keyed by the picture's {@code xlink:href} attribute value,
+     * which for embedded pictures is the zip-entry path (e.g.
+     * {@code Pictures/abc.png}).  Used to populate
+     * {@link TikaPagedText#PAGE_NUMBERS} on the embedded picture's metadata.
+     *
+     * <p>Only draw:page is treated as a page boundary; draw:image elements
+     * outside any draw:page (e.g. on a master-page template) are ignored
+     * because no slide number meaningfully applies.  Their metadata is left
+     * without page tagging — the "unknown" branch of the convention.
+     */
+    static final class PicturePageHandler extends DefaultHandler {
+        private static final String DRAW_NS =
+                "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+        private static final String XLINK_NS =
+                "http://www.w3.org/1999/xlink";
 
+        private final Map<String, Set<Integer>> picturePages = new HashMap<>();
+        private int currentPage = 0;
+
+        @Override
+        public void startElement(String uri, String localName, String qName,
+                                 Attributes attrs) {
+            if (!DRAW_NS.equals(uri)) {
+                return;
+            }
+            if ("page".equals(localName)) {
+                currentPage++;
+            } else if ("image".equals(localName) && currentPage > 0) {
+                String href = attrs.getValue(XLINK_NS, "href");
+                if (href != null) {
+                    picturePages
+                            .computeIfAbsent(href, k -> new LinkedHashSet<>())
+                            .add(currentPage);
+                }
+            }
+        }
+
+        Map<String, Set<Integer>> getPicturePages() {
+            return picturePages;
+        }
+    }
 }

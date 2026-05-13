@@ -21,9 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -54,6 +56,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -98,6 +101,18 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     protected static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
     protected final DataFormatter formatter;
     protected final List<PackagePart> sheetParts = new ArrayList<>();
+    /**
+     * Pre-pass index of embedded-image absolute part name (e.g.
+     * {@code /xl/media/image1.png}) → set of 1-based sheet numbers
+     * referencing that image.  In XLSX, sheets reference images
+     * indirectly via drawing parts (sheet → drawing → image), so the
+     * pre-pass walks both hops.  Populated by
+     * {@link #getMainDocumentParts()} so that
+     * {@link #applyEmbeddedAnchorMetadata} can answer per-target
+     * lookups even after {@code AbstractOOXMLExtractor.handleEmbeddedParts}
+     * has deduped on second-and-later references.
+     */
+    private final Map<String, Set<Integer>> picturePages = new HashMap<>();
     protected final Map<String, String> drawingHyperlinks = new HashMap<>();
     protected Metadata metadata;
     protected ParseContext parseContext;
@@ -920,7 +935,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
         List<PackagePart> parts = new ArrayList<>();
+        // The sheet order in sheetParts mirrors the workbook's sheet
+        // ordering (populated in buildXHTML), so the index here is the
+        // 1-based sheet number.
+        int sheetNumber = 0;
         for (PackagePart part : sheetParts) {
+            sheetNumber++;
             // Add the sheet
             parts.add(part);
 
@@ -931,7 +951,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     if (rel.getTargetMode() == TargetMode.INTERNAL) {
                         PackagePartName relName =
                                 PackagingURIHelper.createPartName(rel.getTargetURI());
-                        parts.add(rel.getPackage().getPart(relName));
+                        PackagePart drawingPart = rel.getPackage().getPart(relName);
+                        parts.add(drawingPart);
+                        recordImagesOnSheet(drawingPart, sheetNumber);
                     }
                 }
                 for (PackageRelationship rel : part
@@ -939,7 +961,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     if (rel.getTargetMode() == TargetMode.INTERNAL) {
                         PackagePartName relName =
                                 PackagingURIHelper.createPartName(rel.getTargetURI());
-                        parts.add(rel.getPackage().getPart(relName));
+                        PackagePart vmlPart = rel.getPackage().getPart(relName);
+                        parts.add(vmlPart);
+                        recordImagesOnSheet(vmlPart, sheetNumber);
                     }
                 }
             } catch (InvalidFormatException e) {
@@ -1251,5 +1275,59 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 sb.append(ch, start, length);
             }
         }
+    }
+
+    /**
+     * Records every image relationship of {@code drawingPart} against the
+     * given 1-based {@code sheetNumber}.  Called once per drawing during
+     * the pre-pass in {@link #getMainDocumentParts()}.  When the same
+     * image is referenced from drawings on multiple sheets, all sheet
+     * numbers end up in the set so {@link Office#SHEET_NUMBERS} ends up
+     * multi-valued.  Keyed by absolute part name so the lookup matches
+     * what {@link AbstractOOXMLExtractor#applyEmbeddedAnchorMetadata}
+     * sees &mdash; relative target URIs across drawing parts collide
+     * and are not stable lookup keys.
+     */
+    private void recordImagesOnSheet(PackagePart drawingPart, int sheetNumber) {
+        if (drawingPart == null) {
+            return;
+        }
+        PackageRelationshipCollection prc;
+        try {
+            prc = drawingPart.getRelationshipsByType(PackageRelationshipTypes.IMAGE_PART);
+        } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            return;
+        }
+        if (prc == null) {
+            return;
+        }
+        for (PackageRelationship rel : prc) {
+            if (rel.getTargetMode() != TargetMode.INTERNAL) {
+                continue;
+            }
+            PackagePart imagePart;
+            try {
+                imagePart = drawingPart.getRelatedPart(rel);
+            } catch (InvalidFormatException | IllegalArgumentException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+                continue;
+            }
+            if (imagePart == null) {
+                continue;
+            }
+            picturePages
+                    .computeIfAbsent(imagePart.getPartName().getName(),
+                            k -> new LinkedHashSet<>())
+                    .add(sheetNumber);
+        }
+    }
+
+    @Override
+    protected void applyEmbeddedAnchorMetadata(PackagePart part, Metadata metadata) {
+        PageAnchoring.applySheetMetadata(metadata,
+                picturePages.get(part.getPartName().getName()));
     }
 }

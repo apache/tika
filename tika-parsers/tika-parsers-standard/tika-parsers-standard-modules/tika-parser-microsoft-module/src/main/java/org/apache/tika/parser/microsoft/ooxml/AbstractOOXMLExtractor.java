@@ -55,6 +55,7 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
@@ -151,6 +152,36 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     protected Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
         return Collections.emptyMap();
+    }
+
+    /**
+     * Hook for subclasses to apply anchor metadata (page or sheet numbers)
+     * to an embedded part's metadata, for paginated/sheeted containers.
+     * Called from {@link #handleEmbeddedFile} after the basic metadata
+     * (relationship id, content type, etc.) has been written, before the
+     * embedded part is handed off to the recursing parser.
+     *
+     * <p>Default is no-op &mdash; non-paginated containers (Word, Visio,
+     * ...) leave embedded resources without anchor metadata.  Subclasses
+     * for paginated containers should override and invoke either
+     * {@link PageAnchoring#applyPageMetadata} (presentations) or
+     * {@link PageAnchoring#applySheetMetadata} (spreadsheets) with the
+     * indices for {@code part}.  Letting each subclass own the write
+     * keeps the abstract class format-agnostic &mdash; pages vs. sheets
+     * is a per-format decision.
+     *
+     * <p>The {@link PackagePart} (not just its target URI) is supplied
+     * because relative target URIs differ depending on the relationship
+     * source (e.g. {@code ../media/image1.png} from a slide, or the same
+     * relative URI from an Excel drawing) and would not be stable
+     * lookup keys across sources.  Subclasses can use
+     * {@code part.getPartName().getName()} for a canonical absolute path.
+     *
+     * @param part      the embedded part being emitted
+     * @param metadata  metadata to enrich
+     */
+    protected void applyEmbeddedAnchorMetadata(PackagePart part, Metadata metadata) {
+        // default: no-op
     }
 
     protected String getJustFileName(String desc) {
@@ -450,7 +481,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     /**
-     * Handles an embedded file in the document
+     * Handles an embedded file in the document.  Invokes
+     * {@link #applyEmbeddedAnchorMetadata} so paginated/sheeted
+     * subclasses can tag the embedded resource's metadata with the
+     * pages or sheets it is anchored to.
      */
     protected void handleEmbeddedFile(PackagePart part, XHTMLContentHandler xhtml,
                                       String rel,
@@ -468,6 +502,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
         // Get the content type
         metadata.set(Metadata.CONTENT_TYPE, part.getContentType());
+
+        applyEmbeddedAnchorMetadata(part, metadata);
 
         // Call the recursing handler
         if (embeddedExtractor.shouldParseEmbedded(metadata)) {

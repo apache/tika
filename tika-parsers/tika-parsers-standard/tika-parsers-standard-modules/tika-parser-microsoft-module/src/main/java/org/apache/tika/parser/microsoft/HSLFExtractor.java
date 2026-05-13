@@ -63,8 +63,8 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -595,10 +595,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         pic.getIndex(), mediaType);
                 Metadata picMetadata = Metadata.newInstance(context);
                 picMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
-                Set<Integer> slideNums = picToSlides.get(pic.getIndex());
-                if (slideNums != null && slideNums.size() == 1) {
-                    picMetadata.set(TikaPagedText.PAGE_NUMBER, slideNums.iterator().next());
-                }
+                PageAnchoring.applyPageMetadata(picMetadata, picToSlides.get(pic.getIndex()));
                 handleEmbeddedResource(picIs, picMetadata, picName, null,
                         null, mediaType, xhtml, false);
             }

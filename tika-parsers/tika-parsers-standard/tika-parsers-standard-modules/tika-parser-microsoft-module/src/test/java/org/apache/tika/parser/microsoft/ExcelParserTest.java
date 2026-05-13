@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -630,5 +631,67 @@ public class ExcelParserTest extends TikaTest {
         // Test DDE link extraction (service|topic format)
         assertContains("class=\"external-ref-ddeLink\"", xml);
         assertContains("cmd|", xml);
+    }
+
+    @Test
+    public void testXlsPictureSheetNumbers() throws Exception {
+        // testEXCEL_1img.xls has a single embedded image on sheet 1.
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_1img.xls");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            int[] sheets = m.getIntValues(Office.SHEET_NUMBERS);
+            if (sheets.length == 0) {
+                continue;
+            }
+            assertArrayEquals(new int[]{1}, sheets,
+                    "embedded resource should be tagged with sheet 1");
+            assertEquals("1", m.get(Office.SHEET_NUMBER));
+            imagesChecked++;
+        }
+        assertTrue(imagesChecked > 0, "expected at least one image with sheet metadata");
+    }
+
+    @Test
+    public void testXlsxPictureSheetNumbers() throws Exception {
+        // testEXCEL_1img.xlsx has a single image referenced from sheet1
+        // (sheet2 has no drawing).  The embedded image's metadata should
+        // therefore carry SHEET_NUMBERS=[1] and SHEET_NUMBER=1.
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_1img.xlsx");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.INTERNAL_PATH);
+            if (path == null || !path.startsWith("/xl/media/")) {
+                continue;
+            }
+            assertArrayEquals(new int[]{1}, m.getIntValues(Office.SHEET_NUMBERS),
+                    "image " + path + " should be tagged with sheet 1");
+            assertEquals("1", m.get(Office.SHEET_NUMBER),
+                    "SHEET_NUMBER should equal 1 for single-sheet image: " + path);
+            imagesChecked++;
+        }
+        assertEquals(1, imagesChecked, "expected exactly one embedded image");
+    }
+
+    @Test
+    public void testXlsxAllPicturesOnSheet1() throws Exception {
+        // testEXCEL_embeded.xlsx has images referenced from sheet1 (one
+        // via drawing1.xml, several via vmlDrawing1.vml).  Every image
+        // under /xl/media/ should carry SHEET_NUMBERS=[1] and
+        // SHEET_NUMBER=1.  Don't hardcode the count — embedded OLE
+        // objects can contribute additional preview thumbnails through
+        // their own paths.
+        List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeded.xlsx");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.INTERNAL_PATH);
+            if (path == null || !path.startsWith("/xl/media/")) {
+                continue;
+            }
+            assertArrayEquals(new int[]{1}, m.getIntValues(Office.SHEET_NUMBERS),
+                    "image " + path + " should be tagged with sheet 1");
+            assertEquals("1", m.get(Office.SHEET_NUMBER), path);
+            imagesChecked++;
+        }
+        assertTrue(imagesChecked >= 4, "expected at least four embedded images, got " + imagesChecked);
     }
 }
