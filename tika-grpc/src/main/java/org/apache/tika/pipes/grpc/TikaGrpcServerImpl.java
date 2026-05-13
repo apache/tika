@@ -19,6 +19,7 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -248,7 +249,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 fetchReplyBuilder.setErrorMessage(pipesResult.message());
             }
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
+                List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
+                for (Metadata metadata : metadataList) {
                     for (String name : metadata.names()) {
                         String value = metadata.get(name);
                         if (value != null) {
@@ -256,6 +258,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                         }
                     }
                 }
+                // Populate the experimental strongly-typed response alongside the flat fields map.
+                fetchReplyBuilder.setTypedResponse(TikaTypedMetadataMapper.map(metadataList));
             }
             responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {

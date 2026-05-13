@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 syntax = "proto3";
+import "tika_typed_response.proto";
 package tika;
 
 option java_multiple_files = true;
@@ -115,6 +116,8 @@ message FetchAndParseReply {
   // The status from the message. See javadoc for org.apache.tika.pipes.PipesResult.STATUS for the list of status.
   string status = 3;
   // If there was an error, this will contain the error message.
+  // Experimental: strongly-typed parse response. See TikaTypedResponse and TIKA-4727.
+  TikaTypedResponse typed_response = 5;
   string error_message = 4;
 }
 
