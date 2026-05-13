@@ -223,6 +223,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         attributes.addAttribute("", name, name, "CDATA", value);
     }
 
+    private static void setOrReplaceAttribute(String name, String value,
+                                              AttributesImpl attributes) {
+        if (name == null || value == null) {
+            return;
+        }
+        int idx = attributes.getIndex("", name);
+        if (idx >= 0) {
+            attributes.setValue(idx, value);
+        } else {
+            attributes.addAttribute("", name, name, "CDATA", value);
+        }
+    }
+
     private static PDActionURI getActionURI(PDAnnotation annot) {
         //copied and pasted from PDFBox's PrintURLs
 
@@ -1093,8 +1106,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
         };
-        addNonNullAttribute("class", "javascript", attrs);
-        addNonNullAttribute("type", jsAction.getType(), attrs);
+        setOrReplaceAttribute("class", "javascript", attrs);
+        setOrReplaceAttribute("type", jsAction.getType(), attrs);
         addNonNullAttribute("subtype", jsAction.getSubType(), attrs);
         xhtml.startElement("div", attrs);
         xhtml.endElement("div");

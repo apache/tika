@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -41,7 +42,9 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
@@ -59,6 +62,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parent class of Tika tests
@@ -87,6 +91,20 @@ public abstract class TikaTest {
 
     public static void assertNotContained(String needle, String haystack) {
         assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
+    }
+
+    /**
+     * Re-parses the given XHTML string with a SAX parser and fails the test if it is
+     * not well-formed. Use this on the output of {@link #getXML} to catch parsers that
+     * emit malformed XHTML (e.g., duplicate attributes, unclosed tags, bad escaping).
+     */
+    public static void assertValidXHTML(String xml) {
+        try {
+            XMLReaderUtils.getSAXParser().parse(
+                    new InputSource(new StringReader(xml)), new DefaultHandler());
+        } catch (Exception e) {
+            fail("XHTML is not well-formed: " + e.getMessage() + "\nXHTML:\n" + xml, e);
+        }
     }
 
     public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
