@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.hpsf.ClassID;
@@ -213,7 +214,7 @@ abstract class AbstractPOIFSExtractor {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
                 } else {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            name + '.' + type.getExtension());
+                            appendExtensionIfMissing(name, type.getExtension()));
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
             }
@@ -225,7 +226,7 @@ abstract class AbstractPOIFSExtractor {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName);
                 } else {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                            rName + '.' + type.getExtension());
+                            appendExtensionIfMissing(rName, type.getExtension()));
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
             }
@@ -320,7 +321,7 @@ abstract class AbstractPOIFSExtractor {
 
             // Record what we can do about it
             metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName + extension);
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, appendExtensionIfMissing(rName, extension));
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
             parseEmbedded(parentDir, tis, xhtml, metadata, outputHtml);
@@ -415,6 +416,21 @@ abstract class AbstractPOIFSExtractor {
         }
     }
 
+
+    /**
+     * Appends {@code ext} to {@code name} only when {@code name} does not already end with it
+     * (case-insensitive). {@code ext} may or may not have a leading dot.
+     */
+    private static String appendExtensionIfMissing(String name, String ext) {
+        if (StringUtils.isBlank(ext)) {
+            return name;
+        }
+        String dotExt = ext.startsWith(".") ? ext : "." + ext;
+        if (name.toLowerCase(Locale.ROOT).endsWith(dotExt.toLowerCase(Locale.ROOT))) {
+            return name;
+        }
+        return name + dotExt;
+    }
 
     public static String tryToGetMsgTitle(DirectoryEntry node, String defaultVal) {
 
