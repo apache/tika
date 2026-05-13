@@ -510,8 +510,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
 
-        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-        attributes.addAttribute("", "id", "id", "CDATA", fileName);
+        setOrReplaceAttribute("class", "embedded", attributes);
+        setOrReplaceAttribute("id", fileName, attributes);
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
 

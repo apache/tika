@@ -77,6 +77,7 @@ public class PRTParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+        xhtml.startDocument();
         Last5 l5 = new Last5();
         int read;
 
@@ -125,6 +126,7 @@ public class PRTParser implements Parser {
                 l5.record(read);
             }
         }
+        xhtml.endDocument();
     }
 
     private void handleNoteText(InputStream tis, XHTMLContentHandler xhtml)

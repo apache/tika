@@ -97,8 +97,14 @@ public abstract class TikaTest {
      * Re-parses the given XHTML string with a SAX parser and fails the test if it is
      * not well-formed. Use this on the output of {@link #getXML} to catch parsers that
      * emit malformed XHTML (e.g., duplicate attributes, unclosed tags, bad escaping).
+     * <p>
+     * Empty/null input is treated as a no-op (nothing emitted, nothing to validate) so
+     * callers can pass partial output from parses that aborted early.
      */
     public static void assertValidXHTML(String xml) {
+        if (xml == null || xml.isEmpty()) {
+            return;
+        }
         try {
             XMLReaderUtils.getSAXParser().parse(
                     new InputSource(new StringReader(xml)), new DefaultHandler());

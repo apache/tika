@@ -607,7 +607,15 @@ public class EpubParser implements Parser {
             if (needToRewrite) {
                 AttributesImpl simplifiedAtts = new AttributesImpl();
                 for (int i = 0; i < atts.getLength(); i++) {
-                    simplifiedAtts.addAttribute("", atts.getLocalName(i), atts.getLocalName(i),
+                    String localAttName = atts.getLocalName(i);
+                    // Stripping the namespace prefix can collapse two distinct
+                    // qnames onto one local name (e.g. xml:lang + lang). The
+                    // serialized XHTML must have unique attribute names, so
+                    // keep the first occurrence and drop later duplicates.
+                    if (simplifiedAtts.getIndex("", localAttName) >= 0) {
+                        continue;
+                    }
+                    simplifiedAtts.addAttribute("", localAttName, localAttName,
                             atts.getType(i), atts.getValue(i));
                 }
                 super.startElement(uri, localName, localName, simplifiedAtts);
