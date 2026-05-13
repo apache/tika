@@ -215,18 +215,23 @@ public class MarkdownToXHTMLEmitterTest {
     void testEmptyInput() throws Exception {
         String xml = emit("");
         // Should produce just the root wrapper, no content elements
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?><root/>", xml);
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<root xmlns=\"http://www.w3.org/1999/xhtml\"/>", xml);
     }
 
     @Test
     void testNullInput() throws Exception {
         String xml = emit(null);
-        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?><root/>", xml);
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                + "<root xmlns=\"http://www.w3.org/1999/xhtml\"/>", xml);
     }
 
+    private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
+
     /**
-     * Emit markdown through the emitter, wrapping in a root element so
-     * the SAX output is well-formed XML we can assert against.
+     * Emit markdown through the emitter, wrapping in a root element in the
+     * XHTML namespace so emitter-emitted elements inherit the namespace and
+     * the serializer doesn't redeclare xmlns on every child.
      */
     private String emit(String markdown) throws Exception {
         StringWriter sw = new StringWriter();
@@ -238,9 +243,9 @@ public class MarkdownToXHTMLEmitterTest {
         th.setResult(new StreamResult(sw));
 
         th.startDocument();
-        th.startElement("", "root", "root", new org.xml.sax.helpers.AttributesImpl());
+        th.startElement(XHTML_NS, "root", "root", new org.xml.sax.helpers.AttributesImpl());
         MarkdownToXHTMLEmitter.emit(markdown, th);
-        th.endElement("", "root", "root");
+        th.endElement(XHTML_NS, "root", "root");
         th.endDocument();
 
         return sw.toString();
