@@ -124,7 +124,27 @@ import java.util.zip.GZIPOutputStream;
 public class TrainJunkModel {
 
     static final String MAGIC = "JUNKDET1";
-    static final byte VERSION = 5;
+    /** Sole supported file-format version.  Matches JunkDetector.VERSION. */
+    static final byte VERSION = 6;
+
+    // -----------------------------------------------------------------------
+    // v6 model constants (codepoint-bigram-hash + Bloom + unigram-backoff)
+    // -----------------------------------------------------------------------
+
+    /** Bigram hash bucket count (power of 2).  Locked at 4096 from prototype sweep. */
+    static final int V6_BIGRAM_BUCKETS = 4096;
+    /** Unigram hash bucket count (power of 2). */
+    static final int V6_UNIGRAM_BUCKETS = 8192;
+    /** Default Bloom filter capacity in bits (must be a multiple of 64). */
+    static final int V6_BLOOM_BITS_DEFAULT = 4 * 1024 * 1024;
+    /** Number of hash functions for the Bloom filter (double-hashing). */
+    static final int V6_BLOOM_K = 7;
+    /** FNV-1a seed; stored in the model so training and inference stay synced. */
+    public static final int V6_FNV_SEED = 0xB8E7A1F3;
+    /** Unigram backoff multiplier.  α=1.0 = plain independence; prototype validated. */
+    static final float V6_BACKOFF_ALPHA = 1.0f;
+    /** Additive smoothing constant for log-prob computation. */
+    static final double V6_ADD_ALPHA = 0.01;
 
     /** Number of clean (and corrupted) windows used to train the per-script classifier. */
     static final int NUM_CLASSIFIER_SAMPLES = 500;
@@ -178,6 +198,7 @@ public class TrainJunkModel {
         Path dataDir = Paths.get(System.getProperty("user.home"),
                 "datasets", "madlad", "junkdetect");
         Path output = dataDir.resolve("junkdetect.bin");
+        int bloomBits = V6_BLOOM_BITS_DEFAULT;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -187,6 +208,13 @@ public class TrainJunkModel {
                 case "--output":
                     output = Paths.get(args[++i]);
                     break;
+                case "--bloom-bits":
+                    bloomBits = Integer.parseInt(args[++i]);
+                    if (bloomBits % 64 != 0) {
+                        System.err.println("ERROR: --bloom-bits must be a multiple of 64");
+                        System.exit(1);
+                    }
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     printUsage();
@@ -194,31 +222,35 @@ public class TrainJunkModel {
             }
         }
 
-        System.out.println("=== TrainJunkModel (v5) ===");
-        System.out.println("  data-dir: " + dataDir);
-        System.out.println("  output:   " + output);
+        System.out.println("=== TrainJunkModel ===");
+        System.out.println("  data-dir:           " + dataDir);
+        System.out.println("  output:             " + output);
+        System.out.printf( "  bigram_buckets:     %d%n", V6_BIGRAM_BUCKETS);
+        System.out.printf( "  unigram_buckets:    %d%n", V6_UNIGRAM_BUCKETS);
+        System.out.printf( "  bloom_bits:         %d (%d KB), k=%d%n",
+                bloomBits, bloomBits / 8 / 1024, V6_BLOOM_K);
+        System.out.printf( "  fnv_seed:           0x%08X%n", V6_FNV_SEED);
+        System.out.printf( "  backoff_alpha:      %.2f%n", V6_BACKOFF_ALPHA);
 
         if (!Files.isDirectory(dataDir)) {
             System.err.println("ERROR: data-dir not found: " + dataDir);
             System.exit(1);
         }
 
-        System.out.print("Building Unicode named-block index... ");
+        int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
+        System.out.printf("Block bucketing: %d named blocks + 1 unassigned "
+                + "(scheme version %d, JVM-independent)%n",
+                blockN - 1, org.apache.tika.ml.junkdetect.UnicodeBlockRanges.SCHEME_VERSION);
         long t0 = System.currentTimeMillis();
-        Map<Character.UnicodeBlock, Integer> blockIndex = buildBlockIndex();
-        int blockN = blockIndex.size() + 1;
-        System.out.printf("%d named blocks → table size %d×%d (%dms)%n",
-                blockIndex.size(), blockN, blockN, System.currentTimeMillis() - t0);
 
-        TreeMap<String, float[]> bigramTables        = new TreeMap<>();
-        TreeMap<String, float[]> bigramCalibrations  = new TreeMap<>();
-        TreeMap<String, float[]> blockTables         = new TreeMap<>();
-        TreeMap<String, float[]> blockCalibrations   = new TreeMap<>();
+        TreeMap<String, float[]> f1Calibrations    = new TreeMap<>();
+        TreeMap<String, float[]> blockTables       = new TreeMap<>();
+        TreeMap<String, float[]> blockCalibrations = new TreeMap<>();
         TreeMap<String, float[]> controlCalibrations = new TreeMap<>();
-        TreeMap<String, float[]> classifierWeights   = new TreeMap<>();
-        TreeMap<String, Path>    devFilePaths        = new TreeMap<>();
-        List<Path>               allTrainFiles       = new ArrayList<>();
-        List<Path>               allDevFiles         = new ArrayList<>();
+        TreeMap<String, float[]> classifierWeights = new TreeMap<>();
+        TreeMap<String, Path>    devFilePaths      = new TreeMap<>();
+        List<Path>               allTrainFiles     = new ArrayList<>();
+        List<Path>               allDevFiles       = new ArrayList<>();
 
         List<Path> trainFiles;
         try (var stream = Files.list(dataDir)) {
@@ -234,9 +266,22 @@ public class TrainJunkModel {
         }
 
         // -----------------------------------------------------------------------
-        // Phase 1 — per-script bigram tables, block tables, calibrations
+        // Phase 1 — global codepoint-bigram + unigram hash + Bloom filter
         // -----------------------------------------------------------------------
-        System.out.println("\n--- Phase 1: per-script tables and calibrations ---");
+        System.out.println("\n--- Phase 1: global codepoint-hash tables + Bloom ---");
+        t0 = System.currentTimeMillis();
+        System.out.print("  Training global codepoint-bigram + unigram + Bloom... ");
+        V6F1Tables f1Tables = trainCodepointHashTables(trainFiles, bloomBits);
+        System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
+        System.out.printf("  bigram quant range: [%.3f, %.3f]%n",
+                f1Tables.bigramQuantMin, f1Tables.bigramQuantMax);
+        System.out.printf("  unigram quant range: [%.3f, %.3f]%n",
+                f1Tables.unigramQuantMin, f1Tables.unigramQuantMax);
+
+        // -----------------------------------------------------------------------
+        // Phase 1.5 — per-script F1 calibration + F2 block tables + F3 control cal
+        // -----------------------------------------------------------------------
+        System.out.println("\n--- Phase 1.5: per-script tables and calibrations ---");
         for (Path trainFile : trainFiles) {
             String filename = trainFile.getFileName().toString();
             String script = filename.substring(0, filename.length() - ".train.gz".length())
@@ -248,34 +293,29 @@ public class TrainJunkModel {
             allTrainFiles.add(trainFile);
 
             t0 = System.currentTimeMillis();
-            System.out.print("    Training byte-bigram table...      ");
-            float[] bigramTable = trainBigramTable(trainFile);
+            System.out.print("    Training named-block table...     ");
+            float[] blockTable = trainBlockTable(trainFile);
             System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
 
-            t0 = System.currentTimeMillis();
-            System.out.print("    Training named-block table...      ");
-            float[] blockTable = trainBlockTable(trainFile, blockIndex, blockN);
-            System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
-
-            float[] bigramCal  = new float[]{0f, 1f};
+            float[] f1Cal      = new float[]{0f, 1f};
             float[] blockCal   = new float[]{0f, 1f};
             float[] controlCal = new float[]{0f, 1f};
 
             if (Files.exists(devFile)) {
                 t0 = System.currentTimeMillis();
-                System.out.print("    Calibrating byte bigrams on dev... ");
-                bigramCal = computeBigramCalibration(devFile, bigramTable);
+                System.out.print("    Calibrating F1 (cp-hash) on dev... ");
+                f1Cal = calibrateF1PerScript(devFile, f1Tables);
                 System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
-                        bigramCal[0], bigramCal[1], System.currentTimeMillis() - t0);
+                        f1Cal[0], f1Cal[1], System.currentTimeMillis() - t0);
 
                 t0 = System.currentTimeMillis();
-                System.out.print("    Calibrating named blocks on dev... ");
-                blockCal = computeBlockCalibration(devFile, blockTable, blockIndex, blockN);
+                System.out.print("    Calibrating named blocks on dev...");
+                blockCal = computeBlockCalibration(devFile, blockTable);
                 System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
                         blockCal[0], blockCal[1], System.currentTimeMillis() - t0);
 
                 t0 = System.currentTimeMillis();
-                System.out.print("    Calibrating control bytes on dev...");
+                System.out.print("    Calibrating control bytes on dev..");
                 controlCal = computeControlByteCalibration(devFile);
                 System.out.printf("done — mu=%.6f sigma=%.6f (%dms)%n",
                         controlCal[0], controlCal[1], System.currentTimeMillis() - t0);
@@ -286,17 +326,16 @@ public class TrainJunkModel {
                 System.out.println("    WARNING: no dev file found, using uncalibrated defaults");
             }
 
-            bigramTables.put(script, bigramTable);
-            bigramCalibrations.put(script, bigramCal);
+            f1Calibrations.put(script, f1Cal);
             blockTables.put(script, blockTable);
             blockCalibrations.put(script, blockCal);
             controlCalibrations.put(script, controlCal);
-            // Placeholder — set in phase 3
+            // Placeholder — set in Phase 3
             classifierWeights.put(script, new float[]{1f / 4, 1f / 4, 1f / 4, 1f / 4, 0f});
         }
 
         // -----------------------------------------------------------------------
-        // Phase 2 — global script-transition table
+        // Phase 2 — global script-transition table + supporting pools
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 2: global script-transition table ---");
         List<String> scriptBuckets = buildScriptBuckets();
@@ -334,10 +373,10 @@ public class TrainJunkModel {
         System.out.printf("%d tables built%n", remapTables.size());
 
         // -----------------------------------------------------------------------
-        // Phase 3 — per-script linear classifiers (now with z4)
+        // Phase 3 — per-script linear classifiers using v6 features
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 3: per-script linear classifiers (z1,z2,z3,z4) ---");
-        for (String script : bigramTables.keySet()) {
+        for (String script : f1Calibrations.keySet()) {
             Path devFile = devFilePaths.get(script);
             if (devFile == null) {
                 System.out.printf("  [%s] WARNING: no dev file, keeping equal-weight defaults%n", script);
@@ -345,10 +384,10 @@ public class TrainJunkModel {
             }
             t0 = System.currentTimeMillis();
             System.out.printf("  [%s] training classifier... ", script);
-            float[] weights = trainClassifier(devFile,
-                    bigramTables.get(script), bigramCalibrations.get(script),
+            float[] weights = trainClassifierV6(devFile,
+                    f1Tables, f1Calibrations.get(script),
                     blockTables.get(script), blockCalibrations.get(script),
-                    controlCalibrations.get(script), blockIndex, blockN,
+                    controlCalibrations.get(script),
                     scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets,
                     scriptCodepoints, remapTables);
             classifierWeights.put(script, weights);
@@ -358,38 +397,15 @@ public class TrainJunkModel {
         }
 
         System.out.printf("%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
-                bigramTables.size(), blockN, numScriptBuckets, output);
-        saveModel(bigramTables, bigramCalibrations,
+                f1Calibrations.size(), blockN, numScriptBuckets, output);
+        saveModelV6(f1Calibrations,
                   blockTables, blockCalibrations,
                   controlCalibrations, classifierWeights,
-                  blockIndex, blockN, scriptBuckets, scriptTransTable, scriptTransCal, output);
-        System.out.printf("Model size: %,d bytes (%.1f MB)%n",
-                Files.size(output), Files.size(output) / 1_000_000.0);
+                  scriptBuckets, scriptTransTable, scriptTransCal,
+                  f1Tables, output);
+        System.out.printf("Model size: %,d bytes (%.1f KB)%n",
+                Files.size(output), Files.size(output) / 1024.0);
         System.out.println("Done.");
-    }
-
-    // -----------------------------------------------------------------------
-    // Block index
-    // -----------------------------------------------------------------------
-
-    /**
-     * Builds a stable ordered mapping from {@link Character.UnicodeBlock} to integer index
-     * by scanning all valid Unicode codepoints in order (U+0000 to U+10FFFF) and
-     * recording each block's first occurrence.
-     *
-     * <p>The resulting map has {@code size()} entries (one per named block).
-     * Callers should reserve index {@code size()} as the "unassigned" bucket
-     * (for codepoints where {@code UnicodeBlock.of(cp)} returns null).
-     *
-     * @return immutable ordered map: UnicodeBlock → integer index [0, size)
-     */
-    static Map<Character.UnicodeBlock, Integer> buildBlockIndex() {
-        LinkedHashMap<Character.UnicodeBlock, Integer> index = new LinkedHashMap<>();
-        for (int cp = 0; cp <= 0x10FFFF; cp++) {
-            Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
-            if (b != null) index.putIfAbsent(b, index.size());
-        }
-        return Collections.unmodifiableMap(index);
     }
 
     // -----------------------------------------------------------------------
@@ -397,43 +413,15 @@ public class TrainJunkModel {
     // -----------------------------------------------------------------------
 
     /**
-     * Trains a 256×256 byte-bigram log-probability table from a gzipped sentence file.
+     * Trains a {@code N × N} block-transition log-probability table where
+     * {@code N = UnicodeBlockRanges.bucketCount()}.  Block bucketing uses
+     * the JVM-independent {@link UnicodeBlockRanges} table.
      *
-     * @return float[65536] where index {@code a*256+b} = log P(b|a)
+     * @return float[N*N] where index {@code a*N+b} = log P(block_b | block_a)
      */
-    static float[] trainBigramTable(Path trainGz) throws IOException {
-        long[] counts = new long[65536];
-        long totalBigrams = 0;
-        long sentences = 0;
-
-        try (BufferedReader r = openGzipped(trainGz)) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                byte[] bytes = line.getBytes(StandardCharsets.UTF_8);
-                for (int i = 0; i + 1 < bytes.length; i++) {
-                    counts[((bytes[i] & 0xFF) << 8) | (bytes[i + 1] & 0xFF)]++;
-                    totalBigrams++;
-                }
-                sentences++;
-            }
-        }
-
-        System.out.printf("    %,d sentences, %,d byte bigrams%n", sentences, totalBigrams);
-        return laplaceSmoothLogProb(counts, 256);
-    }
-
-    /**
-     * Trains a {@code blockN×blockN} named-Unicode-block transition log-probability table.
-     *
-     * @param blockIndex ordered mapping from UnicodeBlock to index [0, blockIndex.size())
-     * @param blockN     blockIndex.size() + 1 (includes the null bucket)
-     * @return float[blockN*blockN] where index {@code a*blockN+b} = log P(block_b | block_a)
-     */
-    static float[] trainBlockTable(Path trainGz,
-                                   Map<Character.UnicodeBlock, Integer> blockIndex,
-                                   int blockN) throws IOException {
+    static float[] trainBlockTable(Path trainGz) throws IOException {
+        int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
         long[] counts = new long[blockN * blockN];
-        int nullId = blockN - 1;
         long totalBigrams = 0;
         long sentences = 0;
 
@@ -443,8 +431,7 @@ public class TrainJunkModel {
                 int prev = -1;
                 for (int i = 0; i < line.length(); ) {
                     int cp = line.codePointAt(i);
-                    Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
-                    int blockId = b != null ? blockIndex.getOrDefault(b, nullId) : nullId;
+                    int blockId = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketOf(cp);
                     if (prev >= 0) {
                         counts[prev * blockN + blockId]++;
                         totalBigrams++;
@@ -533,37 +520,17 @@ public class TrainJunkModel {
         return result;
     }
 
-    /** @return float[2] = {mu, sigma} of byte-bigram mean log-prob on dev windows */
-    static float[] computeBigramCalibration(Path devGz, float[] bigramTable) throws IOException {
-        List<String> windows = sampleSubstrings(devGz, CALIB_SAMPLES, CALIB_LENGTHS, 42);
-        List<Double> scores = new ArrayList<>(windows.size());
-        for (String window : windows) {
-            byte[] bytes = window.getBytes(StandardCharsets.UTF_8);
-            if (bytes.length < 2) continue;
-            double sum = 0;
-            for (int i = 0; i + 1 < bytes.length; i++) {
-                sum += bigramTable[((bytes[i] & 0xFF) << 8) | (bytes[i + 1] & 0xFF)];
-            }
-            scores.add(sum / (bytes.length - 1));
-        }
-        System.out.printf("    %,d dev windows%n", scores.size());
-        return muSigma(scores);
-    }
-
     /** @return float[2] = {mu, sigma} of block-transition mean log-prob on dev windows */
-    static float[] computeBlockCalibration(Path devGz, float[] blockTable,
-                                           Map<Character.UnicodeBlock, Integer> blockIndex,
-                                           int blockN) throws IOException {
+    static float[] computeBlockCalibration(Path devGz, float[] blockTable) throws IOException {
+        int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
         List<String> windows = sampleSubstrings(devGz, CALIB_SAMPLES, CALIB_LENGTHS, 43);
         List<Double> scores = new ArrayList<>(windows.size());
-        int nullId = blockN - 1;
         for (String window : windows) {
             int[] ids = new int[window.length()];
             int len = 0;
             for (int i = 0; i < window.length(); ) {
                 int cp = window.codePointAt(i);
-                Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
-                ids[len++] = b != null ? blockIndex.getOrDefault(b, nullId) : nullId;
+                ids[len++] = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketOf(cp);
                 i += Character.charCount(cp);
             }
             if (len < 2) continue;
@@ -623,166 +590,15 @@ public class TrainJunkModel {
      * @param remapTables list of pre-built wrong-codec remap tables from {@link #buildRemapTable}
      * @return float[5] = {w1, w2, w3, w4, bias} — classifier weights; positive logit = clean
      */
-    static float[] trainClassifier(Path devGz,
-                                    float[] bigramTable, float[] bigramCal,
-                                    float[] blockTable, float[] blockCal,
-                                    float[] controlCal,
-                                    Map<Character.UnicodeBlock, Integer> blockIndex,
-                                    int blockN,
-                                    float[] scriptTransTable, float[] scriptTransCal,
-                                    Map<String, Integer> scriptBucketMap, int numScriptBuckets,
-                                    Map<String, List<Integer>> scriptCodepoints,
-                                    List<Map<Character, Character>> remapTables)
-            throws IOException {
-        int nEach = NUM_CLASSIFIER_SAMPLES;
 
-        // Clean windows
-        List<String> cleanWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 100);
-
-        // Corrupted windows: sample base windows (seed 101), then distort
-        // Four-way rotation: inject / shuffle / cross-script / wrong-codec remap
-        List<String> baseWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 101);
-        Random rng = new Random(102);
-        List<String> corruptedWindows = new ArrayList<>(nEach);
-        for (int i = 0; i < baseWindows.size(); i++) {
-            String w = baseWindows.get(i);
-            switch (i % 4) {
-                case 0:
-                    corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
-                    break;
-                case 1:
-                    corruptedWindows.add(shuffleChars(w, rng));
-                    break;
-                case 2:
-                    corruptedWindows.add(injectCrossScriptChars(w, CLASSIFIER_INJECT_RATE, rng,
-                            scriptCodepoints));
-                    break;
-                default:
-                    if (!remapTables.isEmpty()) {
-                        Map<Character, Character> table =
-                                remapTables.get(rng.nextInt(remapTables.size()));
-                        corruptedWindows.add(wrongCodecRemap(w, table, CLASSIFIER_INJECT_RATE, rng));
-                    } else {
-                        corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
-                    }
-                    break;
-            }
-        }
-
-        // Build (z1, z2, z3, z4) feature matrix
-        List<float[]> features = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
-        List<Integer> labels   = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
-
-        for (String w : cleanWindows) {
-            features.add(extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex,
-                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
-            labels.add(1); // clean
-        }
-        for (String w : corruptedWindows) {
-            features.add(extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex,
-                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
-            labels.add(0); // corrupted
-        }
-
-        float[] weights = fitLogisticRegression(features, labels, 4);
-
-        // Calibrate bias using only short (len=15) windows so that FPR ≤ 2.5%
-        // even at the worst-case (shortest) window length.
-        List<String> shortWindows = sampleSubstrings(devGz, nEach, new int[]{15}, 200);
-        List<Float> shortLogits = new ArrayList<>(shortWindows.size());
-        int nFeat = weights.length - 1;
-        for (String w : shortWindows) {
-            float[] x = extractFeatures(w, bigramTable, bigramCal,
-                    blockTable, blockCal, blockN, controlCal, blockIndex,
-                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets);
-            float logit = weights[nFeat];
-            for (int j = 0; j < nFeat; j++) logit += weights[j] * x[j];
-            shortLogits.add(logit);
-        }
-        if (!shortLogits.isEmpty()) {
-            Collections.sort(shortLogits);
-            int pIdx = (int) (0.025 * shortLogits.size());
-            float p025 = shortLogits.get(Math.max(0, pIdx));
-            weights[nFeat] -= p025;
-        }
-
-        return weights;
-    }
-
-    /**
-     * Extracts calibrated z-scores (z1, z2, z3, z4) for a single text window.
-     *
-     * @return float[4] = {z1_bigram, z2_block, z3_control, z4_scriptTrans}
-     */
-    static float[] extractFeatures(String window,
-                                    float[] bigramTable, float[] bigramCal,
-                                    float[] blockTable, float[] blockCal,
-                                    int blockN, float[] controlCal,
-                                    Map<Character.UnicodeBlock, Integer> blockIndex,
-                                    float[] scriptTransTable, float[] scriptTransCal,
-                                    Map<String, Integer> scriptBucketMap, int numScriptBuckets) {
-        byte[] utf8 = window.getBytes(StandardCharsets.UTF_8);
-
-        // z1: byte-bigram mean log-prob
-        float z1 = 0f;
-        if (utf8.length >= 2) {
-            double sum = 0;
-            int count = 0;
-            for (int i = 0; i + 1 < utf8.length; i++) {
-                sum += bigramTable[((utf8[i] & 0xFF) << 8) | (utf8[i + 1] & 0xFF)];
-                count++;
-            }
-            z1 = ((float) (sum / count) - bigramCal[0]) / bigramCal[1];
-        }
-
-        // z2: block-transition mean log-prob
-        float z2 = 0f;
-        if (blockTable != null && window.length() >= 2) {
-            int nullId = blockN - 1;
-            int prev = -1;
-            double sum = 0;
-            int count = 0;
-            for (int i = 0; i < window.length(); ) {
-                int cp = window.codePointAt(i);
-                Character.UnicodeBlock b = Character.UnicodeBlock.of(cp);
-                int blockId = b != null ? blockIndex.getOrDefault(b, nullId) : nullId;
-                if (prev >= 0) {
-                    sum += blockTable[prev * blockN + blockId];
-                    count++;
-                }
-                prev = blockId;
-                i += Character.charCount(cp);
-            }
-            if (count > 0) {
-                z2 = ((float) (sum / count) - blockCal[0]) / blockCal[1];
-            }
-        }
-
-        // z3: control-byte fraction (stored as −fraction, so higher = cleaner)
-        float z3 = 0f;
-        if (utf8.length > 0 && controlCal != null) {
-            long controlCount = 0;
-            for (byte b : utf8) {
-                if (isControlByte(b & 0xFF)) controlCount++;
-            }
-            float score = -(float) controlCount / utf8.length;
-            z3 = (score - controlCal[0]) / controlCal[1];
-        }
-
-        // z4: script-transition mean log-prob (raw UnicodeScript, no model fallback)
-        float z4 = 0f;
-        if (scriptTransTable != null && scriptTransCal != null) {
-            double raw = rawScriptTransitionLogProb(window, scriptTransTable,
-                    scriptBucketMap, numScriptBuckets, numScriptBuckets - 1);
-            if (!Double.isNaN(raw)) {
-                z4 = ((float) raw - scriptTransCal[0]) / scriptTransCal[1];
-            }
-        }
-
-        return new float[]{z1, z2, z3, z4};
-    }
+    // Per-feature z-score helpers (z2, z3, z4) for the classifier-training
+    // path live on JunkDetector as public static methods so they are the
+    // SOLE implementation — inference and training share the exact same
+    // math by construction.  See {@link JunkDetector#computeZ2BlockTransition},
+    // {@link JunkDetector#computeZ3ControlByte},
+    // {@link JunkDetector#computeZ4ScriptTransition}.  z1 (codepoint-hash)
+    // is computed against the in-progress hash tables during training and
+    // against the loaded model at inference.
 
     /**
      * Replaces a random fraction of characters with Unicode control characters.
@@ -900,50 +716,381 @@ public class TrainJunkModel {
     // Model serialisation
     // -----------------------------------------------------------------------
 
+    private static byte[] toBytes(float[] table) {
+        ByteBuffer buf = ByteBuffer.allocate(table.length * 4).order(ByteOrder.BIG_ENDIAN);
+        for (float v : table) buf.putFloat(v);
+        return buf.array();
+    }
+
+    // -----------------------------------------------------------------------
+    // v6 model save + carrier
+    // -----------------------------------------------------------------------
+
     /**
-     * Writes the trained model (version 4) to a gzipped binary file.
-     *
-     * <p>Format documented in the class Javadoc.  All multi-byte integers are
-     * big-endian; floats are IEEE 754 big-endian.
-     *
-     * @param classifierWeights per-script float[5] = {w1, w2, w3, w4, bias}
-     * @param blockN the block table dimension (blockIndex.size() + 1)
-     * @param scriptBuckets ordered list of script bucket names (last = "OTHER")
-     * @param scriptTransTable global script-transition log-prob table
-     * @param scriptTransCal float[2] = {mu, sigma} for script-transition feature
+     * Carrier for v6 Feature 1 data — global hashed codepoint-bigram + Bloom-
+     * gated unigram-backoff replacing v5's per-script byte-bigram tables.
      */
-    static void saveModel(TreeMap<String, float[]> bigramTables,
-                          TreeMap<String, float[]> bigramCalibrations,
-                          TreeMap<String, float[]> blockTables,
-                          TreeMap<String, float[]> blockCalibrations,
-                          TreeMap<String, float[]> controlCalibrations,
-                          TreeMap<String, float[]> classifierWeights,
-                          Map<Character.UnicodeBlock, Integer> blockIndex,
-                          int blockN,
-                          List<String> scriptBuckets,
-                          float[] scriptTransTable,
-                          float[] scriptTransCal,
-                          Path output) throws IOException {
+    public static final class V6F1Tables {
+        /** 8-bit quantized log-prob per bigram bucket. */
+        public final byte[] bigramHash;
+        public final int bigramBuckets;
+        public final float bigramQuantMin;
+        public final float bigramQuantMax;
+        /** 8-bit quantized log-prob per unigram bucket. */
+        public final byte[] unigramHash;
+        public final int unigramBuckets;
+        public final float unigramQuantMin;
+        public final float unigramQuantMax;
+        /** Bloom bit array; length = bloomBitCount / 64. */
+        public final long[] bloomBits;
+        public final int bloomBitCount;
+        public final int bloomK;
+        public final int fnvSeed;
+        public final float backoffAlpha;
+
+        public V6F1Tables(byte[] bigramHash, int bigramBuckets,
+                          float bigramQuantMin, float bigramQuantMax,
+                          byte[] unigramHash, int unigramBuckets,
+                          float unigramQuantMin, float unigramQuantMax,
+                          long[] bloomBits, int bloomBitCount, int bloomK,
+                          int fnvSeed, float backoffAlpha) {
+            this.bigramHash = bigramHash;
+            this.bigramBuckets = bigramBuckets;
+            this.bigramQuantMin = bigramQuantMin;
+            this.bigramQuantMax = bigramQuantMax;
+            this.unigramHash = unigramHash;
+            this.unigramBuckets = unigramBuckets;
+            this.unigramQuantMin = unigramQuantMin;
+            this.unigramQuantMax = unigramQuantMax;
+            this.bloomBits = bloomBits;
+            this.bloomBitCount = bloomBitCount;
+            this.bloomK = bloomK;
+            this.fnvSeed = fnvSeed;
+            this.backoffAlpha = backoffAlpha;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // v6 Phase 1: global codepoint-hash training
+    // -----------------------------------------------------------------------
+
+    /**
+     * Single global pass over all training .gz files: counts codepoint
+     * pairs into a {@link #V6_BIGRAM_BUCKETS}-sized hash table, codepoint
+     * unigrams into a {@link #V6_UNIGRAM_BUCKETS}-sized table, and inserts
+     * every observed pair into a Bloom filter sized at {@code bloomBits}.
+     * Quantizes both log-prob tables to 8-bit unsigned.  Returns a
+     * {@link V6F1Tables} ready to hand to {@link #saveModelV6}.
+     *
+     * <p>Hash function and Bloom-filter scheme are identical to those
+     * used at inference time in {@link JunkDetector#computeCodepointHashMeanLogP}
+     * — same seed, same FNV-1a polynomial, same double-hashing layout —
+     * so the trained Bloom filter accurately reflects which pairs the
+     * scorer will treat as "seen".
+     */
+    public static V6F1Tables trainCodepointHashTables(List<Path> trainFiles, int bloomBits)
+            throws IOException {
+        long[] bigramCounts = new long[V6_BIGRAM_BUCKETS];
+        long[] unigramCounts = new long[V6_UNIGRAM_BUCKETS];
+        long bigramTotal = 0;
+        long unigramTotal = 0;
+        long[] bloomBitArr = new long[(bloomBits + 63) >> 6];
+
+        for (Path trainFile : trainFiles) {
+            try (BufferedReader r = openGzipped(trainFile)) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    int prevCp = -1;
+                    for (int i = 0; i < line.length(); ) {
+                        int cp = line.codePointAt(i);
+                        i += Character.charCount(cp);
+                        int uBucket = (int) (fnv1aUnigramV6(cp, V6_FNV_SEED)
+                                & (V6_UNIGRAM_BUCKETS - 1));
+                        unigramCounts[uBucket]++;
+                        unigramTotal++;
+                        if (prevCp >= 0) {
+                            int bBucket = (int) (fnv1aBigramV6(prevCp, cp, V6_FNV_SEED)
+                                    & (V6_BIGRAM_BUCKETS - 1));
+                            bigramCounts[bBucket]++;
+                            bigramTotal++;
+                            bloomAddV6(bloomBitArr, bloomBits, V6_BLOOM_K,
+                                    prevCp, cp, V6_FNV_SEED);
+                        }
+                        prevCp = cp;
+                    }
+                }
+            }
+        }
+
+        // Add-α smoothing → log-prob → 8-bit quantize.
+        float[] bigramLogP = new float[V6_BIGRAM_BUCKETS];
+        double bigramDenom = bigramTotal + V6_ADD_ALPHA * V6_BIGRAM_BUCKETS;
+        for (int i = 0; i < V6_BIGRAM_BUCKETS; i++) {
+            double p = (bigramCounts[i] + V6_ADD_ALPHA) / bigramDenom;
+            bigramLogP[i] = (float) Math.log(p);
+        }
+        float[] unigramLogP = new float[V6_UNIGRAM_BUCKETS];
+        double unigramDenom = unigramTotal + V6_ADD_ALPHA * V6_UNIGRAM_BUCKETS;
+        for (int i = 0; i < V6_UNIGRAM_BUCKETS; i++) {
+            double p = (unigramCounts[i] + V6_ADD_ALPHA) / unigramDenom;
+            unigramLogP[i] = (float) Math.log(p);
+        }
+
+        QuantizedFloats qBigram = quantizeFloats(bigramLogP);
+        QuantizedFloats qUnigram = quantizeFloats(unigramLogP);
+
+        return new V6F1Tables(qBigram.bytes, V6_BIGRAM_BUCKETS,
+                qBigram.min, qBigram.max,
+                qUnigram.bytes, V6_UNIGRAM_BUCKETS,
+                qUnigram.min, qUnigram.max,
+                bloomBitArr, bloomBits, V6_BLOOM_K,
+                V6_FNV_SEED, V6_BACKOFF_ALPHA);
+    }
+
+    /**
+     * Computes per-script F1 calibration ({mu, sigma}) by scoring each
+     * window in the dev file against the trained codepoint-hash tables
+     * and collecting the mean log-prob distribution.  Same math as
+     * inference-time z1 computation, sans the per-script z-normalization
+     * (that's what this is producing).
+     */
+    public static float[] calibrateF1PerScript(Path devGz, V6F1Tables f1) throws IOException {
+        List<String> windows = sampleSubstrings(devGz, CALIB_SAMPLES, CALIB_LENGTHS, 42);
+        List<Double> scores = new ArrayList<>(windows.size());
+        for (String window : windows) {
+            double score = codepointHashMeanLogP(window, f1);
+            if (!Double.isNaN(score)) {
+                scores.add(score);
+            }
+        }
+        System.out.printf("    %,d dev windows%n", scores.size());
+        return muSigma(scores);
+    }
+
+    /**
+     * Mirrors {@link JunkDetector#computeCodepointHashMeanLogP} but for
+     * use inside the trainer (where we have a {@link V6F1Tables} rather
+     * than a loaded {@link JunkDetector} instance).  Same math by
+     * construction — if these two ever diverge, the v6 retrain produces
+     * a model whose inference scores don't match its training-time
+     * calibration.
+     */
+    public static double codepointHashMeanLogP(String text, V6F1Tables f1) {
+        if (text == null || text.length() < 2) {
+            return Double.NaN;
+        }
+        double sum = 0;
+        int n = 0;
+        int prevCp = -1;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (prevCp >= 0) {
+                sum += scorePair(prevCp, cp, f1);
+                n++;
+            }
+            prevCp = cp;
+        }
+        return n == 0 ? Double.NaN : sum / n;
+    }
+
+    private static double scorePair(int cpA, int cpB, V6F1Tables f1) {
+        if (bloomContainsV6(f1.bloomBits, f1.bloomBitCount, f1.bloomK, cpA, cpB, f1.fnvSeed)) {
+            int bucket = (int) (fnv1aBigramV6(cpA, cpB, f1.fnvSeed) & (f1.bigramBuckets - 1));
+            return dequantize(f1.bigramHash[bucket], f1.bigramQuantMin, f1.bigramQuantMax);
+        }
+        double ua = dequantize(
+                f1.unigramHash[(int) (fnv1aUnigramV6(cpA, f1.fnvSeed) & (f1.unigramBuckets - 1))],
+                f1.unigramQuantMin, f1.unigramQuantMax);
+        double ub = dequantize(
+                f1.unigramHash[(int) (fnv1aUnigramV6(cpB, f1.fnvSeed) & (f1.unigramBuckets - 1))],
+                f1.unigramQuantMin, f1.unigramQuantMax);
+        return f1.backoffAlpha * (ua + ub);
+    }
+
+    /** Bloom membership check (matches JunkDetector.bloomContains semantics). */
+    public static boolean bloomContainsV6(long[] bloomBits, int bitCount, int k,
+                                          int cpA, int cpB, int seed) {
+        long h1 = fnv1aBigramV6(cpA, cpB, seed);
+        long h2 = secondaryHashV6(cpA, cpB);
+        for (int i = 0; i < k; i++) {
+            long pos = ((h1 + (long) i * h2) & 0x7FFFFFFFFFFFFFFFL) % bitCount;
+            if ((bloomBits[(int) (pos >>> 6)] & (1L << (pos & 63))) == 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static float dequantize(byte b, float min, float max) {
+        return min + ((b & 0xFF) / 255.0f) * (max - min);
+    }
+
+    // -----------------------------------------------------------------------
+    // v6 Phase 3: classifier feature extractor + orchestrator
+    // -----------------------------------------------------------------------
+
+    /**
+     * Extracts a 4-dim calibrated z-score vector for one training window
+     * using the codepoint-hash architecture.  z2/z3/z4 delegate to the
+     * public helpers on {@link JunkDetector} — same math used at inference,
+     * no trainer/inference drift possible.
+     *
+     * @return float[4] = {z1_cpHash, z2_block, z3_control, z4_scriptTrans}
+     */
+    static float[] extractFeaturesV6(String window,
+                                      V6F1Tables f1, float[] f1Cal,
+                                      float[] blockTable, float[] blockCal,
+                                      float[] controlCal,
+                                      float[] scriptTransTable, float[] scriptTransCal,
+                                      Map<String, Integer> scriptBucketMap,
+                                      int numScriptBuckets) {
+        byte[] utf8 = window.getBytes(StandardCharsets.UTF_8);
+
+        // z1: codepoint-hash mean log-prob, per-script-calibrated
+        float z1 = 0f;
+        double rawF1 = codepointHashMeanLogP(window, f1);
+        if (!Double.isNaN(rawF1) && f1Cal != null && f1Cal[1] > 0) {
+            z1 = ((float) rawF1 - f1Cal[0]) / f1Cal[1];
+        }
+
+        float z2 = org.apache.tika.ml.junkdetect.JunkDetector
+                .computeZ2BlockTransition(window, blockTable, blockCal);
+        float z3 = org.apache.tika.ml.junkdetect.JunkDetector
+                .computeZ3ControlByte(utf8, controlCal);
+        float z4 = org.apache.tika.ml.junkdetect.JunkDetector
+                .computeZ4ScriptTransition(window, scriptTransTable, scriptTransCal,
+                        scriptBucketMap, numScriptBuckets);
+
+        return new float[]{z1, z2, z3, z4};
+    }
+
+    /**
+     * Trains a per-script binary logistic regression classifier on
+     * (z1_cpHash, z2, z3, z4).  Mirrors the original {@code trainClassifier}
+     * scaffolding (sample windows, corrupt half, fit LR, bias-calibrate
+     * on short windows) but uses the codepoint-hash feature extractor.
+     */
+    static float[] trainClassifierV6(Path devGz,
+                                      V6F1Tables f1, float[] f1Cal,
+                                      float[] blockTable, float[] blockCal,
+                                      float[] controlCal,
+                                      float[] scriptTransTable, float[] scriptTransCal,
+                                      Map<String, Integer> scriptBucketMap, int numScriptBuckets,
+                                      Map<String, List<Integer>> scriptCodepoints,
+                                      List<Map<Character, Character>> remapTables)
+            throws IOException {
+        int nEach = NUM_CLASSIFIER_SAMPLES;
+
+        List<String> cleanWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 100);
+
+        List<String> baseWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 101);
+        Random rng = new Random(102);
+        List<String> corruptedWindows = new ArrayList<>(nEach);
+        for (int i = 0; i < baseWindows.size(); i++) {
+            String w = baseWindows.get(i);
+            switch (i % 4) {
+                case 0:
+                    corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
+                    break;
+                case 1:
+                    corruptedWindows.add(shuffleChars(w, rng));
+                    break;
+                case 2:
+                    corruptedWindows.add(injectCrossScriptChars(w, CLASSIFIER_INJECT_RATE, rng,
+                            scriptCodepoints));
+                    break;
+                default:
+                    if (!remapTables.isEmpty()) {
+                        Map<Character, Character> table =
+                                remapTables.get(rng.nextInt(remapTables.size()));
+                        corruptedWindows.add(wrongCodecRemap(w, table, CLASSIFIER_INJECT_RATE, rng));
+                    } else {
+                        corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
+                    }
+                    break;
+            }
+        }
+
+        List<float[]> features = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
+        List<Integer> labels   = new ArrayList<>(cleanWindows.size() + corruptedWindows.size());
+
+        for (String w : cleanWindows) {
+            features.add(extractFeaturesV6(w, f1, f1Cal,
+                    blockTable, blockCal, controlCal,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
+            labels.add(1);
+        }
+        for (String w : corruptedWindows) {
+            features.add(extractFeaturesV6(w, f1, f1Cal,
+                    blockTable, blockCal, controlCal,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets));
+            labels.add(0);
+        }
+
+        float[] weights = fitLogisticRegression(features, labels, 4);
+
+        // Bias calibration on short windows so FPR ≤ 2.5% at worst-case length.
+        List<String> shortWindows = sampleSubstrings(devGz, nEach, new int[]{15}, 200);
+        List<Float> shortLogits = new ArrayList<>(shortWindows.size());
+        int nFeat = weights.length - 1;
+        for (String w : shortWindows) {
+            float[] x = extractFeaturesV6(w, f1, f1Cal,
+                    blockTable, blockCal, controlCal,
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets);
+            float logit = weights[nFeat];
+            for (int j = 0; j < nFeat; j++) logit += weights[j] * x[j];
+            shortLogits.add(logit);
+        }
+        if (!shortLogits.isEmpty()) {
+            Collections.sort(shortLogits);
+            int pIdx = (int) (0.025 * shortLogits.size());
+            float p025 = shortLogits.get(Math.max(0, pIdx));
+            weights[nFeat] -= p025;
+        }
+
+        return weights;
+    }
+
+    /**
+     * Writes a v6 model file (JUNKDET1 version=6 gzipped binary).
+     *
+     * <p>Layout differs from v5 in two ways:
+     * <ol>
+     *   <li>A new global F1 section after the script-transition section,
+     *       holding the codepoint-bigram hash + Bloom + unigram-backoff
+     *       tables.</li>
+     *   <li>Per-script section drops the 65,536-float byte-bigram table.
+     *       The {@code mu1}/{@code sigma1} calibration fields remain (now
+     *       calibrated on the codepoint-hash mean log-prob, not byte-bigram).</li>
+     * </ol>
+     *
+     * F2 (block transition), F3 (control byte), F4 (script transition)
+     * sections are unchanged from v5 — pass v5-trained tables through.
+     */
+    public static void saveModelV6(TreeMap<String, float[]> f1Calibrations,
+                                   TreeMap<String, float[]> blockTables,
+                                   TreeMap<String, float[]> blockCalibrations,
+                                   TreeMap<String, float[]> controlCalibrations,
+                                   TreeMap<String, float[]> classifierWeights,
+                                   List<String> scriptBuckets,
+                                   float[] scriptTransTable,
+                                   float[] scriptTransCal,
+                                   V6F1Tables v6,
+                                   Path output) throws IOException {
         try (DataOutputStream dos = new DataOutputStream(
                 new GZIPOutputStream(Files.newOutputStream(output)))) {
 
             dos.write(MAGIC.getBytes(StandardCharsets.UTF_8));
             dos.writeByte(VERSION);
-            dos.writeInt(bigramTables.size());
-            dos.writeShort(blockN);
+            dos.writeInt(f1Calibrations.size());
 
-            // Block names section (v5+): write ordered block names for JVM-independence
-            String[] blockNames = new String[blockN - 1];
-            for (Map.Entry<Character.UnicodeBlock, Integer> e : blockIndex.entrySet()) {
-                blockNames[e.getValue()] = e.getKey().toString();
-            }
-            for (String name : blockNames) {
-                byte[] nameBytes = name.getBytes(StandardCharsets.UTF_8);
-                dos.writeShort(nameBytes.length);
-                dos.write(nameBytes);
-            }
+            // Block-scheme version byte — bound to the JVM-independent
+            // UnicodeBlockRanges static table.  Mismatch at load time is a
+            // hard error (no silent re-mapping).
+            dos.writeByte(org.apache.tika.ml.junkdetect.UnicodeBlockRanges.SCHEME_VERSION);
 
-            // Global script-transition section (v4+)
+            // Global script-transition section
             int numBuckets = scriptBuckets.size();
             dos.writeByte(numBuckets);
             for (String bucketName : scriptBuckets) {
@@ -952,45 +1099,164 @@ public class TrainJunkModel {
                 dos.write(nameBytes);
             }
             dos.write(toBytes(scriptTransTable));
-            dos.writeFloat(scriptTransCal[0]); // mu
-            dos.writeFloat(scriptTransCal[1]); // sigma
+            dos.writeFloat(scriptTransCal[0]);
+            dos.writeFloat(scriptTransCal[1]);
 
-            for (var entry : bigramTables.entrySet()) {
+            // Global F1 section (v6+) — new
+            dos.writeInt(v6.fnvSeed);
+            dos.writeFloat(v6.backoffAlpha);
+            dos.writeInt(v6.bigramBuckets);
+            dos.writeFloat(v6.bigramQuantMin);
+            dos.writeFloat(v6.bigramQuantMax);
+            dos.write(v6.bigramHash);
+            dos.writeInt(v6.unigramBuckets);
+            dos.writeFloat(v6.unigramQuantMin);
+            dos.writeFloat(v6.unigramQuantMax);
+            dos.write(v6.unigramHash);
+            dos.writeInt(v6.bloomBitCount);
+            dos.writeByte(v6.bloomK);
+            ByteBuffer bloomBuf = ByteBuffer.allocate(v6.bloomBitCount / 8)
+                    .order(ByteOrder.BIG_ENDIAN);
+            for (long w : v6.bloomBits) {
+                bloomBuf.putLong(w);
+            }
+            dos.write(bloomBuf.array());
+
+            // Per-script section — v6 drops the per-script byte-bigram table.
+            // mu1/sigma1 remain (calibrated on the codepoint-hash score).
+            int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
+            for (var entry : f1Calibrations.entrySet()) {
                 String script = entry.getKey();
-                float[] bigramTable  = entry.getValue();
-                float[] bigramCal    = bigramCalibrations.getOrDefault(script, new float[]{0f, 1f});
-                float[] blockTable   = blockTables.getOrDefault(script, new float[blockN * blockN]);
-                float[] blockCal     = blockCalibrations.getOrDefault(script, new float[]{0f, 1f});
-                float[] controlCal   = controlCalibrations.getOrDefault(script, new float[]{0f, 1f});
-                float[] weights      = classifierWeights.getOrDefault(script,
+                float[] f1Cal      = entry.getValue();
+                float[] blockTable = blockTables.getOrDefault(script, new float[blockN * blockN]);
+                float[] blockCal   = blockCalibrations.getOrDefault(script, new float[]{0f, 1f});
+                float[] controlCal = controlCalibrations.getOrDefault(script, new float[]{0f, 1f});
+                float[] weights    = classifierWeights.getOrDefault(script,
                         new float[]{1f / 4, 1f / 4, 1f / 4, 1f / 4, 0f});
 
                 byte[] nameBytes = script.getBytes(StandardCharsets.UTF_8);
                 dos.writeShort(nameBytes.length);
                 dos.write(nameBytes);
 
-                dos.writeFloat(bigramCal[0]);
-                dos.writeFloat(bigramCal[1]);
-                dos.write(toBytes(bigramTable));
+                // F1 calibration only (no byte-bigram table in v6)
+                dos.writeFloat(f1Cal[0]);
+                dos.writeFloat(f1Cal[1]);
 
+                // F2 — block transitions
                 dos.writeFloat(blockCal[0]);
                 dos.writeFloat(blockCal[1]);
                 dos.write(toBytes(blockTable));
 
+                // F3 — control-byte calibration
                 dos.writeFloat(controlCal[0]);
                 dos.writeFloat(controlCal[1]);
 
+                // Classifier weights
                 int numFeatures = weights.length - 1;
                 dos.writeByte(numFeatures);
-                for (float v : weights) dos.writeFloat(v);
+                for (float v : weights) {
+                    dos.writeFloat(v);
+                }
             }
         }
     }
 
-    private static byte[] toBytes(float[] table) {
-        ByteBuffer buf = ByteBuffer.allocate(table.length * 4).order(ByteOrder.BIG_ENDIAN);
-        for (float v : table) buf.putFloat(v);
-        return buf.array();
+    /**
+     * Quantizes a float array to 8-bit unsigned by linearly mapping
+     * {@code [min, max] → [0, 255]}.  Returns the byte array; {@code min}
+     * and {@code max} are computed from the input.
+     *
+     * <p>Stored in v6 model files as 8-bit log-prob tables; reader
+     * dequantizes via {@code min + (b/255) * (max - min)}.
+     *
+     * @return three-element record: byte[] quantized, float min, float max
+     */
+    public static QuantizedFloats quantizeFloats(float[] in) {
+        float min = Float.POSITIVE_INFINITY;
+        float max = Float.NEGATIVE_INFINITY;
+        for (float v : in) {
+            if (Float.isFinite(v)) {
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+        if (!Float.isFinite(min) || !Float.isFinite(max) || max == min) {
+            // Degenerate input — emit zeros, store dummy range.
+            return new QuantizedFloats(new byte[in.length], 0f, 1f);
+        }
+        byte[] out = new byte[in.length];
+        float range = max - min;
+        for (int i = 0; i < in.length; i++) {
+            float v = Float.isFinite(in[i]) ? in[i] : min;
+            int q = Math.round(((v - min) / range) * 255.0f);
+            if (q < 0) q = 0;
+            else if (q > 255) q = 255;
+            out[i] = (byte) q;
+        }
+        return new QuantizedFloats(out, min, max);
+    }
+
+    /** Return type of {@link #quantizeFloats(float[])}. */
+    public static final class QuantizedFloats {
+        public final byte[] bytes;
+        public final float min;
+        public final float max;
+        public QuantizedFloats(byte[] bytes, float min, float max) {
+            this.bytes = bytes;
+            this.min = min;
+            this.max = max;
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // FNV-1a hash + Bloom utilities (v6 — must match JunkDetector inference)
+    // -----------------------------------------------------------------------
+
+    private static final long V6_FNV_OFFSET = 0xcbf29ce484222325L;
+    private static final long V6_FNV_PRIME  = 0x100000001b3L;
+
+    public static long fnv1aBigramV6(int cpA, int cpB, int seed) {
+        long h = V6_FNV_OFFSET;
+        h = (h ^ (seed & 0xFF))        * V6_FNV_PRIME;
+        h = (h ^ ((cpA >>> 24) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cpA >>> 16) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cpA >>> 8)  & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ (cpA & 0xFF))         * V6_FNV_PRIME;
+        h = (h ^ 0xFF)                 * V6_FNV_PRIME;
+        h = (h ^ ((cpB >>> 24) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cpB >>> 16) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cpB >>> 8)  & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ (cpB & 0xFF))         * V6_FNV_PRIME;
+        return h;
+    }
+
+    public static long fnv1aUnigramV6(int cp, int seed) {
+        long h = V6_FNV_OFFSET;
+        h = (h ^ (seed & 0xFF))        * V6_FNV_PRIME;
+        h = (h ^ ((cp >>> 24) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cp >>> 16) & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ ((cp >>> 8)  & 0xFF)) * V6_FNV_PRIME;
+        h = (h ^ (cp & 0xFF))          * V6_FNV_PRIME;
+        return h;
+    }
+
+    public static long secondaryHashV6(int cpA, int cpB) {
+        long h = 0xff51afd7ed558ccdL;
+        h = (h ^ Integer.reverse(cpA)) * 0xc4ceb9fe1a85ec53L;
+        h = (h ^ Integer.reverse(cpB)) * 0xc4ceb9fe1a85ec53L;
+        h ^= h >>> 33;
+        return h;
+    }
+
+    /** Adds the codepoint pair to the Bloom filter using double-hashing. */
+    public static void bloomAddV6(long[] bloomBits, int bitCount, int k,
+                                  int cpA, int cpB, int seed) {
+        long h1 = fnv1aBigramV6(cpA, cpB, seed);
+        long h2 = secondaryHashV6(cpA, cpB);
+        for (int i = 0; i < k; i++) {
+            long pos = ((h1 + (long) i * h2) & 0x7FFFFFFFFFFFFFFFL) % bitCount;
+            bloomBits[(int) (pos >>> 6)] |= 1L << (pos & 63);
+        }
     }
 
     // -----------------------------------------------------------------------
