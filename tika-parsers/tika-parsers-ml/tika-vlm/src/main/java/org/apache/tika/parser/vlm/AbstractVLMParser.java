@@ -159,6 +159,10 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
 
+        if (!serverAvailable) {
+            return;
+        }
+
         VLMOCRConfig config = getConfig(parseContext);
 
         if (config.isSkipOcr()) {
@@ -235,7 +239,10 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             return;
         }
         try {
-            httpClient.get(healthUrl, Map.of(), defaultConfig.getTimeoutSeconds());
+            Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
+                    ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
+                    : Map.of();
+            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutSeconds());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {

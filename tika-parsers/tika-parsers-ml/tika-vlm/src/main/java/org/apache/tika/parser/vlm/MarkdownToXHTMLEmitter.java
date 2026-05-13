@@ -77,6 +77,8 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 class MarkdownToXHTMLEmitter {
 
+    private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
+
     private static final List<Extension> EXTENSIONS = Arrays.asList(
             TablesExtension.create(),
             StrikethroughExtension.create()
@@ -368,7 +370,7 @@ class MarkdownToXHTMLEmitter {
                 return;
             }
             try {
-                handler.startElement("", localName, localName, attrs);
+                handler.startElement(XHTML_NS, localName, localName, attrs);
             } catch (SAXException e) {
                 saxException = e;
             }
@@ -379,7 +381,7 @@ class MarkdownToXHTMLEmitter {
                 return;
             }
             try {
-                handler.endElement("", localName, localName);
+                handler.endElement(XHTML_NS, localName, localName);
             } catch (SAXException e) {
                 saxException = e;
             }
