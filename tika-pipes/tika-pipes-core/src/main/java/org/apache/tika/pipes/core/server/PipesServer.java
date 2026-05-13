@@ -61,6 +61,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
@@ -403,7 +404,8 @@ public class PipesServer implements AutoCloseable {
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
         return new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager,
-                fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory);
+                fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory,
+                pipesConfig.getParseMode());
     }
 
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
@@ -550,7 +552,7 @@ public class PipesServer implements AutoCloseable {
         if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
             mergedContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
         }
-        // Overlay request's values (request takes precedence)
+        // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
         return mergedContext;
     }

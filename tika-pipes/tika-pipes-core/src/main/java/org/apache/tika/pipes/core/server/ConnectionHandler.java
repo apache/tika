@@ -230,7 +230,7 @@ public class ConnectionHandler implements Runnable, Closeable {
                 resources.getEmitStrategy(), resources.getEmitterManager(), threshold);
         return new PipesWorker(fetchEmitTuple, mergedContext, resources.getAutoDetectParser(),
                 resources.getEmitterManager(), fetchHandler, parseHandler, emitHandler,
-                resources.getDefaultMetadataWriteLimiterFactory());
+                resources.getDefaultMetadataWriteLimiterFactory(), pipesConfig.getParseMode());
     }
 
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
