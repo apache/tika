@@ -170,9 +170,10 @@ plugins) locally; that build output is the build context for the
 `apache/tika-grpc` image and isn't published as a release artifact in its
 own right.
 
-tika-grpc requires at least one pf4j plugin to be loaded at startup; an
-empty `plugins/` directory triggers a `TikaConfigException` with a
-download URL pointing at Apache dist.
+tika-grpc expects pf4j plugins for full functionality; starting without
+plugins logs a warning with a download URL pointing at Apache dist.
+Most fetcher-dependent RPC calls will fail at runtime if no plugins are
+present.
 
 === Server: slim jar on Central, bin.zip on dist
 
