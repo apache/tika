@@ -201,8 +201,20 @@ public class TrainJunkModel {
         Path dataDir = Paths.get(System.getProperty("user.home"),
                 "datasets", "madlad", "junkdetect");
         Path output = dataDir.resolve("junkdetect.bin");
-        int bloomBits = V6_BLOOM_BITS_DEFAULT;
-        int minBigramCount = 1;
+
+        // Durable training parameters live in JunkDetectorTrainingConfig; this
+        // tool deliberately refuses CLI overrides so a built model file's
+        // identity always matches a committed config.
+        int bloomBits = JunkDetectorTrainingConfig.BLOOM_BITS;
+        int minBigramCount = JunkDetectorTrainingConfig.MIN_BIGRAM_COUNT;
+        if (bloomBits % 64 != 0) {
+            System.err.println("ERROR: BLOOM_BITS must be a multiple of 64");
+            System.exit(1);
+        }
+        if (minBigramCount < 1) {
+            System.err.println("ERROR: MIN_BIGRAM_COUNT must be >= 1");
+            System.exit(1);
+        }
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -213,18 +225,10 @@ public class TrainJunkModel {
                     output = Paths.get(args[++i]);
                     break;
                 case "--bloom-bits":
-                    bloomBits = Integer.parseInt(args[++i]);
-                    if (bloomBits % 64 != 0) {
-                        System.err.println("ERROR: --bloom-bits must be a multiple of 64");
-                        System.exit(1);
-                    }
-                    break;
                 case "--min-bigram-count":
-                    minBigramCount = Integer.parseInt(args[++i]);
-                    if (minBigramCount < 1) {
-                        System.err.println("ERROR: --min-bigram-count must be >= 1");
-                        System.exit(1);
-                    }
+                    System.err.println("ERROR: " + args[i] + " is no longer a CLI option."
+                            + "  Edit JunkDetectorTrainingConfig and commit the change instead.");
+                    System.exit(1);
                     break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
@@ -236,12 +240,14 @@ public class TrainJunkModel {
         System.out.println("=== TrainJunkModel ===");
         System.out.println("  data-dir:           " + dataDir);
         System.out.println("  output:             " + output);
+        System.out.println("  --- v6 format constants (TrainJunkModel) ---");
         System.out.printf( "  bigram_buckets:     %d%n", V6_BIGRAM_BUCKETS);
         System.out.printf( "  unigram_buckets:    %d%n", V6_UNIGRAM_BUCKETS);
-        System.out.printf( "  bloom_bits:         %d (%d KB), k=%d%n",
-                bloomBits, bloomBits / 8 / 1024, V6_BLOOM_K);
         System.out.printf( "  fnv_seed:           0x%08X%n", V6_FNV_SEED);
         System.out.printf( "  backoff_alpha:      %.2f%n", V6_BACKOFF_ALPHA);
+        System.out.println("  --- config (JunkDetectorTrainingConfig) ---");
+        System.out.printf( "  bloom_bits:         %d (%d KB), k=%d%n",
+                bloomBits, bloomBits / 8 / 1024, V6_BLOOM_K);
         System.out.printf( "  min_bigram_count:   %d%n", minBigramCount);
 
         if (!Files.isDirectory(dataDir)) {
@@ -1525,16 +1531,13 @@ public class TrainJunkModel {
 
     private static void printUsage() {
         System.err.println("Usage: TrainJunkModel [options]");
-        System.err.println("  --data-dir <path>         Directory with {script}.train.gz / .dev.gz files");
-        System.err.println("                            (default: ~/datasets/madlad/junkdetect)");
-        System.err.println("  --output   <path>         Output model file");
-        System.err.println("                            (default: {data-dir}/junkdetect.bin)");
-        System.err.println("  --bloom-bits <n>          F1 Bloom filter size in bits (multiple of 64)");
-        System.err.println("  --min-bigram-count <n>    Drop F1 bigrams with global per-pair count < n.");
-        System.err.println("                            n>=2 enables a pre-pass that tallies per-pair");
-        System.err.println("                            counts; rare bigrams (typically OCR/proper-noun");
-        System.err.println("                            noise) are excluded from the hash table and");
-        System.err.println("                            Bloom filter, cutting model size and FPR with");
-        System.err.println("                            negligible TPR impact.  Default: 1 (no pruning).");
+        System.err.println("  --data-dir <path>  Directory with {script}.train.gz / .dev.gz files");
+        System.err.println("                     (default: ~/datasets/madlad/junkdetect)");
+        System.err.println("  --output   <path>  Output model file");
+        System.err.println("                     (default: {data-dir}/junkdetect.bin)");
+        System.err.println();
+        System.err.println("All other training parameters (Bloom filter size, min bigram count, etc.)");
+        System.err.println("are fixed in JunkDetectorTrainingConfig and tracked in git.  Edit that");
+        System.err.println("file and commit to change them.");
     }
 }

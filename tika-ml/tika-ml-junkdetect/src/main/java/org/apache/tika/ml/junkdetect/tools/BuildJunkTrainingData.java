@@ -82,66 +82,18 @@ import java.util.zip.GZIPOutputStream;
 public class BuildJunkTrainingData {
 
     // -----------------------------------------------------------------------
-    // Defaults
+    // Split ratios — fixed, part of the model identity (changing them would
+    // invalidate downstream eval comparisons).
     // -----------------------------------------------------------------------
-
-    /** Lines read per language to determine dominant script. */
-    private static final int DEFAULT_SCRIPT_SAMPLE_LINES = 2_000;
-
-    /**
-     * UTF-8 bytes loaded per script group for entropy estimation.
-     * Budget is spread evenly across languages in the group.
-     * 200KB is enough to observe the bigram distribution reliably.
-     */
-    private static final long ENTROPY_SAMPLE_BYTES = 200_000L;
-
-    /**
-     * Total UTF-8 byte budget across all script groups.  Divided proportionally
-     * by bigram entropy after the sampling phase.  50MB gives ~1–3MB per script
-     * on average across 34 groups; scale up for production runs.
-     */
-    private static final long DEFAULT_TOTAL_BUDGET_BYTES = 50_000_000L;
-
-    /**
-     * Maximum UTF-8 bytes any single language may contribute to its script
-     * bucket.  Prevents one language (e.g. {@code zho} with 8 GB of MADLAD)
-     * from dominating a multi-language script.  Languages with less than this
-     * available take what they have; languages above the cap get truncated.
-     * Default {@code 5 MB} balances diversity against per-language coverage.
-     */
-    private static final long DEFAULT_PER_LANGUAGE_CAP_BYTES = 5_000_000L;
-
-    /** Minimum UTF-8 byte length for a sentence to pass the quality filter. */
-    private static final int DEFAULT_MIN_BYTES = 50;
-
-    /** Maximum fraction of codepoints that may be ASCII punctuation/digits. */
-    private static final double DEFAULT_MAX_PUNC_FRAC = 0.30;
-
-    /**
-     * Minimum fraction of a sentence's non-COMMON/INHERITED codepoints that
-     * must belong to the script bucket's target script for the sentence to be
-     * accepted.  Lines whose target-script fraction falls below this floor are
-     * dropped — typically these are off-target Wikipedia stubs (e.g. an article
-     * about Gothic written almost entirely in English).  Set very low by
-     * default so that legitimate mixed-script content (Japanese with kanji +
-     * kana, Korean with hanja annotations, Chinese with English citations) is
-     * preserved.
-     */
-    private static final double DEFAULT_MIN_TARGET_SCRIPT_FRAC = 0.05;
 
     /** Fraction of sentences written to each split (train / dev / test = 80/10/10). */
     private static final double TRAIN_FRAC = 0.80;
     private static final double DEV_FRAC   = 0.10;
     // remaining (1 - TRAIN_FRAC - DEV_FRAC) goes to the test split
 
-    /**
-     * Minimum number of sentences that must land in the dev split for a script to be
-     * included in the model.  Scripts below this floor have too few samples to reliably
-     * estimate calibration statistics (mu/sigma), which produces noisy z-scores and
-     * inflated false positive rates.  With DEV_FRAC=0.10 the effective minimum total
-     * sentence count is minDevSentences / DEV_FRAC (default: 5,000 total sentences).
-     */
-    private static final int DEFAULT_MIN_DEV_SENTENCES = 500;
+    // All other durable parameters live in JunkDetectorTrainingConfig.  This
+    // tool deliberately does not accept CLI overrides for those values; see
+    // the rejection logic in main() below.
 
     // -----------------------------------------------------------------------
     // Entry point
@@ -150,16 +102,22 @@ public class BuildJunkTrainingData {
     public static void main(String[] args) throws IOException {
         Path dataDir = Paths.get(System.getProperty("user.home"), "datasets", "madlad", "data");
         Path outputDir = Paths.get(System.getProperty("user.home"), "datasets", "madlad", "junkdetect");
-        int scriptSampleLines = DEFAULT_SCRIPT_SAMPLE_LINES;
-        long totalBudgetBytes = DEFAULT_TOTAL_BUDGET_BYTES;
-        long perLanguageCapBytes = DEFAULT_PER_LANGUAGE_CAP_BYTES;
-        int minBytes = DEFAULT_MIN_BYTES;
-        double maxPuncFrac = DEFAULT_MAX_PUNC_FRAC;
-        double minTargetScriptFrac = DEFAULT_MIN_TARGET_SCRIPT_FRAC;
-        int seed = 42;
         boolean dryRun = false;
-        int minDevSentences = DEFAULT_MIN_DEV_SENTENCES;
-        java.util.Set<String> dropScripts = new java.util.HashSet<>();
+
+        // Bind config-controlled values into local variables.  These are
+        // read-only from this point on; any attempt to override them via CLI
+        // is rejected below.
+        long totalBudgetBytes = JunkDetectorTrainingConfig.TOTAL_BUDGET_BYTES;
+        long perLanguageCapBytes = JunkDetectorTrainingConfig.PER_LANGUAGE_CAP_BYTES;
+        int minBytes = JunkDetectorTrainingConfig.MIN_BYTES_PER_SENTENCE;
+        double maxPuncFrac = JunkDetectorTrainingConfig.MAX_PUNC_FRAC;
+        double minTargetScriptFrac = JunkDetectorTrainingConfig.MIN_TARGET_SCRIPT_FRAC;
+        int minDevSentences = JunkDetectorTrainingConfig.MIN_DEV_SENTENCES;
+        int scriptSampleLines = JunkDetectorTrainingConfig.SCRIPT_SAMPLE_LINES;
+        int seed = JunkDetectorTrainingConfig.SEED;
+        java.util.Set<String> dropScripts = JunkDetectorTrainingConfig.DROP_SCRIPTS;
+        Map<String, Long> scriptBudgetOverrides =
+                JunkDetectorTrainingConfig.SCRIPT_BUDGET_OVERRIDES;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -169,38 +127,25 @@ public class BuildJunkTrainingData {
                 case "--output-dir":
                     outputDir = Paths.get(args[++i]);
                     break;
-                case "--script-sample-lines":
-                    scriptSampleLines = Integer.parseInt(args[++i]);
-                    break;
-                case "--total-budget-bytes":
-                    totalBudgetBytes = Long.parseLong(args[++i]);
-                    break;
-                case "--per-language-cap-bytes":
-                    perLanguageCapBytes = Long.parseLong(args[++i]);
-                    break;
-                case "--min-bytes":
-                    minBytes = Integer.parseInt(args[++i]);
-                    break;
-                case "--max-punc-frac":
-                    maxPuncFrac = Double.parseDouble(args[++i]);
-                    break;
-                case "--min-target-script-frac":
-                    minTargetScriptFrac = Double.parseDouble(args[++i]);
-                    break;
-                case "--seed":
-                    seed = Integer.parseInt(args[++i]);
-                    break;
-                case "--min-dev-sentences":
-                    minDevSentences = Integer.parseInt(args[++i]);
-                    break;
-                case "--drop-scripts":
-                    for (String s : args[++i].split(",")) {
-                        String t = s.trim().toUpperCase();
-                        if (!t.isEmpty()) dropScripts.add(t);
-                    }
-                    break;
                 case "--dry-run":
                     dryRun = true;
+                    break;
+                // Durable parameters are config-controlled.  Refuse any CLI
+                // override so that a model file's identity always matches the
+                // committed config.
+                case "--script-sample-lines":
+                case "--total-budget-bytes":
+                case "--per-language-cap-bytes":
+                case "--min-bytes":
+                case "--max-punc-frac":
+                case "--min-target-script-frac":
+                case "--seed":
+                case "--min-dev-sentences":
+                case "--drop-scripts":
+                case "--script-budget-override":
+                    System.err.println("ERROR: " + args[i] + " is no longer a CLI option."
+                            + "  Edit JunkDetectorTrainingConfig and commit the change instead.");
+                    System.exit(1);
                     break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
@@ -210,21 +155,26 @@ public class BuildJunkTrainingData {
         }
 
         System.out.println("=== BuildJunkTrainingData ===");
-        System.out.println("  data-dir:           " + dataDir);
-        System.out.println("  output-dir:         " + outputDir);
-        System.out.printf( "  total-budget-bytes:    %,d (%.1f MB)%n",
+        System.out.println("  data-dir:               " + dataDir);
+        System.out.println("  output-dir:             " + outputDir);
+        System.out.println("  --- config (JunkDetectorTrainingConfig) ---");
+        System.out.printf( "  total-budget-bytes:     %,d (%.1f MB)%n",
                 totalBudgetBytes, totalBudgetBytes / 1_000_000.0);
-        System.out.printf( "  per-language-cap:      %,d (%.1f MB)%n",
+        System.out.printf( "  per-language-cap:       %,d (%.1f MB)%n",
                 perLanguageCapBytes, perLanguageCapBytes / 1_000_000.0);
-        System.out.printf( "  min-bytes:             %d%n", minBytes);
-        System.out.printf( "  max-punc-frac:         %.2f%n", maxPuncFrac);
+        System.out.printf( "  min-bytes:              %d%n", minBytes);
+        System.out.printf( "  max-punc-frac:          %.2f%n", maxPuncFrac);
         System.out.printf( "  min-target-script-frac: %.2f%n", minTargetScriptFrac);
-        System.out.printf( "  min-dev-sentences:     %d  (min total ≈ %d)%n",
+        System.out.printf( "  min-dev-sentences:      %d  (min total ≈ %d)%n",
                 minDevSentences, (int)(minDevSentences / DEV_FRAC));
+        System.out.printf( "  seed:                   %d%n", seed);
         if (!dropScripts.isEmpty()) {
-            System.out.println("  drop-scripts:          " + dropScripts);
+            System.out.println("  drop-scripts:           " + dropScripts);
         }
-        System.out.println("  dry-run:               " + dryRun);
+        if (!scriptBudgetOverrides.isEmpty()) {
+            System.out.println("  script-budget-override: " + scriptBudgetOverrides);
+        }
+        System.out.println("  dry-run:                " + dryRun);
 
         if (!Files.isDirectory(dataDir)) {
             System.err.println("ERROR: data-dir not found: " + dataDir);
@@ -273,7 +223,8 @@ public class BuildJunkTrainingData {
             String script = entry.getKey();
             List<Path> langDirs = entry.getValue();
 
-            long perLangSampleBytes = Math.max(ENTROPY_SAMPLE_BYTES / langDirs.size(), 2_000L);
+            long perLangSampleBytes = Math.max(
+                    JunkDetectorTrainingConfig.ENTROPY_SAMPLE_BYTES / langDirs.size(), 2_000L);
             List<String> sample = new ArrayList<>();
             for (Path langDir : langDirs) {
                 loadSentences(langDir, perLangSampleBytes, minBytes, maxPuncFrac, sample);
@@ -297,9 +248,25 @@ public class BuildJunkTrainingData {
         Map<String, Long> scriptBudget = new TreeMap<>();
         for (Map.Entry<String, Double> e : scriptEntropy.entrySet()) {
             long budget = (long) (totalBudgetBytes * e.getValue() / totalEntropy);
+            Long override = scriptBudgetOverrides.get(e.getKey());
+            if (override != null) {
+                System.out.printf("  %-20s H=%.3f → %,d bytes (%.1f MB)"
+                        + "  [OVERRIDE: was %,d (%.1f MB)]%n",
+                        e.getKey(), e.getValue(), override, override / 1_000_000.0,
+                        budget, budget / 1_000_000.0);
+                budget = override;
+            } else {
+                System.out.printf("  %-20s H=%.3f → %,d bytes (%.1f MB)%n",
+                        e.getKey(), e.getValue(), budget, budget / 1_000_000.0);
+            }
             scriptBudget.put(e.getKey(), budget);
-            System.out.printf("  %-20s H=%.3f → %,d bytes (%.1f MB)%n",
-                    e.getKey(), e.getValue(), budget, budget / 1_000_000.0);
+        }
+        // Warn about overrides for scripts that aren't in the bucket set.
+        for (String k : scriptBudgetOverrides.keySet()) {
+            if (!scriptBudget.containsKey(k)) {
+                System.err.printf("WARNING: --script-budget-override for %s ignored"
+                        + " (script not in bucket set)%n", k);
+            }
         }
 
         if (dryRun) {
@@ -752,33 +719,15 @@ public class BuildJunkTrainingData {
 
     private static void printUsage() {
         System.err.println("Usage: BuildJunkTrainingData [options]");
-        System.err.println("  --data-dir               <path>  MADLAD data root"
+        System.err.println("  --data-dir   <path>  MADLAD data root"
                 + " (default: ~/datasets/madlad/data)");
-        System.err.println("  --output-dir             <path>  Output directory"
+        System.err.println("  --output-dir <path>  Output directory"
                 + " (default: ~/datasets/madlad/junkdetect)");
-        System.err.println("  --script-sample-lines    N       Lines per language for script"
-                + " detection (default: 2000)");
-        System.err.println("  --total-budget-bytes     N       Total UTF-8 bytes across all"
-                + " scripts (default: 50000000)");
-        System.err.println("  --per-language-cap-bytes N       Max UTF-8 bytes contributed by any"
-                + " single language to its script bucket (default: 5000000).  Prevents one large"
-                + " language source from dominating a multi-language bucket.");
-        System.err.println("  --min-bytes              N       Min UTF-8 bytes per sentence"
-                + " (default: 50)");
-        System.err.println("  --max-punc-frac          F       Max ASCII punct fraction"
-                + " (default: 0.30)");
-        System.err.println("  --min-target-script-frac F       Min fraction of non-COMMON cps that"
-                + " must be in the bucket's target script for a sentence to be kept"
-                + " (default: 0.05).  Filters off-target Wikipedia stubs (e.g. English-about-Gothic"
-                + " articles in the GOTHIC bucket).");
-        System.err.println("  --min-dev-sentences      N       Min sentences in dev split for a"
-                + " script to be included (default: 500). Scripts below this floor"
-                + " have unreliable calibration and inflated FPR.");
-        System.err.println("  --drop-scripts           S,S,..  Comma-separated script bucket names"
-                + " to exclude (e.g. GOTHIC,THAANA).  Use when source data is too thin or off-"
-                + " target for reliable distribution estimates.");
-        System.err.println("  --seed                   N       Random seed (default: 42)");
-        System.err.println("  --dry-run                        Detect scripts + show budget,"
-                + " skip file writing");
+        System.err.println("  --dry-run            Detect scripts + show budget,"
+                + " skip file writing.");
+        System.err.println();
+        System.err.println("All other training/build parameters (budgets, filters, dropped"
+                + " scripts, seed, etc.) are fixed in JunkDetectorTrainingConfig and tracked"
+                + " in git.  Edit that file and commit to change them.");
     }
 }
