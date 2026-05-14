@@ -161,7 +161,11 @@ public class OpenAIVLMParserTest {
     @Test
     void testApiKeyHeader() throws Exception {
         config.setApiKey("sk-test-key");
+        // Default completions path -> initialize() will probe /v1/models.
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, "{\"object\":\"list\"}"));
         parser = new OpenAIVLMParser(config);
+        parser.initialize();
+        server.clearRequests();
 
         server.enqueue(new TikaTestHttpServer.MockResponse(200,
                 buildChatResponse("text", 10, 5)));
@@ -180,13 +184,14 @@ public class OpenAIVLMParserTest {
     @Test
     void testAzureStyleAuth() throws Exception {
         config.setApiKey("azure-key-123");
-        parser = new OpenAIVLMParser(config);
         config.setCompletionsPath("/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01");
         parser = new OpenAIVLMParser(config);
         parser.setApiKeyHeaderName("api-key");
         parser.setApiKeyPrefix("");
         parser.setCompletionsPath(
                 "/openai/deployments/gpt-4o/chat/completions?api-version=2024-02-01");
+        // Non-default completions path -> health check is skipped.
+        parser.initialize();
 
         server.enqueue(new TikaTestHttpServer.MockResponse(200,
                 buildChatResponse("text", 10, 5)));
