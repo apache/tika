@@ -177,7 +177,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         Chunk chunk = new Chunk(null, locators);
         chunk.setVector(vector);
 
-        ChunkSerializer.mergeInto(metadata, List.of(chunk));
+        ChunkSerializer.mergeInto(metadata, List.of(chunk), config.getOutputField());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 handler, metadata, parseContext);
@@ -369,6 +369,14 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     public void setMaxFileSizeToEmbed(long maxFileSizeToEmbed) {
         defaultConfig.setMaxFileSizeToEmbed(maxFileSizeToEmbed);
+    }
+
+    public String getOutputField() {
+        return defaultConfig.getOutputField();
+    }
+
+    public void setOutputField(String outputField) {
+        defaultConfig.setOutputField(outputField);
     }
 
     // ---- Azure / endpoint config getters/setters ----------------------------

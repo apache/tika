@@ -76,15 +76,22 @@ public final class ChunkSerializer {
     public static void mergeInto(
             org.apache.tika.metadata.Metadata metadata,
             List<Chunk> newChunks) throws IOException {
+        mergeInto(metadata, newChunks, TikaCoreProperties.TIKA_CHUNKS);
+    }
+
+    public static void mergeInto(
+            org.apache.tika.metadata.Metadata metadata,
+            List<Chunk> newChunks,
+            String fieldName) throws IOException {
         List<Chunk> existing;
-        String current = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
+        String current = metadata.get(fieldName);
         if (current != null && !current.isEmpty()) {
             existing = fromJson(current);
         } else {
             existing = new ArrayList<>();
         }
         existing.addAll(newChunks);
-        metadata.set(TikaCoreProperties.TIKA_CHUNKS, toJson(existing));
+        metadata.set(fieldName, toJson(existing));
     }
 
     /**
