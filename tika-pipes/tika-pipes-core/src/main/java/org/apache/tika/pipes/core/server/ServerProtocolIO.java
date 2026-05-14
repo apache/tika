@@ -20,6 +20,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -44,6 +47,8 @@ import org.apache.tika.utils.StringUtils;
  * catching exceptions and responding according to their own lifecycle policy.
  */
 public class ServerProtocolIO {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServerProtocolIO.class);
 
     private final DataInputStream input;
     private final DataOutputStream output;
@@ -122,12 +127,16 @@ public class ServerProtocolIO {
         UnpackConfig unpackConfig = requestContext.get(UnpackConfig.class);
         ParseMode parseMode = requestContext.get(ParseMode.class);
 
+        // Warn (don't throw) when UnpackConfig has an emitter but ParseMode is not UNPACK.
+        // The global parse-context may include UnpackConfig as a default for UNPACK pipe runs,
+        // but the /rmeta and /tika endpoints explicitly set RMETA mode and PipesWorker correctly
+        // ignores UnpackConfig for non-UNPACK modes. Throwing here would crash the child process.
         if (unpackConfig != null && !StringUtils.isBlank(unpackConfig.getEmitter())
-                && parseMode != ParseMode.UNPACK) {
-            throw new TikaConfigException(
-                    "FetchEmitTuple has UnpackConfig with emitter '" + unpackConfig.getEmitter() +
-                            "' but ParseMode is " + parseMode + ". " +
-                            "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.");
+                && parseMode != null && parseMode != ParseMode.UNPACK) {
+            LOG.warn("FetchEmitTuple has UnpackConfig with emitter '{}' but ParseMode is {}. "
+                    + "UnpackConfig will be ignored. "
+                    + "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.",
+                    unpackConfig.getEmitter(), parseMode);
         }
     }
 }

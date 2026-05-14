@@ -69,10 +69,12 @@ class PipesWorker implements Callable<PipesResult> {
     private final ParseHandler parseHandler;
     private final EmitHandler emitHandler;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
+    private final ParseMode defaultParseMode;
 
     public PipesWorker(FetchEmitTuple fetchEmitTuple, ParseContext parseContext, AutoDetectParser autoDetectParser,
                        EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
-                       EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory) {
+                       EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
+                       ParseMode defaultParseMode) {
         this.fetchEmitTuple = fetchEmitTuple;
         this.parseContext = parseContext;
         this.autoDetectParser = autoDetectParser;
@@ -81,6 +83,7 @@ class PipesWorker implements Callable<PipesResult> {
         this.parseHandler = parseHandler;
         this.emitHandler = emitHandler;
         this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
+        this.defaultParseMode = defaultParseMode;
     }
 
     @Override
@@ -607,6 +610,9 @@ class PipesWorker implements Callable<PipesResult> {
         }
 
         ParseMode parseMode = parseContext.get(ParseMode.class);
+        if (parseMode == null) {
+            parseMode = defaultParseMode;
+        }
         UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
 
         // For UNPACK mode, automatically set up byte extraction

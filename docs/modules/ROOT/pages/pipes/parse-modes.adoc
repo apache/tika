@@ -20,7 +20,8 @@
 :toclevels: 3
 
 Tika Pipes uses `ParseMode` to control how documents are parsed and how results are emitted.
-The parse mode is set on the `ParseContext` or configured in `PipesConfig`.
+The parse mode is configured in the `pipes` section of the JSON config, or overridden per-request
+in the `parseContext` field of a `FetchEmitTuple`.
 
 == Available Parse Modes
 
@@ -87,7 +88,7 @@ to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`).
 [source,json]
 ----
 {
-  "parseContext": {
+  "pipes": {
     "parseMode": "CONCATENATE"
   }
 }
@@ -125,7 +126,7 @@ useful for:
 [source,json]
 ----
 {
-  "parseContext": {
+  "pipes": {
     "parseMode": "CONTENT_ONLY"
   }
 }

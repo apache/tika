@@ -158,6 +158,7 @@ public class SharedServerResources {
         if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
             mergedContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
         }
+        // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
         return mergedContext;
     }
