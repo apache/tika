@@ -142,11 +142,15 @@ public final class JunkDetectorTrainingConfig {
 
     /**
      * Per-script byte-budget overrides applied on top of the entropy-
-     * proportional allocation.  Empty in the current configuration: an
-     * experiment that gave HAN 60 MB instead of the entropy-derived 26 MB
-     * <i>worsened</i> Cohen's d for every non-HAN script (the global F1
-     * hash table is the bottleneck, not the corpus), so the override
-     * mechanism is preserved as infrastructure but is not currently used.
+     * proportional allocation.  Empty in the current configuration.
+     *
+     * <p>Under v6 the {@code HAN=60MB} experiment <em>worsened</em> every
+     * non-HAN script (the global F1 hash table was the bottleneck).  Under
+     * v7's per-script tables, the same experiment correctly leaves other
+     * scripts untouched, but the HAN gain itself was negligible (Cohen's d
+     * moved 7.26 → 7.35) — the per-script HAN model is already near its
+     * data-saturation point with ~18 MB of training data.  Override left
+     * empty until a more decisive HAN-coverage experiment is designed.
      */
     public static final Map<String, Long> SCRIPT_BUDGET_OVERRIDES =
             Collections.emptyMap();
@@ -156,22 +160,34 @@ public final class JunkDetectorTrainingConfig {
     // =======================================================================
 
     /**
-     * Drop F1 bigrams whose global per-pair occurrence count is below this
-     * threshold from the codepoint-bigram hash table and Bloom filter.
-     * Set to 3 on evidence that singleton and doubleton pairs are
-     * overwhelmingly OCR artifacts and proper-noun noise that inflate the
-     * clean-side score distribution tail without contributing signal.
+     * Drop per-script F1 bigrams whose per-pair occurrence count (within
+     * that script's training data) is below this threshold.  Set to 3 on
+     * evidence that singleton and doubleton pairs are overwhelmingly OCR
+     * artifacts and proper-noun noise that inflate the clean-side score
+     * distribution tail without contributing signal.
      *
-     * <p>Set to 1 to disable the filter (legacy behavior).
+     * <p>Set to 1 to disable the filter (every observed pair retained).
      */
     public static final int MIN_BIGRAM_COUNT = 3;
 
     /**
-     * Bloom filter capacity in bits for the F1 codepoint-bigram membership
-     * oracle.  Must be a multiple of 64.  16 Mbit gives a comfortable false-
-     * positive rate at the current corpus's distinct-pair count.
+     * Target load factor for the per-script open-addressing F1 hash
+     * table.  Table capacity is sized as the smallest power of two
+     * larger than {@code keptPairs / loadFactor}, giving an average of
+     * 1 / (1 - loadFactor) probes per lookup.  0.5 → ~2 probes; modestly
+     * wasteful in space but very cheap to probe.
      */
-    public static final int BLOOM_BITS = 16 * 1024 * 1024;
+    public static final double OA_LOAD_FACTOR = 0.5;
+
+    /**
+     * Bit width of each codepoint's dense index within a script's F1
+     * table.  Each bigram is packed as {@code (idxA << KEY_INDEX_BITS) |
+     * idxB}, so each side must fit in this many bits.  16 bits supports
+     * up to 65535 distinct codepoints per script, which is comfortably
+     * above the largest per-script count we have measured (HAN is the
+     * worst case at ~15K kept codepoints).
+     */
+    public static final int KEY_INDEX_BITS = 16;
 
     private JunkDetectorTrainingConfig() {
         // No instances.

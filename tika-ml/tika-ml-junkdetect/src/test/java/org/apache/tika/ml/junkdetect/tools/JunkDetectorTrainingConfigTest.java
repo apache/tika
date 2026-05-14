@@ -73,19 +73,20 @@ class JunkDetectorTrainingConfigTest {
     }
 
     @Test
-    void scriptBudgetOverridesEmptyByDefault() {
-        // We tried HAN=60MB; it lowered Cohen's d for every non-HAN script
-        // because the global F1 hash table is the bottleneck.  Keep this
-        // map empty until v7 (per-script F1 tables) lands.
+    void scriptBudgetOverridesEmpty() {
+        // v7 hypothesis test (HAN=60MB) ran but gave only marginal gains.
+        // Override map is intentionally empty pending a more decisive
+        // experiment.
         assertTrue(JunkDetectorTrainingConfig.SCRIPT_BUDGET_OVERRIDES.isEmpty());
     }
 
     @Test
     void modelTrainValues() {
         assertEquals(3, JunkDetectorTrainingConfig.MIN_BIGRAM_COUNT);
-        assertEquals(16 * 1024 * 1024, JunkDetectorTrainingConfig.BLOOM_BITS);
-        assertEquals(0, JunkDetectorTrainingConfig.BLOOM_BITS % 64,
-                "BLOOM_BITS must be a multiple of 64");
+        assertEquals(0.5, JunkDetectorTrainingConfig.OA_LOAD_FACTOR, 1e-9);
+        assertEquals(16, JunkDetectorTrainingConfig.KEY_INDEX_BITS);
+        assertTrue(JunkDetectorTrainingConfig.KEY_INDEX_BITS <= 16,
+                "KEY_INDEX_BITS must be <= 16 to fit packed key in an int");
     }
 
     @Test

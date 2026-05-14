@@ -92,10 +92,11 @@ public final class JunkDetector implements TextQualityDetector {
 
     static final String MAGIC = "JUNKDET1";
     /** Sole supported file-format version.  Mismatch is a hard error. */
-    static final int VERSION = 6;
+    static final int VERSION = 7;
 
-    // Feature 1 — global hashed codepoint-bigram + Bloom-gated unigram backoff
-    private final F1Tables f1;
+    // Feature 1 — per-script open-addressed codepoint-bigram tables.
+    // No global Bloom: empty-slot is the membership oracle.
+    private final Map<String, V7Tables> f1TablesByScript;
 
     /** Per-script F1 calibration on the codepoint-hash mean log-prob. */
     private final Map<String, float[]> calibrations; // script → float[2] {mu, sigma}
@@ -127,7 +128,7 @@ public final class JunkDetector implements TextQualityDetector {
                          float[] scriptTransitionCalibration,
                          Map<String, Integer> scriptBucketIndex,
                          int numScriptBuckets,
-                         F1Tables f1) {
+                         Map<String, V7Tables> f1TablesByScript) {
         this.calibrations = Collections.unmodifiableMap(calibrations);
         this.blockTables = Collections.unmodifiableMap(blockTables);
         this.blockCalibrations = Collections.unmodifiableMap(blockCalibrations);
@@ -137,7 +138,7 @@ public final class JunkDetector implements TextQualityDetector {
         this.scriptTransitionCalibration = scriptTransitionCalibration;
         this.scriptBucketIndex = Collections.unmodifiableMap(scriptBucketIndex);
         this.numScriptBuckets = numScriptBuckets;
-        this.f1 = f1;
+        this.f1TablesByScript = Collections.unmodifiableMap(f1TablesByScript);
     }
 
     // -----------------------------------------------------------------------
@@ -197,7 +198,7 @@ public final class JunkDetector implements TextQualityDetector {
      * <p>File-format layout (gzipped):
      * <pre>
      *   [8 bytes]    magic "JUNKDET1" (ASCII)
-     *   [1 byte]     version (= 6)
+     *   [1 byte]     version (= 7)
      *   [4 bytes]    num_scripts (int BE)
      *   [1 byte]     block_scheme_version  (must equal
      *                {@link UnicodeBlockRanges#SCHEME_VERSION})
@@ -208,32 +209,34 @@ public final class JunkDetector implements TextQualityDetector {
      *   [num_script_buckets² × 4 bytes]  script-transition log-prob table (F4)
      *   [4 bytes]    mu4 (float32 BE)
      *   [4 bytes]    sigma4 (float32 BE)
-     *   [4 bytes]    fnv_seed (int BE)
-     *   [4 bytes]    backoff_alpha (float32 BE)
-     *   [4 bytes]    bigram_buckets (int BE, power of 2)
-     *   [4 bytes]    bigram_quant_min (float32 BE)
-     *   [4 bytes]    bigram_quant_max (float32 BE)
-     *   [bigram_buckets bytes]  bigram log-prob table (8-bit quantized)
-     *   [4 bytes]    unigram_buckets (int BE, power of 2)
-     *   [4 bytes]    unigram_quant_min (float32 BE)
-     *   [4 bytes]    unigram_quant_max (float32 BE)
-     *   [unigram_buckets bytes]  unigram log-prob table (8-bit quantized)
-     *   [4 bytes]    bloom_bits (int BE, multiple of 64)
-     *   [1 byte]     bloom_k
-     *   [bloom_bits/8 bytes]  Bloom bit array
      *   for each script (sorted by name):
      *     [2 bytes]      name length
      *     [name bytes]   script name (UTF-8)
-     *     [4 bytes]      mu1 (F1 calibration, codepoint-hash mean log-prob)
+     *     [4 bytes]      mu1 (F1 calibration, codepoint-bigram mean log-prob)
      *     [4 bytes]      sigma1
+     *     // V7 F1 tables for this script — see {@link V7Tables#writeTo}
+     *     [4 bytes]      backoff_alpha (float32 BE)
+     *     [4 bytes]      codepoint_count
+     *     [codepoint_count × 4 bytes]  codepoint index (sorted, ascending)
+     *     [4 bytes]      bigram_slots (power of 2)
+     *     [4 bytes]      bigram_quant_min (float32 BE)
+     *     [4 bytes]      bigram_quant_max (float32 BE)
+     *     [bigram_slots × 4 bytes]  bigram open-addressing keys
+     *                                ((idxA<<16)|idxB, or {@link V7Tables#EMPTY_KEY})
+     *     [bigram_slots bytes]      bigram values (8-bit quantized log-probs)
+     *     [4 bytes]      unigram_quant_min (float32 BE)
+     *     [4 bytes]      unigram_quant_max (float32 BE)
+     *     [4 bytes]      unigram_fallback_log_prob (float32 BE; used for
+     *                                                codepoints not in index)
+     *     [codepoint_count bytes]   unigram values (8-bit quantized log-probs)
+     *     // F2/F3/classifier (unchanged from v6 layout)
      *     [4 bytes]      mu2 (F2 calibration)
      *     [4 bytes]      sigma2
      *     [block_N² × 4 bytes]  block-transition log-prob table (F2)
      *     [4 bytes]      mu3 (F3 calibration)
      *     [4 bytes]      sigma3
      *     [1 byte]       num_features
-     *     [num_features × 4 bytes]  classifier weights w1..wN
-     *     [4 bytes]      bias
+     *     [(num_features+1) × 4 bytes]  classifier weights w1..wN and bias
      * </pre>
      */
     public static JunkDetector load(InputStream rawIs) throws IOException {
@@ -281,39 +284,22 @@ public final class JunkDetector implements TextQualityDetector {
             float[] scriptTransitionTable = readFloatTable(dis, numScriptBuckets * numScriptBuckets);
             float[] scriptTransitionCalibration = new float[]{dis.readFloat(), dis.readFloat()};
 
-            // Global F1 hash + Bloom section
-            int fnvSeed = dis.readInt();
-            float backoffAlpha = dis.readFloat();
-            int bigramBuckets = dis.readInt();
-            float bigramMin = dis.readFloat();
-            float bigramMax = dis.readFloat();
-            byte[] bigramHash = dis.readNBytes(bigramBuckets);
-            int unigramBuckets = dis.readInt();
-            float unigramMin = dis.readFloat();
-            float unigramMax = dis.readFloat();
-            byte[] unigramHash = dis.readNBytes(unigramBuckets);
-            int bloomBits = dis.readInt();
-            int bloomK = dis.readUnsignedByte();
-            int bloomLongs = (bloomBits + 63) >> 6;
-            long[] bloom = new long[bloomLongs];
-            byte[] bloomBytes = dis.readNBytes(bloomBits / 8);
-            ByteBuffer bloomBuf = ByteBuffer.wrap(bloomBytes).order(ByteOrder.BIG_ENDIAN);
-            bloomBuf.asLongBuffer().get(bloom);
-            F1Tables f1 = new F1Tables(bigramHash, bigramBuckets, bigramMin, bigramMax,
-                    unigramHash, unigramBuckets, unigramMin, unigramMax,
-                    bloom, bloomBits, bloomK, fnvSeed, backoffAlpha);
-
-            Map<String, float[]> calibrations        = new HashMap<>(numScripts * 2);
-            Map<String, float[]> blockTables         = new HashMap<>(numScripts * 2);
-            Map<String, float[]> blockCalibrations   = new HashMap<>(numScripts * 2);
-            Map<String, float[]> controlCalibrations = new HashMap<>(numScripts * 2);
-            Map<String, float[]> classifierWeights   = new HashMap<>(numScripts * 2);
+            Map<String, V7Tables>  f1TablesByScript   = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   calibrations       = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   blockTables        = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   blockCalibrations  = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   controlCalibrations = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   classifierWeights  = new HashMap<>(numScripts * 2);
 
             for (int s = 0; s < numScripts; s++) {
                 int nameLen = dis.readUnsignedShort();
                 String script = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
 
                 calibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
+
+                // Per-script V7 F1 tables.
+                f1TablesByScript.put(script, V7Tables.readFrom(dis));
+
                 blockCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
                 blockTables.put(script, readFloatTable(dis, blockN * blockN));
                 controlCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
@@ -330,7 +316,7 @@ public final class JunkDetector implements TextQualityDetector {
                     blockTables, blockCalibrations,
                     controlCalibrations, classifierWeights,
                     scriptTransitionTable, scriptTransitionCalibration,
-                    scriptBucketIndex, numScriptBuckets, f1);
+                    scriptBucketIndex, numScriptBuckets, f1TablesByScript);
         }
     }
 
@@ -582,8 +568,9 @@ public final class JunkDetector implements TextQualityDetector {
      * training and inference share the same math.
      */
     private float[] computeChunkZs(byte[] utf8, String text, String script) {
-        // Feature 1: global hashed codepoint-bigram, calibrated per-script
-        float meanF1LogProb = computeCodepointHashMeanLogP(text);
+        // Feature 1: per-script codepoint-bigram, calibrated per-script
+        V7Tables tables = f1TablesByScript.get(script);
+        float meanF1LogProb = computeCodepointF1MeanLogP(text, tables);
         float[] cal1 = calibrations.get(script);
         float z1 = (meanF1LogProb - cal1[0]) / cal1[1];
 
@@ -591,6 +578,12 @@ public final class JunkDetector implements TextQualityDetector {
                 blockTables.get(script), blockCalibrations.get(script));
         float z3 = computeZ3ControlByte(utf8, controlCalibrations.get(script));
         return new float[]{z1, z2, z3};
+    }
+
+    private static float computeCodepointF1MeanLogP(String text, V7Tables tables) {
+        if (tables == null) return Float.NaN;
+        double v = computeF1MeanLogP(text, tables);
+        return Double.isNaN(v) ? Float.NaN : (float) v;
     }
 
     /**
@@ -719,123 +712,150 @@ public final class JunkDetector implements TextQualityDetector {
     }
 
     // -----------------------------------------------------------------------
-    // Feature 1: hashed codepoint-bigram + Bloom-gated unigram-backoff
+    // Feature 1: per-script open-addressing codepoint-bigram lookup
     // -----------------------------------------------------------------------
 
     /**
      * Mean log-prob over the codepoint pairs in {@code text} using the given
-     * F1 tables.
+     * script's V7 F1 tables.
      *
-     * <p>For each adjacent codepoint pair {@code (a, b)}: if the Bloom filter
-     * reports the pair was seen at training time, return the dequantized
-     * log-prob from the bigram hash bucket.  Else fall back to
-     * {@code alpha * (log P(a) + log P(b))} via the unigram hash table.
+     * <p>For each adjacent codepoint pair {@code (a, b)}:
+     * <ol>
+     *   <li>Binary-search both codepoints in the script's codepoint index.
+     *       If either is absent, the pair was never seen in training; emit
+     *       {@code α * (logP(a) + logP(b))} using each codepoint's unigram
+     *       value (or {@link V7Tables#unigramFallbackLogProb} if the
+     *       codepoint isn't even in the unigram index).</li>
+     *   <li>Otherwise, look up the packed {@code (idxA<<16)|idxB} key in
+     *       the open-addressing bigram table.  Empty slot → unseen pair →
+     *       unigram backoff (same formula).  Match → dequantize the stored
+     *       value.</li>
+     * </ol>
      *
-     * <p>This is the single authoritative implementation of the F1 scoring
-     * math, shared between inference ({@link #score}) and training
-     * ({@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel#calibrateF1PerScript}).
-     * Keeping one implementation eliminates the risk of train/infer drift in
-     * the F1 feature — the same risk that motivated making z2/z3/z4 public
-     * static methods.
+     * <p>This is the single authoritative implementation of the V7 F1
+     * scoring math, shared by inference and training.  Keeping one
+     * implementation eliminates the risk of train/infer drift in the F1
+     * feature.
      *
      * @return mean log-prob, or {@link Double#NaN} if {@code text} has fewer
-     *         than two codepoints
+     *         than two codepoints or {@code tables} is null
      */
-    public static double computeF1MeanLogP(String text, F1Tables f1) {
-        if (text == null || text.length() < 2) {
+    public static double computeF1MeanLogP(String text, V7Tables tables) {
+        if (text == null || text.length() < 2 || tables == null) {
             return Double.NaN;
         }
         double sum = 0;
         int n = 0;
         int prevCp = -1;
+        int prevIdx = -1;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
+            int curIdx = codepointToIndex(tables, cp);
             if (prevCp >= 0) {
-                sum += scorePairF1(prevCp, cp, f1);
+                sum += scorePairF1V7(prevCp, prevIdx, cp, curIdx, tables);
                 n++;
             }
             prevCp = cp;
+            prevIdx = curIdx;
         }
         return n == 0 ? Double.NaN : sum / n;
     }
 
-    /** Thin instance wrapper around the shared static implementation. */
-    private float computeCodepointHashMeanLogP(String text) {
-        double v = computeF1MeanLogP(text, f1);
-        return Double.isNaN(v) ? Float.NaN : (float) v;
+    /**
+     * Binary-search a codepoint in the script's index.
+     *
+     * @return the dense index (≥ 0) if found, or -1 if the codepoint
+     *         doesn't appear in any kept bigram for this script
+     */
+    public static int codepointToIndex(V7Tables tables, int cp) {
+        return java.util.Arrays.binarySearch(tables.codepointIndex, cp);
     }
 
-    private static double scorePairF1(int cpA, int cpB, F1Tables f1) {
-        if (bloomContainsF1(cpA, cpB, f1)) {
-            int bucket = (int) (fnv1aBigram(cpA, cpB, f1.fnvSeed) & (f1.bigramBuckets - 1));
-            return dequantize(f1.bigramHash[bucket], f1.bigramQuantMin, f1.bigramQuantMax);
-        }
-        // Unigram backoff.  α=1.0 gives plain independence assumption;
-        // α<1 discounts (stupid-backoff style) — prototype showed α=1.0 is
-        // correct for junk discrimination.
-        double ua = dequantize(
-                f1.unigramHash[(int) (fnv1aUnigram(cpA, f1.fnvSeed) & (f1.unigramBuckets - 1))],
-                f1.unigramQuantMin, f1.unigramQuantMax);
-        double ub = dequantize(
-                f1.unigramHash[(int) (fnv1aUnigram(cpB, f1.fnvSeed) & (f1.unigramBuckets - 1))],
-                f1.unigramQuantMin, f1.unigramQuantMax);
-        return f1.backoffAlpha * (ua + ub);
+    /**
+     * Mixing function used to scatter packed (idxA, idxB) keys across
+     * the open-addressing table.  A simple integer finalizer (splitmix32
+     * style) gives good distribution for sequential index values.
+     *
+     * <p>Public so the trainer's open-addressing insertion routine uses
+     * the same probe order as inference — drift here would silently
+     * corrupt every lookup.
+     */
+    public static int mixIndexKey(int packedKey) {
+        int x = packedKey;
+        x = (x ^ (x >>> 16)) * 0x7feb352d;
+        x = (x ^ (x >>> 15)) * 0x846ca68b;
+        x = x ^ (x >>> 16);
+        return x;
     }
 
-    private static boolean bloomContainsF1(int cpA, int cpB, F1Tables f1) {
-        long h1 = fnv1aBigram(cpA, cpB, f1.fnvSeed);
-        long h2 = secondaryHash(cpA, cpB);
-        for (int i = 0; i < f1.bloomK; i++) {
-            long pos = ((h1 + (long) i * h2) & 0x7FFFFFFFFFFFFFFFL) % f1.bloomBitCount;
-            if ((f1.bloomBits[(int) (pos >>> 6)] & (1L << (pos & 63))) == 0) {
-                return false;
+    /**
+     * Packed bigram key for indices {@code (a, b)} where each index fits in
+     * {@link JunkDetectorTrainingConfig#KEY_INDEX_BITS} bits.  Asserts that
+     * indices are non-negative; that's the caller's contract.
+     */
+    public static int packBigramKey(int idxA, int idxB) {
+        return (idxA << 16) | (idxB & 0xFFFF);
+    }
+
+    /**
+     * Looks up a (cpA, cpB) bigram in the script's V7 tables and returns
+     * its dequantized log-prob.  Falls back to unigram backoff on miss.
+     *
+     * <p>{@code idxA}/{@code idxB} are the pre-computed codepoint indices
+     * (from {@link #codepointToIndex}); {@code -1} means the codepoint is
+     * not in this script's index.  The caller is expected to compute them
+     * once when scanning the text (avoiding a redundant binary search per
+     * codepoint).
+     */
+    private static double scorePairF1V7(int cpA, int idxA, int cpB, int idxB,
+                                         V7Tables tables) {
+        if (idxA >= 0 && idxB >= 0) {
+            int slot = lookupBigramSlot(tables, idxA, idxB);
+            if (slot >= 0) {
+                return dequantize(tables.bigramValues[slot],
+                        tables.bigramQuantMin, tables.bigramQuantMax);
             }
         }
-        return true;
+        // Unigram backoff for unseen pair or for codepoints absent from the
+        // per-script index.  α=1.0 = plain independence; prototype-validated.
+        double ua = unigramLogProb(tables, idxA);
+        double ub = unigramLogProb(tables, idxB);
+        return tables.backoffAlpha * (ua + ub);
+    }
+
+    /**
+     * Open-addressing lookup: returns the slot index that contains the key
+     * for {@code (idxA, idxB)}, or {@code -1} if not present (probe hit an
+     * empty slot first).
+     *
+     * <p>Linear probing with the same mix-hash used at training time —
+     * required for the table to be readable, not just writable.
+     */
+    static int lookupBigramSlot(V7Tables tables, int idxA, int idxB) {
+        int packedKey = packBigramKey(idxA, idxB);
+        int[] keys = tables.bigramKeys;
+        int mask = keys.length - 1;
+        int h = mixIndexKey(packedKey) & mask;
+        while (true) {
+            int k = keys[h];
+            if (k == V7Tables.EMPTY_KEY) return -1;
+            if (k == packedKey) return h;
+            h = (h + 1) & mask;
+        }
+    }
+
+    private static double unigramLogProb(V7Tables tables, int idx) {
+        if (idx < 0) {
+            return tables.unigramFallbackLogProb;
+        }
+        return dequantize(tables.unigramTable[idx],
+                tables.unigramQuantMin, tables.unigramQuantMax);
     }
 
     private static float dequantize(byte b, float min, float max) {
         int u = b & 0xFF;
         return min + (u / 255.0f) * (max - min);
-    }
-
-    // FNV-1a constants for codepoint hashing.  Must match the values used at
-    // training time (TrainJunkModel).  Seed is stored in the model file.
-    private static final long FNV_OFFSET = 0xcbf29ce484222325L;
-    private static final long FNV_PRIME  = 0x100000001b3L;
-
-    static long fnv1aBigram(int cpA, int cpB, int seed) {
-        long h = FNV_OFFSET;
-        h = (h ^ (seed & 0xFF))        * FNV_PRIME;
-        h = (h ^ ((cpA >>> 24) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cpA >>> 16) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cpA >>> 8)  & 0xFF)) * FNV_PRIME;
-        h = (h ^ (cpA & 0xFF))         * FNV_PRIME;
-        h = (h ^ 0xFF)                 * FNV_PRIME; // separator
-        h = (h ^ ((cpB >>> 24) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cpB >>> 16) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cpB >>> 8)  & 0xFF)) * FNV_PRIME;
-        h = (h ^ (cpB & 0xFF))         * FNV_PRIME;
-        return h;
-    }
-
-    static long fnv1aUnigram(int cp, int seed) {
-        long h = FNV_OFFSET;
-        h = (h ^ (seed & 0xFF))        * FNV_PRIME;
-        h = (h ^ ((cp >>> 24) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cp >>> 16) & 0xFF)) * FNV_PRIME;
-        h = (h ^ ((cp >>> 8)  & 0xFF)) * FNV_PRIME;
-        h = (h ^ (cp & 0xFF))          * FNV_PRIME;
-        return h;
-    }
-
-    static long secondaryHash(int cpA, int cpB) {
-        long h = 0xff51afd7ed558ccdL;
-        h = (h ^ Integer.reverse(cpA)) * 0xc4ceb9fe1a85ec53L;
-        h = (h ^ Integer.reverse(cpB)) * 0xc4ceb9fe1a85ec53L;
-        h ^= h >>> 33;
-        return h;
     }
 
     /**
