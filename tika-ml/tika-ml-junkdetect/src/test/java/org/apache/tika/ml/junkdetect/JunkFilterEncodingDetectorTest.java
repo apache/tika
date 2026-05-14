@@ -161,4 +161,54 @@ public class JunkFilterEncodingDetectorTest {
     // constructor — ServiceLoader cannot instantiate it. Wiring JunkDetector
     // up as a proper SPI provider is tracked as follow-up work for TIKA-4720;
     // at that point this test can be added to exercise the real SPI path.
+
+    @Test
+    void expandHtmlEntities_numericDecimalResolvesToCodepoint() {
+        // U+0D4D = Malayalam Sign Virama
+        assertEquals("്",
+                JunkFilterEncodingDetector.expandHtmlEntities("&#3405;"));
+        // Surrounding ASCII preserved
+        assertEquals("a്b",
+                JunkFilterEncodingDetector.expandHtmlEntities("a&#3405;b"));
+    }
+
+    @Test
+    void expandHtmlEntities_numericHexResolvesToCodepoint() {
+        // U+4E2D = 中 (Han ideograph "middle")
+        assertEquals("中",
+                JunkFilterEncodingDetector.expandHtmlEntities("&#x4E2D;"));
+        assertEquals("中",
+                JunkFilterEncodingDetector.expandHtmlEntities("&#x4e2d;"));
+    }
+
+    @Test
+    void expandHtmlEntities_namedReferences() {
+        assertEquals("&", JunkFilterEncodingDetector.expandHtmlEntities("&amp;"));
+        assertEquals("<", JunkFilterEncodingDetector.expandHtmlEntities("&lt;"));
+        assertEquals(">", JunkFilterEncodingDetector.expandHtmlEntities("&gt;"));
+        assertEquals("\"", JunkFilterEncodingDetector.expandHtmlEntities("&quot;"));
+        assertEquals("a & b < c", JunkFilterEncodingDetector.expandHtmlEntities("a &amp; b &lt; c"));
+    }
+
+    @Test
+    void expandHtmlEntities_malformedPassesThrough() {
+        // No semicolon → not matched, left as literal
+        assertEquals("&#3405", JunkFilterEncodingDetector.expandHtmlEntities("&#3405"));
+        // Unknown named entity → left as literal
+        assertEquals("&unknown;",
+                JunkFilterEncodingDetector.expandHtmlEntities("&unknown;"));
+        // Out-of-range numeric → left as literal (passes overflow guard)
+        assertEquals("&#999999999;",
+                JunkFilterEncodingDetector.expandHtmlEntities("&#999999999;"));
+    }
+
+    @Test
+    void expandHtmlEntities_mixedEntityAndRawCodepoints() {
+        // Simulates an AIT5-style document: mix of raw Malayalam codepoints
+        // and numeric entity references encoding more Malayalam codepoints.
+        // ത = ത  ് = ് (virama)
+        String input = "ത&#3405;ര";
+        String expected = "ത്ര";
+        assertEquals(expected, JunkFilterEncodingDetector.expandHtmlEntities(input));
+    }
 }

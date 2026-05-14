@@ -25,6 +25,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +41,6 @@ import org.apache.tika.ml.chardetect.HtmlByteStripper;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.quality.TextQualityComparison;
 import org.apache.tika.quality.TextQualityDetector;
-import org.apache.tika.quality.TextQualityScore;
 
 /**
  * A {@link MetaEncodingDetector} that arbitrates charset candidates by
@@ -75,34 +76,6 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     /** How many probe bytes to read for decoding candidates.  Matches the
      * default read limit used by the charset base detectors. */
     private static final int DEFAULT_READ_LIMIT = 16384;
-
-    // ---------------------------------------------------------------------
-    // TACTICAL: declarative-override gate constants.
-    //
-    // These exist to compensate for known per-script calibration unevenness
-    // in the quality scorer (HAN noise floor too generous; MALAYALAM/TAMIL/
-    // BENGALI floors too strict).  They produce wrong tournaments when an
-    // honest in-document declaration (`<meta charset>` / XML decl) decodes
-    // to sparse non-Latin content that scores junky-but-correct, while a
-    // statistical pick decodes to dense mojibake-Han that scores decent-
-    // but-wrong.  See `analyses/2026-04-26-tika-eval-charset-and-other.md`
-    // and the indic-collapse + Korean+Hanja fixtures.
-    //
-    // REMOVE when the quality scorer is recalibrated per-script — the
-    // tournament should then be reliable on its own.
-    // ---------------------------------------------------------------------
-
-    /** Maximum delta in z-score units we tolerate before honoring the
-     *  in-document declaration over the tournament winner.  Tuned so that
-     *  small same-script-different-codepage deltas (windows-1252 vs
-     *  windows-1257 ≈ 1-2 units) don't trigger override when scripts
-     *  match, while indic-vs-mojibake-Han deltas (~3-5 units) do. */
-    private static final float DECLARATIVE_OVERRIDE_MAX_DELTA = 6.0f;
-
-    /** Maximum fraction of REPLACEMENT CHARACTER (U+FFFD) in the declared
-     *  decoder's output.  Above this, the declared charset clearly cannot
-     *  decode the bytes and we should not honor the declaration. */
-    private static final double DECLARATIVE_MAX_FFFD_RATE = 0.01;
 
     /** Cached quality detector.  {@code null} if none is on the classpath. */
     private final TextQualityDetector qualityDetector;
@@ -187,10 +160,21 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
 
         // Decode probe under each candidate, preserving insertion order so
         // tournament seeding is deterministic.
+        //
+        // Each decoded string is then run through HTML entity expansion.
+        // For entity-encoded HTML (numeric refs like &#3405;), this is
+        // load-bearing: entity refs are ASCII bytes that decode identically
+        // under every candidate charset, so they don't differentiate.
+        // After expansion they become real codepoints — and crucially, in
+        // the *wrong* decoding (e.g. mojibake-as-HAN), they introduce
+        // cross-script transitions (HAN ↔ MALAYALAM mid-document) that the
+        // quality detector's script-transition feature correctly penalises.
+        // See `20260512-junkdetector-codepoint-hash-plan.md` (AIT5 case).
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset cs : uniqueCharsets) {
             String decoded = safeDecode(forDecode, cs);
             if (decoded != null && !decoded.isEmpty()) {
+                decoded = expandHtmlEntities(decoded);
                 candidates.put(cs, decoded);
                 if (LOG.isTraceEnabled()) {
                     int sampleLen = Math.min(400, decoded.length());
@@ -246,146 +230,15 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
                     champion.getKey().name(), challenger.getKey().name(),
                     cmp.winner(), String.format(java.util.Locale.ROOT, "%.3f", cmp.delta()),
                     cmp.scoreA(), cmp.scoreB());
-            if ("B".equals(cmp.winner())) {
+            if (challenger.getKey().name().equals(cmp.winner())) {
                 champion = challenger;
             }
         }
         LOG.trace("junk-filter -> {} (tournament champion)", champion.getKey().name());
 
-        // TACTICAL: declarative override.  See class-level comment block.
-        // REMOVE when quality scorer is recalibrated per-script.
-        Charset declarativeOverride = applyInDocumentDeclarativeOverride(
-                context, candidates, champion.getKey());
-        if (declarativeOverride != null) {
-            float conf = context.getTopConfidenceFor(declarativeOverride);
-            context.setArbitrationInfo("junk-filter-declarative-override");
-            LOG.trace("junk-filter -> {} (declarative override of tournament winner {})",
-                    declarativeOverride.name(), champion.getKey().name());
-            return List.of(new EncodingResult(declarativeOverride, conf));
-        }
-
         float confidence = context.getTopConfidenceFor(champion.getKey());
         context.setArbitrationInfo("junk-filter-selected");
         return List.of(new EncodingResult(champion.getKey(), confidence));
-    }
-
-    /**
-     * Tactical fix: honor an in-document {@code <meta charset>} or XML
-     * declaration when the quality scorer's per-script calibration unevenness
-     * would otherwise mis-rank candidates of <em>different scripts</em>.
-     *
-     * <p>Returns the in-document declared charset to use, or {@code null} to
-     * leave the tournament winner intact.</p>
-     *
-     * <p>Gates (all must hold to override):</p>
-     * <ol>
-     *   <li><strong>(a) Decode is mostly clean</strong>: declared decoder produces
-     *       fewer than {@link #DECLARATIVE_MAX_FFFD_RATE} U+FFFD per char.</li>
-     *   <li><strong>(b) Both decoded</strong>: declared and tournament winner are
-     *       both in the candidate map (already guaranteed by upstream code).</li>
-     *   <li><strong>(c) Quality gap small</strong>: tournament winner's z-score
-     *       is not vastly higher than the declared's; specifically
-     *       {@code winner.z - declared.z &lt;= DECLARATIVE_OVERRIDE_MAX_DELTA}.</li>
-     *   <li><strong>(d) Different scripts</strong>: declared and winner classify
-     *       as different scripts.  Same-script Latin-cousin lies (e.g. windows-1252
-     *       declared on a windows-1257 file) fall through to the tournament,
-     *       which correctly handles them via byte-distribution scoring.</li>
-     * </ol>
-     *
-     * <p>"In-document" means {@code HtmlEncodingDetector} or any future XML-decl
-     * source — explicitly NOT {@code MetadataCharsetDetector} (outer Content-Type
-     * header), which is more often wrong.</p>
-     */
-    private Charset applyInDocumentDeclarativeOverride(
-            EncodingDetectorContext context,
-            Map<Charset, String> candidates,
-            Charset champion) {
-        Charset declared = findInDocumentDeclarative(context);
-        if (declared == null) {
-            return null;
-        }
-        if (declared.equals(champion)) {
-            return null; // already winning
-        }
-        // Per HTML5 spec, <meta charset> cannot validly declare UTF-16 / UTF-32:
-        // the meta tag itself is bytes that have to be parsed before its
-        // declaration is known, and UTF-16/32 require a BOM.  If the
-        // declaration claims UTF-16/32 and no BOM was found (BOMDetector runs
-        // first in the chain), we treat the declaration as invalid and let
-        // the tournament winner stand.  This catches govdocs1-style "utf-16
-        // declared on a Latin file" lies that would otherwise look like a
-        // legitimate script-mismatch override.
-        String declaredName = declared.name();
-        if (declaredName.startsWith("UTF-16") || declaredName.startsWith("UTF-32")) {
-            LOG.trace("junk-filter declarative-override skipped: UTF-16/32 in <meta> (HTML5 invalid)");
-            return null;
-        }
-        String championText = candidates.get(champion);
-        String declaredText = candidates.get(declared);
-        if (declaredText == null || championText == null) {
-            return null; // failed to decode
-        }
-        // (a) decode mostly clean
-        double fffdRate = replacementCharRate(declaredText);
-        if (fffdRate > DECLARATIVE_MAX_FFFD_RATE) {
-            LOG.trace("junk-filter declarative-override skipped: U+FFFD rate {} > {}",
-                    fffdRate, DECLARATIVE_MAX_FFFD_RATE);
-            return null;
-        }
-        TextQualityScore declaredScore = qualityDetector.score(declaredText);
-        TextQualityScore championScore = qualityDetector.score(championText);
-        // (c) winner not vastly higher
-        float delta = championScore.getZScore() - declaredScore.getZScore();
-        if (delta > DECLARATIVE_OVERRIDE_MAX_DELTA) {
-            LOG.trace("junk-filter declarative-override skipped: delta {} > {}",
-                    delta, DECLARATIVE_OVERRIDE_MAX_DELTA);
-            return null;
-        }
-        // (d) different scripts
-        String declaredScript = declaredScore.getDominantScript();
-        String championScript = championScore.getDominantScript();
-        if (declaredScript == null || declaredScript.equals(championScript)) {
-            LOG.trace("junk-filter declarative-override skipped: same script {}",
-                    declaredScript);
-            return null;
-        }
-        LOG.trace("junk-filter declarative-override fires: declared={} (script={}, z={}) vs winner={} (script={}, z={}) delta={}",
-                declared.name(), declaredScript, declaredScore.getZScore(),
-                champion.name(), championScript, championScore.getZScore(), delta);
-        return declared;
-    }
-
-    /**
-     * Find the first in-document DECLARATIVE candidate (from
-     * {@code HtmlEncodingDetector} / XML declaration), or {@code null}.
-     * Outer Content-Type metadata ({@code MetadataCharsetDetector}) is
-     * intentionally excluded — those headers lie too often.
-     */
-    private static Charset findInDocumentDeclarative(EncodingDetectorContext context) {
-        for (EncodingDetectorContext.Result r : context.getResults()) {
-            String name = r.getDetectorName();
-            if (("HtmlEncodingDetector".equals(name)
-                    || "StandardHtmlEncodingDetector".equals(name))
-                    && r.getResultType() == EncodingResult.ResultType.DECLARATIVE) {
-                return r.getCharset();
-            }
-        }
-        return null;
-    }
-
-    /** Fraction of {@code U+FFFD} (REPLACEMENT CHARACTER) in the decoded String —
-     * a proxy for "this charset cannot decode these bytes". */
-    private static double replacementCharRate(String s) {
-        if (s.isEmpty()) {
-            return 0.0;
-        }
-        long count = 0;
-        for (int i = 0; i < s.length(); i++) {
-            if (s.charAt(i) == '�') {
-                count++;
-            }
-        }
-        return (double) count / s.length();
     }
 
     /**
@@ -457,6 +310,69 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             LOG.debug("Decode failed for {}: {}", charset.name(), e.toString());
             return null;
         }
+    }
+
+    // -----------------------------------------------------------------------
+    // HTML entity expansion
+    //
+    // Applied to every decoded candidate before quality scoring.  Resolves
+    // numeric character refs (&#NNNN; / &#xHHHH;) to their target codepoints
+    // and a small set of common named entities.  Malformed entities pass
+    // through as literal text.  Sufficient for the AIT5-class failure
+    // mode where blogspot/news pages use numeric Malayalam/Bengali entities
+    // intermixed with raw UTF-8 codepoints.
+    // -----------------------------------------------------------------------
+
+    private static final Pattern ENTITY_DEC = Pattern.compile("&#(\\d{1,7});");
+    private static final Pattern ENTITY_HEX = Pattern.compile("&#[xX]([0-9a-fA-F]{1,6});");
+    private static final Pattern ENTITY_NAMED =
+            Pattern.compile("&(amp|lt|gt|quot|apos|nbsp|copy|reg);");
+
+    /**
+     * Expands HTML numeric and a small set of named entity references in
+     * {@code s}.  Malformed or out-of-range entities pass through unchanged.
+     * The named-entity set is intentionally small — only the universally-
+     * declared HTML5 entities that don't depend on a DOCTYPE.  Anything more
+     * exotic stays as a literal entity reference (which scores as ASCII noise,
+     * the same as it would have before).
+     */
+    static String expandHtmlEntities(String s) {
+        s = ENTITY_DEC.matcher(s).replaceAll(mr -> {
+            try {
+                int cp = Integer.parseInt(mr.group(1));
+                if (cp >= 0 && cp <= 0x10FFFF) {
+                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
+                }
+            } catch (NumberFormatException ignored) {
+                // overflow — fall through, leave entity literal
+            }
+            return Matcher.quoteReplacement(mr.group());
+        });
+        s = ENTITY_HEX.matcher(s).replaceAll(mr -> {
+            try {
+                int cp = Integer.parseInt(mr.group(1), 16);
+                if (cp >= 0 && cp <= 0x10FFFF) {
+                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
+                }
+            } catch (NumberFormatException ignored) {
+                // overflow — fall through, leave entity literal
+            }
+            return Matcher.quoteReplacement(mr.group());
+        });
+        s = ENTITY_NAMED.matcher(s).replaceAll(mr -> {
+            switch (mr.group(1)) {
+                case "amp":  return "&";
+                case "lt":   return "<";
+                case "gt":   return ">";
+                case "quot": return "\"";
+                case "apos": return "'";
+                case "nbsp": return " ";
+                case "copy": return "©";
+                case "reg":  return "®";
+                default:     return Matcher.quoteReplacement(mr.group());
+            }
+        });
+        return s;
     }
 
     /**

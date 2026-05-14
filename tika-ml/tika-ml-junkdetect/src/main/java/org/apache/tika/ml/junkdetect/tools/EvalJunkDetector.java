@@ -470,7 +470,7 @@ public class EvalJunkDetector {
                                 sourceCodec, asSource, wrongCodec, asWrong);
 
                         deltas.add(result.delta());
-                        if ("A".equals(result.winner())) nCorrect++;
+                        if (sourceCodec.equals(result.winner())) nCorrect++;
                     }
 
                     if (deltas.isEmpty()) continue;
