@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import org.apache.tika.config.TikaComponent;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
@@ -37,6 +38,7 @@ import org.apache.tika.metadata.filter.MetadataFilterBase;
 import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.quality.TextQualityScore;
 
+@TikaComponent
 public class TikaEvalMetadataFilter extends MetadataFilterBase {
 
     public static String TIKA_EVAL_NS = "tika-eval" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
