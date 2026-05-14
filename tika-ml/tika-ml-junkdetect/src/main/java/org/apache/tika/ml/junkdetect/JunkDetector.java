@@ -414,8 +414,12 @@ public final class JunkDetector implements TextQualityDetector {
                 continue; // skip scripts not in model; treat as neutral, not junk
             }
             byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
-            if (runUtf8.length < 2) {
-                continue; // too short to score
+            // Skip if too short to form a bigram by either metric.  A single
+            // CJK char is 3 UTF-8 bytes (passes the byte filter) but 1 UTF-16
+            // unit, and computeF1MeanLogP filters by text.length() < 2 and
+            // returns NaN — which would poison the weighted sum here.
+            if (runUtf8.length < 2 || run.text.length() < 2) {
+                continue;
             }
             float logit = scoreChunk(runUtf8, run.text, run.script, z4);
             int n = runUtf8.length;
@@ -477,8 +481,8 @@ public final class JunkDetector implements TextQualityDetector {
                 continue;
             }
             byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
-            if (runUtf8.length < 2) {
-                continue;
+            if (runUtf8.length < 2 || run.text.length() < 2) {
+                continue; // see scoreText: paired filter avoids NaN poisoning
             }
             float[] zs = computeChunkZs(runUtf8, run.text, run.script);
             float chunkLogit = combineLogit(zs[0], zs[1], zs[2], z4, run.script);

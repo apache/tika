@@ -38,10 +38,18 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.tika.detect.BOMDetector;
+import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.HtmlByteStripper;
 import org.apache.tika.ml.junkdetect.JunkDetector;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlEncodingDetector;
+import org.apache.tika.parser.txt.UniversalEncodingDetector;
 import org.apache.tika.quality.TextQualityScore;
 
 /**
@@ -110,6 +118,13 @@ public class PrototypeCodepointHash {
         int maxRecords = MAX_RECORDS_PER_FILE;
         List<Path> fixturesDirs = new ArrayList<>();
         String wrongCharsetName = "GB18030";
+        boolean singleModel = false;
+        List<String> candidates = List.of(
+                "UTF-8", "GB18030", "windows-1252", "windows-1251", "windows-1257",
+                "Shift_JIS", "EUC-JP", "ISO-2022-JP", "UTF-16LE", "UTF-16BE");
+        List<String> forceCandidates = null; // when set, skip base detectors
+        String expected = "UTF-8";
+        int[] probeSizes = null; // when set, sweep these probe sizes per fixture
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -128,12 +143,48 @@ public class PrototypeCodepointHash {
                 case "--wrong-charset":
                     wrongCharsetName = args[++i];
                     break;
+                case "--single-model":
+                    // Skip prototype training; run N-way fixture eval on bundled JunkDetector only.
+                    singleModel = true;
+                    break;
+                case "--candidates":
+                    candidates = Arrays.asList(args[++i].split(","));
+                    break;
+                case "--force-candidates":
+                    // Bypass base detectors; pairwise tournament directly on these.
+                    forceCandidates = Arrays.asList(args[++i].split(","));
+                    break;
+                case "--expected":
+                    expected = args[++i];
+                    break;
+                case "--probe-sizes":
+                    // Comma-separated probe sizes (bytes).  Each fixture
+                    // gets one row per size, so you can see how length
+                    // affects UNKNOWN vs scored.
+                    String[] sizes = args[++i].split(",");
+                    probeSizes = new int[sizes.length];
+                    for (int k = 0; k < sizes.length; k++) {
+                        probeSizes[k] = Integer.parseInt(sizes[k].trim());
+                    }
+                    break;
                 default:
                     System.err.println("Unknown arg: " + args[i]);
                     System.exit(1);
             }
         }
         Files.createDirectories(outputDir);
+
+        // --single-model bypasses the v5/v6-prototype comparison apparatus.
+        // For evaluating the currently-bundled JunkDetector against real fixtures.
+        if (singleModel) {
+            if (fixturesDirs.isEmpty()) {
+                System.err.println("--single-model requires --fixtures-dir");
+                System.exit(1);
+            }
+            evalFixturesSingleModel(fixturesDirs, candidates, forceCandidates, expected,
+                    probeSizes, outputDir);
+            return;
+        }
 
         System.err.println("=== PrototypeCodepointHash ===");
         System.err.println("  devtest-dir:  " + devtestDir);
@@ -247,6 +298,486 @@ public class PrototypeCodepointHash {
         }
 
         System.err.println("Done.");
+    }
+
+    // -----------------------------------------------------------------------
+    // Real-life fixture eval: runs the production base detectors (BOM +
+    // HtmlEncodingDetector + UniversalEncodingDetector) and asks the
+    // JunkDetector to pick among their candidates via pairwise compare.
+    // Mirrors the production charset-detection arbitration.
+    // -----------------------------------------------------------------------
+
+    private static void evalFixturesSingleModel(List<Path> fixturesDirs,
+                                                List<String> candidates, // ignored
+                                                List<String> forceCandidates,
+                                                String expected,
+                                                int[] probeSizes,
+                                                Path outputDir) throws IOException {
+        boolean forceMode = forceCandidates != null && !forceCandidates.isEmpty();
+        if (forceMode) {
+            System.err.println("\n--- Forced-candidates fixture eval ---");
+            System.err.println("  candidates: " + forceCandidates);
+        } else {
+            System.err.println("\n--- Real-life fixture eval (BOM + HTML + Universal) ---");
+        }
+        JunkDetector detector = JunkDetector.loadFromClasspath();
+        System.err.println("  model version: " + detector.getModelVersion());
+        System.err.println("  expected:      " + expected);
+
+        // Pre-resolve forced charsets; skip unsupported ones up front.
+        List<Charset> forced = new ArrayList<>();
+        if (forceMode) {
+            for (String n : forceCandidates) {
+                try {
+                    forced.add(Charset.forName(n));
+                } catch (Exception e) {
+                    System.err.println("  skip unsupported charset: " + n);
+                }
+            }
+        }
+
+        BOMDetector bom = new BOMDetector();
+        HtmlEncodingDetector html = new HtmlEncodingDetector();
+        UniversalEncodingDetector universal = new UniversalEncodingDetector();
+        ParseContext pctx = new ParseContext();
+
+        Path out = outputDir.resolve("fixtures-real-life.tsv");
+        try (PrintWriter pw = new PrintWriter(
+                Files.newBufferedWriter(out, StandardCharsets.UTF_8))) {
+            pw.println("dir\tfile\tn_bytes\tprobe_size\texpected\tbom_cs\thtml_cs\tuniversal_cs"
+                    + "\tcandidates\twinner\tmargin\tstatus\tnotes");
+            int pass = 0, fail = 0, skip = 0, agree = 0;
+            double passMarginSum = 0.0;
+            List<String> failingLines = new ArrayList<>();
+
+            for (Path dir : fixturesDirs) {
+                if (!Files.isDirectory(dir)) {
+                    System.err.println("  WARN: not a directory: " + dir);
+                    continue;
+                }
+                try (Stream<Path> stream = Files.walk(dir)) {
+                    List<Path> files = new ArrayList<>();
+                    stream.filter(Files::isRegularFile).forEach(files::add);
+                    Collections.sort(files);
+                    int[] sizes = probeSizes != null ? probeSizes : new int[]{16_384};
+                    for (Path f : files) {
+                        for (int sz : sizes) {
+                            FixtureResult r = forceMode
+                                    ? evalOneForced(f, expected, detector, forced, sz)
+                                    : evalOneRealLife(f, expected, detector, bom, html,
+                                            universal, pctx, sz);
+                            pw.println(r.toTsvLine());
+                            switch (r.status) {
+                                case "PASS":
+                                    pass++;
+                                    passMarginSum += r.margin;
+                                    break;
+                                case "FAIL":
+                                    fail++;
+                                    failingLines.add(r.dir + "/" + r.shortName
+                                            + "@" + sz + " -> " + r.winner
+                                            + " (expected " + r.expected + ")");
+                                    break;
+                                case "AGREE":
+                                    agree++;
+                                    break;
+                                default:
+                                    skip++;
+                            }
+                        }
+                    }
+                }
+            }
+            int n = pass + fail;
+            System.err.println();
+            System.err.println("=== Summary ===");
+            System.err.printf("Pass:    %d / %d (%.1f%%) — JunkDetector picked the expected charset%n",
+                    pass, n, n == 0 ? 0.0 : 100.0 * pass / n);
+            System.err.printf("Fail:    %d%n", fail);
+            System.err.printf("Agree:   %d  (all detectors agreed; no arbitration needed)%n", agree);
+            System.err.printf("Skip:    %d%n", skip);
+            if (pass > 0) {
+                System.err.printf("Mean margin on pass: %.3f%n", passMarginSum / pass);
+            }
+            if (!failingLines.isEmpty()) {
+                System.err.println("Failing:");
+                Collections.sort(failingLines);
+                for (String line : failingLines) {
+                    System.err.println("  " + line);
+                }
+            }
+        }
+        System.err.println("Wrote " + out);
+    }
+
+    private static FixtureResult evalOneForced(Path file, String expected,
+                                               JunkDetector detector,
+                                               List<Charset> forced,
+                                               int probeBytes) throws IOException {
+        byte[] raw = Files.readAllBytes(file);
+        FixtureResult r = new FixtureResult();
+        r.dir = file.getParent().getFileName().toString();
+        String fname = file.getFileName().toString();
+        r.shortName = fname.length() > 24 ? fname.substring(0, 24) : fname;
+        r.bytes = raw.length;
+        r.probeSize = probeBytes;
+        r.expected = expected;
+
+        if (isBinaryMagic(raw)) {
+            r.status = "SKIP_BIN";
+            return r;
+        }
+        // Strip HTML on the WHOLE raw buffer first, then slice to probeBytes
+        // from the stripped content.  Otherwise a small probe slice can land
+        // entirely inside <!DOCTYPE>/<html>/<head> boilerplate and leave
+        // nothing to score after strip.
+        byte[] strippedFull = stripHtmlBytes(raw);
+        byte[] forDecode = strippedFull.length > probeBytes
+                ? Arrays.copyOf(strippedFull, probeBytes) : strippedFull;
+        r.candidatesStr = forced.stream().map(Charset::name)
+                .reduce((a, b) -> a + "," + b).orElse("-");
+
+        // Always log every candidate in notes — even those JunkDetector
+        // rejects as unknown — so the failure mode is visible.  An
+        // "unknown" score itself is meaningful information when the other
+        // candidate scored fine.
+        String winner = null;
+        String runner = null;
+        float winnerZ = Float.NEGATIVE_INFINITY;
+        float runnerZ = Float.NEGATIVE_INFINITY;
+        StringBuilder notes = new StringBuilder();
+        int decoded_scored = 0;
+        for (Charset cs : forced) {
+            String decoded = applyEntityVariant(new String(forDecode, cs), "expanded");
+            int cps = toCodepoints(decoded).length;
+            if (cps < 3) {
+                notes.append(cs.name()).append("=TOO_SHORT(").append(cps).append(") ");
+                continue;
+            }
+            TextQualityScore s = detector.score(decoded);
+            if (s.isUnknown()) {
+                // Diagnose: is this script-not-in-model (neutral case) or
+                // all-runs-fragmented-too-short (a real mojibake signal)?
+                String why = diagnoseUnknown(decoded, detector);
+                notes.append(cs.name()).append("=UNK[").append(why).append("] ");
+                continue;
+            }
+            float z = s.getZScore();
+            notes.append(cs.name()).append("=").append(String.format("%.2f", z)).append(" ");
+            decoded_scored++;
+            if (z > winnerZ) {
+                runner = winner;
+                runnerZ = winnerZ;
+                winner = cs.name();
+                winnerZ = z;
+            } else if (z > runnerZ) {
+                runner = cs.name();
+                runnerZ = z;
+            }
+        }
+        if (winner == null) {
+            r.status = "NO_DECODE";
+            r.notes = notes.toString().trim();
+            return r;
+        }
+        r.winner = winner;
+        if (decoded_scored < 2) {
+            // Only one candidate scored; no real arbitration happened.
+            r.margin = Float.NaN;
+            r.status = safeCanonical(winner).equals(safeCanonical(expected))
+                    ? "ONLY_EXPECTED_SCORED" : "ONLY_WRONG_SCORED";
+        } else {
+            r.margin = winnerZ - runnerZ;
+            r.status = safeCanonical(winner).equals(safeCanonical(expected)) ? "PASS" : "FAIL";
+        }
+        r.notes = notes.toString().trim();
+        return r;
+    }
+
+    private static FixtureResult evalOneRealLife(Path file, String expected,
+                                                 JunkDetector detector,
+                                                 BOMDetector bom,
+                                                 HtmlEncodingDetector html,
+                                                 UniversalEncodingDetector universal,
+                                                 ParseContext pctx,
+                                                 int probeBytes) throws IOException {
+        byte[] raw = Files.readAllBytes(file);
+        int origLen = raw.length;
+        FixtureResult r = new FixtureResult();
+        r.dir = file.getParent().getFileName().toString();
+        String fname = file.getFileName().toString();
+        r.shortName = fname.length() > 24 ? fname.substring(0, 24) : fname;
+        r.bytes = origLen;
+        r.probeSize = probeBytes;
+        r.expected = expected;
+
+        if (isBinaryMagic(raw)) {
+            r.status = "SKIP_BIN";
+            return r;
+        }
+
+        // Probe bytes for the base detectors (16 KB matches production read limit).
+        // For the base detectors we keep the raw bytes (the BOM detector and
+        // HTML-header sniff both want the original prefix).
+        byte[] probe = raw.length > probeBytes ? Arrays.copyOf(raw, probeBytes) : raw;
+
+        r.bomCs    = firstCharset(bom,       probe, pctx);
+        r.htmlCs   = firstCharset(html,      probe, pctx);
+        r.universalCs = firstCharset(universal, probe, pctx);
+
+        // Collect distinct candidates in order of priority: BOM > HTML > universal.
+        List<Charset> candList = new ArrayList<>();
+        addUnique(candList, r.bomCs);
+        addUnique(candList, r.htmlCs);
+        addUnique(candList, r.universalCs);
+        r.candidatesStr = candList.stream().map(Charset::name)
+                .reduce((a, b) -> a + "," + b).orElse("-");
+
+        if (candList.isEmpty()) {
+            r.status = "NO_CANDIDATES";
+            return r;
+        }
+        if (candList.size() == 1) {
+            // All detectors agreed (or only one fired): no arbitration to do.
+            r.winner = candList.get(0).name();
+            r.status = safeCanonical(r.winner).equals(safeCanonical(expected)) ? "AGREE" : "AGREE_WRONG";
+            return r;
+        }
+
+        // Strip HTML from the FULL raw bytes, then slice to probeBytes from
+        // the stripped content — so a small probe-size doesn't land inside
+        // the DOCTYPE/head boilerplate with nothing left to score.
+        byte[] strippedFull = stripHtmlBytes(raw);
+        byte[] forDecode = strippedFull.length > probeBytes
+                ? Arrays.copyOf(strippedFull, probeBytes) : strippedFull;
+        // Pairwise tournament — pick the candidate that beats all others.
+        Charset winnerCs = candList.get(0);
+        float bestMargin = Float.POSITIVE_INFINITY;
+        for (int i = 1; i < candList.size(); i++) {
+            Charset challenger = candList.get(i);
+            String aDecoded = applyEntityVariant(new String(forDecode, winnerCs), "expanded");
+            String bDecoded = applyEntityVariant(new String(forDecode, challenger), "expanded");
+            TextQualityScore aScore = detector.score(aDecoded);
+            TextQualityScore bScore = detector.score(bDecoded);
+            if (aScore.isUnknown() || bScore.isUnknown()) {
+                continue;
+            }
+            float margin = aScore.getZScore() - bScore.getZScore();
+            if (margin < 0) {
+                winnerCs = challenger;
+                margin = -margin;
+            }
+            bestMargin = Math.min(bestMargin, Math.abs(margin));
+        }
+        r.winner = winnerCs.name();
+        r.margin = Float.isInfinite(bestMargin) ? Float.NaN : bestMargin;
+        r.status = safeCanonical(r.winner).equals(safeCanonical(expected)) ? "PASS" : "FAIL";
+        return r;
+    }
+
+    private static String firstCharset(org.apache.tika.detect.EncodingDetector d,
+                                       byte[] bytes, ParseContext pctx) {
+        try (TikaInputStream tis =
+                     TikaInputStream.get(new java.io.ByteArrayInputStream(bytes))) {
+            List<EncodingResult> results = d.detect(tis, new Metadata(), pctx);
+            if (results == null || results.isEmpty()) {
+                return null;
+            }
+            Charset cs = results.get(0).getCharset();
+            return cs == null ? null : cs.name();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static void addUnique(List<Charset> list, String name) {
+        if (name == null) {
+            return;
+        }
+        Charset cs;
+        try {
+            cs = Charset.forName(name);
+        } catch (Exception e) {
+            return;
+        }
+        for (Charset c : list) {
+            if (c.equals(cs)) {
+                return;
+            }
+        }
+        list.add(cs);
+    }
+
+    /**
+     * Diagnose why JunkDetector returned UNKNOWN for {@code text}.  Walks
+     * the same script-run logic, then classifies the failure mode:
+     * <ul>
+     *   <li>{@code EMPTY} — input had no characters.</li>
+     *   <li>{@code NO_MODELED_SCRIPT} — all runs are in scripts the model
+     *       doesn't know (legit reason to be neutral).</li>
+     *   <li>{@code ALL_RUNS_TOO_SHORT(N)} — runs exist in modeled scripts
+     *       but every one is &lt;2 UTF-8 bytes.  Strong mojibake signal —
+     *       text is a salad of single codepoints from many scripts.</li>
+     *   <li>{@code MIXED} — some runs were modeled-but-too-short and
+     *       some were unmodeled.</li>
+     * </ul>
+     */
+    private static String diagnoseUnknown(String text, JunkDetector detector) {
+        if (text == null || text.isEmpty()) {
+            return "EMPTY";
+        }
+        Set<String> modeled = detector.knownScripts();
+        // Walk codepoints, splitting on script boundaries — same as
+        // JunkDetector.buildScriptRuns conceptually.  Track per-script:
+        // longest UTF-8-byte run length, plus a separate "unmodeled" tally.
+        java.util.Map<String, Integer> longestModeled = new java.util.HashMap<>();
+        int unmodeledRuns = 0;
+        int modeledTooShortRuns = 0;
+        int currentBytes = 0;
+        String currentScript = null;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            int charCount = Character.charCount(cp);
+            String script = Character.UnicodeScript.of(cp).name();
+            // COMMON / INHERITED / UNKNOWN attach to preceding run, but for
+            // diagnosis we don't need to be that precise — treat them as a
+            // continuation.
+            if ("COMMON".equals(script) || "INHERITED".equals(script)
+                    || "UNKNOWN".equals(script)) {
+                if (currentScript != null) {
+                    currentBytes += new String(new int[]{cp}, 0, 1)
+                            .getBytes(StandardCharsets.UTF_8).length;
+                }
+            } else if (script.equals(currentScript)) {
+                currentBytes += new String(new int[]{cp}, 0, 1)
+                        .getBytes(StandardCharsets.UTF_8).length;
+            } else {
+                // close out previous run
+                tallyRun(currentScript, currentBytes, modeled, longestModeled);
+                if (currentScript != null) {
+                    if (!modeled.contains(currentScript)) {
+                        unmodeledRuns++;
+                    } else if (currentBytes < 2) {
+                        modeledTooShortRuns++;
+                    }
+                }
+                currentScript = script;
+                currentBytes = new String(new int[]{cp}, 0, 1)
+                        .getBytes(StandardCharsets.UTF_8).length;
+            }
+            i += charCount;
+        }
+        // close final run
+        if (currentScript != null) {
+            if (!modeled.contains(currentScript)) {
+                unmodeledRuns++;
+            } else if (currentBytes < 2) {
+                modeledTooShortRuns++;
+            } else {
+                longestModeled.merge(currentScript, currentBytes, Math::max);
+            }
+        }
+        boolean anyModeledLong = !longestModeled.isEmpty();
+        if (anyModeledLong) {
+            // Some modeled run is ≥2 bytes — shouldn't have hit UNKNOWN.
+            // (Possible discrepancy with the production logic; reported as MIXED.)
+            return "MIXED(modeled_long=" + longestModeled.size() + ")";
+        }
+        if (modeledTooShortRuns > 0 && unmodeledRuns > 0) {
+            return "MIXED(short=" + modeledTooShortRuns
+                    + ",unmodeled=" + unmodeledRuns + ")";
+        }
+        if (modeledTooShortRuns > 0) {
+            return "ALL_RUNS_TOO_SHORT(" + modeledTooShortRuns + ")";
+        }
+        if (unmodeledRuns > 0) {
+            return "NO_MODELED_SCRIPT(" + unmodeledRuns + ")";
+        }
+        return "OTHER";
+    }
+
+    private static void tallyRun(String script, int bytes, Set<String> modeled,
+                                 java.util.Map<String, Integer> longestModeled) {
+        if (script == null) {
+            return;
+        }
+        if (modeled.contains(script) && bytes >= 2) {
+            longestModeled.merge(script, bytes, Math::max);
+        }
+    }
+
+    /**
+     * Run HtmlByteStripper over the entire input; return the stripped
+     * content bytes (or the input verbatim if no tags found).
+     */
+    private static byte[] stripHtmlBytes(byte[] raw) {
+        byte[] dst = new byte[raw.length];
+        HtmlByteStripper.Result r =
+                HtmlByteStripper.strip(raw, 0, raw.length, dst, 0);
+        if (r.tagCount > 0 && r.length > 0) {
+            return Arrays.copyOf(dst, r.length);
+        }
+        return raw;
+    }
+
+    private static boolean isBinaryMagic(byte[] b) {
+        if (b.length < 4) {
+            return false;
+        }
+        if (b[0] == 0x50 && b[1] == 0x4B
+                && (b[2] == 0x03 || b[2] == 0x05 || b[2] == 0x07)) {
+            return true; // ZIP / JAR / APK / docx
+        }
+        if ((b[0] & 0xFF) == 0x1F && (b[1] & 0xFF) == 0x8B) {
+            return true; // gzip
+        }
+        if (b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F') {
+            return true; // PDF
+        }
+        if ((b[0] & 0xFF) == 0xD0 && (b[1] & 0xFF) == 0xCF) {
+            return true; // OLE2
+        }
+        return false;
+    }
+
+    private static String safeCanonical(String charset) {
+        if (charset == null) {
+            return "";
+        }
+        try {
+            return Charset.forName(charset).name();
+        } catch (Exception e) {
+            return charset.toUpperCase();
+        }
+    }
+
+    private static final class FixtureResult {
+        String dir;
+        String shortName;
+        int bytes;
+        int probeSize;
+        String expected;
+        String bomCs;
+        String htmlCs;
+        String universalCs;
+        String candidatesStr = "-";
+        String winner = "-";
+        float margin = Float.NaN;
+        String status = "";
+        String notes = "";
+
+        String toTsvLine() {
+            return String.format("%s\t%s\t%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s",
+                    dir, shortName, bytes, probeSize, expected,
+                    str(bomCs), str(htmlCs), str(universalCs),
+                    candidatesStr, str(winner),
+                    Float.isNaN(margin) ? "-" : String.format("%.3f", margin),
+                    status, notes.isEmpty() ? "-" : notes);
+        }
+
+        private static String str(String s) {
+            return s == null ? "-" : s;
+        }
     }
 
     // -----------------------------------------------------------------------

@@ -17,6 +17,7 @@
 package org.apache.tika.ml.junkdetect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
@@ -198,6 +199,46 @@ public class JunkDetectorSmokeTest {
 
         assertEquals("A", result.winner(),
                 "Shift-JIS decode should beat garbled UTF-8 for short Japanese filename");
+    }
+
+    /**
+     * Regression: a single CJK codepoint sandwiched between modeled-script
+     * runs used to NaN-poison the entire score, because the byte-length
+     * filter ({@code runUtf8.length >= 2}) and the UTF-16 char-length
+     * filter inside {@code computeF1MeanLogP} ({@code text.length() >= 2})
+     * disagreed.  A single CJK char is 3 UTF-8 bytes (1 UTF-16 unit), so
+     * it passed the outer filter, computed NaN inside, and poisoned the
+     * weighted aggregate — surfacing as UNKNOWN to callers.  This was the
+     * root cause of the AIT5-class regressions (UTF-8 Malayalam decoded as
+     * GB18030 returns lots of single-Han-char runs).
+     */
+    @Test
+    void singleCjkCharDoesNotNaNPoisonScore() {
+        // Latin sentence with a stray CJK char dropped in — exactly the
+        // shape of a GB18030-mojibake-of-UTF-8 decode at the run-boundary
+        // level.  The CJK char forms a single-codepoint HAN run.
+        String text = "The quick brown 中 fox jumps over the lazy dog. "
+                + "Pack 中 my box with five dozen liquor jugs.";
+        TextQualityScore score = detector.score(text);
+        assertFalse(score.isUnknown(),
+                "score should not be UNKNOWN — single-CJK run should be skipped, "
+                        + "not poison the aggregate.  Got: " + score);
+    }
+
+    /**
+     * Sibling regression: the same NaN-poisoning case caused by a single
+     * supplementary-plane (4-byte UTF-8, 2-UTF-16-unit) codepoint.  Less
+     * load-bearing than the BMP-CJK case — supplementary chars decode to
+     * {@code text.length() == 2} so they pass the inner filter — but
+     * worth pinning the behaviour.
+     */
+    @Test
+    void supplementaryPlaneCharSurvivesScoring() {
+        // U+1F600 (😀) is a 2-UTF-16-unit supplementary char with script COMMON,
+        // so it attaches to a preceding modeled run rather than forming its own.
+        String text = "Hello world 😀 this is some plain English text.";
+        TextQualityScore score = detector.score(text);
+        assertFalse(score.isUnknown(), "supplementary char should not break scoring: " + score);
     }
 
     // -----------------------------------------------------------------------
