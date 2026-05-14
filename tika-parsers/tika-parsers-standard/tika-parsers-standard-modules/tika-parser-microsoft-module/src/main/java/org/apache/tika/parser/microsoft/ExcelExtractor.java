@@ -17,10 +17,13 @@
 package org.apache.tika.parser.microsoft;
 
 import java.awt.Point;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -29,9 +32,13 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import org.apache.poi.ddf.DefaultEscherRecordFactory;
 import org.apache.poi.ddf.EscherBSERecord;
 import org.apache.poi.ddf.EscherBlipRecord;
+import org.apache.poi.ddf.EscherOptRecord;
+import org.apache.poi.ddf.EscherProperty;
 import org.apache.poi.ddf.EscherRecord;
+import org.apache.poi.ddf.EscherSimpleProperty;
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
@@ -42,9 +49,11 @@ import org.apache.poi.hssf.record.BOFRecord;
 import org.apache.poi.hssf.record.BoundSheetRecord;
 import org.apache.poi.hssf.record.CellValueRecordInterface;
 import org.apache.poi.hssf.record.ColumnInfoRecord;
+import org.apache.poi.hssf.record.ContinueRecord;
 import org.apache.poi.hssf.record.CountryRecord;
 import org.apache.poi.hssf.record.DateWindow1904Record;
 import org.apache.poi.hssf.record.DrawingGroupRecord;
+import org.apache.poi.hssf.record.DrawingRecord;
 import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FooterRecord;
@@ -80,6 +89,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -306,6 +316,9 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * contiguous. Collect them for later processing.
          */
         private final List<DrawingGroupRecord> drawingGroups = new ArrayList<>();
+        // Per-sheet drawing bytes (DrawingRecord + Continues), keyed by 0-based sheet index.
+        private final Map<Integer, ByteArrayOutputStream> sheetDrawingData = new HashMap<>();
+        private boolean inDrawing = false;
 
         private final List<String> hiddenSheets = new ArrayList<>();
         private final List<String> veryHiddenSheets = new ArrayList<>();
@@ -374,6 +387,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
                 hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
+                hssfRequest.addListener(formatListener, DrawingRecord.sid);
+                hssfRequest.addListener(formatListener, ContinueRecord.sid);
                 hssfRequest.addListener(formatListener, ProtectRecord.sid);
                 hssfRequest.addListener(formatListener, ColumnInfoRecord.sid);
                 hssfRequest.addListener(formatListener, RowRecord.sid);
@@ -397,11 +412,66 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             // Output any extra text that came after all the sheets
             processExtraText();
 
-            // Look for embeded images, now that the drawing records
-            //  have been fully matched with their continue data
+            // Build the blip-index → set-of-1-based-sheet-numbers map from
+            // per-sheet drawing buffers, then walk the workbook-level BSE
+            // pool in order, tagging each emitted picture with its sheets.
+            Map<Integer, Set<Integer>> picToSheets = buildPicToSheetsMap();
             for (DrawingGroupRecord dgr : drawingGroups) {
                 dgr.decode();
-                findPictures(dgr.getEscherRecords());
+                findPictures(dgr.getEscherRecords(), picToSheets, new int[]{0});
+            }
+        }
+
+        private void appendDrawingBytes(byte[] data) {
+            sheetDrawingData
+                    .computeIfAbsent(currentSheetIndex & 0xFFFF,
+                            k -> new ByteArrayOutputStream())
+                    .write(data, 0, data.length);
+        }
+
+        private Map<Integer, Set<Integer>> buildPicToSheetsMap() {
+            Map<Integer, Set<Integer>> picToSheets = new HashMap<>();
+            DefaultEscherRecordFactory factory = new DefaultEscherRecordFactory();
+            for (Map.Entry<Integer, ByteArrayOutputStream> e : sheetDrawingData.entrySet()) {
+                int sheetNum = e.getKey() + 1; // 1-based
+                byte[] data = e.getValue().toByteArray();
+                int pos = 0;
+                while (pos < data.length - 8) {
+                    EscherRecord rec;
+                    try {
+                        rec = factory.createRecord(data, pos);
+                        int consumed = rec.fillFields(data, pos, factory);
+                        if (consumed <= 0) {
+                            break;
+                        }
+                        pos += consumed;
+                    } catch (Exception ex) {
+                        break; // best-effort: stop on malformed segment
+                    }
+                    collectPibs(rec, sheetNum, picToSheets);
+                }
+            }
+            return picToSheets;
+        }
+
+        private void collectPibs(EscherRecord rec, int sheetNum,
+                                 Map<Integer, Set<Integer>> picToSheets) {
+            if (rec instanceof EscherOptRecord) {
+                for (EscherProperty prop : ((EscherOptRecord) rec).getEscherProperties()) {
+                    // Property ID is the low 14 bits; 0x0104 = blip-id (pib).
+                    if ((prop.getPropertyNumber() & 0x3FFF) == 0x104
+                            && prop instanceof EscherSimpleProperty) {
+                        int pib = ((EscherSimpleProperty) prop).getPropertyValue();
+                        if (pib > 0) {
+                            picToSheets
+                                    .computeIfAbsent(pib, k -> new LinkedHashSet<>())
+                                    .add(sheetNum);
+                        }
+                    }
+                }
+            }
+            for (EscherRecord child : rec.getChildRecords()) {
+                collectPibs(child, sheetNum, picToSheets);
             }
         }
 
@@ -437,6 +507,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
         private void internalProcessRecord(Record record)
                 throws SAXException, TikaException, IOException {
+            // Drawing-chain tracking: snapshot then reset.  ContinueRecord
+            // is only a drawing continuation when the prior record was a
+            // DrawingRecord or another drawing ContinueRecord.
+            boolean wasInDrawingChain = inDrawing;
+            inDrawing = false;
             switch (record.getSid()) {
                 case BOFRecord.sid: // start of workbook, worksheet etc. records
                     BOFRecord bof = (BOFRecord) record;
@@ -568,6 +643,20 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     // Collect this now, we'll process later when all
                     //  the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
+                    break;
+
+                case DrawingRecord.sid:
+                    if (currentSheetIndex >= 0) {
+                        appendDrawingBytes(((DrawingRecord) record).getRecordData());
+                        inDrawing = true;
+                    }
+                    break;
+
+                case ContinueRecord.sid:
+                    if (wasInDrawingChain && currentSheetIndex >= 0) {
+                        appendDrawingBytes(((ContinueRecord) record).getData());
+                        inDrawing = true;
+                    }
                     break;
 
                 case HeaderRecord.sid:
@@ -733,24 +822,34 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             handler.endElement("div");
         }
 
-        private void findPictures(List<EscherRecord> records)
+        private void findPictures(List<EscherRecord> records,
+                                  Map<Integer, Set<Integer>> picToSheets,
+                                  int[] blipCounter)
                 throws IOException, SAXException, TikaException {
             for (EscherRecord escherRecord : records) {
                 if (escherRecord instanceof EscherBSERecord) {
+                    // 1-based blip index — must increment for every BSE
+                    // record, even ones with null blip data, to stay in
+                    // sync with sheet drawings' pib references.
+                    blipCounter[0]++;
                     EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
                     if (blip != null) {
                         HSSFPictureData picture = new HSSFPictureData(blip);
                         String mimeType = picture.getMimeType();
                         TikaInputStream tis = TikaInputStream.get(picture.getData());
 
-                        // Handle the embeded resource
-                        extractor.handleEmbeddedResource(tis, null, null, mimeType, handler,
-                                true);
+                        Metadata embeddedMetadata = new Metadata();
+                        Set<Integer> sheets = picToSheets.get(blipCounter[0]);
+                        if (sheets != null) {
+                            PageAnchoring.applySheetMetadata(embeddedMetadata, sheets);
+                        }
+                        extractor.handleEmbeddedResource(tis, embeddedMetadata,
+                                null, null, null, mimeType, handler, true);
                     }
                 }
 
                 // Recursive call.
-                findPictures(escherRecord.getChildRecords());
+                findPictures(escherRecord.getChildRecords(), picToSheets, blipCounter);
             }
         }
 

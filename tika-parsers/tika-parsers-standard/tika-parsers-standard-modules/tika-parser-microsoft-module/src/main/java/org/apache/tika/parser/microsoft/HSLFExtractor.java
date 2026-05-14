@@ -19,8 +19,10 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -37,6 +39,7 @@ import org.apache.poi.hslf.usermodel.HSLFNotes;
 import org.apache.poi.hslf.usermodel.HSLFObjectData;
 import org.apache.poi.hslf.usermodel.HSLFObjectShape;
 import org.apache.poi.hslf.usermodel.HSLFPictureData;
+import org.apache.poi.hslf.usermodel.HSLFPictureShape;
 import org.apache.poi.hslf.usermodel.HSLFShape;
 import org.apache.poi.hslf.usermodel.HSLFSlide;
 import org.apache.poi.hslf.usermodel.HSLFSlideShow;
@@ -60,6 +63,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -553,6 +557,12 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
     private void handleSlideEmbeddedPictures(HSLFSlideShow slideshow, XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
+        // Build picture-index → slide numbers map so each image carries its page number
+        Map<Integer, Set<Integer>> picToSlides = new HashMap<>();
+        for (HSLFSlide slide : slideshow.getSlides()) {
+            collectPictureSlides(slide, slide.getSlideNumber(), picToSlides);
+        }
+
         for (HSLFPictureData pic : slideshow.getPictureData()) {
             String mediaType;
 
@@ -585,8 +595,31 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         pic.getIndex(), mediaType);
                 Metadata picMetadata = Metadata.newInstance(context);
                 picMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
+                PageAnchoring.applyPageMetadata(picMetadata, picToSlides.get(pic.getIndex()));
                 handleEmbeddedResource(picIs, picMetadata, picName, null,
                         null, mediaType, xhtml, false);
+            }
+        }
+    }
+
+    /**
+     * Walks all shapes in {@code container} and records, for each
+     * {@link HSLFPictureShape}, the 1-based slide number in {@code picToSlides}.
+     */
+    private void collectPictureSlides(ShapeContainer container, int slideNum,
+                                      Map<Integer, Set<Integer>> picToSlides) {
+        List<HSLFShape> shapes = getShapes(container);
+        if (shapes == null) {
+            return;
+        }
+        for (HSLFShape shape : shapes) {
+            if (shape instanceof HSLFPictureShape) {
+                HSLFPictureData pd = ((HSLFPictureShape) shape).getPictureData();
+                if (pd != null) {
+                    picToSlides.computeIfAbsent(pd.getIndex(), k -> new HashSet<>()).add(slideNum);
+                }
+            } else if (shape instanceof HSLFGroupShape) {
+                collectPictureSlides((HSLFGroupShape) shape, slideNum, picToSlides);
             }
         }
     }

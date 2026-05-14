@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipException;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -29,6 +31,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
@@ -37,6 +40,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
@@ -71,6 +75,15 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     private final Metadata metadata;
     private final CommentAuthors commentAuthors = new CommentAuthors();
     private PackagePart mainDocument = null;
+    /**
+     * Pre-pass index of embedded-image absolute part name → set of
+     * 1-based slide numbers referencing that image.  Populated during
+     * {@link #getMainDocumentParts()} so that {@link #getPagesForEmbeddedTarget(URI)}
+     * can answer per-target lookups even after the deduplication done by
+     * {@code AbstractOOXMLExtractor.handleEmbeddedParts} would otherwise hide
+     * the second-and-later references.
+     */
+    private final Map<String, Set<Integer>> picturePages = new HashMap<>();
 
     public SXSLFPowerPointExtractorDecorator(Metadata metadata, ParseContext context,
                                              XSLFEventBasedPowerPointExtractor extractor) {
@@ -267,6 +280,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
                 }
+                recordPicturePageRefs(slidePart, i + 1);
                 addSlideParts(slidePart, parts);
             }
         }
@@ -298,6 +312,62 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         return parts;
+    }
+
+    /**
+     * Records every image relationship of {@code slidePart} against the
+     * given 1-based {@code slideNumber}.  Called once per slide during the
+     * pre-pass in {@link #getMainDocumentParts()}.  When the same image is
+     * referenced from multiple slides, both slide numbers end up in the
+     * set so {@link org.apache.tika.metadata.TikaPagedText#PAGE_NUMBERS}
+     * ends up multi-valued.  Keyed by absolute part name (e.g.
+     * {@code /ppt/media/image1.png}) so the lookup matches what
+     * {@link AbstractOOXMLExtractor#applyEmbeddedAnchorMetadata} sees
+     * &mdash; relative target URIs from different sources can clash and
+     * are not stable lookup keys.
+     */
+    private void recordPicturePageRefs(PackagePart slidePart, int slideNumber) {
+        if (slidePart == null) {
+            return;
+        }
+        PackageRelationshipCollection prc;
+        try {
+            prc = slidePart.getRelationshipsByType(PackageRelationshipTypes.IMAGE_PART);
+        } catch (InvalidFormatException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            return;
+        }
+        if (prc == null) {
+            return;
+        }
+        for (PackageRelationship rel : prc) {
+            if (rel.getTargetMode() != TargetMode.INTERNAL) {
+                continue;
+            }
+            PackagePart imagePart;
+            try {
+                imagePart = slidePart.getRelatedPart(rel);
+            } catch (InvalidFormatException | IllegalArgumentException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+                continue;
+            }
+            if (imagePart == null) {
+                continue;
+            }
+            picturePages
+                    .computeIfAbsent(imagePart.getPartName().getName(),
+                            k -> new LinkedHashSet<>())
+                    .add(slideNumber);
+        }
+    }
+
+    @Override
+    protected void applyEmbeddedAnchorMetadata(PackagePart part, Metadata metadata) {
+        // Pre-pass keys by absolute part name (canonical zip path).
+        PageAnchoring.applyPageMetadata(metadata,
+                picturePages.get(part.getPartName().getName()));
     }
 
     private void addSlideParts(PackagePart slidePart, List<PackagePart> parts) {

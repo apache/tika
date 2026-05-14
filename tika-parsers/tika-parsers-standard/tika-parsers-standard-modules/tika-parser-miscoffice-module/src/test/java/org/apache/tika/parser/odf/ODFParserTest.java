@@ -16,7 +16,9 @@
  */
 package org.apache.tika.parser.odf;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,6 +47,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -500,6 +503,90 @@ public class ODFParserTest extends TikaTest {
             }
         }
         assertTrue(filesTested > 10);
+    }
+
+    @Test
+    public void testOdpPicturePageNumbers() throws Exception {
+        // testODP_NPE.odp has seven images, each referenced from exactly
+        // one draw:page (computed from the content.xml at fixture build
+        // time).  Each embedded picture should therefore carry
+        // PAGE_NUMBERS=[N] and PAGE_NUMBER=N.
+        // Page numbers counted strictly by <draw:page> opening tags
+        // (excluding <draw:page-thumbnail>, <draw:page-number>, etc.).
+        java.util.Map<String, Integer> expected = new java.util.HashMap<>();
+        expected.put("Pictures/10000000000001F4000002705F89BA821D9F0627.jpg", 32);
+        expected.put("Pictures/1000000000000263000005A43C6E7911DFE698F3.jpg", 14);
+        expected.put("Pictures/100000000000028A000003BD577F6EA35EDCA351.jpg", 37);
+        expected.put("Pictures/100000000000029C000003DDDCB6B16F49D730C4.jpg", 35);
+        expected.put("Pictures/10000000000002B9000002619EFEE29AE4039384.jpg", 30);
+        expected.put("Pictures/10000000000003A600000366D2A4CA24B31718E5.jpg", 21);
+        expected.put("Pictures/10000000000005790000046EA0860EFDD89319F8.jpg", 16);
+
+        List<Metadata> metadataList = getRecursiveMetadata("testODP_NPE.odp");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.INTERNAL_PATH);
+            if (path == null || !expected.containsKey(path)) {
+                continue;
+            }
+            int page = expected.get(path);
+            assertArrayEquals(new int[]{page},
+                    m.getIntValues(TikaPagedText.PAGE_NUMBERS),
+                    "picture " + path + " should report page " + page);
+            assertEquals(Integer.toString(page),
+                    m.get(TikaPagedText.PAGE_NUMBER),
+                    "PAGE_NUMBER should equal " + page + " for single-page picture: " + path);
+            imagesChecked++;
+        }
+        assertEquals(expected.size(), imagesChecked,
+                "expected " + expected.size() + " tagged pictures");
+    }
+
+    @Test
+    public void testOdpPicturePageHandlerMultiPage() throws Exception {
+        // Direct unit test of the SAX pre-scan: a synthetic content.xml
+        // with the same picture referenced from draw:page 1 AND draw:page 3,
+        // a second picture only on draw:page 2, and a third picture inside
+        // a master-page (outside any draw:page) so it should NOT be tagged.
+        String contentXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+                "<office:document-content " +
+                "xmlns:office=\"urn:oasis:names:tc:opendocument:xmlns:office:1.0\" " +
+                "xmlns:draw=\"urn:oasis:names:tc:opendocument:xmlns:drawing:1.0\" " +
+                "xmlns:style=\"urn:oasis:names:tc:opendocument:xmlns:style:1.0\" " +
+                "xmlns:xlink=\"http://www.w3.org/1999/xlink\">" +
+                "<office:master-styles>" +
+                  "<style:master-page>" +
+                    "<draw:image xlink:href=\"Pictures/master.png\"/>" +
+                  "</style:master-page>" +
+                "</office:master-styles>" +
+                "<office:body><office:presentation>" +
+                  "<draw:page><draw:frame>" +
+                    "<draw:image xlink:href=\"Pictures/shared.png\"/>" +
+                  "</draw:frame></draw:page>" +
+                  "<draw:page>" +
+                    "<draw:image xlink:href=\"Pictures/only_page2.png\"/>" +
+                  "</draw:page>" +
+                  "<draw:page>" +
+                    "<draw:image xlink:href=\"Pictures/shared.png\"/>" +
+                  "</draw:page>" +
+                "</office:presentation></office:body>" +
+                "</office:document-content>";
+
+        OpenDocumentParser.PicturePageHandler handler =
+                new OpenDocumentParser.PicturePageHandler();
+        XMLReaderUtils.parseSAX(
+                new java.io.ByteArrayInputStream(contentXml.getBytes(StandardCharsets.UTF_8)),
+                handler, new ParseContext());
+
+        java.util.Map<String, java.util.Set<Integer>> pages = handler.getPicturePages();
+        assertEquals(new java.util.LinkedHashSet<>(Arrays.asList(1, 3)),
+                pages.get("Pictures/shared.png"),
+                "shared picture should be on draw:page 1 and 3");
+        assertEquals(new java.util.LinkedHashSet<>(java.util.Collections.singletonList(2)),
+                pages.get("Pictures/only_page2.png"),
+                "page-2 picture should only be on draw:page 2");
+        assertNull(pages.get("Pictures/master.png"),
+                "master-page picture should NOT be tagged with any draw:page");
     }
 
     @Test

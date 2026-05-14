@@ -230,4 +230,34 @@ public interface Office {
 
     // Security-relevant: Framesets can load external URLs
     Property HAS_FRAMESETS = Property.internalBoolean("msoffice:doc:has-framesets");
+
+    /**
+     * 1-based sheet number for a resource (e.g. an embedded image)
+     * anchored to exactly one sheet of a workbook.  For resources
+     * spanning multiple sheets see {@link #SHEET_NUMBERS}.  This is the
+     * spreadsheet analogue of {@link TikaPagedText#PAGE_NUMBER} — the
+     * convention is identical, but the property name reflects the
+     * domain (Excel sheets are not "pages" in the printer sense).
+     */
+    Property SHEET_NUMBER = Property.internalInteger("msoffice:excel:sheet-number");
+
+    /**
+     * 1-based sheet numbers a resource is anchored to, as a sequence.
+     * Used for resources that appear on multiple sheets of a workbook.
+     * See {@link TikaPagedText#PAGE_NUMBERS} for the full convention
+     * (single-page, multi-page, unlinked, unknown); the same rules
+     * apply here, with {@link #UNLINKED_SHEET} as the "known unlinked"
+     * sentinel.
+     */
+    Property SHEET_NUMBERS = Property.internalIntegerSequence("msoffice:excel:sheet-numbers");
+
+    /**
+     * Sentinel value used as the sole element of {@link #SHEET_NUMBERS}
+     * when an embedded resource is present in a workbook but not
+     * referenced from any sheet.  Mirrors
+     * {@link TikaPagedText#UNLINKED_PAGE} — negative because real sheet
+     * numbers are 1-based.  See {@link PageAnchoring} for the helper
+     * that writes this convention.
+     */
+    int UNLINKED_SHEET = -1;
 }

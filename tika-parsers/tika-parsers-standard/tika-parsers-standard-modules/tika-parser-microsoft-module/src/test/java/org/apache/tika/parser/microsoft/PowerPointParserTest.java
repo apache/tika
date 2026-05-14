@@ -16,7 +16,9 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -34,6 +36,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -382,5 +385,55 @@ public class PowerPointParserTest extends TikaTest {
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 xlsx.get(Metadata.CONTENT_TYPE));
 
+    }
+
+    @Test
+    public void testPptxPicturePageNumbersMultiSlide() throws Exception {
+        // testPPT_embedded_two_slides.pptx references image4.png, image5.gif
+        // and image6.png from BOTH slide1 and slide2 (other media parts in
+        // /ppt/media/ are OLE-object preview thumbnails not referenced from
+        // any slide).  Each slide-referenced image should carry
+        // PAGE_NUMBERS=[1,2] and PAGE_NUMBER unset.
+        List<String> slideReferencedImages = Arrays.asList(
+                "/ppt/media/image4.png", "/ppt/media/image5.gif", "/ppt/media/image6.png");
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testPPT_embedded_two_slides.pptx");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.INTERNAL_PATH);
+            if (path == null || !slideReferencedImages.contains(path)) {
+                continue;
+            }
+            assertArrayEquals(new int[]{1, 2},
+                    m.getIntValues(TikaPagedText.PAGE_NUMBERS),
+                    "image " + path + " should be tagged with both slide numbers");
+            assertNull(m.get(TikaPagedText.PAGE_NUMBER),
+                    "PAGE_NUMBER should be unset for multi-slide image: " + path);
+            imagesChecked++;
+        }
+        assertEquals(3, imagesChecked,
+                "expected three slide-referenced images in testPPT_embedded_two_slides.pptx");
+    }
+
+    @Test
+    public void testPptxPicturePageNumbersSingleSlide() throws Exception {
+        // testPPT_2imgs.pptx has all images on slide 1, so each picture
+        // should carry PAGE_NUMBERS=[1] AND PAGE_NUMBER=1 (single-page
+        // backwards-compatible convention).
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_2imgs.pptx");
+        int imagesChecked = 0;
+        for (Metadata m : metadataList) {
+            String path = m.get(TikaCoreProperties.INTERNAL_PATH);
+            if (path == null || !path.startsWith("/ppt/media/image")) {
+                continue;
+            }
+            assertArrayEquals(new int[]{1},
+                    m.getIntValues(TikaPagedText.PAGE_NUMBERS),
+                    "image " + path + " should report slide 1");
+            assertEquals("1", m.get(TikaPagedText.PAGE_NUMBER),
+                    "PAGE_NUMBER should equal 1 for single-slide image: " + path);
+            imagesChecked++;
+        }
+        assertTrue(imagesChecked > 0, "expected at least one embedded image");
     }
 }
