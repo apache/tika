@@ -202,6 +202,7 @@ public class TrainJunkModel {
                 "datasets", "madlad", "junkdetect");
         Path output = dataDir.resolve("junkdetect.bin");
         int bloomBits = V6_BLOOM_BITS_DEFAULT;
+        int minBigramCount = 1;
 
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
@@ -215,6 +216,13 @@ public class TrainJunkModel {
                     bloomBits = Integer.parseInt(args[++i]);
                     if (bloomBits % 64 != 0) {
                         System.err.println("ERROR: --bloom-bits must be a multiple of 64");
+                        System.exit(1);
+                    }
+                    break;
+                case "--min-bigram-count":
+                    minBigramCount = Integer.parseInt(args[++i]);
+                    if (minBigramCount < 1) {
+                        System.err.println("ERROR: --min-bigram-count must be >= 1");
                         System.exit(1);
                     }
                     break;
@@ -234,6 +242,7 @@ public class TrainJunkModel {
                 bloomBits, bloomBits / 8 / 1024, V6_BLOOM_K);
         System.out.printf( "  fnv_seed:           0x%08X%n", V6_FNV_SEED);
         System.out.printf( "  backoff_alpha:      %.2f%n", V6_BACKOFF_ALPHA);
+        System.out.printf( "  min_bigram_count:   %d%n", minBigramCount);
 
         if (!Files.isDirectory(dataDir)) {
             System.err.println("ERROR: data-dir not found: " + dataDir);
@@ -273,7 +282,7 @@ public class TrainJunkModel {
         System.out.println("\n--- Phase 1: global codepoint-hash tables + Bloom ---");
         t0 = System.currentTimeMillis();
         System.out.print("  Training global codepoint-bigram + unigram + Bloom... ");
-        F1Tables f1Tables = trainCodepointHashTables(trainFiles, bloomBits);
+        F1Tables f1Tables = trainCodepointHashTables(trainFiles, bloomBits, minBigramCount);
         System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
         System.out.print(f1Tables.statsString());
 
@@ -735,11 +744,61 @@ public class TrainJunkModel {
      */
     public static F1Tables trainCodepointHashTables(List<Path> trainFiles, int bloomBits)
             throws IOException {
+        return trainCodepointHashTables(trainFiles, bloomBits, 1);
+    }
+
+    /**
+     * Same as the 2-arg overload, but only bigrams with global per-pair count
+     * &gt;= {@code minBigramCount} contribute to the bigram hash table and the
+     * Bloom filter.  Unigrams are always counted (used for backoff).  When
+     * {@code minBigramCount == 1} this is a no-op and the single-pass code
+     * path runs.  Otherwise a first pass tallies per-pair counts into an
+     * in-memory map and a second pass emits only frequent pairs.
+     */
+    public static F1Tables trainCodepointHashTables(List<Path> trainFiles, int bloomBits,
+            int minBigramCount) throws IOException {
         long[] bigramCounts = new long[V6_BIGRAM_BUCKETS];
         long[] unigramCounts = new long[V6_UNIGRAM_BUCKETS];
         long bigramTotal = 0;
         long unigramTotal = 0;
         long[] bloomBitArr = new long[(bloomBits + 63) >> 6];
+
+        HashMap<Long, long[]> pairTallies = null;
+        if (minBigramCount > 1) {
+            System.out.printf("  pre-pass: tallying per-pair counts "
+                    + "(min_bigram_count=%d)%n", minBigramCount);
+            pairTallies = new HashMap<>(1 << 18);
+            for (Path trainFile : trainFiles) {
+                try (BufferedReader r = openGzipped(trainFile)) {
+                    String line;
+                    while ((line = r.readLine()) != null) {
+                        int prevCp = -1;
+                        for (int i = 0; i < line.length(); ) {
+                            int cp = line.codePointAt(i);
+                            i += Character.charCount(cp);
+                            if (prevCp >= 0) {
+                                long packed = ((long) prevCp << 24) | (cp & 0xFFFFFFL);
+                                long[] c = pairTallies.get(packed);
+                                if (c == null) {
+                                    pairTallies.put(packed, new long[]{1L});
+                                } else {
+                                    c[0]++;
+                                }
+                            }
+                            prevCp = cp;
+                        }
+                    }
+                }
+            }
+            int kept = 0;
+            int dropped = 0;
+            for (long[] c : pairTallies.values()) {
+                if (c[0] >= minBigramCount) kept++;
+                else dropped++;
+            }
+            System.out.printf("  pre-pass: distinct pairs=%,d  kept=%,d  dropped=%,d%n",
+                    pairTallies.size(), kept, dropped);
+        }
 
         for (Path trainFile : trainFiles) {
             try (BufferedReader r = openGzipped(trainFile)) {
@@ -754,12 +813,20 @@ public class TrainJunkModel {
                         unigramCounts[uBucket]++;
                         unigramTotal++;
                         if (prevCp >= 0) {
-                            int bBucket = (int) (fnv1aBigramV6(prevCp, cp, V6_FNV_SEED)
-                                    & (V6_BIGRAM_BUCKETS - 1));
-                            bigramCounts[bBucket]++;
-                            bigramTotal++;
-                            bloomAddV6(bloomBitArr, bloomBits, V6_BLOOM_K,
-                                    prevCp, cp, V6_FNV_SEED);
+                            boolean accept = true;
+                            if (pairTallies != null) {
+                                long packed = ((long) prevCp << 24) | (cp & 0xFFFFFFL);
+                                long[] c = pairTallies.get(packed);
+                                accept = c != null && c[0] >= minBigramCount;
+                            }
+                            if (accept) {
+                                int bBucket = (int) (fnv1aBigramV6(prevCp, cp, V6_FNV_SEED)
+                                        & (V6_BIGRAM_BUCKETS - 1));
+                                bigramCounts[bBucket]++;
+                                bigramTotal++;
+                                bloomAddV6(bloomBitArr, bloomBits, V6_BLOOM_K,
+                                        prevCp, cp, V6_FNV_SEED);
+                            }
                         }
                         prevCp = cp;
                     }
@@ -1458,9 +1525,16 @@ public class TrainJunkModel {
 
     private static void printUsage() {
         System.err.println("Usage: TrainJunkModel [options]");
-        System.err.println("  --data-dir <path>  Directory with {script}.train.gz / .dev.gz files");
-        System.err.println("                     (default: ~/datasets/madlad/junkdetect)");
-        System.err.println("  --output   <path>  Output model file");
-        System.err.println("                     (default: {data-dir}/junkdetect.bin)");
+        System.err.println("  --data-dir <path>         Directory with {script}.train.gz / .dev.gz files");
+        System.err.println("                            (default: ~/datasets/madlad/junkdetect)");
+        System.err.println("  --output   <path>         Output model file");
+        System.err.println("                            (default: {data-dir}/junkdetect.bin)");
+        System.err.println("  --bloom-bits <n>          F1 Bloom filter size in bits (multiple of 64)");
+        System.err.println("  --min-bigram-count <n>    Drop F1 bigrams with global per-pair count < n.");
+        System.err.println("                            n>=2 enables a pre-pass that tallies per-pair");
+        System.err.println("                            counts; rare bigrams (typically OCR/proper-noun");
+        System.err.println("                            noise) are excluded from the hash table and");
+        System.err.println("                            Bloom filter, cutting model size and FPR with");
+        System.err.println("                            negligible TPR impact.  Default: 1 (no pruning).");
     }
 }
