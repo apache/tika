@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -42,9 +41,7 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
@@ -61,8 +58,8 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
+import org.apache.tika.sax.StrictXHTMLValidator;
 import org.apache.tika.sax.ToXMLContentHandler;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Parent class of Tika tests
@@ -70,6 +67,19 @@ import org.apache.tika.utils.XMLReaderUtils;
 public abstract class TikaTest {
 
     protected static Parser AUTO_DETECT_PARSER = new AutoDetectParser();
+
+    /**
+     * Build a {@link BasicContentHandlerFactory} with the strict XHTML
+     * validator enabled so that any malformed XHTML emitted during a
+     * recursive parse throws at the offending SAX event. All TikaTest
+     * helpers route through this so individual tests don't have to opt in.
+     */
+    private static BasicContentHandlerFactory validatingFactory(
+            BasicContentHandlerFactory.HANDLER_TYPE type) {
+        BasicContentHandlerFactory f = new BasicContentHandlerFactory(type, -1);
+        f.setValidateXHTML(true);
+        return f;
+    }
     public static void assertContainsCount(String needle, String haystack, int targetCount) {
         int i = haystack.indexOf(needle);
         int count = 0;
@@ -91,26 +101,6 @@ public abstract class TikaTest {
 
     public static void assertNotContained(String needle, String haystack) {
         assertFalse(haystack.contains(needle), needle + " unexpectedly found in:\n" + haystack);
-    }
-
-    /**
-     * Re-parses the given XHTML string with a SAX parser and fails the test if it is
-     * not well-formed. Use this on the output of {@link #getXML} to catch parsers that
-     * emit malformed XHTML (e.g., duplicate attributes, unclosed tags, bad escaping).
-     * <p>
-     * Empty/null input is treated as a no-op (nothing emitted, nothing to validate) so
-     * callers can pass partial output from parses that aborted early.
-     */
-    public static void assertValidXHTML(String xml) {
-        if (xml == null || xml.isEmpty()) {
-            return;
-        }
-        try {
-            XMLReaderUtils.getSAXParser().parse(
-                    new InputSource(new StringReader(xml)), new DefaultHandler());
-        } catch (Exception e) {
-            fail("XHTML is not well-formed: " + e.getMessage() + "\nXHTML:\n" + xml, e);
-        }
     }
 
     public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
@@ -354,9 +344,13 @@ public abstract class TikaTest {
         }
 
         try (input) {
-            ContentHandler handler = new ToXMLContentHandler();
+            ToXMLContentHandler xml = new ToXMLContentHandler();
+            // Wrap with the strict validator so parsers that emit malformed
+            // XHTML (duplicate attrs, unclosed tags, cross-nested elements)
+            // throw at the offending SAX event with a parser stack frame.
+            ContentHandler handler = new StrictXHTMLValidator(xml);
             parser.parse(input, handler, metadata, context);
-            return new XMLResult(handler.toString(), metadata);
+            return new XMLResult(xml.toString(), metadata);
         }
     }
 
@@ -486,7 +480,7 @@ public abstract class TikaTest {
             throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+                validatingFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML));
         try (tis) {
             wrapper.parse(tis, handler, metadata, context);
         } catch (Exception e) {
@@ -503,7 +497,7 @@ public abstract class TikaTest {
             throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(handlerType, -1));
+                validatingFactory(handlerType));
         try (tis) {
             wrapper.parse(tis, handler, metadata, context);
         } catch (Exception e) {
@@ -519,7 +513,7 @@ public abstract class TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
 
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+                validatingFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML));
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filePath)) {
@@ -547,7 +541,7 @@ public abstract class TikaTest {
                                                   ParseContext context) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
         RecursiveParserWrapperHandler handler =
-                new RecursiveParserWrapperHandler(new BasicContentHandlerFactory(handlerType, -1));
+                new RecursiveParserWrapperHandler(validatingFactory(handlerType));
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, FilenameUtils.getName(filePath));
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filePath)) {
@@ -560,7 +554,7 @@ public abstract class TikaTest {
                                                   ParseContext parseContext) throws Exception {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parserToWrap);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
-                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+                validatingFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML));
 
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filePath)) {
             wrapper.parse(tis, handler, new Metadata(), parseContext);
@@ -602,7 +596,8 @@ public abstract class TikaTest {
      */
     public String getText(TikaInputStream tis, Parser parser, ParseContext context, Metadata metadata)
             throws Exception {
-        ContentHandler handler = new BodyContentHandler(1000000);
+        BodyContentHandler body = new BodyContentHandler(1000000);
+        ContentHandler handler = new StrictXHTMLValidator(body);
         try (tis) {
             parser.parse(tis, handler, metadata, context);
         } catch (SAXException e) {
@@ -610,7 +605,7 @@ public abstract class TikaTest {
                 throw e;
             }
         }
-        return handler.toString();
+        return body.toString();
     }
 
     public String getText(TikaInputStream tis, Parser parser, Metadata metadata) throws Exception {
