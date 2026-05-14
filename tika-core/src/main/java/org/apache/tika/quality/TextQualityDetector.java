@@ -37,7 +37,7 @@ package org.apache.tika.quality;
  * // Arbitrate between two charset decodings
  * TextQualityComparison cmp = detector.compare("cp1252", decodedAsCp1252,
  *                                               "cp1251", decodedAsCp1251);
- * String winner = cmp.winner();  // "A" or "B"
+ * String winner = cmp.winner();  // returns the chosen label, e.g. "cp1251"
  * }</pre>
  */
 public interface TextQualityDetector {

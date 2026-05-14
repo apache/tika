@@ -50,8 +50,8 @@ public final class TextQualityComparison {
     }
 
     /**
-     * Returns {@code "A"} if candidate A is cleaner, {@code "B"} otherwise.
-     * Check {@link #delta()} to gauge confidence.
+     * Returns the label of the cleaner candidate ({@link #labelA()} or
+     * {@link #labelB()}).  Check {@link #delta()} to gauge confidence.
      */
     public String winner() {
         return winner;
@@ -88,8 +88,7 @@ public final class TextQualityComparison {
     @Override
     public String toString() {
         return String.format(java.util.Locale.ROOT,
-                "TextQualityComparison[winner=%s(%s) delta=%.3f A=%s B=%s]",
-                winner, winner.equals("A") ? labelA : labelB,
-                delta, scoreA, scoreB);
+                "TextQualityComparison[winner=%s delta=%.3f A=%s(%s) B=%s(%s)]",
+                winner, delta, labelA, scoreA, labelB, scoreB);
     }
 }

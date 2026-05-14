@@ -41,15 +41,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.tika.detect.BOMDetector;
-import org.apache.tika.detect.EncodingResult;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.HtmlByteStripper;
 import org.apache.tika.ml.junkdetect.JunkDetector;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.html.HtmlEncodingDetector;
-import org.apache.tika.parser.txt.UniversalEncodingDetector;
 import org.apache.tika.quality.TextQualityScore;
 
 /**
@@ -175,13 +168,20 @@ public class PrototypeCodepointHash {
         Files.createDirectories(outputDir);
 
         // --single-model bypasses the v5/v6-prototype comparison apparatus.
-        // For evaluating the currently-bundled JunkDetector against real fixtures.
+        // Requires --force-candidates to specify the charsets to compare;
+        // the base-detector-driven path was removed to keep tika-ml-junkdetect
+        // free of heavy encoding-detector deps.
         if (singleModel) {
             if (fixturesDirs.isEmpty()) {
                 System.err.println("--single-model requires --fixtures-dir");
                 System.exit(1);
             }
-            evalFixturesSingleModel(fixturesDirs, candidates, forceCandidates, expected,
+            if (forceCandidates == null || forceCandidates.isEmpty()) {
+                System.err.println("--single-model requires --force-candidates "
+                        + "(e.g. --force-candidates UTF-8,GB18030)");
+                System.exit(1);
+            }
+            evalFixturesSingleModel(fixturesDirs, forceCandidates, expected,
                     probeSizes, outputDir);
             return;
         }
@@ -308,38 +308,24 @@ public class PrototypeCodepointHash {
     // -----------------------------------------------------------------------
 
     private static void evalFixturesSingleModel(List<Path> fixturesDirs,
-                                                List<String> candidates, // ignored
                                                 List<String> forceCandidates,
                                                 String expected,
                                                 int[] probeSizes,
                                                 Path outputDir) throws IOException {
-        boolean forceMode = forceCandidates != null && !forceCandidates.isEmpty();
-        if (forceMode) {
-            System.err.println("\n--- Forced-candidates fixture eval ---");
-            System.err.println("  candidates: " + forceCandidates);
-        } else {
-            System.err.println("\n--- Real-life fixture eval (BOM + HTML + Universal) ---");
-        }
+        System.err.println("\n--- Forced-candidates fixture eval ---");
+        System.err.println("  candidates: " + forceCandidates);
         JunkDetector detector = JunkDetector.loadFromClasspath();
         System.err.println("  model version: " + detector.getModelVersion());
         System.err.println("  expected:      " + expected);
 
-        // Pre-resolve forced charsets; skip unsupported ones up front.
         List<Charset> forced = new ArrayList<>();
-        if (forceMode) {
-            for (String n : forceCandidates) {
-                try {
-                    forced.add(Charset.forName(n));
-                } catch (Exception e) {
-                    System.err.println("  skip unsupported charset: " + n);
-                }
+        for (String n : forceCandidates) {
+            try {
+                forced.add(Charset.forName(n));
+            } catch (Exception e) {
+                System.err.println("  skip unsupported charset: " + n);
             }
         }
-
-        BOMDetector bom = new BOMDetector();
-        HtmlEncodingDetector html = new HtmlEncodingDetector();
-        UniversalEncodingDetector universal = new UniversalEncodingDetector();
-        ParseContext pctx = new ParseContext();
 
         Path out = outputDir.resolve("fixtures-real-life.tsv");
         try (PrintWriter pw = new PrintWriter(
@@ -362,10 +348,8 @@ public class PrototypeCodepointHash {
                     int[] sizes = probeSizes != null ? probeSizes : new int[]{16_384};
                     for (Path f : files) {
                         for (int sz : sizes) {
-                            FixtureResult r = forceMode
-                                    ? evalOneForced(f, expected, detector, forced, sz)
-                                    : evalOneRealLife(f, expected, detector, bom, html,
-                                            universal, pctx, sz);
+                            FixtureResult r =
+                                    evalOneForced(f, expected, detector, forced, sz);
                             pw.println(r.toTsvLine());
                             switch (r.status) {
                                 case "PASS":
@@ -492,120 +476,6 @@ public class PrototypeCodepointHash {
         }
         r.notes = notes.toString().trim();
         return r;
-    }
-
-    private static FixtureResult evalOneRealLife(Path file, String expected,
-                                                 JunkDetector detector,
-                                                 BOMDetector bom,
-                                                 HtmlEncodingDetector html,
-                                                 UniversalEncodingDetector universal,
-                                                 ParseContext pctx,
-                                                 int probeBytes) throws IOException {
-        byte[] raw = Files.readAllBytes(file);
-        int origLen = raw.length;
-        FixtureResult r = new FixtureResult();
-        r.dir = file.getParent().getFileName().toString();
-        String fname = file.getFileName().toString();
-        r.shortName = fname.length() > 24 ? fname.substring(0, 24) : fname;
-        r.bytes = origLen;
-        r.probeSize = probeBytes;
-        r.expected = expected;
-
-        if (isBinaryMagic(raw)) {
-            r.status = "SKIP_BIN";
-            return r;
-        }
-
-        // Probe bytes for the base detectors (16 KB matches production read limit).
-        // For the base detectors we keep the raw bytes (the BOM detector and
-        // HTML-header sniff both want the original prefix).
-        byte[] probe = raw.length > probeBytes ? Arrays.copyOf(raw, probeBytes) : raw;
-
-        r.bomCs    = firstCharset(bom,       probe, pctx);
-        r.htmlCs   = firstCharset(html,      probe, pctx);
-        r.universalCs = firstCharset(universal, probe, pctx);
-
-        // Collect distinct candidates in order of priority: BOM > HTML > universal.
-        List<Charset> candList = new ArrayList<>();
-        addUnique(candList, r.bomCs);
-        addUnique(candList, r.htmlCs);
-        addUnique(candList, r.universalCs);
-        r.candidatesStr = candList.stream().map(Charset::name)
-                .reduce((a, b) -> a + "," + b).orElse("-");
-
-        if (candList.isEmpty()) {
-            r.status = "NO_CANDIDATES";
-            return r;
-        }
-        if (candList.size() == 1) {
-            // All detectors agreed (or only one fired): no arbitration to do.
-            r.winner = candList.get(0).name();
-            r.status = safeCanonical(r.winner).equals(safeCanonical(expected)) ? "AGREE" : "AGREE_WRONG";
-            return r;
-        }
-
-        // Strip HTML from the FULL raw bytes, then slice to probeBytes from
-        // the stripped content — so a small probe-size doesn't land inside
-        // the DOCTYPE/head boilerplate with nothing left to score.
-        byte[] strippedFull = stripHtmlBytes(raw);
-        byte[] forDecode = strippedFull.length > probeBytes
-                ? Arrays.copyOf(strippedFull, probeBytes) : strippedFull;
-        // Pairwise tournament — pick the candidate that beats all others.
-        Charset winnerCs = candList.get(0);
-        float bestMargin = Float.POSITIVE_INFINITY;
-        for (int i = 1; i < candList.size(); i++) {
-            Charset challenger = candList.get(i);
-            String aDecoded = applyEntityVariant(new String(forDecode, winnerCs), "expanded");
-            String bDecoded = applyEntityVariant(new String(forDecode, challenger), "expanded");
-            TextQualityScore aScore = detector.score(aDecoded);
-            TextQualityScore bScore = detector.score(bDecoded);
-            if (aScore.isUnknown() || bScore.isUnknown()) {
-                continue;
-            }
-            float margin = aScore.getZScore() - bScore.getZScore();
-            if (margin < 0) {
-                winnerCs = challenger;
-                margin = -margin;
-            }
-            bestMargin = Math.min(bestMargin, Math.abs(margin));
-        }
-        r.winner = winnerCs.name();
-        r.margin = Float.isInfinite(bestMargin) ? Float.NaN : bestMargin;
-        r.status = safeCanonical(r.winner).equals(safeCanonical(expected)) ? "PASS" : "FAIL";
-        return r;
-    }
-
-    private static String firstCharset(org.apache.tika.detect.EncodingDetector d,
-                                       byte[] bytes, ParseContext pctx) {
-        try (TikaInputStream tis =
-                     TikaInputStream.get(new java.io.ByteArrayInputStream(bytes))) {
-            List<EncodingResult> results = d.detect(tis, new Metadata(), pctx);
-            if (results == null || results.isEmpty()) {
-                return null;
-            }
-            Charset cs = results.get(0).getCharset();
-            return cs == null ? null : cs.name();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static void addUnique(List<Charset> list, String name) {
-        if (name == null) {
-            return;
-        }
-        Charset cs;
-        try {
-            cs = Charset.forName(name);
-        } catch (Exception e) {
-            return;
-        }
-        for (Charset c : list) {
-            if (c.equals(cs)) {
-                return;
-            }
-        }
-        list.add(cs);
     }
 
     /**

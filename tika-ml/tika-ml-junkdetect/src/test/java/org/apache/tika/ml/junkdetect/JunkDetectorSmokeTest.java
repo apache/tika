@@ -112,7 +112,7 @@ public class JunkDetectorSmokeTest {
 
         System.out.println("Baltic comparison: " + result);
 
-        assertEquals("B", result.winner(),
+        assertEquals("cp1257", result.winner(),
                 "cp1257 should be identified as the correct encoding for Lithuanian text");
         // Delta is weak (pooled LATIN model dilutes Baltic-specific bigrams).
         // Production threshold is delta > 1.0; PoC floor is 0.1.
@@ -144,7 +144,7 @@ public class JunkDetectorSmokeTest {
 
         System.out.println("Russian Cyrillic comparison: " + result);
 
-        assertEquals("B", result.winner(),
+        assertEquals("cp1251", result.winner(),
                 "cp1251 should be identified as the correct encoding for Russian text");
         assertTrue(result.delta() > 1.0,
                 "Cyrillic codec separation should be strong: delta=" + result.delta());
@@ -197,7 +197,7 @@ public class JunkDetectorSmokeTest {
 
         System.out.println("Shift-JIS zip entry: " + result);
 
-        assertEquals("A", result.winner(),
+        assertEquals("Shift-JIS", result.winner(),
                 "Shift-JIS decode should beat garbled UTF-8 for short Japanese filename");
     }
 

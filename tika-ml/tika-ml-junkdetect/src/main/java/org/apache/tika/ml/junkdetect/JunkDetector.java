@@ -81,7 +81,7 @@ import org.apache.tika.quality.TextQualityScore;
  *
  * // Arbitrate between two charset decodings
  * TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1251", ascp1251);
- * String winner = result.winner();  // "A" or "B"
+ * String winner = result.winner();  // returns "cp1252" or "cp1251"
  * }</pre>
  */
 public final class JunkDetector implements TextQualityDetector {
@@ -374,7 +374,7 @@ public final class JunkDetector implements TextQualityDetector {
         float zA = scoreA.isUnknown() ? 0f : scoreA.getZScore();
         float zB = scoreB.isUnknown() ? 0f : scoreB.getZScore();
 
-        String winner = zA >= zB ? "A" : "B";
+        String winner = zA >= zB ? labelA : labelB;
         float delta = Math.abs(zA - zB);
 
         return new TextQualityComparison(winner, delta, scoreA, scoreB, labelA, labelB);

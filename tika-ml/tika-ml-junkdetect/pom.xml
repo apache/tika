@@ -59,28 +59,6 @@
       <artifactId>tika-encoding-detector-mojibuster</artifactId>
       <version>${revision}</version>
     </dependency>
-    <!-- Used by EvalFixtures-mode tooling to invoke the three production base
-         detectors (BOM + HTML header + universal statistical) against fixture
-         bytes.  Compile-scope so the diagnostic tool under tools/ links;
-         the production junk-filter detector discovers these via ServiceLoader. -->
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-html</artifactId>
-      <version>${revision}</version>
-    </dependency>
-    <!-- Bundles the StandardCharsets_unsupported_by_IANA.txt resource that
-         HtmlEncodingDetector loads from its static initializer.  Without
-         this dep on the eval tool's classpath, HtmlEncodingDetector NPEs. -->
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parser-html-module</artifactId>
-      <version>${revision}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-universal</artifactId>
-      <version>${revision}</version>
-    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
