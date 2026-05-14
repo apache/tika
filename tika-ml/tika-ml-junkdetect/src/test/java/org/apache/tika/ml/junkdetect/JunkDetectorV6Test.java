@@ -86,7 +86,7 @@ public class JunkDetectorV6Test {
         long[] bloom = new long[(bloomBits + 63) >> 6];
         TrainJunkModel.bloomAddV6(bloom, bloomBits, bloomK, 'A', 'B', seed);
 
-        TrainJunkModel.V6F1Tables v6Tables = new TrainJunkModel.V6F1Tables(
+        F1Tables v6Tables = new F1Tables(
                 qBigram.bytes, bigramBuckets, qBigram.min, qBigram.max,
                 qUnigram.bytes, unigramBuckets, qUnigram.min, qUnigram.max,
                 bloom, bloomBits, bloomK, seed, 1.0f);
@@ -183,7 +183,7 @@ public class JunkDetectorV6Test {
         TrainJunkModel.bloomAddV6(bloom, bloomBits, bloomK, 'A', 'B', seed);
         TrainJunkModel.bloomAddV6(bloom, bloomBits, bloomK, 'B', 'A', seed);
 
-        TrainJunkModel.V6F1Tables v6Tables = new TrainJunkModel.V6F1Tables(
+        F1Tables v6Tables = new F1Tables(
                 qBigram.bytes, bigramBuckets, qBigram.min, qBigram.max,
                 qUnigram.bytes, unigramBuckets, qUnigram.min, qUnigram.max,
                 bloom, bloomBits, bloomK, seed, 1.0f);
@@ -198,27 +198,12 @@ public class JunkDetectorV6Test {
                 "All-seen 'ABAB' should score z ≈ +4");
     }
 
-    @Test
-    void oldFormatModelIsRejected() {
-        // Strict invariant on this branch: only the current file-format
-        // version is accepted.  The bundled junkdetect.bin from the previous
-        // architecture must fail to load with a clear error rather than
-        // silently scoring through a fallback path.
-        IOException ex = org.junit.jupiter.api.Assertions.assertThrows(
-                IOException.class,
-                JunkDetector::loadFromClasspath,
-                "Bundled previous-format model should be rejected");
-        org.junit.jupiter.api.Assertions.assertTrue(
-                ex.getMessage().contains("Unsupported model format version"),
-                "Error message should mention unsupported version, was: " + ex.getMessage());
-    }
-
     // -----------------------------------------------------------------------
     // Helper — minimal LATIN-only v6 model for tests that only need to
     // exercise scoring of LATIN text.
     // -----------------------------------------------------------------------
 
-    private static void saveMinimalV6Model(TrainJunkModel.V6F1Tables v6,
+    private static void saveMinimalV6Model(F1Tables v6,
                                             Path modelFile) throws IOException {
         TreeMap<String, float[]> f1Cal = new TreeMap<>();
         f1Cal.put("LATIN", new float[]{-5.0f, 1.0f});
@@ -278,7 +263,7 @@ public class JunkDetectorV6Test {
         // --- 2. Phase 1: train codepoint-hash tables ---
         // Use a small Bloom (64 KB) — the synthetic corpus has only a
         // few hundred unique pairs.
-        TrainJunkModel.V6F1Tables f1 = TrainJunkModel.trainCodepointHashTables(
+        F1Tables f1 = TrainJunkModel.trainCodepointHashTables(
                 List.of(trainFile), 524288);
 
         // Sanity: Bloom should contain pairs we observed in training.
@@ -293,7 +278,7 @@ public class JunkDetectorV6Test {
                 "Bloom should contain (o, x) — appears in training");
 
         // --- 3. F1 raw scoring sanity ---
-        double meanLogP = TrainJunkModel.codepointHashMeanLogP(
+        double meanLogP = JunkDetector.computeF1MeanLogP(
                 "the quick brown fox", f1);
         assertTrue(Double.isFinite(meanLogP),
                 "Mean log-prob on training text should be finite, got " + meanLogP);
@@ -348,12 +333,12 @@ public class JunkDetectorV6Test {
 
         // --- 7. Train/infer consistency check ---
         // The inference path should compute the same raw F1 score as
-        // the trainer's codepointHashMeanLogP on the same text — if these
+        // JunkDetector.computeF1MeanLogP on the same text — if these
         // two ever disagree, the model's calibration is silently wrong.
         // We can verify indirectly: score same text using
-        // codepointHashMeanLogP and re-derive z1 manually.
+        // computeF1MeanLogP and re-derive z1 manually.
         String probe = "pack my box with five dozen liquor jugs";
-        double trainerRawMean = TrainJunkModel.codepointHashMeanLogP(probe, f1);
+        double trainerRawMean = JunkDetector.computeF1MeanLogP(probe, f1);
         float expectedZ1 = (float) (trainerRawMean - f1CalLatin[0]) / f1CalLatin[1];
         TextQualityScore probeScore = detector.score(probe);
         // logit = w1 * z1 + 0 + 0 + 0 + 0 = z1 in this test configuration.

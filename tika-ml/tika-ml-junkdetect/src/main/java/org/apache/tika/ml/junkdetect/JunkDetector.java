@@ -95,27 +95,7 @@ public final class JunkDetector implements TextQualityDetector {
     static final int VERSION = 6;
 
     // Feature 1 — global hashed codepoint-bigram + Bloom-gated unigram backoff
-    /** Quantized 8-bit log-prob per bigram bucket, size = {@link #cpBigramBuckets}. */
-    private final byte[] cpBigramHash;
-    /** Power of 2.  Index = FNV-1a(cp_a, cp_b, seed) &amp; (buckets - 1). */
-    private final int cpBigramBuckets;
-    private final float cpBigramQuantMin;
-    private final float cpBigramQuantMax;
-    /** Quantized 8-bit log-prob per unigram bucket, size = {@link #cpUnigramBuckets}. */
-    private final byte[] cpUnigramHash;
-    /** Power of 2.  Index = FNV-1a(cp, seed) &amp; (buckets - 1). */
-    private final int cpUnigramBuckets;
-    private final float cpUnigramQuantMin;
-    private final float cpUnigramQuantMax;
-    /** Bloom filter bit array.  Length = bloomBitCount / 64. */
-    private final long[] cpBloomBits;
-    private final int cpBloomBitCount;
-    /** Number of hash functions for Bloom filter (double-hashing). */
-    private final int cpBloomK;
-    /** Seed for FNV-1a hash; same value at training and inference. */
-    private final int cpFnvSeed;
-    /** Multiplier on unigram-backoff log-prob when bigram pair is unseen. */
-    private final float cpBackoffAlpha;
+    private final F1Tables f1;
 
     /** Per-script F1 calibration on the codepoint-hash mean log-prob. */
     private final Map<String, float[]> calibrations; // script → float[2] {mu, sigma}
@@ -157,61 +137,7 @@ public final class JunkDetector implements TextQualityDetector {
         this.scriptTransitionCalibration = scriptTransitionCalibration;
         this.scriptBucketIndex = Collections.unmodifiableMap(scriptBucketIndex);
         this.numScriptBuckets = numScriptBuckets;
-        this.cpBigramHash = f1.bigramHash;
-        this.cpBigramBuckets = f1.bigramBuckets;
-        this.cpBigramQuantMin = f1.bigramQuantMin;
-        this.cpBigramQuantMax = f1.bigramQuantMax;
-        this.cpUnigramHash = f1.unigramHash;
-        this.cpUnigramBuckets = f1.unigramBuckets;
-        this.cpUnigramQuantMin = f1.unigramQuantMin;
-        this.cpUnigramQuantMax = f1.unigramQuantMax;
-        this.cpBloomBits = f1.bloomBits;
-        this.cpBloomBitCount = f1.bloomBitCount;
-        this.cpBloomK = f1.bloomK;
-        this.cpFnvSeed = f1.fnvSeed;
-        this.cpBackoffAlpha = f1.backoffAlpha;
-    }
-
-    /**
-     * Carrier for Feature 1 data — global codepoint-bigram hash table, Bloom
-     * filter, and unigram-backoff hash table.  Loaders and tests build
-     * instances of this and hand them to the {@link JunkDetector} constructor.
-     */
-    static final class F1Tables {
-        final byte[] bigramHash;
-        final int bigramBuckets;
-        final float bigramQuantMin;
-        final float bigramQuantMax;
-        final byte[] unigramHash;
-        final int unigramBuckets;
-        final float unigramQuantMin;
-        final float unigramQuantMax;
-        final long[] bloomBits;
-        final int bloomBitCount;
-        final int bloomK;
-        final int fnvSeed;
-        final float backoffAlpha;
-
-        F1Tables(byte[] bigramHash, int bigramBuckets,
-                 float bigramQuantMin, float bigramQuantMax,
-                 byte[] unigramHash, int unigramBuckets,
-                 float unigramQuantMin, float unigramQuantMax,
-                 long[] bloomBits, int bloomBitCount, int bloomK,
-                 int fnvSeed, float backoffAlpha) {
-            this.bigramHash = bigramHash;
-            this.bigramBuckets = bigramBuckets;
-            this.bigramQuantMin = bigramQuantMin;
-            this.bigramQuantMax = bigramQuantMax;
-            this.unigramHash = unigramHash;
-            this.unigramBuckets = unigramBuckets;
-            this.unigramQuantMin = unigramQuantMin;
-            this.unigramQuantMax = unigramQuantMax;
-            this.bloomBits = bloomBits;
-            this.bloomBitCount = bloomBitCount;
-            this.bloomK = bloomK;
-            this.fnvSeed = fnvSeed;
-            this.backoffAlpha = backoffAlpha;
-        }
+        this.f1 = f1;
     }
 
     // -----------------------------------------------------------------------
@@ -797,18 +723,27 @@ public final class JunkDetector implements TextQualityDetector {
     // -----------------------------------------------------------------------
 
     /**
-     * Mean log-prob over the codepoint pairs in {@code text}.
+     * Mean log-prob over the codepoint pairs in {@code text} using the given
+     * F1 tables.
      *
      * <p>For each adjacent codepoint pair {@code (a, b)}: if the Bloom filter
      * reports the pair was seen at training time, return the dequantized
      * log-prob from the bigram hash bucket.  Else fall back to
-     * {@code alpha * (log P(a) + log P(b))} via the unigram hash table —
-     * captures "rare-codepoint-pair from mojibake" failure modes that bigram
-     * collisions can't.
+     * {@code alpha * (log P(a) + log P(b))} via the unigram hash table.
+     *
+     * <p>This is the single authoritative implementation of the F1 scoring
+     * math, shared between inference ({@link #score}) and training
+     * ({@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel#calibrateF1PerScript}).
+     * Keeping one implementation eliminates the risk of train/infer drift in
+     * the F1 feature — the same risk that motivated making z2/z3/z4 public
+     * static methods.
+     *
+     * @return mean log-prob, or {@link Double#NaN} if {@code text} has fewer
+     *         than two codepoints
      */
-    private float computeCodepointHashMeanLogP(String text) {
+    public static double computeF1MeanLogP(String text, F1Tables f1) {
         if (text == null || text.length() < 2) {
-            return Float.NaN;
+            return Double.NaN;
         }
         double sum = 0;
         int n = 0;
@@ -817,37 +752,43 @@ public final class JunkDetector implements TextQualityDetector {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
             if (prevCp >= 0) {
-                sum += scorePair(prevCp, cp);
+                sum += scorePairF1(prevCp, cp, f1);
                 n++;
             }
             prevCp = cp;
         }
-        return n == 0 ? Float.NaN : (float) (sum / n);
+        return n == 0 ? Double.NaN : sum / n;
     }
 
-    private double scorePair(int cpA, int cpB) {
-        if (bloomContains(cpA, cpB)) {
-            int bucket = (int) (fnv1aBigram(cpA, cpB, cpFnvSeed) & (cpBigramBuckets - 1));
-            return dequantize(cpBigramHash[bucket], cpBigramQuantMin, cpBigramQuantMax);
+    /** Thin instance wrapper around the shared static implementation. */
+    private float computeCodepointHashMeanLogP(String text) {
+        double v = computeF1MeanLogP(text, f1);
+        return Double.isNaN(v) ? Float.NaN : (float) v;
+    }
+
+    private static double scorePairF1(int cpA, int cpB, F1Tables f1) {
+        if (bloomContainsF1(cpA, cpB, f1)) {
+            int bucket = (int) (fnv1aBigram(cpA, cpB, f1.fnvSeed) & (f1.bigramBuckets - 1));
+            return dequantize(f1.bigramHash[bucket], f1.bigramQuantMin, f1.bigramQuantMax);
         }
         // Unigram backoff.  α=1.0 gives plain independence assumption;
         // α<1 discounts (stupid-backoff style) — prototype showed α=1.0 is
         // correct for junk discrimination.
         double ua = dequantize(
-                cpUnigramHash[(int) (fnv1aUnigram(cpA, cpFnvSeed) & (cpUnigramBuckets - 1))],
-                cpUnigramQuantMin, cpUnigramQuantMax);
+                f1.unigramHash[(int) (fnv1aUnigram(cpA, f1.fnvSeed) & (f1.unigramBuckets - 1))],
+                f1.unigramQuantMin, f1.unigramQuantMax);
         double ub = dequantize(
-                cpUnigramHash[(int) (fnv1aUnigram(cpB, cpFnvSeed) & (cpUnigramBuckets - 1))],
-                cpUnigramQuantMin, cpUnigramQuantMax);
-        return cpBackoffAlpha * (ua + ub);
+                f1.unigramHash[(int) (fnv1aUnigram(cpB, f1.fnvSeed) & (f1.unigramBuckets - 1))],
+                f1.unigramQuantMin, f1.unigramQuantMax);
+        return f1.backoffAlpha * (ua + ub);
     }
 
-    private boolean bloomContains(int cpA, int cpB) {
-        long h1 = fnv1aBigram(cpA, cpB, cpFnvSeed);
+    private static boolean bloomContainsF1(int cpA, int cpB, F1Tables f1) {
+        long h1 = fnv1aBigram(cpA, cpB, f1.fnvSeed);
         long h2 = secondaryHash(cpA, cpB);
-        for (int i = 0; i < cpBloomK; i++) {
-            long pos = ((h1 + (long) i * h2) & 0x7FFFFFFFFFFFFFFFL) % cpBloomBitCount;
-            if ((cpBloomBits[(int) (pos >>> 6)] & (1L << (pos & 63))) == 0) {
+        for (int i = 0; i < f1.bloomK; i++) {
+            long pos = ((h1 + (long) i * h2) & 0x7FFFFFFFFFFFFFFFL) % f1.bloomBitCount;
+            if ((f1.bloomBits[(int) (pos >>> 6)] & (1L << (pos & 63))) == 0) {
                 return false;
             }
         }

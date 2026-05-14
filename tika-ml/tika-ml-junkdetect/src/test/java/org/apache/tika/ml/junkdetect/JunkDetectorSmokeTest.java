@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Random;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.quality.TextQualityComparison;
@@ -33,13 +32,7 @@ import org.apache.tika.quality.TextQualityScore;
  * Smoke tests verifying the bundled model meets minimum quality thresholds.
  * Failures indicate the model needs more data or feature extraction is wrong.
  *
- * <p><b>Disabled on this branch.</b>  The bundled {@code junkdetect.bin} is
- * still the previous format and is rejected by the strict
- * {@link JunkDetector#load} loader.  Re-enable these tests once the retrain
- * lands a new bundled model in the current file format.  See the planning
- * doc at {@code 20260512-junkdetector-codepoint-hash-plan.md}.
  */
-@Disabled("Bundled junkdetect.bin is the previous format; re-enable after retrain")
 public class JunkDetectorSmokeTest {
 
     private static JunkDetector detector;
