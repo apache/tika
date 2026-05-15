@@ -33,8 +33,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -492,6 +494,252 @@ public class UnpackerResourceTest extends CXFTestBase {
         boolean hasZeroPaddedName = data.keySet().stream()
                 .anyMatch(k -> k.matches("\\d{4}\\..*"));
         assertTrue(hasZeroPaddedName, "Should have zero-padded file names (e.g., 0000.jpeg)");
+    }
+
+    /**
+     * The datapackage.json "resources" array is the manifest for the Frictionless
+     * package. Verifies it lists exactly the data files present in the zip, with
+     * no missing or extraneous entries. The package envelope (datapackage.json
+     * and the optional metadata.json) is not itself a "resource" and is excluded
+     * from the comparison.
+     */
+    @Test
+    public void testFrictionlessDataPackageMatchesArchiveContents() throws Exception {
+        String configJson = """
+                {
+                  "parse-context": {
+                    "unpack-config": {
+                      "outputFormat": "FRICTIONLESS",
+                      "outputMode": "ZIPPED",
+                      "includeFullMetadata": true,
+                      "includeOriginal": true
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + ALL_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
+
+        byte[] dpBytes = data.get("datapackage.json");
+        assertNotNull(dpBytes, "datapackage.json should be present");
+
+        JsonNode dataPackage = MAPPER.readTree(dpBytes);
+        JsonNode resources = dataPackage.get("resources");
+        assertNotNull(resources, "datapackage.json should have a 'resources' array");
+        assertTrue(resources.isArray() && resources.size() > 0,
+                "resources array should be non-empty");
+
+        Set<String> manifestPaths = new HashSet<>();
+        for (JsonNode resource : resources) {
+            manifestPaths.add(resource.get("path").asText());
+        }
+
+        Set<String> archiveDataFiles = new HashSet<>(data.keySet());
+        archiveDataFiles.remove("datapackage.json");
+        archiveDataFiles.remove("metadata.json");
+
+        assertEquals(archiveDataFiles, manifestPaths,
+                "datapackage.json 'resources' must list exactly the data files in the zip. " +
+                        "Only-in-manifest: " + difference(manifestPaths, archiveDataFiles) +
+                        ", only-in-archive: " + difference(archiveDataFiles, manifestPaths));
+    }
+
+    private static Set<String> difference(Set<String> a, Set<String> b) {
+        Set<String> diff = new HashSet<>(a);
+        diff.removeAll(b);
+        return diff;
+    }
+
+    /**
+     * /unpack/all forces unpack-config.includeOriginal=true. In REGULAR mode,
+     * the container must appear exactly once in the archive — at "0.&lt;ext&gt;"
+     * at the zip root — with no additional copy elsewhere.
+     */
+    @Test
+    public void testRegularAllContainerAppearsOnce() throws Exception {
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+
+        Response response = WebClient
+                .create(endPoint + ALL_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, String> data = readZipArchive((InputStream) response.getEntity());
+
+        long containerEntries = data.keySet().stream()
+                .filter(k -> !k.endsWith(".metadata.json"))
+                .filter(k -> k.equals("0") || k.startsWith("0."))
+                .count();
+        assertEquals(1, containerEntries,
+                "Container should appear exactly once at the zip root as 0.<ext>. " +
+                        "Entries: " + data.keySet());
+    }
+
+    /**
+     * Documents the shape of /unpack output in FRICTIONLESS mode (no /all,
+     * default config): a datapackage.json manifest plus the unpacked/&lt;id&gt;
+     * children, and no metadata.json envelope.
+     */
+    @Test
+    public void testFrictionlessUnpackShape() throws Exception {
+        String configJson = """
+                {
+                  "parse-context": {
+                    "unpack-config": {
+                      "outputFormat": "FRICTIONLESS",
+                      "outputMode": "ZIPPED"
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + UNPACKER_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, String> data = readZipArchive((InputStream) response.getEntity());
+
+        assertTrue(data.containsKey("datapackage.json"),
+                "Should contain datapackage.json manifest. Entries: " + data.keySet());
+        assertFalse(data.containsKey("metadata.json"),
+                "Should not contain metadata.json without includeFullMetadata. Entries: " + data.keySet());
+        boolean hasUnpacked = data.keySet().stream().anyMatch(k -> k.startsWith("unpacked/"));
+        assertTrue(hasUnpacked, "Should contain unpacked/ entries. Entries: " + data.keySet());
+    }
+
+    /**
+     * Documents the difference between /unpack and /unpack/all in FRICTIONLESS:
+     * /unpack/all forces unpack-config.includeOriginal=true, which causes the
+     * container itself to be added to the unpack output as id 0
+     * ("unpacked/0.&lt;ext&gt;"). /unpack with no extra config does not.
+     */
+    @Test
+    public void testFrictionlessUnpackAllAddsContainerAsUnpackedZero() throws Exception {
+        String configJson = """
+                {
+                  "parse-context": {
+                    "unpack-config": {
+                      "outputFormat": "FRICTIONLESS",
+                      "outputMode": "ZIPPED"
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
+        Attachment unpackFile = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment unpackConfig = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response unpackResponse = WebClient
+                .create(endPoint + UNPACKER_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(unpackFile, unpackConfig)));
+        assertEquals(200, unpackResponse.getStatus());
+        Set<String> unpackEntries = new HashSet<>(readZipArchive(
+                (InputStream) unpackResponse.getEntity()).keySet());
+
+        Attachment allFile = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment allConfig = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+        Response allResponse = WebClient
+                .create(endPoint + ALL_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(allFile, allConfig)));
+        assertEquals(200, allResponse.getStatus());
+        Set<String> allEntries = new HashSet<>(readZipArchive(
+                (InputStream) allResponse.getEntity()).keySet());
+
+        boolean unpackHasContainer = unpackEntries.stream().anyMatch(k -> k.equals("unpacked/0.doc"));
+        boolean allHasContainer = allEntries.stream().anyMatch(k -> k.equals("unpacked/0.doc"));
+        assertFalse(unpackHasContainer,
+                "/unpack alone should not include the container. Entries: " + unpackEntries);
+        assertTrue(allHasContainer,
+                "/unpack/all should include the container as unpacked/0.<ext>. " +
+                        "Entries: " + allEntries);
+
+        Set<String> onlyInAll = difference(allEntries, unpackEntries);
+        assertEquals(Set.of("unpacked/0.doc"), onlyInAll,
+                "Only the container (unpacked/0.<ext>) should distinguish /unpack/all " +
+                        "from /unpack. Difference: " + onlyInAll);
+    }
+
+    /**
+     * Documents that includeFullMetadata=true in FRICTIONLESS adds a
+     * metadata.json envelope whose entries carry X-TIKA:content (the extracted
+     * text) and Content-Type alongside the per-document metadata.
+     */
+    @Test
+    public void testFrictionlessIncludeFullMetadataAddsMetadataJson() throws Exception {
+        String configJson = """
+                {
+                  "parse-context": {
+                    "unpack-config": {
+                      "outputFormat": "FRICTIONLESS",
+                      "outputMode": "ZIPPED",
+                      "includeFullMetadata": true
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + ALL_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(200, response.getStatus());
+
+        Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
+        byte[] metadataBytes = data.get("metadata.json");
+        assertNotNull(metadataBytes, "metadata.json should be present when includeFullMetadata=true. " +
+                "Entries: " + data.keySet());
+
+        JsonNode metadata = MAPPER.readTree(metadataBytes);
+        assertTrue(metadata.isArray() && metadata.size() > 0,
+                "metadata.json should be a non-empty array");
+
+        JsonNode container = metadata.get(0);
+        assertTrue(container.has("Content-Type"),
+                "Container metadata entry should carry Content-Type. Entry: " + container);
+        assertEquals("application/msword", container.get("Content-Type").asText(),
+                "Container metadata entry should describe the submitted .doc");
+        assertTrue(container.has("X-TIKA:content"),
+                "Container metadata entry should carry X-TIKA:content (extracted text). Entry: " + container);
+        assertTrue(container.get("X-TIKA:content").asText().length() > 0,
+                "X-TIKA:content for the container should be non-empty");
     }
 
     /**

@@ -489,72 +489,6 @@ class PipesWorker implements Callable<PipesResult> {
         mapper.writeValue(os, metadataMap);
     }
 
-    /**
-     * Stores the original document to the temp handler for inclusion in the zip.
-     * Uses TikaInputStream's internal file caching to avoid consuming the stream.
-     */
-    private void storeOriginalDocument(TikaInputStream tis, TempFileUnpackHandler tempHandler)
-            throws IOException {
-        String fileName = getFileNameFromFetchKey();
-
-        // TikaInputStream caches to a temp file internally - get that file
-        Path originalPath = tis.getPath();
-        if (originalPath != null && Files.exists(originalPath)) {
-            // Copy from the cached file
-            try (InputStream is = Files.newInputStream(originalPath)) {
-                tempHandler.storeOriginalDocument(is, fileName);
-            }
-        } else {
-            // Stream hasn't been cached yet - we need to read and reset
-            tis.mark(Integer.MAX_VALUE);
-            try {
-                tempHandler.storeOriginalDocument(tis, fileName);
-            } finally {
-                tis.reset();
-            }
-        }
-    }
-
-    /**
-     * Stores the original document to the frictionless handler for inclusion in output.
-     * Uses TikaInputStream's internal file caching to avoid consuming the stream.
-     */
-    private void storeOriginalDocumentForFrictionless(TikaInputStream tis,
-                                                      FrictionlessUnpackHandler frictionlessHandler)
-            throws IOException {
-        String fileName = getFileNameFromFetchKey();
-
-        // TikaInputStream caches to a temp file internally - get that file
-        Path originalPath = tis.getPath();
-        if (originalPath != null && Files.exists(originalPath)) {
-            // Copy from the cached file
-            try (InputStream is = Files.newInputStream(originalPath)) {
-                frictionlessHandler.storeOriginalDocument(is, fileName);
-            }
-        } else {
-            // Stream hasn't been cached yet - we need to read and reset
-            tis.mark(Integer.MAX_VALUE);
-            try {
-                frictionlessHandler.storeOriginalDocument(tis, fileName);
-            } finally {
-                tis.reset();
-            }
-        }
-    }
-
-    /**
-     * Extracts the file name from the fetch key.
-     */
-    private String getFileNameFromFetchKey() {
-        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
-        String fileName = fetchKey;
-        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
-        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
-            fileName = fetchKey.substring(lastSlash + 1);
-        }
-        return fileName;
-    }
-
     protected ParseDataOrPipesResult parseFromTuple() throws TikaException, InterruptedException {
         //start a new metadata object to gather info from the fetch process
         //we want to isolate and not touch the metadata sent into the fetchEmitTuple
@@ -575,16 +509,6 @@ class PipesWorker implements Callable<PipesResult> {
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            // Store original document for zipping/frictionless if requested
-            UnpackHandler handler = localContext.get(UnpackHandler.class);
-            UnpackConfig uc = localContext.get(UnpackConfig.class);
-            if (uc != null && uc.isIncludeOriginal()) {
-                if (handler instanceof FrictionlessUnpackHandler frictionlessHandler) {
-                    storeOriginalDocumentForFrictionless(tis, frictionlessHandler);
-                } else if (handler instanceof TempFileUnpackHandler tempHandler) {
-                    storeOriginalDocument(tis, tempHandler);
-                }
-            }
             return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
