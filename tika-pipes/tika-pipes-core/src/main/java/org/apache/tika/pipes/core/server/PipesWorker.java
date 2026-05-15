@@ -37,6 +37,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -503,6 +504,15 @@ class PipesWorker implements Callable<PipesResult> {
         }
         // Use newMetadata() to apply any configured write limits
         Metadata metadata = localContext.newMetadata();
+        // Carry the caller-supplied resource name across the fresh-metadata boundary so
+        // detection, suffix selection, and the Frictionless manifest's name field see
+        // the logical filename rather than whatever the fetcher's path happens to be
+        // (e.g., a server-side spool prefix). TikaInputStream.get(path, metadata)
+        // already honors a pre-set RESOURCE_NAME_KEY.
+        String suppliedName = fetchEmitTuple.getMetadata().get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (!StringUtils.isBlank(suppliedName)) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
+        }
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());

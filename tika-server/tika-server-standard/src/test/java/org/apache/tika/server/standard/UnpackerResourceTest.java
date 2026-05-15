@@ -556,6 +556,65 @@ public class UnpackerResourceTest extends CXFTestBase {
                         ", only-in-archive: " + difference(archiveDataFiles, manifestPaths));
     }
 
+    /**
+     * The Frictionless manifest's "name" field is supposed to carry the
+     * original filename of each resource. For the container (unpacked/0.<ext>),
+     * that name should be the filename the user supplied on the multipart
+     * upload -- not the server's internal spool filename.
+     */
+    @Test
+    public void testFrictionlessContainerManifestNameMatchesUploadFilename() throws Exception {
+        String configJson = """
+                {
+                  "parse-context": {
+                    "unpack-config": {
+                      "outputFormat": "FRICTIONLESS",
+                      "outputMode": "ZIPPED"
+                    }
+                  }
+                }
+                """;
+        String uploadFilename = "Doc1_ole.doc";
+        ContentDisposition fileCd = new ContentDisposition(
+                "form-data; name=\"file\"; filename=\"" + uploadFilename + "\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + ALL_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
+
+        byte[] dpBytes = data.get("datapackage.json");
+        assertNotNull(dpBytes, "datapackage.json should be present");
+        JsonNode dataPackage = MAPPER.readTree(dpBytes);
+
+        JsonNode containerResource = null;
+        for (JsonNode resource : dataPackage.get("resources")) {
+            String path = resource.get("path").asText();
+            if (path.equals("unpacked/0") || path.startsWith("unpacked/0.")) {
+                containerResource = resource;
+                break;
+            }
+        }
+        assertNotNull(containerResource,
+                "Manifest should list the container at unpacked/0. Resources: " +
+                        dataPackage.get("resources"));
+
+        JsonNode nameNode = containerResource.get("name");
+        assertNotNull(nameNode,
+                "Container resource should carry a 'name' field. Resource: " + containerResource);
+        assertEquals(uploadFilename, nameNode.asText(),
+                "Container's manifest name should be the user-supplied upload filename, " +
+                        "not the server's internal spool filename. Resource: " + containerResource);
+    }
+
     private static Set<String> difference(Set<String> a, Set<String> b) {
         Set<String> diff = new HashSet<>(a);
         diff.removeAll(b);
