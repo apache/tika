@@ -320,15 +320,9 @@ class PipesWorker implements Callable<PipesResult> {
         DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
 
         try {
-            // Emit original document if included
-            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
-                String originalEmitKey = baseEmitKey + "/" + frictionlessHandler.getOriginalDocumentName();
-                try (InputStream is = Files.newInputStream(frictionlessHandler.getOriginalDocumentPath())) {
-                    streamEmitter.emit(originalEmitKey, is, new Metadata(), parseContext);
-                }
-            }
-
-            // Emit each embedded file under unpacked/
+            // Emit each embedded file under unpacked/.
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
                 String fileEmitKey = baseEmitKey + "/unpacked/" + fileInfo.fileName();
                 try (InputStream is = Files.newInputStream(fileInfo.filePath())) {
@@ -385,15 +379,9 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.closeEntry();
             }
 
-            // Add original document if included (at root level)
-            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
-                ZipEntry originalEntry = new ZipEntry(frictionlessHandler.getOriginalDocumentName());
-                zos.putNextEntry(originalEntry);
-                Files.copy(frictionlessHandler.getOriginalDocumentPath(), zos);
-                zos.closeEntry();
-            }
-
-            // Add all embedded files under unpacked/
+            // Add all embedded files under unpacked/.
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
                 ZipEntry fileEntry = new ZipEntry("unpacked/" + fileInfo.fileName());
                 zos.putNextEntry(fileEntry);
@@ -442,14 +430,8 @@ class PipesWorker implements Callable<PipesResult> {
     private void createZipFile(Path zipFile, TempFileUnpackHandler tempHandler,
                                UnpackConfig unpackConfig) throws IOException {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {
-            // Include original document if requested
-            if (unpackConfig.isIncludeOriginal() && tempHandler.hasOriginalDocument()) {
-                ZipEntry originalEntry = new ZipEntry(tempHandler.getOriginalDocumentName());
-                zos.putNextEntry(originalEntry);
-                Files.copy(tempHandler.getOriginalDocumentPath(), zos);
-                zos.closeEntry();
-            }
-
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (TempFileUnpackHandler.EmbeddedFileInfo fileInfo : tempHandler.getEmbeddedFiles()) {
                 // Add the embedded file
                 ZipEntry fileEntry = new ZipEntry(fileInfo.fileName());
