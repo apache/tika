@@ -421,8 +421,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         if (spec instanceof PDSimpleFileSpecification) {
             //((PDSimpleFileSpecification)spec).getFile();
-            attributes.addAttribute("", "class", "class", "CDATA", "linked");
-            attributes.addAttribute("", "id", "id", "CDATA", spec.getFile());
+            setOrReplaceAttribute("class", "linked", attributes);
+            setOrReplaceAttribute("id", spec.getFile(), attributes);
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
         } else if (spec instanceof PDComplexFileSpecification) {

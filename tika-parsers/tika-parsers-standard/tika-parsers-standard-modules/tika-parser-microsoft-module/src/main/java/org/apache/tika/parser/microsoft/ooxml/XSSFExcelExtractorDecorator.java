@@ -220,6 +220,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
+                    // Balance any <tr>/<td> left open by the partial parse so
+                    // the </tbody></table></div> emitted below land in the
+                    // right place.
+                    sheetExtractor.closeAnyPending();
                 }
                 try {
                     getThreadedComments(container, sheetPart, xhtml);
@@ -967,6 +971,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         private XHTMLContentHandler xhtml;
         private int lastSeenRow = -1;
         private int lastSeenCol = -1;
+        // Track open <tr>/<td> so the outer catch can emit balanced closes
+        // when processSheet throws part-way through a row (e.g., a malformed
+        // sheet XML). Without this, the outer code would emit </tbody></table>
+        // while <tr> (or <td>) was still on the stack, producing malformed XHTML.
+        private boolean rowOpen;
+        private boolean cellOpen;
 
         protected SheetTextAsHTML(OfficeParserConfig config, XHTMLContentHandler xhtml) {
             this.includeHeadersFooters = config.isIncludeHeadersAndFooters();
@@ -982,14 +992,19 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 if (includeMissingRows && rowNum > (lastSeenRow + 1)) {
                     for (int rn = lastSeenRow + 1; rn < rowNum; rn++) {
                         xhtml.startElement("tr");
+                        rowOpen = true;
                         xhtml.startElement("td");
+                        cellOpen = true;
                         xhtml.endElement("td");
+                        cellOpen = false;
                         xhtml.endElement("tr");
+                        rowOpen = false;
                     }
                 }
 
                 // Start the new row
                 xhtml.startElement("tr");
+                rowOpen = true;
                 lastSeenCol = -1;
             } catch (SAXException e) {
                 //swallow
@@ -1001,8 +1016,25 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         public void endRow(int rowNum) {
             try {
                 xhtml.endElement("tr");
+                rowOpen = false;
             } catch (SAXException e) {
                 throw new RuntimeSAXException(e);
+            }
+        }
+
+        /**
+         * Closes any pending {@code <tr>} or {@code <td>} that was opened
+         * before a {@link SAXException} interrupted sheet processing. Safe to
+         * call when nothing is open.
+         */
+        void closeAnyPending() throws SAXException {
+            if (cellOpen) {
+                xhtml.endElement("td");
+                cellOpen = false;
+            }
+            if (rowOpen) {
+                xhtml.endElement("tr");
+                rowOpen = false;
             }
         }
 
@@ -1014,12 +1046,15 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         (cellRef == null) ? lastSeenCol + 1 : (new CellReference(cellRef)).getCol();
                 for (int cn = lastSeenCol + 1; cn < colNum; cn++) {
                     xhtml.startElement("td");
+                    cellOpen = true;
                     xhtml.endElement("td");
+                    cellOpen = false;
                 }
                 lastSeenCol = colNum;
 
                 // Start this cell
                 xhtml.startElement("td");
+                cellOpen = true;
 
                 // Main cell contents
                 if (formattedValue != null) {
@@ -1036,6 +1071,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 }
 
                 xhtml.endElement("td");
+                cellOpen = false;
             } catch (SAXException e) {
                 throw new RuntimeSAXException(e);
             }
