@@ -23,8 +23,21 @@ github:
   autolink_jira:
     - TIKA
 
+  rulesets:
+    - name: "Default Branch Protection"
+      type: branch
+      branches:
+        includes:
+          - "~DEFAULT_BRANCH"
+          - "release/*"
+          - "rel/*"
+        excludes: []
+      bypass_teams:
+        - root
+      restrict_deletion: true
+      restrict_force_push: true
 notifications:
-  commits:      commits@tika.apache.org
-  issues:       dev@tika.apache.org
+  commits: commits@tika.apache.org
+  issues: dev@tika.apache.org
   pullrequests: dev@tika.apache.org
   jira_options: link label comment
