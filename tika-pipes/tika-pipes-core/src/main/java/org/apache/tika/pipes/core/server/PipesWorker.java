@@ -37,6 +37,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -319,15 +320,9 @@ class PipesWorker implements Callable<PipesResult> {
         DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
 
         try {
-            // Emit original document if included
-            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
-                String originalEmitKey = baseEmitKey + "/" + frictionlessHandler.getOriginalDocumentName();
-                try (InputStream is = Files.newInputStream(frictionlessHandler.getOriginalDocumentPath())) {
-                    streamEmitter.emit(originalEmitKey, is, new Metadata(), parseContext);
-                }
-            }
-
-            // Emit each embedded file under unpacked/
+            // Emit each embedded file under unpacked/.
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
                 String fileEmitKey = baseEmitKey + "/unpacked/" + fileInfo.fileName();
                 try (InputStream is = Files.newInputStream(fileInfo.filePath())) {
@@ -384,15 +379,9 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.closeEntry();
             }
 
-            // Add original document if included (at root level)
-            if (unpackConfig.isIncludeOriginal() && frictionlessHandler.hasOriginalDocument()) {
-                ZipEntry originalEntry = new ZipEntry(frictionlessHandler.getOriginalDocumentName());
-                zos.putNextEntry(originalEntry);
-                Files.copy(frictionlessHandler.getOriginalDocumentPath(), zos);
-                zos.closeEntry();
-            }
-
-            // Add all embedded files under unpacked/
+            // Add all embedded files under unpacked/.
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
                 ZipEntry fileEntry = new ZipEntry("unpacked/" + fileInfo.fileName());
                 zos.putNextEntry(fileEntry);
@@ -441,14 +430,8 @@ class PipesWorker implements Callable<PipesResult> {
     private void createZipFile(Path zipFile, TempFileUnpackHandler tempHandler,
                                UnpackConfig unpackConfig) throws IOException {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {
-            // Include original document if requested
-            if (unpackConfig.isIncludeOriginal() && tempHandler.hasOriginalDocument()) {
-                ZipEntry originalEntry = new ZipEntry(tempHandler.getOriginalDocumentName());
-                zos.putNextEntry(originalEntry);
-                Files.copy(tempHandler.getOriginalDocumentPath(), zos);
-                zos.closeEntry();
-            }
-
+            // When includeOriginal=true the container itself is added as id 0 by
+            // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (TempFileUnpackHandler.EmbeddedFileInfo fileInfo : tempHandler.getEmbeddedFiles()) {
                 // Add the embedded file
                 ZipEntry fileEntry = new ZipEntry(fileInfo.fileName());
@@ -489,72 +472,6 @@ class PipesWorker implements Callable<PipesResult> {
         mapper.writeValue(os, metadataMap);
     }
 
-    /**
-     * Stores the original document to the temp handler for inclusion in the zip.
-     * Uses TikaInputStream's internal file caching to avoid consuming the stream.
-     */
-    private void storeOriginalDocument(TikaInputStream tis, TempFileUnpackHandler tempHandler)
-            throws IOException {
-        String fileName = getFileNameFromFetchKey();
-
-        // TikaInputStream caches to a temp file internally - get that file
-        Path originalPath = tis.getPath();
-        if (originalPath != null && Files.exists(originalPath)) {
-            // Copy from the cached file
-            try (InputStream is = Files.newInputStream(originalPath)) {
-                tempHandler.storeOriginalDocument(is, fileName);
-            }
-        } else {
-            // Stream hasn't been cached yet - we need to read and reset
-            tis.mark(Integer.MAX_VALUE);
-            try {
-                tempHandler.storeOriginalDocument(tis, fileName);
-            } finally {
-                tis.reset();
-            }
-        }
-    }
-
-    /**
-     * Stores the original document to the frictionless handler for inclusion in output.
-     * Uses TikaInputStream's internal file caching to avoid consuming the stream.
-     */
-    private void storeOriginalDocumentForFrictionless(TikaInputStream tis,
-                                                      FrictionlessUnpackHandler frictionlessHandler)
-            throws IOException {
-        String fileName = getFileNameFromFetchKey();
-
-        // TikaInputStream caches to a temp file internally - get that file
-        Path originalPath = tis.getPath();
-        if (originalPath != null && Files.exists(originalPath)) {
-            // Copy from the cached file
-            try (InputStream is = Files.newInputStream(originalPath)) {
-                frictionlessHandler.storeOriginalDocument(is, fileName);
-            }
-        } else {
-            // Stream hasn't been cached yet - we need to read and reset
-            tis.mark(Integer.MAX_VALUE);
-            try {
-                frictionlessHandler.storeOriginalDocument(tis, fileName);
-            } finally {
-                tis.reset();
-            }
-        }
-    }
-
-    /**
-     * Extracts the file name from the fetch key.
-     */
-    private String getFileNameFromFetchKey() {
-        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
-        String fileName = fetchKey;
-        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
-        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
-            fileName = fetchKey.substring(lastSlash + 1);
-        }
-        return fileName;
-    }
-
     protected ParseDataOrPipesResult parseFromTuple() throws TikaException, InterruptedException {
         //start a new metadata object to gather info from the fetch process
         //we want to isolate and not touch the metadata sent into the fetchEmitTuple
@@ -569,22 +486,21 @@ class PipesWorker implements Callable<PipesResult> {
         }
         // Use newMetadata() to apply any configured write limits
         Metadata metadata = localContext.newMetadata();
+        // Carry the caller-supplied resource name across the fresh-metadata boundary so
+        // detection, suffix selection, and the Frictionless manifest's name field see
+        // the logical filename rather than whatever the fetcher's path happens to be
+        // (e.g., a server-side spool prefix). TikaInputStream.get(path, metadata)
+        // already honors a pre-set RESOURCE_NAME_KEY.
+        String suppliedName = fetchEmitTuple.getMetadata().get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (!StringUtils.isBlank(suppliedName)) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
+        }
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            // Store original document for zipping/frictionless if requested
-            UnpackHandler handler = localContext.get(UnpackHandler.class);
-            UnpackConfig uc = localContext.get(UnpackConfig.class);
-            if (uc != null && uc.isIncludeOriginal()) {
-                if (handler instanceof FrictionlessUnpackHandler frictionlessHandler) {
-                    storeOriginalDocumentForFrictionless(tis, frictionlessHandler);
-                } else if (handler instanceof TempFileUnpackHandler tempHandler) {
-                    storeOriginalDocument(tis, tempHandler);
-                }
-            }
             return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);

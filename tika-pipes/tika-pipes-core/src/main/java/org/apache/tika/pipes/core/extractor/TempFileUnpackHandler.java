@@ -42,8 +42,6 @@ public class TempFileUnpackHandler extends AbstractUnpackHandler
     private final EmitKey containerEmitKey;
     private final UnpackConfig unpackConfig;
     private final List<EmbeddedFileInfo> embeddedFiles = new ArrayList<>();
-    private Path originalDocumentPath;
-    private String originalDocumentName;
     private boolean closed = false;
 
     /**
@@ -110,42 +108,6 @@ public class TempFileUnpackHandler extends AbstractUnpackHandler
      */
     public boolean hasEmbeddedFiles() {
         return !embeddedFiles.isEmpty();
-    }
-
-    /**
-     * Stores the original container document for inclusion in the zip.
-     * Call this before parsing if includeOriginal is enabled.
-     *
-     * @param inputStream the original document input stream
-     * @param fileName the file name for the original document
-     */
-    public void storeOriginalDocument(InputStream inputStream, String fileName) throws IOException {
-        this.originalDocumentName = fileName;
-        this.originalDocumentPath = tempDirectory.resolve("_original_" + fileName);
-        try (OutputStream os = Files.newOutputStream(originalDocumentPath)) {
-            inputStream.transferTo(os);
-        }
-    }
-
-    /**
-     * Returns the path to the original document if stored.
-     */
-    public Path getOriginalDocumentPath() {
-        return originalDocumentPath;
-    }
-
-    /**
-     * Returns the name of the original document if stored.
-     */
-    public String getOriginalDocumentName() {
-        return originalDocumentName;
-    }
-
-    /**
-     * Returns true if the original document was stored.
-     */
-    public boolean hasOriginalDocument() {
-        return originalDocumentPath != null && Files.exists(originalDocumentPath);
     }
 
     @Override
