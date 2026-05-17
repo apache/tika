@@ -1537,6 +1537,20 @@ public class PDFParserTest extends TikaTest {
         config.setMaxPages(1);
     }
 
+    // TIKA-XXXX: handleDestinationOrAction pre-populated class/type on the action div,
+    // then processJavaScriptAction appended a second class/type for PDActionJavaScript
+    // actions, producing a div with duplicate attributes that SAX parsers reject.
+    // TikaTest.getXML wraps with StrictXHTMLValidator, so a regression makes
+    // this test throw at the offending SAX event.
+    @Test
+    public void testExtractActionsXHTMLWellFormed() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractActions(true);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        getXML("testPDF_jsActionOnPage.pdf", context);
+    }
+
     /**
     @Test
     public void testWriteLimit() throws Exception {

@@ -708,6 +708,18 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     } catch (IOException | TikaException e) {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
+                    } catch (SAXException e) {
+                        // Don't let a per-part SAX failure cancel the rest of
+                        // the loop -- and crucially, don't let it propagate
+                        // past the matching </div> emitted after this loop.
+                        // The contentHandler's internal bookkeeping (e.g.,
+                        // OOXMLTikaBodyPartHandler) may still have <p>/<td>/etc.
+                        // open after the partial parse; that cleanup needs a
+                        // handle to the body handler, which this generic method
+                        // doesn't have. Tracked for a follow-up.
+                        WriteLimitReachedException.throwIfWriteLimitReached(e);
+                        parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                ExceptionUtils.getStackTrace(e));
                     }
                 } catch (InvalidFormatException e) {
                     parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,

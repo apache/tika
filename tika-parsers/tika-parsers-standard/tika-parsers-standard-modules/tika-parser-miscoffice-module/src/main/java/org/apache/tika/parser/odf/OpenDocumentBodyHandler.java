@@ -150,6 +150,12 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     private boolean curBold;
     private boolean curItalic;
     private int pDepth = 0;
+    // Nesting depth of <a> (text:a / draw:a) elements. While > 0, style tag
+    // emission is suppressed so b/i/u never close across an open <a> (which
+    // would produce cross-nested XHTML like <a><b>...</a></b>). The tradeoff
+    // is that bold/italic/underline runs that begin or end inside a link lose
+    // their formatting in the captured XHTML.
+    private int anchorDepth = 0;
     OpenDocumentBodyHandler(ContentHandler handler, ParseContext parseContext) {
         super(handler, MAPPINGS);
         this.handler = handler;
@@ -275,6 +281,11 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
 
     private void updateStyleTags() throws SAXException {
 
+        // Suppress style-tag flips while inside a <a> -- emitting </b>/</i>/</u>
+        // here would cross-nest with the open anchor and produce malformed XHTML.
+        if (anchorDepth > 0) {
+            return;
+        }
         if (currTextStyle == null) {
             closeStyleTags();
             return;
@@ -325,7 +336,39 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
         updateStyleTags();
     }
 
+    /**
+     * Returns true for ODF elements that map to block-level XHTML and so
+     * shouldn't sit inside open inline-style tags. When such an element opens
+     * while {@code <b>/<i>/<u>} are on the SAX stack, the inline tags would
+     * trap the new block element underneath them; subsequent style flips
+     * inside the block would emit close events that don't match the topmost
+     * open element. The startElement handler closes pending style tags
+     * before opening any of these.
+     * <p>
+     * text:p / text:h / text:list / annotation / note / notes / a are handled
+     * by their own branches in startElement and never reach the default
+     * branch where this check is used.
+     */
+    private static boolean isBlockLevelOpen(String uri, String localName) {
+        if (DRAW_NS.equals(uri) && "text-box".equals(localName)) {
+            return true;
+        }
+        if (TABLE_NS.equals(uri) &&
+                ("table".equals(localName) || "table-row".equals(localName)
+                        || "table-cell".equals(localName))) {
+            return true;
+        }
+        return TEXT_NS.equals(uri) && "list-item".equals(localName);
+    }
+
     private void closeStyleTags() throws SAXException {
+        // Same reasoning as in updateStyleTags: never emit style-tag closes
+        // while a <a> is on the stack -- the </b>/</i>/</u> would land in the
+        // wrong place and the strict validator (or any SAX parser) would reject
+        // the resulting XHTML.
+        if (anchorDepth > 0) {
+            return;
+        }
         // Close any still open style tags
         if (curUnderlined) {
             handler.endElement(XHTML, "u", "u");
@@ -437,6 +480,22 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             } else if ("notes".equals(localName)) {
                 closeStyleTags();
                 handler.startElement(XHTML, "p", "p", NOTES_ATTRIBUTES);
+            } else if ("a".equals(localName)) {
+                // Suppress any pending style flip before opening the anchor,
+                // and bump the depth so style emission stays quiet while we're
+                // inside it. See updateStyleTags / closeStyleTags.
+                anchorDepth++;
+                super.startElement(namespaceURI, localName, qName, attrs);
+            } else if (isBlockLevelOpen(namespaceURI, localName)) {
+                // Block-level structural elements (draw:text-box -> <div>,
+                // table:table -> <table>, etc.) opened while <b>/<i>/<u> are
+                // on top would trap those inline tags. Subsequent style flips
+                // inside would emit </b> while the block is on top, producing
+                // cross-nested XHTML. Close pending styles before opening the
+                // block; if there's still text to emit at the same style after
+                // the block closes, updateStyleTags() will reopen them.
+                closeStyleTags();
+                super.startElement(namespaceURI, localName, qName, attrs);
             } else {
                 super.startElement(namespaceURI, localName, qName, attrs);
             }
@@ -489,6 +548,24 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
                 closeStyleTags();
                 handler.endElement(namespaceURI, "p", "p");
             } else if ("a".equals(localName)) {
+                // closeStyleTags is a no-op while anchorDepth > 0, but we keep
+                // the call so any future change to its semantics still runs
+                // here. Decrement only after </a> has been emitted so the
+                // suppression covers the close itself.
+                closeStyleTags();
+                super.endElement(namespaceURI, localName, qName);
+                if (anchorDepth > 0) {
+                    anchorDepth--;
+                }
+            } else if (SVG_NS.equals(namespaceURI)
+                    && ("title".equals(localName) || "desc".equals(localName))) {
+                // svg:title / svg:desc map through MAPPINGS to <span>. If a
+                // <b>/<i>/<u> opened inside (via text:span style) is still
+                // on top when </span> fires, we'd cross-nest. Close pending
+                // style tags before the parent close. Other text:span lazy-
+                // close paths (via characters() -> updateStyleTags) are
+                // unaffected because this branch only triggers on these
+                // specific elements.
                 closeStyleTags();
                 super.endElement(namespaceURI, localName, qName);
             } else {

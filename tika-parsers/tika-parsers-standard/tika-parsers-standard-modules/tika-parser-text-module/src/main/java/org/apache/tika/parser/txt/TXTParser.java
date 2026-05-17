@@ -97,17 +97,24 @@ public class TXTParser extends AbstractEncodingDetectorParser {
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
-
-            xhtml.startElement("p");
-            char[] buffer = new char[4096];
-            int n = reader.read(buffer);
-            while (n != -1) {
-                xhtml.characters(buffer, 0, n);
-                n = reader.read(buffer);
+            // try/finally so any upstream exception (e.g., WriteLimitReached)
+            // still emits </p> and </body></html> instead of leaving the
+            // captured XHTML unterminated.
+            try {
+                xhtml.startElement("p");
+                try {
+                    char[] buffer = new char[4096];
+                    int n = reader.read(buffer);
+                    while (n != -1) {
+                        xhtml.characters(buffer, 0, n);
+                        n = reader.read(buffer);
+                    }
+                } finally {
+                    xhtml.endElement("p");
+                }
+            } finally {
+                xhtml.endDocument();
             }
-            xhtml.endElement("p");
-
-            xhtml.endDocument();
         } finally {
             tis.removeCloseShield();
         }

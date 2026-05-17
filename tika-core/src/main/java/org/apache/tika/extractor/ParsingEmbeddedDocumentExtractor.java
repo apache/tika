@@ -178,10 +178,11 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             recordException(e, context);
         } finally {
             tis.removeCloseShield();
-        }
-
-        if (outputHtml) {
-            handler.endElement(XHTML, "div", "div");
+            // Always close the package-entry div so XHTML output stays well-formed
+            // even when the inner parse throws (e.g., zip-bomb depth limits).
+            if (outputHtml) {
+                handler.endElement(XHTML, "div", "div");
+            }
         }
     }
 

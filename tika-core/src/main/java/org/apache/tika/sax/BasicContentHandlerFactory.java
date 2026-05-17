@@ -42,6 +42,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     private HANDLER_TYPE type = HANDLER_TYPE.MARKDOWN;
     private int writeLimit = -1;
     private boolean throwOnWriteLimitReached = true;
+    private boolean validateXHTML = false;
     private transient ParseContext parseContext;
 
     /**
@@ -81,6 +82,23 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
             throw new IllegalArgumentException("parse context must not be null if " +
                     "throwOnWriteLimitReached is false");
         }
+    }
+
+    /**
+     * When true, every handler produced by this factory is wrapped in a
+     * {@link StrictXHTMLValidator} so that any malformed XHTML event sequence
+     * emitted by a parser throws a {@link org.xml.sax.SAXException} at the
+     * offending event. Defaults to false. Intended for catching parser bugs
+     * in development / corpus scans; off in production for performance and
+     * because not every caller wants validation failures to surface as
+     * parser exceptions.
+     */
+    public void setValidateXHTML(boolean validateXHTML) {
+        this.validateXHTML = validateXHTML;
+    }
+
+    public boolean isValidateXHTML() {
+        return validateXHTML;
     }
 
     /**
@@ -138,7 +156,10 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
 
     @Override
     public ContentHandler createHandler() {
+        return maybeValidate(createHandlerInner());
+    }
 
+    private ContentHandler createHandlerInner() {
         if (type == HANDLER_TYPE.BODY) {
             return new BodyContentHandler(
                     new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
@@ -152,6 +173,10 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         }
         return new WriteOutContentHandler(formatHandler, writeLimit, throwOnWriteLimitReached,
                 parseContext);
+    }
+
+    private ContentHandler maybeValidate(ContentHandler h) {
+        return validateXHTML ? new StrictXHTMLValidator(h) : h;
     }
 
     private ContentHandler getFormatHandler() {
@@ -171,7 +196,10 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
 
     @Override
     public ContentHandler createHandler(OutputStream os, Charset charset) {
+        return maybeValidate(createHandlerInner(os, charset));
+    }
 
+    private ContentHandler createHandlerInner(OutputStream os, Charset charset) {
         if (type == HANDLER_TYPE.IGNORE) {
             return new DefaultHandler();
         }

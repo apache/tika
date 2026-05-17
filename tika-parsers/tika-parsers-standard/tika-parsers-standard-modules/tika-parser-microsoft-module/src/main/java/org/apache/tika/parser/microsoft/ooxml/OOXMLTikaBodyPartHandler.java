@@ -64,6 +64,12 @@ public class OOXMLTikaBodyPartHandler
     //<tc><p/><p/><table><tr><tc></p></p></tc></tr></table>...
     private int tableCellDepth = 0;
     private int pWithinCell = 0;
+    // Row open state. Unlike table/cell, OOXML rows aren't nested -- at any
+    // moment at most one <tr> is open inside the innermost table -- so a
+    // single boolean is enough for closeAnyPending() to balance things.
+    // (For nested tables, the inner startTableRow overwrites this, which is
+    // fine because the inner row is the one that needs closing first.)
+    private boolean tableRowOpen = false;
 
     //will need to replace this with a stack
     //if we're marking more that the first level <p/> element
@@ -214,6 +220,36 @@ public class OOXMLTikaBodyPartHandler
         return emittedCommentIds;
     }
 
+    /**
+     * Closes any XHTML elements this handler opened but didn't get a chance to
+     * close, in the proper nesting order. Intended ONLY for the catch arm of a
+     * caller that swallowed a {@link SAXException} from the inner SAX parser;
+     * the normal happy-path flow keeps the trackers in sync via endParagraph
+     * / endTableCell / endTableRow / endTable / FormattingTagManager.closeAll.
+     * Without this, swallowed exceptions leave dangling {@code <p>}, {@code <td>},
+     * {@code <tr>}, {@code <table>}, or formatting tags on the wire that
+     * collide with the outer {@code </body></html>}.
+     */
+    public void closeAnyPending() throws SAXException {
+        formattingTags.closeAll();
+        if (tableCellDepth > 0) {
+            xhtml.endElement("td");
+            tableCellDepth--;
+        }
+        if (tableRowOpen) {
+            xhtml.endElement("tr");
+            tableRowOpen = false;
+        }
+        while (tableDepth > 0) {
+            xhtml.endElement("table");
+            tableDepth--;
+        }
+        if (pDepth > 0 && paragraphTag != null) {
+            xhtml.endElement(paragraphTag);
+            pDepth = 0;
+        }
+    }
+
     @Override
     public void startTable() throws SAXException {
 
@@ -233,11 +269,13 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startTableRow() throws SAXException {
         xhtml.startElement("tr");
+        tableRowOpen = true;
     }
 
     @Override
     public void endTableRow() throws SAXException {
         xhtml.endElement("tr");
+        tableRowOpen = false;
     }
 
     @Override

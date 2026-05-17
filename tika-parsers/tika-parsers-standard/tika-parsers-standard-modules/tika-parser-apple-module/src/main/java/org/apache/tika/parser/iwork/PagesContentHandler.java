@@ -59,7 +59,9 @@ class PagesContentHandler extends DefaultHandler {
     @Override
     public void endDocument() throws SAXException {
         metadata.set(Office.PAGE_COUNT, String.valueOf(pageCount));
-        if (pageCount > 0) {
+        // Either sf:page-start or sl:page-group opens a <div>; close the
+        // last open one regardless of which counter tracked it.
+        if (pageCount + slPageCount > 0) {
             doFooter();
             xhtml.endElement("div");
         }
@@ -85,7 +87,17 @@ class PagesContentHandler extends DefaultHandler {
         } else if ("sf:metadata".equals(qName)) {
             inPart = DocumentPart.METADATA;
         } else if ("sf:page-start".equals(qName) || "sl:page-group".equals(qName)) {
-            if (pageCount > 0) {
+            // sf:p paragraphs can span page boundaries in iWork's XML schema.
+            // If a <p> is still open when the page changes, force-close it
+            // before the page <div> and reopen it in the new page so both
+            // pages have balanced tag pairs.
+            boolean reopenP = inPart == DocumentPart.PARSABLE_TEXT;
+            if (reopenP) {
+                xhtml.endElement("p");
+            }
+            // Use the combined counter so we close the prior <div> regardless
+            // of whether it was opened by sf:page-start or sl:page-group.
+            if (pageCount + slPageCount > 0) {
                 doFooter();
                 xhtml.endElement("div");
             }
@@ -96,6 +108,9 @@ class PagesContentHandler extends DefaultHandler {
                 pageCount++;
             }
             doHeader();
+            if (reopenP) {
+                xhtml.startElement("p");
+            }
         } else if ("sf:p".equals(qName)) {
             if (pageCount + slPageCount > 0) {
                 inPart = DocumentPart.PARSABLE_TEXT;

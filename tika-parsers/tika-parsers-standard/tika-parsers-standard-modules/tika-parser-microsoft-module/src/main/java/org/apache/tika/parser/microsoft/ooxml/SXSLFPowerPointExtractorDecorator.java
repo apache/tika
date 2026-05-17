@@ -38,6 +38,7 @@ import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PageAnchoring;
@@ -202,9 +203,10 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         int hidden = 0;
         xhtml.startElement("div", "class", "slide-content");
+        OOXMLTikaBodyPartHandler bodyHandler = new OOXMLTikaBodyPartHandler(xhtml, metadata);
         try (InputStream stream = slidePart.getInputStream()) {
-            OOXMLWordAndPowerPointTextHandler wordAndPPTHandler = new OOXMLWordAndPowerPointTextHandler(
-                    new OOXMLTikaBodyPartHandler(xhtml, metadata), linkedRelationships);
+            OOXMLWordAndPowerPointTextHandler wordAndPPTHandler =
+                    new OOXMLWordAndPowerPointTextHandler(bodyHandler, linkedRelationships);
             XMLReaderUtils.parseSAX(stream,
                     new EmbeddedContentHandler(wordAndPPTHandler), context);
             if (wordAndPPTHandler.isHiddenSlide()) {
@@ -214,9 +216,19 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             if (wordAndPPTHandler.hasAnimations()) {
                 metadata.set(Office.HAS_ANIMATIONS, true);
             }
+        } catch (SAXException e) {
+            // Truncated/malformed slide XML can leave the body handler with
+            // unclosed <p>, <td>, etc. on the wire. Close them before the
+            // </div> below so subsequent slides -- and the outer </body> --
+            // land in a balanced spot.
+            WriteLimitReachedException.throwIfWriteLimitReached(e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            bodyHandler.closeAnyPending();
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
+            bodyHandler.closeAnyPending();
         }
 
         xhtml.endElement("div");
