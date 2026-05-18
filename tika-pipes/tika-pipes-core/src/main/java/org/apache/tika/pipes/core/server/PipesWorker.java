@@ -491,7 +491,10 @@ class PipesWorker implements Callable<PipesResult> {
         // the logical filename rather than whatever the fetcher's path happens to be
         // (e.g., a server-side spool prefix). TikaInputStream.get(path, metadata)
         // already honors a pre-set RESOURCE_NAME_KEY.
-        String suppliedName = fetchEmitTuple.getMetadata().get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        Metadata tupleMetadata = fetchEmitTuple.getMetadata();
+        String suppliedName = tupleMetadata == null
+                ? null
+                : tupleMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (!StringUtils.isBlank(suppliedName)) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
         }
