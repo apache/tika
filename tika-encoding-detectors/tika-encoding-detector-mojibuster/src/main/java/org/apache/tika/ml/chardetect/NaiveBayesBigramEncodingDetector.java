@@ -77,20 +77,31 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     private static final int DEFAULT_TOP_K = 5;
 
     /**
-     * Minimum softmax confidence for a candidate to be emitted.  When
-     * NB is very confident (e.g., top = 0.93 on a long clean EBCDIC
-     * probe), the lower-ranked candidates' softmax values fall to ≤
-     * 1e-3 and contribute nothing to downstream arbitration except
-     * noise.  Low-confidence alternatives also give language-based
-     * arbitrators (CharSoup) opportunities to pick cross-script
-     * decodings that happen to look like valid letters of another
-     * script — documented failure mode: English CP500 bytes decoded
-     * as IBM424 produce all-Hebrew letters that CharSoup's language
-     * model scores as "clean Hebrew" with high margin, beating
-     * IBM500's "English with Latin siblings" fit.  Dropping noise
-     * candidates removes the opportunity.
+     * Per-scored-bigram log-score margin (in nats) that defines
+     * "model is reliably right" vs "model is genuinely uncertain
+     * between candidates."  Derived from a calibration run over the
+     * 158K-sample devtest split:
+     *
+     * <ul>
+     *   <li>CORRECT picks have top-1-vs-top-2 margin median ≈
+     *       1.5–2 nats/bg, with p10 ≥ 0.22 nats/bg in every
+     *       length bucket.</li>
+     *   <li>WRONG picks have margin p90 &lt; 0.10 nats/bg in every
+     *       length bucket.</li>
+     * </ul>
+     *
+     * <p>A threshold of 0.20 cleanly separates the two regimes.
+     * Candidates within {@code MARGIN_THRESHOLD_NATS_PER_BIGRAM} of
+     * top-1's score (i.e., the model can't reliably tell them apart
+     * from top-1) are emitted into the candidate pool for downstream
+     * arbitration; candidates further away are dropped.</p>
+     *
+     * <p>Softmax-based confidence is deliberately not used here:
+     * softmax saturates to 1.0 on essentially every probe regardless
+     * of how uncertain the model actually is, so it cannot serve as
+     * a candidate-emission gate.</p>
      */
-    private static final double MIN_EMIT_CONFIDENCE = 0.01;
+    private static final double MARGIN_THRESHOLD_NATS_PER_BIGRAM = 0.20;
 
     private final String[] labels;
     /** Charset objects cached at load — one {@code Charset.forName} per class, ever. */
@@ -211,22 +222,73 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
         return detect(readProbe(tis));
     }
 
+    /** ASCII whitespace: TAB, LF, VT, FF, CR, SPACE. */
+    private static boolean isWhitespace(int b) {
+        return b == 0x09 || b == 0x0a || b == 0x0b || b == 0x0c
+                || b == 0x0d || b == 0x20;
+    }
+
     public List<EncodingResult> detect(byte[] probe) {
-        if (probe == null || probe.length < 2) {
+        ScoreResult sr = scoreClassesAndCount(probe);
+        if (sr == null) {
             return Collections.emptyList();
+        }
+        return emitCandidates(sr.scores, sr.scoredBigrams);
+    }
+
+    /**
+     * Score result returned by {@link #scoreClassesAndCount(byte[])}.
+     * Exposes the raw per-class score vector together with the number
+     * of bigrams that actually contributed to the dot product (i.e.,
+     * bigrams with non-zero IDF and not skipped by the whitespace-pair
+     * rule) and the total bigrams in the scored region of the probe.
+     * {@code scoredBigrams} is the unit of "evidence available to NB"
+     * — robust to HTML / whitespace noise in the input because those
+     * bigrams have IDF == 0 and don't contribute.
+     */
+    public static final class ScoreResult {
+        public final double[] scores;
+        public final int scoredBigrams;
+        public final int totalBigrams;
+        public ScoreResult(double[] scores, int scoredBigrams, int totalBigrams) {
+            this.scores = scores;
+            this.scoredBigrams = scoredBigrams;
+            this.totalBigrams = totalBigrams;
+        }
+    }
+
+    /**
+     * Compute the raw per-class score vector for a probe, without
+     * top-K extraction or softmax.  Returns {@code null} for null /
+     * tiny probes that can't be scored.
+     */
+    public double[] scoreClasses(byte[] probe) {
+        if (probe == null || probe.length < 2) {
+            return null;
         }
         int len = Math.min(probe.length, MAX_PROBE_BYTES);
 
         // Integer hot loop — CharSoup-style.  int8 logP × int8 IDF →
         // int16 product, accumulated into int32 per class.  Overflow
-        // safety: at MAX_PROBE_BYTES=1024, max 1023 bigrams × 127 × 127
-        // ≈ 16.5M per class, well inside int32's 2.1B headroom.
+        // safety: at MAX_PROBE_BYTES=16384, max 16383 bigrams × 127 × 127
+        // ≈ 264M per class, well inside int32's 2.1B headroom.
         int[] dots = new int[numClasses];
         for (int i = 0; i + 1 < len; i++) {
-            int bigram = ((probe[i] & 0xFF) << 8) | (probe[i + 1] & 0xFF);
+            int b0 = probe[i] & 0xFF;
+            int b1 = probe[i + 1] & 0xFF;
+            // γ: bigrams where both bytes are ASCII whitespace carry no
+            // encoding signal, and per-class training-data preparation
+            // varies in how it handles consecutive whitespace (GB18030's
+            // training collapsed it; others retained it).  That asymmetry
+            // can dominate scoring on HTML-stripped probes where
+            // whitespace bigrams are the highest-frequency tokens.  Skip.
+            if (isWhitespace(b0) && isWhitespace(b1)) {
+                continue;
+            }
+            int bigram = (b0 << 8) | b1;
             int w = idf8[bigram];  // non-negative, 0..127
             if (w == 0) {
-                continue; // bigram appears in every class; no signal
+                continue; // bigram has no discriminative power; skip
             }
             int base = bigram * numClasses;
             for (int c = 0; c < numClasses; c++) {
@@ -234,39 +296,156 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             }
         }
 
-        // Single per-class dequantization at end of probe.  The
-        // perClassDequant constant folds scale[c] × idfScale ×
-        // (1/logVocabSize[c]) into one float — the B-3 per-class
-        // score normalization comes for free.
+        // Single per-class dequantization at end of probe.
         double[] score = new double[numClasses];
         for (int c = 0; c < numClasses; c++) {
             score[c] = dots[c] * perClassDequant[c];
         }
-
-        return topK(score, DEFAULT_TOP_K);
+        return score;
     }
 
     /**
-     * Bounded top-K extraction via insertion sort on a size-K primitive
-     * array.  Avoids {@code Integer[]} boxing + comparator callbacks of
-     * {@code Arrays.sort} with a comparator.  O(N·K) comparisons total;
-     * for K=5, N=35 that's &lt; 180 comparisons, comparable to an O(N
-     * log N) sort but with zero allocation beyond the K-sized buffers.
-     *
-     * <p>Confidence is softmax over the top-K log-likelihoods only —
-     * 5 exp() calls instead of numClasses.</p>
+     * Per-bigram contribution to the per-class score, used for
+     * diagnostic tools that want to understand why a probe scores
+     * one class over another.  Returned by
+     * {@link #analyzeBigrams(byte[], int, int)}.
      */
-    private List<EncodingResult> topK(double[] score, int k) {
-        k = Math.min(k, numClasses);
+    public static final class BigramContrib {
+        public final int bigram;       // (b0 << 8) | b1
+        public final double contribA;  // logP_A * idf in nats
+        public final double contribB;
+        public BigramContrib(int bigram, double a, double b) {
+            this.bigram = bigram;
+            this.contribA = a;
+            this.contribB = b;
+        }
+        public double diff() {
+            return contribA - contribB;
+        }
+    }
+
+    /**
+     * For each scored bigram in the probe (same skip rules as
+     * {@link #scoreClasses(byte[])}), compute and return its
+     * dequantized contribution to two specified classes' scores.
+     * The list is in probe order, with duplicates allowed (a bigram
+     * that appears N times in the probe yields N entries).
+     */
+    public List<BigramContrib> analyzeBigrams(byte[] probe, int classA, int classB) {
+        List<BigramContrib> out = new java.util.ArrayList<>();
+        if (probe == null || probe.length < 2) {
+            return out;
+        }
+        int len = Math.min(probe.length, MAX_PROBE_BYTES);
+        // perClassDequant[c] folds scale[c] × idfScale already, so
+        // contribution(bigram, c) = logP8[..c] * idf8[bigram] * perClassDequant[c]
+        double dqA = perClassDequant[classA];
+        double dqB = perClassDequant[classB];
+        for (int i = 0; i + 1 < len; i++) {
+            int b0 = probe[i] & 0xFF;
+            int b1 = probe[i + 1] & 0xFF;
+            if (isWhitespace(b0) && isWhitespace(b1)) {
+                continue;
+            }
+            int bigram = (b0 << 8) | b1;
+            int w = idf8[bigram];
+            if (w == 0) {
+                continue;
+            }
+            int base = bigram * numClasses;
+            double contribA = logP8[base + classA] * w * dqA;
+            double contribB = logP8[base + classB] * w * dqB;
+            out.add(new BigramContrib(bigram, contribA, contribB));
+        }
+        return out;
+    }
+
+    /**
+     * Like {@link #scoreClasses(byte[])} but also reports the number
+     * of bigrams that contributed to the dot product vs the total
+     * scored region.  Used by offline calibration to bucket samples
+     * by "evidence available" rather than raw byte length.
+     */
+    public ScoreResult scoreClassesAndCount(byte[] probe) {
+        if (probe == null || probe.length < 2) {
+            return null;
+        }
+        int len = Math.min(probe.length, MAX_PROBE_BYTES);
+        int[] dots = new int[numClasses];
+        int scored = 0;
+        int total = 0;
+        for (int i = 0; i + 1 < len; i++) {
+            int b0 = probe[i] & 0xFF;
+            int b1 = probe[i + 1] & 0xFF;
+            total++;
+            if (isWhitespace(b0) && isWhitespace(b1)) {
+                continue;
+            }
+            int bigram = (b0 << 8) | b1;
+            int w = idf8[bigram];
+            if (w == 0) {
+                continue;
+            }
+            scored++;
+            int base = bigram * numClasses;
+            for (int c = 0; c < numClasses; c++) {
+                dots[c] += logP8[base + c] * w;
+            }
+        }
+        double[] score = new double[numClasses];
+        for (int c = 0; c < numClasses; c++) {
+            score[c] = dots[c] * perClassDequant[c];
+        }
+        return new ScoreResult(score, scored, total);
+    }
+
+    public String[] getLabels() {
+        return labels.clone();
+    }
+
+    public Charset[] getCharsets() {
+        return charsets.clone();
+    }
+
+    /**
+     * Margin-gated candidate emission.  Always emits top-1.  Additional
+     * candidates are emitted only when their score is within
+     * {@link #MARGIN_THRESHOLD_NATS_PER_BIGRAM} × {@code scoredBigrams}
+     * of top-1 — i.e., when the model is genuinely close between
+     * top-1 and the alternative.  Cap at {@link #DEFAULT_TOP_K}
+     * candidates total.
+     *
+     * <p>The emitted {@code confidence} value is NOT softmax (which
+     * saturates to 1.0 on essentially every probe regardless of true
+     * uncertainty — see {@code feedback_no_softmax_for_ood.md}).
+     * It's a linear margin distance:</p>
+     * <ul>
+     *   <li>top-1: 1.0</li>
+     *   <li>rank {@code i &gt; 0}:
+     *       {@code 1.0 - (top1_score − this_score) / margin_threshold},
+     *       clamped to [0.0, 1.0]</li>
+     * </ul>
+     * <p>A candidate at exactly the margin threshold gets confidence
+     * 0.0 and isn't emitted; one at half the threshold gets 0.5;
+     * top-1 always gets 1.0.</p>
+     */
+    private List<EncodingResult> emitCandidates(double[] score, int scoredBigrams) {
+        if (scoredBigrams <= 0) {
+            // No evidence at all — emit nothing.  Higher-level callers
+            // (MojibusterEncodingDetector) have their own pure-ASCII /
+            // empty-probe fallbacks.
+            return Collections.emptyList();
+        }
+        double marginThreshold = MARGIN_THRESHOLD_NATS_PER_BIGRAM * scoredBigrams;
+
+        int k = Math.min(DEFAULT_TOP_K, numClasses);
         int[] idx = new int[k];
         double[] val = new double[k];
         Arrays.fill(idx, -1);
         Arrays.fill(val, Double.NEGATIVE_INFINITY);
-
         for (int c = 0; c < numClasses; c++) {
             double s = score[c];
             if (s > val[k - 1]) {
-                // Shift-right insertion into sorted-desc buffer.
                 int pos = k - 1;
                 while (pos > 0 && val[pos - 1] < s) {
                     val[pos] = val[pos - 1];
@@ -277,35 +456,26 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 idx[pos] = c;
             }
         }
+        if (idx[0] < 0) {
+            return Collections.emptyList();
+        }
+        double top1Score = val[0];
 
-        // Softmax over top-K only.
-        double maxScore = val[0];
-        double sumExp = 0.0;
-        double[] expBuf = new double[k];
-        int filled = 0;
+        List<EncodingResult> out = new ArrayList<>(k);
         for (int i = 0; i < k; i++) {
             if (idx[i] < 0) {
                 break;
             }
-            expBuf[i] = Math.exp(val[i] - maxScore);
-            sumExp += expBuf[i];
-            filled = i + 1;
-        }
-
-        List<EncodingResult> out = new ArrayList<>(filled);
-        for (int i = 0; i < filled; i++) {
             Charset cs = charsets[idx[i]];
             if (cs == null) {
-                continue; // training-only label with no Java charset
+                continue;
             }
-            double conf = expBuf[i] / sumExp;
-            // Always emit top-1 (even if tiny — at least one result
-            // keeps the pipeline from going empty).  For the rest,
-            // drop below MIN_EMIT_CONFIDENCE: those are noise and
-            // cause downstream arbiters to pick cross-script decodings.
-            if (i > 0 && conf < MIN_EMIT_CONFIDENCE) {
+            double gap = top1Score - val[i];
+            if (i > 0 && gap >= marginThreshold) {
                 break;
             }
+            double conf = (i == 0) ? 1.0
+                    : Math.max(0.0, 1.0 - gap / marginThreshold);
             out.add(new EncodingResult(cs, (float) conf,
                     labels[idx[i]], EncodingResult.ResultType.STATISTICAL));
         }

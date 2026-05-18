@@ -1,0 +1,312 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Regression evaluation with tika-app + tika-eval
+
+A step-by-step recipe for comparing two Tika configurations against the
+same corpus.  Typical uses:
+
+* Verify a code change or dependency bump didn't regress extraction.
+* Compare two parser/detector configurations (e.g. different encoding-detector
+  chains) head-to-head.
+* Generate signed-off reports for a release.
+
+== Concept
+
+The flow is three stages:
+
+. *Extract A* — run Tika config `A` over the corpus, writing one JSON
+  per input file to `extracts-A/`.
+. *Extract B* — run Tika config `B` over the same corpus, writing to
+  `extracts-B/`.
+. *Compare + Report* — run `tika-eval` to load both extract trees into
+  a database and produce `.xlsx` reports highlighting differences
+  (MIME, content, exceptions, embedded documents, metadata).
+
+Both extracts include SHA-256 digests so `tika-eval` can align
+embedded documents across runs even when filenames differ.
+
+== Prerequisites
+
+[source,bash]
+----
+# Build tika-app and tika-eval (in the tika source tree)
+./mvnw install -pl tika-app,tika-eval/tika-eval-app -am -DskipTests \
+    -Dmaven.repo.local=$(pwd)/.local_m2_repo
+----
+
+This produces two distribution zips:
+
+* `tika-app/target/tika-app-{tika-version}.zip` — contains the
+  tika-app jar, `lib/` (dependencies), and `plugins/` (file-system
+  fetcher/emitter/iterator pipes plugin).  Unzip somewhere and run
+  from that directory; `TikaAsyncCLI` auto-discovers the `plugins/`
+  sibling, so no extra flag is needed.
+* `tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.zip` —
+  contains the tika-eval-app jar and its `lib/`.  Unzip and run from
+  there.
+
+[source,bash]
+----
+mkdir -p ~/tika-runtime && cd ~/tika-runtime
+unzip -q tika-app/target/tika-app-{tika-version}.zip -d tika-app
+unzip -q tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.zip -d tika-eval
+----
+
+Running the bare `tika-app-*.jar` or `tika-eval-app-*.jar` (without
+the unzipped `lib/` siblings) will fail at runtime with
+`ClassNotFoundException` — the jars are intentionally not fat jars.
+
+== Step 1: prepare the corpus
+
+Put the input files somewhere on disk.  For this example we'll use
+`/data/corpus/`.  Tika's pipes iterator walks the tree recursively;
+files at any depth are processed.
+
+== Step 2: write the two extraction configs
+
+When you pass `-i <input>` and `-o <output>` on the command line,
+tika-app auto-builds the fetcher / emitter / pipes-iterator for the
+file system.  The config only needs the things you want to OVERRIDE
+from defaults — typically just the digester and (for this kind of
+A/B test) the field under test.
+
+The two configs should differ in exactly *one* thing — the field
+under test.  Everything else (digester, parsers, worker count) should
+match.
+
+=== Config A (baseline)
+
+`tika-config-A.json`:
+
+[source,json]
+----
+{
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [{ "algorithm": "SHA256" }],
+      "skipContainerDocumentDigest": false
+    }
+  }
+}
+----
+
+The `parse-context > commons-digester-factory` block makes every
+extracted record carry an `X-TIKA:digest:SHA256` metadata field —
+required by `tika-eval` for embedded-document alignment across runs.
+
+=== Config B (variant under test)
+
+Copy config A, add the field you're testing.  Example — test a
+different encoding-detector chain:
+
+[source,json]
+----
+{
+  "encoding-detectors": [
+    { "bom-detector": {} },
+    { "html-encoding-detector": {} },
+    { "mojibuster-encoding-detector": {} },
+    { "junk-filter-encoding-detector": {} }
+  ],
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [{ "algorithm": "SHA256" }],
+      "skipContainerDocumentDigest": false
+    }
+  }
+}
+----
+
+When an explicit `encoding-detectors` array is present, TikaLoader
+uses it verbatim instead of the SPI-discovered default chain.  Other
+encoding detectors on the classpath are excluded.
+
+If you need to override anything else (parsers, plugin-roots, content
+handler factory), put it under additional top-level keys.  Anything
+not specified takes its default.
+
+== Step 3: run extractions
+
+[source,bash]
+----
+cd ~/tika-runtime/tika-app
+
+# Extract A — baseline
+java -jar tika-app-{tika-version}.jar \
+    -i /data/corpus \
+    -o /data/extracts-A \
+    -c /path/to/tika-config-A.json \
+    -n 8
+
+# Extract B — variant
+java -jar tika-app-{tika-version}.jar \
+    -i /data/corpus \
+    -o /data/extracts-B \
+    -c /path/to/tika-config-B.json \
+    -n 8
+----
+
+Flags:
+
+* `-i` / `--inputDir` — input directory (recursive walk)
+* `-o` / `--outputDir` — output directory for per-file JSON
+* `-c` / `--config` — optional config overrides
+* `-n` / `--numClients` — forked worker processes (default 4)
+* `-p` / `--pluginsDir` — explicit plugins directory (omit when
+  running from the unzipped distribution — auto-discovery handles it)
+* `-T` / `--timeoutMs` — per-parse timeout
+
+Each run forks worker processes and produces one `.json` per input
+file under the output directory.  Run them sequentially or in
+parallel — they're independent.
+
+Progress is logged to stderr.  On a typical workstation, extraction
+throughput is in the hundreds-of-files-per-minute range, depending on
+parser cost and worker count.
+
+== Step 4: compare and report
+
+[source,bash]
+----
+java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar \
+    -n 8 -r -d my-comparison \
+    -a /data/extracts-A \
+    -b /data/extracts-B
+----
+
+The `Compare` subcommand keyword is optional — the CLI infers it from
+the `-a` / `-b` flags.  The `-r` flag both runs the Report stage and
+zips the resulting reports directory for easy archiving.
+
+Options:
+
+* `-a` / `--extractsA` — A's extract directory (required)
+* `-b` / `--extractsB` — B's extract directory (required)
+* `-i` / `--inputDir` — original binary input directory (optional, lets
+  tika-eval pair extracts to source files even if A or B failed on some)
+* `-d` / `--db` — H2 database name/path.  A short label is fine —
+  tika-eval will create `{label}.mv.db` and a `{label}-reports/` dir
+  alongside.  Persist the db if you want to re-run Report later.
+* `-r` / `--report` — automatically run the Report step after Compare,
+  and zip the reports directory.
+* `-rd` / `--reportsDir` — explicit reports directory (overrides the
+  default derived from `-d`).
+* `-n` / `--numWorkers` — comparison worker count.
+* `-c` / `--config` — optional tika-eval JSON config.
+
+== Step 5: read the reports
+
+The reports directory contains subdirectories:
+
+* `mimes/` — MIME type comparison.  Headline files:
+** `mime_diffs_A_to_B.xlsx` — summary counts per (A type, B type)
+   transition
+** `mime_diffs_A_to_B_details.xlsx` — one row per file that changed
+* `content/` — token-count and content comparison
+* `exceptions/` — new/changed exceptions in B vs A
+* `attachments/` — embedded-document comparison
+* `metadata/` — metadata comparison
+
+Open the `.xlsx` files directly, or use the `regression` skill
+(`~/.claude/skills/regression/SKILL.md`) for guided triage.
+
+== Tips
+
+* *Keep the digester identical between A and B.*  tika-eval uses the
+  `X-TIKA:digest:SHA256` field on embedded documents to align records
+  across the two extracts.  If A digests and B doesn't (or different
+  algorithms), the embedded-doc alignment falls back to filename and
+  produces false-positive diffs.
+
+* *Use the same `numClients` and `timeoutMillis`*.  Different parallelism
+  can produce different timeout behavior that shows up as spurious
+  exception diffs.
+
+* *Run on copies of the binaries when investigating crashes.*  Some
+  parsers may corrupt input files in rare cases; keep a known-good
+  source tree separate from working copies.
+
+* *Persist the H2 database (`-d /path/to/eval.db`)* if you want to
+  re-run the Report step or query it directly with the H2 console.
+  Omitting `-d` writes to a temp file that's cleaned up on exit.
+
+* *Re-run only Report*: if you already have the database, skip Compare
+  and run the Report tool directly:
++
+[source,bash]
+----
+java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar Report \
+    -d /tmp/eval.db -rd /data/reports/
+----
+
+== Worked example: encoding-detector chain comparison
+
+Compare the SPI default detector chain (A) against an explicit
+`[BOM, HTML, Mojibuster, JunkFilter]` chain (B) over a 29 000-file
+Common Crawl HTML sample at `~/data/commoncrawl/cc-html-sample`.
+
+. One-time build: `./mvnw install -pl tika-app,tika-eval/tika-eval-app -am -DskipTests`
+. Unzip both distributions: `unzip tika-app/target/tika-app-*.zip` and
+  `unzip tika-eval/tika-eval-app/target/tika-eval-app-*.zip`.
+. Write `tika-config-A.json` (digester only) and `tika-config-B.json`
+  (digester + the four-detector `encoding-detectors` array) per the
+  examples above.
+. Extract A:
++
+[source,bash]
+----
+cd ~/tika-runtime/tika-app
+java -jar tika-app-{tika-version}.jar \
+    -i ~/data/commoncrawl/cc-html-sample \
+    -o ~/data/extracts/cc-html-sample-A \
+    -c ~/configs/tika-config-A.json -n 8
+----
+. Extract B (same form, different config + output):
++
+[source,bash]
+----
+java -jar tika-app-{tika-version}.jar \
+    -i ~/data/commoncrawl/cc-html-sample \
+    -o ~/data/extracts/cc-html-sample-B \
+    -c ~/configs/tika-config-B.json -n 8
+----
+. Compare + report:
++
+[source,bash]
+----
+cd ~/tika-runtime/tika-eval
+java -jar tika-eval-app-{tika-version}.jar \
+    -n 8 -r -d cc-html-29k-A-vs-B \
+    -a ~/data/extracts/cc-html-sample-A \
+    -b ~/data/extracts/cc-html-sample-B
+----
++
+Produces `cc-html-29k-A-vs-B-reports/` plus a `.tar.gz` of the same
+alongside `cc-html-29k-A-vs-B.mv.db`.
+
+For a 29 K-file HTML sample on a typical workstation (8 forked workers,
+i9-ish CPU): each extraction completes in roughly 45-60 seconds; the
+Compare step finishes in 2-5 minutes depending on extract size.
+. Open `reports/mimes/mime_diffs_A_to_B.xlsx` to see the headline
+  MIME-detection differences; the encoding-detector chain change
+  surfaces as charset diffs in `mimes/mime_diffs_A_to_B_details.xlsx`
+  (`X-TIKA:detected_encoding`).
+
+A regression analysis writeup goes in
+`~/Desktop/claude-todo/<reports-dir-name>-analysis.md` per the
+`regression` skill.

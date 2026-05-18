@@ -38,16 +38,16 @@ import org.apache.tika.ml.junkdetect.tools.TrainJunkModel;
 import org.apache.tika.quality.TextQualityScore;
 
 /**
- * Validates the v7 model file format end-to-end: a synthetic small model is
+ * Validates the model file format end-to-end: a synthetic small model is
  * constructed in-memory with known table values, saved via
- * {@link TrainJunkModel#saveModelV7}, loaded via {@link JunkDetector#load},
+ * {@link TrainJunkModel#saveModel}, loaded via {@link JunkDetector#load},
  * scored against known input, and the output verified against hand-computed
  * expected values.
  *
- * <p>This is the architectural-decision validation: it confirms that the v7
- * file format spec, the trainer's save path, the loader, and the scoring
- * path (per-script open-addressing codepoint-bigram + unigram backoff) all
- * agree on the semantics.  Does not require the production training corpus.
+ * <p>Confirms that the file format spec, the trainer's save path, the
+ * loader, and the scoring path (per-script open-addressing codepoint-bigram
+ * + unigram backoff) all agree on the semantics.  Does not require the
+ * production training corpus.
  */
 public class JunkDetectorV7Test {
 
@@ -77,7 +77,7 @@ public class JunkDetectorV7Test {
 
         // Verify the file roundtrips through the loader.
         JunkDetector detector = JunkDetector.loadFromPath(modelFile);
-        assertEquals(7, detector.getModelVersion(), "Loaded model should be v7");
+        assertEquals(JunkDetector.VERSION, detector.getModelVersion(), "Loaded model should match current VERSION");
 
         TextQualityScore score = detector.score("ABAB");
         assertEquals("LATIN", score.getDominantScript(), "Dominant script should be LATIN");
@@ -194,22 +194,24 @@ public class JunkDetectorV7Test {
         TreeMap<String, float[]> f1CalMap = new TreeMap<>();
         f1CalMap.put("LATIN", f1CalLatin);
         TreeMap<String, float[]> classifierWeights = new TreeMap<>();
-        classifierWeights.put("LATIN", new float[]{1f, 0f, 0f, 0f, 0f});
+        // 6 feature weights + bias.  Only z1 is non-zero here.
+        // 8 feature weights + bias.  Only z1 is non-zero here.
+        classifierWeights.put("LATIN", new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
 
         List<String> scriptBuckets = List.of("LATIN", "OTHER");
         float[] scriptTransTable = new float[scriptBuckets.size() * scriptBuckets.size()];
         float[] scriptTransCal = new float[]{0f, 1f};
 
         Path modelPath = tmp.resolve("junkdetect.bin");
-        TrainJunkModel.saveModelV7(
+        TrainJunkModel.saveModel(
                 f1Tables, f1CalMap, blockTables, blockCal, controlCal,
                 classifierWeights, scriptBuckets, scriptTransTable,
                 scriptTransCal, modelPath);
 
         // --- 6. Load via JunkDetector and score ---
         JunkDetector detector = JunkDetector.loadFromPath(modelPath);
-        assertEquals(7, detector.getModelVersion(),
-                "Loaded model should be v7");
+        assertEquals(JunkDetector.VERSION, detector.getModelVersion(),
+                "Loaded model should match current VERSION");
         assertTrue(detector.knownScripts().contains("LATIN"),
                 "Loaded model should know LATIN");
 
@@ -330,9 +332,12 @@ public class JunkDetectorV7Test {
         float[] scriptTransCal = new float[]{0f, 1f};
 
         TreeMap<String, float[]> classifierWeights = new TreeMap<>();
-        classifierWeights.put("LATIN", new float[]{1.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+        // Current model format: 7 feature weights + bias.  Only z1 is
+        // non-zero in this minimal fixture; z2-z7 contribute 0 to the logit.
+        // 8 feature weights + bias (z1-z8 + bias).
+        classifierWeights.put("LATIN", new float[]{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
 
-        TrainJunkModel.saveModelV7(
+        TrainJunkModel.saveModel(
                 f1Tables, f1Cal, blockTables, blockCal, controlCal,
                 classifierWeights, scriptBuckets, scriptTransTable,
                 scriptTransCal, modelFile);

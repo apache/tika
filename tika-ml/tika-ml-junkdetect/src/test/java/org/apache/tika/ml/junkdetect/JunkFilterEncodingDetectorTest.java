@@ -162,6 +162,49 @@ public class JunkFilterEncodingDetectorTest {
     // up as a proper SPI provider is tracked as follow-up work for TIKA-4720;
     // at that point this test can be added to exercise the real SPI path.
 
+    /**
+     * Regression: Korean text was being mis-arbitrated to GB18030 (Chinese)
+     * because JunkDetector's HAN classifier scores cross-script mojibake more
+     * permissively than HANGUL scores its own correct text (per-script
+     * calibration bias).  The fix is the calibrated rescaling in
+     * {@link JunkFilterEncodingDetector} (per-script affine transform of
+     * z-scores to a common scale).
+     *
+     * <p>This test uses a real {@link JunkDetector} model (default
+     * constructor loads from classpath) on synthesized bytes — no corpus
+     * dependency.
+     */
+    @Test
+    public void koreanTextNotMisarbitragedToChinese() throws Exception {
+        Charset xwin949 = Charset.forName("x-windows-949");
+        Charset gb18030 = Charset.forName("GB18030");
+        // Real Korean text — enough characters that the HANGUL classifier
+        // has signal to work with after HTML strip would leave it alone
+        // (the bytes are pure non-HTML).
+        String korean = "초록샘 새벽교회 주일말씀 열린침례교회 한국교회";
+        byte[] bytes = korean.getBytes(xwin949);
+
+        // Note: GB18030 listed first so calibrated arbitration has to beat
+        // the insertion-order tiebreak to pick x-windows-949 — this also
+        // exercises the cross-script calibration directly.
+        ParseContext pc = contextWith(
+                new EncodingResult(gb18030, 1.0f, "GB18030",
+                        EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(xwin949, 1.0f, "x-windows-949",
+                        EncodingResult.ResultType.STATISTICAL));
+
+        JunkFilterEncodingDetector detector = new JunkFilterEncodingDetector();
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size(), "Expected exactly one result");
+            assertEquals(xwin949, out.get(0).getCharset(),
+                    "Korean text must arbitrate to x-windows-949, not GB18030. "
+                            + "Without calibrated rescaling, the HAN classifier's "
+                            + "permissive bias lets Chinese-gibberish decode "
+                            + "out-score correct HANGUL.");
+        }
+    }
+
     @Test
     void expandHtmlEntities_numericDecimalResolvesToCodepoint() {
         // U+0D4D = Malayalam Sign Virama

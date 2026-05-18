@@ -105,14 +105,6 @@ public class ZipParser extends AbstractArchiveParser {
     private static final Set<MediaType> SUPPORTED_TYPES = MediaType.set(ZIP, JAR);
 
     /**
-     * Minimum byte count we feed to the encoding detector when guessing the
-     * charset of a non-Unicode ZIP entry name. Short names (e.g., a few bytes
-     * of Shift_JIS) carry too little signal for statistical detectors; we
-     * cyclically repeat the bytes up to this length to stabilise detection.
-     */
-    private static final int MIN_BYTES_FOR_DETECTING_CHARSET = 100;
-
-    /**
      * Maximum number of entries to record in integrity check metadata fields.
      * Prevents excessive metadata in ZIPs with many discrepancies.
      */
@@ -565,25 +557,12 @@ public class ZipParser extends AbstractArchiveParser {
             return new String(entry.getRawName(), config.getEntryEncoding());
         }
 
-        // If charset detection is enabled, try to detect and decode
+        // If charset detection is enabled, try to detect and decode.
+        // Mojibuster handles short inputs natively (zip filenames are often
+        // 9-30 bytes); no byte-extension trick needed.
         if (config.isDetectCharsetsInEntryNames()) {
             byte[] entryName = entry.getRawName();
-            // Extend short entry names before detection: statistical detectors
-            // (e.g. UniversalEncodingDetector, Icu4j) need enough material to
-            // make a confident call. Cyclically repeat the bytes so the
-            // detector still sees the same byte distribution.
-            byte[] extendedEntryName = entryName;
-            if (entryName != null && 0 < entryName.length
-                    && entryName.length < MIN_BYTES_FOR_DETECTING_CHARSET) {
-                int len = entryName.length
-                        * (MIN_BYTES_FOR_DETECTING_CHARSET / entryName.length);
-                extendedEntryName = new byte[len];
-                for (int i = 0; i < len; i++) {
-                    extendedEntryName[i] = entryName[i % entryName.length];
-                }
-            }
-
-            try (TikaInputStream detectStream = TikaInputStream.get(extendedEntryName)) {
+            try (TikaInputStream detectStream = TikaInputStream.get(entryName)) {
                 List<EncodingResult> encResults =
                         getEncodingDetector().detect(detectStream, parentMetadata, context);
                 Charset candidate = encResults.isEmpty() ? null : encResults.get(0).getCharset();

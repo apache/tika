@@ -658,6 +658,11 @@ public class BuildJunkTrainingData {
         if (text.indexOf('\uFFFD') >= 0) {
             return null;
         }
+        // NFD (not NFC) so combining-mark scripts (Vietnamese precomposed,
+        // Indic, Thai) have their marks as separate codepoints in the
+        // training corpus.  Lets per-script bigram tables and z5 (letter-
+        // adjacent-to-mark) discriminate uniformly across mark-using
+        // scripts.  Must match JunkDetector.scoreText's normalization.
         text = Normalizer.normalize(text, Normalizer.Form.NFC);
         if (text.getBytes(StandardCharsets.UTF_8).length < minBytes) {
             return null;

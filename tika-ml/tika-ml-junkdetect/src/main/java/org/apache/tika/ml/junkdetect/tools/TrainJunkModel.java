@@ -24,19 +24,16 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.charset.UnsupportedCharsetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -127,8 +124,11 @@ import org.apache.tika.ml.junkdetect.V7Tables;
 public class TrainJunkModel {
 
     static final String MAGIC = "JUNKDET1";
-    /** Sole supported file-format version.  Matches JunkDetector.VERSION. */
-    static final byte VERSION = 7;
+    /** Current file-format version produced by this trainer.  v8 adds two
+     *  global calibrations (z5 letter-adjacent-to-mark, z6 replacement-char)
+     *  after the script-transition calibration and writes 6-feature LR
+     *  weights per script.  Matches {@link JunkDetector#VERSION}. */
+    static final byte VERSION = 13;
 
     // -----------------------------------------------------------------------
     // v7 model constants (per-script open-addressing codepoint-bigram tables)
@@ -156,25 +156,141 @@ public class TrainJunkModel {
     static final float CONTROL_BYTE_MIN_SIGMA = 0.005f;
 
     /**
-     * Codec pairs used to build wrong-codec remap tables for training.
-     * Each entry is {sourceCodec, wrongCodec}: text encoded in sourceCodec but
-     * decoded as wrongCodec.  Pairs within the same script family (e.g. CP1250↔CP1252)
-     * produce wrong-accent distortions that shift characters between Unicode blocks
-     * while staying in LATIN.  Cross-script pairs (CP1252↔CP1255) additionally change
-     * the Unicode script, which z4 also detects.
+     * Per-script extra positive-sample sources.  For each entry the trainer
+     * reads length-prefixed records from {@code file}, decodes under the
+     * declared {@code charset}, and adds the resulting Unicode strings to
+     * the per-script positive class at fraction {@code fraction} of the
+     * primary corpus.  Phase C of the JunkDetector cleanup uses this to
+     * augment the LATIN positive class with under-represented Central
+     * European and South-East Asian languages (Vietnamese, Polish, Czech,
+     * Baltic) sourced from the charset-detection training corpus.
      */
-    static final String[][] WRONG_CODEC_PAIRS = {
-        {"windows-1252", "windows-1250"}, // Western ↔ Central European (wrong accents)
-        {"windows-1250", "windows-1252"}, // reverse
-        {"windows-1252", "windows-1257"}, // Western ↔ Baltic (wrong accents)
-        {"windows-1257", "windows-1252"}, // reverse
-        {"windows-1252", "windows-1254"}, // Western ↔ Turkish (wrong accents)
-        {"windows-1251", "windows-1252"}, // Cyrillic → Latin (cross-script)
-        {"windows-1252", "windows-1251"}, // Latin → Cyrillic (cross-script)
-        {"windows-1253", "windows-1252"}, // Greek → Latin (cross-script)
-        {"windows-1252", "windows-1253"}, // Latin → Greek (cross-script)
-        {"windows-1255", "windows-1252"}, // Hebrew → Latin (cross-script)
-        {"windows-1252", "windows-1255"}, // Latin → Hebrew (the German vcard case)
+    static final Map<String, List<ExtraPositiveSource>> EXTRA_POSITIVE_SOURCES;
+
+    static {
+        Map<String, List<ExtraPositiveSource>> m = new LinkedHashMap<>();
+        Path charsetTrain = Paths.get(System.getProperty("user.home"),
+                "data", "charsets", "train");
+        // Fractions chosen small (0.04 / 0.04 / 0.02) to nudge bigram
+        // coverage without drowning out the primary LATIN corpus or
+        // collapsing per-script bias/discrimination on Western-Latin
+        // (English/Spanish/French) and Baltic test fixtures.  Initial
+        // larger fractions (0.15/0.10/0.05) helped Vietnamese but
+        // dropped LATIN bias from ~1.6 to ~0.4 and broke the cp1257
+        // Baltic discrimination test.
+        m.put("LATIN", List.of(
+                // Vietnamese (the deferred Phase C target).  windows-1258
+                // bytes decoded as windows-1258 give Unicode Vietnamese text
+                // that lifts the LATIN bigram model's Vietnamese coverage.
+                new ExtraPositiveSource(charsetTrain.resolve("windows-1258.bin.gz"),
+                        "windows-1258", 0.04),
+                // Central European (Polish, Czech, Slovak, Hungarian,
+                // Croatian) — similarly under-represented.
+                new ExtraPositiveSource(charsetTrain.resolve("windows-1250.bin.gz"),
+                        "windows-1250", 0.04),
+                // Baltic — modest boost for windows-1257 cohort coverage.
+                new ExtraPositiveSource(charsetTrain.resolve("windows-1257.bin.gz"),
+                        "windows-1257", 0.02)));
+        EXTRA_POSITIVE_SOURCES = Collections.unmodifiableMap(m);
+    }
+
+    static final class ExtraPositiveSource {
+        final Path file;
+        final String charsetName;
+        final double fraction;
+
+        ExtraPositiveSource(Path file, String charsetName, double fraction) {
+            this.file = file;
+            this.charsetName = charsetName;
+            this.fraction = fraction;
+        }
+    }
+
+    /**
+     * Full-text byte-level mojibake pairs used by {@link #byteLevelMojibake}.
+     * Each entry is {sourceCodec, wrongCodec}: training text gets encoded in
+     * sourceCodec, then the resulting bytes are re-decoded as wrongCodec to
+     * produce realistic mojibake.  Covers SBCS sibling confusion (1252↔1250,
+     * etc.), UTF-8 ↔ Latin (TIKA-4683), and CJK siblings (the GB18030↔EUC-JP
+     * cohort that was -14817 in the 29K eval).  For codec pairs that share
+     * an ASCII subset, ASCII-only training samples pass through unchanged
+     * (no-op corruption), so the list is safe to apply across all scripts.
+     */
+    static final String[][] BYTE_LEVEL_MOJIBAKE_PAIRS = {
+        // SBCS Western family
+        {"windows-1252", "windows-1250"},
+        {"windows-1250", "windows-1252"},
+        {"windows-1252", "windows-1257"},
+        {"windows-1257", "windows-1252"},
+        {"windows-1252", "windows-1254"},
+        {"ISO-8859-1", "windows-1252"},
+        {"windows-1252", "ISO-8859-1"},
+        {"x-MacRoman", "windows-1252"},
+        // SBCS Cyrillic / Greek / RTL
+        {"windows-1251", "windows-1252"},
+        {"windows-1252", "windows-1251"},
+        {"windows-1253", "windows-1252"},
+        {"windows-1252", "windows-1253"},
+        {"windows-1255", "windows-1252"},
+        {"windows-1252", "windows-1255"},
+        {"windows-1256", "windows-1252"},
+        // Polish ¶ emblem and Central European
+        {"ISO-8859-2", "windows-1250"},
+        {"windows-1250", "ISO-8859-2"},
+        {"ISO-8859-3", "windows-1250"},
+        // Vietnamese
+        {"windows-1258", "windows-1252"},
+        {"windows-1252", "windows-1258"},
+        // UTF-8 → Latin (TIKA-4683 / AIT5)
+        {"UTF-8",      "windows-1252"},
+        {"UTF-8",      "ISO-8859-1"},
+        // UTF-16 → various — bytes-as-UTF-16 produces dense CJK ideographs
+        // (the AIT5 / TIKA-4683 shape); included for HAN-classifier training
+        // against this cohort.
+        {"UTF-8",      "UTF-16LE"},
+        {"UTF-8",      "UTF-16BE"},
+        // CJK siblings
+        {"GB18030",    "EUC-JP"},
+        {"EUC-JP",     "GB18030"},        // reverse
+        {"GB18030",    "Shift_JIS"},      // CJK siblings
+        {"Shift_JIS",  "GB18030"},        // reverse
+        {"Big5-HKSCS", "GB18030"},        // CJK siblings
+        {"GB18030",    "Big5-HKSCS"},     // reverse
+        // Latin → CJK: the SPECIFIC pattern that produces our 66 wrong-CJK
+        // over-adoption cases.  Western European accents (0xC0-0xFE in
+        // windows-1252) are valid 2-byte CJK lead bytes; GB18030/Shift_JIS/etc
+        // decoders consume them as the lead of a multi-byte sequence, which
+        // (a) inserts singleton Han characters scattered through Latin text
+        // and (b) eats the byte after each accent.  Produces the
+        // long-Latin-with-singleton-HAN fragmentation that z9 measures.
+        // Without these pairs the LATIN classifier never sees this pattern
+        // in its negatives and the LR fits w9 = 0.
+        {"windows-1252", "GB18030"},
+        {"windows-1252", "Shift_JIS"},
+        {"windows-1252", "EUC-JP"},
+        {"windows-1252", "Big5-HKSCS"},
+        {"ISO-8859-1",   "GB18030"},
+        {"ISO-8859-1",   "Shift_JIS"},
+    };
+
+    /**
+     * Same pairs as the LATIN→CJK block above, but isolated for the
+     * sampling-boost in {@link #trainClassifierV7}.  When training the
+     * LATIN classifier, half of the case-2 (byte-level-mojibake) picks
+     * come from this subset rather than from the full pair list.
+     * Without the boost, LATIN→CJK pairs are ~6/54 = 11% of case-2,
+     * which translates to ~1.4% of all LATIN negatives — too rare to
+     * lift w9 (script-alternation ratio) above the L2 floor.  Boosting
+     * to 50% of case-2 = ~6% of all negatives gives the LR enough z9
+     * signal to fit a meaningful weight.
+     */
+    static final String[][] LATIN_TO_CJK_PAIRS = {
+        {"windows-1252", "GB18030"},
+        {"windows-1252", "Shift_JIS"},
+        {"windows-1252", "EUC-JP"},
+        {"windows-1252", "Big5-HKSCS"},
+        {"ISO-8859-1",   "GB18030"},
+        {"ISO-8859-1",   "Shift_JIS"},
     };
 
     /**
@@ -299,6 +415,10 @@ public class TrainJunkModel {
             t0 = System.currentTimeMillis();
             System.out.print("    Training named-block table...       ");
             float[] blockTable = trainBlockTable(trainFile);
+            // Round-trip through int8 quantization so the calibration sees
+            // the same precision the inference path will see (Phase F:
+            // eliminates train/infer drift on F2 dequantized lookups).
+            blockTable = quantizeDequantizeRoundTrip(blockTable);
             System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
 
             t0 = System.currentTimeMillis();
@@ -344,6 +464,9 @@ public class TrainJunkModel {
         t0 = System.currentTimeMillis();
         System.out.print("  Training script-transition table... ");
         float[] scriptTransTable = trainScriptTransitionTable(allTrainFiles, scriptBucketMap, numScriptBuckets);
+        // Round-trip through int8 quantization so calibration sees the
+        // values inference will see (Phase F: F4 is also stored quantized).
+        scriptTransTable = quantizeDequantizeRoundTrip(scriptTransTable);
         System.out.printf("done (%dms)%n", System.currentTimeMillis() - t0);
 
         t0 = System.currentTimeMillis();
@@ -353,24 +476,10 @@ public class TrainJunkModel {
         System.out.printf("done — mu=%.4f sigma=%.4f (%dms)%n",
                 scriptTransCal[0], scriptTransCal[1], System.currentTimeMillis() - t0);
 
-        t0 = System.currentTimeMillis();
-        System.out.print("  Collecting per-script codepoint pools... ");
-        Map<String, List<Integer>> scriptCodepoints = collectScriptCodepoints(allTrainFiles, 200);
-        System.out.printf("done — %d scripts (%dms)%n",
-                scriptCodepoints.size(), System.currentTimeMillis() - t0);
-
-        System.out.print("  Building wrong-codec remap tables...    ");
-        List<Map<Character, Character>> remapTables = new ArrayList<>();
-        for (String[] pair : WRONG_CODEC_PAIRS) {
-            Map<Character, Character> table = buildRemapTable(pair[0], pair[1]);
-            if (!table.isEmpty()) remapTables.add(table);
-        }
-        System.out.printf("%d tables built%n", remapTables.size());
-
         // -----------------------------------------------------------------------
-        // Phase 3 — per-script linear classifiers using v6 features
+        // Phase 3 — per-script linear classifiers (9 features: z1-z9)
         // -----------------------------------------------------------------------
-        System.out.println("\n--- Phase 3: per-script linear classifiers (z1,z2,z3,z4) ---");
+        System.out.println("\n--- Phase 3: per-script linear classifiers (z1..z9) ---");
         for (String script : f1Calibrations.keySet()) {
             Path trainFile = trainFilePaths.get(script);
             if (trainFile == null) {
@@ -379,21 +488,23 @@ public class TrainJunkModel {
             }
             t0 = System.currentTimeMillis();
             System.out.printf("  [%s] training classifier... ", script);
-            float[] weights = trainClassifierV7(trainFile,
+            float[] weights = trainClassifierV7(script, trainFile,
                     f1TablesByScript.get(script), f1Calibrations.get(script),
                     blockTables.get(script), blockCalibrations.get(script),
                     controlCalibrations.get(script),
-                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets,
-                    scriptCodepoints, remapTables);
+                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets);
             classifierWeights.put(script, weights);
-            System.out.printf("done — w=[%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
-                    weights[0], weights[1], weights[2], weights[3], weights[4],
+            System.out.printf(
+                    "done — w=[%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
+                    weights[0], weights[1], weights[2], weights[3],
+                    weights[4], weights[5], weights[6], weights[7], weights[8],
+                    weights[9],
                     System.currentTimeMillis() - t0);
         }
 
         System.out.printf("%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
                 f1Calibrations.size(), blockN, numScriptBuckets, output);
-        saveModelV7(f1TablesByScript, f1Calibrations,
+        saveModel(f1TablesByScript, f1Calibrations,
                   blockTables, blockCalibrations,
                   controlCalibrations, classifierWeights,
                   scriptBuckets, scriptTransTable, scriptTransCal,
@@ -510,7 +621,72 @@ public class TrainJunkModel {
             while (end < bytes.length && (bytes[end] & 0xC0) == 0x80) {
                 end++;
             }
-            result.add(new String(bytes, start, end - start, StandardCharsets.UTF_8));
+            String s = new String(bytes, start, end - start, StandardCharsets.UTF_8);
+            // NFD-normalize on read so calibration/training feature math
+            // matches JunkDetector.scoreText's NFD path.  On-disk corpus
+            // may be NFC (older builds of BuildJunkTrainingData); NFD is
+            // idempotent on already-NFD text.
+            s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC);
+            result.add(s);
+        }
+        return result;
+    }
+
+    /**
+     * Read length-prefixed binary records ({@code [u16-BE length][bytes]})
+     * from a gzipped file (the format used by {@code ~/data/charsets/train/})
+     * and sample {@code nSamples} substrings of varying length, decoded
+     * under {@code charset}.  Mirrors {@link #sampleSubstrings} but reads
+     * a different file format so the trainer can pull Vietnamese / Polish /
+     * Baltic positive samples from the charset-detection training corpus
+     * (Phase C: {@link #EXTRA_POSITIVE_SOURCES}).
+     */
+    static List<String> sampleBinaryRecords(Path file, Charset charset,
+                                            int nSamples, int[] lengths,
+                                            long seed) throws IOException {
+        List<byte[]> records = new ArrayList<>();
+        try (java.io.FileInputStream fis = new java.io.FileInputStream(file.toFile());
+             java.util.zip.GZIPInputStream gis = new java.util.zip.GZIPInputStream(fis);
+             java.io.DataInputStream dis = new java.io.DataInputStream(gis)) {
+            // Read up to 4000 records (plenty to sample from)
+            int cap = Math.max(nSamples * 4, 4000);
+            while (records.size() < cap) {
+                int len;
+                try {
+                    len = dis.readUnsignedShort();
+                } catch (java.io.EOFException eof) {
+                    break;
+                }
+                byte[] rec = new byte[len];
+                dis.readFully(rec);
+                if (rec.length >= 2) {
+                    records.add(rec);
+                }
+            }
+        }
+        if (records.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        Random rng = new Random(seed);
+        List<String> result = new ArrayList<>(nSamples);
+        for (int i = 0; i < nSamples; i++) {
+            byte[] rec = records.get(rng.nextInt(records.size()));
+            int targetLen = lengths[i % lengths.length];
+
+            String text;
+            if (rec.length <= targetLen) {
+                text = new String(rec, charset);
+            } else {
+                int start = rng.nextInt(rec.length - targetLen);
+                int end = Math.min(start + targetLen, rec.length);
+                text = new String(rec, start, end - start, charset);
+            }
+            // NFC + skip if effectively empty after decoding
+            text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+            if (!text.isEmpty()) {
+                result.add(text);
+            }
         }
         return result;
     }
@@ -567,23 +743,19 @@ public class TrainJunkModel {
     // -----------------------------------------------------------------------
 
     /**
-     * Trains a per-script binary logistic regression classifier on (z1, z2, z3, z4).
+     * Trains a per-script binary logistic regression classifier on
+     * 8 features (z1-z8).
      *
-     * <p>Clean examples: {@link #NUM_CLASSIFIER_SAMPLES} random dev windows (seed 100).
-     * Corrupted examples: same count, cycling through four distortions (seed 102):
-     * <ol>
-     *   <li>inject@5% control chars</li>
-     *   <li>char-shuffle</li>
-     *   <li>cross-script substitution — replaces ~5% of characters with codepoints from
-     *       foreign scripts, simulating charset encoding errors such as German umlauts
-     *       becoming Hebrew letters when CP1252 text is decoded as CP1255</li>
-     *   <li>wrong-codec remap — replaces ~5% of characters using a random pre-computed
-     *       charset remap table (e.g. CP1252→CP1250 for wrong accents, CP1252→CP1255
-     *       for script crossings), simulating real-world charset misdetection</li>
-     * </ol>
+     * <p>Clean examples: {@link #NUM_CLASSIFIER_SAMPLES} random dev windows
+     * (seed 100).  Corrupted examples: same count, cycling through eight
+     * realistic distortions (seed 102) covering charset mojibake (via full-
+     * text byte-level codec confusion), PDF/OCR junk (PUA injection,
+     * diacritic shedding, visual OCR substitutions, whitespace mangling,
+     * repeat-byte storms), RTL direction flip, and general structural
+     * corruption (control-byte injection, codepoint shuffle).
      *
-     * @param remapTables list of pre-built wrong-codec remap tables from {@link #buildRemapTable}
-     * @return float[5] = {w1, w2, w3, w4, bias} — classifier weights; positive logit = clean
+     * @return float[9] = {w1, w2, w3, w4, w5, w6, w7, w8, bias}
+     *         classifier weights; positive logit = clean.
      */
 
     // Per-feature z-score helpers (z2, z3, z4) for the classifier-training
@@ -629,6 +801,227 @@ public class TrainJunkModel {
             codepoints[j] = tmp;
         }
         return new String(codepoints, 0, codepoints.length);
+    }
+
+    /**
+     * Reverses the codepoint order of the text.  Models the PDF/OCR
+     * BiDi-direction-flip failure on RTL scripts (Arabic, Hebrew,
+     * Syriac, N'Ko, Thaana) where extraction tools sometimes emit
+     * runs in visual order rather than logical order — producing
+     * readable-looking-but-meaningless text.  Applied only when the
+     * dominant script is RTL; passthrough for LTR scripts.
+     */
+    static String reverseRtlText(String text) {
+        if (text.isEmpty()) return text;
+        Character.UnicodeScript dom = dominantScriptOf(text);
+        if (dom != Character.UnicodeScript.ARABIC
+                && dom != Character.UnicodeScript.HEBREW
+                && dom != Character.UnicodeScript.SYRIAC
+                && dom != Character.UnicodeScript.NKO
+                && dom != Character.UnicodeScript.THAANA) {
+            return text;
+        }
+        int[] cps = text.codePoints().toArray();
+        for (int i = 0, j = cps.length - 1; i < j; i++, j--) {
+            int tmp = cps[i];
+            cps[i] = cps[j];
+            cps[j] = tmp;
+        }
+        return new String(cps, 0, cps.length);
+    }
+
+    /**
+     * Injects codepoints from the Unicode Private Use Area
+     * (U+E000–U+F8FF) at the given rate.  Models PDF text extraction
+     * where a broken / missing cmap table emits blocks of PUA chars
+     * instead of real text — a common PDF-junk failure that
+     * JunkDetector should catch outside its charset-arbitration role.
+     */
+    static String injectPrivateUseAreaChars(String text, double rate, Random rng) {
+        if (text.isEmpty()) return text;
+        int[] codepoints = text.codePoints().toArray();
+        int puaSpan = 0xF8FF - 0xE000 + 1;
+        for (int i = 0; i < codepoints.length; i++) {
+            if (rng.nextDouble() < rate) {
+                codepoints[i] = 0xE000 + rng.nextInt(puaSpan);
+            }
+        }
+        return new String(codepoints, 0, codepoints.length);
+    }
+
+    /**
+     * Strips combining marks (Mn / Mc / Me categories) after NFD
+     * normalization.  Models the PDF/OCR pipeline that drops marks
+     * during extraction — Vietnamese / Arabic / Indic content gets
+     * stripped of its tone / vowel marks, which destroys meaning
+     * while leaving the base letters intact.  Also useful training
+     * signal for z5 (letter-adjacent-to-mark) since stripped text
+     * has z5 = 0.
+     */
+    static String shedDiacritics(String text) {
+        if (text.isEmpty()) return text;
+        String nfd = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFD);
+        StringBuilder sb = new StringBuilder(nfd.length());
+        for (int i = 0; i < nfd.length(); ) {
+            int cp = nfd.codePointAt(i);
+            i += Character.charCount(cp);
+            int type = Character.getType(cp);
+            if (type == Character.NON_SPACING_MARK
+                    || type == Character.COMBINING_SPACING_MARK
+                    || type == Character.ENCLOSING_MARK) {
+                continue;
+            }
+            sb.appendCodePoint(cp);
+        }
+        return sb.toString();
+    }
+
+    /** Visual OCR substitution pairs — pairs that confuse OCR
+     *  recognition: O↔0, 1↔l↔I, rn↔m, cl↔d, etc. */
+    private static final char[][] OCR_SUBS = {
+            {'O', '0'}, {'0', 'O'},
+            {'1', 'l'}, {'l', '1'},
+            {'I', 'l'}, {'l', 'I'},
+            {'S', '5'}, {'5', 'S'},
+            {'B', '8'}, {'8', 'B'},
+            {'Z', '2'}, {'2', 'Z'},
+            {'G', '6'}, {'6', 'G'},
+    };
+
+    /**
+     * Applies single-char OCR-confusion substitutions at the given
+     * rate.  Models OCR errors where visually-similar chars are
+     * misrecognised; doesn't change byte structure but corrupts the
+     * bigram distribution.
+     */
+    static String visualOcrSubstitutions(String text, double rate, Random rng) {
+        if (text.isEmpty()) return text;
+        StringBuilder sb = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (cp < 0x80 && rng.nextDouble() < rate) {
+                for (char[] pair : OCR_SUBS) {
+                    if (pair[0] == cp) {
+                        cp = pair[1];
+                        break;
+                    }
+                }
+            }
+            sb.appendCodePoint(cp);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Removes all whitespace from the text.  Models PDF columnar
+     * extraction that stitches words together without spaces.
+     */
+    static String collapseWhitespace(String text) {
+        if (text.isEmpty()) return text;
+        StringBuilder sb = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            if (!Character.isWhitespace(cp)) {
+                sb.appendCodePoint(cp);
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Injects random ASCII spaces inside the text at the given rate.
+     * Models PDF kerning bugs that fragment words with stray spaces.
+     */
+    static String inflateWhitespace(String text, double rate, Random rng) {
+        if (text.isEmpty()) return text;
+        StringBuilder sb = new StringBuilder((int) (text.length() * (1 + rate)));
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            sb.appendCodePoint(cp);
+            if (rng.nextDouble() < rate) {
+                sb.append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Picks a random codepoint and duplicates it 5–10 times in place.
+     * Models OCR sticky-character artifacts and scanner repeat-row
+     * bugs where a single glyph gets emitted as a run.
+     */
+    static String repeatByteStorm(String text, Random rng) {
+        if (text.isEmpty()) return text;
+        int[] cps = text.codePoints().toArray();
+        if (cps.length == 0) return text;
+        int target = rng.nextInt(cps.length);
+        int repeats = 5 + rng.nextInt(6);
+        StringBuilder sb = new StringBuilder(cps.length + repeats);
+        for (int i = 0; i < cps.length; i++) {
+            sb.appendCodePoint(cps[i]);
+            if (i == target) {
+                for (int r = 0; r < repeats; r++) {
+                    sb.appendCodePoint(cps[i]);
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    /** Dominant Unicode script of {@code text}, COMMON/INHERITED/UNKNOWN
+     *  excluded.  Used by {@link #reverseRtlText} to gate the corruption
+     *  on RTL scripts only. */
+    private static Character.UnicodeScript dominantScriptOf(String text) {
+        if (text == null || text.isEmpty()) {
+            return Character.UnicodeScript.COMMON;
+        }
+        Map<Character.UnicodeScript, Integer> counts = new HashMap<>();
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s != Character.UnicodeScript.COMMON
+                    && s != Character.UnicodeScript.INHERITED
+                    && s != Character.UnicodeScript.UNKNOWN) {
+                counts.merge(s, 1, Integer::sum);
+            }
+        }
+        return counts.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(Character.UnicodeScript.COMMON);
+    }
+
+    /**
+     * Full-text byte-level mojibake: encodes the text in {@code sourceCs}
+     * and decodes the resulting bytes as {@code wrongCs}.  ASCII-only text
+     * is unchanged for ASCII-superset codec pairs (UTF-8↔Latin-1,
+     * GB18030↔EUC-JP, etc.).  For non-ASCII content the result is the
+     * realistic mojibake pattern that production charset mis-detection
+     * produces.
+     *
+     * <p>Trains v8's z5 (letter-adjacent-to-mark) feature: real
+     * mark-using text has letters followed by combining marks; the
+     * mojibake decode loses all marks (they become precomposed Latin-1
+     * letters or replacement chars).  Also exercises z6 because the
+     * reinterpret typically introduces some U+FFFD on partial/invalid
+     * sequences.
+     *
+     * <p>Returns the input unchanged on encoder/decoder error (preserves
+     * positive training signal in those edge cases).
+     */
+    static String byteLevelMojibake(String text, String sourceCs, String wrongCs) {
+        if (text.isEmpty()) return text;
+        try {
+            byte[] bytes = text.getBytes(Charset.forName(sourceCs));
+            return new String(bytes, Charset.forName(wrongCs));
+        } catch (IllegalArgumentException e) {
+            // Covers UnsupportedCharsetException + IllegalCharsetNameException
+            return text;
+        }
     }
 
     /**
@@ -740,7 +1133,7 @@ public class TrainJunkModel {
      * </ol>
      *
      * <p>Returned {@link V7Tables} are ready to hand to
-     * {@link #saveModelV7}.
+     * {@link #saveModel}.
      *
      * @param trainFile         the per-script {@code *.train.gz}
      * @param minBigramCount    drop pairs whose count is below this
@@ -957,6 +1350,10 @@ public class TrainJunkModel {
                                       float[] scriptTransTable, float[] scriptTransCal,
                                       Map<String, Integer> scriptBucketMap,
                                       int numScriptBuckets) {
+        // NFD-normalize defensively — corruption modes (utf8AsWindows1252-
+        // Mojibake, etc.) produce text in whatever form the encoder yields.
+        // Matches JunkDetector.scoreText / scoreWithFeatureComponents.
+        window = java.text.Normalizer.normalize(window, java.text.Normalizer.Form.NFC);
         byte[] utf8 = window.getBytes(StandardCharsets.UTF_8);
 
         // z1: per-script codepoint-bigram mean log-prob
@@ -974,53 +1371,159 @@ public class TrainJunkModel {
                 .computeZ4ScriptTransition(window, scriptTransTable, scriptTransCal,
                         scriptBucketMap, numScriptBuckets);
 
-        return new float[]{z1, z2, z3, z4};
+        // z5: letter-adjacent-to-mark ratio.  Raw [0,1] — high for
+        // mark-using scripts in correct decode, ~0 for mojibake.  LR
+        // weight absorbs scale; non-negativity → positive contribution.
+        double rawZ5 = org.apache.tika.ml.junkdetect.TextQualityFeatures
+                .letterAdjacentToMarkRatio(window);
+        float z5 = Double.isNaN(rawZ5) ? 0f : (float) rawZ5;
+
+        // z6: 1 - replacement-character ratio (high for clean text, low
+        // when the decode produced U+FFFD).  Flipped so the LR's
+        // non-negativity puts positive weight on it.
+        double rawZ6 = org.apache.tika.ml.junkdetect.TextQualityFeatures
+                .replacementRatio(window);
+        float z6 = Double.isNaN(rawZ6) ? 1f : 1f - (float) rawZ6;
+
+        // z7: script density — fraction of codepoints in any script
+        // (non-COMMON/INHERITED/UNKNOWN).  Pure-whitespace / pure-digit
+        // text scores 0.  High = script-bearing content (positive signal).
+        double rawZ7 = org.apache.tika.ml.junkdetect.TextQualityFeatures
+                .scriptDensity(window);
+        float z7 = Double.isNaN(rawZ7) ? 0f : (float) rawZ7;
+
+        // z8: script coherence = 1 - fragmentation.  High = one coherent
+        // script run; low = script-salad mojibake.  Flipped so positive
+        // weight in LR means "more coherent → cleaner."
+        double rawZ8 = org.apache.tika.ml.junkdetect.TextQualityFeatures
+                .scriptFragmentation(window);
+        float z8 = Double.isNaN(rawZ8) ? 1f : 1f - (float) rawZ8;
+
+        // z9: scriptAlternationRatio = transitions / (2 * min(N_dom, N_foreign)).
+        // Length- and proportion-invariant.  Catches LATIN→CJK mojibake
+        // (every accent becomes a singleton Han → maximally alternating).
+        // Clean text and clumped real mixed-script both score near 0.
+        // Sign flipped so high alternation = junky = negative z9; LR fits
+        // positive weight where "low alternation → cleaner."
+        double rawZ9 = org.apache.tika.ml.junkdetect.TextQualityFeatures
+                .scriptAlternationRatio(window);
+        float z9 = Double.isNaN(rawZ9) ? 0f : -(float) rawZ9;
+
+        return new float[]{z1, z2, z3, z4, z5, z6, z7, z8, z9};
     }
 
     /**
      * Trains a per-script binary logistic regression classifier on
-     * (z1_cpHash, z2, z3, z4).  Same scaffolding as the v6 trainer
+     * (z1_cpHash, z2, z3, z4, z5, z6).  Same scaffolding as the v6/v7
+     * trainer
      * (sample windows, corrupt half, fit LR, bias-calibrate on short
      * windows) but uses v7 per-script F1 tables.
      */
-    static float[] trainClassifierV7(Path devGz,
+    static float[] trainClassifierV7(String script,
+                                      Path devGz,
                                       V7Tables tables, float[] f1Cal,
                                       float[] blockTable, float[] blockCal,
                                       float[] controlCal,
                                       float[] scriptTransTable, float[] scriptTransCal,
-                                      Map<String, Integer> scriptBucketMap, int numScriptBuckets,
-                                      Map<String, List<Integer>> scriptCodepoints,
-                                      List<Map<Character, Character>> remapTables)
+                                      Map<String, Integer> scriptBucketMap, int numScriptBuckets)
             throws IOException {
         int nEach = NUM_CLASSIFIER_SAMPLES;
 
-        List<String> cleanWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 100);
+        List<String> cleanWindows = new ArrayList<>(
+                sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 100));
+
+        // Phase C: augment per-script positive samples from EXTRA_POSITIVE_SOURCES.
+        // For LATIN this pulls in Vietnamese / Polish / Baltic content
+        // sourced from the charset-detection training corpus, fixing the
+        // under-representation that caused Vietnamese and Polish-¶
+        // cohort regressions in the cc-html-29k eval.
+        List<ExtraPositiveSource> extras = EXTRA_POSITIVE_SOURCES.get(script);
+        if (extras != null) {
+            int seed = 110;
+            for (ExtraPositiveSource src : extras) {
+                if (!Files.isReadable(src.file)) {
+                    System.out.printf("%n    EXTRA %s: file unreadable, skipping%n", src.file);
+                    continue;
+                }
+                int nExtra = (int) Math.round(nEach * src.fraction);
+                List<String> extraWindows = sampleBinaryRecords(
+                        src.file, Charset.forName(src.charsetName),
+                        nExtra, CALIB_LENGTHS, seed++);
+                cleanWindows.addAll(extraWindows);
+                System.out.printf("%n    EXTRA %s (%s, fraction=%.2f): +%d positive samples",
+                        src.file.getFileName(), src.charsetName, src.fraction,
+                        extraWindows.size());
+            }
+        }
 
         List<String> baseWindows = sampleSubstrings(devGz, nEach, CALIB_LENGTHS, 101);
         Random rng = new Random(102);
         List<String> corruptedWindows = new ArrayList<>(nEach);
+        // Corruption mix — 9-way rotation, all realistic real-world failures:
+        //  0: random control bytes (universal binary-garbage signal)
+        //  1: codepoint shuffle (general structural corruption)
+        //  2: full-text byte-level mojibake (random pair — primary mode)
+        //  3: reverse RTL text (PDF/OCR BiDi-flip on Arabic/Hebrew/etc.)
+        //  4: PUA injection (PDF cmap garbage)
+        //  5: diacritic shedding (OCR/PDF mark-loss)
+        //  6: visual OCR substitutions (O↔0, l↔1, etc.)
+        //  7: whitespace mangle (PDF columnar/kerning) + repeat-byte storm
+        //     alternated per-window
+        //  8: LATIN→CJK byte-level mojibake (for LATIN script only — drives
+        //     z9 / z4 / z8 signal for the 66-file wrong-CJK over-adoption
+        //     failure mode; for other scripts, falls back to random
+        //     byte-level mojibake to avoid crowding any single mode).
         for (int i = 0; i < baseWindows.size(); i++) {
             String w = baseWindows.get(i);
-            switch (i % 4) {
+            switch (i % 9) {
                 case 0:
                     corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
                     break;
                 case 1:
                     corruptedWindows.add(shuffleChars(w, rng));
                     break;
-                case 2:
-                    corruptedWindows.add(injectCrossScriptChars(w, CLASSIFIER_INJECT_RATE, rng,
-                            scriptCodepoints));
+                case 2: {
+                    String[] pair = BYTE_LEVEL_MOJIBAKE_PAIRS[
+                            rng.nextInt(BYTE_LEVEL_MOJIBAKE_PAIRS.length)];
+                    corruptedWindows.add(byteLevelMojibake(w, pair[0], pair[1]));
                     break;
-                default:
-                    if (!remapTables.isEmpty()) {
-                        Map<Character, Character> table =
-                                remapTables.get(rng.nextInt(remapTables.size()));
-                        corruptedWindows.add(wrongCodecRemap(w, table, CLASSIFIER_INJECT_RATE, rng));
+                }
+                case 3:
+                    corruptedWindows.add(reverseRtlText(w));
+                    break;
+                case 4:
+                    corruptedWindows.add(injectPrivateUseAreaChars(w, 0.10, rng));
+                    break;
+                case 5:
+                    corruptedWindows.add(shedDiacritics(w));
+                    break;
+                case 6:
+                    corruptedWindows.add(visualOcrSubstitutions(w, 0.05, rng));
+                    break;
+                case 7:
+                    if (rng.nextBoolean()) {
+                        if (rng.nextBoolean()) {
+                            corruptedWindows.add(collapseWhitespace(w));
+                        } else {
+                            corruptedWindows.add(inflateWhitespace(w, 0.10, rng));
+                        }
                     } else {
-                        corruptedWindows.add(injectControlChars(w, CLASSIFIER_INJECT_RATE, rng));
+                        corruptedWindows.add(repeatByteStorm(w, rng));
                     }
                     break;
+                default: {
+                    // Case 8: dedicated LATIN→CJK slot.  For LATIN script,
+                    // produces the long-Latin-with-singleton-HAN pattern
+                    // that z9 measures.  For other scripts, fall back to
+                    // a random byte-level mojibake pair so we don't waste
+                    // the slot.
+                    String[] pair = "LATIN".equals(script)
+                            ? LATIN_TO_CJK_PAIRS[rng.nextInt(LATIN_TO_CJK_PAIRS.length)]
+                            : BYTE_LEVEL_MOJIBAKE_PAIRS[
+                                    rng.nextInt(BYTE_LEVEL_MOJIBAKE_PAIRS.length)];
+                    corruptedWindows.add(byteLevelMojibake(w, pair[0], pair[1]));
+                    break;
+                }
             }
         }
 
@@ -1040,7 +1543,7 @@ public class TrainJunkModel {
             labels.add(0);
         }
 
-        float[] weights = fitLogisticRegression(features, labels, 4);
+        float[] weights = fitLogisticRegression(features, labels, 9);
 
         // Bias calibration on short windows so FPR ≤ 2.5% at worst-case length.
         List<String> shortWindows = sampleSubstrings(devGz, nEach, new int[]{15}, 200);
@@ -1065,27 +1568,23 @@ public class TrainJunkModel {
     }
 
     /**
-     * Writes a v7 model file (JUNKDET1 version=7 gzipped binary).
-     *
-     * <p>Layout vs. v6: no global F1+Bloom section.  Each per-script
-     * section embeds that script's {@link V7Tables} (codepoint index,
-     * open-addressing bigram keys+values, unigram table) directly after
-     * its F1 calibration, before F2.  See {@link JunkDetector#load} for
-     * the full layout spec.
-     *
-     * <p>F2 (block transition), F3 (control byte), F4 (script transition)
-     * sections are unchanged from v6.
+     * Writes a model file in the current binary format.  Layout: gzip
+     * envelope around {@code JUNKDET1} magic + {@link #VERSION} byte +
+     * global script-transition section + z5/z6 calibrations + per-script
+     * sections (F1 tables, F2 block transitions, F3 control calibration,
+     * 7-element LR weight vector = 6 weights + bias).  See
+     * {@link JunkDetector#load} for the load-side spec.
      */
-    public static void saveModelV7(TreeMap<String, V7Tables> f1Tables,
-                                   TreeMap<String, float[]> f1Calibrations,
-                                   TreeMap<String, float[]> blockTables,
-                                   TreeMap<String, float[]> blockCalibrations,
-                                   TreeMap<String, float[]> controlCalibrations,
-                                   TreeMap<String, float[]> classifierWeights,
-                                   List<String> scriptBuckets,
-                                   float[] scriptTransTable,
-                                   float[] scriptTransCal,
-                                   Path output) throws IOException {
+    public static void saveModel(TreeMap<String, V7Tables> f1Tables,
+                                 TreeMap<String, float[]> f1Calibrations,
+                                 TreeMap<String, float[]> blockTables,
+                                 TreeMap<String, float[]> blockCalibrations,
+                                 TreeMap<String, float[]> controlCalibrations,
+                                 TreeMap<String, float[]> classifierWeights,
+                                 List<String> scriptBuckets,
+                                 float[] scriptTransTable,
+                                 float[] scriptTransCal,
+                                 Path output) throws IOException {
         try (DataOutputStream dos = new DataOutputStream(
                 new GZIPOutputStream(Files.newOutputStream(output)))) {
 
@@ -1106,9 +1605,29 @@ public class TrainJunkModel {
                 dos.writeShort(nameBytes.length);
                 dos.write(nameBytes);
             }
-            dos.write(toBytes(scriptTransTable));
+            // F4 script-transition table — Phase F int16 quantized.
+            // Layout: [float min][float max][numBuckets² × 2 bytes BE].
+            QuantizedShorts qScriptTrans = quantizeToShorts(scriptTransTable);
+            dos.writeFloat(qScriptTrans.min);
+            dos.writeFloat(qScriptTrans.max);
+            for (short s : qScriptTrans.shorts) {
+                dos.writeShort(s);
+            }
             dos.writeFloat(scriptTransCal[0]);
             dos.writeFloat(scriptTransCal[1]);
+
+            // Three document-level calibrations:
+            //   z5 (letter-adjacent-to-mark): pass-through (mu=0, sigma=1)
+            //   z6 (replacement-ratio): mu=1, sigma=1 so inference returns 1-raw
+            //   z9 (scriptRunDensity): pass-through with flip — mu=0, sigma=1
+            //       so inference returns -raw (high density = junky = negative).
+            //   Training extractor mirrors each flip.  LR weight absorbs scale.
+            dos.writeFloat(0f); // z5 mu
+            dos.writeFloat(1f); // z5 sigma
+            dos.writeFloat(1f); // z6 mu  (so inference returns 1 - raw)
+            dos.writeFloat(1f); // z6 sigma
+            dos.writeFloat(0f); // z9 mu  (so inference returns -raw)
+            dos.writeFloat(1f); // z9 sigma
 
             // Per-script sections.  V7 embeds the F1 tables inline.
             int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
@@ -1123,7 +1642,8 @@ public class TrainJunkModel {
                 float[] blockCal   = blockCalibrations.getOrDefault(script, new float[]{0f, 1f});
                 float[] controlCal = controlCalibrations.getOrDefault(script, new float[]{0f, 1f});
                 float[] weights    = classifierWeights.getOrDefault(script,
-                        new float[]{1f / 4, 1f / 4, 1f / 4, 1f / 4, 0f});
+                        new float[]{1f / 9, 1f / 9, 1f / 9, 1f / 9, 1f / 9,
+                                    1f / 9, 1f / 9, 1f / 9, 1f / 9, 0f});
 
                 byte[] nameBytes = script.getBytes(StandardCharsets.UTF_8);
                 dos.writeShort(nameBytes.length);
@@ -1136,10 +1656,16 @@ public class TrainJunkModel {
                 // F1 per-script tables
                 tables.writeTo(dos);
 
-                // F2 — block transitions
+                // F2 — block transitions (Phase F int16 quantized).
+                // Layout: [calMu][calSigma][float min][float max][blockN² × 2 bytes BE].
                 dos.writeFloat(blockCal[0]);
                 dos.writeFloat(blockCal[1]);
-                dos.write(toBytes(blockTable));
+                QuantizedShorts qBlock = quantizeToShorts(blockTable);
+                dos.writeFloat(qBlock.min);
+                dos.writeFloat(qBlock.max);
+                for (short s : qBlock.shorts) {
+                    dos.writeShort(s);
+                }
 
                 // F3 — control-byte calibration
                 dos.writeFloat(controlCal[0]);
@@ -1165,6 +1691,63 @@ public class TrainJunkModel {
      *
      * @return three-element record: byte[] quantized, float min, float max
      */
+    /**
+     * Quantize a float[] to int16 and dequantize back, returning a new
+     * float[] with the int16-precision values.  Used at training time
+     * so downstream calibration (mu, sigma) is computed on values the
+     * inference path will actually see.  Eliminates the train/infer
+     * drift that v13's first attempt at Phase F exhibited.  65536
+     * levels keep ~0.0002 nats/level resolution, essentially lossless
+     * for our [-15, -1] log-prob range.
+     */
+    public static float[] quantizeDequantizeRoundTrip(float[] in) {
+        QuantizedShorts q = quantizeToShorts(in);
+        float scale = (q.max - q.min) / 65535f;
+        float[] out = new float[in.length];
+        for (int i = 0; i < in.length; i++) {
+            int s = q.shorts[i] & 0xFFFF;
+            out[i] = q.min + s * scale;
+        }
+        return out;
+    }
+
+    /** int16 (unsigned 0-65535) quantization of a float[].  Linear
+     *  mapping {@code [min, max] → [0, 65535]}. */
+    public static QuantizedShorts quantizeToShorts(float[] in) {
+        float min = Float.POSITIVE_INFINITY;
+        float max = Float.NEGATIVE_INFINITY;
+        for (float v : in) {
+            if (Float.isFinite(v)) {
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+        if (!Float.isFinite(min) || !Float.isFinite(max) || max == min) {
+            return new QuantizedShorts(new short[in.length], 0f, 1f);
+        }
+        float scale = 65535f / (max - min);
+        short[] out = new short[in.length];
+        for (int i = 0; i < in.length; i++) {
+            float v = in[i];
+            int q = Math.round((v - min) * scale);
+            if (q < 0) q = 0;
+            if (q > 65535) q = 65535;
+            out[i] = (short) q;
+        }
+        return new QuantizedShorts(out, min, max);
+    }
+
+    public static final class QuantizedShorts {
+        public final short[] shorts;
+        public final float min;
+        public final float max;
+        public QuantizedShorts(short[] shorts, float min, float max) {
+            this.shorts = shorts;
+            this.min = min;
+            this.max = max;
+        }
+    }
+
     public static QuantizedFloats quantizeFloats(float[] in) {
         float min = Float.POSITIVE_INFINITY;
         float max = Float.NEGATIVE_INFINITY;
@@ -1361,30 +1944,54 @@ public class TrainJunkModel {
         return count > 0 ? sum / count : Double.NaN;
     }
 
+
+    // -----------------------------------------------------------------------
+    // Eval-tooling helpers — used by {@link EvalJunkDetector} for the
+    // synthetic-corruption eval matrix.  No longer used by classifier
+    // training (Phase E replaced wrongCodecRemap with full-text
+    // byteLevelMojibake from BYTE_LEVEL_MOJIBAKE_PAIRS).
+    // -----------------------------------------------------------------------
+
     /**
-     * Builds a character→character remap table for a (sourceCodec, wrongCodec) pair.
-     * For every byte 0x80–0xFF, if the two codecs decode it to different characters
-     * (and neither produces the replacement character U+FFFD), the source character
-     * maps to the wrong-codec character.
-     *
-     * <p>Returns an empty map if either codec is unavailable on this JVM.
+     * Legacy codec pairs for the synthetic char-level remap eval mode.
+     * Production training uses {@link #BYTE_LEVEL_MOJIBAKE_PAIRS} instead.
+     */
+    static final String[][] WRONG_CODEC_PAIRS = {
+        {"windows-1252", "windows-1250"},
+        {"windows-1250", "windows-1252"},
+        {"windows-1252", "windows-1257"},
+        {"windows-1257", "windows-1252"},
+        {"windows-1251", "windows-1252"},
+        {"windows-1252", "windows-1251"},
+        {"windows-1253", "windows-1252"},
+        {"windows-1255", "windows-1252"},
+        {"ISO-8859-2", "windows-1250"},
+        {"ISO-8859-1", "windows-1252"},
+        {"windows-1258", "windows-1252"},
+    };
+
+    /**
+     * Build a char→char remap table for a single-byte (sourceCodec,
+     * wrongCodec) pair.  Used by {@link EvalJunkDetector}'s synthetic
+     * eval; not used by training (full-text {@link #byteLevelMojibake}
+     * is more realistic).
      */
     static Map<Character, Character> buildRemapTable(String sourceCodec, String wrongCodec) {
         Charset src, wrong;
         try {
-            src  = Charset.forName(sourceCodec);
+            src = Charset.forName(sourceCodec);
             wrong = Charset.forName(wrongCodec);
-        } catch (UnsupportedCharsetException e) {
+        } catch (IllegalArgumentException e) {
             return Collections.emptyMap();
         }
         Map<Character, Character> table = new HashMap<>();
         byte[] singleByte = new byte[1];
         for (int b = 0x80; b <= 0xFF; b++) {
             singleByte[0] = (byte) b;
-            String fromSrc  = new String(singleByte, src);
+            String fromSrc = new String(singleByte, src);
             String fromWrong = new String(singleByte, wrong);
             if (fromSrc.length() == 1 && fromWrong.length() == 1
-                    && fromSrc.charAt(0) != '\uFFFD' && fromWrong.charAt(0) != '\uFFFD'
+                    && fromSrc.charAt(0) != '�' && fromWrong.charAt(0) != '�'
                     && fromSrc.charAt(0) != fromWrong.charAt(0)) {
                 table.put(fromSrc.charAt(0), fromWrong.charAt(0));
             }
@@ -1393,15 +2000,8 @@ public class TrainJunkModel {
     }
 
     /**
-     * Replaces characters using a pre-computed wrong-codec remap table, simulating
-     * the effect of encoding text in one charset and decoding it in another.
-     * Only characters present in the remap table are candidates for replacement.
-     *
-     * <p>This produces realistic mojibake: German umlauts becoming Hebrew letters,
-     * Polish characters becoming Western accents, Cyrillic becoming Latin symbols, etc.
-     *
-     * @param remapTable source-char → wrong-char substitution table (from {@link #buildRemapTable})
-     * @param rate       fraction of remappable characters to replace [0, 1]
+     * Stochastic char-level codec remap.  See {@link #buildRemapTable}.
+     * Eval-only.
      */
     static String wrongCodecRemap(String text, Map<Character, Character> remapTable,
                                    double rate, Random rng) {
@@ -1415,96 +2015,6 @@ public class TrainJunkModel {
                 if (replacement != null) {
                     codepoints[i] = replacement;
                 }
-            }
-        }
-        return new String(codepoints, 0, codepoints.length);
-    }
-
-    /**
-     * Collects a sample of codepoints from each raw {@link Character.UnicodeScript}
-     * found across all training files.  Used to build the foreign-script codepoint
-     * pools for the cross-script substitution distortion.
-     *
-     * @param maxPerScript maximum distinct codepoints to collect per script
-     * @return map from raw UnicodeScript name → list of sampled codepoints
-     */
-    static Map<String, List<Integer>> collectScriptCodepoints(List<Path> trainFiles,
-                                                               int maxPerScript)
-            throws IOException {
-        Map<String, Set<Integer>> collected = new HashMap<>();
-        for (Path trainFile : trainFiles) {
-            try (BufferedReader r = openGzipped(trainFile)) {
-                String line;
-                while ((line = r.readLine()) != null) {
-                    for (int i = 0; i < line.length(); ) {
-                        int cp = line.codePointAt(i);
-                        i += Character.charCount(cp);
-                        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
-                        if (s == Character.UnicodeScript.COMMON
-                                || s == Character.UnicodeScript.INHERITED
-                                || s == Character.UnicodeScript.UNKNOWN) {
-                            continue;
-                        }
-                        Set<Integer> pool = collected.computeIfAbsent(
-                                s.name(), k -> new HashSet<>());
-                        if (pool.size() < maxPerScript) {
-                            pool.add(cp);
-                        }
-                    }
-                }
-            }
-        }
-        Map<String, List<Integer>> result = new HashMap<>(collected.size() * 2);
-        for (Map.Entry<String, Set<Integer>> e : collected.entrySet()) {
-            result.put(e.getKey(), new ArrayList<>(e.getValue()));
-        }
-        return result;
-    }
-
-    /**
-     * Replaces a random fraction of characters with codepoints drawn from scripts
-     * that do NOT appear in the source text.  Simulates real-world charset encoding
-     * errors where accented characters in one script are misread as characters from
-     * a completely different script — e.g., German umlauts (ä, ö, ü) becoming
-     * Hebrew letters when CP1252-encoded text is decoded as CP1255.
-     *
-     * @param rate            fraction of characters to replace [0, 1]
-     * @param scriptCodepoints map from raw UnicodeScript name → pool of codepoints
-     */
-    static String injectCrossScriptChars(String text, double rate, Random rng,
-                                          Map<String, List<Integer>> scriptCodepoints) {
-        if (text.isEmpty() || scriptCodepoints.isEmpty()) {
-            return text;
-        }
-
-        // Identify which scripts appear in the source text
-        Set<String> sourceScripts = new HashSet<>();
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
-            if (s != Character.UnicodeScript.COMMON
-                    && s != Character.UnicodeScript.INHERITED
-                    && s != Character.UnicodeScript.UNKNOWN) {
-                sourceScripts.add(s.name());
-            }
-        }
-
-        // Build pool of codepoints from all other scripts
-        List<Integer> foreignPool = new ArrayList<>();
-        for (Map.Entry<String, List<Integer>> e : scriptCodepoints.entrySet()) {
-            if (!sourceScripts.contains(e.getKey())) {
-                foreignPool.addAll(e.getValue());
-            }
-        }
-        if (foreignPool.isEmpty()) {
-            return text;
-        }
-
-        int[] codepoints = text.codePoints().toArray();
-        for (int i = 0; i < codepoints.length; i++) {
-            if (rng.nextDouble() < rate) {
-                codepoints[i] = foreignPool.get(rng.nextInt(foreignPool.size()));
             }
         }
         return new String(codepoints, 0, codepoints.length);

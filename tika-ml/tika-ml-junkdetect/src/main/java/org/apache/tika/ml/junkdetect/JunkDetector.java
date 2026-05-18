@@ -91,8 +91,11 @@ public final class JunkDetector implements TextQualityDetector {
             "org/apache/tika/ml/junkdetect/junkdetect.bin";
 
     static final String MAGIC = "JUNKDET1";
-    /** Sole supported file-format version.  Mismatch is a hard error. */
-    static final int VERSION = 7;
+    /** Sole supported file-format version.  Mismatch is a hard error —
+     *  prior versions live in git history and are not loadable by this
+     *  build.  We deliberately don't keep dual-version paths so it's
+     *  impossible to confuse model versions. */
+    static final int VERSION = 13;
 
     // Feature 1 — per-script open-addressed codepoint-bigram tables.
     // No global Bloom: empty-slot is the membership oracle.
@@ -101,17 +104,23 @@ public final class JunkDetector implements TextQualityDetector {
     /** Per-script F1 calibration on the codepoint-hash mean log-prob. */
     private final Map<String, float[]> calibrations; // script → float[2] {mu, sigma}
 
-    // Feature 2 — per-script block transition.  Block bucketing uses the
-    // JVM-independent {@link UnicodeBlockRanges} static table; table size
-    // per script is {@code bucketCount()²} floats.
-    private final Map<String, float[]> blockTables;
+    // Feature 2 — per-script block transition.  Phase F: int16 quantized
+    // in storage AND in memory (~230 KB per script vs ~460 KB float32
+    // form, 65536 levels keep ~0.0002 nats/level resolution — essentially
+    // lossless for our [-15, -1] log-prob range).  Dequantize at lookup
+    // via {@code min + (s/65535) * (max - min)} where s is the unsigned
+    // 16-bit value.
+    private final Map<String, short[]> blockTables;
+    private final Map<String, float[]> blockTableQuant; // {min, max}
     private final Map<String, float[]> blockCalibrations;
 
     // Feature 3 — per-script control-byte fraction calibration
     private final Map<String, float[]> controlCalibrations;
 
-    // Feature 4 — single global script-transition table
-    private final float[] scriptTransitionTable;
+    // Feature 4 — single global script-transition table (Phase F: int16
+    // quantized; tiny win, free with same machinery as F2).
+    private final short[] scriptTransitionTable;
+    private final float[] scriptTransitionTableQuant; // {min, max}
     private final float[] scriptTransitionCalibration;
     private final Map<String, Integer> scriptBucketIndex;
     private final int numScriptBuckets;
@@ -119,26 +128,49 @@ public final class JunkDetector implements TextQualityDetector {
     // Per-script linear classifier: float[numFeatures+1] = {w1, ..., wN, bias}.
     private final Map<String, float[]> classifierWeights;
 
+    /** Document-level z5 calibration {mu, sigma}. */
+    private final float[] z5Calibration;
+    /** Document-level z6 calibration {mu, sigma}. */
+    private final float[] z6Calibration;
+    /** Document-level z9 calibration {mu, sigma}.  z9 = scriptAlternationRatio:
+     *  transitions between dominant and foreign script, normalized by max
+     *  possible transitions given the counts.  Length- and proportion-
+     *  invariant.  Catches the mojibake-of-Latin-as-CJK pattern: scattered
+     *  singleton Han chars in Latin text score near 1.0 (max alternation),
+     *  while legitimate mixed-script (English with embedded Chinese phrase)
+     *  scores low because the foreign script clumps together. */
+    private final float[] z9Calibration;
+
     private JunkDetector(Map<String, float[]> calibrations,
-                         Map<String, float[]> blockTables,
+                         Map<String, short[]> blockTables,
+                         Map<String, float[]> blockTableQuant,
                          Map<String, float[]> blockCalibrations,
                          Map<String, float[]> controlCalibrations,
                          Map<String, float[]> classifierWeights,
-                         float[] scriptTransitionTable,
+                         short[] scriptTransitionTable,
+                         float[] scriptTransitionTableQuant,
                          float[] scriptTransitionCalibration,
                          Map<String, Integer> scriptBucketIndex,
                          int numScriptBuckets,
-                         Map<String, V7Tables> f1TablesByScript) {
+                         Map<String, V7Tables> f1TablesByScript,
+                         float[] z5Calibration,
+                         float[] z6Calibration,
+                         float[] z9Calibration) {
         this.calibrations = Collections.unmodifiableMap(calibrations);
         this.blockTables = Collections.unmodifiableMap(blockTables);
+        this.blockTableQuant = Collections.unmodifiableMap(blockTableQuant);
         this.blockCalibrations = Collections.unmodifiableMap(blockCalibrations);
         this.controlCalibrations = Collections.unmodifiableMap(controlCalibrations);
         this.classifierWeights = Collections.unmodifiableMap(classifierWeights);
         this.scriptTransitionTable = scriptTransitionTable;
+        this.scriptTransitionTableQuant = scriptTransitionTableQuant;
         this.scriptTransitionCalibration = scriptTransitionCalibration;
         this.scriptBucketIndex = Collections.unmodifiableMap(scriptBucketIndex);
         this.numScriptBuckets = numScriptBuckets;
         this.f1TablesByScript = Collections.unmodifiableMap(f1TablesByScript);
+        this.z5Calibration = z5Calibration;
+        this.z6Calibration = z6Calibration;
+        this.z9Calibration = z9Calibration;
     }
 
     // -----------------------------------------------------------------------
@@ -281,12 +313,29 @@ public final class JunkDetector implements TextQualityDetector {
                 String bucketName = new String(dis.readNBytes(nameLen), StandardCharsets.UTF_8);
                 scriptBucketIndex.put(bucketName, i);
             }
-            float[] scriptTransitionTable = readFloatTable(dis, numScriptBuckets * numScriptBuckets);
+            // F4 script-transition table: v12 stores int16-quantized.
+            // Layout: [float min][float max][numScriptBuckets² × 2 bytes BE].
+            float scriptTransMin = dis.readFloat();
+            float scriptTransMax = dis.readFloat();
+            short[] scriptTransitionTable = readShortTable(dis, numScriptBuckets * numScriptBuckets);
+            float[] scriptTransitionTableQuant = new float[]{scriptTransMin, scriptTransMax};
             float[] scriptTransitionCalibration = new float[]{dis.readFloat(), dis.readFloat()};
+
+            // Document-level calibrations:
+            //   z5 = letter-adjacent-to-mark ratio
+            //   z6 = replacement-character ratio
+            //   z9 = script-run density (runs per codepoint) — v13.
+            //        Catches mojibake-of-Latin-as-CJK fragmentation that z4/z8
+            //        weight too weakly on the LATIN classifier.
+            // (z7 was removed in v9 — inert across all scripts.)
+            float[] z5Calibration = new float[]{dis.readFloat(), dis.readFloat()};
+            float[] z6Calibration = new float[]{dis.readFloat(), dis.readFloat()};
+            float[] z9Calibration = new float[]{dis.readFloat(), dis.readFloat()};
 
             Map<String, V7Tables>  f1TablesByScript   = new HashMap<>(numScripts * 2);
             Map<String, float[]>   calibrations       = new HashMap<>(numScripts * 2);
-            Map<String, float[]>   blockTables        = new HashMap<>(numScripts * 2);
+            Map<String, short[]>   blockTables        = new HashMap<>(numScripts * 2);
+            Map<String, float[]>   blockTableQuant    = new HashMap<>(numScripts * 2);
             Map<String, float[]>   blockCalibrations  = new HashMap<>(numScripts * 2);
             Map<String, float[]>   controlCalibrations = new HashMap<>(numScripts * 2);
             Map<String, float[]>   classifierWeights  = new HashMap<>(numScripts * 2);
@@ -301,7 +350,12 @@ public final class JunkDetector implements TextQualityDetector {
                 f1TablesByScript.put(script, V7Tables.readFrom(dis));
 
                 blockCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
-                blockTables.put(script, readFloatTable(dis, blockN * blockN));
+                // F2 block table: v12 stores int16 quantized.
+                // Layout: [float min][float max][blockN² × 2 bytes BE].
+                float blockMin = dis.readFloat();
+                float blockMax = dis.readFloat();
+                blockTables.put(script, readShortTable(dis, blockN * blockN));
+                blockTableQuant.put(script, new float[]{blockMin, blockMax});
                 controlCalibrations.put(script, new float[]{dis.readFloat(), dis.readFloat()});
 
                 int numFeatures = dis.readUnsignedByte();
@@ -313,11 +367,21 @@ public final class JunkDetector implements TextQualityDetector {
             }
 
             return new JunkDetector(calibrations,
-                    blockTables, blockCalibrations,
+                    blockTables, blockTableQuant, blockCalibrations,
                     controlCalibrations, classifierWeights,
-                    scriptTransitionTable, scriptTransitionCalibration,
-                    scriptBucketIndex, numScriptBuckets, f1TablesByScript);
+                    scriptTransitionTable, scriptTransitionTableQuant,
+                    scriptTransitionCalibration,
+                    scriptBucketIndex, numScriptBuckets, f1TablesByScript,
+                    z5Calibration, z6Calibration, z9Calibration);
         }
+    }
+
+    /** Read {@code size} big-endian int16 values as a short[]. */
+    private static short[] readShortTable(DataInputStream dis, int size) throws IOException {
+        byte[] raw = dis.readNBytes(size * 2);
+        short[] out = new short[size];
+        ByteBuffer.wrap(raw).order(ByteOrder.BIG_ENDIAN).asShortBuffer().get(out);
+        return out;
     }
 
     private static float[] readFloatTable(DataInputStream dis, int size) throws IOException {
@@ -385,7 +449,8 @@ public final class JunkDetector implements TextQualityDetector {
         return calibrations.keySet();
     }
 
-    /** Returns the file-format version of the loaded model. */
+    /** Returns the file-format version of the loaded model
+     *  (always {@link #VERSION}; mismatches are rejected at load time). */
     public int getModelVersion() {
         return VERSION;
     }
@@ -395,11 +460,31 @@ public final class JunkDetector implements TextQualityDetector {
     // -----------------------------------------------------------------------
 
     private TextQualityScore scoreText(String text) {
+        // NFD-normalize before scoring so we match the training pipeline.
+        // NFD decomposes precomposed accented letters into base + combining
+        // marks (e.g. `ề` → `e` + U+0302 + U+0300); the trainer's
+        // extractFeaturesV7 + sampleSubstrings apply the same NFD so the
+        // per-script bigram tables index the decomposed form.  NFD chosen
+        // over NFC so combining-mark scripts (Vietnamese precomposed,
+        // Indic, Thai) all surface their marks as separate codepoints,
+        // letting z5 (letter-adjacent-to-mark) discriminate uniformly.
+        text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
         List<ScriptRun> runs = buildScriptRuns(text);
 
-        // Global z4: script-transition feature over the whole input string.
-        // Computed before chunking because it captures document-level script mixing.
+        // Document-level features computed once per scoring call.
+        // z4 = script-transition log-prob (cross-script mixing).
+        // z5 = letter-adjacent-to-mark ratio (combining marks signal).
+        // z6 = 1 - replacement-ratio (clean = high; U+FFFD = low).
+        // z7 = scriptDensity (fraction of codepoints in any real script).
+        // z8 = scriptCoherence = 1 - fragmentation (one long script run = high).
         float z4 = computeScriptTransitionZ(text);
+        float z5 = computeZ5LetterAdjacentToMarkRatio(text);
+        float z6 = computeZ6ReplacementRatio(text);
+        float z7 = (float) TextQualityFeatures.scriptDensity(text);
+        if (Float.isNaN(z7)) z7 = 0f;
+        double rawFrag = TextQualityFeatures.scriptFragmentation(text);
+        float z8 = Double.isNaN(rawFrag) ? 1f : 1f - (float) rawFrag;
+        float z9 = computeZ9AlternationRatio(text);
 
         // Score each run against its own model; aggregate weighted by byte count.
         float totalBytes = 0;
@@ -411,7 +496,7 @@ public final class JunkDetector implements TextQualityDetector {
 
         for (ScriptRun run : runs) {
             if (!calibrations.containsKey(run.script)) {
-                continue; // skip scripts not in model; treat as neutral, not junk
+                continue; // skip scripts not in model; handled by no-script fallback below
             }
             byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
             // Skip if too short to form a bigram by either metric.  A single
@@ -421,7 +506,8 @@ public final class JunkDetector implements TextQualityDetector {
             if (runUtf8.length < 2 || run.text.length() < 2) {
                 continue;
             }
-            float logit = scoreChunk(runUtf8, run.text, run.script, z4);
+            float logit = scoreChunk(runUtf8, run.text, run.script,
+                    z4, z5, z6, z7, z8, z9);
             int n = runUtf8.length;
             weightedLogit += logit * n;
             totalBytes += n;
@@ -434,8 +520,16 @@ public final class JunkDetector implements TextQualityDetector {
         }
 
         if (totalBytes == 0 || dominantScript == null) {
-            String label = runs.isEmpty() ? "LATIN" : runs.get(0).script;
-            return unknownScore(label);
+            // No scoreable script run — but every input gets a finite score
+            // ("model UNKNOWN out of existence").  Doc-level features alone:
+            //   density=0 → all-whitespace / pure-digit → very negative
+            //   density=1, coherence=1 → real coherent unmodeled script (Gothic) → positive
+            //   density=1, coherence=0 → script-salad mojibake → very negative
+            // Formula chosen for those three anchors; future NONE classifier
+            // can replace it with a fit on synthetic samples.
+            float fallback = -7f + 4f * z7 + 6f * z8;
+            float pClean = (float) (1.0 / (1.0 + Math.exp(-fallback)));
+            return new TextQualityScore(fallback, pClean, fallback, fallback, "NONE");
         }
 
         float zScore = weightedLogit / totalBytes;
@@ -463,10 +557,20 @@ public final class JunkDetector implements TextQualityDetector {
     public FeatureComponents scoreWithFeatureComponents(String text) {
         if (text == null || text.isEmpty()) {
             return new FeatureComponents(Float.NaN, Float.NaN, Float.NaN,
+                    Float.NaN, Float.NaN, Float.NaN, Float.NaN, Float.NaN,
                     Float.NaN, Float.NaN, "UNKNOWN", null, 0);
         }
+        // Same NFC normalization as scoreText — keep train/infer aligned.
+        text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
         List<ScriptRun> runs = buildScriptRuns(text);
         float z4 = computeScriptTransitionZ(text);
+        float z5 = computeZ5LetterAdjacentToMarkRatio(text);
+        float z6 = computeZ6ReplacementRatio(text);
+        float z7 = (float) TextQualityFeatures.scriptDensity(text);
+        if (Float.isNaN(z7)) z7 = 0f;
+        double rawFrag = TextQualityFeatures.scriptFragmentation(text);
+        float z8 = Double.isNaN(rawFrag) ? 1f : 1f - (float) rawFrag;
+        float z9 = computeZ9AlternationRatio(text);
 
         float totalBytes = 0;
         float weightedZ1 = 0;
@@ -485,7 +589,8 @@ public final class JunkDetector implements TextQualityDetector {
                 continue; // see scoreText: paired filter avoids NaN poisoning
             }
             float[] zs = computeChunkZs(runUtf8, run.text, run.script);
-            float chunkLogit = combineLogit(zs[0], zs[1], zs[2], z4, run.script);
+            float chunkLogit = combineLogit(zs[0], zs[1], zs[2],
+                    z4, z5, z6, z7, z8, z9, run.script);
             int n = runUtf8.length;
             weightedZ1 += zs[0] * n;
             weightedZ2 += zs[1] * n;
@@ -499,8 +604,10 @@ public final class JunkDetector implements TextQualityDetector {
         }
 
         if (totalBytes == 0 || dominantScript == null) {
-            return new FeatureComponents(Float.NaN, Float.NaN, Float.NaN, z4,
-                    Float.NaN, runs.isEmpty() ? "UNKNOWN" : runs.get(0).script,
+            float fallback = -7f + 4f * z7 + 6f * z8;
+            return new FeatureComponents(Float.NaN, Float.NaN, Float.NaN,
+                    z4, z5, z6, z7, z8, z9,
+                    fallback, "NONE",
                     null, 0);
         }
 
@@ -509,7 +616,7 @@ public final class JunkDetector implements TextQualityDetector {
                 weightedZ1 / totalBytes,
                 weightedZ2 / totalBytes,
                 weightedZ3 / totalBytes,
-                z4,
+                z4, z5, z6, z7, z8, z9,
                 weightedLogit / totalBytes,
                 dominantScript,
                 cw,
@@ -518,13 +625,17 @@ public final class JunkDetector implements TextQualityDetector {
 
     /**
      * Per-feature z-score breakdown returned by
-     * {@link #scoreWithFeatureComponents(String)}.  All z-scores are
-     * byte-count-weighted aggregates across script-homogeneous chunks
-     * except {@code z4}, which is a single document-level value.
+     * {@link #scoreWithFeatureComponents(String)}.  z1-z3 are byte-count-
+     * weighted aggregates across script-homogeneous chunks; z4-z6 are
+     * single document-level values.
+     *
+     * <p>z5 (letter-adjacent-to-mark ratio) and z6 (replacement-character
+     * ratio) are document-level features included alongside z1–z4 in the
+     * per-script LR.
      *
      * <p>{@code classifierWeights} is the per-script linear classifier
-     * weight vector {@code {w1, w2, w3, w4, bias}} for the dominant
-     * script — useful for hybrid models that recompute the logit after
+     * weight vector {@code {w1, ..., wN, bias}} for the dominant script
+     * — useful for hybrid models that recompute the logit after
      * substituting one z-score with an externally-computed value.
      */
     public static final class FeatureComponents {
@@ -532,18 +643,29 @@ public final class JunkDetector implements TextQualityDetector {
         public final float z2;
         public final float z3;
         public final float z4;
+        public final float z5;
+        public final float z6;
+        public final float z7;
+        public final float z8;
+        public final float z9;
         public final float logit;
         public final String dominantScript;
         public final float[] classifierWeights;
         public final int totalBytes;
 
         FeatureComponents(float z1, float z2, float z3, float z4,
+                          float z5, float z6, float z7, float z8, float z9,
                           float logit, String dominantScript,
                           float[] classifierWeights, int totalBytes) {
             this.z1 = z1;
             this.z2 = z2;
             this.z3 = z3;
             this.z4 = z4;
+            this.z5 = z5;
+            this.z6 = z6;
+            this.z7 = z7;
+            this.z8 = z8;
+            this.z9 = z9;
             this.logit = logit;
             this.dominantScript = dominantScript;
             this.classifierWeights = classifierWeights;
@@ -555,14 +677,78 @@ public final class JunkDetector implements TextQualityDetector {
      * Scores a single script-homogeneous chunk and returns its logit.
      * Positive = clean, negative = junk.  Returns 0 (neutral) if the chunk
      * has no model or is too short.
+     *
+     * <p>z4/z5/z6 are document-level features passed in by the caller —
+     * the chunk reuses the same document-wide values.
      */
-    private float scoreChunk(byte[] utf8, String text, String script, float z4) {
+    private float scoreChunk(byte[] utf8, String text, String script,
+                             float z4, float z5, float z6, float z7, float z8,
+                             float z9) {
         if (utf8.length < 2 || !calibrations.containsKey(script)) {
             return 0f;
         }
         float[] zs = computeChunkZs(utf8, text, script);
-        return combineLogit(zs[0], zs[1], zs[2], z4, script);
+        return combineLogit(zs[0], zs[1], zs[2], z4, z5, z6, z7, z8, z9, script);
     }
+
+    // -----------------------------------------------------------------------
+    // v8 global features (computed once per document, like z4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * z5: calibrated letter-adjacent-to-mark ratio.  Delegates raw
+     * computation to {@link TextQualityFeatures#letterAdjacentToMarkRatio}
+     * and applies the document-level (mu, sigma) calibration loaded from
+     * the v8 model file.  Returns 0 (neutral) when the model has no z5
+     * calibration (v7 case) or when the raw value is NaN.
+     *
+     * <p>Positive z5 = correct decoding of a precomposed-or-decomposed
+     * script (Vietnamese, Indic, Thai, Arabic).  Negative z5 = mojibake
+     * of such content as Latin-1.
+     */
+    public float computeZ5LetterAdjacentToMarkRatio(String text) {
+        double raw = TextQualityFeatures.letterAdjacentToMarkRatio(text);
+        if (Double.isNaN(raw) || z5Calibration == null || z5Calibration[1] <= 0) {
+            return 0f;
+        }
+        return ((float) raw - z5Calibration[0]) / z5Calibration[1];
+    }
+
+    /**
+     * z6: calibrated replacement-character ratio.  Direct decode-failure
+     * signal — fraction of codepoints that are U+FFFD.  Higher raw value
+     * = more decode failure = junkier; but the calibration centers on the
+     * training distribution, so negative z6 = junkier than typical.
+     *
+     * <p>Returns 0 (neutral) when no calibration available.
+     */
+    public float computeZ6ReplacementRatio(String text) {
+        double raw = TextQualityFeatures.replacementRatio(text);
+        if (Double.isNaN(raw) || z6Calibration == null || z6Calibration[1] <= 0) {
+            return 0f;
+        }
+        // Flip sign: higher replacement = lower quality, so feature is
+        // (mu - raw) / sigma so a clean decode → positive z6.
+        return (z6Calibration[0] - (float) raw) / z6Calibration[1];
+    }
+
+    /**
+     * z9: calibrated script-alternation ratio.  Catches the mojibake-of-
+     * Latin-as-CJK pattern where every accent becomes a singleton Han
+     * char scattered through Latin text (high alternation = max value).
+     * Length- and proportion-invariant by construction.  Sign flipped so
+     * clean (low alternation) → positive z9 and mojibake (high
+     * alternation) → negative.
+     */
+    public float computeZ9AlternationRatio(String text) {
+        double raw = TextQualityFeatures.scriptAlternationRatio(text);
+        if (Double.isNaN(raw) || z9Calibration == null || z9Calibration[1] <= 0) {
+            return 0f;
+        }
+        // Higher alternation = junkier; (mu - raw) / sigma so clean text → positive z9.
+        return (z9Calibration[0] - (float) raw) / z9Calibration[1];
+    }
+
 
     /**
      * Computes per-feature z-scores {z1, z2, z3} for a single script-
@@ -578,10 +764,51 @@ public final class JunkDetector implements TextQualityDetector {
         float[] cal1 = calibrations.get(script);
         float z1 = (meanF1LogProb - cal1[0]) / cal1[1];
 
-        float z2 = computeZ2BlockTransition(text,
-                blockTables.get(script), blockCalibrations.get(script));
+        float z2 = computeZ2BlockTransitionQuantized(text,
+                blockTables.get(script), blockTableQuant.get(script),
+                blockCalibrations.get(script));
         float z3 = computeZ3ControlByte(utf8, controlCalibrations.get(script));
         return new float[]{z1, z2, z3};
+    }
+
+    /**
+     * Inference-side z2 lookup against an int16-quantized block table.
+     * Mirrors {@link #computeZ2BlockTransition}(float[]) but reads from
+     * the quantized {@code short[]} table with per-table {min, max}
+     * dequant params (Phase F runtime quantization).  Per-bigram
+     * dequantize is {@code min + (s/65535) * (max - min)} where s is
+     * the unsigned 16-bit value.  65536 levels keep ~0.0002 nats/level
+     * resolution — essentially lossless vs the float32 form for our
+     * log-prob range.
+     */
+    private static float computeZ2BlockTransitionQuantized(String text,
+                                                            short[] blockTable,
+                                                            float[] quant,
+                                                            float[] blockCal) {
+        if (blockTable == null || quant == null || blockCal == null || text.length() < 2) {
+            return 0f;
+        }
+        int blockN = UnicodeBlockRanges.bucketCount();
+        float min = quant[0];
+        float scale = (quant[1] - min) / 65535f;
+        int prev = -1;
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            int blockId = UnicodeBlockRanges.bucketOf(cp);
+            if (prev >= 0) {
+                int s = blockTable[prev * blockN + blockId] & 0xFFFF;
+                sum += min + s * scale;
+                count++;
+            }
+            prev = blockId;
+            i += Character.charCount(cp);
+        }
+        if (count == 0) {
+            return 0f;
+        }
+        return ((float) (sum / count) - blockCal[0]) / blockCal[1];
     }
 
     private static float computeCodepointF1MeanLogP(String text, V7Tables tables) {
@@ -699,9 +926,18 @@ public final class JunkDetector implements TextQualityDetector {
 
     /**
      * Combines per-feature z-scores via the per-script linear classifier.
-     * Fallback (when no classifier weights stored): equal-weight average.
+     * Fallback (when no classifier weights stored): equal-weight average of
+     * the four bigram-/transition-based features (z1-z4).
+     *
+     * <p>v13 classifiers have 9 weights + bias (nFeat == 9) —
+     * z1 (bigram), z2 (block transitions), z3 (control bytes),
+     * z4 (script transitions), z5 (letter-adjacent-to-mark),
+     * z6 (replacement ratio), z7 (script density), z8 (script coherence),
+     * z9 (script-run density).
      */
-    private float combineLogit(float z1, float z2, float z3, float z4, String script) {
+    private float combineLogit(float z1, float z2, float z3, float z4,
+                               float z5, float z6, float z7, float z8,
+                               float z9, String script) {
         float[] cw = classifierWeights.get(script);
         if (cw != null) {
             int nFeat = cw.length - 1; // bias is last
@@ -710,6 +946,11 @@ public final class JunkDetector implements TextQualityDetector {
             if (nFeat >= 2) logit += cw[1] * z2;
             if (nFeat >= 3) logit += cw[2] * z3;
             if (nFeat >= 4) logit += cw[3] * z4;
+            if (nFeat >= 5) logit += cw[4] * z5;
+            if (nFeat >= 6) logit += cw[5] * z6;
+            if (nFeat >= 7) logit += cw[6] * z7;
+            if (nFeat >= 8) logit += cw[7] * z8;
+            if (nFeat >= 9) logit += cw[8] * z9;
             return logit;
         }
         return (z1 + z2 + z3 + z4) / 4.0f; // fallback: equal weight
@@ -756,7 +997,14 @@ public final class JunkDetector implements TextQualityDetector {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
             int curIdx = codepointToIndex(tables, cp);
-            if (prevCp >= 0) {
+            if (prevCp >= 0
+                    && !(isAsciiWhitespace(prevCp) && isAsciiWhitespace(cp))) {
+                // γ-analog of NaiveBayesBigramEncodingDetector's
+                // whitespace-bigram skip: only the whitespace+whitespace
+                // case is dropped.  (letter, space) and (space, letter)
+                // still score so that real inter-word context is kept,
+                // but (space, space) runs from HTML indentation don't
+                // dominate the mean with unigram-fallback penalties.
                 sum += scorePairF1V7(prevCp, prevIdx, cp, curIdx, tables);
                 n++;
             }
@@ -764,6 +1012,19 @@ public final class JunkDetector implements TextQualityDetector {
             prevIdx = curIdx;
         }
         return n == 0 ? Double.NaN : sum / n;
+    }
+
+    /**
+     * ASCII whitespace per the γ filter in
+     * {@code NaiveBayesBigramEncodingDetector}: tab, LF, VT, FF, CR, space.
+     * Deliberately ASCII-only (not {@link Character#isWhitespace(int)})
+     * to match the encoding-detector's filter exactly and to leave the
+     * Unicode whitespace separators (no-break space, ideographic space,
+     * etc.) inside the bigram model.
+     */
+    private static boolean isAsciiWhitespace(int cp) {
+        return cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r'
+                || cp == 0x0B /* VT */ || cp == 0x0C /* FF */;
     }
 
     /**
@@ -864,14 +1125,43 @@ public final class JunkDetector implements TextQualityDetector {
 
     /**
      * Computes the global script-transition z-score for the whole input
-     * string against this model's loaded tables.  Thin wrapper around the
-     * public static {@link #computeZ4ScriptTransition} helper — same math,
-     * just preloaded with this instance's parameters.
+     * string against this model's loaded tables.  Uses the int8-quantized
+     * (Phase F) lookup; the public static {@link #computeZ4ScriptTransition}
+     * float[] variant remains for trainer use.
      */
     private float computeScriptTransitionZ(String text) {
-        return computeZ4ScriptTransition(text,
-                scriptTransitionTable, scriptTransitionCalibration,
-                scriptBucketIndex, numScriptBuckets);
+        if (scriptTransitionTable == null || scriptTransitionCalibration == null
+                || scriptBucketIndex == null || numScriptBuckets == 0) {
+            return 0f;
+        }
+        int otherBucket = numScriptBuckets - 1;
+        float min = scriptTransitionTableQuant[0];
+        float scale = (scriptTransitionTableQuant[1] - min) / 65535f;
+        int prev = -1;
+        double sum = 0;
+        int count = 0;
+        for (int i = 0; i < text.length(); ) {
+            int cp = text.codePointAt(i);
+            i += Character.charCount(cp);
+            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            if (s == Character.UnicodeScript.COMMON
+                    || s == Character.UnicodeScript.INHERITED
+                    || s == Character.UnicodeScript.UNKNOWN) {
+                continue;
+            }
+            int bucket = scriptBucketIndex.getOrDefault(s.name(), otherBucket);
+            if (prev >= 0) {
+                int val = scriptTransitionTable[prev * numScriptBuckets + bucket] & 0xFFFF;
+                sum += min + val * scale;
+                count++;
+            }
+            prev = bucket;
+        }
+        if (count == 0) {
+            return 0f;
+        }
+        return ((float) (sum / count) - scriptTransitionCalibration[0])
+                / scriptTransitionCalibration[1];
     }
 
     /**

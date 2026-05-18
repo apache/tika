@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.HtmlByteStripper;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.quality.TextQualityComparison;
 import org.apache.tika.quality.TextQualityDetector;
 
 /**
@@ -76,6 +74,42 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     /** How many probe bytes to read for decoding candidates.  Matches the
      * default read limit used by the charset base detectors. */
     private static final int DEFAULT_READ_LIMIT = 16384;
+
+    /** Per-script (clean_mean, mojibake_mean) measured by
+     *  {@code CalibrationGapDiagnostic} on the labeled charset devtest
+     *  (200 records per source × multiple wrong targets).  Used to rescale
+     *  per-candidate raw logits to a cross-script-comparable [junk≈0,
+     *  clean≈1] scale before arbitration.  Without this, HAN and LATIN
+     *  classifiers (which are structurally more permissive — clean mean
+     *  ~+0.7 vs HANGUL's +1.7, mojibake mean ~-4 vs HANGUL's -10) would
+     *  out-score correct decodings under stricter classifiers on
+     *  cross-script comparisons (the Korean→Chinese over-override case).
+     *  Falls back to LATIN constants for unmeasured scripts. */
+    private static final Map<String, float[]> SCRIPT_CAL = Map.ofEntries(
+            Map.entry("LATIN",      new float[]{ 0.773f, -3.240f}),
+            Map.entry("HAN",        new float[]{ 0.719f, -4.122f}),
+            Map.entry("HANGUL",     new float[]{ 1.697f, -9.700f}),
+            Map.entry("CYRILLIC",   new float[]{ 1.524f, -5.041f}),
+            Map.entry("ARABIC",     new float[]{ 1.491f, -13.904f}),
+            Map.entry("HEBREW",     new float[]{ 1.144f, -13.898f}),
+            Map.entry("ARMENIAN",   new float[]{ 1.114f, -15.221f}),
+            Map.entry("TIBETAN",    new float[]{ 1.500f, -7.179f}),
+            Map.entry("BENGALI",    new float[]{ 1.860f, -5.000f}),
+            Map.entry("DEVANAGARI", new float[]{ 1.541f, -5.000f}),
+            Map.entry("GREEK",      new float[]{ 1.500f, -13.226f})
+    );
+    private static final float[] FALLBACK_CAL = SCRIPT_CAL.get("LATIN");
+
+    /** Rescale a raw logit to a [junk≈0, clean≈1] common scale using the
+     *  per-script (clean_mean, moji_mean) constants in {@link #SCRIPT_CAL}. */
+    private static double calibrate(double rawZ, String script) {
+        float[] cal = SCRIPT_CAL.getOrDefault(script, FALLBACK_CAL);
+        float clean = cal[0];
+        float moji = cal[1];
+        double span = clean - moji;
+        if (span <= 0) return rawZ;
+        return (rawZ - moji) / span;
+    }
 
     /** Cached quality detector.  {@code null} if none is on the classpath. */
     private final TextQualityDetector qualityDetector;
@@ -216,29 +250,45 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return Collections.emptyList();
         }
 
-        // Pairwise tournament: the first candidate seeds the champion slot;
-        // every subsequent candidate challenges the current champion.
-        Iterator<Map.Entry<Charset, String>> it = candidates.entrySet().iterator();
-        Map.Entry<Charset, String> champion = it.next();
-        LOG.trace("junk-filter tournament seed: {}", champion.getKey().name());
-        while (it.hasNext()) {
-            Map.Entry<Charset, String> challenger = it.next();
-            TextQualityComparison cmp = qualityDetector.compare(
-                    champion.getKey().name(), champion.getValue(),
-                    challenger.getKey().name(), challenger.getValue());
-            LOG.trace("junk-filter compare {} vs {} -> {} (delta={} A={} B={})",
-                    champion.getKey().name(), challenger.getKey().name(),
-                    cmp.winner(), String.format(java.util.Locale.ROOT, "%.3f", cmp.delta()),
-                    cmp.scoreA(), cmp.scoreB());
-            if (challenger.getKey().name().equals(cmp.winner())) {
-                champion = challenger;
+        // Calibrated-rescale argmax.  Score each candidate once with the
+        // quality detector, rescale per-script to a [junk≈0, clean≈1]
+        // common scale, then pick the highest.  The rescaling is what
+        // makes cross-script comparisons sound — without it, the more
+        // permissive HAN/LATIN classifiers can out-score the stricter
+        // HANGUL/ARABIC/HEBREW ones on equal-quality text and arbitrate
+        // wrong (the Korean→Chinese case).
+        //
+        // Operates on raw decoded candidates — the strip-COMMON step that
+        // used to live here was removed once γ (whitespace-bigram skip)
+        // and NFC normalization landed inside JunkDetector itself.  Those
+        // address the same Masada-style whitespace-storm root cause for
+        // every caller of JunkDetector and avoid the train/inference
+        // distribution divergence that the strip introduced.
+        Charset champion = null;
+        double championCalZ = Double.NEGATIVE_INFINITY;
+        for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
+            org.apache.tika.quality.TextQualityScore sc =
+                    qualityDetector.score(entry.getValue());
+            float rawZ = sc.isUnknown() ? 0f : sc.getZScore();
+            String script = sc.isUnknown() ? "LATIN" : sc.getDominantScript();
+            double calZ = calibrate(rawZ, script);
+            LOG.trace("junk-filter score {} raw_z={} script={} cal_z={}",
+                    entry.getKey().name(),
+                    String.format(java.util.Locale.ROOT, "%.3f", rawZ),
+                    script,
+                    String.format(java.util.Locale.ROOT, "%.3f", calZ));
+            if (calZ > championCalZ) {
+                championCalZ = calZ;
+                champion = entry.getKey();
             }
         }
-        LOG.trace("junk-filter -> {} (tournament champion)", champion.getKey().name());
+        LOG.trace("junk-filter -> {} (calibrated argmax, cal_z={})",
+                champion.name(),
+                String.format(java.util.Locale.ROOT, "%.3f", championCalZ));
 
-        float confidence = context.getTopConfidenceFor(champion.getKey());
+        float confidence = context.getTopConfidenceFor(champion);
         context.setArbitrationInfo("junk-filter-selected");
-        return List.of(new EncodingResult(champion.getKey(), confidence));
+        return List.of(new EncodingResult(champion, confidence));
     }
 
     /**

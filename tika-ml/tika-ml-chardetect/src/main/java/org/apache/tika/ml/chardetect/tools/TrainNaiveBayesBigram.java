@@ -104,8 +104,7 @@ public class TrainNaiveBayesBigram {
      *       UTF-16-encoded CJK from legacy byte encodings because
      *       CJK characters in UTF-16 encode to byte pairs that alias
      *       common ASCII bigrams (e.g. U+6572 in UTF-16-LE is
-     *       {@code 72 65} which also encodes "re").  See
-     *       {@code ~/Desktop/claude-todo/charset/why-stride1-bigrams-dont-work-for-utf16.md}.</li>
+     *       {@code 72 65} which also encodes "re").</li>
      *   <li>UTF-8 — trained NB class.  UTF-8's lead + continuation
      *       byte-pair structure has distinctive frequency signatures
      *       that don't alias with legacy encodings at the bigram-
@@ -132,16 +131,20 @@ public class TrainNaiveBayesBigram {
             "windows-1250", "windows-1251", "windows-1252", "windows-1253",
             "windows-1254", "windows-1255", "windows-1256", "windows-1257",
             "windows-1258", "windows-874",
-            // ISO-8859 (2)
-            "ISO-8859-3", "ISO-8859-16",
+            // ISO-8859 (3) — ISO-8859-2 added 2026-05-18 for Polish /
+            // Central European coverage alongside the windows-1250 superset
+            "ISO-8859-2", "ISO-8859-3", "ISO-8859-16",
             // Mac (2)
             "x-MacRoman", "x-mac-cyrillic");
 
     /**
      * Training-data filename → training-class-label aliases.  Empty
      * by default; reserved for cases where multiple training files
-     * should merge into one class label.  (UTF-16 was an experiment
-     * that didn't pan out — see why-stride1-bigrams-dont-work-for-utf16.md.)
+     * should merge into one class label.  (UTF-16-LE / UTF-16-BE were
+     * previously aliased to a single UTF-16 class but the experiment
+     * didn't pan out: stride-1 byte bigrams cannot discriminate UTF-16
+     * from legacy encodings — CJK characters in UTF-16 produce byte
+     * pairs that alias common ASCII bigrams.)
      */
     static final Map<String, String> TRAINING_LABEL_ALIASES = Map.of();
 
