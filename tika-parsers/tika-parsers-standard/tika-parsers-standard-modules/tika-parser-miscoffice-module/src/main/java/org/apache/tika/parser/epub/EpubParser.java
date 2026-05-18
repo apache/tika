@@ -607,8 +607,11 @@ public class EpubParser implements Parser {
         // through this handler. After a swallowed SAXException from a single
         // spine item's parse, drainOpen() emits the matching endElements so
         // the outer </body></html> doesn't land on top of an open <g>, <p>,
-        // etc. left over from the failed item.
-        private final java.util.Deque<String> openElements = new java.util.ArrayDeque<>();
+        // etc. left over from the failed item. We track the original uri
+        // alongside the localName so drainOpen's endElement events carry the
+        // same namespace as the matching startElement, in case a downstream
+        // handler is namespace-aware.
+        private final java.util.Deque<OpenTag> openElements = new java.util.ArrayDeque<>();
 
         public EpubNormalizingHandler(ContentHandler contentHandler) {
             super(contentHandler);
@@ -643,7 +646,7 @@ public class EpubParser implements Parser {
             } else {
                 super.startElement(uri, localName, localName, atts);
             }
-            openElements.push(localName);
+            openElements.push(new OpenTag(uri, localName));
         }
 
         @Override
@@ -663,8 +666,21 @@ public class EpubParser implements Parser {
          */
         void drainOpen() throws SAXException {
             while (!openElements.isEmpty()) {
-                String el = openElements.pop();
-                super.endElement("", el, el);
+                OpenTag t = openElements.pop();
+                // Mirror the (uri, localName, localName) shape used by
+                // startElement / endElement above so the SAX events stay
+                // namespace-consistent.
+                super.endElement(t.uri, t.localName, t.localName);
+            }
+        }
+
+        private static final class OpenTag {
+            final String uri;
+            final String localName;
+
+            OpenTag(String uri, String localName) {
+                this.uri = uri;
+                this.localName = localName;
             }
         }
     }
