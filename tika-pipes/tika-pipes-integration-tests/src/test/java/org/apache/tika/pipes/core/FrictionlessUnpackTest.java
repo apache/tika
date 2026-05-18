@@ -635,28 +635,30 @@ public class FrictionlessUnpackTest {
 
     @Test
     public void testFrictionlessWithIncludeOriginal(@TempDir Path tmp) throws Exception {
-        // Test that includeOriginal works with Frictionless format
+        // includeOriginal=true causes the container to appear in the Frictionless
+        // package as "unpacked/0.<ext>" (added by ParseHandler._preParse via
+        // unpackHandler.add(0, ...)) and to be listed once in datapackage.json.
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
 
         try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
+
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(EMITTER_NAME);
             unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
             unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-            unpackConfig.setIncludeOriginal(true);  // Include container document
+            unpackConfig.setIncludeOriginal(true);
             parseContext.set(UnpackConfig.class, unpackConfig);
-            
+
             PipesResult pipesResult = pipesClient.process(
                     new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
                             new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
                             new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
                             new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
+
             assertTrue(pipesResult.isSuccess(),
                     "Frictionless with includeOriginal should succeed");
         }
@@ -664,39 +666,43 @@ public class FrictionlessUnpackTest {
         List<Path> zipFiles = Files.list(outputDir)
                 .filter(p -> p.toString().endsWith("-frictionless.zip"))
                 .toList();
+        assertEquals(1, zipFiles.size(), "Should create exactly one frictionless zip");
 
         try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
-            // Original file should be at root level or in a specific location
-            boolean hasOriginal = false;
+            // The container itself should be present as the id-0 entry under
+            // unpacked/. Match "unpacked/0" exactly or "unpacked/0.<ext>"
+            // (whichever the active SUFFIX_STRATEGY produces).
+            Set<String> allEntries = new HashSet<>();
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                // Original could be at root or documented location
-                if (entry.getName().contains(TEST_DOC_WITH_EMBEDDED) ||
-                        entry.getName().equals("original/" + TEST_DOC_WITH_EMBEDDED)) {
-                    hasOriginal = true;
-                    break;
-                }
+                allEntries.add(entries.nextElement().getName());
             }
+            boolean hasContainerAsId0 = allEntries.stream()
+                    .anyMatch(n -> n.equals("unpacked/0") || n.startsWith("unpacked/0."));
+            assertTrue(hasContainerAsId0,
+                    "With includeOriginal=true, the container should appear as the " +
+                            "unpacked/0 entry. Entries: " + allEntries);
 
-            // Also check datapackage.json for original in resources
+            // And the manifest's resources should list the container at unpacked/0;
+            // no resource path should escape the unpacked/ prefix (no separate
+            // root-level "original" entry should exist).
             ZipEntry dpEntry = zip.getEntry("datapackage.json");
-            if (dpEntry != null) {
-                JsonNode dataPackage;
-                try (InputStream is = zip.getInputStream(dpEntry)) {
-                    dataPackage = OBJECT_MAPPER.readTree(is);
-                }
-                for (JsonNode resource : dataPackage.get("resources")) {
-                    String path = resource.get("path").asText();
-                    if (!path.startsWith("unpacked/")) {
-                        hasOriginal = true;
-                        break;
-                    }
+            assertNotNull(dpEntry, "datapackage.json should be present");
+            JsonNode dataPackage;
+            try (InputStream is = zip.getInputStream(dpEntry)) {
+                dataPackage = OBJECT_MAPPER.readTree(is);
+            }
+            boolean manifestListsContainer = false;
+            for (JsonNode resource : dataPackage.get("resources")) {
+                String path = resource.get("path").asText();
+                assertTrue(path.startsWith("unpacked/"),
+                        "Manifest resources should only list unpacked/ paths; got " + path);
+                if (path.equals("unpacked/0") || path.startsWith("unpacked/0.")) {
+                    manifestListsContainer = true;
                 }
             }
-
-            assertTrue(hasOriginal,
-                    "With includeOriginal=true, original document should be in package");
+            assertTrue(manifestListsContainer,
+                    "Manifest should list the container at unpacked/0");
         }
     }
 

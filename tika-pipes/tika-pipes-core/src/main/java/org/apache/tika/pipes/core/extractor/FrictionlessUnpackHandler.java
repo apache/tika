@@ -61,10 +61,6 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
     private final EmitKey containerEmitKey;
     private final UnpackConfig unpackConfig;
     private final List<FrictionlessFileInfo> embeddedFiles = new ArrayList<>();
-    private Path originalDocumentPath;
-    private String originalDocumentName;
-    private String originalDocumentHash;
-    private long originalDocumentBytes;
     private boolean closed = false;
 
     /**
@@ -154,39 +150,6 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
     }
 
     /**
-     * Stores the original container document for optional inclusion.
-     *
-     * @param inputStream the original document input stream
-     * @param fileName    the file name for the original document
-     * @throws IOException if storing fails
-     */
-    public void storeOriginalDocument(InputStream inputStream, String fileName) throws IOException {
-        this.originalDocumentName = fileName;
-        this.originalDocumentPath = tempDirectory.resolve(fileName);
-
-        MessageDigest digest;
-        try {
-            digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            throw new IOException("SHA-256 algorithm not available", e);
-        }
-
-        long bytes = 0;
-        try (DigestInputStream dis = new DigestInputStream(inputStream, digest);
-             OutputStream os = Files.newOutputStream(originalDocumentPath)) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = dis.read(buffer)) != -1) {
-                os.write(buffer, 0, read);
-                bytes += read;
-            }
-        }
-
-        this.originalDocumentHash = FrictionlessResource.formatHash(digest.digest());
-        this.originalDocumentBytes = bytes;
-    }
-
-    /**
      * Builds the DataPackage manifest from collected files.
      *
      * @param containerName the name of the container document
@@ -194,17 +157,6 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
      */
     public DataPackage buildDataPackage(String containerName) {
         DataPackage dataPackage = new DataPackage(containerName);
-
-        // Add original document if included
-        if (unpackConfig.isIncludeOriginal() && hasOriginalDocument()) {
-            dataPackage.addResource(FrictionlessResource.create(
-                    originalDocumentName,
-                    detectMediatypeFromFilename(originalDocumentName),
-                    originalDocumentBytes,
-                    originalDocumentHash,
-                    originalDocumentName
-            ));
-        }
 
         // Add all embedded files with unpacked/ prefix
         for (FrictionlessFileInfo fileInfo : embeddedFiles) {
@@ -220,48 +172,6 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
         }
 
         return dataPackage;
-    }
-
-    /**
-     * Simple mediatype detection from filename extension.
-     */
-    private String detectMediatypeFromFilename(String filename) {
-        if (filename == null) {
-            return "application/octet-stream";
-        }
-        String lower = filename.toLowerCase(java.util.Locale.ROOT);
-        if (lower.endsWith(".pdf")) {
-            return "application/pdf";
-        } else if (lower.endsWith(".xml")) {
-            return "application/xml";
-        } else if (lower.endsWith(".doc")) {
-            return "application/msword";
-        } else if (lower.endsWith(".docx")) {
-            return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-        } else if (lower.endsWith(".xls")) {
-            return "application/vnd.ms-excel";
-        } else if (lower.endsWith(".xlsx")) {
-            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-        } else if (lower.endsWith(".ppt")) {
-            return "application/vnd.ms-powerpoint";
-        } else if (lower.endsWith(".pptx")) {
-            return "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-        } else if (lower.endsWith(".txt")) {
-            return "text/plain";
-        } else if (lower.endsWith(".html") || lower.endsWith(".htm")) {
-            return "text/html";
-        } else if (lower.endsWith(".json")) {
-            return "application/json";
-        } else if (lower.endsWith(".png")) {
-            return "image/png";
-        } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
-            return "image/jpeg";
-        } else if (lower.endsWith(".gif")) {
-            return "image/gif";
-        } else if (lower.endsWith(".zip")) {
-            return "application/zip";
-        }
-        return "application/octet-stream";
     }
 
     /**
@@ -290,27 +200,6 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
      */
     public boolean hasEmbeddedFiles() {
         return !embeddedFiles.isEmpty();
-    }
-
-    /**
-     * Returns the path to the original document if stored.
-     */
-    public Path getOriginalDocumentPath() {
-        return originalDocumentPath;
-    }
-
-    /**
-     * Returns the name of the original document if stored.
-     */
-    public String getOriginalDocumentName() {
-        return originalDocumentName;
-    }
-
-    /**
-     * Returns true if the original document was stored.
-     */
-    public boolean hasOriginalDocument() {
-        return originalDocumentPath != null && Files.exists(originalDocumentPath);
     }
 
     /**

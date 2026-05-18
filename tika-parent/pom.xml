@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.68.0</google.cloud.version>
-    <aws2.version>2.44.6</aws2.version>
+    <aws2.version>2.44.7</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -401,7 +401,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.0.3</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>7.5.10</junrar.version>
+    <junrar.version>7.6.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.2.0</kafka.version>
     <kotlin-stdlib.version>2.3.21</kotlin-stdlib.version>
@@ -413,6 +413,8 @@
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
     <metadata.extractor.version>2.20.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
+    <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
+         which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
     <micronaut.version>3.10.6</micronaut.version>
     <mime4j.version>0.8.14</mime4j.version>
     <mockito.version>5.23.0</mockito.version>
@@ -485,7 +487,7 @@
       <dependency>
         <groupId>org.codehaus.plexus</groupId>
         <artifactId>plexus-classworlds</artifactId>
-        <version>2.10.0</version>
+        <version>2.11.0</version>
       </dependency>
       <!-- boms -->
       <dependency>
@@ -1218,7 +1220,7 @@
       <dependency>
         <groupId>io.swagger.core.v3</groupId>
         <artifactId>swagger-annotations</artifactId>
-        <version>2.2.49</version>
+        <version>2.2.50</version>
       </dependency>
       <dependency>
         <groupId>org.jetbrains.kotlin</groupId>
@@ -1580,7 +1582,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.4.0</version>
+        <version>3.5.1</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>

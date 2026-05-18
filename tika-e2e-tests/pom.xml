@@ -104,18 +104,6 @@
                 <version>${jackson.version}</version>
             </dependency>
 
-            <!-- Micronaut version alignment for Ignite 3.x -->
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-validation</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-
             <!-- Lombok -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
