@@ -98,6 +98,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static final int MIN_TAG_COUNT_TO_USE_STRIP = 1;
 
     /**
+     * Minimum HTML entity count to apply the stripper even when no
+     * well-formed tags are present.  A single stray {@code &amp;}
+     * mention in plain prose shouldn't trigger the strip path, but
+     * entity-heavy content (HTML-quoted text in a plain-text file,
+     * truncated reads where the leading tag was lost, etc.) should.
+     */
+    private static final int MIN_ENTITY_COUNT_TO_USE_STRIP = 3;
+
+    /**
      * Confidence attached to UTF-32 structural candidates — high but
      * sub-1.0 so the ResultType.STRUCTURAL flag carries meaning
      * without blocking downstream override on mislabeled content.
@@ -674,10 +683,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         byte[] dst = new byte[probe.length];
         HtmlByteStripper.Result stripped =
                 HtmlByteStripper.strip(probe, 0, probe.length, dst, 0);
-        if (stripped.tagCount < MIN_TAG_COUNT_TO_USE_STRIP) {
-            // No well-formed tags found — probe isn't markup (or the
-            // bytes don't parse as markup in any ASCII-compatible
-            // reading).  Use original.
+        if (stripped.tagCount < MIN_TAG_COUNT_TO_USE_STRIP
+                && stripped.entityCount < MIN_ENTITY_COUNT_TO_USE_STRIP) {
+            // No well-formed tags AND not enough entities to be markup —
+            // probe isn't markup (or the bytes don't parse as markup in
+            // any ASCII-compatible reading).  Use original.
             return probe;
         }
         byte[] trimmed = new byte[stripped.length];

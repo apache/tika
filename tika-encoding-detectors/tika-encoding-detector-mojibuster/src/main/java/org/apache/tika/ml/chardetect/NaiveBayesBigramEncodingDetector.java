@@ -101,7 +101,53 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
      * of how uncertain the model actually is, so it cannot serve as
      * a candidate-emission gate.</p>
      */
-    private static final double MARGIN_THRESHOLD_NATS_PER_BIGRAM = 0.20;
+    public static final double MARGIN_THRESHOLD_NATS_PER_BIGRAM = 0.20;
+
+    /**
+     * Per-bigram cross-class total-contribution cap (Type C clipping).
+     * For each distinct bigram in the probe, the top-scoring class's
+     * total contribution (count × logP × idf, after dequantization) is
+     * capped at the runner-up class's contribution + this many nats.
+     *
+     * <p>Defends against corpus-skew pathologies where one class
+     * accumulates extreme bigram mass that swings classification on
+     * one or two byte-pairs alone (e.g., Czech "ČR" digraph in
+     * ISO-8859-2 contributing +186 nats over win-1252 on Italian text).
+     * Length-invariant by construction: the cap is on per-bigram
+     * advantage, regardless of how many times the bigram appears.</p>
+     *
+     * <p>20 nats = e^20 ≈ 5×10^8 probability-ratio advantage per
+     * bigram — preserves legitimate CJK-vs-Latin and other cross-script
+     * signal while bounding the diffuse-corpus-skew tail.</p>
+     */
+    public static final double CAP_PER_BIGRAM_NATS = 20.0;
+
+    /**
+     * Minimum distinct bigrams required before the per-bigram cap
+     * applies.  On short probes, each bigram carries proportionally
+     * more signal — clipping would destroy more discrimination than
+     * it saves.
+     */
+    public static final int MIN_DISTINCT_FOR_CAP = 30;
+
+    /**
+     * Minimum distinct-bigram fraction of total-scored-bigrams.  Below
+     * this, the input is treated as degenerate (looped / repeated /
+     * corrupt) and {@link #scoreClassesAndCount(byte[])} returns
+     * {@code null} so callers can fall back.  Defends against pathological
+     * inputs like {@code "thththth..."} where one bigram appears
+     * hundreds of times.
+     */
+    public static final double MIN_DIVERSITY_RATIO = 0.02;
+
+    /**
+     * Minimum scored bigrams required before the diversity gate
+     * applies.  Short probes legitimately have lower diversity ratios
+     * (fewer total bigrams = fewer opportunities for distinct ones)
+     * and shouldn't be gated as degenerate.  Above this floor, the
+     * ratio measurement is meaningful.
+     */
+    public static final int MIN_BIGRAMS_FOR_DIVERSITY_GATE = 100;
 
     private final String[] labels;
     /** Charset objects cached at load — one {@code Charset.forName} per class, ever. */
@@ -263,45 +309,8 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
      * tiny probes that can't be scored.
      */
     public double[] scoreClasses(byte[] probe) {
-        if (probe == null || probe.length < 2) {
-            return null;
-        }
-        int len = Math.min(probe.length, MAX_PROBE_BYTES);
-
-        // Integer hot loop — CharSoup-style.  int8 logP × int8 IDF →
-        // int16 product, accumulated into int32 per class.  Overflow
-        // safety: at MAX_PROBE_BYTES=16384, max 16383 bigrams × 127 × 127
-        // ≈ 264M per class, well inside int32's 2.1B headroom.
-        int[] dots = new int[numClasses];
-        for (int i = 0; i + 1 < len; i++) {
-            int b0 = probe[i] & 0xFF;
-            int b1 = probe[i + 1] & 0xFF;
-            // γ: bigrams where both bytes are ASCII whitespace carry no
-            // encoding signal, and per-class training-data preparation
-            // varies in how it handles consecutive whitespace (GB18030's
-            // training collapsed it; others retained it).  That asymmetry
-            // can dominate scoring on HTML-stripped probes where
-            // whitespace bigrams are the highest-frequency tokens.  Skip.
-            if (isWhitespace(b0) && isWhitespace(b1)) {
-                continue;
-            }
-            int bigram = (b0 << 8) | b1;
-            int w = idf8[bigram];  // non-negative, 0..127
-            if (w == 0) {
-                continue; // bigram has no discriminative power; skip
-            }
-            int base = bigram * numClasses;
-            for (int c = 0; c < numClasses; c++) {
-                dots[c] += logP8[base + c] * w;
-            }
-        }
-
-        // Single per-class dequantization at end of probe.
-        double[] score = new double[numClasses];
-        for (int c = 0; c < numClasses; c++) {
-            score[c] = dots[c] * perClassDequant[c];
-        }
-        return score;
+        ScoreResult sr = scoreClassesAndCount(probe);
+        return sr == null ? null : sr.scores;
     }
 
     /**
@@ -371,7 +380,15 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             return null;
         }
         int len = Math.min(probe.length, MAX_PROBE_BYTES);
-        int[] dots = new int[numClasses];
+
+        // Pass 1: count distinct bigrams.  Whitespace and zero-IDF
+        // bigrams are skipped as in the original hot loop.  short[] is
+        // enough since count fits in 16383 (max possible).  Track the
+        // ids of distinct bigrams in a parallel array so pass 2 doesn't
+        // need to scan the full 65k space.
+        short[] count = new short[BIGRAM_SPACE];
+        int[] distinctBigrams = new int[len];
+        int distinctIdx = 0;
         int scored = 0;
         int total = 0;
         for (int i = 0; i + 1 < len; i++) {
@@ -387,14 +404,75 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 continue;
             }
             scored++;
-            int base = bigram * numClasses;
-            for (int c = 0; c < numClasses; c++) {
-                dots[c] += logP8[base + c] * w;
+            if (count[bigram] == 0) {
+                distinctBigrams[distinctIdx++] = bigram;
             }
+            count[bigram]++;
         }
+
+        // Type A — diversity gate.  If the input has too few distinct
+        // bigrams relative to total scored bigrams, it's a degenerate
+        // / looped input ("thththth..." or worse).  Abstain — caller
+        // falls back.  Only applied above a minimum scored-bigrams
+        // floor, since short probes legitimately have lower diversity
+        // ratios.
+        if (scored >= MIN_BIGRAMS_FOR_DIVERSITY_GATE
+                && (double) distinctIdx / scored < MIN_DIVERSITY_RATIO) {
+            return null;
+        }
+
+        // Type C — per-bigram total-contribution cap.  Only applies
+        // when we have enough distinct bigrams that capping any single
+        // one won't destroy a large fraction of the discriminative
+        // signal.  Below the floor, short-probe semantics rule: every
+        // bigram counts fully.
+        boolean applyCap = distinctIdx >= MIN_DISTINCT_FOR_CAP;
+
+        // Pass 2: per distinct bigram, compute per-class total
+        // contribution and (when above floor) apply Type C cap.
         double[] score = new double[numClasses];
-        for (int c = 0; c < numClasses; c++) {
-            score[c] = dots[c] * perClassDequant[c];
+        double[] contributions = new double[numClasses];
+        for (int k = 0; k < distinctIdx; k++) {
+            int bigram = distinctBigrams[k];
+            int n = count[bigram];
+            int w = idf8[bigram];
+            double countTimesIdf = (double) n * w;
+            int base = bigram * numClasses;
+
+            if (!applyCap) {
+                // Fast path: no cap, just accumulate.
+                for (int c = 0; c < numClasses; c++) {
+                    score[c] += logP8[base + c] * countTimesIdf * perClassDequant[c];
+                }
+                continue;
+            }
+
+            // logPs are negative; "best" class for the bigram = highest
+            // (least negative) contribution after dequant.
+            double max = Double.NEGATIVE_INFINITY;
+            double secondMax = Double.NEGATIVE_INFINITY;
+            for (int c = 0; c < numClasses; c++) {
+                double contrib = logP8[base + c] * countTimesIdf * perClassDequant[c];
+                contributions[c] = contrib;
+                if (contrib > max) {
+                    secondMax = max;
+                    max = contrib;
+                } else if (contrib > secondMax) {
+                    secondMax = contrib;
+                }
+            }
+            // Cap any class whose contribution exceeds runner-up + cap.
+            double cap = secondMax + CAP_PER_BIGRAM_NATS;
+            if (max > cap) {
+                for (int c = 0; c < numClasses; c++) {
+                    if (contributions[c] > cap) {
+                        contributions[c] = cap;
+                    }
+                }
+            }
+            for (int c = 0; c < numClasses; c++) {
+                score[c] += contributions[c];
+            }
         }
         return new ScoreResult(score, scored, total);
     }

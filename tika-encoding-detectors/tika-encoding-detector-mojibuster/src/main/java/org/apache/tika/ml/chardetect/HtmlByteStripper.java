@@ -66,6 +66,29 @@ public final class HtmlByteStripper {
      *  end at the next {@code >}. Internal subsets ({@code <!DOCTYPE foo [ ... ]>})
      *  are rare; we'd stop at the first nested {@code >}. Acceptable. */
     private static final int DECL_OR_PI = 10;
+    /** Just saw {@code &}.  Next byte decides whether this is a named
+     *  entity ({@code &amp;}), a numeric reference ({@code &#169;} or
+     *  {@code &#xA9;}), or a stray ampersand. */
+    private static final int ENTITY = 11;
+    private static final int ENTITY_NAME = 12;
+    /** Just saw {@code &#}.  Next byte: {@code x}/{@code X} for hex, or
+     *  decimal digit for decimal. */
+    private static final int ENTITY_NUM = 13;
+    private static final int ENTITY_DEC = 14;
+    private static final int ENTITY_HEX = 15;
+
+    /**
+     * Maximum body length for an entity (bytes after {@code &}, including
+     * any {@code #}/{@code x} prefix, excluding the trailing {@code ;}).
+     * Standard HTML5 named entities are at most 32 bytes
+     * ({@code &CounterClockwiseContourIntegral;}), but only a few dozen
+     * exceed 16; 99% of real-world entities are well under that.  A 16-byte
+     * cap covers the common cases ({@code &nbsp;}, {@code &laquo;},
+     * {@code &Aacute;}, {@code &hellip;}, {@code &middot;}, etc.) and
+     * bounds pathological input that might otherwise eat language-content
+     * bytes before bailing out.
+     */
+    private static final int MAX_ENTITY_BODY_LEN = 16;
 
     private static final byte[] SCRIPT = {'s', 'c', 'r', 'i', 'p', 't'};
     private static final byte[] STYLE = {'s', 't', 'y', 'l', 'e'};
@@ -105,10 +128,13 @@ public final class HtmlByteStripper {
         public final int length;
         /** Number of well-formed tags parsed (including comments). */
         public final int tagCount;
+        /** Number of well-formed HTML entities stripped from TEXT. */
+        public final int entityCount;
 
-        public Result(int length, int tagCount) {
+        public Result(int length, int tagCount, int entityCount) {
             this.length = length;
             this.tagCount = tagCount;
+            this.entityCount = entityCount;
         }
     }
 
@@ -140,6 +166,11 @@ public final class HtmlByteStripper {
         int rawMatch = 0;
         int end = srcOffset + srcLen;
         int tagCount = 0;
+        int entityCount = 0;
+        // Position of the leading '&' for the in-progress entity.
+        // Tracked so the bailout path can emit the consumed prefix
+        // as literal text when the parse fails (e.g. "AT&T").
+        int entityStart = 0;
         int attrNameStart = 0;
         // When true, the current quoted attribute value's bytes are
         // emitted to dst (attribute name matched TEXT_ATTRS).  Reset
@@ -152,6 +183,9 @@ public final class HtmlByteStripper {
                 case TEXT:
                     if (b == '<') {
                         state = LT;
+                    } else if (b == '&') {
+                        state = ENTITY;
+                        entityStart = i;
                     } else {
                         dst[w++] = b;
                     }
@@ -186,6 +220,121 @@ public final class HtmlByteStripper {
                 case DECL_OR_PI:
                     if (b == '>') {
                         state = TEXT;
+                    }
+                    break;
+
+                case ENTITY:
+                    // First byte after '&' decides path.
+                    if (b == '#') {
+                        state = ENTITY_NUM;
+                    } else if (isAsciiLetter(b)) {
+                        state = ENTITY_NAME;
+                    } else {
+                        // Not entity-shaped: emit consumed prefix (just '&')
+                        // and re-process b under TEXT semantics.
+                        for (int k = entityStart; k < i; k++) {
+                            dst[w++] = src[k];
+                        }
+                        if (b == '<') {
+                            state = LT;
+                        } else if (b == '&') {
+                            entityStart = i;
+                            // state stays ENTITY
+                        } else {
+                            dst[w++] = b;
+                            state = TEXT;
+                        }
+                    }
+                    break;
+
+                case ENTITY_NAME:
+                    if (b == ';') {
+                        entityCount++;
+                        state = TEXT;
+                    } else if (isAsciiLetter(b)
+                            && (i - entityStart) <= MAX_ENTITY_BODY_LEN) {
+                        // continue accumulating; no emit
+                    } else {
+                        for (int k = entityStart; k < i; k++) {
+                            dst[w++] = src[k];
+                        }
+                        if (b == '<') {
+                            state = LT;
+                        } else if (b == '&') {
+                            entityStart = i;
+                            state = ENTITY;
+                        } else {
+                            dst[w++] = b;
+                            state = TEXT;
+                        }
+                    }
+                    break;
+
+                case ENTITY_NUM:
+                    // First byte after '&#': 'x'/'X' for hex, digit for decimal.
+                    if (b == 'x' || b == 'X') {
+                        state = ENTITY_HEX;
+                    } else if (isAsciiDigit(b)) {
+                        state = ENTITY_DEC;
+                    } else {
+                        for (int k = entityStart; k < i; k++) {
+                            dst[w++] = src[k];
+                        }
+                        if (b == '<') {
+                            state = LT;
+                        } else if (b == '&') {
+                            entityStart = i;
+                            state = ENTITY;
+                        } else {
+                            dst[w++] = b;
+                            state = TEXT;
+                        }
+                    }
+                    break;
+
+                case ENTITY_DEC:
+                    if (b == ';') {
+                        entityCount++;
+                        state = TEXT;
+                    } else if (isAsciiDigit(b)
+                            && (i - entityStart) <= MAX_ENTITY_BODY_LEN) {
+                        // continue
+                    } else {
+                        for (int k = entityStart; k < i; k++) {
+                            dst[w++] = src[k];
+                        }
+                        if (b == '<') {
+                            state = LT;
+                        } else if (b == '&') {
+                            entityStart = i;
+                            state = ENTITY;
+                        } else {
+                            dst[w++] = b;
+                            state = TEXT;
+                        }
+                    }
+                    break;
+
+                case ENTITY_HEX:
+                    if (b == ';') {
+                        entityCount++;
+                        state = TEXT;
+                    } else if (isHexDigit(b)
+                            && (i - entityStart) <= MAX_ENTITY_BODY_LEN) {
+                        // continue
+                    } else {
+                        for (int k = entityStart; k < i; k++) {
+                            dst[w++] = src[k];
+                        }
+                        if (b == '<') {
+                            state = LT;
+                        } else if (b == '&') {
+                            entityStart = i;
+                            state = ENTITY;
+                        } else {
+                            dst[w++] = b;
+                            state = TEXT;
+                        }
                     }
                     break;
 
@@ -332,7 +481,15 @@ public final class HtmlByteStripper {
             }
         }
 
-        return new Result(w - dstOffset, tagCount);
+        // Unterminated entity at EOF: emit consumed prefix as literal text.
+        if (state == ENTITY || state == ENTITY_NAME || state == ENTITY_NUM
+                || state == ENTITY_DEC || state == ENTITY_HEX) {
+            for (int k = entityStart; k < end; k++) {
+                dst[w++] = src[k];
+            }
+        }
+
+        return new Result(w - dstOffset, tagCount, entityCount);
     }
 
     /**
@@ -348,6 +505,16 @@ public final class HtmlByteStripper {
     private static boolean isAsciiLetter(byte b) {
         int c = b & 0xFF;
         return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+    }
+
+    private static boolean isAsciiDigit(byte b) {
+        int c = b & 0xFF;
+        return c >= '0' && c <= '9';
+    }
+
+    private static boolean isHexDigit(byte b) {
+        int c = b & 0xFF;
+        return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
     }
 
     private static boolean isTagNameTerminator(byte b) {
