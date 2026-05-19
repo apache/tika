@@ -320,6 +320,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         BasicContentHandlerFactory that = (BasicContentHandlerFactory) o;
         return writeLimit == that.writeLimit &&
                 throwOnWriteLimitReached == that.throwOnWriteLimitReached &&
+                validateXHTML == that.validateXHTML &&
                 type == that.type;
     }
 
@@ -328,6 +329,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         int result = type != null ? type.hashCode() : 0;
         result = 31 * result + writeLimit;
         result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
+        result = 31 * result + (validateXHTML ? 1 : 0);
         return result;
     }
 }

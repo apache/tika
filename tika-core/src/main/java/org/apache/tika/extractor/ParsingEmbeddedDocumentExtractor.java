@@ -40,6 +40,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.SAXOutputConfig;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -163,10 +164,19 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             handler.endElement(XHTML, "h1", "h1");
         }
 
+        // Wrap the delegate's handler so we can close anything it left open if
+        // it throws mid-element. Without this, the </div> emitted in finally
+        // could land on top of an open <p>/<table>/etc. from the failed
+        // sub-parse and produce malformed XHTML.
+        XHTMLBalancingHandler balancer =
+                outputHtml ? new XHTMLBalancingHandler(handler) : null;
+        ContentHandler delegateHandler = outputHtml ? balancer : handler;
+
         // Use the delegate parser to parse this entry
         try {
             tis.setCloseShield();
-            DELEGATING_PARSER.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)),
+            DELEGATING_PARSER.parse(tis,
+                    new EmbeddedContentHandler(new BodyContentHandler(delegateHandler)),
                     metadata, context);
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
@@ -181,6 +191,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             // Always close the package-entry div so XHTML output stays well-formed
             // even when the inner parse throws (e.g., zip-bomb depth limits).
             if (outputHtml) {
+                balancer.drainOpenElements();
                 handler.endElement(XHTML, "div", "div");
             }
         }
