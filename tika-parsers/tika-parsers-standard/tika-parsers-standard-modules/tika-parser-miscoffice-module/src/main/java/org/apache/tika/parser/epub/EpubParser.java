@@ -59,8 +59,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -245,7 +245,7 @@ public class EpubParser implements Parser {
                             // before the next item (or the outer </body>)
                             // emits, otherwise the validator sees cross-
                             // nested events.
-                            normalizer.drainOpen();
+                            normalizer.drainOpenElements();
                         } catch (IOException ioe) {
                             LOG.trace("epub spine read IOException on {}: {}", path, ioe.toString());
                             throw ioe;
@@ -347,7 +347,7 @@ public class EpubParser implements Parser {
                 failed++;
                 LOG.trace("epub fallback: SAX failure on {}: {}", entry.getName(), e.toString());
                 // Close any tags the aborted parse left open.
-                normalizer.drainOpen();
+                normalizer.drainOpenElements();
             } catch (IOException e) {
                 failed++;
                 LOG.trace("epub fallback: IO failure on {}: {}", entry.getName(), e.toString());
@@ -601,17 +601,7 @@ public class EpubParser implements Parser {
     //for now, this simply converts all names to local names to avoid
     //namespace conflicts in the content handler. This also removes namespaces
     //from attributes
-    private static class EpubNormalizingHandler extends ContentHandlerDecorator {
-
-        // Tracks the SAX element stack across every spine item that flows
-        // through this handler. After a swallowed SAXException from a single
-        // spine item's parse, drainOpen() emits the matching endElements so
-        // the outer </body></html> doesn't land on top of an open <g>, <p>,
-        // etc. left over from the failed item. We track the original uri
-        // alongside the localName so drainOpen's endElement events carry the
-        // same namespace as the matching startElement, in case a downstream
-        // handler is namespace-aware.
-        private final java.util.Deque<OpenTag> openElements = new java.util.ArrayDeque<>();
+    private static class EpubNormalizingHandler extends XHTMLBalancingHandler {
 
         public EpubNormalizingHandler(ContentHandler contentHandler) {
             super(contentHandler);
@@ -646,42 +636,11 @@ public class EpubParser implements Parser {
             } else {
                 super.startElement(uri, localName, localName, atts);
             }
-            openElements.push(new OpenTag(uri, localName));
         }
 
         @Override
         public void endElement(String uri, String localName, String name) throws SAXException {
             super.endElement(uri, localName, localName);
-            if (!openElements.isEmpty()) {
-                openElements.pop();
-            }
-        }
-
-        /**
-         * Emits endElements for every element still on the stack, in reverse
-         * order. Intended ONLY for the catch arm of an EPUB spine item whose
-         * inner parser threw mid-stream: the outer XHTMLContentHandler still
-         * needs balanced events, but the malformed spine left some elements
-         * dangling on the wire.
-         */
-        void drainOpen() throws SAXException {
-            while (!openElements.isEmpty()) {
-                OpenTag t = openElements.pop();
-                // Mirror the (uri, localName, localName) shape used by
-                // startElement / endElement above so the SAX events stay
-                // namespace-consistent.
-                super.endElement(t.uri, t.localName, t.localName);
-            }
-        }
-
-        private static final class OpenTag {
-            final String uri;
-            final String localName;
-
-            OpenTag(String uri, String localName) {
-                this.uri = uri;
-                this.localName = localName;
-            }
         }
     }
 }

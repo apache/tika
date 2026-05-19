@@ -97,8 +97,7 @@ public class PRTParser implements Parser {
                         dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" +
                         dateStr.substring(10, 12) + ":00";
                 metadata.set(TikaCoreProperties.CREATED, formattedDate);
-                // TODO Metadata.DATE is used as modified, should it be here?
-                metadata.set(TikaCoreProperties.CREATED, formattedDate);
+                metadata.set(TikaCoreProperties.MODIFIED, formattedDate);
             }
             metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
 

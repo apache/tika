@@ -62,6 +62,7 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -665,22 +666,22 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     if (relatedPartPart == null) {
                         continue;
                     }
+                    // Wrap the contentHandler so we can close anything the
+                    // inner parser left open if it throws mid-element. Without
+                    // this, the </div> emitted after the loop would land on
+                    // top of an open <p>/<td>/etc. from the failed sub-parse.
+                    XHTMLBalancingHandler balancer =
+                            new XHTMLBalancingHandler(contentHandler);
                     try (InputStream stream = relatedPartPart.getInputStream()) {
                         XMLReaderUtils.parseSAX(stream,
-                                new EmbeddedContentHandler(contentHandler), context);
+                                new EmbeddedContentHandler(balancer), context);
 
                     } catch (IOException | TikaException e) {
+                        balancer.drainOpenElements();
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
                     } catch (SAXException e) {
-                        // Don't let a per-part SAX failure cancel the rest of
-                        // the loop -- and crucially, don't let it propagate
-                        // past the matching </div> emitted after this loop.
-                        // The contentHandler's internal bookkeeping (e.g.,
-                        // OOXMLTikaBodyPartHandler) may still have <p>/<td>/etc.
-                        // open after the partial parse; that cleanup needs a
-                        // handle to the body handler, which this generic method
-                        // doesn't have. Tracked for a follow-up.
+                        balancer.drainOpenElements();
                         WriteLimitReachedException.throwIfWriteLimitReached(e);
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
