@@ -159,6 +159,33 @@ public final class HtmlByteStripper {
      */
     public static Result strip(byte[] src, int srcOffset, int srcLen,
                      byte[] dst, int dstOffset) {
+        // Back-compat alias for charset-detection callers (Mojibuster,
+        // training tools): strips tags AND well-formed entities.
+        return stripTagsAndEntities(src, srcOffset, srcLen, dst, dstOffset);
+    }
+
+    /**
+     * Strip tags <em>and</em> well-formed HTML entities.  For <b>charset
+     * detection</b> (Mojibuster): entities are ASCII, charset-neutral, and
+     * bias the byte-bigram statistics, so they're removed.
+     */
+    public static Result stripTagsAndEntities(byte[] src, int srcOffset, int srcLen,
+                     byte[] dst, int dstOffset) {
+        return strip(src, srcOffset, srcLen, dst, dstOffset, true);
+    }
+
+    /**
+     * Strip tags only; entities pass through unchanged.  For <b>junk
+     * detection</b>, which expands them in string space afterward (dropping
+     * them here would make that expansion a no-op).
+     */
+    public static Result stripTags(byte[] src, int srcOffset, int srcLen,
+                     byte[] dst, int dstOffset) {
+        return strip(src, srcOffset, srcLen, dst, dstOffset, false);
+    }
+
+    private static Result strip(byte[] src, int srcOffset, int srcLen,
+                     byte[] dst, int dstOffset, boolean dropEntities) {
         int w = dstOffset;
         int state = TEXT;
         int nameStart = 0;
@@ -183,7 +210,7 @@ public final class HtmlByteStripper {
                 case TEXT:
                     if (b == '<') {
                         state = LT;
-                    } else if (b == '&') {
+                    } else if (b == '&' && dropEntities) {
                         state = ENTITY;
                         entityStart = i;
                     } else {

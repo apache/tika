@@ -38,6 +38,7 @@ import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.tika.ml.junkdetect.HtmlContentCleaner;
 import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.ml.junkdetect.V7Tables;
 
@@ -1820,11 +1821,22 @@ public class TrainJunkModel {
         return new float[]{(float) mu, (float) sigma};
     }
 
+    /**
+     * Opens a gzipped train/dev file, applying {@link HtmlContentCleaner#clean}
+     * to every line — the same cleaning {@code JunkFilterEncodingDetector} does
+     * at inference, so train and inference match.  No-op on clean corpus lines.
+     */
     static BufferedReader openGzipped(Path path) throws IOException {
         return new BufferedReader(
                 new InputStreamReader(
                         new GZIPInputStream(Files.newInputStream(path)),
-                        StandardCharsets.UTF_8));
+                        StandardCharsets.UTF_8)) {
+            @Override
+            public String readLine() throws IOException {
+                String l = super.readLine();
+                return l == null ? null : HtmlContentCleaner.clean(l);
+            }
+        };
     }
 
     /**

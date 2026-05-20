@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,10 +75,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public static final String DEFAULT_MODEL_RESOURCE =
             "/org/apache/tika/ml/chardetect/nb-bigram.bin";
 
-    // 16 KB matches the production read limit used by UniversalEncodingDetector
-    // and JunkFilterEncodingDetector; uniform probe size across the chain
-    // makes downstream candidate-pool arbitration consistent.
-    private static final int MAX_PROBE_BYTES = 16384;
+    // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
+    // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
+    // sequences) sit past a fixed 16 KB raw window would otherwise starve the
+    // structural UTF-8 check and NB scoring. See AdaptiveProbe.
+    private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
+    private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
     /**
      * Minimum number of successfully-parsed well-formed tags required
@@ -709,18 +710,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     private static byte[] readProbe(TikaInputStream tis) throws IOException {
-        tis.mark(MAX_PROBE_BYTES);
-        byte[] buf = new byte[MAX_PROBE_BYTES];
-        try {
-            int n = IOUtils.read(tis, buf);
-            if (n < buf.length) {
-                byte[] trimmed = new byte[n];
-                System.arraycopy(buf, 0, trimmed, 0, n);
-                return trimmed;
-            }
-            return buf;
-        } finally {
-            tis.reset();
-        }
+        return AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
     }
 }

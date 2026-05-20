@@ -17,7 +17,9 @@
 package org.apache.tika.ml.chardetect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,58 @@ public class HtmlByteStripperTest {
             this.tagCount = tagCount;
             this.entityCount = entityCount;
         }
+    }
+
+    /** Helper: tagCount when stripping the given bytes (tags+entities). */
+    private static int tagCount(byte[] src) {
+        byte[] dst = new byte[src.length];
+        return HtmlByteStripper.strip(src, 0, src.length, dst, 0).tagCount;
+    }
+
+    @Test
+    public void multiByteUnicodeIsNotTagStripped() {
+        // The byte-level stripper must not mangle UTF-16/UTF-32: those bytes
+        // don't form single-byte ASCII tags, so tagCount stays 0 and callers
+        // (Mojibuster / JunkFilter) fall back to the raw bytes via their
+        // `tagCount > 0` gate.  Regression guard for the "does the byte
+        // stripper botch wide Unicode?" question.
+        String html = "<html><head><title>商品</title></head>"
+                + "<body><p>这是中文测试 with markup</p></body></html>";
+        // ASCII-compatible encodings: tags ARE recognized (and safely stripped).
+        assertTrue(tagCount(html.getBytes(StandardCharsets.UTF_8)) > 0,
+                "UTF-8 tags should be recognized");
+        assertTrue(tagCount(html.getBytes(Charset.forName("GBK"))) > 0,
+                "GBK (ASCII-compatible) tags should be recognized");
+        // Wide Unicode: no single-byte ASCII tags → tagCount 0 → strip not used.
+        assertEquals(0, tagCount(html.getBytes(Charset.forName("UTF-16LE"))),
+                "UTF-16LE must not register tags");
+        assertEquals(0, tagCount(html.getBytes(Charset.forName("UTF-16BE"))),
+                "UTF-16BE must not register tags");
+        assertEquals(0, tagCount(html.getBytes(Charset.forName("UTF-32LE"))),
+                "UTF-32LE must not register tags");
+        assertEquals(0, tagCount(html.getBytes(Charset.forName("UTF-32BE"))),
+                "UTF-32BE must not register tags");
+    }
+
+    @Test
+    public void stripTagsPreservesEntitiesForJunkDetection() {
+        // JunkFilter path: tags removed, entities KEPT (expanded later in
+        // string space).  Charset path (default strip) removes both.
+        String in = "<p>Copyright &#169; 2024 caf&eacute;</p>";
+        byte[] src = in.getBytes(StandardCharsets.US_ASCII);
+        byte[] dstA = new byte[src.length];
+        byte[] dstB = new byte[src.length];
+        HtmlByteStripper.Result tagsOnly =
+                HtmlByteStripper.stripTags(src, 0, src.length, dstA, 0);
+        HtmlByteStripper.Result both =
+                HtmlByteStripper.stripTagsAndEntities(src, 0, src.length, dstB, 0);
+        assertEquals("Copyright &#169; 2024 caf&eacute;",
+                new String(dstA, 0, tagsOnly.length, StandardCharsets.US_ASCII));
+        assertEquals("Copyright  2024 caf",
+                new String(dstB, 0, both.length, StandardCharsets.US_ASCII));
+        // tagsOnly does not count entities (it doesn't enter the entity path)
+        assertEquals(0, tagsOnly.entityCount);
+        assertEquals(2, both.entityCount);
     }
 
     @Test

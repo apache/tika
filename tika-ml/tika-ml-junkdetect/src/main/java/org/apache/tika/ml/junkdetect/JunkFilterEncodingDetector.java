@@ -24,8 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +34,7 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.ml.chardetect.HtmlByteStripper;
+import org.apache.tika.ml.chardetect.AdaptiveProbe;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.quality.TextQualityDetector;
 
@@ -177,38 +175,18 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         }
         bytes = stripBomBytes(bytes);
 
-        // Strip HTML/XML markup before decoding so the quality score reflects
-        // body text, not whitespace and tags.  Falls back to the raw probe
-        // when no well-formed tags are detected.
-        byte[] forDecode = bytes;
-        byte[] stripDst = new byte[bytes.length];
-        HtmlByteStripper.Result stripped =
-                HtmlByteStripper.strip(bytes, 0, bytes.length, stripDst, 0);
-        boolean stripUsed = stripped.tagCount > 0 && stripped.length > 0;
-        LOG.trace("junk-filter strip: input={}B tagCount={} stripped={}B used={}",
-                bytes.length, stripped.tagCount, stripped.length, stripUsed);
-        if (stripUsed) {
-            forDecode = new byte[stripped.length];
-            System.arraycopy(stripDst, 0, forDecode, 0, stripped.length);
-        }
-
-        // Decode probe under each candidate, preserving insertion order so
-        // tournament seeding is deterministic.
-        //
-        // Each decoded string is then run through HTML entity expansion.
-        // For entity-encoded HTML (numeric refs like &#3405;), this is
-        // load-bearing: entity refs are ASCII bytes that decode identically
-        // under every candidate charset, so they don't differentiate.
-        // After expansion they become real codepoints — and crucially, in
-        // the *wrong* decoding (e.g. mojibake-as-HAN), they introduce
-        // cross-script transitions (HAN ↔ MALAYALAM mid-document) that the
-        // quality detector's script-transition feature correctly penalises.
-        // See `20260512-junkdetector-codepoint-hash-plan.md` (AIT5 case).
+        // Decode each candidate, then HtmlContentCleaner.clean — the same
+        // tag-strip + entity-expand TrainJunkModel applies, so train and
+        // inference match.  Entity expansion is load-bearing: numeric refs
+        // become codepoints whose cross-script transitions expose mojibake
+        // under a wrong decoding (AIT5 case).
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset cs : uniqueCharsets) {
-            String decoded = safeDecode(forDecode, cs);
+            String decoded = safeDecode(bytes, cs);
             if (decoded != null && !decoded.isEmpty()) {
-                decoded = expandHtmlEntities(decoded);
+                decoded = HtmlContentCleaner.clean(decoded);
+            }
+            if (decoded != null && !decoded.isEmpty()) {
                 candidates.put(cs, decoded);
                 if (LOG.isTraceEnabled()) {
                     int sampleLen = Math.min(400, decoded.length());
@@ -330,27 +308,9 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     }
 
     private byte[] readProbe(TikaInputStream tis) throws IOException {
-        try {
-            tis.mark(readLimit);
-            byte[] buf = new byte[readLimit];
-            int total = 0;
-            int read;
-            while (total < readLimit
-                    && (read = tis.read(buf, total, readLimit - total)) != -1) {
-                total += read;
-            }
-            if (total == 0) {
-                return null;
-            }
-            if (total < readLimit) {
-                byte[] trimmed = new byte[total];
-                System.arraycopy(buf, 0, trimmed, 0, total);
-                return trimmed;
-            }
-            return buf;
-        } finally {
-            tis.reset();
-        }
+        // readLimit is the tag-stripped content target; cap raw reads at 512 KB.
+        byte[] probe = AdaptiveProbe.read(tis, readLimit, AdaptiveProbe.DEFAULT_RAW_CAP);
+        return probe.length == 0 ? null : probe;
     }
 
     private static String safeDecode(byte[] bytes, Charset charset) {
@@ -373,56 +333,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     // intermixed with raw UTF-8 codepoints.
     // -----------------------------------------------------------------------
 
-    private static final Pattern ENTITY_DEC = Pattern.compile("&#(\\d{1,7});");
-    private static final Pattern ENTITY_HEX = Pattern.compile("&#[xX]([0-9a-fA-F]{1,6});");
-    private static final Pattern ENTITY_NAMED =
-            Pattern.compile("&(amp|lt|gt|quot|apos|nbsp|copy|reg);");
-
     /**
-     * Expands HTML numeric and a small set of named entity references in
-     * {@code s}.  Malformed or out-of-range entities pass through unchanged.
-     * The named-entity set is intentionally small — only the universally-
-     * declared HTML5 entities that don't depend on a DOCTYPE.  Anything more
-     * exotic stays as a literal entity reference (which scores as ASCII noise,
-     * the same as it would have before).
+     * Delegates to {@link HtmlContentCleaner#expandHtmlEntities} — the single
+     * implementation shared with training.  Retained here as the historical
+     * entry point used by tests and diagnostics.
      */
     static String expandHtmlEntities(String s) {
-        s = ENTITY_DEC.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1));
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — fall through, leave entity literal
-            }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_HEX.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1), 16);
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — fall through, leave entity literal
-            }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_NAMED.matcher(s).replaceAll(mr -> {
-            switch (mr.group(1)) {
-                case "amp":  return "&";
-                case "lt":   return "<";
-                case "gt":   return ">";
-                case "quot": return "\"";
-                case "apos": return "'";
-                case "nbsp": return " ";
-                case "copy": return "©";
-                case "reg":  return "®";
-                default:     return Matcher.quoteReplacement(mr.group());
-            }
-        });
-        return s;
+        return HtmlContentCleaner.expandHtmlEntities(s);
     }
 
     /**
