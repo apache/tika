@@ -298,17 +298,43 @@ public class TikaCLI {
         }
 
         if (runpack || ! StringUtils.isBlank(tikaConfigPath)) {
-            TikaAsyncCLI.main(args);
+            invokeAsyncCLI(args);
             return;
         }
         if (args.length == 1 &&  args[0].endsWith(".json")) {
-            TikaAsyncCLI.main(args);
+            invokeAsyncCLI(args);
             return;
         }
         // For batch mode (two directories), pass directly to TikaAsyncCLI.
         // It will create its own config with PluginsWriter that includes
         // plugin-roots, fetcher, emitter, and pipes-iterator configuration.
-        TikaAsyncCLI.main(args);
+        invokeAsyncCLI(args);
+    }
+
+    /**
+     * Invokes the batch/async processor ({@code tika-async-cli}). The async
+     * processor and the parsers it forks live in the {@code lib/} directory of
+     * the tika-app distribution rather than inside the bare {@code tika-app.jar}.
+     * If tika-app is run as a standalone jar (without the surrounding unzipped
+     * distribution), the supporting classes are missing from the classpath and
+     * the JVM throws {@link NoClassDefFoundError}. Translate that into an
+     * actionable message rather than letting the raw error escape.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-4733">TIKA-4733</a>
+     */
+    private static void invokeAsyncCLI(String[] args) throws Exception {
+        try {
+            TikaAsyncCLI.main(args);
+        } catch (NoClassDefFoundError e) {
+            System.err.println("Error: could not load the Tika batch/async processor (" +
+                    e.getMessage() + ").");
+            System.err.println("Batch mode requires the full tika-app distribution, not the "
+                    + "standalone jar.");
+            System.err.println("Download tika-app-<version>.zip, unzip it, and run "
+                    + "tika-app-<version>.jar from inside the unzipped directory so that the "
+                    + "adjacent 'lib/' and 'plugins/' directories are on the classpath.");
+            System.exit(1);
+        }
     }
 
     /**

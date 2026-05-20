@@ -20,8 +20,9 @@
   <id>bin</id>
   <baseDirectory>${project.build.finalName}-bin</baseDirectory>
   <includeBaseDirectory>false</includeBaseDirectory>
+  <!-- TIKA-4733: 4.x ships the full distribution as .zip only (universally
+       readable); the redundant .tgz of identical contents was dropped. -->
   <formats>
-    <format>tgz</format>
     <format>zip</format>
   </formats>
   <dependencySets>

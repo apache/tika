@@ -127,6 +127,56 @@
                         <include name="tika-pipes/tika-pipes-plugins/*/target/tika-pipes-*-${project.version}.zip*" />
                       </fileset>
                     </copy>
+                    <!--
+                      TIKA-4733: fail the release build if any expected dist
+                      artifact did not land in target/${project.version}/.
+                      Ant <copy> silently succeeds when an <include> matches
+                      zero files, so a renamed, re-versioned, or forgotten
+                      artifact (or a module whose assembly/shade stopped
+                      producing output) would otherwise yield an incomplete
+                      release candidate with no error. Each <fail> below names
+                      the missing artifact so the gap is obvious. Keep this list
+                      in sync with the <copy> include list above.
+                    -->
+                    <fail message="Release staging missing: CHANGES.txt">
+                      <condition><not><available file="${basedir}/target/${project.version}/CHANGES.txt" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-${project.version}-src.zip">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-parser-scientific-package-${project.version}-shaded.jar">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-parser-scientific-package-${project.version}-shaded.jar" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-parser-sqlite3-package-${project.version}-shaded.jar">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-parser-sqlite3-package-${project.version}-shaded.jar" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-parser-nlp-package-${project.version}-shaded.jar">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-parser-nlp-package-${project.version}-shaded.jar" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-app-${project.version}.zip">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-app-${project.version}.zip" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-server-standard-${project.version}-bin.zip">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-server-standard-${project.version}-bin.zip" /></not></condition>
+                    </fail>
+                    <fail message="Release staging missing: tika-eval-app-${project.version}.zip">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-eval-app-${project.version}.zip" /></not></condition>
+                    </fail>
+                    <!--
+                      pipes plugin zips are staged via a glob, so assert the
+                      staged count equals the number of plugin modules that have
+                      an assembly descriptor. This catches a single plugin whose
+                      zip silently dropped out without hard-coding the plugin set.
+                    -->
+                    <resourcecount property="staged.plugin.zip.count">
+                      <fileset dir="${basedir}/target/${project.version}" includes="tika-pipes-*-${project.version}.zip" />
+                    </resourcecount>
+                    <resourcecount property="source.plugin.count">
+                      <fileset dir="${basedir}/tika-pipes/tika-pipes-plugins" includes="*/src/main/assembly/assembly.xml" />
+                    </resourcecount>
+                    <fail message="Release staging has ${staged.plugin.zip.count} tika-pipes plugin zip(s) but there are ${source.plugin.count} plugin module(s) with an assembly descriptor; a plugin zip was dropped from dist staging.">
+                      <condition><not><equals arg1="${staged.plugin.zip.count}" arg2="${source.plugin.count}" /></not></condition>
+                    </fail>
                     <checksum algorithm="SHA-512" fileext=".sha512">
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.tgz" />

@@ -180,6 +180,13 @@
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
+          <!-- TIKA-4733: the -bin.zip full distribution is an Apache dist
+               artifact, not a Maven Central one. attach=false keeps it off
+               Central; the apache-release profile stages it to dist straight
+               from target/. Sibling modules (tika-e2e-tests/tika-server) that
+               consume tika-server-standard:bin:zip as a Maven dep are satisfied
+               by the install-file execution below. -->
+          <attach>false</attach>
         </configuration>
         <executions>
           <execution>
@@ -188,6 +195,36 @@
             <goals>
               <goal>single</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <!--
+            With <attach>false</attach> on the assembly above (TIKA-4733) the
+            -bin.zip is not part of the project artifact set and so is neither
+            deployed to Central nor installed locally. Sibling reactor modules
+            declare tika-server-standard:bin:zip as a Maven dep, so install it
+            into the local repo at its canonical coordinates to satisfy reactor
+            resolution without publishing it to Central.
+          -->
+          <execution>
+            <id>install-server-bin-zip-locally</id>
+            <phase>install</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.build.directory}/tika-server-standard-${project.version}-bin.zip</file>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>${project.artifactId}</artifactId>
+              <version>${project.version}</version>
+              <classifier>bin</classifier>
+              <packaging>zip</packaging>
+              <generatePom>false</generatePom>
+            </configuration>
           </execution>
         </executions>
       </plugin>
