@@ -61,6 +61,18 @@
     </dependency>
 
     <!-- Test dependencies -->
+    <!--
+      tika-serialization is test-scope only because the one consumer
+      (BuildJunkAugmentationData) lives in src/test/java — it's a corpus-prep
+      tool, not part of the runtime detector. Keeps the production classpath of
+      tika-ml-junkdetect free of the serialization dep.
+    -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${revision}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>

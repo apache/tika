@@ -226,6 +226,12 @@ public class TrainJunkModel {
         {"ISO-8859-1", "windows-1252"},
         {"windows-1252", "ISO-8859-1"},
         {"x-MacRoman", "windows-1252"},
+        // The exact win-1252/ISO-8859-2 sibling pathology: a win-1252 page with
+        // ©/®/£ symbols read as ISO-8859-2 yields isolated Latin-Extended-A
+        // letters (Š/Ž/Ł). Included as classifier negatives so the LR trains
+        // against this pattern directly.
+        {"windows-1252", "ISO-8859-2"},
+        {"ISO-8859-2", "windows-1252"},
         // SBCS Cyrillic / Greek / RTL
         {"windows-1251", "windows-1252"},
         {"windows-1252", "windows-1251"},
