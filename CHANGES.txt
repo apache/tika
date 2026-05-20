@@ -1,3 +1,17 @@
+Release 3.3.1 - 5/20/2026
+
+  * Dependency upgrades  (TIKA-4695).
+
+  * Use the IANA-registered text/markdown as the primary media type, with
+    text/x-web-markdown and text/x-markdown kept as aliases (TIKA-4724).
+
+  * Fix several potential resource/file-handle leaks across the OOXML and ODF parsers,
+    the HTTP fetcher, the gRPC server, and ForkClient (TIKA-4704).
+
+  * The resourceName of a nested tarball no longer includes the parent
+    directories of its parent gzip file, and fix a typo in the .gz extension
+    (TIKA-4705).
+
 Release 3.3.0 - 3/18/2026
 
   * Switch to poi-ooxml-full (TIKA-4563).

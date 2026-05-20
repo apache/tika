@@ -397,6 +397,7 @@
     <kafka.version>4.2.0</kafka.version>
     <kotlin-stdlib.version>2.3.21</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
+    <!-- 3.x requires jdk17 -->
     <log4j2.version>2.26.0</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
