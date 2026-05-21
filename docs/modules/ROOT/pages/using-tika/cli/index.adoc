@@ -24,8 +24,28 @@ This section covers using Apache Tika from the command line via `tika-app`.
 
 == Overview
 
-The Tika application (`tika-app.jar`) is a standalone command line utility for extracting
+The Tika application (`tika-app`) is a command line utility for extracting
 text content and metadata from all sorts of files.
+
+== Installation
+
+NOTE: As of 4.x, `tika-app` is distributed as a zip archive rather than a single
+self-contained jar. The bare `tika-app-<version>.jar` is only a thin launcher and
+will fail with `NoClassDefFoundError` if run on its own — the parsers and supporting
+modules (including the batch processor) live in the adjacent `lib/` directory.
+
+Download `tika-app-<version>.zip`, unzip it, and run `tika-app-<version>.jar` from
+inside the unzipped directory so that `lib/` and `plugins/` sit alongside the jar:
+
+[source,bash]
+----
+unzip tika-app-<version>.zip
+cd tika-app-<version>
+java -jar tika-app-<version>.jar [option...] [file|port...]
+----
+
+The examples below use `tika-app.jar` as shorthand for the versioned jar in the
+unzipped distribution.
 
 == Basic Usage
 
@@ -143,16 +163,17 @@ Use a custom configuration file:
 java -jar tika-app.jar --config=tika-config.json document.pdf
 ----
 
-== Batch Processing (tika-async-cli)
+== Batch Processing
 
-For processing large numbers of files, use `tika-async-cli`. It uses the Tika Pipes
-architecture with forked JVM processes for fault tolerance.
+For processing large numbers of files, run `tika-app` with input/output directories.
+Under the hood this uses Tika Pipes batch processing, with forked JVM processes for
+fault tolerance.
 
 === Basic Batch Usage
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output
+java -jar tika-app.jar -i /path/to/input -o /path/to/output
 ----
 
 This processes all files in the input directory and writes JSON metadata (RMETA format)
@@ -195,7 +216,7 @@ Extract markdown content only (no metadata) from all files:
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output --handler m --content-only
+java -jar tika-app.jar -i /path/to/input -o /path/to/output --handler m --content-only
 ----
 
 This produces `.md` files in the output directory containing just the extracted markdown
@@ -205,5 +226,5 @@ Extract text with all metadata in concatenated mode:
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /path/to/input -o /path/to/output --concatenate
+java -jar tika-app.jar -i /path/to/input -o /path/to/output --concatenate
 ----

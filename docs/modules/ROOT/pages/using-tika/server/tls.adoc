@@ -642,7 +642,7 @@ Add this JVM argument to see detailed SSL handshake information:
 
 [source,bash]
 ----
-java -Djavax.net.debug=ssl:handshake -jar tika-server-standard.jar -c config.json
+java -Djavax.net.debug=ssl:handshake -jar tika-server-standard-X.Y.Z.jar -c config.json
 ----
 
 == See Also

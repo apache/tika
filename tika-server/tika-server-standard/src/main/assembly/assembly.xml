@@ -20,8 +20,9 @@
   <id>bin</id>
   <baseDirectory>${project.build.finalName}-bin</baseDirectory>
   <includeBaseDirectory>false</includeBaseDirectory>
+  <!-- TIKA-4733: 4.x ships the full distribution as .zip only (universally
+       readable); the redundant .tgz of identical contents was dropped. -->
   <formats>
-    <format>tgz</format>
     <format>zip</format>
   </formats>
   <dependencySets>
@@ -53,7 +54,7 @@
     <file>
       <source>${project.build.directory}/tika-server-standard-${project.version}.jar</source>
       <outputDirectory/>
-      <destName>tika-server.jar</destName>
+      <destName>tika-server-standard-${project.version}.jar</destName>
     </file>
   </files>
 </assembly>

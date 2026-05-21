@@ -38,7 +38,7 @@
 
     <properties>
         <!-- Path to the tika-server-standard binary assembly zip built in the same reactor -->
-        <tika.server.zip>${project.basedir}/../../tika-server/tika-server-standard/target/tika-server-standard-${revision}-bin.zip</tika.server.zip>
+        <tika.server.zip>${project.basedir}/../../tika-server/tika-server-standard/target/tika-server-standard-${revision}.zip</tika.server.zip>
         <!-- Directory where the assembly is unpacked before tests run -->
         <tika.server.home>${project.build.directory}/tika-server-dist</tika.server.home>
     </properties>
@@ -112,7 +112,6 @@
                                             <groupId>org.apache.tika</groupId>
                                             <artifactId>tika-server-standard</artifactId>
                                             <version>${revision}</version>
-                                            <classifier>bin</classifier>
                                             <type>zip</type>
                                             <overWrite>false</overWrite>
                                             <outputDirectory>${tika.server.home}</outputDirectory>

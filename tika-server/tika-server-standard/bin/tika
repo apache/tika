@@ -165,7 +165,7 @@ function print_usage() {
     echo ""
     echo "  -d            Specify the Tika server directory; defaults to ../"
     echo ""
-    echo "  -j/--jar      Specify the tika-server.jar; defaults to tika-server.jar"
+    echo "  -j/--jar      Specify the server jar; defaults to tika-server-standard-<version>.jar"
     echo ""
     echo "  -V/--verbose   Verbose messages from this script"
     echo ""
@@ -428,7 +428,13 @@ if [ -z "$TIKA_HOST" ]; then
 fi
 
 if [ -z "$TIKA_SERVER_JAR" ]; then
-  TIKA_SERVER_JAR=tika-server.jar
+  # The distribution ships a versioned jar (tika-server-standard-<version>.jar);
+  # pick it up by glob so this script needs no edits across releases. Use -j to
+  # override.
+  TIKA_SERVER_JAR=$(cd "$TIKA_SERVER_DIR" 2>/dev/null && ls tika-server-standard-*.jar 2>/dev/null | head -n 1)
+  if [ -z "$TIKA_SERVER_JAR" ]; then
+    TIKA_SERVER_JAR=tika-server-standard.jar
+  fi
 fi
 
 if [ -z "$TIKA_LOGS_DIR" ]; then

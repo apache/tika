@@ -39,7 +39,7 @@ repository is still used for 3.x patch releases — see <<3x-patches>> below. Ne
 
 minimal::
 Apache Tika server with base dependencies (Java + the unpacked
-`tika-server-standard-bin.zip`).
+`tika-server-standard-<v>.zip`).
 
 full::
 Adds Tesseract OCR, GDAL, ImageMagick, and Microsoft fonts.
@@ -66,7 +66,7 @@ The gRPC server packaged with parser-package jars and pipes plugin zips.
 
 [source,bash]
 ----
-curl -sLI https://downloads.apache.org/tika/<TAG>/tika-server-standard-<TAG>-bin.zip \
+curl -sLI https://downloads.apache.org/tika/<TAG>/tika-server-standard-<TAG>.zip \
   | head -1
 ----
 

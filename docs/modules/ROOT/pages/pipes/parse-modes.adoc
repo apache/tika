@@ -52,7 +52,7 @@ See <<no-parse-mode>>.
 == Content Handler Types
 
 The content handler type determines the format of the extracted text. It is set on the
-`ContentHandlerFactory` configured in `parseContext` (or via the CLI `-h` flag), and applies
+`ContentHandlerFactory` configured in `parseContext` (or via the CLI `--handler` flag), and applies
 to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`).
 
 [cols="1,1,2"]
@@ -147,12 +147,12 @@ only `X-TIKA:content` and `X-TIKA:container_exception`. If you set your own
 
 === CLI usage
 
-The `tika-async-cli` batch processor supports `CONTENT_ONLY` via the `--content-only`
+The `tika-app` batch processor supports `CONTENT_ONLY` via the `--content-only`
 flag:
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /input -o /output --handler m --content-only
+java -jar tika-app.jar -i /input -o /output --handler m --content-only
 ----
 
 This produces `.md` files (when using the `m` handler type) containing only the
