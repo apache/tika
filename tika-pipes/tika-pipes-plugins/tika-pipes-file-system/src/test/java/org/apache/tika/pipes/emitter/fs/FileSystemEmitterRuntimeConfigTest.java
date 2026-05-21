@@ -229,4 +229,35 @@ public class FileSystemEmitterRuntimeConfigTest {
         assertFalse(Files.exists(otherDir.resolve("test.json")),
                 "File should not be created in other directory");
     }
+
+    @Test
+    public void testExceptionMessageWhenOutputExists(@TempDir Path tempDir) throws Exception {
+        // TIKA-4736: the onExists=EXCEPTION failure should carry an actionable message,
+        // not just the bare path from FileAlreadyExistsException.
+        String config = String.format(Locale.ROOT,
+                "{\"basePath\":\"%s\", \"onExists\":\"EXCEPTION\"}",
+                tempDir.toString().replace("\\", "\\\\"));
+        FileSystemEmitter emitter = FileSystemEmitter.build(
+                new ExtensionConfig("test-emitter", "test", config));
+        ParseContext context = new ParseContext();
+
+        // Bytes path (the --extract / image-extraction scenario)
+        emitter.emit("img", new ByteArrayInputStream("a".getBytes(StandardCharsets.UTF_8)),
+                new Metadata(), context);
+        IOException bytesEx = assertThrows(IOException.class, () ->
+                emitter.emit("img", new ByteArrayInputStream("b".getBytes(StandardCharsets.UTF_8)),
+                        new Metadata(), context));
+        assertTrue(bytesEx.getMessage().contains("onExists=EXCEPTION"), bytesEx.getMessage());
+        assertTrue(bytesEx.getMessage().contains("REPLACE or SKIP"), bytesEx.getMessage());
+
+        // Metadata-JSON path
+        List<Metadata> metadataList = new ArrayList<>();
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.TIKA_CONTENT, "x");
+        metadataList.add(m);
+        emitter.emit("meta.json", metadataList, context);
+        IOException metaEx = assertThrows(IOException.class, () ->
+                emitter.emit("meta.json", metadataList, context));
+        assertTrue(metaEx.getMessage().contains("onExists=EXCEPTION"), metaEx.getMessage());
+    }
 }

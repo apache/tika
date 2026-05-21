@@ -44,6 +44,13 @@ public class AsyncHelper {
                 }
                 argList.add("-o");
                 argList.add(dir);
+            } else if ("--extract".equals(arg)) {
+                // tika-app documents --extract as the long form of -z. TikaAsyncCLI
+                // only knows -z/--unzipShallow (and -Z/--unzipRecursive), so without
+                // this translation --extract falls through as an unrecognized arg and
+                // trips the "unknown args" / "set inputDir once" errors (TIKA-4736).
+                // -z passes through untranslated and is already recognized.
+                argList.add("-z");
             } else if ("-a".equals(arg)) {
                 //do nothing
             } else if (arg.startsWith(UNPACK_FORMAT_KEY)) {

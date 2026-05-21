@@ -801,6 +801,8 @@ public class TikaCLI {
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
+        out.println("    --on-exists=<mode>     When an output file already exists: exception");
+        out.println("                           (default), replace or skip");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");

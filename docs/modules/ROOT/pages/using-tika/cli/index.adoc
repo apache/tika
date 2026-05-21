@@ -200,6 +200,9 @@ to the output directory.
 |`--content-only`
 |Output only extracted content (no metadata, no JSON wrapper); implies `--concatenate`
 
+|`--on-exists`
+|Behavior when an output file already exists: `exception` (default), `replace` or `skip`
+
 |`-T` or `--timeoutMs`
 |Timeout for each parse in milliseconds
 

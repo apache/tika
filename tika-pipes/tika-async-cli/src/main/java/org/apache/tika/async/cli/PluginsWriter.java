@@ -151,6 +151,16 @@ public class PluginsWriter {
                 }
             }
 
+            // Override the emitter's onExists policy if set on the CLI (--on-exists)
+            if (!StringUtils.isBlank(simpleAsyncConfig.getOnExists())
+                    && emitters != null && emitters.has("fse")) {
+                ObjectNode fse = (ObjectNode) emitters.get("fse");
+                if (fse != null && fse.has("file-system-emitter")) {
+                    ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
+                    fsEmitter.put("onExists", simpleAsyncConfig.getOnExists());
+                }
+            }
+
             // Write timeout limits to parse-context if configured on CLI
             if (simpleAsyncConfig.getTimeoutMs() != null) {
                 ObjectNode parseContext = root.has("parse-context")

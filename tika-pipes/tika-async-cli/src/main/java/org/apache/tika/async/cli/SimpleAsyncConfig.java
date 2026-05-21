@@ -46,6 +46,10 @@ class SimpleAsyncConfig {
     private final String unpackMode;    // "ZIPPED" or "DIRECTORY"
     private final boolean unpackIncludeMetadata;
 
+    // Emitter behavior when an output file already exists: "EXCEPTION", "REPLACE" or "SKIP".
+    // null leaves the emitter/config default (EXCEPTION) in place.
+    private String onExists;
+
     //TODO -- switch to a builder
     public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
                              String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
@@ -136,6 +140,14 @@ class SimpleAsyncConfig {
         return unpackIncludeMetadata;
     }
 
+    public String getOnExists() {
+        return onExists;
+    }
+
+    public void setOnExists(String onExists) {
+        this.onExists = onExists;
+    }
+
     @Override
     public String toString() {
         return "SimpleAsyncConfig{" +
@@ -154,6 +166,7 @@ class SimpleAsyncConfig {
                 ", unpackFormat='" + unpackFormat + '\'' +
                 ", unpackMode='" + unpackMode + '\'' +
                 ", unpackIncludeMetadata=" + unpackIncludeMetadata +
+                ", onExists='" + onExists + '\'' +
                 '}';
     }
 }
