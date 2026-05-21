@@ -18,6 +18,7 @@ package org.apache.tika.async.cli;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -157,6 +158,47 @@ public class AsyncProcessorTest extends TikaTest {
         assertContains("some_embedded_content", metadataList
                 .get(1)
                 .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testContentOnlyFromConfigDefault() throws Exception {
+        // TIKA-4735: parseMode set only as a PipesConfig default (not on the request
+        // context) must still be honored at emit time - the file should be raw content,
+        // not a JSON metadata wrapper.
+        Path contentOnlyConfig = configDir.resolve("tika-config-content-only.json");
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", inputDir);
+        replacements.put("JSON_EMITTER_BASE_PATH", jsonOutputDir);
+        replacements.put("BYTES_EMITTER_BASE_PATH", bytesOutputDir);
+        replacements.put("PLUGIN_ROOTS", Paths.get("target/plugins"));
+        JsonConfigHelper.writeConfigFromResource("/configs/config-content-only-default.json",
+                AsyncProcessorTest.class, replacements, contentOnlyConfig);
+
+        AsyncProcessor processor = AsyncProcessor.load(contentOnlyConfig);
+
+        // Deliberately do NOT set ParseMode on the request context - it must come from
+        // the config default.
+        FetchEmitTuple t = new FetchEmitTuple("co-1", new FetchKey("fsf", "mock.xml"),
+                new EmitKey("fse-json", "emit-co"), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        processor.offer(t, 1000);
+        for (int i = 0; i < 10; i++) {
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+        }
+        while (processor.checkActive()) {
+            Thread.sleep(100);
+        }
+        processor.close();
+
+        String emitted = Files.readString(jsonOutputDir.resolve("emit-co"));
+        // Raw concatenated content (markdown may escape underscores), not a JSON wrapper.
+        assertContains("content", emitted);
+        assertContains("some", emitted);
+        assertFalse(emitted.contains(TikaCoreProperties.TIKA_CONTENT.getName()),
+                "content-only output must not contain the JSON content key: " + emitted);
+        String trimmed = emitted.trim();
+        assertFalse(trimmed.startsWith("[") || trimmed.startsWith("{"),
+                "content-only output must be raw content, not a JSON wrapper: " + emitted);
     }
 
     @Test

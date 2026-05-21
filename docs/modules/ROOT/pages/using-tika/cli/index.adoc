@@ -191,7 +191,7 @@ to the output directory.
 |`-o`
 |Output directory
 
-|`-h` or `--handlerType`
+|`--handler`
 |Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore (default: `t`)
 
 |`--concatenate`
@@ -216,7 +216,7 @@ Extract markdown content only (no metadata) from all files:
 
 [source,bash]
 ----
-java -jar tika-app.jar -i /path/to/input -o /path/to/output -h m --content-only
+java -jar tika-app.jar -i /path/to/input -o /path/to/output --handler m --content-only
 ----
 
 This produces `.md` files in the output directory containing just the extracted markdown
