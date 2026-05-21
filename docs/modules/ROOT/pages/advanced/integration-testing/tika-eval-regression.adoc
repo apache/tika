@@ -310,3 +310,55 @@ Compare step finishes in 2-5 minutes depending on extract size.
 A regression analysis writeup goes in
 `~/Desktop/claude-todo/<reports-dir-name>-analysis.md` per the
 `regression` skill.
+
+== Querying the H2 database directly
+
+`tika-eval` stores everything in an *H2* database — the `-d <name>` passed to
+`Compare` produces `<name>.mv.db`. The generated reports surface only pre-canned
+views; for custom counts and joins, connect to the H2 file and run SQL.
+
+The database is created with *no username and no password*
+(`H2Util` opens it with `DriverManager.getConnection(url)` and no credentials).
+So the old H2 default `-user sa` *fails* with "Wrong user name or password" — use
+empty credentials. Append `;IFEXISTS=TRUE` (so a typo opens nothing rather than
+creating a new empty db) and `;ACCESS_MODE_DATA=r` for a read-only open. H2 is
+single-writer: query only after the `Compare`/`Profile`/`Report` run has released
+the file lock. Use the `h2-*.jar` shipped with `tika-eval-app`.
+
+[source,bash]
+----
+H2=path/to/h2-x.y.z.jar
+# note: omit the .mv.db suffix in the URL
+DB='jdbc:h2:path/to/eval-db;IFEXISTS=TRUE;ACCESS_MODE_DATA=r'
+java -cp "$H2" org.h2.tools.Shell -url "$DB" -user '' -password '' \
+  -sql "SHOW TABLES"
+----
+
+Pass SQL to `-sql` as a *single line* (a multi-line argument leaves the Shell
+waiting on stdin).
+
+Key tables: `profiles_a`/`profiles_b` (one row per extracted file: `file_name`,
+`mime_id`, `length`, …), `contents_a`/`contents_b` (text profile: `oov`,
+`languageness`, `num_tokens`, `lang_id_1`, …), `content_comparisons`
+(`dice_coefficient`, `overlap`), `mimes`, `containers`. *A and B are paired by
+`id`* — the same row `id` is the same file in both runs (this is how the built-in
+reports join: `join profiles_b pb on pa.id = pb.id`). Always join on `id`.
+
+[source,sql]
+----
+-- OOV / languageness: how many files improved vs regressed in B (fast PK join)
+SELECT SUM(CASE WHEN cb.oov < ca.oov THEN 1 ELSE 0 END) AS oov_better,
+       SUM(CASE WHEN cb.oov > ca.oov THEN 1 ELSE 0 END) AS oov_worse
+FROM contents_a ca JOIN contents_b cb ON ca.id = cb.id;
+
+-- net common-tokens A vs B (headline "more real text recovered" metric)
+SELECT SUM(ca.num_common_tokens) AS common_a,
+       SUM(cb.num_common_tokens) AS common_b,
+       SUM(cb.num_common_tokens) - SUM(ca.num_common_tokens) AS delta
+FROM contents_a ca JOIN contents_b cb ON ca.id = cb.id;
+
+-- detected charset distribution in the B run
+SELECT m.mime_string, COUNT(*) n
+FROM profiles_b p JOIN mimes m ON p.mime_id = m.mime_id
+GROUP BY m.mime_string ORDER BY n DESC;
+----

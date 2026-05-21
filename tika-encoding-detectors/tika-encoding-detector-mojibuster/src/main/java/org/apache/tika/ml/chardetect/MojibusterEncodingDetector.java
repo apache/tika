@@ -135,25 +135,26 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * to drop a high-confidence UTF-8 classification on otherwise-valid
      * text and fall through to {@code AutoDetectReader.detect}, which
      * raises {@code TikaException} when the chain returns no candidates.
-     * 0.5% (1 byte per 200) accommodates "tiny corruption" while still
-     * rejecting genuinely-non-UTF-8 streams (which would have many more
-     * malformed bytes).
+     * Per-byte error rate governing LONG probes (the absolute cap below is a
+     * floor for short ones).  0.01% (~1 malformed sequence per 10 KB)
+     * accommodates real UTF-8 with a few stray/corrupt bytes (e.g. a 150 KB
+     * page with 4 errors = 0.003%) while still rejecting a win-1252 page
+     * misread as UTF-8 (a 20 KB Western page surfaces ~14 invalid sequences =
+     * 0.07%, 7× over).
      *
      * <p>TACTICAL: remove or revisit when Mojibuster's UTF-8 grammar
      * check is replaced with a probabilistic decoder that returns a
      * confidence score directly.</p>
      */
-    private static final double UTF8_MALFORMED_TOLERANCE = 0.005;
+    private static final double UTF8_MALFORMED_TOLERANCE = 0.0001;
 
     /**
-     * Absolute cap on UTF-8 error events tolerated alongside
-     * {@link #UTF8_MALFORMED_TOLERANCE}.  Tolerance fires only when
-     * BOTH the rate AND the absolute count are within bounds — a
-     * 20 KB French win-1252 probe with 14 invalid UTF-8 sequences
-     * has a 0.07% error rate (under the 0.5% rate cap) but 14
-     * scattered errors is decisively "not UTF-8".  Cap of 1 matches
-     * the original comment intent ("a single bad continuation byte
-     * in 2KB of CJK is nearly always corruption").
+     * Absolute floor on tolerated UTF-8 error events for SHORT probes, where a
+     * rate is meaningless (a 20-byte string with 1 bad byte is 5%).  The
+     * effective cap is {@code max(this, probeLen * UTF8_MALFORMED_TOLERANCE)} —
+     * so short probes allow 1, long probes are governed by the rate.  (Earlier
+     * this was a hard cap applied at all lengths, which wrongly rejected long,
+     * genuinely-UTF-8 pages carrying a couple of stray bytes.)
      */
     private static final int UTF8_MAX_TOLERATED_ERRORS = 1;
 
@@ -309,9 +310,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         boolean utf8Tolerated = false;
         if (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
             int errors = StructuralEncodingRules.countUtf8Errors(probe);
-            if (errors > 0
-                    && errors <= UTF8_MAX_TOLERATED_ERRORS
-                    && (double) errors / probe.length <= UTF8_MALFORMED_TOLERANCE) {
+            // Length-aware: absolute floor for short probes, rate for long ones.
+            int maxTolerated = Math.max(UTF8_MAX_TOLERATED_ERRORS,
+                    (int) (probe.length * UTF8_MALFORMED_TOLERANCE));
+            if (errors > 0 && errors <= maxTolerated) {
                 utf8Tolerated = true;
                 LOG.trace("mojibuster utf8 NOT_UTF8 tolerated: {} error events in {}B ({}%)",
                         errors, probe.length,
