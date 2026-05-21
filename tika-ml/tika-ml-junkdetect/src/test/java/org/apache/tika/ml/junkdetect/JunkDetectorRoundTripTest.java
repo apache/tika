@@ -49,12 +49,12 @@ import org.apache.tika.quality.TextQualityScore;
  * + unigram backoff) all agree on the semantics.  Does not require the
  * production training corpus.
  */
-public class JunkDetectorV7Test {
+public class JunkDetectorRoundTripTest {
 
     @Test
-    void v7RoundTripSeenPairAndUnigramBackoff(@TempDir Path tmp) throws IOException {
+    void roundTripSeenPairAndUnigramBackoff(@TempDir Path tmp) throws IOException {
         // -----------------------------------------------------------------
-        // Build a tiny synthetic v7 model for LATIN.
+        // Build a tiny synthetic model for LATIN.
         //
         // codepointIndex = ['A', 'B']  (indices 0, 1)
         // Pair (A, B) stored with log-prob -1.0
@@ -70,10 +70,10 @@ public class JunkDetectorV7Test {
         // f1Cal mu=-5, sigma=1  →  z1 = (-2 - -5) / 1 = +3.0
         // Classifier w1=1, rest 0, bias=0  →  logit = +3.0
         // -----------------------------------------------------------------
-        V7Tables tables = buildLatinTablesAB();
+        BigramTables tables = buildLatinTablesAB();
 
-        Path modelFile = tmp.resolve("v7-test.bin");
-        saveMinimalV7Model(tables, modelFile);
+        Path modelFile = tmp.resolve("junk-test.bin");
+        saveMinimalModel(tables, modelFile);
 
         // Verify the file roundtrips through the loader.
         JunkDetector detector = JunkDetector.loadFromPath(modelFile);
@@ -83,18 +83,18 @@ public class JunkDetectorV7Test {
         assertEquals("LATIN", score.getDominantScript(), "Dominant script should be LATIN");
         // Quantization of [-4, -1] to 8 bits introduces ~0.012 nat / level.
         // Net z-error over 3 pairs bounded ~0.05; allow 0.3 to be safe.
-        // Sentinel-bounded scoring: expected = calibrated F1 over ^_doc A B A B $_doc.
+        // Expected = calibrated mean F1 over the bucketed bigrams (A·B, B·A, A·B).
         assertEquals(expectedRunZ(tables, "ABAB", -5.0f, 1.0f), score.getZScore(), 0.05f,
-                "Inference z must match the authoritative F1 on the sentinel-bounded run");
+                "Inference z must match the authoritative F1 over the bucketed bigrams");
     }
 
     @Test
-    void v7RoundTripAllSeenPairsScoreHigher(@TempDir Path tmp) throws IOException {
+    void roundTripAllSeenPairsScoreHigher(@TempDir Path tmp) throws IOException {
         // Same shape as the first test but with BOTH (A,B) and (B,A) in the
         // bigram table.  mean log-prob = -1.0, z1 = +4.0, logit = +4.0.
         int[] cpIndex = new int[]{'A', 'B'};
         int[] keys = new int[4];
-        Arrays.fill(keys, V7Tables.EMPTY_KEY);
+        Arrays.fill(keys, BigramTables.EMPTY_KEY);
         byte[] values = new byte[4];
         float bMin = -10.0f;
         float bMax = -1.0f;
@@ -109,29 +109,30 @@ public class JunkDetectorV7Test {
                 quantizeOne(-2.0f, uMin, uMax),
         };
 
-        V7Tables tables = new V7Tables(cpIndex, keys, values, unigramBytes,
+        BigramTables tables = new BigramTables(cpIndex, keys, values, unigramBytes,
                 bMin, bMax, uMin, uMax,
                 -10.0f, 1.0f);
 
-        Path modelFile = tmp.resolve("v7-test-allseen.bin");
-        saveMinimalV7Model(tables, modelFile);
+        Path modelFile = tmp.resolve("junk-test-allseen.bin");
+        saveMinimalModel(tables, modelFile);
         JunkDetector detector = JunkDetector.loadFromPath(modelFile);
 
         TextQualityScore score = detector.score("ABAB");
         assertEquals(expectedRunZ(tables, "ABAB", -5.0f, 1.0f), score.getZScore(), 0.05f,
-                "All-seen 'ABAB': inference z must match authoritative sentinel-bounded F1");
+                "All-seen 'ABAB': inference z must match authoritative bucketed F1");
     }
 
     /**
      * End-to-end trainer integration: drives {@link
-     * TrainJunkModel#trainV7TablesForScript} on a tiny synthetic corpus,
+     * TrainJunkModel#trainBigramTablesForScript} on a tiny synthetic corpus,
      * calibrates F1, saves a model, loads it, and scores text.  Catches
      * drift between trainer F1 math and inference F1 math — the FNV
      * mix-hash, packed-key layout, and codepoint-pair iteration order all
      * have to agree exactly, or scoring produces nonsense.
      *
-     * <p>F2/F3/F4 are zeroed out (placeholder data) — the test isolates
-     * F1's trainer↔inference round-trip.
+     * <p>The block / control / script-transition features are zeroed out
+     * (placeholder data) — the test isolates the bigram (z1)
+     * trainer↔inference round-trip.
      */
     @Test
     void trainerRoundTripIntegration(@TempDir Path tmp) throws IOException {
@@ -149,9 +150,9 @@ public class JunkDetectorV7Test {
                 "a stitch in time saves nine",
                 "all that glitters is not gold");
 
-        // --- 2. Phase 1: train V7 F1 tables for this script ---
+        // --- 2. Train bigram tables for this script ---
         // Tiny corpus → min_count=1 so all pairs survive.
-        V7Tables tables = TrainJunkModel.trainV7TablesForScript(trainFile,
+        BigramTables tables = TrainJunkModel.trainBigramTablesForScript(trainFile,
                 1, JunkDetectorTrainingConfig.OA_LOAD_FACTOR,
                 JunkDetectorTrainingConfig.KEY_INDEX_BITS);
 
@@ -175,28 +176,24 @@ public class JunkDetectorV7Test {
         assertTrue(meanLogP > -15 && meanLogP < 0,
                 "Score on training text should be sensible, got " + meanLogP);
 
-        // --- 4. Phase 1.5: F1 calibration on dev ---
-        float[] f1CalLatin = TrainJunkModel.calibrateF1PerScript(devFile, tables);
+        // --- 4. z1 calibration on dev ---
+        float[] f1CalLatin = TrainJunkModel.calibrateBucketScript(
+                devFile, "LATIN", java.util.Map.of("LATIN", tables));
         assertTrue(Float.isFinite(f1CalLatin[0]), "mu1 should be finite");
         assertTrue(Float.isFinite(f1CalLatin[1]) && f1CalLatin[1] > 0,
                 "sigma1 should be positive finite");
 
-        // --- 5. Assemble + save a minimal v7 model ---
+        // --- 5. Assemble + save a minimal model ---
         int blockN = UnicodeBlockRanges.bucketCount();
-        TreeMap<String, V7Tables> f1Tables = new TreeMap<>();
+        TreeMap<String, BigramTables> f1Tables = new TreeMap<>();
         f1Tables.put("LATIN", tables);
-        TreeMap<String, float[]> blockTables = new TreeMap<>();
-        blockTables.put("LATIN", new float[blockN * blockN]);
-        TreeMap<String, float[]> blockCal = new TreeMap<>();
-        blockCal.put("LATIN", new float[]{0f, 1f});
-        TreeMap<String, float[]> controlCal = new TreeMap<>();
-        controlCal.put("LATIN", new float[]{0f, 1f});
         TreeMap<String, float[]> f1CalMap = new TreeMap<>();
         f1CalMap.put("LATIN", f1CalLatin);
-        TreeMap<String, float[]> classifierWeights = new TreeMap<>();
-        // 6 feature weights + bias.  Only z1 is non-zero here.
-        // 8 feature weights + bias.  Only z1 is non-zero here.
-        classifierWeights.put("LATIN", new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
+        // Single GLOBAL block table / control calib / combiner.
+        float[] blockTable = new float[blockN * blockN];
+        float[] blockCal = new float[]{0f, 1f};
+        float[] controlCal = new float[]{0f, 1f};
+        float[] combiner = new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
 
         List<String> scriptBuckets = List.of("LATIN", "OTHER");
         float[] scriptTransTable = new float[scriptBuckets.size() * scriptBuckets.size()];
@@ -204,9 +201,8 @@ public class JunkDetectorV7Test {
 
         Path modelPath = tmp.resolve("junkdetect.bin");
         TrainJunkModel.saveModel(
-                f1Tables, f1CalMap, blockTables, blockCal, controlCal,
-                classifierWeights, scriptBuckets, scriptTransTable,
-                scriptTransCal, modelPath);
+                f1Tables, f1CalMap, blockTable, blockCal, controlCal,
+                combiner, scriptBuckets, scriptTransTable, scriptTransCal, modelPath);
 
         // --- 6. Load via JunkDetector and score ---
         JunkDetector detector = JunkDetector.loadFromPath(modelPath);
@@ -227,10 +223,10 @@ public class JunkDetectorV7Test {
         String probe = "pack my box with five dozen liquor jugs";
         float expectedZ1 = expectedRunZ(tables, probe, f1CalLatin[0], f1CalLatin[1]);
         TextQualityScore probeScore = detector.score(probe);
-        // logit = w1*z1 (rest 0); inference aggregates the same per-run
-        // sentinel-bounded F1 the helper computes — must agree (no drift).
+        // logit = w1*z1 (rest 0); inference aggregates the same bucketed
+        // bigram F1 the helper computes — must agree (no drift).
         assertEquals(expectedZ1, probeScore.getZScore(), 0.02f,
-                "Inference z1 must match the per-run sentinel-bounded F1 "
+                "Inference z1 must match the bucketed bigram F1 "
                 + "(train/infer F1 math drift)");
     }
 
@@ -239,7 +235,7 @@ public class JunkDetectorV7Test {
     // -----------------------------------------------------------------------
 
     /**
-     * Builds a V7Tables with codepoint index ['A', 'B'], where (A,B) has a
+     * Builds a BigramTables with codepoint index ['A', 'B'], where (A,B) has a
      * stored log-prob of -1.0 but (B,A) is absent (forces unigram backoff).
      * Unigram log-prob = -2.0 for both A and B.
      *
@@ -249,12 +245,12 @@ public class JunkDetectorV7Test {
      * {@link TrainJunkModel#quantizeFloats}).  Same idea for the unigram
      * range {@code [-5, -2]} so the (-2.0, -2.0) values map to byte 255.
      */
-    private static V7Tables buildLatinTablesAB() {
+    private static BigramTables buildLatinTablesAB() {
         int[] cpIndex = new int[]{'A', 'B'};
 
         // 4 slots ≈ 25% load for 1 pair.  Open-addressing with linear probe.
         int[] keys = new int[4];
-        Arrays.fill(keys, V7Tables.EMPTY_KEY);
+        Arrays.fill(keys, BigramTables.EMPTY_KEY);
         byte[] values = new byte[4];
 
         // Manual quantization with a chosen range so we don't hit the
@@ -271,33 +267,31 @@ public class JunkDetectorV7Test {
                 quantizeOne(-2.0f, uMin, uMax),
         };
 
-        return new V7Tables(cpIndex, keys, values, unigramBytes,
+        return new BigramTables(cpIndex, keys, values, unigramBytes,
                 bMin, bMax,
                 uMin, uMax,
                 -10.0f, 1.0f);
     }
 
-    /**
-     * Mirrors inference's z1: byte-weighted mean over non-COMMON runs of the
-     * sentinel-bounded F1, then calibrated.  COMMON runs are skipped (these
-     * minimal models have no COMMON table, so inference skips them too).
-     */
-    private static float expectedRunZ(V7Tables tables, String text, float mu, float sigma) {
-        double weighted = 0;
-        long bytes = 0;
-        for (JunkDetector.Run r : JunkDetector.segmentRuns(text)) {
-            if (r.isCommon()) {
+    /** Expected z1: mean log-prob over every non-digit adjacent bigram scored
+     *  against the single-script {@code tables}, calibrated.  Mirrors
+     *  {@link JunkDetector}'s aggregate for single-script text. */
+    private static float expectedRunZ(BigramTables tables, String text, float mu, float sigma) {
+        int[] cps = text.codePoints().toArray();
+        double sum = 0;
+        long n = 0;
+        for (int i = 0; i + 1 < cps.length; i++) {
+            if (Character.isDigit(cps[i]) || Character.isDigit(cps[i + 1])) {
                 continue;
             }
-            double f1 = JunkDetector.computeF1MeanLogP(r.withSentinels(), tables);
+            double f1 = JunkDetector.computeF1MeanLogP(new int[]{cps[i], cps[i + 1]}, tables);
             if (Double.isNaN(f1)) {
                 continue;
             }
-            int n = r.text().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
-            weighted += f1 * n;
-            bytes += n;
+            sum += f1;
+            n++;
         }
-        return (float) ((weighted / bytes - mu) / sigma);
+        return (float) ((sum / n - mu) / sigma);
     }
 
     /** Quantize a single float to 8-bit unsigned using the explicit range. */
@@ -317,7 +311,7 @@ public class JunkDetectorV7Test {
     private static void insertOA(int[] keys, byte[] values, int packedKey, byte value) {
         int mask = keys.length - 1;
         int h = JunkDetector.mixIndexKey(packedKey) & mask;
-        while (keys[h] != V7Tables.EMPTY_KEY) {
+        while (keys[h] != BigramTables.EMPTY_KEY) {
             if (keys[h] == packedKey) {
                 values[h] = value;
                 return;
@@ -329,41 +323,34 @@ public class JunkDetectorV7Test {
     }
 
     /**
-     * Saves a minimal v7 model containing only LATIN, with F2/F3/F4 zeroed
-     * out and pure-F1 classifier weights (w1=1, rest 0, bias 0).  Scoring
-     * a window thus reduces to z1 directly.  F1 calibration: mu=-5, sigma=1.
+     * Saves a minimal model containing only LATIN, with the block / control /
+     * script-transition features zeroed out and pure-z1 combiner weights
+     * (w1=1, rest 0, bias 0).  Scoring a window thus reduces to z1 directly.
+     * z1 calibration: mu=-5, sigma=1.
      */
-    private static void saveMinimalV7Model(V7Tables tables, Path modelFile) throws IOException {
-        TreeMap<String, V7Tables> f1Tables = new TreeMap<>();
+    private static void saveMinimalModel(BigramTables tables, Path modelFile) throws IOException {
+        TreeMap<String, BigramTables> f1Tables = new TreeMap<>();
         f1Tables.put("LATIN", tables);
 
         TreeMap<String, float[]> f1Cal = new TreeMap<>();
         f1Cal.put("LATIN", new float[]{-5.0f, 1.0f});
 
         int blockN = UnicodeBlockRanges.bucketCount();
-
-        TreeMap<String, float[]> blockTables = new TreeMap<>();
-        blockTables.put("LATIN", new float[blockN * blockN]);
-        TreeMap<String, float[]> blockCal = new TreeMap<>();
-        blockCal.put("LATIN", new float[]{0f, 1f});
-
-        TreeMap<String, float[]> controlCal = new TreeMap<>();
-        controlCal.put("LATIN", new float[]{0f, 1f});
+        // Single GLOBAL block table + global control calibration.
+        float[] blockTable = new float[blockN * blockN];
+        float[] blockCal = new float[]{0f, 1f};
+        float[] controlCal = new float[]{0f, 1f};
 
         List<String> scriptBuckets = List.of("LATIN", "OTHER");
         float[] scriptTransTable = new float[scriptBuckets.size() * scriptBuckets.size()];
         float[] scriptTransCal = new float[]{0f, 1f};
 
-        TreeMap<String, float[]> classifierWeights = new TreeMap<>();
-        // Current model format: 7 feature weights + bias.  Only z1 is
-        // non-zero in this minimal fixture; z2-z7 contribute 0 to the logit.
-        // 8 feature weights + bias (z1-z8 + bias).
-        classifierWeights.put("LATIN", new float[]{1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f});
+        // Single GLOBAL combiner: z1 weight 1, z2..z9 weights 0, bias 0 → logit = z1.
+        float[] combiner = new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f};
 
         TrainJunkModel.saveModel(
-                f1Tables, f1Cal, blockTables, blockCal, controlCal,
-                classifierWeights, scriptBuckets, scriptTransTable,
-                scriptTransCal, modelFile);
+                f1Tables, f1Cal, blockTable, blockCal, controlCal,
+                combiner, scriptBuckets, scriptTransTable, scriptTransCal, modelFile);
     }
 
     private static void writeGzippedLines(Path path, String... lines) throws IOException {

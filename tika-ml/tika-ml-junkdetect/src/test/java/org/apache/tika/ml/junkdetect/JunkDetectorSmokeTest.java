@@ -115,13 +115,10 @@ public class JunkDetectorSmokeTest {
         assertEquals("cp1257", result.winner(),
                 "cp1257 should be identified as the correct encoding for Lithuanian text");
         // Delta is weak (pooled LATIN model dilutes Baltic-specific bigrams).
-        // Production threshold is delta > 1.0; PoC floor was 0.1 in v12,
-        // relaxed to 0.05 in v13 — the case-8 LATIN→CJK corruption slot
-        // redistributes ~1.4% of training budget away from cp1252↔cp1257
-        // sibling negatives, dropping the typical Baltic delta from ~0.13
-        // to ~0.10.  The trade-off buys 13 LATIN→CJK over-adoption fixes
-        // on cc-html-sample.  Baltic still picks cp1257 correctly; only
-        // the margin shrunk.
+        // The LATIN→CJK corruption training slot redistributes some budget
+        // away from cp1252↔cp1257 sibling negatives, shrinking the typical
+        // Baltic delta to ~0.10.  Baltic still picks cp1257 correctly; only
+        // the margin shrunk, so this floor is intentionally loose.
         assertTrue(result.delta() > 0.05,
                 "Should have some separation: delta=" + result.delta());
     }

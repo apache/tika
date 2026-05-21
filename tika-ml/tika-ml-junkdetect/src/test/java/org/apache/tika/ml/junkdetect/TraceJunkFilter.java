@@ -80,8 +80,20 @@ public final class TraceJunkFilter {
         boolean showMojibuster = true;
         boolean entityModes = false;
         boolean autoCandidates = false;
+        boolean sumDiff = false;
+        boolean skipSymbols = false;
+        int headBytes = 0;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
+                case "--sum-diff":
+                    sumDiff = true;
+                    break;
+                case "--skip-symbols":
+                    skipSymbols = true;
+                    break;
+                case "--head-bytes":
+                    headBytes = Integer.parseInt(args[++i]);
+                    break;
                 case "--file":
                     files.add(resolvePath(args[++i]));
                     break;
@@ -138,7 +150,8 @@ public final class TraceJunkFilter {
         for (Path file : files) {
             traceOne(file, detector, moji, fixedCharsets, sampleLen,
                     showFeatures, showScriptDist, showPerScriptRun,
-                    entityModes, autoCandidates, showMojibuster);
+                    entityModes, autoCandidates, showMojibuster,
+                    sumDiff, skipSymbols, headBytes);
         }
     }
 
@@ -157,10 +170,14 @@ public final class TraceJunkFilter {
                                   boolean showFeatures, boolean showScriptDist,
                                   boolean showPerScriptRun,
                                   boolean entityModes, boolean autoCandidates,
-                                  boolean showMojibuster) throws IOException {
+                                  boolean showMojibuster,
+                                  boolean sumDiff, boolean skipSymbols,
+                                  int headBytes)
+            throws IOException {
         byte[] all = Files.readAllBytes(file);
-        byte[] bytes = all.length > READ_LIMIT
-                ? Arrays.copyOfRange(all, 0, READ_LIMIT) : all;
+        int limit = headBytes > 0 ? Math.min(headBytes, all.length) : READ_LIMIT;
+        byte[] bytes = all.length > limit
+                ? Arrays.copyOfRange(all, 0, limit) : all;
 
         String shortId = file.getFileName().toString();
         if (shortId.length() > 16) shortId = shortId.substring(0, 16);
@@ -264,6 +281,46 @@ public final class TraceJunkFilter {
             }
         }
 
+        if (sumDiff) {
+            System.out.println("  REDESIGN sum-diff (coherent runs, "
+                    + (skipSymbols ? "skip digits+symbols" : "skip digits")
+                    + ", no sentinels):");
+            Map<String, double[]> sums = new LinkedHashMap<>();
+            for (String cs : decoded.keySet()) {
+                sums.put(cs, sumLogP(detector, decoded.get(cs), skipSymbols));
+            }
+            for (String cs : decoded.keySet()) {
+                double[] r = sums.get(cs);
+                double mean = r[1] > 0 ? r[0] / r[1] : Double.NaN;
+                System.out.printf(Locale.ROOT,
+                        "    %-14s sum=%+12.2f perChar=%+7.3f scored=%-7d "
+                                + "(skipDigit=%d skipCross=%d skipGlue=%d)%n",
+                        cs, r[0], mean, (int) r[1], (int) r[2], (int) r[3], (int) r[4]);
+            }
+            System.out.println("    pairwise SUM-diff (sumA - sumB; positive => A wins):");
+            for (int i = 0; i < names.length; i++) {
+                for (int j = i + 1; j < names.length; j++) {
+                    double diff = sums.get(names[i])[0] - sums.get(names[j])[0];
+                    String win = diff >= 0 ? names[i] : names[j];
+                    System.out.printf(Locale.ROOT,
+                            "      %-14s vs %-14s -> %-14s  sumDiff=%+.2f%n",
+                            names[i], names[j], win, diff);
+                }
+            }
+            System.out.println("    pairwise per-CHAR (meanA - meanB; positive => A wins):");
+            for (int i = 0; i < names.length; i++) {
+                for (int j = i + 1; j < names.length; j++) {
+                    double mi = sums.get(names[i])[0] / sums.get(names[i])[1];
+                    double mj = sums.get(names[j])[0] / sums.get(names[j])[1];
+                    double diff = mi - mj;
+                    String win = diff >= 0 ? names[i] : names[j];
+                    System.out.printf(Locale.ROOT,
+                            "      %-14s vs %-14s -> %-14s  meanDiff=%+.4f%n",
+                            names[i], names[j], win, diff);
+                }
+            }
+        }
+
         System.out.println("  tournament (insertion order):");
         String champion = names[0];
         for (int i = 1; i < names.length; i++) {
@@ -302,6 +359,74 @@ public final class TraceJunkFilter {
                 System.out.println("    " + cs + ": " + sample);
             }
         }
+    }
+
+    /**
+     * Redesign-probe scorer: Σ logP over coherent-run bigrams (no COMMON
+     * splitting, no sentinels).  Digits (and optionally symbols) are skipped
+     * as charset-invariant; a bigram touching COMMON glue is scored against
+     * its single adjacent script's table (the glue folds in); a bigram
+     * straddling two distinct real scripts is skipped (cross-script boundary).
+     *
+     * @return {@code [sum, scored, skipDigit, skipCross, skipGlue]}
+     */
+    private static double[] sumLogP(JunkDetector det, String text,
+                                    boolean skipSymbols) {
+        int[] cps = text.codePoints().toArray();
+        double total = 0;
+        int scored = 0, skipDigit = 0, skipCross = 0, skipGlue = 0;
+        for (int i = 0; i + 1 < cps.length; i++) {
+            int a = cps[i], b = cps[i + 1];
+            if (isSkippable(a, skipSymbols) || isSkippable(b, skipSymbols)) {
+                skipDigit++;
+                continue;
+            }
+            String ka = JunkDetector.classKey(a);
+            String kb = JunkDetector.classKey(b);
+            boolean aCommon = JunkDetector.COMMON_SCRIPT.equals(ka);
+            boolean bCommon = JunkDetector.COMMON_SCRIPT.equals(kb);
+            String script;
+            if (aCommon && bCommon) {
+                skipGlue++;
+                continue;                 // glue-glue: nothing charset-specific
+            } else if (aCommon) {
+                script = kb;
+            } else if (bCommon) {
+                script = ka;
+            } else if (ka.equals(kb)) {
+                script = ka;
+            } else {
+                skipCross++;
+                continue;                 // cross-script boundary
+            }
+            BigramTables tbl = det.f1TablesFor(script);
+            if (tbl == null) {
+                skipCross++;
+                continue;
+            }
+            double lp = JunkDetector.computeF1MeanLogP(new int[] {a, b}, tbl);
+            if (Double.isNaN(lp)) {
+                continue;
+            }
+            total += lp;
+            scored++;
+        }
+        return new double[] {total, scored, skipDigit, skipCross, skipGlue};
+    }
+
+    /** Charset-invariant content to skip in per-script scoring. */
+    private static boolean isSkippable(int cp, boolean skipSymbols) {
+        if (Character.isDigit(cp)) {
+            return true;
+        }
+        if (skipSymbols) {
+            int type = Character.getType(cp);
+            return type == Character.MATH_SYMBOL
+                    || type == Character.CURRENCY_SYMBOL
+                    || type == Character.MODIFIER_SYMBOL
+                    || type == Character.OTHER_SYMBOL;
+        }
+        return false;
     }
 
     private static void printFeatureComponents(String label,

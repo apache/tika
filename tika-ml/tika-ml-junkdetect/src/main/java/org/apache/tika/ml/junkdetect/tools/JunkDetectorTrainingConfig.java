@@ -44,9 +44,8 @@ import java.util.Set;
  * model.
  *
  * <p>The constants below reflect the choices that produced the current
- * shipping model and are recorded in the corresponding training notes
- * ({@code 20260514-junk-retrain-v6.md}).  Update them by editing this
- * file and committing the change together with the new model output.
+ * shipping model.  Update them by editing this file and committing the
+ * change together with the new model output.
  *
  * <p>The class has no instance state; all values are exposed as
  * {@code public static final}.  This keeps callsites short and avoids
@@ -144,9 +143,7 @@ public final class JunkDetectorTrainingConfig {
      * Per-script byte-budget overrides applied on top of the entropy-
      * proportional allocation.  Empty in the current configuration.
      *
-     * <p>Under v6 the {@code HAN=60MB} experiment <em>worsened</em> every
-     * non-HAN script (the global F1 hash table was the bottleneck).  Under
-     * v7's per-script tables, the same experiment correctly leaves other
+     * <p>With per-script tables a {@code HAN=60MB} experiment leaves other
      * scripts untouched, but the HAN gain itself was negligible (Cohen's d
      * moved 7.26 → 7.35) — the per-script HAN model is already near its
      * data-saturation point with ~18 MB of training data.  Override left
