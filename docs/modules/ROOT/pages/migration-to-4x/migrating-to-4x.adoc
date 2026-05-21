@@ -36,8 +36,11 @@ Tika provides a conversion tool in `tika-app` to help migrate your XML configura
 
 [source,bash]
 ----
-java -jar tika-app.jar --convert-config-xml-to-json=tika-config.xml,tika-config.json
+java -jar tika-app.jar --convert-config-xml-to-json=tika-config.xml > tika-config.json
 ----
+
+The converted JSON is written to standard output, so redirect it to the file of your choice
+(as shown above). No separate `--config` argument is needed.
 
 The converter currently supports:
 

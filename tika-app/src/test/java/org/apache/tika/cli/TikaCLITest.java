@@ -764,6 +764,25 @@ public class TikaCLITest {
      * reset outContent and errContent if they are not empty
      * run given params in TikaCLI and return outContent String with UTF-8
      */
+    /**
+     * Tests --convert-config-xml-to-json with no separate config file.
+     * Regression test for TIKA-4734: the flag used to be misrouted to async
+     * mode (the input arg ended in ".json"), failing with a TikaConfigException
+     * unless a --config was also passed. It must now run standalone and write
+     * the converted JSON to stdout.
+     */
+    @Test
+    public void testConvertConfigXmlToJson() throws Exception {
+        String xmlPath = Paths.get(getClass().getResource("/xml-configs/tika-config-simple.xml").toURI()).toString();
+        String content = getParamOutContent("--convert-config-xml-to-json=" + xmlPath);
+
+        // stdout should contain the converted JSON (and only the JSON)
+        assertTrue(content.contains("\"parsers\""), "Expected JSON parsers section, got: " + content);
+        assertTrue(content.contains("pdf-parser"), "Expected pdf-parser in output, got: " + content);
+        assertTrue(content.contains("\"sortByPosition\" : true"), "Expected converted param, got: " + content);
+        assertTrue(content.trim().startsWith("{"), "Output should be pure JSON, got: " + content);
+    }
+
     String getParamOutContent(String... params) throws Exception {
         resetContent();
         TikaCLI.main(params);
