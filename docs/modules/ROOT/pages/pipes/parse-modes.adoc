@@ -147,12 +147,12 @@ only `X-TIKA:content` and `X-TIKA:container_exception`. If you set your own
 
 === CLI usage
 
-The `tika-async-cli` batch processor supports `CONTENT_ONLY` via the `--content-only`
+The `tika-app` batch processor supports `CONTENT_ONLY` via the `--content-only`
 flag:
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /input -o /output -h m --content-only
+java -jar tika-app.jar -i /input -o /output -h m --content-only
 ----
 
 This produces `.md` files (when using the `m` handler type) containing only the

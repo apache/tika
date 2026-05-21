@@ -62,7 +62,7 @@
 # If not set, the script will create PID files in /var/tika
 #TIKA_PID_DIR=
 
-# Tika provides a default Log4J configuration properties file in tika-server.jar
+# Tika provides a default Log4J configuration properties file in the server jar
 # however, you may want to customize the log settings and file appender location
 # so you can point the script to use a different log4j2.properties file
 #LOG4J_PROPS=/var/tika/log4j2.properties

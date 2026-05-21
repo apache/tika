@@ -151,6 +151,10 @@
             <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
           <appendAssemblyId>false</appendAssemblyId>
+          <!-- TIKA-4733: this fat zip (slim jar + lib/) is an Apache dist artifact,
+               not a Maven Central one. attach=false keeps it off Central; the
+               apache-release profile stages it to dist straight from target/. -->
+          <attach>false</attach>
         </configuration>
         <executions>
           <execution>

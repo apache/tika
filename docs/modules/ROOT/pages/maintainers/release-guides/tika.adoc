@@ -200,7 +200,7 @@ Verify the directory contains all expected artifacts (each with `.asc` and
 
 * `tika-X.Y.Z-src.zip`
 * `tika-app-X.Y.Z.jar`
-* `tika-server-standard-X.Y.Z.jar` (and `-bin.tgz`, `-bin.zip`)
+* `tika-server-standard-X.Y.Z.jar` (and `tika-server-standard-X.Y.Z.zip`)
 * `tika-parser-scientific-package-X.Y.Z.jar`
 * `tika-parser-sqlite3-package-X.Y.Z.jar`
 * `tika-parser-nlp-package-X.Y.Z.jar`

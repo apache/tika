@@ -127,9 +127,9 @@ but is no longer the active convention.
 
 Tika 4.x changed the `tika-server-standard` packaging: the published jar is now
 a thin top-level jar that resolves its dependencies from a sibling `lib/`
-directory. The 4.x image therefore ships the unpacked `tika-server-standard-bin.zip`
-distribution under `/opt/tika-server/` (containing `tika-server.jar`, `lib/`,
-and `plugins/`) instead of a single fat jar.
+directory. The 4.x image therefore ships the unpacked `tika-server-standard-<version>.zip`
+distribution under `/opt/tika-server/` (containing `tika-server-standard-<version>.jar`,
+`lib/`, and `plugins/`) instead of a single fat jar.
 
 The standard REST endpoints (`/tika`, `/rmeta`, `/unpack`, `/detect`, etc.)
 work as in 3.x — they spool the request body to a temp file internally via
@@ -138,7 +138,7 @@ work as in 3.x — they spool the request body to a temp file internally via
 Pipes-mode endpoints (`/pipes`, `/async`) require pf4j plugins. The
 `tika-pipes-file-system` plugin is **bundled** under
 `/opt/tika-server/plugins/tika-pipes-file-system/` (it ships inside the
-upstream `tika-server-standard-bin.zip`). Other pipes plugins
+upstream `tika-server-standard-<version>.zip`). Other pipes plugins
 (`tika-pipes-http`, `tika-pipes-s3`, etc.) are not currently bundled in the
 preview image; mount them into `/opt/tika-server/plugins/` if you need them.
 Bundling additional common plugins is planned for `4.0.0-beta-1.0`.
