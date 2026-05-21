@@ -152,7 +152,7 @@ flag:
 
 [source,bash]
 ----
-java -jar tika-async-cli.jar -i /input -o /output -h m --content-only
+java -jar tika-async-cli.jar -i /input -o /output --handler m --content-only
 ----
 
 This produces `.md` files (when using the `m` handler type) containing only the

@@ -32,28 +32,28 @@ public class AsyncHelperTest {
     @Test
     public void testTextHandler() throws Exception {
         String[] args = new String[]{"-t", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testTextHandlerLong() throws Exception {
         String[] args = new String[]{"--text", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testHtmlHandler() throws Exception {
         String[] args = new String[]{"--html", "input", "output"};
-        String[] expected = new String[]{"-h", "h", "input", "output"};
+        String[] expected = new String[]{"--handler", "h", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testXmlHandler() throws Exception {
         String[] args = new String[]{"-x", "input", "output"};
-        String[] expected = new String[]{"-h", "x", "input", "output"};
+        String[] expected = new String[]{"--handler", "x", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
@@ -61,14 +61,14 @@ public class AsyncHelperTest {
     public void testJsonRecursiveSkipped() throws Exception {
         // -J is the default in async mode, so it's just skipped
         String[] args = new String[]{"-J", "-t", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testBatchModeWithOptions() throws Exception {
         String[] args = new String[]{"-J", "-t", "/path/to/input", "/path/to/output"};
-        String[] expected = new String[]{"-h", "t", "/path/to/input", "/path/to/output"};
+        String[] expected = new String[]{"--handler", "t", "/path/to/input", "/path/to/output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 }

@@ -59,17 +59,17 @@ public class AsyncHelper {
             } else if (arg.equals(UNPACK_INCLUDE_METADATA)) {
                 argList.add("--unpack-include-metadata");
             } else if (arg.equals("-t") || arg.equals("--text")) {
-                // Translate TikaCLI text output to TikaAsyncCLI handler type
-                argList.add("-h");
+                // Translate TikaCLI text output to the TikaAsyncCLI handler type.
+                // TikaAsyncCLI's handler option is --handler; -h there means --help.
+                argList.add("--handler");
                 argList.add("t");
             } else if (arg.equals("--html")) {
-                // Translate TikaCLI html output to TikaAsyncCLI handler type
-                // Note: TikaCLI uses -h for html, but TikaAsyncCLI uses -h for handler type
-                argList.add("-h");
+                // Translate TikaCLI html output to the TikaAsyncCLI handler type.
+                argList.add("--handler");
                 argList.add("h");
             } else if (arg.equals("-x") || arg.equals("--xml")) {
-                // Translate TikaCLI xml output to TikaAsyncCLI handler type
-                argList.add("-h");
+                // Translate TikaCLI xml output to the TikaAsyncCLI handler type.
+                argList.add("--handler");
                 argList.add("x");
             } else if (arg.equals("-J") || arg.equals("--jsonRecursive")) {
                 // TikaAsyncCLI always outputs JSON with recursive metadata (RMETA mode)
