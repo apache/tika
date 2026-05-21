@@ -332,7 +332,7 @@ public class TikaCLI {
                     + "standalone jar.");
             System.err.println("Download tika-app-<version>.zip, unzip it, and run "
                     + "tika-app-<version>.jar from inside the unzipped directory so that the "
-                    + "adjacent 'lib/' and 'plugins/' directories are on the classpath.");
+                    + "adjacent 'lib/' and 'plugins/' directories are present alongside the jar.");
             System.exit(1);
         }
     }

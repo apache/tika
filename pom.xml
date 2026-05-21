@@ -122,7 +122,7 @@
                         <include name="tika-parsers/tika-parsers-extended/tika-parser-sqlite3-package/target/tika-parser-sqlite3-package-${project.version}-shaded.jar*" />
                         <include name="tika-parsers/tika-parsers-ml/tika-parser-nlp-package/target/tika-parser-nlp-package-${project.version}-shaded.jar*" />
                         <include name="tika-app/target/tika-app-${project.version}.zip*" />
-                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}-bin.zip*" />
+                        <include name="tika-server/tika-server-standard/target/tika-server-standard-${project.version}.zip*" />
                         <include name="tika-eval/tika-eval-app/target/tika-eval-app-${project.version}.zip*" />
                         <include name="tika-pipes/tika-pipes-plugins/*/target/tika-pipes-*-${project.version}.zip*" />
                       </fileset>
@@ -156,8 +156,8 @@
                     <fail message="Release staging missing: tika-app-${project.version}.zip">
                       <condition><not><available file="${basedir}/target/${project.version}/tika-app-${project.version}.zip" /></not></condition>
                     </fail>
-                    <fail message="Release staging missing: tika-server-standard-${project.version}-bin.zip">
-                      <condition><not><available file="${basedir}/target/${project.version}/tika-server-standard-${project.version}-bin.zip" /></not></condition>
+                    <fail message="Release staging missing: tika-server-standard-${project.version}.zip">
+                      <condition><not><available file="${basedir}/target/${project.version}/tika-server-standard-${project.version}.zip" /></not></condition>
                     </fail>
                     <fail message="Release staging missing: tika-eval-app-${project.version}.zip">
                       <condition><not><available file="${basedir}/target/${project.version}/tika-eval-app-${project.version}.zip" /></not></condition>

@@ -50,14 +50,14 @@ Installing as a Service on Linux
 -----------------------
 To run as a service on Linux you need to run the `install_tika_service.sh` script.
 
-Assuming you have the binary distribution like `tika-server-2.0.0-bin.tgz`,
-then you can extract the install script via:
+Assuming you have the binary distribution `tika-server-standard-<version>.zip`,
+you can extract the install script via:
 
-`tar xzf tika-server-2.0.0-bin.tgz --strip-components=2 tika-server-2.0.0-bin/bin/install_tika_service.sh`
+`unzip -j tika-server-standard-<version>.zip bin/install_tika_service.sh`
 
-and then run the installation process via:
+and then run the installation process (as root) via:
 
-`./install_tika_service.sh  ./tika-server-2.0.0-bin.tgz`
+`./install_tika_service.sh ./tika-server-standard-<version>.zip`
 
 
 Usage

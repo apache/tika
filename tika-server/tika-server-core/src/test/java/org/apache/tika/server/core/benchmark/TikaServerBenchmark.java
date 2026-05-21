@@ -195,7 +195,7 @@ public class TikaServerBenchmark {
             System.err.println("ERROR: MockParser is NOT being used by the server!");
             System.err.println("The tika-core test jar must be on the server's classpath.");
             System.err.println("If using java -jar, the test jar must be in the manifest Class-Path.");
-            System.err.println("Try running with: java -cp 'tika-server.jar:lib/*' org.apache.tika.server.core.TikaServerCli");
+            System.err.println("Try running with: java -cp 'tika-server-standard-<version>.jar:lib/*' org.apache.tika.server.core.TikaServerCli");
             System.exit(1);
         }
         System.out.println("MockParser verified.");

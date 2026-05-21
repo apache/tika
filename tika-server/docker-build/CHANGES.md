@@ -32,9 +32,9 @@ the `.N` convention until 4.0.0 GA.
   * Tag scheme changed to `<tika-version>` + `<tika-version>-<N>` + `latest`.
   * Migrated build out of the external `apache/tika-docker` repo into
     `tika-server/docker-build/` in `apache/tika`.
-  * Switched server packaging to the unpacked `tika-server-standard-bin.zip`
+  * Switched server packaging to the unpacked `tika-server-standard-<version>.zip`
     (`/opt/tika-server/`). Bundles the `tika-pipes-file-system` plugin from
-    the upstream bin.zip. Pipes-mode endpoints (`/pipes`, `/async`) with
+    the upstream distribution zip. Pipes-mode endpoints (`/pipes`, `/async`) with
     other fetchers/emitters need plugins mounted into
     `/opt/tika-server/plugins/`.
   * Upgraded base to Ubuntu 26.04 (resolute) and JRE to OpenJDK 25.

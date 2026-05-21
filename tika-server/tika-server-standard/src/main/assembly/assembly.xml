@@ -54,7 +54,7 @@
     <file>
       <source>${project.build.directory}/tika-server-standard-${project.version}.jar</source>
       <outputDirectory/>
-      <destName>tika-server.jar</destName>
+      <destName>tika-server-standard-${project.version}.jar</destName>
     </file>
   </files>
 </assembly>

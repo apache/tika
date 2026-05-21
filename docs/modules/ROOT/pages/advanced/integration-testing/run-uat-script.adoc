@@ -78,9 +78,9 @@ expected pattern and a truncated response body.
 
 [source,bash]
 ----
-unzip tika-server-standard-<VERSION>-bin.zip -d /tmp/tika-server-dist
+unzip tika-server-standard-<VERSION>.zip -d /tmp/tika-server-dist
 cd /tmp/tika-server-dist
-java -jar tika-server.jar -p 9998 -h localhost &
+java -jar tika-server-standard-<VERSION>.jar -p 9998 -h localhost &
 sleep 12
 ~/path/to/tika/release-tools/uat/run-uat.sh
 ----
@@ -98,8 +98,8 @@ cd tika-server/docker-build
 
 === As part of the e2e tests (CI)
 
-The Maven module `tika-e2e-tests/tika-server` unpacks the bin.zip, forks
-`java -jar tika-server.jar`, and invokes this script via
+The Maven module `tika-e2e-tests/tika-server` unpacks the distribution zip, forks
+`java -jar tika-server-standard-<VERSION>.jar`, and invokes this script via
 `org.apache.tika.server.e2e.RunUatSmokeTest`. The CI workflow
 `.github/workflows/main-jdk17-build.yml` runs this automatically on every PR
 via `mvn -pl tika-e2e-tests -am clean verify -Pe2e`.
@@ -107,7 +107,7 @@ via `mvn -pl tika-e2e-tests -am clean verify -Pe2e`.
 == When to use it
 
 * *Pre-vote release verification.* Unpack
-  `tika-server-standard-<VERSION>-bin.zip` from `dist/dev` and run the UAT
+  `tika-server-standard-<VERSION>.zip` from `dist/dev` and run the UAT
   against it. Catches packaging regressions before the vote thread starts.
 * *Pre-publish docker verification.* Run via `docker-tool.sh test-uat` after
   building a new image and before tagging it for release.

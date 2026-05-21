@@ -21,10 +21,12 @@ services:
     image: apache/tika:${TAG}-full
     # Override default so we can add the /customocr dir on the classpath
     # (for the bundled TesseractOCRConfig.properties). The 4.x image layout
-    # places the thin server jar at /opt/tika-server/tika-server.jar and its
-    # deps at /opt/tika-server/lib/*. working_dir=/opt/tika-server matters for
-    # tika-server's plugin-roots fallback (see TikaServerProcess#resolveDefaultPluginsDir).
-    entrypoint: [ "/bin/sh", "-c", "exec java -cp \"/customocr:/opt/tika-server/tika-server.jar:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $$0 $$@"]
+    # places the versioned server jar at /opt/tika-server/tika-server-standard-<version>.jar
+    # and its deps at /opt/tika-server/lib/*. /opt/tika-server/* matches that single
+    # jar (Java classpath wildcard expands only *.jar), so this needs no edit per
+    # release. working_dir=/opt/tika-server matters for tika-server's plugin-roots
+    # fallback (see TikaServerProcess#resolveDefaultPluginsDir).
+    entrypoint: [ "/bin/sh", "-c", "exec java -cp \"/customocr:/opt/tika-server/*:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $$0 $$@"]
     working_dir: /opt/tika-server
     # Kept command as example but could be added to entrypoint too
     command: -c /tika-config.json

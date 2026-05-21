@@ -28,8 +28,8 @@ mkdir -p /tmp/tika-server-test
 cd /tmp/tika-server-test
 
 # Copy and extract distribution
-cp /path/to/tika-server-standard-4.0.0-SNAPSHOT-bin.zip .
-unzip tika-server-standard-4.0.0-SNAPSHOT-bin.zip
+cp /path/to/tika-server-standard-4.0.0-SNAPSHOT.zip .
+unzip tika-server-standard-4.0.0-SNAPSHOT.zip
 
 # Copy test files
 cp /path/to/test-documents/testPDF.pdf .
@@ -43,7 +43,7 @@ Start server in default mode (config endpoints disabled):
 
 [source,bash]
 ----
-java -jar tika-server.jar --port 9998 &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar --port 9998 &
 sleep 8
 curl -s http://localhost:9998/version
 ----
@@ -220,7 +220,7 @@ Stop the default server and create a config file:
 
 [source,bash]
 ----
-pkill -f "tika-server.jar"
+pkill -f "tika-server-standard-4.0.0-SNAPSHOT.jar"
 
 cat > tika-config-unsecure.json << 'EOF'
 {
@@ -236,7 +236,7 @@ cat > tika-config-unsecure.json << 'EOF'
 }
 EOF
 
-java -jar tika-server.jar -c tika-config-unsecure.json &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-unsecure.json &
 sleep 10
 curl -s http://localhost:9998/version
 ----
@@ -288,7 +288,7 @@ unzip -l /tmp/unpack-all.zip
 
 [source,bash]
 ----
-java -jar tika-server.jar --port 9999 &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar --port 9999 &
 sleep 8
 curl -s http://localhost:9999/version
 ----
@@ -299,7 +299,7 @@ curl -s http://localhost:9999/version
 
 [source,bash]
 ----
-java -jar tika-server.jar --host 0.0.0.0 --port 9998 &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar --host 0.0.0.0 --port 9998 &
 ----
 
 *Expected:* Server binds to all interfaces.
@@ -308,7 +308,7 @@ java -jar tika-server.jar --host 0.0.0.0 --port 9998 &
 
 [source,bash]
 ----
-java -jar tika-server.jar -c tika-config.json &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config.json &
 ----
 
 *Expected:* Server uses custom configuration.
@@ -357,7 +357,7 @@ curl -s -w "\nHTTP Status: %{http_code}\n" -X DELETE http://localhost:9998/tika/
 
 [source,bash]
 ----
-pkill -f "tika-server.jar"
+pkill -f "tika-server-standard-4.0.0-SNAPSHOT.jar"
 rm -rf /tmp/tika-server-test
 ----
 
