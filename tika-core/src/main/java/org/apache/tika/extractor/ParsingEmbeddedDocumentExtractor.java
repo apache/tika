@@ -173,11 +173,13 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         ContentHandler delegateHandler = outputHtml ? balancer : handler;
 
         // Use the delegate parser to parse this entry
+        boolean parsedCleanly = false;
         try {
             tis.setCloseShield();
             DELEGATING_PARSER.parse(tis,
                     new EmbeddedContentHandler(new BodyContentHandler(delegateHandler)),
                     metadata, context);
+            parsedCleanly = true;
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
@@ -188,10 +190,15 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             recordException(e, context);
         } finally {
             tis.removeCloseShield();
-            // Always close the package-entry div so XHTML output stays well-formed
-            // even when the inner parse throws (e.g., zip-bomb depth limits).
             if (outputHtml) {
-                balancer.drainOpenElements();
+                // Only an aborted parse can leave elements open; on a clean parse
+                // the balancer stack is empty. Draining only on abort keeps the
+                // package-entry div well-formed when the inner parse throws, while
+                // letting StrictXHTMLValidator still catch genuine imbalances on the
+                // happy path (TIKA-4728).
+                if (!parsedCleanly) {
+                    balancer.drainOpenElements();
+                }
                 handler.endElement(XHTML, "div", "div");
             }
         }

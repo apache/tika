@@ -171,7 +171,9 @@ public class StrictXHTMLValidator extends ContentHandlerDecorator {
             String uri = nullSafe(attrs.getURI(i));
             String local = nullSafe(attrs.getLocalName(i));
             String qn = nullSafe(attrs.getQName(i));
-            String key = uri + "" + local;
+            // U+0001 cannot appear in a valid XML uri/localName, so it joins the
+            // two unambiguously without risk of a key collision.
+            String key = uri + "\u0001" + local;
             if (!seenUriLocal.add(key)) {
                 throw new SAXException(
                         "StrictXHTMLValidator: duplicate attribute on <"
