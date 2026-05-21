@@ -381,9 +381,15 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
+            // The partial parse may have left <p>, <td>, <tr>, <table>, or
+            // formatting tags open on the XHTML stream. Close them now so
+            // subsequent parts -- and the outer </body></html> -- land in a
+            // balanced spot.
+            bodyHandler.closeAnyPending();
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
+            bodyHandler.closeAnyPending();
         }
         Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
         resolveEmfNames(packagePart, partMetadata);

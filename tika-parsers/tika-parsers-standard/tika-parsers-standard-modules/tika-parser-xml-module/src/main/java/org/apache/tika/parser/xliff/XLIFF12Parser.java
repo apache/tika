@@ -66,12 +66,13 @@ public class XLIFF12Parser implements Parser {
         metadata.set(Metadata.CONTENT_TYPE, XLF_CONTENT_TYPE.toString());
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-
+        xhtml.startDocument();
         tis.setCloseShield();
         try {
             XMLReaderUtils.parseSAX(tis, new XLIFF12ContentHandler(xhtml, metadata), context);
         } finally {
             tis.removeCloseShield();
+            xhtml.endDocument();
         }
 
     }
