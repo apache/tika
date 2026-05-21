@@ -95,7 +95,10 @@ public final class JunkDetector implements TextQualityDetector {
      *  prior versions live in git history and are not loadable by this
      *  build.  We deliberately don't keep dual-version paths so it's
      *  impossible to confuse model versions. */
-    static final int VERSION = 13;
+    // v14: COMMON-as-a-script — COMMON runs route to a pooled COMMON table,
+    // all runs scored with kind-typed boundary sentinels (int[] codepoints).
+    // Pre-v14 models score incompatibly and are rejected at load.
+    public static final int VERSION = 14;
 
     // Feature 1 — per-script open-addressed codepoint-bigram tables.
     // No global Bloom: empty-slot is the membership oracle.
@@ -460,16 +463,11 @@ public final class JunkDetector implements TextQualityDetector {
     // -----------------------------------------------------------------------
 
     private TextQualityScore scoreText(String text) {
-        // NFD-normalize before scoring so we match the training pipeline.
-        // NFD decomposes precomposed accented letters into base + combining
-        // marks (e.g. `ề` → `e` + U+0302 + U+0300); the trainer's
-        // extractFeaturesV7 + sampleSubstrings apply the same NFD so the
-        // per-script bigram tables index the decomposed form.  NFD chosen
-        // over NFC so combining-mark scripts (Vietnamese precomposed,
-        // Indic, Thai) all surface their marks as separate codepoints,
-        // letting z5 (letter-adjacent-to-mark) discriminate uniformly.
+        // NFC-normalize before scoring so we match the training pipeline:
+        // the trainer's extractFeaturesV7 applies the same NFC, so the
+        // per-script bigram tables are indexed on the composed form.
         text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
-        List<ScriptRun> runs = buildScriptRuns(text);
+        List<Run> runs = segmentRuns(text);
 
         // Document-level features computed once per scoring call.
         // z4 = script-transition log-prob (cross-script mixing).
@@ -494,25 +492,25 @@ public final class JunkDetector implements TextQualityDetector {
         int totalBigramCount = 0;
         float[] dominantCal1 = null;
 
-        for (ScriptRun run : runs) {
+        for (Run run : runs) {
             if (!calibrations.containsKey(run.script)) {
                 continue; // skip scripts not in model; handled by no-script fallback below
             }
-            byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
-            // Skip if too short to form a bigram by either metric.  A single
-            // CJK char is 3 UTF-8 bytes (passes the byte filter) but 1 UTF-16
-            // unit, and computeF1MeanLogP filters by text.length() < 2 and
-            // returns NaN — which would poison the weighted sum here.
-            if (runUtf8.length < 2 || run.text.length() < 2) {
+            byte[] runUtf8 = run.text().getBytes(StandardCharsets.UTF_8);
+            if (runUtf8.length == 0) {
                 continue;
             }
-            float logit = scoreChunk(runUtf8, run.text, run.script,
-                    z4, z5, z6, z7, z8, z9);
+            // Sentinels make even single-codepoint runs scorable (^x$), so no
+            // length<2 skip is needed; computeF1MeanLogP(withSentinels) is never
+            // NaN for a non-empty run.
+            float logit = scoreChunk(run, runUtf8, z4, z5, z6, z7, z8, z9);
             int n = runUtf8.length;
             weightedLogit += logit * n;
             totalBytes += n;
-            totalBigramCount += n - 1;
-            if (n > maxBytes) {
+            totalBigramCount += run.cps.length + 1; // sentinel-bounded bigrams
+            // COMMON is not a real script — never report it as dominant, but it
+            // still contributes its (cancelling / junk-flagging) logit above.
+            if (!run.isCommon() && n > maxBytes) {
                 maxBytes = n;
                 dominantScript = run.script;
                 dominantCal1 = calibrations.get(run.script);
@@ -562,7 +560,7 @@ public final class JunkDetector implements TextQualityDetector {
         }
         // Same NFC normalization as scoreText — keep train/infer aligned.
         text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
-        List<ScriptRun> runs = buildScriptRuns(text);
+        List<Run> runs = segmentRuns(text);
         float z4 = computeScriptTransitionZ(text);
         float z5 = computeZ5LetterAdjacentToMarkRatio(text);
         float z6 = computeZ6ReplacementRatio(text);
@@ -580,15 +578,15 @@ public final class JunkDetector implements TextQualityDetector {
         String dominantScript = null;
         int maxBytes = 0;
 
-        for (ScriptRun run : runs) {
+        for (Run run : runs) {
             if (!calibrations.containsKey(run.script)) {
                 continue;
             }
-            byte[] runUtf8 = run.text.getBytes(StandardCharsets.UTF_8);
-            if (runUtf8.length < 2 || run.text.length() < 2) {
-                continue; // see scoreText: paired filter avoids NaN poisoning
+            byte[] runUtf8 = run.text().getBytes(StandardCharsets.UTF_8);
+            if (runUtf8.length == 0) {
+                continue;
             }
-            float[] zs = computeChunkZs(runUtf8, run.text, run.script);
+            float[] zs = computeChunkZs(run, runUtf8);
             float chunkLogit = combineLogit(zs[0], zs[1], zs[2],
                     z4, z5, z6, z7, z8, z9, run.script);
             int n = runUtf8.length;
@@ -597,7 +595,7 @@ public final class JunkDetector implements TextQualityDetector {
             weightedZ3 += zs[2] * n;
             weightedLogit += chunkLogit * n;
             totalBytes += n;
-            if (n > maxBytes) {
+            if (!run.isCommon() && n > maxBytes) {
                 maxBytes = n;
                 dominantScript = run.script;
             }
@@ -681,14 +679,14 @@ public final class JunkDetector implements TextQualityDetector {
      * <p>z4/z5/z6 are document-level features passed in by the caller —
      * the chunk reuses the same document-wide values.
      */
-    private float scoreChunk(byte[] utf8, String text, String script,
+    private float scoreChunk(Run run, byte[] utf8,
                              float z4, float z5, float z6, float z7, float z8,
                              float z9) {
-        if (utf8.length < 2 || !calibrations.containsKey(script)) {
+        if (!calibrations.containsKey(run.script)) {
             return 0f;
         }
-        float[] zs = computeChunkZs(utf8, text, script);
-        return combineLogit(zs[0], zs[1], zs[2], z4, z5, z6, z7, z8, z9, script);
+        float[] zs = computeChunkZs(run, utf8);
+        return combineLogit(zs[0], zs[1], zs[2], z4, z5, z6, z7, z8, z9, run.script);
     }
 
     // -----------------------------------------------------------------------
@@ -757,13 +755,17 @@ public final class JunkDetector implements TextQualityDetector {
      * via the public {@code computeZ2/3/4...} static helpers so
      * training and inference share the same math.
      */
-    private float[] computeChunkZs(byte[] utf8, String text, String script) {
-        // Feature 1: per-script codepoint-bigram, calibrated per-script
+    private float[] computeChunkZs(Run run, byte[] utf8) {
+        String script = run.script;
+        // Feature 1: per-script codepoint-bigram over the SENTINEL-BOUNDED run,
+        // calibrated per-script.  COMMON runs route to the COMMON table.
         V7Tables tables = f1TablesByScript.get(script);
-        float meanF1LogProb = computeCodepointF1MeanLogP(text, tables);
+        float meanF1LogProb = computeCodepointF1MeanLogP(run.withSentinels(), tables);
         float[] cal1 = calibrations.get(script);
         float z1 = (meanF1LogProb - cal1[0]) / cal1[1];
 
+        // z2/z3 score the literal run text (sentinels have no bytes/blocks).
+        String text = run.text();
         float z2 = computeZ2BlockTransitionQuantized(text,
                 blockTables.get(script), blockTableQuant.get(script),
                 blockCalibrations.get(script));
@@ -811,9 +813,9 @@ public final class JunkDetector implements TextQualityDetector {
         return ((float) (sum / count) - blockCal[0]) / blockCal[1];
     }
 
-    private static float computeCodepointF1MeanLogP(String text, V7Tables tables) {
+    private static float computeCodepointF1MeanLogP(int[] cps, V7Tables tables) {
         if (tables == null) return Float.NaN;
-        double v = computeF1MeanLogP(text, tables);
+        double v = computeF1MeanLogP(cps, tables);
         return Double.isNaN(v) ? Float.NaN : (float) v;
     }
 
@@ -989,22 +991,35 @@ public final class JunkDetector implements TextQualityDetector {
         if (text == null || text.length() < 2 || tables == null) {
             return Double.NaN;
         }
+        return computeF1MeanLogP(text.codePoints().toArray(), tables);
+    }
+
+    /**
+     * Codepoint-array form of {@link #computeF1MeanLogP(String, V7Tables)}.
+     *
+     * <p>Operates on a pre-decoded codepoint sequence rather than a
+     * {@code String} so callers can splice run-boundary sentinel
+     * pseudo-codepoints (> {@code 0x10FFFF}, which a UTF-16 {@code String}
+     * cannot represent) into the sequence before scoring.  Same F1 math —
+     * this is the single authoritative implementation; the {@code String}
+     * overload just decodes and delegates.
+     */
+    public static double computeF1MeanLogP(int[] cps, V7Tables tables) {
+        if (cps == null || cps.length < 2 || tables == null) {
+            return Double.NaN;
+        }
+        // Every adjacent pair is scored.  The old whitespace+whitespace skip
+        // (HTML-indentation guard) is gone: whitespace is now COMMON and lives
+        // in its own COMMON run/table, so it no longer pollutes a per-script
+        // mean.  Dropping the skip also makes the training tally trivially
+        // match this scorer — both just count every adjacent pair.
         double sum = 0;
         int n = 0;
         int prevCp = -1;
         int prevIdx = -1;
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
+        for (int cp : cps) {
             int curIdx = codepointToIndex(tables, cp);
-            if (prevCp >= 0
-                    && !(isAsciiWhitespace(prevCp) && isAsciiWhitespace(cp))) {
-                // γ-analog of NaiveBayesBigramEncodingDetector's
-                // whitespace-bigram skip: only the whitespace+whitespace
-                // case is dropped.  (letter, space) and (space, letter)
-                // still score so that real inter-word context is kept,
-                // but (space, space) runs from HTML indentation don't
-                // dominate the mean with unigram-fallback penalties.
+            if (prevCp >= 0) {
                 sum += scorePairF1V7(prevCp, prevIdx, cp, curIdx, tables);
                 n++;
             }
@@ -1012,19 +1027,6 @@ public final class JunkDetector implements TextQualityDetector {
             prevIdx = curIdx;
         }
         return n == 0 ? Double.NaN : sum / n;
-    }
-
-    /**
-     * ASCII whitespace per the γ filter in
-     * {@code NaiveBayesBigramEncodingDetector}: tab, LF, VT, FF, CR, space.
-     * Deliberately ASCII-only (not {@link Character#isWhitespace(int)})
-     * to match the encoding-detector's filter exactly and to leave the
-     * Unicode whitespace separators (no-break space, ideographic space,
-     * etc.) inside the bigram model.
-     */
-    private static boolean isAsciiWhitespace(int cp) {
-        return cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r'
-                || cp == 0x0B /* VT */ || cp == 0x0C /* FF */;
     }
 
     /**
@@ -1164,64 +1166,155 @@ public final class JunkDetector implements TextQualityDetector {
                 / scriptTransitionCalibration[1];
     }
 
+
+    // -----------------------------------------------------------------------
+    // Shared run segmentation + boundary sentinels (COMMON-as-a-script).
+    // Used by BOTH inference (scoreText) and training table-building so the
+    // two tally / score exactly the same sentinel-bounded sequences.
+    // -----------------------------------------------------------------------
+
+    /** Model script key for the pooled COMMON (digits/punctuation/symbols) table. */
+    public static final String COMMON_SCRIPT = "COMMON";
+
+    // Run-boundary sentinel pseudo-codepoints, typed by neighbor KIND
+    // (doc edge / COMMON run / script run).  Chosen above U+10FFFF so they can
+    // never collide with a real codepoint; a UTF-16 String cannot hold them,
+    // which is why z1 scoring runs on int[] (see computeF1MeanLogP(int[],...)).
+    // They are appended to each table's codepointIndex at training time so
+    // binarySearch resolves them.  Typing is by neighbor KIND, never identity
+    // (which script): identity typing would make the same charset-invariant
+    // COMMON run score differently per candidate decode — the pollution bug.
+    public static final int SENT_START_DOC    = 0x110000;
+    public static final int SENT_START_COMMON = 0x110001;
+    public static final int SENT_START_SCRIPT = 0x110002;
+    public static final int SENT_END_DOC      = 0x110003;
+    public static final int SENT_END_COMMON   = 0x110004;
+    public static final int SENT_END_SCRIPT   = 0x110005;
+
+    /** All sentinels, ascending — appended to every per-script codepointIndex. */
+    public static final int[] SENTINEL_CODEPOINTS = {
+        SENT_START_DOC, SENT_START_COMMON, SENT_START_SCRIPT,
+        SENT_END_DOC, SENT_END_COMMON, SENT_END_SCRIPT
+    };
+
+    /** Kind of an adjacent run, for sentinel typing. */
+    public enum NeighborKind { DOC, COMMON, SCRIPT }
+
+    private static int startSentinel(NeighborKind k) {
+        switch (k) {
+            case COMMON: return SENT_START_COMMON;
+            case SCRIPT: return SENT_START_SCRIPT;
+            default:     return SENT_START_DOC;
+        }
+    }
+
+    private static int endSentinel(NeighborKind k) {
+        switch (k) {
+            case COMMON: return SENT_END_COMMON;
+            case SCRIPT: return SENT_END_SCRIPT;
+            default:     return SENT_END_DOC;
+        }
+    }
+
     /**
-     * Splits text into maximal runs of the same Unicode script.
-     * COMMON, INHERITED, and UNKNOWN codepoints (spaces, punctuation, digits)
-     * are attached to the preceding script run so that inter-word bigrams are
-     * preserved within each run.  Any leading COMMON characters are prepended
-     * to the first non-COMMON run.
+     * A maximal same-class run: either one model script or a COMMON run
+     * (digits/punctuation/symbols/space — {@code script == }{@link #COMMON_SCRIPT}).
+     * {@code left}/{@code right} record the KIND of the neighboring run so the
+     * boundary sentinels can be typed.
      */
-    private List<ScriptRun> buildScriptRuns(String text) {
-        List<ScriptRun> runs = new ArrayList<>();
-        String currentScript = null;
-        StringBuilder currentText = new StringBuilder();
-        StringBuilder leadingCommon = new StringBuilder();
+    public static final class Run {
+        public final String script;
+        public final int[] cps;            // literal codepoints, no sentinels
+        public NeighborKind left = NeighborKind.DOC;
+        public NeighborKind right = NeighborKind.DOC;
 
-        for (int i = 0; i < text.length(); ) {
-            int cp = text.codePointAt(i);
-            i += Character.charCount(cp);
-
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
-            if (s == Character.UnicodeScript.COMMON
-                    || s == Character.UnicodeScript.INHERITED
-                    || s == Character.UnicodeScript.UNKNOWN) {
-                if (currentScript != null) {
-                    currentText.appendCodePoint(cp);
-                } else {
-                    leadingCommon.appendCodePoint(cp);
-                }
-                continue;
-            }
-
-            String scriptName = SCRIPT_MODEL_FALLBACK.getOrDefault(s.name(), s.name());
-
-            if (!scriptName.equals(currentScript)) {
-                if (currentScript != null && currentText.length() > 0) {
-                    runs.add(new ScriptRun(currentScript, currentText.toString()));
-                }
-                currentScript = scriptName;
-                currentText = new StringBuilder();
-                if (leadingCommon.length() > 0) {
-                    currentText.append(leadingCommon);
-                    leadingCommon.setLength(0);
-                }
-            }
-            currentText.appendCodePoint(cp);
+        Run(String script, int[] cps) {
+            this.script = script;
+            this.cps = cps;
         }
 
-        if (currentScript != null && currentText.length() > 0) {
-            runs.add(new ScriptRun(currentScript, currentText.toString()));
+        public boolean isCommon() {
+            return COMMON_SCRIPT.equals(script);
+        }
+
+        NeighborKind kind() {
+            return isCommon() ? NeighborKind.COMMON : NeighborKind.SCRIPT;
+        }
+
+        /** Literal run text (sentinels excluded; every cp is &le; U+10FFFF). */
+        public String text() {
+            return new String(cps, 0, cps.length);
+        }
+
+        /**
+         * Sentinel-bounded codepoint sequence for z1 scoring:
+         * {@code [startSentinel(left), cps..., endSentinel(right)]}.  Only z1
+         * (the bigram LM) sees sentinels; z2/z3 score the literal {@link #text()}.
+         */
+        public int[] withSentinels() {
+            int[] out = new int[cps.length + 2];
+            out[0] = startSentinel(left);
+            System.arraycopy(cps, 0, out, 1, cps.length);
+            out[out.length - 1] = endSentinel(right);
+            return out;
+        }
+    }
+
+    /** COMMON-class predicate: COMMON, INHERITED, UNKNOWN all pool into COMMON. */
+    private static String classKey(int cp) {
+        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+        if (s == Character.UnicodeScript.COMMON
+                || s == Character.UnicodeScript.INHERITED
+                || s == Character.UnicodeScript.UNKNOWN) {
+            return COMMON_SCRIPT;
+        }
+        return SCRIPT_MODEL_FALLBACK.getOrDefault(s.name(), s.name());
+    }
+
+    /**
+     * Segments a codepoint sequence into maximal same-class runs.  COMMON /
+     * INHERITED / UNKNOWN codepoints form their own COMMON runs rather than
+     * attaching to a neighboring script — this is what stops charset-invariant
+     * content (digits, punctuation) from being charged to a per-script bigram
+     * table.  Real scripts map through {@link #SCRIPT_MODEL_FALLBACK};
+     * consecutive same-key codepoints form one run.  Each run records its
+     * left/right neighbor KIND for boundary-sentinel typing.
+     */
+    public static List<Run> segmentRuns(int[] cps) {
+        List<Run> runs = new ArrayList<>();
+        if (cps == null || cps.length == 0) {
+            return runs;
+        }
+        int[] scratch = new int[cps.length];
+        int len = 0;
+        String curKey = null;
+        for (int cp : cps) {
+            String key = classKey(cp);
+            if (curKey == null) {
+                curKey = key;
+            } else if (!key.equals(curKey)) {
+                runs.add(new Run(curKey, java.util.Arrays.copyOf(scratch, len)));
+                curKey = key;
+                len = 0;
+            }
+            scratch[len++] = cp;
+        }
+        runs.add(new Run(curKey, java.util.Arrays.copyOf(scratch, len)));
+
+        for (int i = 0; i < runs.size(); i++) {
+            if (i > 0) {
+                runs.get(i).left = runs.get(i - 1).kind();
+            }
+            if (i < runs.size() - 1) {
+                runs.get(i).right = runs.get(i + 1).kind();
+            }
         }
         return runs;
     }
 
-    private static final class ScriptRun {
-        final String script;
-        final String text;
-        ScriptRun(String script, String text) {
-            this.script = script;
-            this.text = text;
-        }
+    /** {@code String} convenience for {@link #segmentRuns(int[])}. */
+    public static List<Run> segmentRuns(String text) {
+        return text == null ? new ArrayList<>() : segmentRuns(text.codePoints().toArray());
     }
 
     /**

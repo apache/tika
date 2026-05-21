@@ -83,8 +83,9 @@ public class JunkDetectorV7Test {
         assertEquals("LATIN", score.getDominantScript(), "Dominant script should be LATIN");
         // Quantization of [-4, -1] to 8 bits introduces ~0.012 nat / level.
         // Net z-error over 3 pairs bounded ~0.05; allow 0.3 to be safe.
-        assertEquals(3.0f, score.getZScore(), 0.3f,
-                "Expected z ≈ +3.0 for 'ABAB' (seen-pair + backoff mix)");
+        // Sentinel-bounded scoring: expected = calibrated F1 over ^_doc A B A B $_doc.
+        assertEquals(expectedRunZ(tables, "ABAB", -5.0f, 1.0f), score.getZScore(), 0.05f,
+                "Inference z must match the authoritative F1 on the sentinel-bounded run");
     }
 
     @Test
@@ -117,9 +118,8 @@ public class JunkDetectorV7Test {
         JunkDetector detector = JunkDetector.loadFromPath(modelFile);
 
         TextQualityScore score = detector.score("ABAB");
-        // mean = -1.0, z1 = (-1 - -5) / 1 = +4.0
-        assertEquals(4.0f, score.getZScore(), 0.3f,
-                "All-seen 'ABAB' should score z ≈ +4");
+        assertEquals(expectedRunZ(tables, "ABAB", -5.0f, 1.0f), score.getZScore(), 0.05f,
+                "All-seen 'ABAB': inference z must match authoritative sentinel-bounded F1");
     }
 
     /**
@@ -225,12 +225,12 @@ public class JunkDetectorV7Test {
         // JunkDetector.computeF1MeanLogP on the same text — if these
         // two ever disagree, the model's calibration is silently wrong.
         String probe = "pack my box with five dozen liquor jugs";
-        double trainerRawMean = JunkDetector.computeF1MeanLogP(probe, tables);
-        float expectedZ1 = (float) ((trainerRawMean - f1CalLatin[0]) / f1CalLatin[1]);
+        float expectedZ1 = expectedRunZ(tables, probe, f1CalLatin[0], f1CalLatin[1]);
         TextQualityScore probeScore = detector.score(probe);
-        // logit = w1 * z1 + 0 + 0 + 0 + 0 = z1 in this test configuration.
-        assertEquals(expectedZ1, probeScore.getZScore(), 0.001f,
-                "Inference z1 must match trainer-computed z1 "
+        // logit = w1*z1 (rest 0); inference aggregates the same per-run
+        // sentinel-bounded F1 the helper computes — must agree (no drift).
+        assertEquals(expectedZ1, probeScore.getZScore(), 0.02f,
+                "Inference z1 must match the per-run sentinel-bounded F1 "
                 + "(train/infer F1 math drift)");
     }
 
@@ -275,6 +275,29 @@ public class JunkDetectorV7Test {
                 bMin, bMax,
                 uMin, uMax,
                 -10.0f, 1.0f);
+    }
+
+    /**
+     * Mirrors inference's z1: byte-weighted mean over non-COMMON runs of the
+     * sentinel-bounded F1, then calibrated.  COMMON runs are skipped (these
+     * minimal models have no COMMON table, so inference skips them too).
+     */
+    private static float expectedRunZ(V7Tables tables, String text, float mu, float sigma) {
+        double weighted = 0;
+        long bytes = 0;
+        for (JunkDetector.Run r : JunkDetector.segmentRuns(text)) {
+            if (r.isCommon()) {
+                continue;
+            }
+            double f1 = JunkDetector.computeF1MeanLogP(r.withSentinels(), tables);
+            if (Double.isNaN(f1)) {
+                continue;
+            }
+            int n = r.text().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+            weighted += f1 * n;
+            bytes += n;
+        }
+        return (float) ((weighted / bytes - mu) / sigma);
     }
 
     /** Quantize a single float to 8-bit unsigned using the explicit range. */

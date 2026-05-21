@@ -125,11 +125,6 @@ import org.apache.tika.ml.junkdetect.V7Tables;
 public class TrainJunkModel {
 
     static final String MAGIC = "JUNKDET1";
-    /** Current file-format version produced by this trainer.  v8 adds two
-     *  global calibrations (z5 letter-adjacent-to-mark, z6 replacement-char)
-     *  after the script-transition calibration and writes 6-feature LR
-     *  weights per script.  Matches {@link JunkDetector#VERSION}. */
-    static final byte VERSION = 13;
 
     // -----------------------------------------------------------------------
     // v7 model constants (per-script open-addressing codepoint-bigram tables)
@@ -312,8 +307,13 @@ public class TrainJunkModel {
 
     public static void main(String[] args) throws IOException {
         Path dataDir = Paths.get(System.getProperty("user.home"),
-                "datasets", "madlad", "junkdetect");
-        Path output = dataDir.resolve("junkdetect.bin");
+                "data", "junk-augmented-symbolboost");
+        // Output is written straight to the bundled resource (run from the repo
+        // root).  Prior model versions live in git history; the model ships with
+        // the code and is intentionally NOT backwards compatible.
+        Path output = Paths.get(
+                "tika-ml/tika-ml-junkdetect/src/main/resources",
+                "org/apache/tika/ml/junkdetect/junkdetect.bin");
 
         // Durable training parameters live in JunkDetectorTrainingConfig; this
         // tool deliberately refuses CLI overrides so a built model file's
@@ -402,6 +402,12 @@ public class TrainJunkModel {
         //           F3 control-byte calibration
         // -----------------------------------------------------------------------
         TreeMap<String, V7Tables> f1TablesByScript = new TreeMap<>();
+        // Shared COMMON pool: digits/punctuation/symbols/space runs from EVERY
+        // corpus go into one COMMON table so charset-invariant content cancels
+        // across candidate decodes instead of polluting a per-script table.
+        HashMap<Long, long[]> commonPairs = new HashMap<>(1 << 16);
+        HashMap<Integer, long[]> commonUnigrams = new HashMap<>(1 << 12);
+        long[] commonTotals = new long[2];
         System.out.println("\n--- Phase 1: per-script F1 tables + calibrations ---");
         for (Path trainFile : trainFiles) {
             String filename = trainFile.getFileName().toString();
@@ -413,8 +419,15 @@ public class TrainJunkModel {
 
             t0 = System.currentTimeMillis();
             System.out.print("    Training V7 F1 tables (cp index + OA)..");
-            V7Tables v7 = trainV7TablesForScript(trainFile, minBigramCount,
-                    loadFactor, keyIndexBits);
+            // Segment + route: this file's non-COMMON runs build its script
+            // table; its COMMON runs accumulate into the shared COMMON pool.
+            HashMap<Long, long[]> scriptPairs = new HashMap<>(1 << 14);
+            HashMap<Integer, long[]> scriptUnigrams = new HashMap<>(1 << 12);
+            long[] scriptTotals = new long[2];
+            tallyFileRuns(trainFile, scriptPairs, scriptUnigrams, scriptTotals,
+                    commonPairs, commonUnigrams, commonTotals);
+            V7Tables v7 = buildV7TablesFromCounts(scriptPairs, scriptUnigrams,
+                    scriptTotals[0], minBigramCount, loadFactor, keyIndexBits);
             System.out.printf(" done (%dms)%n", System.currentTimeMillis() - t0);
             System.out.println(v7.statsString());
             f1TablesByScript.put(script, v7);
@@ -457,6 +470,33 @@ public class TrainJunkModel {
         }
 
         // -----------------------------------------------------------------------
+        // Phase 1b — pooled COMMON table (digits/punctuation/symbols/space).
+        // Built from COMMON runs accumulated across every corpus.  Registered
+        // into f1Calibrations/classifierWeights only AFTER Phase 3 so no COMMON
+        // classifier is trained — COMMON uses z1-passthrough weights (approach
+        // (i)): its z1 cancels across candidate decodes and flags symbol salad.
+        // -----------------------------------------------------------------------
+        System.out.println("\n--- Phase 1b: pooled COMMON table ---");
+        t0 = System.currentTimeMillis();
+        V7Tables commonV7 = buildV7TablesFromCounts(commonPairs, commonUnigrams,
+                commonTotals[0], minBigramCount, loadFactor, keyIndexBits);
+        f1TablesByScript.put(JunkDetector.COMMON_SCRIPT, commonV7);
+        System.out.printf("    %s done (%dms)%n", commonV7.statsString(),
+                System.currentTimeMillis() - t0);
+        List<Double> commonScores = new ArrayList<>();
+        for (Path f : trainFiles) {
+            for (String window : sampleSubstrings(f, CALIB_SAMPLES, CALIB_LENGTHS, 77)) {
+                double s = windowMeanRunF1(window, commonV7, true);
+                if (!Double.isNaN(s)) {
+                    commonScores.add(s);
+                }
+            }
+        }
+        float[] commonCal = muSigma(commonScores);
+        System.out.printf("    COMMON F1 cal: mu=%.4f sigma=%.4f (%,d windows)%n",
+                commonCal[0], commonCal[1], commonScores.size());
+
+        // -----------------------------------------------------------------------
         // Phase 2 — global script-transition table + supporting pools
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 2: global script-transition table ---");
@@ -484,29 +524,38 @@ public class TrainJunkModel {
                 scriptTransCal[0], scriptTransCal[1], System.currentTimeMillis() - t0);
 
         // -----------------------------------------------------------------------
-        // Phase 3 — per-script linear classifiers (9 features: z1-z9)
+        // Phase 3 — ONE global combiner, trained pointwise (clean>garbage, the
+        // absolute junkness scale) + contrastive (correct-decode>wrong, incl. RTL
+        // logical>reversed, the ranking task).  Replaces the per-script LRs and
+        // their corruption recipes.  Features are extracted through a temp model
+        // so they are exactly the inference features (no train/infer drift).
         // -----------------------------------------------------------------------
-        System.out.println("\n--- Phase 3: per-script linear classifiers (z1..z9) ---");
-        for (String script : f1Calibrations.keySet()) {
-            Path trainFile = trainFilePaths.get(script);
-            if (trainFile == null) {
-                System.out.printf("  [%s] WARNING: no train file, keeping equal-weight defaults%n", script);
-                continue;
+        System.out.println("\n--- Phase 3: global contrastive combiner ---");
+        // COMMON (z1-passthrough) is registered before the temp save so feature
+        // extraction routes COMMON runs to the COMMON table.
+        f1Calibrations.put(JunkDetector.COMMON_SCRIPT, commonCal);
+        classifierWeights.put(JunkDetector.COMMON_SCRIPT,
+                new float[]{1f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f});
+
+        Path tmpModel = Files.createTempFile("junkdetect-feat", ".bin");
+        saveModel(f1TablesByScript, f1Calibrations, blockTables, blockCalibrations,
+                controlCalibrations, classifierWeights, scriptBuckets,
+                scriptTransTable, scriptTransCal, tmpModel);
+        JunkDetector featExtractor = JunkDetector.loadFromPath(tmpModel);
+        Files.deleteIfExists(tmpModel);
+
+        t0 = System.currentTimeMillis();
+        float[] global = trainGlobalCombiner(featExtractor, trainFilePaths);
+        System.out.printf(
+                "  global w=[%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
+                global[0], global[1], global[2], global[3], global[4], global[5],
+                global[6], global[7], global[8], global[9],
+                System.currentTimeMillis() - t0);
+        // Apply the global combiner to every real script; COMMON keeps passthrough.
+        for (String s : f1TablesByScript.keySet()) {
+            if (!JunkDetector.COMMON_SCRIPT.equals(s)) {
+                classifierWeights.put(s, global);
             }
-            t0 = System.currentTimeMillis();
-            System.out.printf("  [%s] training classifier... ", script);
-            float[] weights = trainClassifierV7(script, trainFile,
-                    f1TablesByScript.get(script), f1Calibrations.get(script),
-                    blockTables.get(script), blockCalibrations.get(script),
-                    controlCalibrations.get(script),
-                    scriptTransTable, scriptTransCal, scriptBucketMap, numScriptBuckets);
-            classifierWeights.put(script, weights);
-            System.out.printf(
-                    "done — w=[%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
-                    weights[0], weights[1], weights[2], weights[3],
-                    weights[4], weights[5], weights[6], weights[7], weights[8],
-                    weights[9],
-                    System.currentTimeMillis() - t0);
         }
 
         System.out.printf("%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
@@ -1152,40 +1201,100 @@ public class TrainJunkModel {
                                                   int minBigramCount,
                                                   double loadFactor,
                                                   int keyIndexBits) throws IOException {
-        // --- Pass 1: tally pair and unigram counts. ---
+        // Single-file convenience: pools only this file's own (non-COMMON)
+        // script runs.  The full pipeline routes COMMON across all corpora via
+        // tallyFileRuns into a shared COMMON table (the throwaway maps here
+        // discard this file's COMMON runs).
         HashMap<Long, long[]> pairCounts = new HashMap<>(1 << 14);
         HashMap<Integer, long[]> unigramCounts = new HashMap<>(1 << 12);
-        long bigramTotal = 0;
-        long unigramTotal = 0;
+        long[] scriptTotals = new long[2];
+        tallyFileRuns(trainFile, pairCounts, unigramCounts, scriptTotals,
+                new HashMap<>(), new HashMap<>(), new long[2]);
+        return buildV7TablesFromCounts(pairCounts, unigramCounts, scriptTotals[0],
+                minBigramCount, loadFactor, keyIndexBits);
+    }
 
+    /**
+     * Reads a {@code *.train.gz}, NFC-normalizes each line, segments it via
+     * {@link JunkDetector#segmentRuns} and tallies sentinel-bounded bigrams:
+     * non-COMMON runs into the per-script maps, COMMON runs into the shared
+     * COMMON maps.  NFC + sentinels match inference exactly (no train/infer
+     * drift).  {@code *Totals[0]}=unigram count, {@code *Totals[1]}=bigrams.
+     */
+    static void tallyFileRuns(Path trainFile,
+                              HashMap<Long, long[]> scriptPairs,
+                              HashMap<Integer, long[]> scriptUnigrams,
+                              long[] scriptTotals,
+                              HashMap<Long, long[]> commonPairs,
+                              HashMap<Integer, long[]> commonUnigrams,
+                              long[] commonTotals) throws IOException {
         try (BufferedReader r = openGzipped(trainFile)) {
             String line;
             while ((line = r.readLine()) != null) {
-                int prevCp = -1;
-                for (int i = 0; i < line.length(); ) {
-                    int cp = line.codePointAt(i);
-                    i += Character.charCount(cp);
-                    long[] uc = unigramCounts.get(cp);
-                    if (uc == null) {
-                        unigramCounts.put(cp, new long[]{1L});
+                if (line.isEmpty()) {
+                    continue;
+                }
+                String norm = java.text.Normalizer.normalize(
+                        line, java.text.Normalizer.Form.NFC);
+                for (JunkDetector.Run run : JunkDetector.segmentRuns(norm)) {
+                    int[] seq = run.withSentinels();
+                    if (run.isCommon()) {
+                        tallySeq(seq, commonPairs, commonUnigrams, commonTotals);
                     } else {
-                        uc[0]++;
+                        tallySeq(seq, scriptPairs, scriptUnigrams, scriptTotals);
                     }
-                    unigramTotal++;
-                    if (prevCp >= 0) {
-                        long packed = ((long) prevCp << 32) | (cp & 0xFFFFFFFFL);
-                        long[] bc = pairCounts.get(packed);
-                        if (bc == null) {
-                            pairCounts.put(packed, new long[]{1L});
-                        } else {
-                            bc[0]++;
-                        }
-                        bigramTotal++;
-                    }
-                    prevCp = cp;
                 }
             }
         }
+    }
+
+    /**
+     * Tallies unigram + adjacent-pair counts of a codepoint sequence into the
+     * given maps ({@code totals[0]}+=unigrams, {@code totals[1]}+=bigrams).
+     * Matches {@link JunkDetector#computeF1MeanLogP(int[], V7Tables)} exactly
+     * (every adjacent pair, no skips) so trained tables fit scored sequences.
+     */
+    private static void tallySeq(int[] seq,
+                                 HashMap<Long, long[]> pairs,
+                                 HashMap<Integer, long[]> unigrams,
+                                 long[] totals) {
+        int prevCp = -1;
+        for (int cp : seq) {
+            long[] uc = unigrams.get(cp);
+            if (uc == null) {
+                unigrams.put(cp, new long[]{1L});
+            } else {
+                uc[0]++;
+            }
+            totals[0]++;
+            if (prevCp >= 0) {
+                long packed = ((long) prevCp << 32) | (cp & 0xFFFFFFFFL);
+                long[] bc = pairs.get(packed);
+                if (bc == null) {
+                    pairs.put(packed, new long[]{1L});
+                } else {
+                    bc[0]++;
+                }
+                totals[1]++;
+            }
+            prevCp = cp;
+        }
+    }
+
+    /**
+     * Builds the {@link V7Tables} F1 carrier from pre-tallied pair/unigram
+     * counts (see {@link #tallyFileRuns}).  Drops pairs below
+     * {@code minBigramCount}, assigns dense codepoint indices, and packs an
+     * open-addressing bigram table; unigram log-probs use {@code unigramTotal}
+     * as the denominator.
+     */
+    public static V7Tables buildV7TablesFromCounts(
+            HashMap<Long, long[]> pairCounts,
+            HashMap<Integer, long[]> unigramCounts,
+            long unigramTotal,
+            int minBigramCount,
+            double loadFactor,
+            int keyIndexBits) {
 
         // --- Filter pairs by count, collect kept-codepoint set. ---
         int totalDistinct = pairCounts.size();
@@ -1216,8 +1325,7 @@ public class TrainJunkModel {
             throw new IllegalStateException("Per-script codepoint count "
                     + cpIndex.length + " exceeds 2^KEY_INDEX_BITS (= "
                     + (maxIndex + 1) + ").  Increase KEY_INDEX_BITS or apply"
-                    + " a tighter pair-count filter for "
-                    + trainFile.getFileName());
+                    + " a tighter pair-count filter.");
         }
 
         // --- Compute per-pair log-prob (add-α smoothed over kept pairs). ---
@@ -1329,13 +1437,40 @@ public class TrainJunkModel {
         List<String> windows = sampleSubstrings(devGz, CALIB_SAMPLES, CALIB_LENGTHS, 42);
         List<Double> scores = new ArrayList<>(windows.size());
         for (String window : windows) {
-            double score = JunkDetector.computeF1MeanLogP(window, tables);
+            double score = windowMeanRunF1(window, tables, false);
             if (!Double.isNaN(score)) {
                 scores.add(score);
             }
         }
         System.out.printf("    %,d dev windows%n", scores.size());
         return muSigma(scores);
+    }
+
+    /**
+     * Byte-weighted mean of sentinel-bounded per-run F1 over the runs of
+     * {@code window} selected by {@code wantCommon} (COMMON runs if true, else
+     * non-COMMON script runs), scored against {@code tables}.  This is the
+     * windowed analog of inference's per-run z1 input (pre-calibration): it
+     * segments and sentinel-bounds exactly as {@link JunkDetector#scoreText}
+     * does, so calibration and classifier z1 cannot drift from inference.
+     */
+    static double windowMeanRunF1(String window, V7Tables tables, boolean wantCommon) {
+        String norm = java.text.Normalizer.normalize(window, java.text.Normalizer.Form.NFC);
+        double weighted = 0;
+        long bytes = 0;
+        for (JunkDetector.Run run : JunkDetector.segmentRuns(norm)) {
+            if (run.isCommon() != wantCommon) {
+                continue;
+            }
+            double f1 = JunkDetector.computeF1MeanLogP(run.withSentinels(), tables);
+            if (Double.isNaN(f1)) {
+                continue;
+            }
+            int n = run.text().getBytes(StandardCharsets.UTF_8).length;
+            weighted += f1 * n;
+            bytes += n;
+        }
+        return bytes == 0 ? Double.NaN : weighted / bytes;
     }
 
     // -----------------------------------------------------------------------
@@ -1357,15 +1492,16 @@ public class TrainJunkModel {
                                       float[] scriptTransTable, float[] scriptTransCal,
                                       Map<String, Integer> scriptBucketMap,
                                       int numScriptBuckets) {
-        // NFD-normalize defensively — corruption modes (utf8AsWindows1252-
+        // NFC-normalize defensively — corruption modes (utf8AsWindows1252-
         // Mojibake, etc.) produce text in whatever form the encoder yields.
         // Matches JunkDetector.scoreText / scoreWithFeatureComponents.
         window = java.text.Normalizer.normalize(window, java.text.Normalizer.Form.NFC);
         byte[] utf8 = window.getBytes(StandardCharsets.UTF_8);
 
-        // z1: per-script codepoint-bigram mean log-prob
+        // z1: per-script codepoint-bigram mean log-prob over the window's
+        // non-COMMON runs, sentinel-bounded — mirrors inference's per-run z1.
         float z1 = 0f;
-        double rawF1 = JunkDetector.computeF1MeanLogP(window, tables);
+        double rawF1 = windowMeanRunF1(window, tables, false);
         if (!Double.isNaN(rawF1) && f1Cal != null && f1Cal[1] > 0) {
             z1 = ((float) rawF1 - f1Cal[0]) / f1Cal[1];
         }
@@ -1426,6 +1562,179 @@ public class TrainJunkModel {
      * (sample windows, corrupt half, fit LR, bias-calibrate on short
      * windows) but uses v7 per-script F1 tables.
      */
+    private static final java.util.Set<String> RTL_SCRIPTS = java.util.Set.of(
+            "ARABIC", "HEBREW", "SYRIAC", "NKO", "THAANA");
+
+    private static boolean isRtl(String script) {
+        return RTL_SCRIPTS.contains(script);
+    }
+
+    /**
+     * Trains ONE global combiner over z1..z9 + bias.  The pointwise term anchors
+     * the absolute junkness scale (clean windows positive, generic garbage
+     * negative); the contrastive term ranks decodes (a clean window must outscore
+     * every wrong decode of its own bytes, including RTL logical vs reversed).
+     * Features come from {@code fx} (a temp model) so they match inference
+     * exactly.  Reads only {@code *.train.gz}.
+     */
+    static float[] trainGlobalCombiner(JunkDetector fx,
+                                       TreeMap<String, Path> trainFiles)
+            throws IOException {
+        List<float[]> good = new ArrayList<>();
+        List<float[]> bad = new ArrayList<>();
+        List<float[]> pairCorrect = new ArrayList<>();
+        List<float[]> pairWrong = new ArrayList<>();
+        Random rng = new Random(303);
+
+        for (Map.Entry<String, Path> e : trainFiles.entrySet()) {
+            String script = e.getKey();
+            boolean rtl = isRtl(script);
+            List<String> windows = sampleSubstrings(e.getValue(),
+                    NUM_CLASSIFIER_SAMPLES, CALIB_LENGTHS, 300);
+            for (String w : windows) {
+                float[] fc = featureVector(fx, w);
+                if (fc == null) {
+                    continue;
+                }
+                good.add(fc);
+
+                // Contrastive: the clean decode must beat wrong decodes of its bytes.
+                for (int k = 0; k < 2; k++) {
+                    String[] pr = BYTE_LEVEL_MOJIBAKE_PAIRS[
+                            rng.nextInt(BYTE_LEVEL_MOJIBAKE_PAIRS.length)];
+                    addContrastivePair(fx, w, byteLevelMojibake(w, pr[0], pr[1]),
+                            fc, pairCorrect, pairWrong);
+                }
+                if ("LATIN".equals(script)) {
+                    String[] pr = LATIN_TO_CJK_PAIRS[
+                            rng.nextInt(LATIN_TO_CJK_PAIRS.length)];
+                    addContrastivePair(fx, w, byteLevelMojibake(w, pr[0], pr[1]),
+                            fc, pairCorrect, pairWrong);
+                }
+                if (rtl) {
+                    addContrastivePair(fx, w, reverseRtlText(w), fc,
+                            pairCorrect, pairWrong);
+                }
+
+                // Pointwise garbage anchor (generic junk, no correct counterpart).
+                String junk;
+                int mode = rng.nextInt(3);
+                if (mode == 0) {
+                    junk = injectControlChars(w, 0.15, rng);
+                } else if (mode == 1) {
+                    junk = shuffleChars(w, rng);
+                } else {
+                    junk = injectPrivateUseAreaChars(w, 0.12, rng);
+                }
+                float[] fb = featureVector(fx, junk);
+                if (fb != null) {
+                    bad.add(fb);
+                }
+            }
+        }
+        System.out.printf("  examples: good=%,d bad=%,d pairs=%,d%n",
+                good.size(), bad.size(), pairCorrect.size());
+        return fitContrastiveCombiner(good, bad, pairCorrect, pairWrong);
+    }
+
+    private static void addContrastivePair(JunkDetector fx, String correct,
+                                           String wrong, float[] correctFeat,
+                                           List<float[]> pc, List<float[]> pw) {
+        if (wrong.equals(correct)) {
+            return;
+        }
+        float[] fw = featureVector(fx, wrong);
+        if (fw == null) {
+            return;
+        }
+        pc.add(correctFeat);
+        pw.add(fw);
+    }
+
+    /** z1..z9 for {@code text} via the inference feature path; null if any NaN. */
+    private static float[] featureVector(JunkDetector fx, String text) {
+        JunkDetector.FeatureComponents f = fx.scoreWithFeatureComponents(text);
+        float[] z = {f.z1, f.z2, f.z3, f.z4, f.z5, f.z6, f.z7, f.z8, f.z9};
+        for (float v : z) {
+            if (Float.isNaN(v)) {
+                return null;
+            }
+        }
+        return z;
+    }
+
+    /**
+     * Fits {@code w[9]+bias} by full-batch gradient descent: pointwise
+     * cross-entropy (good=1, bad=0) + pairwise logistic (correct must outscore
+     * wrong) + L2.  Feature weights are projected non-negative (same orientation
+     * convention as {@link #fitLogisticRegression}); the bias is unconstrained.
+     */
+    static float[] fitContrastiveCombiner(List<float[]> good, List<float[]> bad,
+                                          List<float[]> pairCorrect,
+                                          List<float[]> pairWrong) {
+        int f = 9;
+        double[] w = new double[f];
+        double bias = 0;
+        double lr = 0.05;
+        double lambda = 0.01;
+        int epochs = 3000;
+        int ng = Math.max(1, good.size());
+        int nb = Math.max(1, bad.size());
+        int np = Math.max(1, pairCorrect.size());
+
+        for (int epoch = 0; epoch < epochs; epoch++) {
+            double[] grad = new double[f];
+            double gradB = 0;
+            for (float[] x : good) {
+                double p = sigmoid(dotF(w, x) + bias);
+                for (int j = 0; j < f; j++) {
+                    grad[j] += (p - 1) * x[j] / ng;
+                }
+                gradB += (p - 1) / ng;
+            }
+            for (float[] x : bad) {
+                double p = sigmoid(dotF(w, x) + bias);
+                for (int j = 0; j < f; j++) {
+                    grad[j] += p * x[j] / nb;
+                }
+                gradB += p / nb;
+            }
+            for (int i = 0; i < pairCorrect.size(); i++) {
+                float[] c = pairCorrect.get(i);
+                float[] wr = pairWrong.get(i);
+                double s = sigmoid(-(dotF(w, c) - dotF(w, wr)));
+                for (int j = 0; j < f; j++) {
+                    grad[j] += -(c[j] - wr[j]) * s / np;
+                }
+            }
+            for (int j = 0; j < f; j++) {
+                w[j] -= lr * (grad[j] + lambda * w[j]);
+                if (w[j] < 0) {
+                    w[j] = 0;
+                }
+            }
+            bias -= lr * gradB;
+        }
+        float[] out = new float[f + 1];
+        for (int j = 0; j < f; j++) {
+            out[j] = (float) w[j];
+        }
+        out[f] = (float) bias;
+        return out;
+    }
+
+    private static double dotF(double[] w, float[] x) {
+        double s = 0;
+        for (int j = 0; j < w.length; j++) {
+            s += w[j] * x[j];
+        }
+        return s;
+    }
+
+    private static double sigmoid(double z) {
+        return 1.0 / (1.0 + Math.exp(-z));
+    }
+
     static float[] trainClassifierV7(String script,
                                       Path devGz,
                                       V7Tables tables, float[] f1Cal,
@@ -1576,7 +1885,7 @@ public class TrainJunkModel {
 
     /**
      * Writes a model file in the current binary format.  Layout: gzip
-     * envelope around {@code JUNKDET1} magic + {@link #VERSION} byte +
+     * envelope around {@code JUNKDET1} magic + {@link JunkDetector#VERSION} byte +
      * global script-transition section + z5/z6 calibrations + per-script
      * sections (F1 tables, F2 block transitions, F3 control calibration,
      * 7-element LR weight vector = 6 weights + bias).  See
@@ -1596,7 +1905,7 @@ public class TrainJunkModel {
                 new GZIPOutputStream(Files.newOutputStream(output)))) {
 
             dos.write(MAGIC.getBytes(StandardCharsets.UTF_8));
-            dos.writeByte(VERSION);
+            dos.writeByte(JunkDetector.VERSION); // single source of truth
             dos.writeInt(f1Calibrations.size());
 
             // Block-scheme version byte — bound to the JVM-independent
