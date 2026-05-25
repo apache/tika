@@ -73,6 +73,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
      * default read limit used by the charset base detectors. */
     private static final int DEFAULT_READ_LIMIT = 16384;
 
+    /** A STATISTICAL candidate at or below this confidence carries no real
+     *  signal — it's the "I don't know" level (matches Mojibuster's
+     *  windows-1252 fallback confidence).  When the statistical layer offers
+     *  nothing above this, the junk-filter defers to a DECLARATIVE/STRUCTURAL
+     *  anchor instead of arbitrating near-identical decodes by quality. */
+    private static final float NO_INFO_CONFIDENCE = 0.1f;
+
     /** Cached quality detector.  {@code null} if none is on the classpath. */
     private final TextQualityDetector qualityDetector;
 
@@ -206,15 +213,26 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // address the same Masada-style whitespace-storm root cause for
         // every caller of JunkDetector and avoid the train/inference
         // distribution divergence that the strip introduced.
-        // The JunkDetector logit is already cross-script comparable (z1 is
-        // calibrated per script, z2..z9 are global), so arbitration is a plain
-        // argmax of the raw score — no per-script rescaling band-aid.
+        // The JunkDetector logit is cross-script comparable (z1 calibrated per
+        // script, z2..z9 global), so the base decision is a plain argmax of the
+        // raw score.  BUT the score is an ABSOLUTE per-decode quality, dominated
+        // by shared content (whitespace/digits identical across decodes); on a
+        // COMMON-dominated doc the discriminating bytes are diluted and the top
+        // candidates differ only by noise.  The quality signal is STATISTICAL-
+        // grade evidence, so it may override a higher-evidence anchor
+        // (DECLARATIVE author intent, or STRUCTURAL byte-grammar proof) only when
+        // it beats that anchor's score by OVERRIDE_MARGIN; otherwise we defer to
+        // the anchor.  This is honest low-confidence behaviour, not a tie-break:
+        // where the model has real signal (e.g. UTF-8 over garbage UTF-16, Δ≫1)
+        // it still overrides freely.
         Charset champion = null;
         double championZ = Double.NEGATIVE_INFINITY;
+        Map<Charset, Double> scoreByCharset = new LinkedHashMap<>();
         for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
             org.apache.tika.quality.TextQualityScore sc =
                     qualityDetector.score(entry.getValue());
             float rawZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
+            scoreByCharset.put(entry.getKey(), (double) rawZ);
             LOG.trace("junk-filter score {} z={} script={}",
                     entry.getKey().name(),
                     String.format(java.util.Locale.ROOT, "%.3f", rawZ),
@@ -229,6 +247,24 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             // has no opinion, so keep the first (highest-confidence) candidate.
             champion = candidates.keySet().iterator().next();
         }
+
+        // "No-info" guard: if the statistical layer produced no confident
+        // answer — no STRUCTURAL proof, and its best STATISTICAL candidate is
+        // no better than Mojibuster's windows-1252 "I don't know" fallback
+        // (confidence <= NO_INFO_CONFIDENCE) — then it has nothing to say, so a
+        // DECLARATIVE/STRUCTURAL anchor (the author's declaration) should win
+        // rather than a quality argmax over near-identical decodes.  Fires ONLY
+        // when the statistical layer abstained, so it cannot cost the
+        // confident-detection wins (UTF-8 recovery etc.).
+        Charset anchor = bestAnchor(context, scoreByCharset);
+        if (anchor != null && !anchor.equals(champion)
+                && !hasConfidentNonDeclarative(context)) {
+            LOG.trace("junk-filter -> {} (defer to anchor; statistical layer gave "
+                            + "no confident answer, champion was {})",
+                    anchor.name(), champion.name());
+            context.setArbitrationInfo("junk-filter-defer-no-info");
+            return List.of(new EncodingResult(anchor, context.getTopConfidenceFor(anchor)));
+        }
         LOG.trace("junk-filter -> {} (argmax z={})",
                 champion.name(),
                 String.format(java.util.Locale.ROOT, "%.3f", championZ));
@@ -236,6 +272,56 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         float confidence = context.getTopConfidenceFor(champion);
         context.setArbitrationInfo("junk-filter-selected");
         return List.of(new EncodingResult(champion, confidence));
+    }
+
+    /**
+     * True if some detector produced a confident non-declarative signal: any
+     * STRUCTURAL result (byte-grammar proof), or any STATISTICAL result above
+     * {@link #NO_INFO_CONFIDENCE}.  When false, the statistical layer has
+     * effectively abstained (only its "I don't know" fallback), so a
+     * declaration should be trusted over a quality argmax.
+     */
+    private static boolean hasConfidentNonDeclarative(EncodingDetectorContext context) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                EncodingResult.ResultType t = er.getResultType();
+                if (t == EncodingResult.ResultType.STRUCTURAL) {
+                    return true;
+                }
+                if (t == EncodingResult.ResultType.STATISTICAL
+                        && er.getConfidence() > NO_INFO_CONFIDENCE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Highest-scoring DECLARATIVE/STRUCTURAL candidate present in the scored
+     * pool, or {@code null} if none.  This is the higher-evidence "anchor" the
+     * junk-filter defers to when the statistical layer gives no confident answer
+     * (see {@link #hasConfidentNonDeclarative}).
+     */
+    private static Charset bestAnchor(EncodingDetectorContext context,
+                                      Map<Charset, Double> scoreByCharset) {
+        Charset best = null;
+        double bestZ = Double.NEGATIVE_INFINITY;
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                EncodingResult.ResultType t = er.getResultType();
+                if (t != EncodingResult.ResultType.DECLARATIVE
+                        && t != EncodingResult.ResultType.STRUCTURAL) {
+                    continue;
+                }
+                Double z = scoreByCharset.get(er.getCharset());
+                if (z != null && z > bestZ) {
+                    bestZ = z;
+                    best = er.getCharset();
+                }
+            }
+        }
+        return best;
     }
 
     /**

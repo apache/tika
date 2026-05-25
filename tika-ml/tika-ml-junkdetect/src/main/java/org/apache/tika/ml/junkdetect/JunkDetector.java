@@ -1084,6 +1084,16 @@ public final class JunkDetector implements TextQualityDetector {
         return f1TablesByScript.get(script);
     }
 
+    /** Per-script z1 calibration {mu, sigma} (package-private, for diagnostics). */
+    float[] calibrationFor(String script) {
+        return calibrations.get(script);
+    }
+
+    /** Per-script F1 bigram tables view (package-private, for diagnostics). */
+    Map<String, BigramTables> f1TablesByScriptView() {
+        return f1TablesByScript;
+    }
+
     // -----------------------------------------------------------------------
     // Bucket-by-script bigram enumeration (the keystone).
     // Single source of truth for BOTH inference z1 scoring and training tally.
@@ -1111,6 +1121,31 @@ public final class JunkDetector implements TextQualityDetector {
     /** Charset-invariant content excluded from per-script bigram scoring. */
     static boolean isSkipCodepoint(int cp) {
         return Character.isDigit(cp);
+    }
+
+    /** Whitespace-equivalents collapse to canonical U+0020 (' ') before bigram
+     *  lookup.  Tab, NBSP, ideographic space, line/paragraph separators, and
+     *  ASCII control chars (\\n, \\r, etc.) all signal the SAME thing about
+     *  surrounding script context — "end of word" — and shouldn't produce
+     *  distinct bigram entries.  Applied identically in training and inference
+     *  via {@link #forEachScriptBigram}, so the bigram table only ever sees
+     *  the canonical form.  The follow-on (space, space) drop in
+     *  {@link #forEachScriptBigram} then ensures collapsed whitespace runs
+     *  (HtmlContentCleaner indentation residue: \\t\\t, \\n\\r, NBSP·\\t)
+     *  contribute nothing to the COMMON bucket — only (script, space) and
+     *  (space, script) boundary bigrams survive. */
+    static int normalizeWhitespace(int cp) {
+        if (cp == 0x20) {
+            return cp;
+        }
+        int t = Character.getType(cp);
+        if (t == Character.CONTROL
+                || t == Character.SPACE_SEPARATOR
+                || t == Character.LINE_SEPARATOR
+                || t == Character.PARAGRAPH_SEPARATOR) {
+            return 0x20;
+        }
+        return cp;
     }
 
     /**
@@ -1149,9 +1184,15 @@ public final class JunkDetector implements TextQualityDetector {
             return;
         }
         for (int i = 0; i + 1 < cps.length; i++) {
-            int a = cps[i];
-            int b = cps[i + 1];
-            if (isSkipCodepoint(a) || isSkipCodepoint(b)) {
+            int a = normalizeWhitespace(cps[i]);
+            int b = normalizeWhitespace(cps[i + 1]);
+            // (space, space) drop short-circuits ahead of the digit check:
+            // after normalization, every whitespace run (\t\t, \n\r, NBSP·\t,
+            // HtmlContentCleaner indentation salads) collapses to this one
+            // bigram class — high count on HTML, zero script-boundary signal.
+            // (script, space) / (space, script) boundary bigrams survive.
+            if ((a == 0x20 && b == 0x20)
+                    || isSkipCodepoint(a) || isSkipCodepoint(b)) {
                 continue;
             }
             String ka = classKey(a);

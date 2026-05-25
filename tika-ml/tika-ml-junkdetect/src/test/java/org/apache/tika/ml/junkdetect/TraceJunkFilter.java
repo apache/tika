@@ -83,6 +83,8 @@ public final class TraceJunkFilter {
         boolean sumDiff = false;
         boolean skipSymbols = false;
         int headBytes = 0;
+        boolean contentCleaner = false;
+        boolean showBuckets = false;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
                 case "--sum-diff":
@@ -93,6 +95,12 @@ public final class TraceJunkFilter {
                     break;
                 case "--head-bytes":
                     headBytes = Integer.parseInt(args[++i]);
+                    break;
+                case "--content-cleaner":
+                    contentCleaner = true;
+                    break;
+                case "--buckets":
+                    showBuckets = true;
                     break;
                 case "--file":
                     files.add(resolvePath(args[++i]));
@@ -151,7 +159,8 @@ public final class TraceJunkFilter {
             traceOne(file, detector, moji, fixedCharsets, sampleLen,
                     showFeatures, showScriptDist, showPerScriptRun,
                     entityModes, autoCandidates, showMojibuster,
-                    sumDiff, skipSymbols, headBytes);
+                    sumDiff, skipSymbols, headBytes, contentCleaner,
+                    showBuckets);
         }
     }
 
@@ -172,7 +181,8 @@ public final class TraceJunkFilter {
                                   boolean entityModes, boolean autoCandidates,
                                   boolean showMojibuster,
                                   boolean sumDiff, boolean skipSymbols,
-                                  int headBytes)
+                                  int headBytes, boolean contentCleaner,
+                                  boolean showBuckets)
             throws IOException {
         byte[] all = Files.readAllBytes(file);
         int limit = headBytes > 0 ? Math.min(headBytes, all.length) : READ_LIMIT;
@@ -227,8 +237,13 @@ public final class TraceJunkFilter {
         Map<String, String> decoded = new LinkedHashMap<>();
         Map<String, TextQualityScore> scores = new LinkedHashMap<>();
         for (Charset cs : charsets) {
-            String s = JunkFilterEncodingDetector.expandHtmlEntities(
-                    new String(forDecode, cs));
+            // --content-cleaner replicates the live chain exactly (decode the
+            // BOM-stripped probe, then HtmlContentCleaner.clean); the default
+            // path is the byte-strip diagnostic, which scores DIFFERENT text.
+            String s = contentCleaner
+                    ? HtmlContentCleaner.clean(new String(bytes, cs))
+                    : JunkFilterEncodingDetector.expandHtmlEntities(
+                            new String(forDecode, cs));
             decoded.put(cs.name(), s);
             scores.put(cs.name(), detector.score(s));
         }
@@ -348,6 +363,11 @@ public final class TraceJunkFilter {
                 System.out.println("  per-script-run scores (" + cs + "):");
                 printPerScriptRun(detector, decoded.get(cs));
             }
+        }
+
+        if (showBuckets) {
+            printBucketReport(detector, decoded);
+            printCommonBucketHistogram(detector, decoded);
         }
 
         if (sampleLen > 0) {
@@ -470,6 +490,144 @@ public final class TraceJunkFilter {
             if (pct < 0.1) continue;
             System.out.printf(Locale.ROOT, "    %-14s %7d  %5.1f%%%n",
                     e.getKey(), e.getValue(), pct);
+        }
+    }
+
+    /** Per-bucket z1 breakdown — counts, raw means, calibration (mu,sigma),
+     *  calibrated bucket-z, and the (count * z) contribution to the doc-z1.
+     *  Probes the (B) "monoscript-collapse" hypothesis: which bucket(s) on
+     *  which decode drag the count-weighted aggregate? */
+    private static void printBucketReport(JunkDetector det,
+                                          Map<String, String> decoded) {
+        System.out.println("  per-bucket z1 breakdown:");
+        for (Map.Entry<String, String> ent : decoded.entrySet()) {
+            String cs = ent.getKey();
+            String text = java.text.Normalizer.normalize(
+                    ent.getValue(), java.text.Normalizer.Form.NFC);
+            int[] cps = text.codePoints().toArray();
+            Map<String, double[]> buckets =
+                    JunkDetector.bucketSumsAndCounts(
+                            cps, det.f1TablesByScriptView());
+            // Aggregate doc z1 ourselves to verify against scoreWithFeatureComponents.
+            double weightedSum = 0;
+            long totalCount = 0;
+            System.out.println("    " + cs + ":");
+            System.out.printf(Locale.ROOT,
+                    "      %-14s %7s %9s %9s %9s %9s %9s%n",
+                    "bucket", "count", "rawMean", "mu", "sigma", "z", "ct*z");
+            // Sort by count descending for readability
+            List<Map.Entry<String, double[]>> rows =
+                    new ArrayList<>(buckets.entrySet());
+            rows.sort((a, b) -> Double.compare(b.getValue()[1], a.getValue()[1]));
+            for (Map.Entry<String, double[]> e : rows) {
+                String script = e.getKey();
+                long cnt = (long) e.getValue()[1];
+                if (cnt == 0) continue;
+                double rawMean = e.getValue()[0] / cnt;
+                float[] cal = det.calibrationFor(script);
+                double mu = cal == null ? Double.NaN : cal[0];
+                double sigma = cal == null ? Double.NaN : cal[1];
+                double z = cal == null ? Double.NaN : (rawMean - mu) / sigma;
+                double ctz = z * cnt;
+                if (!Double.isNaN(z)) {
+                    weightedSum += ctz;
+                    totalCount += cnt;
+                }
+                System.out.printf(Locale.ROOT,
+                        "      %-14s %7d %+9.3f %+9.3f %9.3f %+9.3f %+9.1f%n",
+                        script, cnt, rawMean, mu, sigma, z, ctz);
+            }
+            if (totalCount > 0) {
+                double docZ1 = weightedSum / totalCount;
+                System.out.printf(Locale.ROOT,
+                        "      %-14s %7d %9s %9s %9s %+9.3f  (sum-ctz/N = doc z1)%n",
+                        "TOTAL", totalCount, "", "", "", docZ1);
+            }
+        }
+    }
+
+    /** Histogram of bigrams that land in the COMMON bucket, broken down by
+     *  the Unicode general-category-letter pair (e.g. "Zs·Zs" = space·space).
+     *  Probes whether COMMON is dominated by whitespace HTML residue. */
+    private static void printCommonBucketHistogram(JunkDetector det,
+                                                   Map<String, String> decoded) {
+        System.out.println("  COMMON bucket bigram categories (top 12 by count):");
+        for (Map.Entry<String, String> ent : decoded.entrySet()) {
+            String cs = ent.getKey();
+            String text = java.text.Normalizer.normalize(
+                    ent.getValue(), java.text.Normalizer.Form.NFC);
+            int[] cps = text.codePoints().toArray();
+            BigramTables tCommon = det.f1TablesFor(JunkDetector.COMMON_SCRIPT);
+            Map<String, long[]> hist = new java.util.HashMap<>(); // catPair -> {count, sumLogP}
+            long commonBigrams = 0;
+            double commonSum = 0;
+            for (int i = 0; i + 1 < cps.length; i++) {
+                int a = cps[i], b = cps[i + 1];
+                if (Character.isDigit(a) || Character.isDigit(b)) continue;
+                String ka = JunkDetector.classKey(a);
+                String kb = JunkDetector.classKey(b);
+                if (!JunkDetector.COMMON_SCRIPT.equals(ka)
+                        || !JunkDetector.COMMON_SCRIPT.equals(kb)) {
+                    continue;
+                }
+                String pair = catLabel(a) + "·" + catLabel(b);
+                long[] row = hist.computeIfAbsent(pair, k -> new long[2]);
+                row[0]++;
+                if (tCommon != null) {
+                    double lp = JunkDetector.computeF1MeanLogP(
+                            new int[]{a, b}, tCommon);
+                    if (!Double.isNaN(lp)) {
+                        commonSum += lp;
+                        commonBigrams++;
+                        // Encode sum-lp ×1000 in row[1] for an int aggregate.
+                        row[1] += (long) (lp * 1000);
+                    }
+                }
+            }
+            System.out.println("    " + cs + ":  total=" + commonBigrams
+                    + "  rawMean=" + String.format(Locale.ROOT, "%.3f",
+                            commonBigrams == 0 ? 0 : commonSum / commonBigrams));
+            List<Map.Entry<String, long[]>> rows =
+                    new ArrayList<>(hist.entrySet());
+            rows.sort((x, y) -> Long.compare(y.getValue()[0], x.getValue()[0]));
+            int shown = 0;
+            for (Map.Entry<String, long[]> e : rows) {
+                if (shown++ >= 12) break;
+                long cnt = e.getValue()[0];
+                double meanLp = cnt == 0 ? 0
+                        : (e.getValue()[1] / 1000.0) / cnt;
+                double pct = 100.0 * cnt / Math.max(1, commonBigrams);
+                System.out.printf(Locale.ROOT,
+                        "      %-12s %7d (%5.1f%%)   meanLp=%+8.3f%n",
+                        e.getKey(), cnt, pct, meanLp);
+            }
+        }
+    }
+
+    /** Short category label for diagnostic output: Zs=space-sep, Zl=line-sep,
+     *  Po=other-punct, Pd=dash-punct, Ps=open, Pe=close, Sm=math, Sc=currency,
+     *  Sk=modifier-sym, So=other-sym, Cc=control, Cf=format, etc. */
+    private static String catLabel(int cp) {
+        int t = Character.getType(cp);
+        switch (t) {
+            case Character.SPACE_SEPARATOR:       return "Zs";
+            case Character.LINE_SEPARATOR:        return "Zl";
+            case Character.PARAGRAPH_SEPARATOR:   return "Zp";
+            case Character.CONTROL:               return "Cc";
+            case Character.FORMAT:                return "Cf";
+            case Character.CONNECTOR_PUNCTUATION: return "Pc";
+            case Character.DASH_PUNCTUATION:      return "Pd";
+            case Character.START_PUNCTUATION:     return "Ps";
+            case Character.END_PUNCTUATION:       return "Pe";
+            case Character.INITIAL_QUOTE_PUNCTUATION: return "Pi";
+            case Character.FINAL_QUOTE_PUNCTUATION:   return "Pf";
+            case Character.OTHER_PUNCTUATION:     return "Po";
+            case Character.MATH_SYMBOL:           return "Sm";
+            case Character.CURRENCY_SYMBOL:       return "Sc";
+            case Character.MODIFIER_SYMBOL:       return "Sk";
+            case Character.OTHER_SYMBOL:          return "So";
+            default:
+                return String.format(Locale.ROOT, "?%d", t);
         }
     }
 
