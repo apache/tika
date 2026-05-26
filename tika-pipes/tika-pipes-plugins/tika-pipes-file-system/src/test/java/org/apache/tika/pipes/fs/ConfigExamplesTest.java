@@ -16,17 +16,9 @@
  */
 package org.apache.tika.pipes.fs;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 
 /**
  * Validates file system fetcher/emitter configuration examples used in documentation.
@@ -34,23 +26,7 @@ import org.apache.tika.config.loader.TikaLoader;
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-
-    @TempDir
-    Path tempDir;
-
-    private void loadAndValidate(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            String json = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            Path configFile = tempDir.resolve("tika-config.json");
-            Files.writeString(configFile, json, StandardCharsets.UTF_8);
-            TikaLoader loader = TikaLoader.load(configFile);
-            assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
-        }
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testFileSystemFetcherConfig() throws Exception {

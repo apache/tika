@@ -43,49 +43,34 @@ public class PluginsWriter {
     }
 
     void write(Path output) throws IOException {
-        Path baseInput = StringUtils.isBlank(simpleAsyncConfig.getInputDir())
-                ? Paths.get(".").toAbsolutePath()
-                : Paths.get(simpleAsyncConfig.getInputDir());
-        Path baseOutput = StringUtils.isBlank(simpleAsyncConfig.getOutputDir())
-                ? null
-                : Paths.get(simpleAsyncConfig.getOutputDir());
-        if (Files.isRegularFile(baseInput)) {
+        boolean userConfigProvided = !StringUtils.isBlank(simpleAsyncConfig.getTikaConfig());
+        boolean inputExplicit = !StringUtils.isBlank(simpleAsyncConfig.getInputDir());
+        boolean outputExplicit = !StringUtils.isBlank(simpleAsyncConfig.getOutputDir());
+
+        // Resolve baseInput. If -i is explicit, use it. If not and the user
+        // didn't supply --config, fall back to '.' so the template's
+        // FETCHER_BASE_PATH placeholder gets a sane default. If --config is
+        // supplied and -i isn't, baseInput stays null so we don't trample the
+        // user's own basePath values.
+        Path baseInput = null;
+        if (inputExplicit) {
+            baseInput = Paths.get(simpleAsyncConfig.getInputDir());
+        } else if (!userConfigProvided) {
+            baseInput = Paths.get(".").toAbsolutePath();
+        }
+        if (baseInput != null && Files.isRegularFile(baseInput)) {
             baseInput = baseInput.toAbsolutePath().getParent();
             if (baseInput == null) {
                 throw new IllegalArgumentException("File must be at least one directory below root");
             }
         }
+        Path baseOutput = outputExplicit
+                ? Paths.get(simpleAsyncConfig.getOutputDir())
+                : null;
         try {
             ObjectMapper objectMapper = TikaObjectMapperFactory.getMapper();
             ObjectNode root = (ObjectNode) objectMapper.readTree(
                     getClass().getResourceAsStream("/config-template.json"));
-
-            // Set fetcher basePath
-            ObjectNode fetchers = (ObjectNode) root.get("fetchers");
-            if (fetchers != null && fetchers.has("fsf")) {
-                ObjectNode fsf = (ObjectNode) fetchers.get("fsf");
-                if (fsf != null && fsf.has("file-system-fetcher")) {
-                    ObjectNode fsFetcher = (ObjectNode) fsf.get("file-system-fetcher");
-                    fsFetcher.put("basePath", baseInput.toAbsolutePath().toString());
-                }
-            }
-
-            // Set emitter basePath
-            ObjectNode emitters = (ObjectNode) root.get("emitters");
-            if (baseOutput != null && emitters != null && emitters.has("fse")) {
-                ObjectNode fse = (ObjectNode) emitters.get("fse");
-                if (fse != null && fse.has("file-system-emitter")) {
-                    ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
-                    fsEmitter.put("basePath", baseOutput.toAbsolutePath().toString());
-                }
-            }
-
-            // Set pipes-iterator basePath
-            ObjectNode pipesIterator = (ObjectNode) root.get("pipes-iterator");
-            if (pipesIterator != null && pipesIterator.has("file-system-pipes-iterator")) {
-                ObjectNode fsIterator = (ObjectNode) pipesIterator.get("file-system-pipes-iterator");
-                fsIterator.put("basePath", baseInput.toAbsolutePath().toString());
-            }
 
             // Set plugin-roots
             String pluginString;
@@ -100,18 +85,36 @@ public class PluginsWriter {
             }
             root.put("plugin-roots", pluginString);
 
-            // If the user provided a -c config, merge their settings first.
-            // This brings in parsers, parse-context, metadata-filters, and
-            // optionally pipes config (e.g. forkedJvmArgs with log4j settings).
+            // Merge user's --config first so the CLI overrides below land on
+            // the final merged document. Doing this in the other order means
+            // mergeUserConfig's shallow replace silently wipes any patch we
+            // applied before the merge — exactly the bug behind TIKA-4739
+            // ("-i/-o don't override basePath as documented").
             if (!StringUtils.isBlank(simpleAsyncConfig.getTikaConfig())) {
                 Path userConfigPath = Paths.get(simpleAsyncConfig.getTikaConfig());
                 JsonNode userRoot = objectMapper.readTree(userConfigPath.toFile());
                 mergeUserConfig(root, (ObjectNode) userRoot);
             }
 
-            // Now apply CLI overrides on top of whatever pipes config exists.
-            // This lets the user have forkedJvmArgs in their config (e.g. log4j)
-            // while still controlling numClients and Xmx from the command line.
+            // Apply -i / -o on top of the merged document by component TYPE
+            // rather than hardcoded id ("fsf"/"fse"). This way users who
+            // renamed their filesystem fetcher/emitter still get the override,
+            // and non-filesystem fetchers/emitters (S3, GCS, etc.) are left
+            // untouched. baseInput/baseOutput are null when the user supplied
+            // --config without -i/-o, in which case their basePath values stay
+            // intact.
+            if (baseInput != null) {
+                patchFileSystemBasePath(root, "fetchers", "file-system-fetcher",
+                        baseInput.toAbsolutePath().toString());
+                patchSingletonFileSystemBasePath(root, "pipes-iterator",
+                        "file-system-pipes-iterator", baseInput.toAbsolutePath().toString());
+            }
+            if (baseOutput != null) {
+                patchFileSystemBasePath(root, "emitters", "file-system-emitter",
+                        baseOutput.toAbsolutePath().toString());
+            }
+
+            // CLI overrides on the pipes section.
             ObjectNode pipesNode = root.has("pipes")
                     ? (ObjectNode) root.get("pipes")
                     : objectMapper.createObjectNode();
@@ -142,23 +145,14 @@ public class PluginsWriter {
             // For content-only mode, change the emitter file extension based on handler type
             if (simpleAsyncConfig.isContentOnly()) {
                 String ext = getFileExtensionForHandlerType(simpleAsyncConfig.getHandlerType());
-                if (emitters != null && emitters.has("fse")) {
-                    ObjectNode fse = (ObjectNode) emitters.get("fse");
-                    if (fse != null && fse.has("file-system-emitter")) {
-                        ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
-                        fsEmitter.put("fileExtension", ext);
-                    }
-                }
+                patchFileSystemField(root, "emitters", "file-system-emitter",
+                        "fileExtension", ext);
             }
 
             // Override the emitter's onExists policy if set on the CLI (--on-exists)
-            if (!StringUtils.isBlank(simpleAsyncConfig.getOnExists())
-                    && emitters != null && emitters.has("fse")) {
-                ObjectNode fse = (ObjectNode) emitters.get("fse");
-                if (fse != null && fse.has("file-system-emitter")) {
-                    ObjectNode fsEmitter = (ObjectNode) fse.get("file-system-emitter");
-                    fsEmitter.put("onExists", simpleAsyncConfig.getOnExists());
-                }
+            if (!StringUtils.isBlank(simpleAsyncConfig.getOnExists())) {
+                patchFileSystemField(root, "emitters", "file-system-emitter",
+                        "onExists", simpleAsyncConfig.getOnExists());
             }
 
             // Write timeout limits to parse-context if configured on CLI
@@ -176,6 +170,52 @@ public class PluginsWriter {
         } catch (Exception e) {
             throw new IOException(e);
         }
+    }
+
+    /**
+     * Sets {@code basePath} on every entry in an id-keyed section
+     * ({@code fetchers}, {@code emitters}) whose wrapper type matches
+     * {@code typeName}. Other component types in the section are left
+     * untouched so a config that mixes filesystem + S3 still works.
+     */
+    private static void patchFileSystemBasePath(ObjectNode root, String section,
+                                                 String typeName, String basePath) {
+        patchFileSystemField(root, section, typeName, "basePath", basePath);
+    }
+
+    /**
+     * Sets a single field on every id-keyed entry in {@code section} whose
+     * wrapper type matches {@code typeName}.
+     */
+    private static void patchFileSystemField(ObjectNode root, String section,
+                                              String typeName, String field, String value) {
+        JsonNode sectionNode = root.get(section);
+        if (sectionNode == null || !sectionNode.isObject()) {
+            return;
+        }
+        Iterator<Map.Entry<String, JsonNode>> ids = sectionNode.fields();
+        while (ids.hasNext()) {
+            Map.Entry<String, JsonNode> idEntry = ids.next();
+            JsonNode typed = idEntry.getValue();
+            if (typed.isObject() && typed.has(typeName)) {
+                ObjectNode target = (ObjectNode) typed.get(typeName);
+                target.put(field, value);
+            }
+        }
+    }
+
+    /**
+     * Sets {@code basePath} on a singleton section ({@code pipes-iterator})
+     * whose wrapper type matches {@code typeName}.
+     */
+    private static void patchSingletonFileSystemBasePath(ObjectNode root, String section,
+                                                          String typeName, String basePath) {
+        JsonNode sectionNode = root.get(section);
+        if (sectionNode == null || !sectionNode.isObject() || !sectionNode.has(typeName)) {
+            return;
+        }
+        ObjectNode target = (ObjectNode) sectionNode.get(typeName);
+        target.put("basePath", basePath);
     }
 
     /**
