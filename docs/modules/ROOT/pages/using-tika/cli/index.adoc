@@ -32,7 +32,7 @@ text content and metadata from all sorts of files.
 NOTE: As of 4.x, `tika-app` is distributed as a zip archive rather than a single
 self-contained jar. The bare `tika-app-<version>.jar` is only a thin launcher and
 will fail with `NoClassDefFoundError` if run on its own — the parsers and supporting
-modules (including the batch processor) live in the adjacent `lib/` directory.
+modules (including the Tika Pipes processor) live in the adjacent `lib/` directory.
 
 Download `tika-app-<version>.zip`, unzip it, and run `tika-app-<version>.jar` from
 inside the unzipped directory so that `lib/` and `plugins/` sit alongside the jar:
@@ -138,9 +138,10 @@ Extract text from a remote document and search for keywords:
 curl http://example.com/document.doc | java -jar tika-app.jar --text | grep -q keyword
 ----
 
-=== Batch processing
+=== Tika Pipes processing
 
-Process entire directories by specifying input and output paths:
+Process many documents by specifying input and output paths. Inputs can be a
+local directory, S3, GCS, Azure, JDBC, and others via Tika Pipes fetchers:
 
 [source,bash]
 ----
@@ -163,13 +164,28 @@ Use a custom configuration file:
 java -jar tika-app.jar --config=tika-config.json document.pdf
 ----
 
-== Batch Processing
+== Tika Pipes Processing
 
-For processing large numbers of files, run `tika-app` with input/output directories.
-Under the hood this uses Tika Pipes batch processing, with forked JVM processes for
-fault tolerance.
+For processing many documents — from a local directory, S3, GCS, Azure, JDBC,
+or any other Tika Pipes source — run `tika-app` with input/output paths.
+Under the hood this is Tika Pipes, dispatched asynchronously into forked JVM
+processes for fault tolerance. Tika prints a one-line banner to `stderr` when
+it switches into Pipes mode so you can confirm which path is running.
 
-=== Basic Batch Usage
+=== How Pipes mode is activated
+
+`tika-app` enters Pipes mode automatically when any of the following are true:
+
+* Two positional arguments are given and the first is an existing directory
+  (`tika-app.jar /in /out`).
+* Any of these options are present: `-i`, `-o`, `--input`, `--output`,
+  `--fileList`, `-z`/`-Z`/`--extract`/`--extract-dir`, or `-a`/`--async`.
+* A single `.json` argument is given — it is treated as a Tika Pipes config file.
+
+Anything else (single file, URL, stdin, `--gui`, `--server`) stays in standard
+single-document mode.
+
+=== Basic Pipes Usage
 
 [source,bash]
 ----
@@ -179,7 +195,7 @@ java -jar tika-app.jar -i /path/to/input -o /path/to/output
 This processes all files in the input directory and writes JSON metadata (RMETA format)
 to the output directory.
 
-=== Batch Options
+=== Tika Pipes Options
 
 [cols="1,3"]
 |===
@@ -213,7 +229,7 @@ to the output directory.
 |Plugins directory
 |===
 
-=== Batch Examples
+=== Tika Pipes Examples
 
 Extract markdown content only (no metadata) from all files:
 
@@ -230,4 +246,12 @@ Extract text with all metadata in concatenated mode:
 [source,bash]
 ----
 java -jar tika-app.jar -i /path/to/input -o /path/to/output --concatenate
+----
+
+Use a Tika config file alongside the Pipes options. Both `--config=foo.json`
+(the standard-mode long form) and `-c foo.json` work:
+
+[source,bash]
+----
+java -jar tika-app.jar -i /path/to/input -o /path/to/output --config=tika-config.json
 ----
