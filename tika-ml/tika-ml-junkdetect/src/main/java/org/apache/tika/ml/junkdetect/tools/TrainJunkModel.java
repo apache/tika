@@ -184,11 +184,11 @@ public class TrainJunkModel {
     static final int CALIB_SAMPLES = 5000;
 
     public static void main(String[] args) throws IOException {
+        // Training data and output paths are intentionally NOT CLI-configurable.
+        // Single bundled model in git; never train to /tmp/; never maintain
+        // parallel A/B variants.  Edit and commit if these need to change.
         Path dataDir = Paths.get(System.getProperty("user.home"),
                 "data", "junk-augmented-symbolboost");
-        // Output is written straight to the bundled resource (run from the repo
-        // root).  Prior model versions live in git history; the model ships with
-        // the code and is intentionally NOT backwards compatible.
         Path output = Paths.get(
                 "tika-ml/tika-ml-junkdetect/src/main/resources",
                 "org/apache/tika/ml/junkdetect/junkdetect.bin");
@@ -212,25 +212,12 @@ public class TrainJunkModel {
             System.exit(1);
         }
 
-        for (int i = 0; i < args.length; i++) {
-            switch (args[i]) {
-                case "--data-dir":
-                    dataDir = Paths.get(args[++i]);
-                    break;
-                case "--output":
-                    output = Paths.get(args[++i]);
-                    break;
-                case "--bloom-bits":
-                case "--min-bigram-count":
-                    System.err.println("ERROR: " + args[i] + " is no longer a CLI option."
-                            + "  Edit JunkDetectorTrainingConfig and commit the change instead.");
-                    System.exit(1);
-                    break;
-                default:
-                    System.err.println("Unknown argument: " + args[i]);
-                    printUsage();
-                    System.exit(1);
-            }
+        if (args.length > 0) {
+            System.err.println("TrainJunkModel takes no arguments.  Data-dir and"
+                    + " output path are baked in; edit the source if they need"
+                    + " to change.  Other training parameters live in"
+                    + " JunkDetectorTrainingConfig.");
+            System.exit(1);
         }
 
         System.out.println("=== TrainJunkModel ===");
@@ -1613,15 +1600,4 @@ public class TrainJunkModel {
     }
 
 
-    private static void printUsage() {
-        System.err.println("Usage: TrainJunkModel [options]");
-        System.err.println("  --data-dir <path>  Directory with {script}.train.gz / .dev.gz files");
-        System.err.println("                     (default: ~/datasets/madlad/junkdetect)");
-        System.err.println("  --output   <path>  Output model file");
-        System.err.println("                     (default: {data-dir}/junkdetect.bin)");
-        System.err.println();
-        System.err.println("All other training parameters (Bloom filter size, min bigram count, etc.)");
-        System.err.println("are fixed in JunkDetectorTrainingConfig and tracked in git.  Edit that");
-        System.err.println("file and commit to change them.");
-    }
 }

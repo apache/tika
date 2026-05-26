@@ -55,7 +55,13 @@ import org.apache.tika.quality.TextQualityScore;
  *   --sample N                (sample N chars of decoded text per candidate)
  *   --features                (per-candidate z1..z8 feature breakdown)
  *   --script-dist             (per-candidate Unicode-script byte distribution)
- *   --per-script-run          (per-candidate per-script-run scores)
+ *   --content-cleaner         (decode each candidate, then run text through
+ *                              HtmlContentCleaner — matches the chain;
+ *                              raw byte-strip otherwise)
+ *   --buckets                 (per-candidate per-script bucket breakdown
+ *                              and COMMON-bucket category histogram)
+ *   --head-bytes N            (truncate read to first N bytes; replicates
+ *                              AdaptiveProbe deep-read behavior)
  *   --no-mojibuster           (skip the Mojibuster pool view)
  *   --entity-modes            (score each candidate three ways:
  *                              raw / entity-expanded / entity-removed)
@@ -76,23 +82,14 @@ public final class TraceJunkFilter {
         int sampleLen = 200;
         boolean showFeatures = false;
         boolean showScriptDist = false;
-        boolean showPerScriptRun = false;
         boolean showMojibuster = true;
         boolean entityModes = false;
         boolean autoCandidates = false;
-        boolean sumDiff = false;
-        boolean skipSymbols = false;
         int headBytes = 0;
         boolean contentCleaner = false;
         boolean showBuckets = false;
         for (int i = 0; i < args.length; i++) {
             switch (args[i]) {
-                case "--sum-diff":
-                    sumDiff = true;
-                    break;
-                case "--skip-symbols":
-                    skipSymbols = true;
-                    break;
                 case "--head-bytes":
                     headBytes = Integer.parseInt(args[++i]);
                     break;
@@ -117,9 +114,6 @@ public final class TraceJunkFilter {
                 case "--script-dist":
                     showScriptDist = true;
                     break;
-                case "--per-script-run":
-                    showPerScriptRun = true;
-                    break;
                 case "--no-mojibuster":
                     showMojibuster = false;
                     break;
@@ -138,8 +132,9 @@ public final class TraceJunkFilter {
             System.err.println(
                     "Usage: TraceJunkFilter --file <path> [--file ...] "
                             + "[--candidates cs1,cs2,...] [--sample N] "
-                            + "[--features] [--script-dist] [--per-script-run] "
-                            + "[--no-mojibuster] [--entity-modes]");
+                            + "[--features] [--script-dist] [--content-cleaner] "
+                            + "[--buckets] [--head-bytes N] "
+                            + "[--no-mojibuster] [--entity-modes] [--auto-candidates]");
             System.exit(1);
         }
 
@@ -157,10 +152,9 @@ public final class TraceJunkFilter {
 
         for (Path file : files) {
             traceOne(file, detector, moji, fixedCharsets, sampleLen,
-                    showFeatures, showScriptDist, showPerScriptRun,
+                    showFeatures, showScriptDist,
                     entityModes, autoCandidates, showMojibuster,
-                    sumDiff, skipSymbols, headBytes, contentCleaner,
-                    showBuckets);
+                    headBytes, contentCleaner, showBuckets);
         }
     }
 
@@ -177,10 +171,8 @@ public final class TraceJunkFilter {
                                   MojibusterEncodingDetector moji,
                                   Charset[] fixedCharsets, int sampleLen,
                                   boolean showFeatures, boolean showScriptDist,
-                                  boolean showPerScriptRun,
                                   boolean entityModes, boolean autoCandidates,
                                   boolean showMojibuster,
-                                  boolean sumDiff, boolean skipSymbols,
                                   int headBytes, boolean contentCleaner,
                                   boolean showBuckets)
             throws IOException {
@@ -296,46 +288,6 @@ public final class TraceJunkFilter {
             }
         }
 
-        if (sumDiff) {
-            System.out.println("  REDESIGN sum-diff (coherent runs, "
-                    + (skipSymbols ? "skip digits+symbols" : "skip digits")
-                    + ", no sentinels):");
-            Map<String, double[]> sums = new LinkedHashMap<>();
-            for (String cs : decoded.keySet()) {
-                sums.put(cs, sumLogP(detector, decoded.get(cs), skipSymbols));
-            }
-            for (String cs : decoded.keySet()) {
-                double[] r = sums.get(cs);
-                double mean = r[1] > 0 ? r[0] / r[1] : Double.NaN;
-                System.out.printf(Locale.ROOT,
-                        "    %-14s sum=%+12.2f perChar=%+7.3f scored=%-7d "
-                                + "(skipDigit=%d skipCross=%d skipGlue=%d)%n",
-                        cs, r[0], mean, (int) r[1], (int) r[2], (int) r[3], (int) r[4]);
-            }
-            System.out.println("    pairwise SUM-diff (sumA - sumB; positive => A wins):");
-            for (int i = 0; i < names.length; i++) {
-                for (int j = i + 1; j < names.length; j++) {
-                    double diff = sums.get(names[i])[0] - sums.get(names[j])[0];
-                    String win = diff >= 0 ? names[i] : names[j];
-                    System.out.printf(Locale.ROOT,
-                            "      %-14s vs %-14s -> %-14s  sumDiff=%+.2f%n",
-                            names[i], names[j], win, diff);
-                }
-            }
-            System.out.println("    pairwise per-CHAR (meanA - meanB; positive => A wins):");
-            for (int i = 0; i < names.length; i++) {
-                for (int j = i + 1; j < names.length; j++) {
-                    double mi = sums.get(names[i])[0] / sums.get(names[i])[1];
-                    double mj = sums.get(names[j])[0] / sums.get(names[j])[1];
-                    double diff = mi - mj;
-                    String win = diff >= 0 ? names[i] : names[j];
-                    System.out.printf(Locale.ROOT,
-                            "      %-14s vs %-14s -> %-14s  meanDiff=%+.4f%n",
-                            names[i], names[j], win, diff);
-                }
-            }
-        }
-
         System.out.println("  tournament (insertion order):");
         String champion = names[0];
         for (int i = 1; i < names.length; i++) {
@@ -358,13 +310,6 @@ public final class TraceJunkFilter {
             }
         }
 
-        if (showPerScriptRun) {
-            for (String cs : decoded.keySet()) {
-                System.out.println("  per-script-run scores (" + cs + "):");
-                printPerScriptRun(detector, decoded.get(cs));
-            }
-        }
-
         if (showBuckets) {
             printBucketReport(detector, decoded);
             printCommonBucketHistogram(detector, decoded);
@@ -379,74 +324,6 @@ public final class TraceJunkFilter {
                 System.out.println("    " + cs + ": " + sample);
             }
         }
-    }
-
-    /**
-     * Redesign-probe scorer: Σ logP over coherent-run bigrams (no COMMON
-     * splitting, no sentinels).  Digits (and optionally symbols) are skipped
-     * as charset-invariant; a bigram touching COMMON glue is scored against
-     * its single adjacent script's table (the glue folds in); a bigram
-     * straddling two distinct real scripts is skipped (cross-script boundary).
-     *
-     * @return {@code [sum, scored, skipDigit, skipCross, skipGlue]}
-     */
-    private static double[] sumLogP(JunkDetector det, String text,
-                                    boolean skipSymbols) {
-        int[] cps = text.codePoints().toArray();
-        double total = 0;
-        int scored = 0, skipDigit = 0, skipCross = 0, skipGlue = 0;
-        for (int i = 0; i + 1 < cps.length; i++) {
-            int a = cps[i], b = cps[i + 1];
-            if (isSkippable(a, skipSymbols) || isSkippable(b, skipSymbols)) {
-                skipDigit++;
-                continue;
-            }
-            String ka = JunkDetector.classKey(a);
-            String kb = JunkDetector.classKey(b);
-            boolean aCommon = JunkDetector.COMMON_SCRIPT.equals(ka);
-            boolean bCommon = JunkDetector.COMMON_SCRIPT.equals(kb);
-            String script;
-            if (aCommon && bCommon) {
-                skipGlue++;
-                continue;                 // glue-glue: nothing charset-specific
-            } else if (aCommon) {
-                script = kb;
-            } else if (bCommon) {
-                script = ka;
-            } else if (ka.equals(kb)) {
-                script = ka;
-            } else {
-                skipCross++;
-                continue;                 // cross-script boundary
-            }
-            BigramTables tbl = det.f1TablesFor(script);
-            if (tbl == null) {
-                skipCross++;
-                continue;
-            }
-            double lp = JunkDetector.computeF1MeanLogP(new int[] {a, b}, tbl);
-            if (Double.isNaN(lp)) {
-                continue;
-            }
-            total += lp;
-            scored++;
-        }
-        return new double[] {total, scored, skipDigit, skipCross, skipGlue};
-    }
-
-    /** Charset-invariant content to skip in per-script scoring. */
-    private static boolean isSkippable(int cp, boolean skipSymbols) {
-        if (Character.isDigit(cp)) {
-            return true;
-        }
-        if (skipSymbols) {
-            int type = Character.getType(cp);
-            return type == Character.MATH_SYMBOL
-                    || type == Character.CURRENCY_SYMBOL
-                    || type == Character.MODIFIER_SYMBOL
-                    || type == Character.OTHER_SYMBOL;
-        }
-        return false;
     }
 
     private static void printFeatureComponents(String label,
@@ -628,29 +505,6 @@ public final class TraceJunkFilter {
             case Character.OTHER_SYMBOL:          return "So";
             default:
                 return String.format(Locale.ROOT, "?%d", t);
-        }
-    }
-
-    private static void printPerScriptRun(JunkDetector det, String text) {
-        Map<String, StringBuilder> byScript = new TreeMap<>();
-        int i = 0;
-        while (i < text.length()) {
-            int cp = text.codePointAt(i);
-            String sn = Character.UnicodeScript.of(cp).name();
-            byScript.computeIfAbsent(sn, k -> new StringBuilder()).appendCodePoint(cp);
-            i += Character.charCount(cp);
-        }
-        for (Map.Entry<String, StringBuilder> e : byScript.entrySet()) {
-            String chunk = e.getValue().toString();
-            if (chunk.length() < 2) continue;
-            TextQualityScore s = det.score(chunk);
-            JunkDetector.FeatureComponents f = det.scoreWithFeatureComponents(chunk);
-            System.out.printf(Locale.ROOT,
-                    "    %-14s cp=%6d bytes=%-6d z=%+6.3f z1=%+6.3f z2=%+6.3f "
-                            + "z3=%+6.3f dom=%s%n",
-                    e.getKey(), chunk.length(), f.totalBytes,
-                    s.isUnknown() ? Float.NaN : s.getZScore(),
-                    f.z1, f.z2, f.z3, f.dominantScript);
         }
     }
 
