@@ -56,6 +56,24 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
     private static final String CUSTOM_PROPERTIES_REL =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties";
 
+    /**
+     * Hard cap on the accumulated text-content of a single property element.
+     * Real OOXML property values are at most a few hundred bytes; anything beyond
+     * this is either corruption or an attacker trying to drive memory or CPU
+     * pressure (cf. the {@code <vt:decimal>} BigDecimal DoS where a 1M-digit
+     * literal compresses ~1000:1 in deflate). 64 KB leaves headroom for any
+     * legitimate value while bounding the slow-path inputs decisively.
+     */
+    static final int MAX_TEXT_BUFFER_LENGTH = 64 * 1024;
+
+    /**
+     * Hard cap on the {@code <vt:decimal>} text length passed to
+     * {@link BigDecimal#BigDecimal(String)}. JDK 17's parser is O(n²) in the
+     * digit count, so even a 64 KB string costs noticeable CPU. Real-world
+     * decimal values fit in well under 50 digits; 256 is generous.
+     */
+    static final int MAX_DECIMAL_LENGTH = 256;
+
     private final OPCPackage opcPackage;
     private final ParseContext parseContext;
 
@@ -187,9 +205,23 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
     }
 
     /**
+     * Append SAX {@code characters()} content to {@code buf}, but stop accepting
+     * once {@link #MAX_TEXT_BUFFER_LENGTH} is reached. Excess characters are
+     * silently dropped; truncated values still flow through downstream parsing
+     * (which will either accept the prefix or reject it as a NumberFormatException).
+     */
+    static void appendCapped(StringBuilder buf, char[] ch, int start, int length) {
+        if (buf.length() >= MAX_TEXT_BUFFER_LENGTH) {
+            return;
+        }
+        int remaining = MAX_TEXT_BUFFER_LENGTH - buf.length();
+        buf.append(ch, start, Math.min(length, remaining));
+    }
+
+    /**
      * SAX handler for docProps/app.xml (extended properties).
      */
-    private static class ExtendedPropertiesHandler extends DefaultHandler {
+    static class ExtendedPropertiesHandler extends DefaultHandler {
 
         private String application;
         private String appVersion;
@@ -219,7 +251,7 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
 
         @Override
         public void characters(char[] ch, int start, int length) {
-            textBuffer.append(ch, start, length);
+            appendCapped(textBuffer, ch, start, length);
         }
 
         @Override
@@ -364,7 +396,7 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
     /**
      * SAX handler for docProps/custom.xml (custom properties).
      */
-    private static class CustomPropertiesHandler extends DefaultHandler {
+    static class CustomPropertiesHandler extends DefaultHandler {
 
         private static final String VT_NS =
                 "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
@@ -387,7 +419,7 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
 
         @Override
         public void characters(char[] ch, int start, int length) {
-            textBuffer.append(ch, start, length);
+            appendCapped(textBuffer, ch, start, length);
         }
 
         @Override
@@ -429,6 +461,13 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                         customMetadata.set(propName, val);
                         break;
                     case "decimal":
+                        // BigDecimal(String) is O(n²) on JDK 17; cap the input
+                        // length to keep an attacker-controlled <vt:decimal>
+                        // from burning CPU. Real values are < 50 chars; 256 is
+                        // generous. See ooxml-bigdecimal-dos.
+                        if (val.length() > MAX_DECIMAL_LENGTH) {
+                            break;
+                        }
                         try {
                             BigDecimal d = new BigDecimal(val);
                             customMetadata.set(propName, d.toPlainString());
