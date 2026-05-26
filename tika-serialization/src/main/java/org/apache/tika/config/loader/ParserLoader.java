@@ -81,6 +81,13 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     }
 
     @Override
+    protected Set<String> getAllowedMarkerKeys() {
+        // ParserLoader honors framework mime-filter decorators on default-parser
+        // in addition to the standard "exclude" key.
+        return Set.of("exclude", "_mime-include", "_mime-exclude");
+    }
+
+    @Override
     protected Parser decorateDefaultComposite(Parser parser, JsonNode configNode,
                                                LoaderContext context) throws TikaConfigException {
         if (configNode == null) {

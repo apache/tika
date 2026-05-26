@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -369,11 +368,10 @@ public class TikaLoaderTest {
         assertFalse(config.isThrowOnMaxCount(), "Should return defaults when key missing");
     }
 
-    // TODO: TIKA-SERIALIZATION-FOLLOWUP - Jackson may need configuration to fail on unknown properties
-    @Disabled("TIKA-SERIALIZATION-FOLLOWUP")
     @Test
-    public void testInvalidBeanPropertyThrowsException() throws Exception {
-        // Config with a property that doesn't exist on DefaultDetector
+    public void testUnknownKeyInDefaultDetectorThrows() throws Exception {
+        // Strict-marker-key validation: an unknown key inside default-detector
+        // must error at load time rather than being silently ignored. (TIKA-4739)
         String invalidConfig = """
                 {
                   "detectors": [
@@ -389,16 +387,113 @@ public class TikaLoaderTest {
         Path tempFile = Files.createTempFile("test-invalid-property", ".json");
         try {
             Files.write(tempFile, invalidConfig.getBytes(StandardCharsets.UTF_8));
-
             TikaLoader loader = TikaLoader.load(tempFile);
             try {
                 loader.loadDetectors();
-                throw new AssertionError("Expected TikaConfigException for invalid property");
+                throw new AssertionError("Expected TikaConfigException for unknown marker key");
             } catch (org.apache.tika.exception.TikaConfigException e) {
-                // Expected - Jackson should fail on unknown property
-                assertTrue(e.getMessage().contains("nonExistentProperty") ||
-                                e.getCause().getMessage().contains("nonExistentProperty"),
-                        "Error should mention the invalid property name");
+                assertTrue(e.getMessage().contains("nonExistentProperty"),
+                        "Error should name the offending key");
+                assertTrue(e.getMessage().contains("default-detector"),
+                        "Error should name the marker");
+            }
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    public void testUnderscoreExcludeInDefaultParserThrows() throws Exception {
+        // The canonical form is "exclude" (no underscore). The historical
+        // "_exclude" was silently dropped, leading to ghost configs that did
+        // nothing. Strict validation must catch this at load time. (TIKA-4739)
+        String invalidConfig = """
+                {
+                  "parsers": [
+                    {
+                      "default-parser": {
+                        "_exclude": ["pdf-parser"]
+                      }
+                    }
+                  ]
+                }
+                """;
+
+        Path tempFile = Files.createTempFile("test-underscore-exclude", ".json");
+        try {
+            Files.write(tempFile, invalidConfig.getBytes(StandardCharsets.UTF_8));
+            TikaLoader loader = TikaLoader.load(tempFile);
+            try {
+                loader.loadParsers();
+                throw new AssertionError("Expected TikaConfigException for _exclude on default-parser");
+            } catch (org.apache.tika.exception.TikaConfigException e) {
+                assertTrue(e.getMessage().contains("_exclude"),
+                        "Error should name the offending key");
+                assertTrue(e.getMessage().contains("default-parser"),
+                        "Error should name the marker");
+            }
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    public void testMimeFilterDecoratorsAllowedOnDefaultParser() throws Exception {
+        // default-parser accepts the framework-level mime-filter decorators
+        // (_mime-include / _mime-exclude). These must NOT be rejected by
+        // strict-marker-key validation. (TIKA-4739)
+        String config = """
+                {
+                  "parsers": [
+                    {
+                      "default-parser": {
+                        "exclude": [],
+                        "_mime-include": ["application/pdf"]
+                      }
+                    }
+                  ]
+                }
+                """;
+
+        Path tempFile = Files.createTempFile("test-mime-include", ".json");
+        try {
+            Files.write(tempFile, config.getBytes(StandardCharsets.UTF_8));
+            TikaLoader loader = TikaLoader.load(tempFile);
+            Parser parser = loader.loadParsers();
+            assertNotNull(parser, "_mime-include on default-parser must load successfully");
+        } finally {
+            Files.deleteIfExists(tempFile);
+        }
+    }
+
+    @Test
+    public void testMimeFilterDecoratorRejectedOnDefaultDetector() throws Exception {
+        // _mime-include is only meaningful on parsers (it restricts which mime
+        // types a parser handles). On detectors it has no consumer, so strict
+        // validation rejects it rather than silently ignore. (TIKA-4739)
+        String config = """
+                {
+                  "detectors": [
+                    {
+                      "default-detector": {
+                        "_mime-include": ["application/pdf"]
+                      }
+                    }
+                  ]
+                }
+                """;
+
+        Path tempFile = Files.createTempFile("test-mime-include-detector", ".json");
+        try {
+            Files.write(tempFile, config.getBytes(StandardCharsets.UTF_8));
+            TikaLoader loader = TikaLoader.load(tempFile);
+            try {
+                loader.loadDetectors();
+                throw new AssertionError(
+                        "Expected TikaConfigException for _mime-include on default-detector");
+            } catch (org.apache.tika.exception.TikaConfigException e) {
+                assertTrue(e.getMessage().contains("_mime-include"),
+                        "Error should name the offending key");
             }
         } finally {
             Files.deleteIfExists(tempFile);

@@ -83,7 +83,7 @@ The converter currently supports:
 
 NOTE: When you configure a parser with specific settings in JSON, the loader automatically
 excludes it from SPI loading. The parser (e.g., `pdf-parser`) is not even instantiated in
-`default-parser` if there's a definition for it in the tika-config.json. Explicit `_exclude`
+`default-parser` if there's a definition for it in the tika-config.json. Explicit `exclude`
 directives are only needed when you want to disable a parser entirely without providing
 custom configuration.
 
@@ -103,7 +103,7 @@ custom configuration.
 
 |Exclusions
 |`<parser-exclude class="..."/>`
-|`"_exclude": ["component-name"]` (only needed to disable a parser entirely)
+|`"exclude": ["component-name"]` (only needed to disable a parser entirely)
 |===
 
 === Limitations

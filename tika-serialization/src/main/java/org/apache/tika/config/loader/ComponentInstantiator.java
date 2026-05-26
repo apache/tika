@@ -305,9 +305,17 @@ public class ComponentInstantiator {
     }
 
     /**
-     * Strips decorator fields (_mime-include, _mime-exclude) from config node.
-     * These fields are handled by TikaLoader for wrapping, not by the component itself.
-     * Note: _exclude is NOT stripped as it's used by DefaultParser for SPI exclusions.
+     * Strips decorator fields ({@code _mime-include}, {@code _mime-exclude}) from a real
+     * component's config node. These directives are applied by {@link
+     * org.apache.tika.config.loader.TikaLoader} as a wrapper around the component, not
+     * consumed by the component itself, so they must be stripped before deserialization.
+     * <p>
+     * Convention: directives that share a JSON object with a real component's own
+     * config properties carry a leading underscore to avoid namespace collisions
+     * (e.g., a parser could legitimately have a config key named {@code mime-include}).
+     * Directives on marker entries that have no component-config namespace —
+     * {@code "exclude"} on {@code default-parser}/{@code default-detector} — need no
+     * prefix; those are read directly by {@link AbstractSpiComponentLoader}.
      */
     private static JsonNode stripDecoratorFields(JsonNode configNode) {
         if (configNode == null || !configNode.isObject()) {
