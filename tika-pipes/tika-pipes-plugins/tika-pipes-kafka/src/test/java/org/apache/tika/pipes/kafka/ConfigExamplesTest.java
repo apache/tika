@@ -17,20 +17,12 @@
 package org.apache.tika.pipes.kafka;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.emitter.kafka.KafkaEmitterConfig;
 import org.apache.tika.pipes.iterator.kafka.KafkaPipesIteratorConfig;
 
@@ -40,44 +32,11 @@ import org.apache.tika.pipes.iterator.kafka.KafkaPipesIteratorConfig;
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private void loadViaTikaLoader(String resourceName) throws Exception {
-        String json = readExample(resourceName);
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        TikaLoader loader = TikaLoader.load(configFile);
-        assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
-    }
-
-    private JsonNode innerComponent(String json, String section, String id, String typeName)
-            throws Exception {
-        JsonNode root = OBJECT_MAPPER.readTree(json);
-        JsonNode sectionNode = root.get(section);
-        assertNotNull(sectionNode, "Missing section: " + section);
-        JsonNode idNode = id == null ? sectionNode : sectionNode.get(id);
-        assertNotNull(idNode, "Missing id: " + id);
-        JsonNode typed = idNode.get(typeName);
-        assertNotNull(typed, "Missing type: " + typeName);
-        return typed;
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testKafkaEmitterConfig() throws Exception {
-        loadViaTikaLoader("kafka-emitter.json");
+        loadAndValidate("kafka-emitter.json");
 
         JsonNode inner = innerComponent(readExample("kafka-emitter.json"),
                 "emitters", "kafe", "kafka-emitter");
@@ -92,7 +51,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testKafkaIteratorConfig() throws Exception {
-        loadViaTikaLoader("kafka-pipes-iterator.json");
+        loadAndValidate("kafka-pipes-iterator.json");
 
         JsonNode inner = innerComponent(readExample("kafka-pipes-iterator.json"),
                 "pipes-iterator", null, "kafka-pipes-iterator");
@@ -108,7 +67,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testKafkaPipelineConfig() throws Exception {
-        loadViaTikaLoader("kafka-pipeline.json");
+        loadAndValidate("kafka-pipeline.json");
 
         String json = readExample("kafka-pipeline.json");
         KafkaEmitterConfig emitter = KafkaEmitterConfig.load(

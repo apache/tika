@@ -20,17 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.emitter.jdbc.JDBCEmitterConfig;
 import org.apache.tika.pipes.iterator.jdbc.JDBCPipesIteratorConfig;
 import org.apache.tika.pipes.reporter.jdbc.JDBCPipesReporterConfig;
@@ -41,44 +34,11 @@ import org.apache.tika.pipes.reporter.jdbc.JDBCPipesReporterConfig;
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private void loadViaTikaLoader(String resourceName) throws Exception {
-        String json = readExample(resourceName);
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        TikaLoader loader = TikaLoader.load(configFile);
-        assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
-    }
-
-    private JsonNode innerComponent(String json, String section, String id, String typeName)
-            throws Exception {
-        JsonNode root = OBJECT_MAPPER.readTree(json);
-        JsonNode sectionNode = root.get(section);
-        assertNotNull(sectionNode, "Missing section: " + section);
-        JsonNode idNode = id == null ? sectionNode : sectionNode.get(id);
-        assertNotNull(idNode, "Missing id: " + id);
-        JsonNode typed = idNode.get(typeName);
-        assertNotNull(typed, "Missing type: " + typeName);
-        return typed;
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testJDBCEmitterConfig() throws Exception {
-        loadViaTikaLoader("jdbc-emitter.json");
+        loadAndValidate("jdbc-emitter.json");
 
         JsonNode inner = innerComponent(readExample("jdbc-emitter.json"),
                 "emitters", "jdbce", "jdbc-emitter");
@@ -98,7 +58,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testJDBCIteratorConfig() throws Exception {
-        loadViaTikaLoader("jdbc-pipes-iterator.json");
+        loadAndValidate("jdbc-pipes-iterator.json");
 
         JsonNode inner = innerComponent(readExample("jdbc-pipes-iterator.json"),
                 "pipes-iterator", null, "jdbc-pipes-iterator");
@@ -116,7 +76,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testJDBCReporterConfig() throws Exception {
-        loadViaTikaLoader("jdbc-reporter.json");
+        loadAndValidate("jdbc-reporter.json");
 
         JsonNode inner = innerComponent(readExample("jdbc-reporter.json"),
                 "pipes-reporters", null, "jdbc-reporter");
@@ -133,7 +93,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testJDBCPipelineConfig() throws Exception {
-        loadViaTikaLoader("jdbc-pipeline.json");
+        loadAndValidate("jdbc-pipeline.json");
 
         String json = readExample("jdbc-pipeline.json");
         JDBCEmitterConfig emitter = JDBCEmitterConfig.load(

@@ -21,17 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.emitter.es.ESEmitterConfig;
 import org.apache.tika.pipes.reporter.es.ESReporterConfig;
 
@@ -41,48 +33,15 @@ import org.apache.tika.pipes.reporter.es.ESReporterConfig;
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private void loadViaTikaLoader(String resourceName) throws Exception {
-        String json = readExample(resourceName);
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        TikaLoader loader = TikaLoader.load(configFile);
-        assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
-    }
-
-    private JsonNode innerComponent(String json, String section, String id, String typeName)
-            throws Exception {
-        JsonNode root = OBJECT_MAPPER.readTree(json);
-        JsonNode sectionNode = root.get(section);
-        assertNotNull(sectionNode, "Missing section: " + section);
-        JsonNode idNode = id == null ? sectionNode : sectionNode.get(id);
-        assertNotNull(idNode, "Missing id: " + id);
-        JsonNode typed = idNode.get(typeName);
-        assertNotNull(typed, "Missing type: " + typeName);
-        return typed;
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testESEmitterConfig() throws Exception {
-        loadViaTikaLoader("es-emitter.json");
+        loadAndValidate("es-emitter.json");
 
-        JsonNode inner = innerComponent(readExample("es-emitter.json"),
-                "emitters", "ese", "es-emitter");
-        ESEmitterConfig config = ESEmitterConfig.load(inner.toString());
+        ESEmitterConfig config = ESEmitterConfig.load(
+                innerComponent(readExample("es-emitter.json"),
+                        "emitters", "ese", "es-emitter").toString());
         assertEquals("doc_id", config.idField());
         assertEquals(ESEmitterConfig.AttachmentStrategy.PARENT_CHILD,
                 config.attachmentStrategy());
@@ -97,11 +56,11 @@ public class ConfigExamplesTest {
 
     @Test
     public void testESReporterConfig() throws Exception {
-        loadViaTikaLoader("es-reporter.json");
+        loadAndValidate("es-reporter.json");
 
-        JsonNode inner = innerComponent(readExample("es-reporter.json"),
-                "pipes-reporters", null, "es-pipes-reporter");
-        ESReporterConfig config = ESReporterConfig.load(inner.toString());
+        ESReporterConfig config = ESReporterConfig.load(
+                innerComponent(readExample("es-reporter.json"),
+                        "pipes-reporters", null, "es-pipes-reporter").toString());
         assertTrue(config.esUrl().contains("tika-status"));
         assertEquals("tika_", config.keyPrefix());
         assertTrue(config.includeRouting());
@@ -112,7 +71,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testESPipelineConfig() throws Exception {
-        loadViaTikaLoader("es-pipeline.json");
+        loadAndValidate("es-pipeline.json");
 
         String json = readExample("es-pipeline.json");
         ESEmitterConfig emitter = ESEmitterConfig.load(
