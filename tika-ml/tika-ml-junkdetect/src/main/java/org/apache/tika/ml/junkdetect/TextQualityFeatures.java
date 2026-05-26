@@ -201,27 +201,73 @@ public final class TextQualityFeatures {
     }
 
     /**
-     * z8: fraction of codepoints that are the Unicode REPLACEMENT CHARACTER
-     * (U+FFFD).  Direct decode-failure signal — Java's CharsetDecoder emits
-     * one U+FFFD per malformed/unmappable byte.  Continuous (not a binary
-     * threshold) so the JunkDetector LR can learn a proportional weight on
-     * it rather than vetoing decodes that happen to contain any.
+     * z6 raw input: fraction of codepoints that are "anomaly indicators" —
+     * codepoints that shouldn't appear in correctly-decoded natural text.
+     * Direct decode-failure signal — wrong encodings produce these in bulk
+     * (Java's CharsetDecoder emits U+FFFD per malformed byte; ISO-8859-X
+     * misreads windows-1252 high bytes as C1 controls; PDF cmap failures
+     * emit private-use codepoints; etc.).
+     *
+     * <p>Anomaly set:
+     * <ul>
+     *   <li>U+FFFD (REPLACEMENT CHARACTER) — the direct decode-failure marker
+     *   <li>Anomalous Cc: {@code 0x01-0x08, 0x0B, 0x0C, 0x0E-0x1F, 0x7F}
+     *       (matching z3's byte-level anomaly definition, at codepoint level)
+     *   <li>C1 control codepoints: {@code U+0080-U+009F} — the
+     *       ISO-8859-X-misdecodes-windows-1252 signal
+     *   <li>Private use area: {@code U+E000-U+F8FF}, plus planes 15-16 PUA —
+     *       the PDF cmap-failure signal
+     * </ul>
+     *
+     * <p>Continuous (not a binary threshold) so the JunkDetector combiner LR
+     * can learn a proportional weight on it.  Excluded: 0x00 (NUL — can
+     * occur legitimately in some text streams; matches z3's exclusion);
+     * 0x09/0x0A/0x0D/0x20 (legitimate whitespace); Cf format chars (ZWJ etc.
+     * have legitimate linguistic uses); Cn unassigned (rare in practice).
      */
     public static double replacementRatio(String text) {
         if (text == null || text.isEmpty()) {
             return Double.NaN;
         }
         int total = 0;
-        int replacements = 0;
+        int anomaly = 0;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
             total++;
-            if (cp == 0xFFFD) {
-                replacements++;
+            if (isAnomalyCodepoint(cp)) {
+                anomaly++;
             }
         }
-        return total == 0 ? Double.NaN : (double) replacements / total;
+        return total == 0 ? Double.NaN : (double) anomaly / total;
+    }
+
+    /** True if {@code cp} is in the z6 anomaly set: U+FFFD, anomalous Cc
+     *  (matching z3 byte-level definition), C1 controls, or private use. */
+    static boolean isAnomalyCodepoint(int cp) {
+        if (cp == 0xFFFD) {
+            return true;
+        }
+        // Anomalous Cc (excludes 0x00, 0x09, 0x0A, 0x0D — match z3)
+        if ((cp >= 0x01 && cp <= 0x08)
+                || cp == 0x0B || cp == 0x0C
+                || (cp >= 0x0E && cp <= 0x1F)
+                || cp == 0x7F) {
+            return true;
+        }
+        // C1 controls — the ISO-8859-X-misreads-windows-1252 signal
+        if (cp >= 0x0080 && cp <= 0x009F) {
+            return true;
+        }
+        // Private use area (BMP)
+        if (cp >= 0xE000 && cp <= 0xF8FF) {
+            return true;
+        }
+        // Supplementary PUA (planes 15 and 16)
+        if (cp >= 0xF0000 && cp <= 0x10FFFD) {
+            return true;
+        }
+        return false;
     }
 
     /**

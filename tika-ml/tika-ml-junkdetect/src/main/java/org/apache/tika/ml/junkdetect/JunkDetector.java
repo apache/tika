@@ -1123,31 +1123,6 @@ public final class JunkDetector implements TextQualityDetector {
         return Character.isDigit(cp);
     }
 
-    /** Whitespace-equivalents collapse to canonical U+0020 (' ') before bigram
-     *  lookup.  Tab, NBSP, ideographic space, line/paragraph separators, and
-     *  ASCII control chars (\\n, \\r, etc.) all signal the SAME thing about
-     *  surrounding script context — "end of word" — and shouldn't produce
-     *  distinct bigram entries.  Applied identically in training and inference
-     *  via {@link #forEachScriptBigram}, so the bigram table only ever sees
-     *  the canonical form.  The follow-on (space, space) drop in
-     *  {@link #forEachScriptBigram} then ensures collapsed whitespace runs
-     *  (HtmlContentCleaner indentation residue: \\t\\t, \\n\\r, NBSP·\\t)
-     *  contribute nothing to the COMMON bucket — only (script, space) and
-     *  (space, script) boundary bigrams survive. */
-    static int normalizeWhitespace(int cp) {
-        if (cp == 0x20) {
-            return cp;
-        }
-        int t = Character.getType(cp);
-        if (t == Character.CONTROL
-                || t == Character.SPACE_SEPARATOR
-                || t == Character.LINE_SEPARATOR
-                || t == Character.PARAGRAPH_SEPARATOR) {
-            return 0x20;
-        }
-        return cp;
-    }
-
     /**
      * Enumerates the script-bucketed bigrams of {@code cps} under the redesign
      * representation (see block comment above).  Used identically by inference
@@ -1179,6 +1154,36 @@ public final class JunkDetector implements TextQualityDetector {
         return buckets;
     }
 
+    /** "Real" structural whitespace collapses to canonical U+0020 before bigram
+     *  emission.  Matches {@link #computeZ3ControlByte}'s definition of
+     *  non-anomalous whitespace: HT (0x09), LF (0x0A), CR (0x0D), regular
+     *  space (0x20), plus the Zs/Zl/Zp Unicode categories (NBSP, ideographic
+     *  space, line/paragraph separators).
+     *
+     *  <p><strong>Anomalous Cc (0x01-0x08, 0x0B, 0x0C, 0x0E-0x1F, 0x7F, U+0085
+     *  NEL, U+0080-0x009F C1 controls) and Cf (format chars) are DELIBERATELY
+     *  NOT normalized.</strong>  Their OOV-floor signal is carrying real
+     *  evidence that the decode is wrong — e.g., windows-1252 bytes 0x80-0x9F
+     *  decode to printable curly quotes / em-dashes; ISO-8859-16 misdecodes
+     *  them as C1 control codepoints; the bigram-table OOV-floor on those
+     *  Cc-touching bigrams is what correctly penalizes the wrong decode.
+     *  z3 has had this distinction since v15; this brings z1 in line. */
+    static int normalizeWhitespace(int cp) {
+        if (cp == 0x20) {
+            return cp;
+        }
+        if (cp == 0x09 || cp == 0x0A || cp == 0x0D) {
+            return 0x20;
+        }
+        int t = Character.getType(cp);
+        if (t == Character.SPACE_SEPARATOR
+                || t == Character.LINE_SEPARATOR
+                || t == Character.PARAGRAPH_SEPARATOR) {
+            return 0x20;
+        }
+        return cp;
+    }
+
     public static void forEachScriptBigram(int[] cps, BigramSink sink) {
         if (cps == null || cps.length < 2) {
             return;
@@ -1186,13 +1191,7 @@ public final class JunkDetector implements TextQualityDetector {
         for (int i = 0; i + 1 < cps.length; i++) {
             int a = normalizeWhitespace(cps[i]);
             int b = normalizeWhitespace(cps[i + 1]);
-            // (space, space) drop short-circuits ahead of the digit check:
-            // after normalization, every whitespace run (\t\t, \n\r, NBSP·\t,
-            // HtmlContentCleaner indentation salads) collapses to this one
-            // bigram class — high count on HTML, zero script-boundary signal.
-            // (script, space) / (space, script) boundary bigrams survive.
-            if ((a == 0x20 && b == 0x20)
-                    || isSkipCodepoint(a) || isSkipCodepoint(b)) {
+            if (isSkipCodepoint(a) || isSkipCodepoint(b)) {
                 continue;
             }
             String ka = classKey(a);
