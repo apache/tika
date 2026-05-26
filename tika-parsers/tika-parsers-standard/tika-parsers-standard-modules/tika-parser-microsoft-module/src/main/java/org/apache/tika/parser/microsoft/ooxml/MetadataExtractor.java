@@ -16,17 +16,23 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Optional;
 
 import org.apache.poi.ooxml.POIXMLProperties;
 import org.apache.poi.ooxml.extractor.POIXMLTextExtractor;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
-import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
@@ -37,10 +43,12 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xps.XPSTextExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * OOXML metadata extractor.
@@ -50,6 +58,28 @@ import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
  * @see OOXMLExtractor#getMetadataExtractor()
  */
 public class MetadataExtractor {
+
+    private static final String CUSTOM_PROPERTIES_REL =
+            "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties";
+
+    /**
+     * Hard cap on the accumulated text-content of a single property element
+     * inside docProps/custom.xml. Real OOXML property values are at most a few
+     * hundred bytes; anything beyond this is either corruption or an attacker
+     * trying to drive memory or CPU pressure (cf. the {@code <vt:decimal>}
+     * BigDecimal DoS where a 1M-digit literal compresses ~1000:1 in deflate).
+     * 64 KB leaves headroom for any legitimate value while bounding the
+     * slow-path inputs decisively.
+     */
+    static final int MAX_TEXT_BUFFER_LENGTH = 64 * 1024;
+
+    /**
+     * Hard cap on the {@code <vt:decimal>} text length passed to
+     * {@link BigDecimal#BigDecimal(String)}. JDK 17's parser is O(n²) in the
+     * digit count, so even a 64 KB string costs noticeable CPU. Real-world
+     * decimal values fit in well under 50 digits; 256 is generous.
+     */
+    static final int MAX_DECIMAL_LENGTH = 256;
 
     private final POIXMLTextExtractor extractor;
 
@@ -65,7 +95,13 @@ public class MetadataExtractor {
                         extractor instanceof XPSTextExtractor) && extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
-            extractMetadata(extractor.getCustomProperties(), metadata);
+            // Custom properties are read via SAX directly from the OPC part
+            // rather than through POI/XMLBeans. The XMLBeans path materializes
+            // an attacker-controlled <vt:decimal> through BigDecimal(String),
+            // which is O(n²) on JDK 17 -- a 3 KB crafted carrier with a
+            // 1,000,000-digit literal burns ~25 s of CPU before this method
+            // even returns. See ooxml-bigdecimal-dos.
+            extractCustomPropertiesViaSAX(extractor.getPackage(), metadata);
         }
     }
 
@@ -157,85 +193,164 @@ public class MetadataExtractor {
         }
     }
 
-    private void extractMetadata(POIXMLProperties.CustomProperties properties, Metadata metadata) {
-        org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties props =
-                properties.getUnderlyingProperties();
-        for (int i = 0; i < props.sizeOfPropertyArray(); i++) {
-            CTProperty property = props.getPropertyArray(i);
-            String val = null;
-            Date date = null;
-
-            if (property.isSetLpwstr()) {
-                val = property.getLpwstr();
-            } else if (property.isSetLpstr()) {
-                val = property.getLpstr();
-            } else if (property.isSetDate()) {
-                date = property.getDate().getTime();
-            } else if (property.isSetFiletime()) {
-                date = property.getFiletime().getTime();
-            } else if (property.isSetBool()) {
-                val = Boolean.toString(property.getBool());
+    /**
+     * Parse {@code docProps/custom.xml} directly via SAX, bypassing
+     * POI/XMLBeans. The XMLBeans path materializes an attacker-controlled
+     * {@code <vt:decimal>} through {@link BigDecimal#BigDecimal(String)}
+     * during XML deserialization, which is O(n²) in the digit count on
+     * JDK 17. By reading the part ourselves we can cap both the buffered
+     * text content ({@link #MAX_TEXT_BUFFER_LENGTH}) and the decimal
+     * literal length ({@link #MAX_DECIMAL_LENGTH}) before any slow parse
+     * runs.
+     */
+    private void extractCustomPropertiesViaSAX(OPCPackage opcPackage, Metadata metadata) {
+        if (opcPackage == null) {
+            return;
+        }
+        try {
+            PackagePart custPart = getRelatedPart(opcPackage, CUSTOM_PROPERTIES_REL);
+            if (custPart == null) {
+                return;
             }
-
-            // Integers
-            else if (property.isSetI1()) {
-                val = Integer.toString(property.getI1());
-            } else if (property.isSetI2()) {
-                val = Integer.toString(property.getI2());
-            } else if (property.isSetI4()) {
-                val = Integer.toString(property.getI4());
-            } else if (property.isSetI8()) {
-                val = Long.toString(property.getI8());
-            } else if (property.isSetInt()) {
-                val = Integer.toString(property.getInt());
+            CustomPropertiesHandler handler = new CustomPropertiesHandler();
+            try (InputStream is = custPart.getInputStream()) {
+                XMLReaderUtils.parseSAX(is, handler, new ParseContext());
             }
+            handler.applyTo(metadata);
+        } catch (Exception e) {
+            //swallow
+        }
+    }
 
-            // Unsigned Integers
-            else if (property.isSetUi1()) {
-                val = Integer.toString(property.getUi1());
-            } else if (property.isSetUi2()) {
-                val = Integer.toString(property.getUi2());
-            } else if (property.isSetUi4()) {
-                val = Long.toString(property.getUi4());
-            } else if (property.isSetUi8()) {
-                val = property.getUi8().toString();
-            } else if (property.isSetUint()) {
-                val = Long.toString(property.getUint());
+    private static PackagePart getRelatedPart(OPCPackage opcPackage, String relationshipType) {
+        try {
+            PackageRelationshipCollection rels =
+                    opcPackage.getRelationshipsByType(relationshipType);
+            if (rels == null || rels.size() == 0) {
+                return null;
             }
+            PackageRelationship rel = rels.getRelationship(0);
+            if (rel == null) {
+                return null;
+            }
+            return opcPackage.getPart(rel);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
-            // Reals
-            else if (property.isSetR4()) {
-                val = Float.toString(property.getR4());
-            } else if (property.isSetR8()) {
-                val = Double.toString(property.getR8());
-            } else if (property.isSetDecimal()) {
-                BigDecimal d = property.getDecimal();
-                if (d == null) {
-                    val = null;
-                } else {
-                    val = d.toPlainString();
+    /**
+     * Append SAX {@code characters()} content to {@code buf}, but stop accepting
+     * once {@link #MAX_TEXT_BUFFER_LENGTH} is reached. Excess characters are
+     * silently dropped; truncated values still flow through downstream parsing.
+     */
+    static void appendCapped(StringBuilder buf, char[] ch, int start, int length) {
+        if (buf.length() >= MAX_TEXT_BUFFER_LENGTH) {
+            return;
+        }
+        int remaining = MAX_TEXT_BUFFER_LENGTH - buf.length();
+        buf.append(ch, start, Math.min(length, remaining));
+    }
+
+    /**
+     * SAX handler for {@code docProps/custom.xml} (custom properties).
+     * Matches the schema defined by Microsoft's
+     * {@code http://schemas.openxmlformats.org/officeDocument/2006/custom-properties}
+     * namespace, with value types coming from the {@code vt:} namespace.
+     */
+    static class CustomPropertiesHandler extends DefaultHandler {
+
+        private static final String VT_NS =
+                "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
+
+        private final Metadata customMetadata = new Metadata();
+        private String currentPropertyName;
+        private String currentValueType;
+        private final StringBuilder textBuffer = new StringBuilder();
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts) {
+            if ("property".equals(localName)) {
+                currentPropertyName = atts.getValue("name");
+                currentValueType = null;
+            } else if (VT_NS.equals(uri) && currentPropertyName != null) {
+                currentValueType = localName;
+                textBuffer.setLength(0);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) {
+            appendCapped(textBuffer, ch, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) {
+            if (VT_NS.equals(uri) && currentValueType != null &&
+                    localName.equals(currentValueType) && currentPropertyName != null) {
+                String val = textBuffer.toString().trim();
+                String propName = "custom:" + currentPropertyName;
+                switch (currentValueType) {
+                    case "lpwstr":
+                    case "lpstr":
+                    case "bstr":
+                        customMetadata.set(propName, val);
+                        break;
+                    case "filetime":
+                    case "date":
+                        Property tikaProp = Property.externalDate(propName);
+                        customMetadata.set(tikaProp, val);
+                        break;
+                    case "bool":
+                        customMetadata.set(propName, val);
+                        break;
+                    case "i1":
+                    case "i2":
+                    case "i4":
+                    case "int":
+                    case "ui1":
+                    case "ui2":
+                        customMetadata.set(propName, val);
+                        break;
+                    case "i8":
+                    case "ui4":
+                    case "ui8":
+                    case "uint":
+                        customMetadata.set(propName, val);
+                        break;
+                    case "r4":
+                    case "r8":
+                        customMetadata.set(propName, val);
+                        break;
+                    case "decimal":
+                        // BigDecimal(String) is O(n²) on JDK 17; cap the input
+                        // length to keep an attacker-controlled <vt:decimal>
+                        // from burning CPU. Real values are < 50 chars; 256 is
+                        // generous. See ooxml-bigdecimal-dos.
+                        if (val.length() > MAX_DECIMAL_LENGTH) {
+                            break;
+                        }
+                        try {
+                            BigDecimal d = new BigDecimal(val);
+                            customMetadata.set(propName, d.toPlainString());
+                        } catch (NumberFormatException e) {
+                            //swallow
+                        }
+                        break;
+                    default:
+                        break;
                 }
-            } else if (property.isSetArray()) {
-                // TODO Fetch the array values and output
-            } else if (property.isSetVector()) {
-                // TODO Fetch the vector values and output
-            } else if (property.isSetBlob() || property.isSetOblob()) {
-                // TODO Decode, if possible
-            } else if (property.isSetStream() || property.isSetOstream() ||
-                    property.isSetVstream()) {
-                // TODO Decode, if possible
-            } else if (property.isSetStorage() || property.isSetOstorage()) {
-                // TODO Decode, if possible
-            } else {
-                // This type isn't currently supported yet, skip the property
+                currentValueType = null;
+            } else if ("property".equals(localName)) {
+                currentPropertyName = null;
             }
+        }
 
-            String propName = "custom:" + property.getName();
-            if (date != null) {
-                Property tikaProp = Property.externalDate(propName);
-                metadata.set(tikaProp, date);
-            } else if (val != null) {
-                metadata.set(propName, val);
+        void applyTo(Metadata metadata) {
+            for (String name : customMetadata.names()) {
+                for (String value : customMetadata.getValues(name)) {
+                    metadata.add(name, value);
+                }
             }
         }
     }
