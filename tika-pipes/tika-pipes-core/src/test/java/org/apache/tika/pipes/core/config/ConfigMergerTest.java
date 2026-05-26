@@ -209,7 +209,7 @@ public class ConfigMergerTest {
     @Test
     public void testFullPipesConfig() throws IOException {
         ConfigOverrides overrides = ConfigOverrides.builder()
-                .setPipesConfig(8, 300000, 5000, List.of("-Xmx1g"))
+                .setPipesConfig(8, 5000, List.of("-Xmx1g"))
                 .build();
 
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
@@ -219,7 +219,6 @@ public class ConfigMergerTest {
 
         JsonNode pipes = root.get("pipes");
         assertEquals(8, pipes.get("numClients").asInt());
-        assertEquals(300000, pipes.get("startupTimeoutMillis").asLong());
         assertEquals(5000, pipes.get("maxFilesProcessedPerProcess").asInt());
 
         Files.deleteIfExists(result.configPath());

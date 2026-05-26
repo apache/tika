@@ -156,9 +156,6 @@ public class ConfigMerger {
             if (pc.getNumClients() > 0) {
                 pipesNode.put("numClients", pc.getNumClients());
             }
-            if (pc.getStartupTimeoutMillis() > 0) {
-                pipesNode.put("startupTimeoutMillis", pc.getStartupTimeoutMillis());
-            }
             if (pc.getMaxFilesProcessedPerProcess() > 0) {
                 pipesNode.put("maxFilesProcessedPerProcess", pc.getMaxFilesProcessedPerProcess());
             }

@@ -77,10 +77,6 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |`1000`
 |Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMs`.
 
-|`startupTimeoutMillis`
-|`240000`
-|Maximum time (ms) to wait for a forked process to start up.
-
 |`shutdownClientAfterMillis`
 |`300000`
 |Shut down an idle forked process after this many milliseconds of inactivity.

@@ -45,8 +45,6 @@
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "startupTimeoutMillis": 240000,
-    "sleepOnStartupTimeoutMillis": 240000,
     "shutdownClientAfterMillis": 300000,
     "numClients": 4,
     "maxFilesProcessedPerProcess": 10000,
