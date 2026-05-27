@@ -187,7 +187,7 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-int
 See xref:pipes/shared-server-mode.adoc[Shared Server Mode] for the trade-offs.
 
 [#config-template]
-=== `tika-async-cli` config template
+=== Tika Pipes config template
 
 [source,json,subs=none]
 ----
