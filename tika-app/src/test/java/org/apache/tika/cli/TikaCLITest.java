@@ -761,10 +761,6 @@ public class TikaCLITest {
     }
 
     /**
-     * reset outContent and errContent if they are not empty
-     * run given params in TikaCLI and return outContent String with UTF-8
-     */
-    /**
      * Tests --convert-config-xml-to-json with no separate config file.
      * Regression test for TIKA-4734: the flag used to be misrouted to async
      * mode (the input arg ended in ".json"), failing with a TikaConfigException
@@ -783,6 +779,10 @@ public class TikaCLITest {
         assertTrue(content.trim().startsWith("{"), "Output should be pure JSON, got: " + content);
     }
 
+    /**
+     * reset outContent and errContent if they are not empty
+     * run given params in TikaCLI and return outContent String with UTF-8
+     */
     String getParamOutContent(String... params) throws Exception {
         resetContent();
         TikaCLI.main(params);
