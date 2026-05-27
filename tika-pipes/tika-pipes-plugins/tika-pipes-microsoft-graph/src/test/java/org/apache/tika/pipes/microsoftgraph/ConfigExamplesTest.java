@@ -20,46 +20,23 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 
 /**
  * Validates Microsoft Graph fetcher configuration examples used in documentation.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testMicrosoftGraphFetcherConfig() throws Exception {
-        String json = readExample("microsoft-graph-fetcher.json");
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        assertNotNull(TikaLoader.load(configFile));
+        loadAndValidate("microsoft-graph-fetcher.json");
 
-        JsonNode inner = OBJECT_MAPPER.readTree(json)
-                .get("fetchers").get("msgf").get("microsoft-graph-fetcher");
+        JsonNode inner = innerComponent(readExample("microsoft-graph-fetcher.json"),
+                "fetchers", "msgf", "microsoft-graph-fetcher");
         MicrosoftGraphFetcherConfig config = MicrosoftGraphFetcherConfig.load(inner.toString());
         assertNotNull(config.getClientSecretCredentialsConfig());
         assertEquals("REDACTED-TENANT-UUID",

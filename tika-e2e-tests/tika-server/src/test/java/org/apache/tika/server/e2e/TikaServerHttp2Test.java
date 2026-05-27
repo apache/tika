@@ -26,6 +26,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -81,15 +82,17 @@ public class TikaServerHttp2Test {
             serverHome = repoRoot.resolve("tika-e2e-tests/tika-server/target/tika-server-dist").toAbsolutePath().toString();
         }
 
-        Path serverJar = Paths.get(serverHome, "tika-server.jar");
-        Assumptions.assumeTrue(Files.exists(serverJar),
-                "tika-server.jar not found at " + serverJar + "; skipping HTTP/2 e2e test. " +
+        // The distribution zip ships a versioned jar (tika-server-standard-<version>.jar),
+        // so resolve it by glob rather than hard-coding the version here.
+        Path serverJar = locateServerJar(Paths.get(serverHome));
+        Assumptions.assumeTrue(serverJar != null && Files.exists(serverJar),
+                "tika-server-standard-*.jar not found in " + serverHome + "; skipping HTTP/2 e2e test. " +
                 "Build with: mvn package -pl tika-server/tika-server-standard && " +
                 "mvn test -pl tika-e2e-tests/tika-server -Pe2e");
 
         log.info("Starting tika-server from: {}", serverJar);
         ProcessBuilder pb = new ProcessBuilder(
-                "java", "-jar", "tika-server.jar",
+                "java", "-jar", serverJar.getFileName().toString(),
                 "-p", String.valueOf(port),
                 "-h", "localhost"
         );
@@ -213,5 +216,19 @@ public class TikaServerHttp2Test {
         try (ServerSocket s = new ServerSocket(0)) {
             return s.getLocalPort();
         }
+    }
+
+    /** Returns the tika-server-standard-&lt;version&gt;.jar in serverHome, or null if absent. */
+    private static Path locateServerJar(Path serverHome) throws Exception {
+        if (!Files.isDirectory(serverHome)) {
+            return null;
+        }
+        try (DirectoryStream<Path> jars =
+                     Files.newDirectoryStream(serverHome, "tika-server-standard-*.jar")) {
+            for (Path jar : jars) {
+                return jar;
+            }
+        }
+        return null;
     }
 }

@@ -41,7 +41,7 @@ Where `per_fork_slice ≥ 2`:
 * 1 CPU for everything else the JVM does (GC concurrent worker, JIT,
   protocol heartbeat, socket I/O thread)
 
-The parent JVM (the one running `tika-async-cli` / `tika-app -a`) is light
+The parent JVM (the one running `tika-app` in Tika Pipes mode) is light
 on CPU — it just serializes requests, deserializes responses, and runs
 the heartbeat — but it must not be CPU-starved. A starved parent shows up
 as pathological tail latency on small operations like `socket.write()`,

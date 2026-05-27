@@ -284,17 +284,6 @@ public class PipesForkParserConfig {
     }
 
     /**
-     * Set the startup timeout in milliseconds.
-     *
-     * @param startupTimeoutMillis the startup timeout
-     * @return this config for chaining
-     */
-    public PipesForkParserConfig setStartupTimeoutMillis(long startupTimeoutMillis) {
-        pipesConfig.setStartupTimeoutMillis(startupTimeoutMillis);
-        return this;
-    }
-
-    /**
      * Get the plugins directory.
      *
      * @return the plugins directory, or null if not set

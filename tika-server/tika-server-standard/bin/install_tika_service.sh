@@ -29,7 +29,7 @@ print_usage() {
   echo ""
   echo "Usage: install_tika_service.sh <path_to_tika_distribution_archive> [OPTIONS]"
   echo ""
-  echo "  The first argument to the script must be a path to a Tika distribution archive, such as tika-server-2.0.0-SNAPSHOT.bin.tgz"
+  echo "  The first argument to the script must be a path to a Tika distribution archive, such as tika-server-standard-<version>.zip"
   echo "    (only .tgz or .zip are supported formats for the archive)"
   echo ""
   echo "  Supported OPTIONS include:"
@@ -90,7 +90,7 @@ if [[ ! $distro ]] ; then
 fi
 
 if [ -z "$1" ]; then
-  print_usage "Must specify the path to the Tika installation archive, such as tika-server-2.0.0-SNAPSHOT-bin.tgz"
+  print_usage "Must specify the path to the Tika installation archive, such as tika-server-standard-<version>.zip"
   exit 1
 fi
 
@@ -268,16 +268,23 @@ TIKA_INSTALL_DIR="$TIKA_EXTRACT_DIR/$TIKA_DIR"
 echo "tika install dir: $TIKA_INSTALL_DIR "
 if [ ! -d "$TIKA_INSTALL_DIR" ]; then
 
-  echo -e "\nExtracting $TIKA_ARCHIVE to $TIKA_EXTRACT_DIR\n"
+  echo -e "\nExtracting $TIKA_ARCHIVE to $TIKA_INSTALL_DIR\n"
 
+  # We create the install dir and extract into it rather than relying on the
+  # archive to contain a top-level directory. The 4.x .zip distribution unpacks
+  # flat (no wrapper directory), so it goes straight into $TIKA_INSTALL_DIR. The
+  # legacy .tgz wrapped everything in a single top-level directory, so strip that
+  # one component to produce the same flat layout. Either way $TIKA_INSTALL_DIR
+  # ends up containing bin/, lib/, plugins/ and the server jar directly.
+  mkdir -p "$TIKA_INSTALL_DIR"
   if $is_tar ; then
-    tar zxf "$TIKA_ARCHIVE" -C "$TIKA_EXTRACT_DIR"
+    tar zxf "$TIKA_ARCHIVE" -C "$TIKA_INSTALL_DIR" --strip-components=1
   else
-    unzip -q "$TIKA_ARCHIVE" -d "$TIKA_EXTRACT_DIR"
+    unzip -q "$TIKA_ARCHIVE" -d "$TIKA_INSTALL_DIR"
   fi
 
-  if [ ! -d "$TIKA_INSTALL_DIR" ]; then
-    echo -e "\nERROR: Expected directory $TIKA_INSTALL_DIR not found after extracting $TIKA_ARCHIVE ... script fails.\n" 1>&2
+  if [ ! -f "$TIKA_INSTALL_DIR/bin/tika" ]; then
+    echo -e "\nERROR: $TIKA_INSTALL_DIR/bin/tika not found after extracting $TIKA_ARCHIVE ... script fails.\n" 1>&2
     exit 1
   fi
 

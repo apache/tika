@@ -1,0 +1,52 @@
+{
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "fse-json": {
+      "file-system-emitter": {
+        "basePath": "JSON_EMITTER_BASE_PATH",
+        "fileExtension": "",
+        "onExists": "EXCEPTION"
+      }
+    },
+    "fse-bytes": {
+      "file-system-emitter": {
+        "basePath": "BYTES_EMITTER_BASE_PATH",
+        "fileExtension": "",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
+  },
+  "pipes": {
+    "parseMode": "CONTENT_ONLY",
+    "emitWithinMillis": 10000,
+    "queueSize": 10000,
+    "numEmitters": 1,
+    "emitIntermediateResults": false,
+    "shutdownClientAfterMillis": 300000,
+    "numClients": 2,
+    "maxFilesProcessedPerProcess": 10000,
+    "staleFetcherTimeoutSeconds": 600,
+    "staleFetcherDelaySeconds": 60,
+    "forkedJvmArgs": [
+      "-Xmx1g",
+      "-XX:+UseG1GC"
+    ],
+    "javaPath": "java",
+    "emitStrategy": {
+      "type": "EMIT_ALL"
+    }
+  },
+  "plugin-roots": "PLUGIN_ROOTS"
+}

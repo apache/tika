@@ -101,7 +101,7 @@ The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit pa
 
 The following `TikaServerConfig` options have been removed:
 
-* `taskTimeoutMillis` - Now configured via `pipes.timeoutMillis`
+* `taskTimeoutMillis` - Now configured via `parse-context.timeout-limits.progressTimeoutMillis` (and optionally `totalTaskTimeoutMillis`); see xref:pipes/timeouts.adoc[Timeouts].
 * `taskPulseMillis` - No longer needed
 * `minimumTimeoutMillis` - No longer needed
 
@@ -125,9 +125,13 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
       }
     }
   },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 30000
+    }
+  },
   "pipes": {
-    "numClients": 2,
-    "timeoutMillis": 30000
+    "numClients": 2
   },
   "plugin-roots": "path/to/plugins"
 }

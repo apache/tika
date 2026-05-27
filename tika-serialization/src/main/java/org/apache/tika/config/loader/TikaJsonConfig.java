@@ -78,7 +78,7 @@ import org.apache.tika.exception.TikaConfigException;
  *   ],
  *   "detectors": [
  *     "poifs-container-detector",       // String shorthand
- *     { "default-detector": { "spoolTypes": ["application/zip", "application/pdf"] } }
+ *     { "default-detector": { "exclude": ["html-detector"] } }
  *   ],
  *
  *   // Pipes components (validated by validateKeys())

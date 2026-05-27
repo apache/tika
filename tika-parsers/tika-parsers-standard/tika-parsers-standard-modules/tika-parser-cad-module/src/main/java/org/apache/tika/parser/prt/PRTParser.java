@@ -77,53 +77,60 @@ public class PRTParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        Last5 l5 = new Last5();
-        int read;
+        xhtml.startDocument();
+        // try/finally so endDocument fires even if a header read, characters
+        // emit, or recursive helper throws IOException/SAXException/TikaException
+        // mid-parse. Without this the captured XHTML would be left unterminated.
+        try {
+            Last5 l5 = new Last5();
+            int read;
 
-        // Try to get the creation date, which is YYYYMMDDhhmm
-        byte[] header = new byte[30];
-        IOUtils.readFully(tis, header);
-        byte[] date = new byte[12];
-        IOUtils.readFully(tis, date);
+            // Try to get the creation date, which is YYYYMMDDhhmm
+            byte[] header = new byte[30];
+            IOUtils.readFully(tis, header);
+            byte[] date = new byte[12];
+            IOUtils.readFully(tis, date);
 
-        String dateStr = new String(date, US_ASCII);
-        if (dateStr.startsWith("19") || dateStr.startsWith("20")) {
-            String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-" +
-                    dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" +
-                    dateStr.substring(10, 12) + ":00";
-            metadata.set(TikaCoreProperties.CREATED, formattedDate);
-            // TODO Metadata.DATE is used as modified, should it be here?
-            metadata.set(TikaCoreProperties.CREATED, formattedDate);
-        }
-        metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
-
-        // The description, if set, is the next up-to-500 bytes
-        byte[] desc = new byte[500];
-        IOUtils.readFully(tis, desc);
-        String description = extractText(desc, true);
-        if (description.length() > 0) {
-            metadata.set(TikaCoreProperties.DESCRIPTION, description);
-        }
-
-        // Now look for text
-        while ((read = tis.read()) > -1) {
-            if (read == 0xe0 || read == 0xe3 || read == 0xf0) {
-                int nread = tis.read();
-                if (nread == 0x3f || nread == 0xbf) {
-                    // Looks promising, check back for a suitable value
-                    if (read == 0xe3 && nread == 0x3f) {
-                        if (l5.is33()) {
-                            // Bingo, note text
-                            handleNoteText(tis, xhtml);
-                        }
-                    } else if (l5.is00()) {
-                        // Likely view name
-                        handleViewName(read, nread, tis, xhtml, l5);
-                    }
-                }
-            } else {
-                l5.record(read);
+            String dateStr = new String(date, US_ASCII);
+            if (dateStr.startsWith("19") || dateStr.startsWith("20")) {
+                String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4, 6) + "-" +
+                        dateStr.substring(6, 8) + "T" + dateStr.substring(8, 10) + ":" +
+                        dateStr.substring(10, 12) + ":00";
+                metadata.set(TikaCoreProperties.CREATED, formattedDate);
+                metadata.set(TikaCoreProperties.MODIFIED, formattedDate);
             }
+            metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
+
+            // The description, if set, is the next up-to-500 bytes
+            byte[] desc = new byte[500];
+            IOUtils.readFully(tis, desc);
+            String description = extractText(desc, true);
+            if (description.length() > 0) {
+                metadata.set(TikaCoreProperties.DESCRIPTION, description);
+            }
+
+            // Now look for text
+            while ((read = tis.read()) > -1) {
+                if (read == 0xe0 || read == 0xe3 || read == 0xf0) {
+                    int nread = tis.read();
+                    if (nread == 0x3f || nread == 0xbf) {
+                        // Looks promising, check back for a suitable value
+                        if (read == 0xe3 && nread == 0x3f) {
+                            if (l5.is33()) {
+                                // Bingo, note text
+                                handleNoteText(tis, xhtml);
+                            }
+                        } else if (l5.is00()) {
+                            // Likely view name
+                            handleViewName(read, nread, tis, xhtml, l5);
+                        }
+                    }
+                } else {
+                    l5.record(read);
+                }
+            }
+        } finally {
+            xhtml.endDocument();
         }
     }
 

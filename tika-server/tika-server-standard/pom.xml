@@ -180,6 +180,16 @@
           <descriptors>
             <descriptor>src/main/assembly/assembly.xml</descriptor>
           </descriptors>
+          <!-- TIKA-4733: the distribution zip is an Apache dist artifact, not a
+               Maven Central one. attach=false keeps it off Central; the
+               apache-release profile stages it to dist straight from target/.
+               Sibling modules (tika-e2e-tests/tika-server) that consume the
+               distribution zip as a Maven dep are satisfied by the install-file
+               execution below. appendAssemblyId=false drops the legacy "-bin"
+               classifier so the file is tika-server-standard-<version>.zip,
+               consistent with tika-app, tika-eval-app and the pipes plugins. -->
+          <attach>false</attach>
+          <appendAssemblyId>false</appendAssemblyId>
         </configuration>
         <executions>
           <execution>
@@ -188,6 +198,41 @@
             <goals>
               <goal>single</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-install-plugin</artifactId>
+        <executions>
+          <!--
+            With <attach>false</attach> on the assembly above (TIKA-4733) the
+            distribution zip is not part of the project artifact set and so is
+            neither deployed to Central nor installed locally. Sibling reactor
+            modules declare tika-server-standard:zip as a Maven dep, so install
+            it into the local repo at its canonical coordinates to satisfy
+            reactor resolution without publishing it to Central.
+
+            Bound to 'package' (not 'install') on purpose: the e2e-tests CI job
+            runs 'mvn -pl tika-e2e-tests -am clean verify', which never reaches
+            the install phase. tika-e2e-tests/tika-server unpacks this zip by
+            artifact coordinates during process-test-resources, so the zip must
+            be in the local repo by the time package completes on this module.
+          -->
+          <execution>
+            <id>install-server-zip-locally</id>
+            <phase>package</phase>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <configuration>
+              <file>${project.build.directory}/tika-server-standard-${project.version}.zip</file>
+              <groupId>${project.groupId}</groupId>
+              <artifactId>${project.artifactId}</artifactId>
+              <version>${project.version}</version>
+              <packaging>zip</packaging>
+              <generatePom>false</generatePom>
+            </configuration>
           </execution>
         </executions>
       </plugin>

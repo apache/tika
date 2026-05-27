@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "parser-excludes": ["pdf-parser"]
+        "exclude": ["pdf-parser"]
       }
     },
     {

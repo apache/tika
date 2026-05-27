@@ -148,15 +148,13 @@ public class ConfigOverrides {
      */
     public static class PipesConfigOverride {
         private final int numClients;
-        private final long startupTimeoutMillis;
         private final int maxFilesProcessedPerProcess;
         private final List<String> forkedJvmArgs;
 
         public PipesConfigOverride(int numClients,
-                                   long startupTimeoutMillis, int maxFilesProcessedPerProcess,
+                                   int maxFilesProcessedPerProcess,
                                    List<String> forkedJvmArgs) {
             this.numClients = numClients;
-            this.startupTimeoutMillis = startupTimeoutMillis;
             this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
             this.forkedJvmArgs = forkedJvmArgs != null ?
                     new ArrayList<>(forkedJvmArgs) : new ArrayList<>();
@@ -164,10 +162,6 @@ public class ConfigOverrides {
 
         public int getNumClients() {
             return numClients;
-        }
-
-        public long getStartupTimeoutMillis() {
-            return startupTimeoutMillis;
         }
 
         public int getMaxFilesProcessedPerProcess() {
@@ -229,7 +223,6 @@ public class ConfigOverrides {
         public Builder setPipesConfig(int numClients,
                                       List<String> forkedJvmArgs) {
             return setPipesConfig(numClients,
-                    org.apache.tika.pipes.core.PipesConfig.DEFAULT_STARTUP_TIMEOUT_MILLIS,
                     org.apache.tika.pipes.core.PipesConfig.DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS,
                     forkedJvmArgs);
         }
@@ -238,16 +231,15 @@ public class ConfigOverrides {
          * Set pipes configuration with all options.
          *
          * @param numClients number of forked JVM clients
-         * @param startupTimeoutMillis startup timeout in milliseconds
          * @param maxFilesProcessedPerProcess max files before process restart
          * @param forkedJvmArgs JVM arguments for forked processes (may be null)
          * @return this builder
          */
         public Builder setPipesConfig(int numClients,
-                                      long startupTimeoutMillis, int maxFilesProcessedPerProcess,
+                                      int maxFilesProcessedPerProcess,
                                       List<String> forkedJvmArgs) {
             this.pipesConfig = new PipesConfigOverride(numClients,
-                    startupTimeoutMillis, maxFilesProcessedPerProcess, forkedJvmArgs);
+                    maxFilesProcessedPerProcess, forkedJvmArgs);
             return this;
         }
 

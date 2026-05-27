@@ -122,6 +122,8 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
                     StandardOpenOption.CREATE_NEW)) { //CREATE_NEW forces an IOException if the file already exists
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+            } catch (FileAlreadyExistsException e) {
+                throw alreadyExistsException(output);
             }
         } else {
             try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
@@ -157,7 +159,11 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
             Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
         } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
-            Files.copy(inputStream, output);
+            try {
+                Files.copy(inputStream, output);
+            } catch (FileAlreadyExistsException e) {
+                throw alreadyExistsException(output);
+            }
         } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP) {
             if (!Files.isRegularFile(output)) {
                 try {
@@ -167,6 +173,16 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 }
             }
         }
+    }
+
+    /**
+     * Actionable error for the {@code onExists=EXCEPTION} case; the bare
+     * {@link FileAlreadyExistsException} reports only the path (TIKA-4736).
+     */
+    private static IOException alreadyExistsException(Path output) {
+        return new IOException("Output already exists (onExists=EXCEPTION, not overwritten): "
+                + output.toAbsolutePath()
+                + ". Use an empty output dir, delete the file, or set onExists to REPLACE or SKIP.");
     }
 
     private FileSystemEmitterConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {

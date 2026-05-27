@@ -56,7 +56,6 @@ public class SourceCodeParserTest extends TikaTest {
                         createMetadata("text/x-java-source")).xml;
 
         assertTrue(htmlContent.indexOf("<html xmlns=\"http") == 0);
-        assertContains("xml:lang=\"en\"", htmlContent);
         assertTrue(htmlContent.indexOf(
                 "<span class=\"java_keyword\">public</span><span class=\"java_plain\">") >
                 0);

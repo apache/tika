@@ -32,28 +32,46 @@ public class AsyncHelperTest {
     @Test
     public void testTextHandler() throws Exception {
         String[] args = new String[]{"-t", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testTextHandlerLong() throws Exception {
         String[] args = new String[]{"--text", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testHtmlHandler() throws Exception {
         String[] args = new String[]{"--html", "input", "output"};
-        String[] expected = new String[]{"-h", "h", "input", "output"};
+        String[] expected = new String[]{"--handler", "h", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testXmlHandler() throws Exception {
         String[] args = new String[]{"-x", "input", "output"};
-        String[] expected = new String[]{"-h", "x", "input", "output"};
+        String[] expected = new String[]{"--handler", "x", "input", "output"};
+        assertArrayEquals(expected, AsyncHelper.translateArgs(args));
+    }
+
+    @Test
+    public void testExtractLongFormTranslatedToZ() throws Exception {
+        // TIKA-4736: tika-app's --extract is the long form of -z. It must be
+        // translated to -z (which TikaAsyncCLI recognizes); otherwise it falls
+        // through as an unknown arg and the batch parse fails.
+        String[] args = new String[]{"--extract", "--extract-dir=ImageFiles", "input.pdf"};
+        String[] expected = new String[]{"-z", "-o", "ImageFiles", "input.pdf"};
+        assertArrayEquals(expected, AsyncHelper.translateArgs(args));
+    }
+
+    @Test
+    public void testShortFormZUnchanged() throws Exception {
+        // -z is already recognized by TikaAsyncCLI and must pass through untranslated.
+        String[] args = new String[]{"-z", "--extract-dir=ImageFiles", "input.pdf"};
+        String[] expected = new String[]{"-z", "-o", "ImageFiles", "input.pdf"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
@@ -61,14 +79,14 @@ public class AsyncHelperTest {
     public void testJsonRecursiveSkipped() throws Exception {
         // -J is the default in async mode, so it's just skipped
         String[] args = new String[]{"-J", "-t", "input", "output"};
-        String[] expected = new String[]{"-h", "t", "input", "output"};
+        String[] expected = new String[]{"--handler", "t", "input", "output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 
     @Test
     public void testBatchModeWithOptions() throws Exception {
         String[] args = new String[]{"-J", "-t", "/path/to/input", "/path/to/output"};
-        String[] expected = new String[]{"-h", "t", "/path/to/input", "/path/to/output"};
+        String[] expected = new String[]{"--handler", "t", "/path/to/input", "/path/to/output"};
         assertArrayEquals(expected, AsyncHelper.translateArgs(args));
     }
 }

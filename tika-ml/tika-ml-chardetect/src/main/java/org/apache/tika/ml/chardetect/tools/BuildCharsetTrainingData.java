@@ -214,16 +214,21 @@ public class BuildCharsetTrainingData {
         put("mlt", "ISO-8859-3");
         put("tur", "windows-1254");
         // Central / Eastern European
-        put("ces", "windows-1250", "IBM852");
-        put("pol", "windows-1250", "IBM852");
-        put("hrv", "windows-1250", "IBM852");
-        put("slk", "windows-1250", "IBM852");
-        put("slv", "windows-1250", "IBM852");
-        put("hun", "windows-1250", "IBM852");
+        // ISO-8859-2 (Latin-2) added 2026-05-18 alongside the
+        // windows-1250 superset for Polish / Czech / Slovak / Slovenian /
+        // Croatian / Hungarian — gives the model a separate class so it
+        // can discriminate genuinely-ISO-8859-2 content (e.g. files with
+        // explicit meta declarations) from windows-1250 supersets.
+        put("ces", "windows-1250", "IBM852", "ISO-8859-2");
+        put("pol", "windows-1250", "IBM852", "ISO-8859-2");
+        put("hrv", "windows-1250", "IBM852", "ISO-8859-2");
+        put("slk", "windows-1250", "IBM852", "ISO-8859-2");
+        put("slv", "windows-1250", "IBM852", "ISO-8859-2");
+        put("hun", "windows-1250", "IBM852", "ISO-8859-2");
         // ISO-8859-16 (Latin-10) retained for Romanian and Albanian
-        put("ron", "windows-1250", "IBM852", "ISO-8859-16");
-        put("bos", "windows-1250", "IBM852");
-        put("sqi", "windows-1250", "IBM852", "ISO-8859-16");
+        put("ron", "windows-1250", "IBM852", "ISO-8859-2", "ISO-8859-16");
+        put("bos", "windows-1250", "IBM852", "ISO-8859-2");
+        put("sqi", "windows-1250", "IBM852", "ISO-8859-2", "ISO-8859-16");
         // Cyrillic — keep all distinct encodings
         put("rus", "windows-1251", "KOI8-R", "IBM855", "IBM866", "x-mac-cyrillic");
         put("ukr", "windows-1251", "KOI8-U", "IBM855", "x-mac-cyrillic");

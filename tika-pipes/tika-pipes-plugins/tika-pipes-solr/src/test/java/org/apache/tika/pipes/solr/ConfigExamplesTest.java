@@ -20,17 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.emitter.solr.SolrEmitterConfig;
 import org.apache.tika.pipes.iterator.solr.SolrPipesIteratorConfig;
 
@@ -40,44 +33,11 @@ import org.apache.tika.pipes.iterator.solr.SolrPipesIteratorConfig;
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private void loadViaTikaLoader(String resourceName) throws Exception {
-        String json = readExample(resourceName);
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        TikaLoader loader = TikaLoader.load(configFile);
-        assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
-    }
-
-    private JsonNode innerComponent(String json, String section, String id, String typeName)
-            throws Exception {
-        JsonNode root = OBJECT_MAPPER.readTree(json);
-        JsonNode sectionNode = root.get(section);
-        assertNotNull(sectionNode, "Missing section: " + section);
-        JsonNode idNode = id == null ? sectionNode : sectionNode.get(id);
-        assertNotNull(idNode, "Missing id: " + id);
-        JsonNode typed = idNode.get(typeName);
-        assertNotNull(typed, "Missing type: " + typeName);
-        return typed;
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testSolrEmitterUrlsConfig() throws Exception {
-        loadViaTikaLoader("solr-emitter.json");
+        loadAndValidate("solr-emitter.json");
 
         JsonNode inner = innerComponent(readExample("solr-emitter.json"),
                 "emitters", "solre", "solr-emitter");
@@ -94,7 +54,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testSolrEmitterZkConfig() throws Exception {
-        loadViaTikaLoader("solr-emitter-zk.json");
+        loadAndValidate("solr-emitter-zk.json");
 
         JsonNode inner = innerComponent(readExample("solr-emitter-zk.json"),
                 "emitters", "solre", "solr-emitter");
@@ -109,7 +69,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testSolrIteratorConfig() throws Exception {
-        loadViaTikaLoader("solr-pipes-iterator.json");
+        loadAndValidate("solr-pipes-iterator.json");
 
         JsonNode inner = innerComponent(readExample("solr-pipes-iterator.json"),
                 "pipes-iterator", null, "solr-pipes-iterator");
@@ -123,7 +83,7 @@ public class ConfigExamplesTest {
 
     @Test
     public void testSolrPipelineConfig() throws Exception {
-        loadViaTikaLoader("solr-pipeline.json");
+        loadAndValidate("solr-pipeline.json");
 
         String json = readExample("solr-pipeline.json");
         SolrEmitterConfig emitter = SolrEmitterConfig.load(

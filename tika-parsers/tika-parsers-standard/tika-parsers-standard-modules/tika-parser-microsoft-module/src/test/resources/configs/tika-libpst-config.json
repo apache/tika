@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "_exclude": [
+        "exclude": [
           "outlook-pst-parser",
           "pst-mail-item-parser"
         ]
