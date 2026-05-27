@@ -66,7 +66,7 @@ jobs:
           TIKA_VERSION="${{ steps.version.outputs.tika_version }}"
           OUT_DIR=target/tika-server-minimal-docker
           mkdir -p "${OUT_DIR}/tika-server"
-          tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
+          unzip -q "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}.zip" -d "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/minimal/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build tika-server minimal image for smoke test
@@ -118,7 +118,7 @@ jobs:
           TIKA_VERSION="${{ steps.version.outputs.tika_version }}"
           OUT_DIR=target/tika-server-full-docker
           mkdir -p "${OUT_DIR}/tika-server"
-          tar xzf "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}-bin.tgz" -C "${OUT_DIR}/tika-server"
+          unzip -q "tika-server/tika-server-standard/target/tika-server-standard-${TIKA_VERSION}.zip" -d "${OUT_DIR}/tika-server"
           cp "tika-server/docker-build/full/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build tika-server full image for smoke test

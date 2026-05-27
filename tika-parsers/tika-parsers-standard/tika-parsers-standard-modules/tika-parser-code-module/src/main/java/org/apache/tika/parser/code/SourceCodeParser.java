@@ -165,6 +165,21 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
     }
 
     private static class TikaNodeFilter implements NodeFilter {
+
+        // JHighlight wraps its highlighted code in a full HTML document. Of
+        // those wrappers:
+        //   - html/body are dropped as elements but their descendants are
+        //     still emitted (that's where the highlighted code lives).
+        //   - head/meta/title/link/style are dropped *with* their subtrees,
+        //     otherwise their text (CSS, the filename, etc.) leaks into the
+        //     outer XHTML as bare character data.
+        // All of these collide with Tika's outer XHTMLContentHandler when
+        // emitted, producing malformed XHTML downstream.
+        private static final Set<String> WRAPPER_TAGS_DROP_ELEMENT =
+                Set.of("html", "body");
+        private static final Set<String> WRAPPER_TAGS_DROP_SUBTREE =
+                Set.of("head", "meta", "title", "link", "style");
+
         boolean ignore = true;
         ContentHandler handler;
 
@@ -179,6 +194,12 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 ignore = false;
             }
             if (ignore) {
+                return FilterResult.CONTINUE;
+            }
+            if (WRAPPER_TAGS_DROP_SUBTREE.contains(node.nodeName())) {
+                return FilterResult.SKIP_ENTIRELY;
+            }
+            if (WRAPPER_TAGS_DROP_ELEMENT.contains(node.nodeName())) {
                 return FilterResult.CONTINUE;
             }
             if (node instanceof TextNode) {
@@ -232,6 +253,10 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
                 ignore = true;
             }
             if (ignore) {
+                return FilterResult.CONTINUE;
+            }
+            if (WRAPPER_TAGS_DROP_ELEMENT.contains(node.nodeName())
+                    || WRAPPER_TAGS_DROP_SUBTREE.contains(node.nodeName())) {
                 return FilterResult.CONTINUE;
             }
             if (node instanceof TextNode || node instanceof DataNode) {

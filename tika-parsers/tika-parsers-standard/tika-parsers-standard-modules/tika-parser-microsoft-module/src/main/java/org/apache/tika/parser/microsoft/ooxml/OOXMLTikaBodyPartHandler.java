@@ -64,6 +64,14 @@ public class OOXMLTikaBodyPartHandler
     //<tc><p/><p/><table><tr><tc></p></p></tc></tr></table>...
     private int tableCellDepth = 0;
     private int pWithinCell = 0;
+    // Stack of structural elements (paragraphs, tables, rows, cells) this
+    // handler has emitted to the xhtml stream and not yet closed. Used by
+    // closeAnyPending() to drain the stack in reverse order so the captured
+    // XHTML stays balanced when a caller's parseSAX call throws part-way.
+    // Tags emitted by FormattingTagManager (<b>/<i>/<u>/<s>/<a>) are not
+    // tracked here -- closeAnyPending closes them via formattingTags.closeAll()
+    // before draining this stack.
+    private final java.util.Deque<String> openStructuralTags = new java.util.ArrayDeque<>();
 
     //will need to replace this with a stack
     //if we're marking more that the first level <p/> element
@@ -163,6 +171,7 @@ public class OOXMLTikaBodyPartHandler
             } else {
                 xhtml.startElement(paragraphTag, "class", styleClass);
             }
+            openStructuralTags.push(paragraphTag);
         }
 
         writeParagraphNumber(paragraphProperties.getNumId(), paragraphProperties.getIlvl(),
@@ -176,6 +185,7 @@ public class OOXMLTikaBodyPartHandler
         formattingTags.closeAll();
         if (pDepth == 1 && tableDepth == 0) {
             xhtml.endElement(paragraphTag);
+            popExpected(paragraphTag);
         } else if (tableCellDepth > 0 && pWithinCell > 0) {
             xhtml.characters(NEWLINE, 0, 1);
         } else if (tableCellDepth == 0) {
@@ -214,10 +224,50 @@ public class OOXMLTikaBodyPartHandler
         return emittedCommentIds;
     }
 
+    /**
+     * Closes any XHTML elements this handler opened but didn't get a chance to
+     * close, in the proper nesting order. Intended ONLY for the catch arm of a
+     * caller that swallowed a {@link SAXException} from the inner SAX parser;
+     * the normal happy-path flow keeps the trackers in sync via endParagraph
+     * / endTableCell / endTableRow / endTable / FormattingTagManager.closeAll.
+     * Without this, swallowed exceptions leave dangling {@code <p>}, {@code <td>},
+     * {@code <tr>}, {@code <table>}, or formatting tags on the wire that
+     * collide with the outer {@code </body></html>}.
+     */
+    public void closeAnyPending() throws SAXException {
+        formattingTags.closeAll();
+        // Drain the structural-element stack in reverse open order. This
+        // handles nested tables correctly (multiple cells/rows/tables
+        // interleaved), unlike per-element counters which lose nesting info.
+        while (!openStructuralTags.isEmpty()) {
+            String tag = openStructuralTags.pop();
+            xhtml.endElement(tag);
+        }
+        // Reset internal depth/state so subsequent emits start clean.
+        tableDepth = 0;
+        tableCellDepth = 0;
+        pDepth = 0;
+        pWithinCell = 0;
+    }
+
+    /**
+     * Pops {@code openStructuralTags} expecting the given tag on top.
+     * If the stack is empty or the top differs, this is a no-op rather than a
+     * throw -- the stack is best-effort tracking for closeAnyPending(), and
+     * the existing happy-path tests (which don't trigger closeAnyPending) must
+     * not be perturbed by stack tracking bugs.
+     */
+    private void popExpected(String tag) {
+        if (!openStructuralTags.isEmpty() && tag.equals(openStructuralTags.peek())) {
+            openStructuralTags.pop();
+        }
+    }
+
     @Override
     public void startTable() throws SAXException {
 
         xhtml.startElement("table");
+        openStructuralTags.push("table");
         tableDepth++;
 
     }
@@ -226,6 +276,7 @@ public class OOXMLTikaBodyPartHandler
     public void endTable() throws SAXException {
 
         xhtml.endElement("table");
+        popExpected("table");
         tableDepth--;
 
     }
@@ -233,22 +284,26 @@ public class OOXMLTikaBodyPartHandler
     @Override
     public void startTableRow() throws SAXException {
         xhtml.startElement("tr");
+        openStructuralTags.push("tr");
     }
 
     @Override
     public void endTableRow() throws SAXException {
         xhtml.endElement("tr");
+        popExpected("tr");
     }
 
     @Override
     public void startTableCell() throws SAXException {
         xhtml.startElement("td");
+        openStructuralTags.push("td");
         tableCellDepth++;
     }
 
     @Override
     public void endTableCell() throws SAXException {
         xhtml.endElement("td");
+        popExpected("td");
         pWithinCell = 0;
         tableCellDepth--;
     }

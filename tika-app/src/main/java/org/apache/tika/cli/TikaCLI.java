@@ -285,6 +285,8 @@ public class TikaCLI {
     }
 
     private static void async(String[] args) throws Exception {
+        System.err.println("tika-app: running in Tika Pipes mode "
+                + "(async dispatch via -a/--async); use --help for options.");
         args = AsyncHelper.translateArgs(args);
         String tikaConfigPath = "";
         //TODO - runpack is a smelly. fix this.
@@ -298,17 +300,43 @@ public class TikaCLI {
         }
 
         if (runpack || ! StringUtils.isBlank(tikaConfigPath)) {
-            TikaAsyncCLI.main(args);
+            invokeAsyncCLI(args);
             return;
         }
         if (args.length == 1 &&  args[0].endsWith(".json")) {
-            TikaAsyncCLI.main(args);
+            invokeAsyncCLI(args);
             return;
         }
-        // For batch mode (two directories), pass directly to TikaAsyncCLI.
+        // For Pipes mode (two directories), pass directly to TikaAsyncCLI.
         // It will create its own config with PluginsWriter that includes
         // plugin-roots, fetcher, emitter, and pipes-iterator configuration.
-        TikaAsyncCLI.main(args);
+        invokeAsyncCLI(args);
+    }
+
+    /**
+     * Invokes the Tika Pipes async processor ({@code tika-async-cli}). The async
+     * processor and the parsers it forks live in the {@code lib/} directory of
+     * the tika-app distribution rather than inside the bare {@code tika-app.jar}.
+     * If tika-app is run as a standalone jar (without the surrounding unzipped
+     * distribution), the supporting classes are missing from the classpath and
+     * the JVM throws {@link NoClassDefFoundError}. Translate that into an
+     * actionable message rather than letting the raw error escape.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-4733">TIKA-4733</a>
+     */
+    private static void invokeAsyncCLI(String[] args) throws Exception {
+        try {
+            TikaAsyncCLI.main(args);
+        } catch (NoClassDefFoundError e) {
+            System.err.println("Error: could not load the Tika Pipes processor (" +
+                    e.getMessage() + ").");
+            System.err.println("Tika Pipes mode requires the full tika-app distribution, not the "
+                    + "standalone jar.");
+            System.err.println("Download tika-app-<version>.zip, unzip it, and run "
+                    + "tika-app-<version>.jar from inside the unzipped directory so that the "
+                    + "adjacent 'lib/' and 'plugins/' directories are present alongside the jar.");
+            System.exit(1);
+        }
     }
 
     /**
@@ -375,7 +403,7 @@ public class TikaCLI {
             }
         }
 
-        // Check if last two args are directories (batch mode with options)
+        // Check if last two args are directories (Pipes mode with options)
         if (args.length >= 2) {
             String lastArg = args[args.length - 1];
             String secondLastArg = args[args.length - 2];
@@ -387,7 +415,7 @@ public class TikaCLI {
                         return true;
                     }
                 } catch (Exception e) {
-                    // Invalid path, not batch mode
+                    // Invalid path, not Pipes mode
                 }
             }
         }
@@ -775,6 +803,8 @@ public class TikaCLI {
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
+        out.println("    --on-exists=<mode>     When an output file already exists: exception");
+        out.println("                           (default), replace or skip");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
@@ -824,20 +854,25 @@ public class TikaCLI {
         out.println("    a normal file explorer to the GUI window to extract");
         out.println("    text content and metadata from the files.");
         out.println();
-        out.println("- Batch mode");
+        out.println("- Tika Pipes mode");
         out.println();
-        out.println("    Simplest method.");
-        out.println("    Specify two directories as args with no other args:");
+        out.println("    For processing many documents from a directory, S3, GCS, Azure, JDBC, etc.");
+        out.println("    Simplest invocation is two directories as args with no other args:");
         out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
-        out.println("Batch/Pipes Options:");
+        out.println("Tika Pipes Options:");
         out.println("    -i                         Input directory");
         out.println("    -o                         Output directory");
-        out.println("    -n                         Number of forked processes");
+        out.println("    -n, --numClients           Number of forked processes");
         out.println("    -X                         -Xmx in the forked processes");
-        out.println("    -T                         Timeout in milliseconds");
-        out.println("    --fileList                  File list (one path per line, relative to -i or absolute)");
+        out.println("    -T, --timeoutMs            Timeout for each parse in milliseconds");
+        out.println("    -c, --config=<file>        Tika config file (--config=<file> also accepted)");
+        out.println("    -p, --pluginsDir           Plugins directory");
+        out.println("    --fileList                 File list (one path per line, relative to -i or absolute)");
         out.println("    --handler                  Handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
+        out.println("    --concatenate              Concatenate content from all embedded documents");
+        out.println("    --content-only             Output only extracted content (no JSON wrapper); implies --concatenate");
+        out.println("    --on-exists                Behavior when an output file exists: exception (default), replace, skip");
         out.println("    -Z                         Recursively unpack all the attachments, too");
         out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
         out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY");
@@ -853,23 +888,6 @@ public class TikaCLI {
     private boolean testForHelp(String[] args) {
         for (String s : args) {
             if (s.equals("-?") || s.equals("--help")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean testForBatch(String[] args) {
-        if (args.length == 2 && !args[0].startsWith("-") && !args[1].startsWith("-")) {
-            Path inputCand = Paths.get(args[0]);
-            Path outputCand = Paths.get(args[1]);
-            if (Files.isDirectory(inputCand) && !Files.isRegularFile(outputCand)) {
-                return true;
-            }
-        }
-
-        for (String s : args) {
-            if (s.equals("-inputDir") || s.equals("--inputDir") || s.equals("-i")) {
                 return true;
             }
         }

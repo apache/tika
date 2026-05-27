@@ -44,6 +44,13 @@ public class AsyncHelper {
                 }
                 argList.add("-o");
                 argList.add(dir);
+            } else if ("--extract".equals(arg)) {
+                // tika-app documents --extract as the long form of -z. TikaAsyncCLI
+                // only knows -z/--unzipShallow (and -Z/--unzipRecursive), so without
+                // this translation --extract falls through as an unrecognized arg and
+                // trips the "unknown args" / "set inputDir once" errors (TIKA-4736).
+                // -z passes through untranslated and is already recognized.
+                argList.add("-z");
             } else if ("-a".equals(arg)) {
                 //do nothing
             } else if (arg.startsWith(UNPACK_FORMAT_KEY)) {
@@ -59,17 +66,17 @@ public class AsyncHelper {
             } else if (arg.equals(UNPACK_INCLUDE_METADATA)) {
                 argList.add("--unpack-include-metadata");
             } else if (arg.equals("-t") || arg.equals("--text")) {
-                // Translate TikaCLI text output to TikaAsyncCLI handler type
-                argList.add("-h");
+                // Translate TikaCLI text output to the TikaAsyncCLI handler type.
+                // TikaAsyncCLI's handler option is --handler; -h there means --help.
+                argList.add("--handler");
                 argList.add("t");
             } else if (arg.equals("--html")) {
-                // Translate TikaCLI html output to TikaAsyncCLI handler type
-                // Note: TikaCLI uses -h for html, but TikaAsyncCLI uses -h for handler type
-                argList.add("-h");
+                // Translate TikaCLI html output to the TikaAsyncCLI handler type.
+                argList.add("--handler");
                 argList.add("h");
             } else if (arg.equals("-x") || arg.equals("--xml")) {
-                // Translate TikaCLI xml output to TikaAsyncCLI handler type
-                argList.add("-h");
+                // Translate TikaCLI xml output to the TikaAsyncCLI handler type.
+                argList.add("--handler");
                 argList.add("x");
             } else if (arg.equals("-J") || arg.equals("--jsonRecursive")) {
                 // TikaAsyncCLI always outputs JSON with recursive metadata (RMETA mode)

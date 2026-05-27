@@ -530,7 +530,10 @@ class PipesWorker implements Callable<PipesResult> {
 
         ParseMode parseMode = parseContext.get(ParseMode.class);
         if (parseMode == null) {
+            // Write the resolved default back so EmitHandler sees it too - it reads ParseMode
+            // only from the context, with no fallback to the PipesConfig default (TIKA-4735).
             parseMode = defaultParseMode;
+            parseContext.set(ParseMode.class, parseMode);
         }
         UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
 

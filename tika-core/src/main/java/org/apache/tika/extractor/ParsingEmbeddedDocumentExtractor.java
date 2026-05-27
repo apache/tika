@@ -40,6 +40,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.SAXOutputConfig;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -163,11 +164,22 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             handler.endElement(XHTML, "h1", "h1");
         }
 
+        // Wrap the delegate's handler so we can close anything it left open if
+        // it throws mid-element. Without this, the </div> emitted in finally
+        // could land on top of an open <p>/<table>/etc. from the failed
+        // sub-parse and produce malformed XHTML.
+        XHTMLBalancingHandler balancer =
+                outputHtml ? new XHTMLBalancingHandler(handler) : null;
+        ContentHandler delegateHandler = outputHtml ? balancer : handler;
+
         // Use the delegate parser to parse this entry
+        boolean parsedCleanly = false;
         try {
             tis.setCloseShield();
-            DELEGATING_PARSER.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(handler)),
+            DELEGATING_PARSER.parse(tis,
+                    new EmbeddedContentHandler(new BodyContentHandler(delegateHandler)),
                     metadata, context);
+            parsedCleanly = true;
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
         } catch (CorruptedFileException e) {
@@ -178,10 +190,17 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             recordException(e, context);
         } finally {
             tis.removeCloseShield();
-        }
-
-        if (outputHtml) {
-            handler.endElement(XHTML, "div", "div");
+            if (outputHtml) {
+                // Only an aborted parse can leave elements open; on a clean parse
+                // the balancer stack is empty. Draining only on abort keeps the
+                // package-entry div well-formed when the inner parse throws, while
+                // letting StrictXHTMLValidator still catch genuine imbalances on the
+                // happy path (TIKA-4728).
+                if (!parsedCleanly) {
+                    balancer.drainOpenElements();
+                }
+                handler.endElement(XHTML, "div", "div");
+            }
         }
     }
 

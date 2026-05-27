@@ -82,6 +82,8 @@ public class TikaAsyncCLI {
                 "output mode for unpacking: ZIPPED (default) or DIRECTORY");
         options.addOption(null, "unpack-include-metadata", false,
                 "include metadata.json in Frictionless output");
+        options.addOption(null, "on-exists", true,
+                "behavior when an output file already exists: exception (default), replace or skip");
 
         return options;
     }
@@ -235,6 +237,16 @@ public class TikaAsyncCLI {
             unpackIncludeMetadata = true;
         }
 
+        String onExists = null;
+        if (line.hasOption("on-exists")) {
+            String v = line.getOptionValue("on-exists").toUpperCase(java.util.Locale.ROOT);
+            if (!v.equals("EXCEPTION") && !v.equals("REPLACE") && !v.equals("SKIP")) {
+                throw new TikaConfigException("Can't understand --on-exists=" +
+                        line.getOptionValue("on-exists") + "; must be one of: exception, replace, skip");
+            }
+            onExists = v;
+        }
+
         if (line.getArgList().size() > 2) {
             throw new TikaConfigException("Can't have more than 2 unknown args: " + line.getArgList());
         }
@@ -282,10 +294,12 @@ public class TikaAsyncCLI {
             outputDir = Paths.get("output").toAbsolutePath().toString();
         }
 
-        return new SimpleAsyncConfig(inputDir, outputDir,
+        SimpleAsyncConfig config = new SimpleAsyncConfig(inputDir, outputDir,
                 numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
                 extractBytesMode, pluginsDir, concatenate, contentOnly,
                 unpackFormat, unpackMode, unpackIncludeMetadata);
+        config.setOnExists(onExists);
+        return config;
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {

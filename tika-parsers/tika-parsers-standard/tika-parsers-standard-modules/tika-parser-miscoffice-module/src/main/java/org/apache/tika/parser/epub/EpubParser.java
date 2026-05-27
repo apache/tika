@@ -59,8 +59,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -114,11 +114,12 @@ public class EpubParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         IOException caughtException = null;
-        ContentHandler childHandler = new EmbeddedContentHandler(
-                new EpubNormalizingHandler(new BodyContentHandler(xhtml)));
+        EpubNormalizingHandler normalizer =
+                new EpubNormalizingHandler(new BodyContentHandler(xhtml));
+        ContentHandler childHandler = new EmbeddedContentHandler(normalizer);
         Set<String> encryptedItems = Collections.EMPTY_SET;
         try {
-            encryptedItems = bufferedParse(tis, childHandler, xhtml, metadata, context);
+            encryptedItems = bufferedParse(tis, childHandler, normalizer, xhtml, metadata, context);
         } catch (IOException e) {
             caughtException = e;
         }
@@ -141,19 +142,22 @@ public class EpubParser implements Parser {
     }
 
     private Set<String> bufferedParse(TikaInputStream tis, ContentHandler bodyHandler,
+                               EpubNormalizingHandler normalizer,
                                XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
         // DefaultZipContainerDetector opens (and salvages, if needed) the ZipFile and
         // stashes it on the TikaInputStream. Reuse it when present; otherwise open ourselves.
         if (tis.getOpenContainer() instanceof ZipFile) {
-            return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler, xhtml, metadata, context);
+            return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler,
+                    normalizer, xhtml, metadata, context);
         }
         try (ZipFile zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get()) {
-            return bufferedParseZipFile(zipFile, bodyHandler, xhtml, metadata, context);
+            return bufferedParseZipFile(zipFile, bodyHandler, normalizer, xhtml, metadata, context);
         }
     }
 
     private Set<String> bufferedParseZipFile(ZipFile zipFile, ContentHandler bodyHandler,
+                                         EpubNormalizingHandler normalizer,
                                          XHTMLContentHandler xhtml, Metadata metadata,
                                          ParseContext context)
             throws IOException, TikaException, SAXException {
@@ -167,7 +171,7 @@ public class EpubParser implements Parser {
             // emit partial content (matching 3.x's streamingParse contract),
             // then throw to signal the result is incomplete.
             LOG.trace("epub fallback: rootOPF=null, streaming all html entries");
-            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "no OPF found in (possibly truncated) container");
         }
         ZipArchiveEntry zae = zipFile.getEntry(rootOPF);
@@ -175,7 +179,7 @@ public class EpubParser implements Parser {
                 zae, zae == null ? "n/a" : zipFile.canReadEntryData(zae));
         if (zae == null || !zipFile.canReadEntryData(zae)) {
             LOG.trace("epub fallback: OPF entry missing/unreadable, streaming all html entries");
-            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "OPF entry missing or unreadable in (possibly truncated) container");
         }
         try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
@@ -191,7 +195,7 @@ public class EpubParser implements Parser {
                 contentOrderScraper.locationMap.size());
         if (contentOrderScraper.contentItems.isEmpty()) {
             LOG.trace("epub fallback: empty spine, streaming all html entries");
-            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, metadata, context,
+            return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "OPF declared no spine items in (possibly truncated) container");
         }
         String relativePath = "";
@@ -236,6 +240,12 @@ public class EpubParser implements Parser {
                                 throw e;
                             }
                             saxExceptions.add(e);
+                            // The aborted spine item may have left <svg>,
+                            // <g>, <p>, etc. open on the wire. Close them
+                            // before the next item (or the outer </body>)
+                            // emits, otherwise the validator sees cross-
+                            // nested events.
+                            normalizer.drainOpenElements();
                         } catch (IOException ioe) {
                             LOG.trace("epub spine read IOException on {}: {}", path, ioe.toString());
                             throw ioe;
@@ -297,6 +307,7 @@ public class EpubParser implements Parser {
      */
     private Set<String> fallbackParseAllHtmlEntries(ZipFile zipFile,
                                                    ContentHandler bodyHandler,
+                                                   EpubNormalizingHandler normalizer,
                                                    Metadata metadata,
                                                    ParseContext context,
                                                    String reason)
@@ -335,6 +346,8 @@ public class EpubParser implements Parser {
                 }
                 failed++;
                 LOG.trace("epub fallback: SAX failure on {}: {}", entry.getName(), e.toString());
+                // Close any tags the aborted parse left open.
+                normalizer.drainOpenElements();
             } catch (IOException e) {
                 failed++;
                 LOG.trace("epub fallback: IO failure on {}: {}", entry.getName(), e.toString());
@@ -588,7 +601,8 @@ public class EpubParser implements Parser {
     //for now, this simply converts all names to local names to avoid
     //namespace conflicts in the content handler. This also removes namespaces
     //from attributes
-    private static class EpubNormalizingHandler extends ContentHandlerDecorator {
+    private static class EpubNormalizingHandler extends XHTMLBalancingHandler {
+
         public EpubNormalizingHandler(ContentHandler contentHandler) {
             super(contentHandler);
         }
@@ -607,7 +621,15 @@ public class EpubParser implements Parser {
             if (needToRewrite) {
                 AttributesImpl simplifiedAtts = new AttributesImpl();
                 for (int i = 0; i < atts.getLength(); i++) {
-                    simplifiedAtts.addAttribute("", atts.getLocalName(i), atts.getLocalName(i),
+                    String localAttName = atts.getLocalName(i);
+                    // Stripping the namespace prefix can collapse two distinct
+                    // qnames onto one local name (e.g. xml:lang + lang). The
+                    // serialized XHTML must have unique attribute names, so
+                    // keep the first occurrence and drop later duplicates.
+                    if (simplifiedAtts.getIndex("", localAttName) >= 0) {
+                        continue;
+                    }
+                    simplifiedAtts.addAttribute("", localAttName, localAttName,
                             atts.getType(i), atts.getValue(i));
                 }
                 super.startElement(uri, localName, localName, simplifiedAtts);

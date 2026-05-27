@@ -28,7 +28,7 @@ content. It can be deployed as a standalone service or in a containerized enviro
 
 [source,bash]
 ----
-java -jar tika-server-standard.jar
+java -jar tika-server-standard-X.Y.Z.jar
 ----
 
 The server starts on port 9998 by default.
@@ -130,7 +130,7 @@ You can also enable unsecure features via command line:
 
 [source,bash]
 ----
-java -jar tika-server-standard.jar --enableUnsecureFeatures
+java -jar tika-server-standard-X.Y.Z.jar --enableUnsecureFeatures
 ----
 
 === Security Best Practices

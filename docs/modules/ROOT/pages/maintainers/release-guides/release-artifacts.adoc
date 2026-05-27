@@ -70,7 +70,7 @@ keep each ecosystem clean.
 |—
 |—
 
-|`tika-server-standard-<v>-bin.zip` (full distribution)
+|`tika-server-standard-<v>.zip` (full distribution)
 |—
 |✓
 |extracted into image
@@ -183,14 +183,16 @@ that also contains a populated `lib/` (and `plugins/`). Standalone the
 slim jar can't run. Maven Central publishes it for embedders who'll
 resolve `lib/*` via Maven dep resolution.
 
-`tika-server-standard-<v>-bin.zip` is the full assembled distribution:
+`tika-server-standard-<v>.zip` is the full assembled distribution:
 the slim jar + `lib/` + the bundled `tika-pipes-file-system` plugin + a
 startup script. Apache dist publishes this for sysadmins who want
 `unzip + java -jar`.
 
 The 4.0.0-alpha-1 release published *both* on dist; 4.x onwards drops the
 slim jar from dist (only on Central) and drops the `-bin.tgz` variant
-(`.zip` is universally readable).
+(`.zip` is universally readable). 4.x also drops the legacy `-bin`
+classifier, so the full distribution is `tika-server-standard-<v>.zip`,
+consistent with `tika-app`, `tika-eval-app`, and the pipes plugins.
 
 === App / eval-app
 
@@ -221,7 +223,7 @@ build process.
 release publish workflow). The `release-tika-grpc` job currently
 assembles a custom build context from per-module outputs (
 `dependency:copy-dependencies`, per-plugin `cp`, parser-package `cp`).
-The `release-tika-server` job builds from `tika-server-standard-bin.zip`
+The `release-tika-server` job builds from `tika-server-standard-<v>.zip`
 (unpacked into `/opt/tika-server/`).
 
 == Cross-references

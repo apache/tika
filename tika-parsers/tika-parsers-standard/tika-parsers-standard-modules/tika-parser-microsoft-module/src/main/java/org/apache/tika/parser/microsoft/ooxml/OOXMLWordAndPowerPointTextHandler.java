@@ -271,6 +271,13 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
             lastStartElementWasP = true;
+            // Each <w:p> needs its own pStarted lifecycle. Without this,
+            // a nested <w:p> (e.g., inside <wps:txbx>/<w:txbxContent>) would
+            // inherit the outer paragraph's pStarted=true, suppress its own
+            // startParagraph in the </w:pPr> branch, then fire its
+            // endParagraph on </w:p> -- producing an unbalanced start/end
+            // count that desyncs the XHTML <p>/<p> stream.
+            pStarted = false;
         } else if (B.equals(localName)) { //TODO: add bCs
             if (inR && inRPr) {
                 currRunProperties.setBold(true);
