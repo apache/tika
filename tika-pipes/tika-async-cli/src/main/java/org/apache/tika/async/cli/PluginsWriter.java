@@ -43,21 +43,13 @@ public class PluginsWriter {
     }
 
     void write(Path output) throws IOException {
-        boolean userConfigProvided = !StringUtils.isBlank(simpleAsyncConfig.getTikaConfig());
         boolean inputExplicit = !StringUtils.isBlank(simpleAsyncConfig.getInputDir());
         boolean outputExplicit = !StringUtils.isBlank(simpleAsyncConfig.getOutputDir());
 
-        // Resolve baseInput. If -i is explicit, use it. If not and the user
-        // didn't supply --config, fall back to '.' so the template's
-        // FETCHER_BASE_PATH placeholder gets a sane default. If --config is
-        // supplied and -i isn't, baseInput stays null so we don't trample the
-        // user's own basePath values.
-        Path baseInput = null;
-        if (inputExplicit) {
-            baseInput = Paths.get(simpleAsyncConfig.getInputDir());
-        } else if (!userConfigProvided) {
-            baseInput = Paths.get(".").toAbsolutePath();
-        }
+        // -i / -o resolution. When unset they're null, in which case we don't
+        // override anything the user (or the post-merge placeholder sweep
+        // below) put in place.
+        Path baseInput = inputExplicit ? Paths.get(simpleAsyncConfig.getInputDir()) : null;
         if (baseInput != null && Files.isRegularFile(baseInput)) {
             baseInput = baseInput.toAbsolutePath().getParent();
             if (baseInput == null) {
@@ -96,13 +88,30 @@ public class PluginsWriter {
                 mergeUserConfig(root, (ObjectNode) userRoot);
             }
 
+            // Resolve any unfilled placeholders left over from
+            // config-template.json. These leak through when --config is
+            // supplied but the user's config does not redefine the relevant
+            // section (e.g. user overrides only `pipes` and inherits the
+            // template's `fetchers`). We replace only the literal placeholder
+            // strings, so a user-supplied real basePath is never trampled.
+            // Default to CWD; the explicit -i/-o overrides below will further
+            // refine when set.
+            String defaultBasePath = Paths.get(".").toAbsolutePath().toString();
+            replaceFileSystemBasePathPlaceholder(root, "fetchers", "file-system-fetcher",
+                    "FETCHER_BASE_PATH", defaultBasePath);
+            replaceSingletonFileSystemBasePathPlaceholder(root, "pipes-iterator",
+                    "file-system-pipes-iterator", "FETCHER_BASE_PATH", defaultBasePath);
+            replaceFileSystemBasePathPlaceholder(root, "emitters", "file-system-emitter",
+                    "EMITTER_BASE_PATH", defaultBasePath);
+
             // Apply -i / -o on top of the merged document by component TYPE
             // rather than hardcoded id ("fsf"/"fse"). This way users who
             // renamed their filesystem fetcher/emitter still get the override,
             // and non-filesystem fetchers/emitters (S3, GCS, etc.) are left
             // untouched. baseInput/baseOutput are null when the user supplied
             // --config without -i/-o, in which case their basePath values stay
-            // intact.
+            // intact (post-merge they're either the user's real value or the
+            // CWD default just installed by the placeholder sweep above).
             if (baseInput != null) {
                 patchFileSystemBasePath(root, "fetchers", "file-system-fetcher",
                         baseInput.toAbsolutePath().toString());
@@ -216,6 +225,56 @@ public class PluginsWriter {
         }
         ObjectNode target = (ObjectNode) sectionNode.get(typeName);
         target.put("basePath", basePath);
+    }
+
+    /**
+     * Replaces {@code basePath} with {@code replacement} for every id-keyed
+     * entry in {@code section} of wrapper type {@code typeName} whose
+     * current value is the literal {@code placeholder} string. Real
+     * user-supplied paths are left alone.
+     */
+    private static void replaceFileSystemBasePathPlaceholder(ObjectNode root, String section,
+                                                              String typeName, String placeholder,
+                                                              String replacement) {
+        JsonNode sectionNode = root.get(section);
+        if (sectionNode == null || !sectionNode.isObject()) {
+            return;
+        }
+        Iterator<Map.Entry<String, JsonNode>> ids = sectionNode.fields();
+        while (ids.hasNext()) {
+            JsonNode typed = ids.next().getValue();
+            if (typed.isObject() && typed.has(typeName)) {
+                ObjectNode target = (ObjectNode) typed.get(typeName);
+                JsonNode current = target.get("basePath");
+                if (current != null && current.isTextual()
+                        && placeholder.equals(current.asText())) {
+                    target.put("basePath", replacement);
+                }
+            }
+        }
+    }
+
+    /**
+     * Replaces the singleton {@code basePath} placeholder under
+     * {@code section.typeName} only if its current value is the literal
+     * placeholder. Mirrors {@link #patchSingletonFileSystemBasePath} but
+     * preserves user-supplied real paths.
+     */
+    private static void replaceSingletonFileSystemBasePathPlaceholder(ObjectNode root,
+                                                                       String section,
+                                                                       String typeName,
+                                                                       String placeholder,
+                                                                       String replacement) {
+        JsonNode sectionNode = root.get(section);
+        if (sectionNode == null || !sectionNode.isObject() || !sectionNode.has(typeName)) {
+            return;
+        }
+        ObjectNode target = (ObjectNode) sectionNode.get(typeName);
+        JsonNode current = target.get("basePath");
+        if (current != null && current.isTextual()
+                && placeholder.equals(current.asText())) {
+            target.put("basePath", replacement);
+        }
     }
 
     /**
