@@ -411,7 +411,14 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
             if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue("name");
                 currentValueType = null;
-            } else if (VT_NS.equals(uri) && currentPropertyName != null) {
+            } else if (VT_NS.equals(uri) && currentPropertyName != null
+                    && currentValueType == null) {
+                // First vt: child under <property> wins. The == null guard keeps
+                // <vt:vector>/<vt:array> containers latched as the type so their
+                // inner children (vt:lpstr, vt:i4, ...) don't get re-emitted as
+                // a scalar custom property. The container itself falls through
+                // the endElement switch's default branch (no emit), matching the
+                // prior POI path that explicitly skipped vector/array.
                 currentValueType = localName;
                 textBuffer.setLength(0);
             }
@@ -426,21 +433,34 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
         public void endElement(String uri, String localName, String qName) {
             if (VT_NS.equals(uri) && currentValueType != null &&
                     localName.equals(currentValueType) && currentPropertyName != null) {
-                String val = textBuffer.toString().trim();
+                // Legacy POI's typed accessors (getLpwstr/getLpstr/getBstr) returned
+                // the raw element text, while numeric/date/bool accessors yielded
+                // already-normalized forms. Mirror that here: keep whitespace in
+                // strings, work with the trimmed form everywhere else.
+                String raw = textBuffer.toString();
+                String trimmed = raw.trim();
                 String propName = "custom:" + currentPropertyName;
                 switch (currentValueType) {
                     case "lpwstr":
                     case "lpstr":
                     case "bstr":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, raw);
                         break;
                     case "filetime":
                     case "date":
                         Property tikaProp = Property.externalDate(propName);
-                        customMetadata.set(tikaProp, val);
+                        customMetadata.set(tikaProp, trimmed);
                         break;
                     case "bool":
-                        customMetadata.set(propName, val);
+                        // xs:boolean lexical space is {true,false,1,0}. Legacy POI
+                        // routed through Boolean.toString(getBool()) so consumers
+                        // doing "true".equals(...) never saw the 1/0 form. Anything
+                        // outside the lexical space is dropped, not stored verbatim.
+                        if ("1".equals(trimmed) || "true".equals(trimmed)) {
+                            customMetadata.set(propName, "true");
+                        } else if ("0".equals(trimmed) || "false".equals(trimmed)) {
+                            customMetadata.set(propName, "false");
+                        }
                         break;
                     case "i1":
                     case "i2":
@@ -448,28 +468,28 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                     case "int":
                     case "ui1":
                     case "ui2":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "i8":
                     case "ui4":
                     case "ui8":
                     case "uint":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "r4":
                     case "r8":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "decimal":
                         // BigDecimal(String) is O(n²) on JDK 17; cap the input
                         // length to keep an attacker-controlled <vt:decimal>
                         // from burning CPU. Real values are < 50 chars; 256 is
                         // generous. See ooxml-bigdecimal-dos.
-                        if (val.length() > MAX_DECIMAL_LENGTH) {
+                        if (trimmed.length() > MAX_DECIMAL_LENGTH) {
                             break;
                         }
                         try {
-                            BigDecimal d = new BigDecimal(val);
+                            BigDecimal d = new BigDecimal(trimmed);
                             customMetadata.set(propName, d.toPlainString());
                         } catch (NumberFormatException e) {
                             //swallow
@@ -481,6 +501,10 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                 currentValueType = null;
             } else if ("property".equals(localName)) {
                 currentPropertyName = null;
+                // Defensive: if a malformed custom.xml left a vt: container open
+                // (e.g. <vt:vector> without a matching close before </property>),
+                // make sure the next property doesn't inherit it.
+                currentValueType = null;
             }
         }
 

@@ -131,6 +131,66 @@ public class SAXBasedMetadataExtractorTest {
                 "string value must be capped at MAX_TEXT_BUFFER_LENGTH");
     }
 
+    @Test
+    public void stringValuesPreserveLeadingAndTrailingWhitespace() throws Exception {
+        // Legacy POI's getLpwstr/getLpstr/getBstr returned the raw element text;
+        // anything that depends on whitespace inside the value would regress if
+        // the SAX path silently trimmed.
+        Metadata m = parseCustomProperties(
+                customProperty("padded", "lpwstr", "  hello world  "));
+        assertEquals("  hello world  ", m.get("custom:padded"),
+                "lpwstr must preserve leading/trailing whitespace");
+
+        m = parseCustomProperties(customProperty("padded", "lpstr", " ascii "));
+        assertEquals(" ascii ", m.get("custom:padded"));
+
+        m = parseCustomProperties(customProperty("padded", "bstr", "\tindented\n"));
+        assertEquals("\tindented\n", m.get("custom:padded"));
+    }
+
+    @Test
+    public void boolLexicalOneIsNormalizedToTrue() throws Exception {
+        Metadata m = parseCustomProperties(customProperty("flag", "bool", "1"));
+        assertEquals("true", m.get("custom:flag"),
+                "<vt:bool>1</vt:bool> must normalize to \"true\" (matching legacy POI)");
+    }
+
+    @Test
+    public void boolLexicalZeroIsNormalizedToFalse() throws Exception {
+        Metadata m = parseCustomProperties(customProperty("flag", "bool", "0"));
+        assertEquals("false", m.get("custom:flag"),
+                "<vt:bool>0</vt:bool> must normalize to \"false\" (matching legacy POI)");
+    }
+
+    @Test
+    public void boolLexicalTrueAndFalsePassThrough() throws Exception {
+        Metadata m = parseCustomProperties(customProperty("flag", "bool", "true"));
+        assertEquals("true", m.get("custom:flag"));
+
+        m = parseCustomProperties(customProperty("flag", "bool", "false"));
+        assertEquals("false", m.get("custom:flag"));
+    }
+
+    @Test
+    public void vectorContainingScalarIsNotEmittedAsScalar() throws Exception {
+        // <vt:vector> with inner <vt:lpstr> children. The container latches as
+        // the value type; inner children must NOT overwrite it, and the
+        // container itself must not be emitted as a scalar. Legacy POI skipped
+        // vector/array entirely.
+        String xml = CUSTOM_HEADER
+                + "<property fmtid=\"{DEADBEEF-0000-0000-0000-000000000000}\" pid=\"2\""
+                + " name=\"tags\">"
+                + "<vt:vector size=\"2\" baseType=\"lpstr\">"
+                + "<vt:lpstr>alpha</vt:lpstr>"
+                + "<vt:lpstr>beta</vt:lpstr>"
+                + "</vt:vector>"
+                + "</property>"
+                + CUSTOM_FOOTER;
+        Metadata m = parseCustomProperties(xml);
+        assertNull(m.get("custom:tags"),
+                "vector container must not emit a scalar custom property");
+    }
+
     // ===== helpers =====
 
     private static String customProperty(String name, String type, String value) {
