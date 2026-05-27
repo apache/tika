@@ -273,7 +273,12 @@ public class MetadataExtractor {
             if ("property".equals(localName)) {
                 currentPropertyName = atts.getValue("name");
                 currentValueType = null;
-            } else if (VT_NS.equals(uri) && currentPropertyName != null) {
+            } else if (VT_NS.equals(uri) && currentPropertyName != null
+                    && currentValueType == null) {
+                // Only the direct vt: child of <property> is captured.
+                // Containers like <vt:vector>/<vt:array> latch currentValueType
+                // here and their scalar children are then ignored, matching the
+                // prior POI/XMLBeans behavior which skipped vectors/arrays.
                 currentValueType = localName;
                 textBuffer.setLength(0);
             }
@@ -288,21 +293,32 @@ public class MetadataExtractor {
         public void endElement(String uri, String localName, String qName) {
             if (VT_NS.equals(uri) && currentValueType != null &&
                     localName.equals(currentValueType) && currentPropertyName != null) {
-                String val = textBuffer.toString().trim();
+                String raw = textBuffer.toString();
+                String trimmed = raw.trim();
                 String propName = "custom:" + currentPropertyName;
                 switch (currentValueType) {
                     case "lpwstr":
                     case "lpstr":
                     case "bstr":
-                        customMetadata.set(propName, val);
+                        // String values are user-controlled metadata content;
+                        // preserve leading/trailing whitespace as the prior
+                        // POI getLpwstr()/getLpstr() path did.
+                        customMetadata.set(propName, raw);
                         break;
                     case "filetime":
                     case "date":
                         Property tikaProp = Property.externalDate(propName);
-                        customMetadata.set(tikaProp, val);
+                        customMetadata.set(tikaProp, trimmed);
                         break;
                     case "bool":
-                        customMetadata.set(propName, val);
+                        // xs:boolean lexical space allows "1"/"0" alongside
+                        // "true"/"false"; the prior POI path emitted
+                        // Boolean.toString(...). Preserve that normalization.
+                        if ("1".equals(trimmed) || "true".equalsIgnoreCase(trimmed)) {
+                            customMetadata.set(propName, "true");
+                        } else if ("0".equals(trimmed) || "false".equalsIgnoreCase(trimmed)) {
+                            customMetadata.set(propName, "false");
+                        }
                         break;
                     case "i1":
                     case "i2":
@@ -310,28 +326,28 @@ public class MetadataExtractor {
                     case "int":
                     case "ui1":
                     case "ui2":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "i8":
                     case "ui4":
                     case "ui8":
                     case "uint":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "r4":
                     case "r8":
-                        customMetadata.set(propName, val);
+                        customMetadata.set(propName, trimmed);
                         break;
                     case "decimal":
                         // BigDecimal(String) is O(n²) on JDK 17; cap the input
                         // length to keep an attacker-controlled <vt:decimal>
                         // from burning CPU. Real values are < 50 chars; 256 is
                         // generous. See ooxml-bigdecimal-dos.
-                        if (val.length() > MAX_DECIMAL_LENGTH) {
+                        if (trimmed.length() > MAX_DECIMAL_LENGTH) {
                             break;
                         }
                         try {
-                            BigDecimal d = new BigDecimal(val);
+                            BigDecimal d = new BigDecimal(trimmed);
                             customMetadata.set(propName, d.toPlainString());
                         } catch (NumberFormatException e) {
                             //swallow
@@ -343,6 +359,7 @@ public class MetadataExtractor {
                 currentValueType = null;
             } else if ("property".equals(localName)) {
                 currentPropertyName = null;
+                currentValueType = null;
             }
         }
 

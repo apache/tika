@@ -120,6 +120,53 @@ public class MetadataExtractorTest {
     }
 
     @Test
+    public void stringValuesPreserveLeadingAndTrailingWhitespace() throws Exception {
+        // The prior POI/XMLBeans path returned the raw element text for
+        // lpwstr/lpstr/bstr; the SAX path must not trim string content.
+        Metadata m = parseCustomProperties(customProperty("note", "lpwstr", "  hello  "));
+        assertEquals("  hello  ", m.get("custom:note"));
+    }
+
+    @Test
+    public void boolLexicalOneIsNormalizedToTrue() throws Exception {
+        // xs:boolean allows "1"/"0"; previous code emitted Boolean.toString(...).
+        Metadata m = parseCustomProperties(customProperty("flag", "bool", "1"));
+        assertEquals("true", m.get("custom:flag"));
+    }
+
+    @Test
+    public void boolLexicalZeroIsNormalizedToFalse() throws Exception {
+        Metadata m = parseCustomProperties(customProperty("flag", "bool", "0"));
+        assertEquals("false", m.get("custom:flag"));
+    }
+
+    @Test
+    public void boolLexicalTrueAndFalsePassThrough() throws Exception {
+        assertEquals("true",
+                parseCustomProperties(customProperty("a", "bool", "true")).get("custom:a"));
+        assertEquals("false",
+                parseCustomProperties(customProperty("b", "bool", "false")).get("custom:b"));
+    }
+
+    @Test
+    public void vectorContainingScalarIsNotEmittedAsScalar() throws Exception {
+        // Old POI/XMLBeans path explicitly skipped vector/array. The SAX path
+        // must not leak a nested <vt:lpstr> inside <vt:vector> as a scalar.
+        String xml = CUSTOM_HEADER
+                + "<property fmtid=\"{DEADBEEF-0000-0000-0000-000000000000}\" pid=\"2\""
+                + " name=\"items\">"
+                + "<vt:vector size=\"2\" baseType=\"lpstr\">"
+                + "<vt:lpstr>foo</vt:lpstr>"
+                + "<vt:lpstr>bar</vt:lpstr>"
+                + "</vt:vector>"
+                + "</property>"
+                + CUSTOM_FOOTER;
+        Metadata m = parseCustomProperties(xml);
+        assertNull(m.get("custom:items"),
+                "vector contents must not be emitted as a scalar custom property");
+    }
+
+    @Test
     public void oversizedStringIsTruncatedNotRejected() throws Exception {
         // A large lpwstr isn't a CPU-DoS like decimal, but unbounded text
         // accumulation would still be a memory pressure vector. The buffer
