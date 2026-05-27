@@ -353,6 +353,7 @@
             </Bundle-Activator>
             <Import-Package>
               org.w3c.dom,
+              org.apache.tika.parser.external,
               org.apache.tika.*,
               *;resolution:=optional
             </Import-Package>
