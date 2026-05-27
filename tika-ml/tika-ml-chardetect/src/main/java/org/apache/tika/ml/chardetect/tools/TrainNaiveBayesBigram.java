@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.tika.ml.chardetect.HtmlByteStripper;
+
 /**
  * Naive-Bayes byte-bigram charset classifier trainer.
  *
@@ -80,6 +82,10 @@ public class TrainNaiveBayesBigram {
 
     private static final double DEFAULT_ALPHA_BASE = 1.0;
     private static final int DEFAULT_MAX_SAMPLES = 50_000;
+    /** Match {@code MojibusterEncodingDetector.MIN_TAG_COUNT_TO_USE_STRIP}. */
+    private static final int MIN_TAG_COUNT_TO_USE_STRIP = 1;
+    /** Match {@code MojibusterEncodingDetector.MIN_ENTITY_COUNT_TO_USE_STRIP}. */
+    private static final int MIN_ENTITY_COUNT_TO_USE_STRIP = 3;
     /**
      * Default per-class vocabulary coverage.  0.999 means the top-K
      * most frequent bigrams covering 99.9% of the class's marginal
@@ -104,8 +110,7 @@ public class TrainNaiveBayesBigram {
      *       UTF-16-encoded CJK from legacy byte encodings because
      *       CJK characters in UTF-16 encode to byte pairs that alias
      *       common ASCII bigrams (e.g. U+6572 in UTF-16-LE is
-     *       {@code 72 65} which also encodes "re").  See
-     *       {@code ~/Desktop/claude-todo/charset/why-stride1-bigrams-dont-work-for-utf16.md}.</li>
+     *       {@code 72 65} which also encodes "re").</li>
      *   <li>UTF-8 — trained NB class.  UTF-8's lead + continuation
      *       byte-pair structure has distinctive frequency signatures
      *       that don't alias with legacy encodings at the bigram-
@@ -132,16 +137,20 @@ public class TrainNaiveBayesBigram {
             "windows-1250", "windows-1251", "windows-1252", "windows-1253",
             "windows-1254", "windows-1255", "windows-1256", "windows-1257",
             "windows-1258", "windows-874",
-            // ISO-8859 (2)
-            "ISO-8859-3", "ISO-8859-16",
+            // ISO-8859 (3) — ISO-8859-2 added 2026-05-18 for Polish /
+            // Central European coverage alongside the windows-1250 superset
+            "ISO-8859-2", "ISO-8859-3", "ISO-8859-16",
             // Mac (2)
             "x-MacRoman", "x-mac-cyrillic");
 
     /**
      * Training-data filename → training-class-label aliases.  Empty
      * by default; reserved for cases where multiple training files
-     * should merge into one class label.  (UTF-16 was an experiment
-     * that didn't pan out — see why-stride1-bigrams-dont-work-for-utf16.md.)
+     * should merge into one class label.  (UTF-16-LE / UTF-16-BE were
+     * previously aliased to a single UTF-16 class but the experiment
+     * didn't pan out: stride-1 byte bigrams cannot discriminate UTF-16
+     * from legacy encodings — CJK characters in UTF-16 produce byte
+     * pairs that alias common ASCII bigrams.)
      */
     static final Map<String, String> TRAINING_LABEL_ALIASES = Map.of();
 
@@ -189,7 +198,7 @@ public class TrainNaiveBayesBigram {
         }
 
         System.out.printf(Locale.ROOT,
-                "coverage=%.3f  alpha-base=%.3f  max-samples/class=%,d%n",
+                "coverage=%.3f  alpha-base=%.3f  max-samples/class=%,d  (markup-stripped via HtmlByteStripper)%n",
                 coverage, alphaBase, maxSamples);
         System.out.println("Classes (" + classFilter.size() + "): "
                 + new java.util.TreeSet<>(classFilter));
@@ -241,8 +250,10 @@ public class TrainNaiveBayesBigram {
             // across contributing files so a 2-file class (UTF-16 LE+BE)
             // doesn't overrun a 1-file class's sample count.
             int perFileBudget = Math.max(1, maxSamples / entry.getValue().size());
+            long samplesStripped = 0;
             for (Path f : entry.getValue()) {
                 int fileSamples = 0;
+                byte[] stripBuf = new byte[65536];
                 try (InputStream fis = new FileInputStream(f.toFile());
                      GZIPInputStream gis = new GZIPInputStream(fis);
                      DataInputStream dis = new DataInputStream(gis)) {
@@ -255,8 +266,30 @@ public class TrainNaiveBayesBigram {
                         }
                         byte[] sample = new byte[len];
                         dis.readFully(sample);
-                        for (int i = 0; i + 1 < sample.length; i++) {
-                            int bigram = ((sample[i] & 0xFF) << 8) | (sample[i + 1] & 0xFF);
+                        // Train/inference symmetry: same HtmlByteStripper +
+                        // same gate as MojibusterEncodingDetector at
+                        // detect-time.  Hardcoded ON to prevent accidental
+                        // misconfiguration; the bigram tables MUST reflect
+                        // the byte distribution NB will actually score.
+                        if (stripBuf.length < len) {
+                            stripBuf = new byte[len];
+                        }
+                        HtmlByteStripper.Result r = HtmlByteStripper.strip(
+                                sample, 0, len, stripBuf, 0);
+                        byte[] scoreBytes;
+                        int scoreLen;
+                        if (r.tagCount >= MIN_TAG_COUNT_TO_USE_STRIP
+                                || r.entityCount >= MIN_ENTITY_COUNT_TO_USE_STRIP) {
+                            scoreBytes = stripBuf;
+                            scoreLen = r.length;
+                            samplesStripped++;
+                        } else {
+                            scoreBytes = sample;
+                            scoreLen = len;
+                        }
+                        for (int i = 0; i + 1 < scoreLen; i++) {
+                            int bigram = ((scoreBytes[i] & 0xFF) << 8)
+                                    | (scoreBytes[i + 1] & 0xFF);
                             counts[bigram]++;
                             totalBigrams++;
                         }
@@ -268,10 +301,11 @@ public class TrainNaiveBayesBigram {
             countsPerClass[ci] = counts;
             totalsPerClass[ci] = totalBigrams;
             System.out.printf(Locale.ROOT,
-                    "  counted %-20s  %,7d samples  %,10d total bigrams  (%d file%s)%n",
+                    "  counted %-20s  %,7d samples  %,10d total bigrams  (%d file%s)  stripped=%,d%n",
                     labels[ci], numSamples, totalBigrams,
                     entry.getValue().size(),
-                    entry.getValue().size() == 1 ? "" : "s");
+                    entry.getValue().size() == 1 ? "" : "s",
+                    samplesStripped);
             ci++;
         }
 

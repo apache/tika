@@ -23,13 +23,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * Carrier for one script's v7 F1 tables.
+ * Carrier for one script's codepoint-bigram tables.
  *
- * <p>The v6 design used a single global codepoint-bigram hash + Bloom
- * filter shared across all scripts.  We measured that this ceiling
- * limits accuracy: enlarging one script's training data (e.g. HAN) hurts
- * the other scripts' z-scores because they share the global hash.  v7
- * gives each script its own pair of tables.
+ * <p>Each script has its own pair of tables so that enlarging one script's
+ * training data does not perturb the others' z-scores.
  *
  * <p>Per-script layout:
  *
@@ -56,20 +53,19 @@ import java.nio.ByteOrder;
  *       absent codepoints don't accidentally score above legitimately-rare
  *       ones.
  *   <li>{@code backoffAlpha} — multiplier on the unigram-backoff
- *       independence sum, copied from v6.
+ *       independence sum.
  * </ul>
  *
  * <p>Membership semantics: no Bloom filter.  The empty-slot sentinel is
  * the membership oracle — a pair is "seen" iff binary-search finds both
  * codepoints in the index AND a probe sequence hits a matching key before
- * an empty slot.  Lookups are therefore exact; there is no false-positive
- * backoff path as there is in v6.
+ * an empty slot.  Lookups are therefore exact.
  *
  * <p>Fields are package-private so the
  * {@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel} trainer can
  * construct instances directly without going through accessors.
  */
-public final class V7Tables {
+public final class BigramTables {
 
     /** Reserved value in {@link #bigramKeys} marking an unoccupied slot. */
     public static final int EMPTY_KEY = -1;
@@ -85,13 +81,13 @@ public final class V7Tables {
     final float unigramFallbackLogProb;
     final float backoffAlpha;
 
-    public V7Tables(int[] codepointIndex,
-                    int[] bigramKeys, byte[] bigramValues,
-                    byte[] unigramTable,
-                    float bigramQuantMin, float bigramQuantMax,
-                    float unigramQuantMin, float unigramQuantMax,
-                    float unigramFallbackLogProb,
-                    float backoffAlpha) {
+    public BigramTables(int[] codepointIndex,
+                        int[] bigramKeys, byte[] bigramValues,
+                        byte[] unigramTable,
+                        float bigramQuantMin, float bigramQuantMax,
+                        float unigramQuantMin, float unigramQuantMax,
+                        float unigramFallbackLogProb,
+                        float backoffAlpha) {
         if (bigramKeys.length != bigramValues.length) {
             throw new IllegalArgumentException(
                     "bigramKeys and bigramValues must have equal length: "
@@ -115,7 +111,7 @@ public final class V7Tables {
     }
 
     /**
-     * Serialises this script's F1 tables.  Read back via
+     * Serialises this script's bigram tables.  Read back via
      * {@link #readFrom(DataInputStream)}.
      */
     public void writeTo(DataOutputStream dos) throws IOException {
@@ -146,7 +142,7 @@ public final class V7Tables {
     }
 
     /** Inverse of {@link #writeTo(DataOutputStream)}. */
-    public static V7Tables readFrom(DataInputStream dis) throws IOException {
+    public static BigramTables readFrom(DataInputStream dis) throws IOException {
         float backoffAlpha = dis.readFloat();
 
         int cpCount = dis.readInt();
@@ -167,7 +163,7 @@ public final class V7Tables {
         float uFallback = dis.readFloat();
         byte[] unigramTable = dis.readNBytes(cpCount);
 
-        return new V7Tables(codepoints, keys, values, unigramTable,
+        return new BigramTables(codepoints, keys, values, unigramTable,
                 bMin, bMax, uMin, uMax, uFallback, backoffAlpha);
     }
 

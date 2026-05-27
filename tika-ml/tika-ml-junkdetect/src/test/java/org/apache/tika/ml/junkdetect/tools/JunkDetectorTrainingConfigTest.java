@@ -74,9 +74,8 @@ class JunkDetectorTrainingConfigTest {
 
     @Test
     void scriptBudgetOverridesEmpty() {
-        // v7 hypothesis test (HAN=60MB) ran but gave only marginal gains.
-        // Override map is intentionally empty pending a more decisive
-        // experiment.
+        // The HAN=60MB hypothesis test gave only marginal gains.  Override
+        // map is intentionally empty pending a more decisive experiment.
         assertTrue(JunkDetectorTrainingConfig.SCRIPT_BUDGET_OVERRIDES.isEmpty());
     }
 

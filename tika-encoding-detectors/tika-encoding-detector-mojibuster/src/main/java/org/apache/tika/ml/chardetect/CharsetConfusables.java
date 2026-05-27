@@ -154,6 +154,31 @@ public final class CharsetConfusables {
      */
     public static final Set<String> SBCS_LATIN_FAMILY;
 
+    /**
+     * Strict subset of {@link #SBCS_LATIN_FAMILY} containing only the
+     * Western European Latin members.  These are the SBCS classes that
+     * share win-1252's source corpus (English / German / French /
+     * Spanish / Italian / Dutch / Portuguese / etc.); when NB picks
+     * one of these as top-1 on a probe, the model has a measurable
+     * bias the chain can fail to rescue, and rewriting to win-1252
+     * is justified because the underlying text is presumed to be
+     * Western European.
+     *
+     * <p><b>Deliberately excludes</b>: windows-1250 / ISO-8859-2 /
+     * IBM852 (Central European), windows-1257 / ISO-8859-13 (Baltic),
+     * windows-1254 (Turkish), ISO-8859-3 (Maltese), ISO-8859-4
+     * (Northern European), ISO-8859-9 (legacy Turkish), ISO-8859-16
+     * (Romanian / Albanian).  These represent different language
+     * regions; "rewrite to win-1252" would corrupt their content.</p>
+     *
+     * <p>Note: this set is intentionally limited to the trained-by-NB
+     * classes that overlap win-1252's source text.  ISO-8859-1 is
+     * also Western European but is not a trained NB class (win-1252
+     * is its superset), so NB never emits it as top-1 — no need to
+     * list it here.</p>
+     */
+    public static final Set<String> WESTERN_LATIN_FAMILY;
+
     static {
         // ----------------------------------------------------------------
         // Symmetric groups
@@ -298,6 +323,8 @@ public final class CharsetConfusables {
                 "ISO-8859-1", "ISO-8859-2", "ISO-8859-3", "ISO-8859-4",
                 "ISO-8859-9", "ISO-8859-13", "ISO-8859-15", "ISO-8859-16",
                 "x-MacRoman")));
+        WESTERN_LATIN_FAMILY = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+                "x-MacRoman", "IBM850", "ISO-8859-15")));
     }
 
     private CharsetConfusables() {

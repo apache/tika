@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,7 +75,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public static final String DEFAULT_MODEL_RESOURCE =
             "/org/apache/tika/ml/chardetect/nb-bigram.bin";
 
-    private static final int MAX_PROBE_BYTES = 4096;
+    // Probe sized by tag-stripped content (16 KB target), capped at 512 KB raw.
+    // Markup-heavy pages whose distinguishing bytes (esp. UTF-8 multi-byte
+    // sequences) sit past a fixed 16 KB raw window would otherwise starve the
+    // structural UTF-8 check and NB scoring. See AdaptiveProbe.
+    private static final int PROBE_CONTENT_TARGET = AdaptiveProbe.DEFAULT_CONTENT_TARGET;
+    private static final int PROBE_RAW_CAP = AdaptiveProbe.DEFAULT_RAW_CAP;
 
     /**
      * Minimum number of successfully-parsed well-formed tags required
@@ -95,6 +99,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     private static final int MIN_TAG_COUNT_TO_USE_STRIP = 1;
 
     /**
+     * Minimum HTML entity count to apply the stripper even when no
+     * well-formed tags are present.  A single stray {@code &amp;}
+     * mention in plain prose shouldn't trigger the strip path, but
+     * entity-heavy content (HTML-quoted text in a plain-text file,
+     * truncated reads where the leading tag was lost, etc.) should.
+     */
+    private static final int MIN_ENTITY_COUNT_TO_USE_STRIP = 3;
+
+    /**
      * Confidence attached to UTF-32 structural candidates — high but
      * sub-1.0 so the ResultType.STRUCTURAL flag carries meaning
      * without blocking downstream override on mislabeled content.
@@ -111,18 +124,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final float UTF8_STRUCTURAL_CONF = 0.95f;
 
-    /**
-     * Low-evidence threshold (number of high bytes &ge; 0x80) below
-     * which {@link #applyLatinSiblingFallback} fires.  Short probes
-     * (sparse Latin in HTML, vCard fragments) get non-1252 Latin
-     * sibling picks from NB on bias / hash-bucket accidents; when
-     * the probe decodes byte-identically under windows-1252 we
-     * relabel to windows-1252 — the WHATWG-canonical answer.  Above
-     * this threshold the model has genuine evidence to discriminate
-     * sibling code pages.
-     */
-    private static final int LATIN_FALLBACK_HIGH_BYTE_THRESHOLD = 5;
-
     /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes. */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
@@ -134,15 +135,28 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * to drop a high-confidence UTF-8 classification on otherwise-valid
      * text and fall through to {@code AutoDetectReader.detect}, which
      * raises {@code TikaException} when the chain returns no candidates.
-     * 0.5% (1 byte per 200) accommodates "tiny corruption" while still
-     * rejecting genuinely-non-UTF-8 streams (which would have many more
-     * malformed bytes).
+     * Per-byte error rate governing LONG probes (the absolute cap below is a
+     * floor for short ones).  0.01% (~1 malformed sequence per 10 KB)
+     * accommodates real UTF-8 with a few stray/corrupt bytes (e.g. a 150 KB
+     * page with 4 errors = 0.003%) while still rejecting a win-1252 page
+     * misread as UTF-8 (a 20 KB Western page surfaces ~14 invalid sequences =
+     * 0.07%, 7× over).
      *
      * <p>TACTICAL: remove or revisit when Mojibuster's UTF-8 grammar
      * check is replaced with a probabilistic decoder that returns a
      * confidence score directly.</p>
      */
-    private static final double UTF8_MALFORMED_TOLERANCE = 0.005;
+    private static final double UTF8_MALFORMED_TOLERANCE = 0.0001;
+
+    /**
+     * Absolute floor on tolerated UTF-8 error events for SHORT probes, where a
+     * rate is meaningless (a 20-byte string with 1 bad byte is 5%).  The
+     * effective cap is {@code max(this, probeLen * UTF8_MALFORMED_TOLERANCE)} —
+     * so short probes allow 1, long probes are governed by the rate.  (Earlier
+     * this was a hard cap applied at all lengths, which wrongly rejected long,
+     * genuinely-UTF-8 pages carrying a couple of stray bytes.)
+     */
+    private static final int UTF8_MAX_TOLERATED_ERRORS = 1;
 
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
     private static final String WIN1252 = "windows-1252";
@@ -251,9 +265,9 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // When the gate fires and the specialist has a confident
         // winner, short-circuit: return a single UTF-16LE/BE
         // STRUCTURAL candidate.  Stride-1 byte bigrams cannot
-        // discriminate UTF-16 reliably (see
-        // why-stride1-bigrams-dont-work-for-utf16.md), so we keep
-        // UTF-16 out of NB training and delegate to the specialist.
+        // discriminate UTF-16 reliably (CJK in UTF-16 produces byte
+        // pairs that alias common ASCII bigrams), so we keep UTF-16
+        // out of NB training and delegate to the specialist.
         boolean utf16Gate = StructuralEncodingRules.has2ByteColumnAsymmetryEvidence(probe);
         LOG.trace("mojibuster utf16Gate={}", utf16Gate);
         if (utf16Gate) {
@@ -296,8 +310,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         boolean utf8Tolerated = false;
         if (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
             int errors = StructuralEncodingRules.countUtf8Errors(probe);
-            if (errors > 0
-                    && (double) errors / probe.length <= UTF8_MALFORMED_TOLERANCE) {
+            // Length-aware: absolute floor for short probes, rate for long ones.
+            int maxTolerated = Math.max(UTF8_MAX_TOLERATED_ERRORS,
+                    (int) (probe.length * UTF8_MALFORMED_TOLERANCE));
+            if (errors > 0 && errors <= maxTolerated) {
                 utf8Tolerated = true;
                 LOG.trace("mojibuster utf8 NOT_UTF8 tolerated: {} error events in {}B ({}%)",
                         errors, probe.length,
@@ -482,28 +498,30 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     /**
-     * Relabel the top result to windows-1252 when all of the following
-     * hold:
-     * <ul>
-     *   <li>top candidate is a non-1252 member of
-     *       {@link CharsetConfusables#SBCS_LATIN_FAMILY};</li>
-     *   <li>high-byte count &lt;
-     *       {@link #LATIN_FALLBACK_HIGH_BYTE_THRESHOLD};</li>
-     *   <li>the probe decodes byte-identically under the candidate
-     *       and under windows-1252 — no information is lost by the
-     *       rewrite.</li>
-     * </ul>
-     * Rationale: on sparse-Latin probes NB picks sibling code pages
-     * (ISO-8859-3, x-MacRoman, IBM850) on bias.  windows-1252 is the
-     * WHATWG-canonical answer and matches downstream test
-     * expectations.  Mirrors Mojibuster's LATIN_FALLBACK_WIN1252 rule.
+     * Relabel the top result to windows-1252 when top is a non-1252
+     * member of {@link CharsetConfusables#SBCS_LATIN_FAMILY} and
+     * windows-1252 decodes at least as many Unicode-Letter codepoints
+     * at high-byte positions as the candidate does.
+     *
+     * <p>Rationale: NB has a residual bias toward MacRoman / IBM850 /
+     * IBM852 / ISO-8859-X siblings on Western European text where the
+     * underlying bytes are actually windows-1252.  Under the wrong
+     * sibling, the high bytes decode to symbols / punctuation /
+     * unassigned codepoints — not letters.  Under the correct
+     * windows-1252, they decode to letters (ä, ö, ü, é, ñ, …).  So a
+     * letter-count compare directly distinguishes "this is actually
+     * windows-1252 mis-labeled" from "this is genuinely MacRoman".
+     * A real MacRoman document with bytes like 0x88 (à in MacRoman)
+     * decodes to a letter under MacRoman but a symbol (ˆ) under
+     * windows-1252 — letter compare correctly keeps MacRoman.</p>
+     *
+     * <p>Replaces the prior strict gates ({@code countHighBytes &lt; 5}
+     * AND {@code byteIdenticalOnProbe(top, win-1252)}) which left
+     * ≥ 5-high-byte Western European pages unprotected.</p>
      */
     private static List<EncodingResult> applyLatinSiblingFallback(byte[] probe,
                                                                   List<EncodingResult> ranked) {
         if (ranked.isEmpty()) {
-            return ranked;
-        }
-        if (countHighBytes(probe) >= LATIN_FALLBACK_HIGH_BYTE_THRESHOLD) {
             return ranked;
         }
         EncodingResult top = ranked.get(0);
@@ -511,11 +529,23 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         if (WIN1252.equals(topName)) {
             return ranked;
         }
-        if (!CharsetConfusables.SBCS_LATIN_FAMILY.contains(topName)) {
+        // Scoped to Western European Latin family only.  Central
+        // European (win-1250 / ISO-8859-2 / IBM852), Baltic (win-1257 /
+        // ISO-8859-13), Turkish (win-1254), Maltese (ISO-8859-3),
+        // Romanian (ISO-8859-16) etc. are NOT in scope — those
+        // represent different language regions, and rewriting them to
+        // windows-1252 corrupts genuine non-Western content (the
+        // letter-count compare ties on most of their Latin letters
+        // because Unicode classifies both decodings as Letters,
+        // misleading the rule into a wrong flip).
+        if (!CharsetConfusables.WESTERN_LATIN_FAMILY.contains(topName)) {
             return ranked;
         }
         Charset win1252 = Charset.forName(WIN1252);
-        if (!DecodeEquivalence.byteIdenticalOnProbe(probe, top.getCharset(), win1252)) {
+        int winLetters = countHighByteLetters(probe, win1252);
+        int topLetters = countHighByteLetters(probe, top.getCharset());
+        // Tie goes to windows-1252 (WHATWG-canonical default).
+        if (winLetters < topLetters) {
             return ranked;
         }
         List<EncodingResult> out = new java.util.ArrayList<>(ranked.size());
@@ -525,6 +555,65 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             out.add(ranked.get(i));
         }
         return out;
+    }
+
+    /**
+     * Decode the probe under {@code cs} and count codepoints that
+     * are Unicode "cased letters" (Lu / Ll / Lt) at codepoints &ge;
+     * 0x80.  Used by the Latin sibling fallback to compare decoded-
+     * text quality between two candidate SBCS encodings.
+     *
+     * <p>Deliberately excludes a few "letter-ish but typographic"
+     * categories that {@link Character#isLetter(int)} would otherwise
+     * count, because they fooled the rule in earlier evals:</p>
+     * <ul>
+     *   <li><b>Modifier letters (Lm)</b>: spacing-modifier letterlike
+     *       symbols (ʰ ʷ ˆ ˜ ʻ etc.) that some encodings put at
+     *       byte positions where the truthful encoding has a symbol /
+     *       punctuation.</li>
+     *   <li><b>Ordinal indicators</b>: U+00AA (ª), U+00BA (º),
+     *       U+207F (ⁿ), U+2122 (™ — not Ll, included for safety).
+     *       MacRoman's 0xBB and 0xBC are ª / º respectively; the
+     *       windows-1252 truth for byte 0xBB is » (final punctuation,
+     *       not a letter).  Without this exclusion, MacRoman's
+     *       letter count beats win-1252's on probes where » appears.</li>
+     *   <li><b>Other letter (Lo)</b>: covers CJK / Korean letterlike
+     *       codepoints that occasionally fall out of byte-level
+     *       decodes; counting those as "Latin letters" would mislead
+     *       the Latin-sibling comparison.</li>
+     * </ul>
+     */
+    private static int countHighByteLetters(byte[] probe, Charset cs) {
+        String decoded;
+        try {
+            decoded = new String(probe, cs);
+        } catch (Exception e) {
+            return 0;
+        }
+        int count = 0;
+        for (int i = 0; i < decoded.length(); ) {
+            int cp = decoded.codePointAt(i);
+            if (cp >= 0x80 && isCasedLatinishLetter(cp)) {
+                count++;
+            }
+            i += Character.charCount(cp);
+        }
+        return count;
+    }
+
+    /**
+     * Returns true for codepoints in Unicode's "cased letter"
+     * categories (Lu / Ll / Lt) but EXCLUDING specific letterlike
+     * typographic symbols (ª, º, ⁿ).  See {@link #countHighByteLetters}.
+     */
+    private static boolean isCasedLatinishLetter(int cp) {
+        if (cp == 0x00AA || cp == 0x00BA || cp == 0x207F) {
+            return false; // ª, º, ⁿ — ordinal / superscript indicators
+        }
+        int type = Character.getType(cp);
+        return type == Character.UPPERCASE_LETTER
+                || type == Character.LOWERCASE_LETTER
+                || type == Character.TITLECASE_LETTER;
     }
 
     private static int countHighBytes(byte[] probe) {
@@ -597,10 +686,11 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         byte[] dst = new byte[probe.length];
         HtmlByteStripper.Result stripped =
                 HtmlByteStripper.strip(probe, 0, probe.length, dst, 0);
-        if (stripped.tagCount < MIN_TAG_COUNT_TO_USE_STRIP) {
-            // No well-formed tags found — probe isn't markup (or the
-            // bytes don't parse as markup in any ASCII-compatible
-            // reading).  Use original.
+        if (stripped.tagCount < MIN_TAG_COUNT_TO_USE_STRIP
+                && stripped.entityCount < MIN_ENTITY_COUNT_TO_USE_STRIP) {
+            // No well-formed tags AND not enough entities to be markup —
+            // probe isn't markup (or the bytes don't parse as markup in
+            // any ASCII-compatible reading).  Use original.
             return probe;
         }
         byte[] trimmed = new byte[stripped.length];
@@ -622,18 +712,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     private static byte[] readProbe(TikaInputStream tis) throws IOException {
-        tis.mark(MAX_PROBE_BYTES);
-        byte[] buf = new byte[MAX_PROBE_BYTES];
-        try {
-            int n = IOUtils.read(tis, buf);
-            if (n < buf.length) {
-                byte[] trimmed = new byte[n];
-                System.arraycopy(buf, 0, trimmed, 0, n);
-                return trimmed;
-            }
-            return buf;
-        } finally {
-            tis.reset();
-        }
+        return AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
     }
 }

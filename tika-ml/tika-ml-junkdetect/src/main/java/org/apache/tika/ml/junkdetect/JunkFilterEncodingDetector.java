@@ -20,13 +20,10 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +34,8 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.ml.chardetect.HtmlByteStripper;
+import org.apache.tika.ml.chardetect.AdaptiveProbe;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.quality.TextQualityComparison;
 import org.apache.tika.quality.TextQualityDetector;
 
 /**
@@ -51,11 +47,11 @@ import org.apache.tika.quality.TextQualityDetector;
  * {@link org.apache.tika.detect.CompositeEncodingDetector} chain emits
  * candidates into the {@link EncodingDetectorContext}.  This meta detector
  * then reads the raw probe bytes, decodes them under each unique candidate
- * charset, and runs pairwise comparisons via
- * {@link TextQualityDetector#compare} to pick the candidate whose decoding
- * produces the cleanest text.  BOM-declared, meta-tag-declared,
- * structural, and statistical candidates all compete on the same footing —
- * quality of the resulting decode is the sole criterion at this layer.
+ * charset, scores each decode with {@link TextQualityDetector#score}, and
+ * picks the highest-scoring candidate (the score is cross-script comparable,
+ * so a plain argmax suffices).  BOM-declared, meta-tag-declared, structural,
+ * and statistical candidates all compete on the same footing — quality of the
+ * resulting decode is the sole criterion at this layer.
  *
  * <p>The {@link TextQualityDetector} implementation is discovered via
  * {@link ServiceLoader}.  When no implementation is on the classpath,
@@ -76,6 +72,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     /** How many probe bytes to read for decoding candidates.  Matches the
      * default read limit used by the charset base detectors. */
     private static final int DEFAULT_READ_LIMIT = 16384;
+
+    /** A STATISTICAL candidate at or below this confidence carries no real
+     *  signal — it's the "I don't know" level (matches Mojibuster's
+     *  windows-1252 fallback confidence).  When the statistical layer offers
+     *  nothing above this, the junk-filter defers to a DECLARATIVE/STRUCTURAL
+     *  anchor instead of arbitrating near-identical decodes by quality. */
+    private static final float NO_INFO_CONFIDENCE = 0.1f;
 
     /** Cached quality detector.  {@code null} if none is on the classpath. */
     private final TextQualityDetector qualityDetector;
@@ -143,38 +146,18 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         }
         bytes = stripBomBytes(bytes);
 
-        // Strip HTML/XML markup before decoding so the quality score reflects
-        // body text, not whitespace and tags.  Falls back to the raw probe
-        // when no well-formed tags are detected.
-        byte[] forDecode = bytes;
-        byte[] stripDst = new byte[bytes.length];
-        HtmlByteStripper.Result stripped =
-                HtmlByteStripper.strip(bytes, 0, bytes.length, stripDst, 0);
-        boolean stripUsed = stripped.tagCount > 0 && stripped.length > 0;
-        LOG.trace("junk-filter strip: input={}B tagCount={} stripped={}B used={}",
-                bytes.length, stripped.tagCount, stripped.length, stripUsed);
-        if (stripUsed) {
-            forDecode = new byte[stripped.length];
-            System.arraycopy(stripDst, 0, forDecode, 0, stripped.length);
-        }
-
-        // Decode probe under each candidate, preserving insertion order so
-        // tournament seeding is deterministic.
-        //
-        // Each decoded string is then run through HTML entity expansion.
-        // For entity-encoded HTML (numeric refs like &#3405;), this is
-        // load-bearing: entity refs are ASCII bytes that decode identically
-        // under every candidate charset, so they don't differentiate.
-        // After expansion they become real codepoints — and crucially, in
-        // the *wrong* decoding (e.g. mojibake-as-HAN), they introduce
-        // cross-script transitions (HAN ↔ MALAYALAM mid-document) that the
-        // quality detector's script-transition feature correctly penalises.
-        // See `20260512-junkdetector-codepoint-hash-plan.md` (AIT5 case).
+        // Decode each candidate, then HtmlContentCleaner.clean — the same
+        // tag-strip + entity-expand TrainJunkModel applies, so train and
+        // inference match.  Entity expansion is load-bearing: numeric refs
+        // become codepoints whose cross-script transitions expose mojibake
+        // under a wrong decoding (AIT5 case).
         Map<Charset, String> candidates = new LinkedHashMap<>();
         for (Charset cs : uniqueCharsets) {
-            String decoded = safeDecode(forDecode, cs);
+            String decoded = safeDecode(bytes, cs);
             if (decoded != null && !decoded.isEmpty()) {
-                decoded = expandHtmlEntities(decoded);
+                decoded = HtmlContentCleaner.clean(decoded);
+            }
+            if (decoded != null && !decoded.isEmpty()) {
                 candidates.put(cs, decoded);
                 if (LOG.isTraceEnabled()) {
                     int sampleLen = Math.min(400, decoded.length());
@@ -216,29 +199,129 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return Collections.emptyList();
         }
 
-        // Pairwise tournament: the first candidate seeds the champion slot;
-        // every subsequent candidate challenges the current champion.
-        Iterator<Map.Entry<Charset, String>> it = candidates.entrySet().iterator();
-        Map.Entry<Charset, String> champion = it.next();
-        LOG.trace("junk-filter tournament seed: {}", champion.getKey().name());
-        while (it.hasNext()) {
-            Map.Entry<Charset, String> challenger = it.next();
-            TextQualityComparison cmp = qualityDetector.compare(
-                    champion.getKey().name(), champion.getValue(),
-                    challenger.getKey().name(), challenger.getValue());
-            LOG.trace("junk-filter compare {} vs {} -> {} (delta={} A={} B={})",
-                    champion.getKey().name(), challenger.getKey().name(),
-                    cmp.winner(), String.format(java.util.Locale.ROOT, "%.3f", cmp.delta()),
-                    cmp.scoreA(), cmp.scoreB());
-            if (challenger.getKey().name().equals(cmp.winner())) {
-                champion = challenger;
+        // Calibrated-rescale argmax.  Score each candidate once with the
+        // quality detector, rescale per-script to a [junk≈0, clean≈1]
+        // common scale, then pick the highest.  The rescaling is what
+        // makes cross-script comparisons sound — without it, the more
+        // permissive HAN/LATIN classifiers can out-score the stricter
+        // HANGUL/ARABIC/HEBREW ones on equal-quality text and arbitrate
+        // wrong (the Korean→Chinese case).
+        //
+        // Operates on raw decoded candidates — the strip-COMMON step that
+        // used to live here was removed once γ (whitespace-bigram skip)
+        // and NFC normalization landed inside JunkDetector itself.  Those
+        // address the same Masada-style whitespace-storm root cause for
+        // every caller of JunkDetector and avoid the train/inference
+        // distribution divergence that the strip introduced.
+        // The JunkDetector logit is cross-script comparable (z1 calibrated per
+        // script, z2..z9 global), so the base decision is a plain argmax of the
+        // raw score.  BUT the score is an ABSOLUTE per-decode quality, dominated
+        // by shared content (whitespace/digits identical across decodes); on a
+        // COMMON-dominated doc the discriminating bytes are diluted and the top
+        // candidates differ only by noise.  The quality signal is STATISTICAL-
+        // grade evidence, so it may override a higher-evidence anchor
+        // (DECLARATIVE author intent, or STRUCTURAL byte-grammar proof) only when
+        // it beats that anchor's score by OVERRIDE_MARGIN; otherwise we defer to
+        // the anchor.  This is honest low-confidence behaviour, not a tie-break:
+        // where the model has real signal (e.g. UTF-8 over garbage UTF-16, Δ≫1)
+        // it still overrides freely.
+        Charset champion = null;
+        double championZ = Double.NEGATIVE_INFINITY;
+        Map<Charset, Double> scoreByCharset = new LinkedHashMap<>();
+        for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
+            org.apache.tika.quality.TextQualityScore sc =
+                    qualityDetector.score(entry.getValue());
+            float rawZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
+            scoreByCharset.put(entry.getKey(), (double) rawZ);
+            LOG.trace("junk-filter score {} z={} script={}",
+                    entry.getKey().name(),
+                    String.format(java.util.Locale.ROOT, "%.3f", rawZ),
+                    sc.isUnknown() ? "UNKNOWN" : sc.getDominantScript());
+            if (rawZ > championZ) {
+                championZ = rawZ;
+                champion = entry.getKey();
             }
         }
-        LOG.trace("junk-filter -> {} (tournament champion)", champion.getKey().name());
+        if (champion == null) {
+            // Every candidate scored UNKNOWN (no modelable script) — the filter
+            // has no opinion, so keep the first (highest-confidence) candidate.
+            champion = candidates.keySet().iterator().next();
+        }
 
-        float confidence = context.getTopConfidenceFor(champion.getKey());
+        // "No-info" guard: if the statistical layer produced no confident
+        // answer — no STRUCTURAL proof, and its best STATISTICAL candidate is
+        // no better than Mojibuster's windows-1252 "I don't know" fallback
+        // (confidence <= NO_INFO_CONFIDENCE) — then it has nothing to say, so a
+        // DECLARATIVE/STRUCTURAL anchor (the author's declaration) should win
+        // rather than a quality argmax over near-identical decodes.  Fires ONLY
+        // when the statistical layer abstained, so it cannot cost the
+        // confident-detection wins (UTF-8 recovery etc.).
+        Charset anchor = bestAnchor(context, scoreByCharset);
+        if (anchor != null && !anchor.equals(champion)
+                && !hasConfidentNonDeclarative(context)) {
+            LOG.trace("junk-filter -> {} (defer to anchor; statistical layer gave "
+                            + "no confident answer, champion was {})",
+                    anchor.name(), champion.name());
+            context.setArbitrationInfo("junk-filter-defer-no-info");
+            return List.of(new EncodingResult(anchor, context.getTopConfidenceFor(anchor)));
+        }
+        LOG.trace("junk-filter -> {} (argmax z={})",
+                champion.name(),
+                String.format(java.util.Locale.ROOT, "%.3f", championZ));
+
+        float confidence = context.getTopConfidenceFor(champion);
         context.setArbitrationInfo("junk-filter-selected");
-        return List.of(new EncodingResult(champion.getKey(), confidence));
+        return List.of(new EncodingResult(champion, confidence));
+    }
+
+    /**
+     * True if some detector produced a confident non-declarative signal: any
+     * STRUCTURAL result (byte-grammar proof), or any STATISTICAL result above
+     * {@link #NO_INFO_CONFIDENCE}.  When false, the statistical layer has
+     * effectively abstained (only its "I don't know" fallback), so a
+     * declaration should be trusted over a quality argmax.
+     */
+    private static boolean hasConfidentNonDeclarative(EncodingDetectorContext context) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                EncodingResult.ResultType t = er.getResultType();
+                if (t == EncodingResult.ResultType.STRUCTURAL) {
+                    return true;
+                }
+                if (t == EncodingResult.ResultType.STATISTICAL
+                        && er.getConfidence() > NO_INFO_CONFIDENCE) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Highest-scoring DECLARATIVE/STRUCTURAL candidate present in the scored
+     * pool, or {@code null} if none.  This is the higher-evidence "anchor" the
+     * junk-filter defers to when the statistical layer gives no confident answer
+     * (see {@link #hasConfidentNonDeclarative}).
+     */
+    private static Charset bestAnchor(EncodingDetectorContext context,
+                                      Map<Charset, Double> scoreByCharset) {
+        Charset best = null;
+        double bestZ = Double.NEGATIVE_INFINITY;
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                EncodingResult.ResultType t = er.getResultType();
+                if (t != EncodingResult.ResultType.DECLARATIVE
+                        && t != EncodingResult.ResultType.STRUCTURAL) {
+                    continue;
+                }
+                Double z = scoreByCharset.get(er.getCharset());
+                if (z != null && z > bestZ) {
+                    bestZ = z;
+                    best = er.getCharset();
+                }
+            }
+        }
+        return best;
     }
 
     /**
@@ -280,27 +363,9 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     }
 
     private byte[] readProbe(TikaInputStream tis) throws IOException {
-        try {
-            tis.mark(readLimit);
-            byte[] buf = new byte[readLimit];
-            int total = 0;
-            int read;
-            while (total < readLimit
-                    && (read = tis.read(buf, total, readLimit - total)) != -1) {
-                total += read;
-            }
-            if (total == 0) {
-                return null;
-            }
-            if (total < readLimit) {
-                byte[] trimmed = new byte[total];
-                System.arraycopy(buf, 0, trimmed, 0, total);
-                return trimmed;
-            }
-            return buf;
-        } finally {
-            tis.reset();
-        }
+        // readLimit is the tag-stripped content target; cap raw reads at 512 KB.
+        byte[] probe = AdaptiveProbe.read(tis, readLimit, AdaptiveProbe.DEFAULT_RAW_CAP);
+        return probe.length == 0 ? null : probe;
     }
 
     private static String safeDecode(byte[] bytes, Charset charset) {
@@ -323,56 +388,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     // intermixed with raw UTF-8 codepoints.
     // -----------------------------------------------------------------------
 
-    private static final Pattern ENTITY_DEC = Pattern.compile("&#(\\d{1,7});");
-    private static final Pattern ENTITY_HEX = Pattern.compile("&#[xX]([0-9a-fA-F]{1,6});");
-    private static final Pattern ENTITY_NAMED =
-            Pattern.compile("&(amp|lt|gt|quot|apos|nbsp|copy|reg);");
-
     /**
-     * Expands HTML numeric and a small set of named entity references in
-     * {@code s}.  Malformed or out-of-range entities pass through unchanged.
-     * The named-entity set is intentionally small — only the universally-
-     * declared HTML5 entities that don't depend on a DOCTYPE.  Anything more
-     * exotic stays as a literal entity reference (which scores as ASCII noise,
-     * the same as it would have before).
+     * Delegates to {@link HtmlContentCleaner#expandHtmlEntities} — the single
+     * implementation shared with training.  Retained here as the historical
+     * entry point used by tests and diagnostics.
      */
     static String expandHtmlEntities(String s) {
-        s = ENTITY_DEC.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1));
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — fall through, leave entity literal
-            }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_HEX.matcher(s).replaceAll(mr -> {
-            try {
-                int cp = Integer.parseInt(mr.group(1), 16);
-                if (cp >= 0 && cp <= 0x10FFFF) {
-                    return Matcher.quoteReplacement(new String(Character.toChars(cp)));
-                }
-            } catch (NumberFormatException ignored) {
-                // overflow — fall through, leave entity literal
-            }
-            return Matcher.quoteReplacement(mr.group());
-        });
-        s = ENTITY_NAMED.matcher(s).replaceAll(mr -> {
-            switch (mr.group(1)) {
-                case "amp":  return "&";
-                case "lt":   return "<";
-                case "gt":   return ">";
-                case "quot": return "\"";
-                case "apos": return "'";
-                case "nbsp": return " ";
-                case "copy": return "©";
-                case "reg":  return "®";
-                default:     return Matcher.quoteReplacement(mr.group());
-            }
-        });
-        return s;
+        return HtmlContentCleaner.expandHtmlEntities(s);
     }
 
     /**

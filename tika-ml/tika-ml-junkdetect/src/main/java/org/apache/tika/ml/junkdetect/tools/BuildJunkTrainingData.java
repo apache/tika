@@ -658,6 +658,13 @@ public class BuildJunkTrainingData {
         if (text.indexOf('\uFFFD') >= 0) {
             return null;
         }
+        // NFC so the training tally matches JunkDetector.aggregate at
+        // inference time (which also NFC-normalises — see comment at
+        // JunkDetector#aggregate).  Precomposed characters (Latin
+        // diacritics, Vietnamese, Indic combining-mark sequences) are
+        // stored as single codepoints, so bigram counts collapse mark
+        // + letter into one unit instead of splitting them — matching
+        // the natural NFC form of most source text.
         text = Normalizer.normalize(text, Normalizer.Form.NFC);
         if (text.getBytes(StandardCharsets.UTF_8).length < minBytes) {
             return null;
