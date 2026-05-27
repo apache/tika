@@ -90,7 +90,38 @@ public class IntegrationTestBase extends TikaTest {
             if (process.isAlive()) {
                 throw new RuntimeException("process still alive!");
             }
+            // DIAGNOSTIC (TIKA-4740): on Windows, Process.destroy() is the same
+            // as destroyForcibly() (supportsNormalTermination() is false), so
+            // tika-server's JVM shutdown hooks never run. That means
+            // PipesParser.close() never fires, and the forked PipesServer
+            // children become orphans. They eventually self-terminate when
+            // their socket to the parent breaks, but the timing is racy --
+            // if @TempDir cleanup runs before they exit, they're still
+            // holding the redirect log files open and the test fails.
+            //
+            // We give the OS a moment for the kill to propagate, then list
+            // any PipesServer JVMs still alive. Anything that shows up here
+            // is an orphan and explains downstream @TempDir cleanup failures.
+            logOrphanPipesServers();
         }
+    }
+
+    private static void logOrphanPipesServers() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return;
+        }
+        long count = ProcessHandle.allProcesses()
+                .filter(p -> p.info().commandLine()
+                        .map(c -> c.contains("org.apache.tika.pipes.core.server.PipesServer"))
+                        .orElse(false))
+                .peek(p -> LOG.warn(
+                        "ORPHAN PipesServer alive after tika-server exit: pid={} cmd={}",
+                        p.pid(), p.info().commandLine().orElse("?")))
+                .count();
+        LOG.info("post-teardown orphan PipesServer count: {}", count);
     }
 
     public void startProcess(String[] extraArgs) throws IOException {

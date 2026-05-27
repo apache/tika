@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -282,17 +283,30 @@ public class SharedServerManager implements ServerManager {
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
         pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
-        // Keep stdout on a parent-owned pipe so we can read the READY:port
-        // signal. Redirect stderr to a file rather than INHERIT -- on
-        // Windows, inheriting stderr duplicates surefire's stderr handle
-        // into the child, blocking the controller's pipe reader past parent
-        // exit and hanging CI. We deliberately do NOT call pb.directory():
-        // the child must inherit the parent JVM's CWD so relative paths in
-        // tika configs (e.g. "plugin-roots":"target/plugins") still resolve.
+        // Tell the child our PID so it can watch ProcessHandle.onExit() and
+        // self-terminate promptly if we die. See PipesServer.watchParentProcess.
+        pb.environment().put(PipesServer.PARENT_PID_ENV,
+                Long.toString(ProcessHandle.current().pid()));
+        // stdout stays on a parent-owned pipe so we can read the READY:port
+        // signal. stderr defaults to INHERIT so the shared-server's log
+        // records show up in the parent's stdio stream (the production case
+        // is Docker/K8s where container stdio is picked up by log
+        // aggregators). Set -Dtika.pipes.server.stdio=discard on the parent
+        // to suppress.
+        //
+        // The Windows surefire hang that previously made INHERIT risky is
+        // mitigated by PipesServer.watchParentProcess(): when the parent
+        // exits, the child detects via ProcessHandle.onExit() in
+        // milliseconds and System.exit()s, releasing its inherited stderr.
+        //
         // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
-        // getCommandline() instead.
+        // getCommandline() and surfaced via SLF4J on abnormal exit.
         pb.redirectErrorStream(false);
-        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
+        if (ServerProcessIO.inheritStdio()) {
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        } else {
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        }
 
         try {
             process = pb.start();
@@ -402,7 +416,14 @@ public class SharedServerManager implements ServerManager {
     }
 
     private void deleteDir(Path dir) {
-        ServerProcessIO.deleteDirWithRetry(LOG, "shared-server", dir);
+        if (dir == null) {
+            return;
+        }
+        try {
+            FileUtils.deleteDirectory(dir.toFile());
+        } catch (IOException e) {
+            LOG.warn("Couldn't delete tmp dir {}", dir);
+        }
     }
 
     private String[] getCommandline() throws IOException {

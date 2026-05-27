@@ -33,19 +33,10 @@ ERROR  clientId=2: Process exited with code 1 before connecting to socket
 ERROR  Shared server process exited with code 1 before becoming ready
 ----
 
-For most failures (bad JVM args, missing classpath entry, OOM at boot), the
-parent logger additionally prints the tail of the child's stderr immediately
-after the exit-code line:
-
-[source]
-----
-ERROR  clientId=2: child stderr tail:
-Error: Could not find or load main class org.apache.tika.pipes.core.server.PipesServer
-----
-
-For native crashes (segfault in a JNI parser, JVM bug), the JVM writes an
-`hs_err_pid<N>.log` file to the child's working directory. The parent logger
-will read and print that file too:
+For *native* JVM crashes (e.g. a segfault in a JNI parser), the JVM writes an
+`hs_err_pid<N>.log` file. We direct that via `-XX:ErrorFile=` into the
+manager's per-server temp directory, then read it into the parent's SLF4J
+logger before cleanup:
 
 [source]
 ----
@@ -57,51 +48,84 @@ ERROR  clientId=2: JVM crash log hs_err_pid12345.log:
 ...
 ----
 
-In short: read the *parent* application's log first. The diagnostics from the
-dead child are inlined there, so you don't have to find anything on disk.
+So for native crashes, read the parent application's log first -- the hs_err
+contents are inlined there.
 
-== Keeping child log files for post-mortem analysis
+== Child JVM stdout/stderr
 
-By default, each forked server's stdout, stderr, and any JVM crash logs are
-written into a per-server temp directory. The temp directory is cleaned up
-when the manager shuts the server down. If you need to keep those files
-around -- for example, to diff stderr across multiple failed restart attempts,
-or to ship crash logs to a support contact -- set the
-`tika.pipes.server.logDir` system property on the *parent* JVM:
+By default the child `PipesServer` JVM inherits its stdout and stderr from
+the parent. This is the 12-factor / container-friendly default: when Tika
+runs in Docker or Kubernetes, the pipes-server's log records flow through
+to the container's stdio stream where the runtime (Docker, containerd) and
+any log aggregator (fluentd, fluent-bit, Promtail, the K8s log API, etc.)
+pick them up automatically. The default `pipes-fork-server-default-log4j2.xml`
+writes to `SYSTEM_ERR`, so inheritance is what makes those records visible
+to your observability stack.
+
+If you don't want the pipes-server's output interleaved with your own --
+e.g. an embedded use case where the parent is producing its own structured
+stdout, or a test environment where you want a quieter console -- set the
+system property `tika.pipes.server.stdio=discard` on the parent JVM:
 
 [source,bash]
 ----
-java -Dtika.pipes.server.logDir=/var/log/tika-pipes-crashes \
-    -jar your-app.jar ...
+java -Dtika.pipes.server.stdio=discard -jar your-app.jar ...
 ----
 
-When set, the manager copies the child's `server-stdout.log`,
-`server-stderr.log`, and any `hs_err_pid*.log` files to that directory on
-every abnormal exit, with a timestamp prefix:
+With this set, the child's stdout and stderr are routed to the null sink
+and the pipes server's log records are silently dropped at the OS level.
+(Records written via SLF4J inside the child can still be captured by
+configuring `log4j2.xml` / `logback.xml` to write to your own file or
+network appender, independent of the stdio setting.)
 
-[source]
-----
-/var/log/tika-pipes-crashes/
-  1748307123456-server-stderr.log
-  1748307123456-hs_err_pid12345.log
-  1748307145001-server-stderr.log     # later restart attempt
-----
+=== Safety of the inherit default on Windows
 
-The property is off by default. Leave it off in steady-state production; turn
-it on when you are actively debugging a recurring fork failure.
+Earlier versions of Tika hit a surefire hang on Windows when inheriting
+child stdio: a forked child held a duplicate of the parent JVM's stderr
+handle, and any reader upstream of the parent (a maven-surefire controller,
+typically) never saw EOF after the parent died -- the child kept the pipe
+open. That class of hang is now mitigated structurally: every child
+`PipesServer` watches its parent's process handle via
+`ProcessHandle.onExit()` (see <<parent-death-detection>>) and self-
+terminates within milliseconds of parent exit. The inherited handle is
+released essentially synchronously with the parent's death, and upstream
+readers see EOF promptly.
 
-== What does *not* go to those files
+[#parent-death-detection]
+== Parent-death detection
 
-Steady-state log output from the parser (every parse, every emitter, every
-embedded-document warning) does **not** go to `server-stderr.log`. It goes
-through SLF4J inside the child JVM and lands in whatever your `log4j2.xml` or
-`logback.xml` directs it to. The child's stderr is only useful for things the
-JVM writes before logging is wired up, or that bypass logging entirely:
+The child `PipesServer` JVMs watch their parent's PID via
+`ProcessHandle.onExit()` and self-terminate within milliseconds if the
+parent dies. The parent passes its own PID via the
+`TIKA_PIPES_PARENT_PID` environment variable when spawning the child.
 
-* JVM startup errors (bad classpath, unrecognized flag, "could not find main
-  class").
-* Uncaught throwables on the main thread that never reached an SLF4J logger.
-* Output from `System.err.println` calls (if any).
+This matters because the parent (e.g. tika-server) can be killed in ways
+that skip its JVM shutdown hooks -- for instance,
+`Process.destroy()` on Windows is equivalent to `TerminateProcess`, which
+bypasses all hooks. Without parent-death detection, an orphaned PipesServer
+would only notice via TCP RST on its next socket read, and would not
+notice at all while busy in a parse, leaving it (and any external
+subprocess it had spawned, such as a tesseract OCR worker) running
+indefinitely.
 
-For native crash investigation, the JVM-generated `hs_err_pid<N>.log` is the
-primary artifact, and it is collected automatically as described above.
+When the watcher fires, the child exits via `System.exit`, which runs
+`AbstractExternalProcessParser`'s shutdown hook and cleans up any
+in-flight external subprocesses.
+
+== Configuration knobs reference
+
+[cols="2,3"]
+|===
+|System property / env var |Effect
+
+|`tika.pipes.server.stdio` (system property)
+|`discard` suppresses child stdout/stderr at the OS level. Anything else
+ (or unset) inherits the child's stdio from the parent JVM. Default: inherit.
+
+|`TIKA_PIPES_PARENT_PID` (env var)
+|Set automatically by the parent manager when spawning a `PipesServer`
+ child. The child uses it to watch its parent and self-terminate if the
+ parent dies. Not normally set by users; if you launch `PipesServer`
+ standalone (outside the normal manager flow) and leave it unset, the
+ parent-watch is simply skipped.
+|===

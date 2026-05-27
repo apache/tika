@@ -30,9 +30,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -269,17 +271,33 @@ public class PerClientServerManager implements ServerManager {
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        // Redirect stdio to per-server files instead of inheriting the parent
-        // JVM's handles -- on Windows inheritIO() duplicates surefire's stderr
-        // handle into the child, blocking the controller's pipe reader past
-        // parent exit and hanging CI. We deliberately do NOT call
-        // pb.directory(): the child must inherit the parent JVM's CWD so
-        // relative paths in tika configs (e.g. "plugin-roots":"target/plugins")
-        // resolve the same way they did when this manager was loaded.
+        // Tell the child our PID so it can watch ProcessHandle.onExit() and
+        // self-terminate promptly if we die. Without this, an orphan child
+        // can only notice via socket-read timeout (default 60s) and can't
+        // notice at all while it is mid-parse -- the leak that TIKA-4740
+        // surfaced via @TempDir cleanup failures.
+        pb.environment().put(PipesServer.PARENT_PID_ENV,
+                Long.toString(ProcessHandle.current().pid()));
+        // Default: inherit stdio so the pipes-server's log records show up
+        // in the parent's stdio stream (the production case is Docker/K8s
+        // where container stdio is picked up by log aggregators -- writing
+        // to files in a container is anti-pattern). Set
+        // -Dtika.pipes.server.stdio=discard on the parent to suppress.
+        //
+        // The Windows surefire hang that previously made inheritIO() risky
+        // is mitigated by PipesServer.watchParentProcess(): when the parent
+        // exits, the child detects it via ProcessHandle.onExit() within
+        // milliseconds and System.exit()s, releasing its inherited stderr
+        // handle so upstream pipe readers see EOF promptly.
+        //
         // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
-        // getCommandline() instead.
-        pb.redirectOutput(ServerProcessIO.stdoutLog(tmpDir));
-        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
+        // getCommandline() and surfaced via SLF4J on abnormal exit.
+        if (ServerProcessIO.inheritStdio()) {
+            pb.inheritIO();
+        } else {
+            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        }
 
         try {
             process = pb.start();
@@ -367,7 +385,14 @@ public class PerClientServerManager implements ServerManager {
     }
 
     private void deleteDir(Path dir) {
-        ServerProcessIO.deleteDirWithRetry(LOG, "clientId=" + clientId, dir);
+        if (dir == null) {
+            return;
+        }
+        try {
+            FileUtils.deleteDirectory(dir.toFile());
+        } catch (IOException e) {
+            LOG.warn("couldn't delete tmp dir {}", dir);
+        }
     }
 
     private String[] getCommandline() throws IOException {
