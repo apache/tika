@@ -132,7 +132,7 @@ public class KafkaEmitter extends AbstractEmitter {
             throw new IOException("metadata list must not be null or of size 0");
         }
         for (Metadata metadata : metadataList) {
-            LOGGER.debug("about to emit to target topic: ({}) path:({})", config.topic(), emitKey);
+            LOGGER.trace("about to emit to target topic: ({}) path:({})", config.topic(), emitKey);
 
             Map<String, Object> fields = new HashMap<>();
             for (String n : metadata.names()) {

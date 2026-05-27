@@ -229,7 +229,7 @@ public class EncodeOCRParser
                 int processed = counter != null
                         ? counter.get()
                         : config.getMaxImagesToOcr();
-                LOG.info("Skipping OCR encode for image because "
+                LOG.debug("Skipping OCR encode for image because "
                                 + "the configured limit of {} images "
                                 + "has been reached ({} already processed)",
                         config.getMaxImagesToOcr(), processed);
@@ -288,7 +288,7 @@ public class EncodeOCRParser
         xhtml.endElement(XHTML, "div", "div");
 
         long durationMs = (System.nanoTime() - startTime) / 1_000_000;
-        LOG.info("OCR encoding - input file size: {} bytes, "
+        LOG.debug("OCR encoding - input file size: {} bytes, "
                         + "output size: {} characters, "
                         + "time taken: {} ms",
                 fileSize, sink.totalChars(), durationMs);

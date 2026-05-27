@@ -142,12 +142,10 @@ public class TikaClientCLI {
                     return 1l;
                 }
                 try {
-                    LOGGER.debug("about to parse: {}", t.getFetchKey());
+                    LOGGER.debug("about to parse: id={}", t.getId());
                     client.parse(t);
                 } catch (IOException | TikaException e) {
-                    LOGGER.warn(t
-                            .getFetchKey()
-                            .toString(), e);
+                    LOGGER.warn("parse failure id={}", t.getId(), e);
                 }
             }
         }

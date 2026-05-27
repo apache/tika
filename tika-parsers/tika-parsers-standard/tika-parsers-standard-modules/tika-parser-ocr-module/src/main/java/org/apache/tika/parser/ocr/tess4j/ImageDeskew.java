@@ -18,14 +18,10 @@ package org.apache.tika.parser.ocr.tess4j;
 
 import java.awt.image.BufferedImage;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Copied and pasted from Tess4j (https://sourceforge.net/projects/tess4j/)
  */
 public class ImageDeskew {
-    private static final Logger LOG = LoggerFactory.getLogger(ImageDeskew.class);
 
     private final BufferedImage cImage;
     private final int cSteps = 200;
@@ -112,7 +108,8 @@ public class ImageDeskew {
             try {
                 this.cHMatrix[var6]++;
             } catch (Exception var9) {
-                LOG.warn("", var9);
+                // out-of-bounds increments are skipped intentionally;
+                // the Hough transform tolerates dropped pixels
             }
 
         }

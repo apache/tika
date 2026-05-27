@@ -62,6 +62,37 @@ pick them up automatically. The default `pipes-fork-server-default-log4j2.xml`
 writes to `SYSTEM_ERR`, so inheritance is what makes those records visible
 to your observability stack.
 
+=== Telling fork lines from parent lines
+
+Since the fork and parent share a single stdio stream, the bundled
+`pipes-fork-server-default-log4j2.xml` pattern adds two orthogonal markers
+so you can read the interleaved output:
+
+* `[fork]` -- present only on lines emitted by a forked `PipesServer`
+  JVM. Lines from the parent process (`PipesClient`, `AsyncProcessor`,
+  `ConnectionHandler`, `tika-server`, `tika-grpc`, etc.) do not carry
+  this tag. Different mechanism on each side: the fork has it injected
+  via the bundled pattern's literal `[fork]` token; the parent does
+  not include it in its own log4j2/logback patterns.
+
+* `pipesClientId=N` -- *the same value on both sides of a pair*. The
+  parent's `PipesClient #N` always connects to the fork running with
+  `-DpipesClientId=N`, so the same N threads correlation across the
+  process boundary. Use it to gather every log line about one
+  conversation, regardless of which side emitted them.
+
+A typical interleaved snippet:
+
+[source]
+----
+INFO  [main] 14:23:45,123 [fork] pipesClientId=0 o.a.t.p.c.server.PipesServer received SHUT_DOWN
+DEBUG [Thread-3] 14:23:45,124 o.a.t.p.c.async.AsyncProcessor pipesClientId=0, status=PARSE_SUCCESS
+----
+
+The first line is from inside fork 0 (`[fork]` present). The second is
+the parent talking *about* fork 0 (`[fork]` absent, but the same client
+id appears in the message body).
+
 If you don't want the pipes-server's output interleaved with your own --
 e.g. an embedded use case where the parent is producing its own structured
 stdout, or a test environment where you want a quieter console -- set the
@@ -111,6 +142,55 @@ indefinitely.
 When the watcher fires, the child exits via `System.exit`, which runs
 `AbstractExternalProcessParser`'s shutdown hook and cleans up any
 in-flight external subprocesses.
+
+== Log levels and sensitive data
+
+Tika Pipes treats `FetchKey` and `EmitKey` values as potentially sensitive --
+they typically contain file paths, URLs, object-store keys, or other identifiers
+that may be private to the data owner. The convention across pipes core and the
+bundled plugins is:
+
+[cols="1,3"]
+|===
+|Level |What is logged
+
+|`ERROR` / `WARN`
+|Failures, exceptions, and configuration problems. *Never* the literal
+ `fetchKey`/`emitKey` or any file content. When a failure refers to a
+ specific document, it is identified by the non-sensitive `FetchEmitTuple.id`
+ (e.g. `parse exception: id=abc-123`).
+
+|`INFO`
+|Lifecycle events -- server start/stop, plugin start/stop, mode banners,
+ restart events. Per-document or per-request lines have been demoted from
+ INFO to DEBUG so production logs stay quiet.
+
+|`DEBUG`
+|Per-document progress and aggregated counts (e.g. `pipesClientId=2,
+ status=PARSE_SUCCESS`, `successfully emitted N docs`). Safe to enable in
+ production for troubleshooting; correlation is by `FetchEmitTuple.id` only.
+
+|`TRACE`
+|Verbose per-fetch and per-emit detail including the literal
+ `fetchKey`/`emitKey` (URL, S3 key, blob path, etc.). Enable only when you
+ need to correlate a Tika log line back to a specific resource, and accept
+ that those keys will appear in the log destination.
+|===
+
+The fetcher and emitter SPIs (`Fetcher.fetch`, `Emitter.emit`,
+`StreamEmitter.emit`) receive the literal key but not the tuple id, so
+plugin code can only log the literal key. Keeping that at TRACE keeps it
+out of any log destination that is configured at DEBUG or higher.
+
+If you write your own fetcher or emitter plugin, please follow the same
+convention: literal keys at TRACE, everything else at DEBUG or above with
+no key in the message.
+
+NOTE: Exception messages thrown out of a fetcher may still include
+response-body bytes for HTTP-style fetchers (configurable via
+`maxErrMsgSize` on `HttpFetcherConfig`). Those bytes appear in whatever
+log catches the thrown exception. Lower `maxErrMsgSize` -- or set it to
+zero -- if your responses can contain sensitive data.
 
 == Configuration knobs reference
 

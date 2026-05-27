@@ -201,7 +201,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
             updateMetadata(get.getURI().toString(), response, context, metadata);
 
             int code = response.getStatusLine().getStatusCode();
-            LOG.info("Fetch id {} status code {}", get.getURI(), code);
+            LOG.trace("Fetch fetchKey={} status code {}", get.getURI(), code);
             if (code < 200 || code > 299) {
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
@@ -210,7 +210,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
             }
         } catch (ConnectionClosedException e) {
             if (retryOnBadLength && e.getMessage() != null && e.getMessage().contains("Premature end of Content-Length delimited message")) {
-                LOG.warn("premature end of content-length delimited message; retrying with content compression disabled for {}", get.getURI());
+                LOG.warn("premature end of content-length delimited message; retrying with content compression disabled");
                 return execute(get, metadata, noCompressHttpClient, false);
             }
             throw e;

@@ -76,7 +76,7 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={} from bucket ({})", fetchKey, config.getBucket());
+        LOGGER.trace("about to fetch fetchkey={} from bucket ({})", fetchKey, config.getBucket());
 
         try {
             Blob blob = storage.get(BlobId.of(config.getBucket(), fetchKey));

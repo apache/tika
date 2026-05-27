@@ -160,7 +160,7 @@ public class SolrPipesIterator extends PipesIteratorBase {
                     for (String nextField : allFields) {
                         metadata.add(nextField, (String) sd.getFieldValue(nextField));
                     }
-                    LOGGER.info("iterator doc: {}, idField={}, fetchKey={}", sd, config.getIdField(), fetchKey);
+                    LOGGER.debug("iterator doc: idField={}", config.getIdField());
                     ParseContext parseContext = new ParseContext();
                     tryToAdd(new FetchEmitTuple(fetchKey, new FetchKey(fetcherId, fetchKey), new EmitKey(emitterId, emitKey), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));

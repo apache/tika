@@ -21,8 +21,30 @@
   <Appenders>
     <Console name="console" target="SYSTEM_ERR">
       <PatternLayout
-          pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n" />
+          pattern="%-5p [%t] %d{HH:mm:ss,SSS} [fork] pipesClientId=${sys:pipesClientId:-?} %c %m%n" />
     </Console>
+
+    <!--
+      Per-fork file logging — to give each PipesServer fork its own log file
+      (e.g. pipes-server-0.log, pipes-server-1.log, ...), uncomment this
+      RollingFile appender and switch the Root logger's AppenderRef below
+      from "console" to "forkFile" (or list both for tee'd output).
+
+      The ${sys:pipesClientId} substitution reads the -DpipesClientId=N
+      property set by the parent when spawning this fork, so the file name
+      and the log lines self-identify which fork they came from.
+
+      <RollingFile name="forkFile"
+                   fileName="logs/pipes-server-${sys:pipesClientId:-unknown}.log"
+                   filePattern="logs/pipes-server-${sys:pipesClientId:-unknown}-%d{yyyy-MM-dd}-%i.log.gz">
+        <PatternLayout pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n" />
+        <Policies>
+          <TimeBasedTriggeringPolicy />
+          <SizeBasedTriggeringPolicy size="50MB" />
+        </Policies>
+        <DefaultRolloverStrategy max="10" />
+      </RollingFile>
+    -->
   </Appenders>
   <Loggers>
     <Root level="info" additivity="false">

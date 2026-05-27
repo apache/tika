@@ -111,7 +111,7 @@ public class CSVPipesIterator extends PipesIteratorBase {
                 String fetchKey = record.get(fetchEmitKeyIndices.fetchKeyIndex);
                 String emitKey = record.get(fetchEmitKeyIndices.emitKeyIndex);
                 if (StringUtils.isBlank(fetchKey) && !StringUtils.isBlank(fetcherId)) {
-                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in ({})", fetcherId, record);
+                    LOGGER.debug("Fetcher specified ({}), but no fetchkey was found in record id={}", fetcherId, id);
                 }
                 if (StringUtils.isBlank(emitKey)) {
                     throw new IOException("emitKey must not be blank in :" + record);

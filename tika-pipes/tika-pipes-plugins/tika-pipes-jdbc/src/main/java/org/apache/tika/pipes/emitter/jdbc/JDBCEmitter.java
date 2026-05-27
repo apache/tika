@@ -217,11 +217,11 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
         } else {
             insertAll(emitKey, metadataList);
         }
-        if (LOGGER.isDebugEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             long start = System.currentTimeMillis();
             insertStatement.executeBatch();
             connection.commit();
-            LOGGER.debug("took {}ms to insert row for key: {}", System.currentTimeMillis() - start, emitKey);
+            LOGGER.trace("took {}ms to insert row for key: {}", System.currentTimeMillis() - start, emitKey);
         } else {
             insertStatement.executeBatch();
             connection.commit();

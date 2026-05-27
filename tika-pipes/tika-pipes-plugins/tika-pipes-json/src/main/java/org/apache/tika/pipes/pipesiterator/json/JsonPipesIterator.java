@@ -64,7 +64,7 @@ public class JsonPipesIterator extends PipesIteratorBase {
             while (line != null) {
                 try (Reader r = new StringReader(line)) {
                     FetchEmitTuple t = JsonFetchEmitTuple.fromJson(r);
-                    LOGGER.info("from json: " + t);
+                    LOGGER.debug("from json: id={}", t.getId());
                     tryToAdd(t);
                     line = reader.readLine();
                 }
