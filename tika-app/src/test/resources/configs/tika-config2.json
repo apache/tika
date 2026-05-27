@@ -2,7 +2,7 @@
   "parsers": [
     {
       "default-parser": {
-        "_exclude": ["executable-parser"],
+        "exclude": ["executable-parser"],
         "_mime-exclude": ["image/jpeg", "application/pdf"]
       }
     },

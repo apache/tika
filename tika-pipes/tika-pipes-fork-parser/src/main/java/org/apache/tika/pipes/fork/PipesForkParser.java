@@ -385,7 +385,6 @@ public class PipesForkParser implements Closeable {
                 // Set pipes configuration
                 .setPipesConfig(
                         pc.getNumClients(),
-                        pc.getStartupTimeoutMillis(),
                         pc.getMaxFilesProcessedPerProcess(),
                         pc.getForkedJvmArgs())
                 // Use PASSBACK_ALL strategy - results returned through socket

@@ -115,6 +115,21 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         Map<String, ExtensionConfig> configs = new HashMap<>();
 
         if (configNode != null && !configNode.isNull()) {
+            // Strict shape check. The section must be a JSON object keyed by
+            // instance ID — e.g. {"my-fetcher": {"file-system-fetcher": {...}}}.
+            // Without this, an array like
+            //   "fetchers": [{"file-system-fetcher": {"id": "my-fetcher", ...}}]
+            // would be silently walked past (JsonNode.fields() on an ArrayNode
+            // returns an empty iterator), leaving the manager with no registered
+            // components and the user with an "Available: []" error at lookup
+            // time instead of at load time.
+            if (!configNode.isObject()) {
+                throw new TikaConfigException(
+                        "Invalid '" + getConfigKey() + "' configuration: expected a JSON "
+                                + "object keyed by instance ID, e.g. {\"my-id\": {\"type-name\": "
+                                + "{...config...}}}. Got " + configNode.getNodeType() + ". "
+                                + "(Array-style configurations are not supported.)");
+            }
             // Outer loop: iterate over instance IDs
             Iterator<Map.Entry<String, JsonNode>> instanceFields = configNode.fields();
             while (instanceFields.hasNext()) {

@@ -106,6 +106,15 @@
             </manifestEntries>
           </archive>
         </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <!-- Publishes a test-jar so plugin modules can extend
+                   AbstractConfigExamplesTest. -->
+              <goal>test-jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

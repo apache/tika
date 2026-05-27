@@ -19,46 +19,23 @@ package org.apache.tika.pipes.json;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.pipesiterator.json.JsonPipesIteratorConfig;
 
 /**
  * Validates JSON iterator configuration example used in documentation.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testJsonIteratorConfig() throws Exception {
-        String json = readExample("json-pipes-iterator.json");
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        assertNotNull(TikaLoader.load(configFile));
+        loadAndValidate("json-pipes-iterator.json");
 
-        JsonNode inner = OBJECT_MAPPER.readTree(json)
-                .get("pipes-iterator").get("json-pipes-iterator");
+        JsonNode inner = innerComponent(readExample("json-pipes-iterator.json"),
+                "pipes-iterator", null, "json-pipes-iterator");
         JsonPipesIteratorConfig config = JsonPipesIteratorConfig.load(inner.toString());
         assertNotNull(config.getJsonPath());
         assertEquals("fsf", config.getFetcherId());

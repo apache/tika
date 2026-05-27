@@ -30,23 +30,5 @@
       "--add-opens=java.management/sun.management=ALL-UNNAMED",
       "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
     ]
-  },
-  "fetchers": [
-    {
-      "fs": {
-        "staticFetcher": {
-          "basePath": "target/govdocs1"
-        }
-      }
-    }
-  ],
-  "emitters": [
-    {
-      "fs": {
-        "defaultEmitter": {
-          "basePath": "/tmp/output"
-        }
-      }
-    }
-  ]
+  }
 }

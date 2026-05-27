@@ -27,8 +27,6 @@ import org.apache.tika.pipes.api.ParseMode;
 public class PipesConfig {
 
 
-    public static final long DEFAULT_STARTUP_TIMEOUT_MILLIS = 240000;
-
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
     public static final int DEFAULT_NUM_CLIENTS = 4;
@@ -58,8 +56,6 @@ public class PipesConfig {
 
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
-    private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
-    private long sleepOnStartupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
 
     private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
     private int numClients = DEFAULT_NUM_CLIENTS;
@@ -132,7 +128,7 @@ public class PipesConfig {
      * This configuration is used by both PipesServer (forking process) and
      * AsyncProcessor (async processing). Some fields are specific to each:
      * <ul>
-     *   <li>PipesServer uses: numClients, timeoutMillis, directEmitThresholdBytes, etc.</li>
+     *   <li>PipesServer uses: numClients, socketTimeoutMs, directEmitThresholdBytes, etc.</li>
      *   <li>AsyncProcessor uses: emitWithinMillis, queueSize, numEmitters, etc.</li>
      * </ul>
      * Unused fields in each context are simply ignored.
@@ -157,7 +153,8 @@ public class PipesConfig {
     /**
      * Socket timeout in milliseconds for reading from the forked process.
      * If no data is received within this time, the connection is considered timed out.
-     * This is different from timeoutMillis which is the parse/processing timeout.
+     * This is distinct from the parse/processing timeout, which lives on
+     * {@link org.apache.tika.config.TimeoutLimits} under {@code parse-context.timeout-limits}.
      * @param socketTimeoutMs
      */
     public void setSocketTimeoutMs(long socketTimeoutMs) {
@@ -209,11 +206,6 @@ public class PipesConfig {
         return forkedJvmArgs;
     }
 
-    public void setStartupTimeoutMillis(long startupTimeoutMillis) {
-        this.startupTimeoutMillis = startupTimeoutMillis;
-    }
-
-
     /**
      * Restart the forked PipesServer after it has processed this many files to avoid
      * slow-building memory leaks.
@@ -235,10 +227,6 @@ public class PipesConfig {
         this.javaPath = javaPath;
     }
 
-    public long getStartupTimeoutMillis() {
-        return startupTimeoutMillis;
-    }
-
     /**
      * Get the emit strategy configuration.
      *
@@ -255,14 +243,6 @@ public class PipesConfig {
      */
     public void setEmitStrategy(EmitStrategyConfig emitStrategy) {
         this.emitStrategy = emitStrategy;
-    }
-
-    public long getSleepOnStartupTimeoutMillis() {
-        return sleepOnStartupTimeoutMillis;
-    }
-
-    public void setSleepOnStartupTimeoutMillis(long sleepOnStartupTimeoutMillis) {
-        this.sleepOnStartupTimeoutMillis = sleepOnStartupTimeoutMillis;
     }
 
     public int getStaleFetcherTimeoutSeconds() {

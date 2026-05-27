@@ -19,46 +19,23 @@ package org.apache.tika.pipes.atlassianjwt;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.fetcher.atlassianjwt.config.AtlassianJwtFetcherConfig;
 
 /**
  * Validates Atlassian JWT fetcher configuration examples used in documentation.
  */
-public class ConfigExamplesTest {
-
-    private static final String EXAMPLES_DIR = "/config-examples/";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    @TempDir
-    Path tempDir;
-
-    private String readExample(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
+public class ConfigExamplesTest extends AbstractConfigExamplesTest {
 
     @Test
     public void testAtlassianJwtFetcherConfig() throws Exception {
-        String json = readExample("atlassian-jwt-fetcher.json");
-        Path configFile = tempDir.resolve("tika-config.json");
-        Files.writeString(configFile, json, StandardCharsets.UTF_8);
-        assertNotNull(TikaLoader.load(configFile));
+        loadAndValidate("atlassian-jwt-fetcher.json");
 
-        JsonNode inner = OBJECT_MAPPER.readTree(json)
-                .get("fetchers").get("ajwt").get("atlassian-jwt-fetcher");
+        JsonNode inner = innerComponent(readExample("atlassian-jwt-fetcher.json"),
+                "fetchers", "ajwt", "atlassian-jwt-fetcher");
         AtlassianJwtFetcherConfig config = AtlassianJwtFetcherConfig.load(inner.toString());
         assertEquals("tika-pipes-app-key", config.getIssuer());
         assertNotNull(config.getSharedSecret());
