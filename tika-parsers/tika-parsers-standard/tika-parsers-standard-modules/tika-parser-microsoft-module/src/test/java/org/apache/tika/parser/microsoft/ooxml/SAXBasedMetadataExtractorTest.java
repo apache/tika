@@ -19,17 +19,16 @@ package org.apache.tika.parser.microsoft.ooxml;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 import org.junit.jupiter.api.Test;
-import org.xml.sax.InputSource;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Tests for length-cap defenses in {@link SAXBasedMetadataExtractor}.
@@ -85,36 +84,38 @@ public class SAXBasedMetadataExtractorTest {
     }
 
     @Test
-    public void oversizedDecimalIsSkippedNotParsed() throws Exception {
-        // 1,000 digits is well past MAX_DECIMAL_LENGTH (256) but far below the
-        // attacker's 1M-digit DoS payload. With the cap in place this should
-        // complete in milliseconds and the property should NOT be set.
-        String hugeDigits = "9".repeat(1000);
-        long start = System.nanoTime();
-        Metadata m = parseCustomProperties(customProperty("evil", "decimal", hugeDigits));
-        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
-
-        assertNull(m.get("custom:evil"),
-                "oversized decimal must be rejected, not parsed");
-        assertTrue(elapsedMs < 2_000,
-                "parse must complete quickly; took " + elapsedMs + "ms");
+    public void decimalAtMaxLengthIsAccepted() throws Exception {
+        // Boundary: exactly MAX_DECIMAL_LENGTH digits must still parse. This is
+        // the upper edge of the accept-and-parse path.
+        String digits = "9".repeat(SAXBasedMetadataExtractor.MAX_DECIMAL_LENGTH);
+        Metadata m = parseCustomProperties(customProperty("ok", "decimal", digits));
+        assertEquals(digits, m.get("custom:ok"),
+                "decimal of exactly MAX_DECIMAL_LENGTH digits must round-trip");
     }
 
     @Test
-    public void oversizedDecimalAttackPayloadCompletesQuickly() throws Exception {
-        // Reporter's actual attack shape: 1,000,000 digits. Without the cap
-        // this takes ~25 s on JDK 17. With the cap the SAX read still has to
-        // accumulate the buffer (bounded to 64 KB by appendCapped) and the
-        // decimal-length check then rejects it.
-        String attackDigits = "9".repeat(1_000_000);
-        long start = System.nanoTime();
-        Metadata m = parseCustomProperties(customProperty("evil", "decimal", attackDigits));
-        long elapsedMs = (System.nanoTime() - start) / 1_000_000;
+    public void decimalOneOverMaxLengthIsRejected() throws Exception {
+        // Boundary: one character past the cap must short-circuit before
+        // BigDecimal(String). Combined with appendCappedTruncatesAtLimit this
+        // mechanically proves the O(n²) parser is never invoked above the cap.
+        String digits = "9".repeat(SAXBasedMetadataExtractor.MAX_DECIMAL_LENGTH + 1);
+        Metadata m = parseCustomProperties(customProperty("evil", "decimal", digits));
+        assertNull(m.get("custom:evil"),
+                "decimal one char over MAX_DECIMAL_LENGTH must be rejected, not parsed");
+    }
 
-        assertNull(m.get("custom:evil"));
-        assertTrue(elapsedMs < 2_000,
-                "1M-digit attack payload must not trigger O(n²) BigDecimal; took "
-                        + elapsedMs + "ms");
+    @Test
+    public void oversizedDecimalAttackPayloadIsRejected() throws Exception {
+        // Reporter's actual attack shape: 1,000,000 digits. The SAX read
+        // truncates accumulation at MAX_TEXT_BUFFER_LENGTH (64 KB) via
+        // appendCapped, then the decimal-length check rejects the truncated
+        // value before BigDecimal(String) runs. No wall-clock assertion —
+        // the boundary tests above are the mechanical proof that
+        // BigDecimal is never called on an oversized payload.
+        String attackDigits = "9".repeat(1_000_000);
+        Metadata m = parseCustomProperties(customProperty("evil", "decimal", attackDigits));
+        assertNull(m.get("custom:evil"),
+                "1M-digit attack payload must be rejected without parsing");
     }
 
     @Test
@@ -144,11 +145,10 @@ public class SAXBasedMetadataExtractorTest {
     private static Metadata parseCustomProperties(String xml) throws Exception {
         SAXBasedMetadataExtractor.CustomPropertiesHandler handler =
                 new SAXBasedMetadataExtractor.CustomPropertiesHandler();
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-        factory.setNamespaceAware(true);
-        SAXParser parser = factory.newSAXParser();
-        parser.parse(new InputSource(new ByteArrayInputStream(
-                xml.getBytes(StandardCharsets.UTF_8))), handler);
+        try (InputStream is = new ByteArrayInputStream(
+                xml.getBytes(StandardCharsets.UTF_8))) {
+            XMLReaderUtils.parseSAX(is, handler, new ParseContext());
+        }
         Metadata metadata = new Metadata();
         handler.applyTo(metadata);
         return metadata;
