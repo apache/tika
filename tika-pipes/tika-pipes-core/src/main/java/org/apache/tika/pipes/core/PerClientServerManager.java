@@ -270,13 +270,15 @@ public class PerClientServerManager implements ServerManager {
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log lands
-        // where surfaceCrashDiagnostics() looks for it. Redirect stdio to per-
-        // server files instead of inheriting the parent JVM's handles -- on
-        // Windows inheritIO() duplicates surefire's stderr handle into the
-        // child, blocking the controller's pipe reader past parent exit and
-        // hanging CI.
-        pb.directory(tmpDir.toFile());
+        // Redirect stdio to per-server files instead of inheriting the parent
+        // JVM's handles -- on Windows inheritIO() duplicates surefire's stderr
+        // handle into the child, blocking the controller's pipe reader past
+        // parent exit and hanging CI. We deliberately do NOT call
+        // pb.directory(): the child must inherit the parent JVM's CWD so
+        // relative paths in tika configs (e.g. "plugin-roots":"target/plugins")
+        // resolve the same way they did when this manager was loaded.
+        // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
+        // getCommandline() instead.
         pb.redirectOutput(ServerProcessIO.stdoutLog(tmpDir));
         pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
 
@@ -383,6 +385,7 @@ public class PerClientServerManager implements ServerManager {
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
         boolean hasActiveProcessorCount = false;
+        boolean hasErrorFile = false;
         String origGCString = null;
         String newGCLogString = null;
 
@@ -402,10 +405,23 @@ public class PerClientServerManager implements ServerManager {
             if (arg.startsWith("-XX:ActiveProcessorCount=")) {
                 hasActiveProcessorCount = true;
             }
+            if (arg.startsWith("-XX:ErrorFile=")) {
+                hasErrorFile = true;
+            }
             if (arg.startsWith("-Xloggc:")) {
                 origGCString = arg;
                 newGCLogString = arg.replace("${pipesClientId}", "id-" + clientId);
             }
+        }
+
+        // Direct native-crash dumps (hs_err_pid<N>.log) into tmpDir so
+        // ServerProcessIO.surfaceCrashDiagnostics() can find and emit them on
+        // abnormal exit. The child JVM inherits the parent's CWD (we do NOT
+        // call pb.directory()), so without this the JVM would write hs_err
+        // wherever the parent was launched -- typically lost.
+        if (!hasErrorFile) {
+            configArgs.add("-XX:ErrorFile=" + tmpDir.resolve("hs_err_pid%p.log")
+                    .toAbsolutePath());
         }
 
         // If the user hasn't explicitly set -XX:ActiveProcessorCount, size each

@@ -283,13 +283,15 @@ public class SharedServerManager implements ServerManager {
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
         pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
-        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log
-        // lands where surfaceCrashDiagnostics() looks for it. Keep stdout on
-        // a parent-owned pipe so we can read the READY:port signal. Redirect
-        // stderr to a file rather than INHERIT -- on Windows, inheriting
-        // stderr duplicates surefire's stderr handle into the child, blocking
-        // the controller's pipe reader past parent exit and hanging CI.
-        pb.directory(tmpDir.toFile());
+        // Keep stdout on a parent-owned pipe so we can read the READY:port
+        // signal. Redirect stderr to a file rather than INHERIT -- on
+        // Windows, inheriting stderr duplicates surefire's stderr handle
+        // into the child, blocking the controller's pipe reader past parent
+        // exit and hanging CI. We deliberately do NOT call pb.directory():
+        // the child must inherit the parent JVM's CWD so relative paths in
+        // tika configs (e.g. "plugin-roots":"target/plugins") still resolve.
+        // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
+        // getCommandline() instead.
         pb.redirectErrorStream(false);
         pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
 
@@ -417,6 +419,7 @@ public class SharedServerManager implements ServerManager {
         boolean hasHeadless = false;
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
+        boolean hasErrorFile = false;
 
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
@@ -431,6 +434,19 @@ public class SharedServerManager implements ServerManager {
             if (arg.startsWith("-Dlog4j.configuration") || arg.startsWith("-Dlog4j2.configuration")) {
                 hasLog4j = true;
             }
+            if (arg.startsWith("-XX:ErrorFile=")) {
+                hasErrorFile = true;
+            }
+        }
+
+        // Direct native-crash dumps (hs_err_pid<N>.log) into tmpDir so
+        // ServerProcessIO.surfaceCrashDiagnostics() can find and emit them on
+        // abnormal exit. The child JVM inherits the parent's CWD (we do NOT
+        // call pb.directory()), so without this the JVM would write hs_err
+        // wherever the parent was launched.
+        if (!hasErrorFile) {
+            configArgs.add("-XX:ErrorFile=" + tmpDir.resolve("hs_err_pid%p.log")
+                    .toAbsolutePath());
         }
 
         List<String> commandLine = new ArrayList<>();
