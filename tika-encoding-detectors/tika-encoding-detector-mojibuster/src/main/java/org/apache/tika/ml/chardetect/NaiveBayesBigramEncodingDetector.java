@@ -382,13 +382,15 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
         int len = Math.min(probe.length, MAX_PROBE_BYTES);
 
         // Pass 1: count distinct bigrams.  Whitespace and zero-IDF
-        // bigrams are skipped as in the original hot loop.  short[] is
-        // enough since count fits in 16383 (max possible).  Track the
-        // ids of distinct bigrams in a parallel array so pass 2 doesn't
-        // need to scan the full 65k space.
-        short[] count = new short[BIGRAM_SPACE];
-        int[] distinctBigrams = new int[len];
-        int distinctIdx = 0;
+        // bigrams are skipped as in the original hot loop.  Counts are
+        // held in a sparse open-addressing int→int hash (see
+        // {@link BigramCountMap}) so per-call working state is
+        // proportional to distinct bigrams (typically a few hundred to
+        // a few thousand) rather than the dense 128 KB
+        // {@code short[65536]} the earlier inner loop used.  Iteration
+        // for pass 2 walks the hash's occupied slots directly — no
+        // parallel distinct-bigram array.
+        BigramCountMap counts = new BigramCountMap();
         int scored = 0;
         int total = 0;
         for (int i = 0; i + 1 < len; i++) {
@@ -404,11 +406,9 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 continue;
             }
             scored++;
-            if (count[bigram] == 0) {
-                distinctBigrams[distinctIdx++] = bigram;
-            }
-            count[bigram]++;
+            counts.increment(bigram);
         }
+        int distinctIdx = counts.size();
 
         // Type A — diversity gate.  If the input has too few distinct
         // bigrams relative to total scored bigrams, it's a degenerate
@@ -430,11 +430,17 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
 
         // Pass 2: per distinct bigram, compute per-class total
         // contribution and (when above floor) apply Type C cap.
+        // Order-independent — see analyzeBigrams() for the probe-order
+        // diagnostic path.
         double[] score = new double[numClasses];
         double[] contributions = new double[numClasses];
-        for (int k = 0; k < distinctIdx; k++) {
-            int bigram = distinctBigrams[k];
-            int n = count[bigram];
+        int hashCap = counts.capacity();
+        for (int slot = 0; slot < hashCap; slot++) {
+            int bigram = counts.keyAt(slot);
+            if (bigram == -1) {
+                continue;
+            }
+            int n = counts.countAt(slot);
             int w = idf8[bigram];
             double countTimesIdf = (double) n * w;
             int base = bigram * numClasses;
@@ -462,11 +468,11 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 }
             }
             // Cap any class whose contribution exceeds runner-up + cap.
-            double cap = secondMax + CAP_PER_BIGRAM_NATS;
-            if (max > cap) {
+            double capValue = secondMax + CAP_PER_BIGRAM_NATS;
+            if (max > capValue) {
                 for (int c = 0; c < numClasses; c++) {
-                    if (contributions[c] > cap) {
-                        contributions[c] = cap;
+                    if (contributions[c] > capValue) {
+                        contributions[c] = capValue;
                     }
                 }
             }
@@ -475,6 +481,118 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             }
         }
         return new ScoreResult(score, scored, total);
+    }
+
+    /**
+     * Open-addressing {@code int → int} hash map specialised for
+     * counting bigram occurrences during a single
+     * {@link #scoreClassesAndCount(byte[])} pass.  Linear probing;
+     * capacity is a power of two; {@code -1} sentinel for empty slots
+     * (bigrams are non-negative 16-bit values so {@code -1} is
+     * unambiguous).
+     *
+     * <p>Per-call local; not thread-safe.  Replaces a dense
+     * {@code short[65536]} (128 KB) count array.  Memory scales with
+     * actual distinct bigrams in the probe — typically a few hundred
+     * for short probes, a few thousand for diverse probes at the
+     * {@link #MAX_PROBE_BYTES} cap.  Initial capacity sized so short
+     * probes never resize; longer probes trigger one or two
+     * power-of-two doublings.
+     */
+    private static final class BigramCountMap {
+
+        /** Initial capacity. 1024 entries × 2 × 4 bytes = 8 KB. */
+        private static final int INITIAL_CAP = 1024;
+        /** Knuth multiplicative hash constant (golden ratio, 32-bit). */
+        private static final int HASH_MULT = 0x9E3779B9;
+
+        private int[] keys;
+        private int[] counts;
+        private int cap;
+        private int mask;
+        /**
+         * Right-shift amount for the multiplicative hash: produces the
+         * top {@code log2(cap)} bits of the multiplied value.  Equal
+         * to {@code Integer.numberOfLeadingZeros(mask)} for a
+         * power-of-two capacity.
+         */
+        private int shift;
+        /** Resize when {@code size > threshold}; 50% load factor for fast probing. */
+        private int threshold;
+        private int size;
+
+        BigramCountMap() {
+            this.cap = INITIAL_CAP;
+            this.mask = cap - 1;
+            this.shift = Integer.numberOfLeadingZeros(mask);
+            this.threshold = cap >>> 1;
+            this.keys = new int[cap];
+            this.counts = new int[cap];
+            Arrays.fill(this.keys, -1);
+        }
+
+        /** Insert a new bigram or increment the count of an existing one. */
+        void increment(int bigram) {
+            int slot = (bigram * HASH_MULT) >>> shift;
+            while (keys[slot] != -1 && keys[slot] != bigram) {
+                slot = (slot + 1) & mask;
+            }
+            if (keys[slot] == -1) {
+                keys[slot] = bigram;
+                counts[slot] = 1;
+                size++;
+                if (size > threshold) {
+                    resize();
+                }
+            } else {
+                counts[slot]++;
+            }
+        }
+
+        /** Number of distinct bigrams stored. */
+        int size() {
+            return size;
+        }
+
+        /** Slot count.  Walk slots {@code [0, capacity)} to enumerate entries. */
+        int capacity() {
+            return cap;
+        }
+
+        /** Bigram at {@code slot}, or {@code -1} if the slot is empty. */
+        int keyAt(int slot) {
+            return keys[slot];
+        }
+
+        /** Count at {@code slot}.  Undefined for empty slots. */
+        int countAt(int slot) {
+            return counts[slot];
+        }
+
+        private void resize() {
+            int oldCap = cap;
+            int[] oldKeys = keys;
+            int[] oldCounts = counts;
+            cap = oldCap << 1;
+            mask = cap - 1;
+            shift = Integer.numberOfLeadingZeros(mask);
+            threshold = cap >>> 1;
+            keys = new int[cap];
+            counts = new int[cap];
+            Arrays.fill(keys, -1);
+            for (int i = 0; i < oldCap; i++) {
+                int k = oldKeys[i];
+                if (k == -1) {
+                    continue;
+                }
+                int slot = (k * HASH_MULT) >>> shift;
+                while (keys[slot] != -1) {
+                    slot = (slot + 1) & mask;
+                }
+                keys[slot] = k;
+                counts[slot] = oldCounts[i];
+            }
+        }
     }
 
     public String[] getLabels() {

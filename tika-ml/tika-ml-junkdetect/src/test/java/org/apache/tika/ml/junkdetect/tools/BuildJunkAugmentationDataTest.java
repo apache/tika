@@ -390,21 +390,6 @@ class BuildJunkAugmentationDataTest {
         assertEquals("0F/ABCD1234", BuildJunkAugmentationData.profileKey(extracts, file));
     }
 
-    @Test
-    void refusesOutputEqualToBaseline(@TempDir Path tmp) throws Exception {
-        Path baseline = tmp.resolve("baseline");
-        Path extracts = tmp.resolve("extracts");
-        Files.createDirectories(baseline);
-        Files.createDirectories(extracts);
-        writeGz(baseline.resolve("latin.train.gz"), List.of("x"));
-
-        // Run in same JVM, catch System.exit. Easiest path is a SecurityManager,
-        // but JDK 17 deprecates that. Instead, hit the static helper directly
-        // for isSameFile semantics.
-        assertTrue(Files.isSameFile(baseline, baseline),
-                "sanity: same directory is same file");
-    }
-
     // ---------------------------------------------------------------------------
 
     private static void writeGz(Path path, List<String> lines) throws Exception {
