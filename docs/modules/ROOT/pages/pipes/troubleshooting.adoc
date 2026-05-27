@@ -1,0 +1,107 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Pipes Troubleshooting
+
+This page covers diagnosing problems with the forked `PipesServer` processes
+that Tika Pipes uses for per-document isolation. The most common symptom is a
+forked process that dies during startup, or one that becomes unresponsive
+mid-run.
+
+== When a forked server fails to start
+
+The Tika parent process always logs the exit code of a failed fork. You will
+see something like:
+
+[source]
+----
+ERROR  clientId=2: Process exited with code 1 before connecting to socket
+ERROR  Shared server process exited with code 1 before becoming ready
+----
+
+For most failures (bad JVM args, missing classpath entry, OOM at boot), the
+parent logger additionally prints the tail of the child's stderr immediately
+after the exit-code line:
+
+[source]
+----
+ERROR  clientId=2: child stderr tail:
+Error: Could not find or load main class org.apache.tika.pipes.core.server.PipesServer
+----
+
+For native crashes (segfault in a JNI parser, JVM bug), the JVM writes an
+`hs_err_pid<N>.log` file to the child's working directory. The parent logger
+will read and print that file too:
+
+[source]
+----
+ERROR  clientId=2: JVM crash log hs_err_pid12345.log:
+#
+# A fatal error has been detected by the Java Runtime Environment:
+#
+#  SIGSEGV (0xb) at pc=0x00007f...
+...
+----
+
+In short: read the *parent* application's log first. The diagnostics from the
+dead child are inlined there, so you don't have to find anything on disk.
+
+== Keeping child log files for post-mortem analysis
+
+By default, each forked server's stdout, stderr, and any JVM crash logs are
+written into a per-server temp directory. The temp directory is cleaned up
+when the manager shuts the server down. If you need to keep those files
+around -- for example, to diff stderr across multiple failed restart attempts,
+or to ship crash logs to a support contact -- set the
+`tika.pipes.server.logDir` system property on the *parent* JVM:
+
+[source,bash]
+----
+java -Dtika.pipes.server.logDir=/var/log/tika-pipes-crashes \
+    -jar your-app.jar ...
+----
+
+When set, the manager copies the child's `server-stdout.log`,
+`server-stderr.log`, and any `hs_err_pid*.log` files to that directory on
+every abnormal exit, with a timestamp prefix:
+
+[source]
+----
+/var/log/tika-pipes-crashes/
+  1748307123456-server-stderr.log
+  1748307123456-hs_err_pid12345.log
+  1748307145001-server-stderr.log     # later restart attempt
+----
+
+The property is off by default. Leave it off in steady-state production; turn
+it on when you are actively debugging a recurring fork failure.
+
+== What does *not* go to those files
+
+Steady-state log output from the parser (every parse, every emitter, every
+embedded-document warning) does **not** go to `server-stderr.log`. It goes
+through SLF4J inside the child JVM and lands in whatever your `log4j2.xml` or
+`logback.xml` directs it to. The child's stderr is only useful for things the
+JVM writes before logging is wired up, or that bypass logging entirely:
+
+* JVM startup errors (bad classpath, unrecognized flag, "could not find main
+  class").
+* Uncaught throwables on the main thread that never reached an SLF4J logger.
+* Output from `System.err.println` calls (if any).
+
+For native crash investigation, the JVM-generated `hs_err_pid<N>.log` is the
+primary artifact, and it is collected automatically as described above.
