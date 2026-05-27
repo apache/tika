@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -403,14 +402,7 @@ public class SharedServerManager implements ServerManager {
     }
 
     private void deleteDir(Path dir) {
-        if (dir == null) {
-            return;
-        }
-        try {
-            FileUtils.deleteDirectory(dir.toFile());
-        } catch (IOException e) {
-            LOG.warn("Couldn't delete tmp dir {}", dir);
-        }
+        ServerProcessIO.deleteDirWithRetry(LOG, "shared-server", dir);
     }
 
     private String[] getCommandline() throws IOException {

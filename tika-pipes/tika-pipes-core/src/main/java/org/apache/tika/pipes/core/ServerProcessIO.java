@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.stream.Stream;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 /**
@@ -60,6 +61,43 @@ final class ServerProcessIO {
 
     static File stderrLog(Path tmpDir) {
         return tmpDir.resolve(STDERR_LOG).toFile();
+    }
+
+    /**
+     * Deletes the manager's tmpDir, retrying past Windows file-handle
+     * lingering. After {@code process.destroyForcibly() / waitFor()} returns,
+     * Windows can still hold open handles for the redirected stdout/stderr
+     * files for up to a few hundred ms. A naive one-shot delete fails with
+     * {@code FileSystemException("...used by another process")}; left
+     * unhandled, that strands the files and breaks higher-level cleanup
+     * (e.g. parent JUnit {@code @TempDir} teardown).
+     */
+    static void deleteDirWithRetry(Logger log, String contextLabel, Path dir) {
+        if (dir == null) {
+            return;
+        }
+        IOException last = null;
+        int attempts = 6;
+        for (int attempt = 1; attempt <= attempts; attempt++) {
+            try {
+                FileUtils.deleteDirectory(dir.toFile());
+                return;
+            } catch (IOException e) {
+                last = e;
+                if (attempt == attempts) {
+                    break;
+                }
+                try {
+                    Thread.sleep(100L * attempt);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+        log.warn("{}: couldn't delete tmp dir {} after {} attempts: {}",
+                contextLabel, dir, attempts,
+                last == null ? "(no error)" : last.toString());
     }
 
     /**
