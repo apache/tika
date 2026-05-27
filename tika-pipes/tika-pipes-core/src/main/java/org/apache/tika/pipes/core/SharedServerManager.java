@@ -283,9 +283,15 @@ public class SharedServerManager implements ServerManager {
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
         pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
-        // Redirect stderr to inherit, capture stdout to read the READY signal
+        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log
+        // lands where surfaceCrashDiagnostics() looks for it. Keep stdout on
+        // a parent-owned pipe so we can read the READY:port signal. Redirect
+        // stderr to a file rather than INHERIT -- on Windows, inheriting
+        // stderr duplicates surefire's stderr handle into the child, blocking
+        // the controller's pipe reader past parent exit and hanging CI.
+        pb.directory(tmpDir.toFile());
         pb.redirectErrorStream(false);
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
 
         try {
             process = pb.start();
@@ -316,6 +322,7 @@ public class SharedServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     LOG.error("Shared server process exited with code {} before becoming ready", exitValue);
+                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     throw new ServerInitializationException(
                             "Shared server failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
                 }
@@ -324,6 +331,7 @@ public class SharedServerManager implements ServerManager {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (elapsed > STARTUP_TIMEOUT_MS) {
                     LOG.error("Timed out waiting for shared server to start after {}ms", elapsed);
+                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     destroyProcessUnsafe();
                     throw new ServerInitializationException(
                             "Shared server did not start within " + STARTUP_TIMEOUT_MS + "ms");

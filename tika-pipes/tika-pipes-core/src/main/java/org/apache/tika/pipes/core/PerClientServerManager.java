@@ -231,6 +231,7 @@ public class PerClientServerManager implements ServerManager {
                     int exitValue = process.exitValue();
                     LOG.error("clientId={}: Process exited with code {} before connecting to socket",
                             clientId, exitValue);
+                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
                     // 1. pb.start() fails (can't launch process) - handled in startServer()
@@ -244,6 +245,7 @@ public class PerClientServerManager implements ServerManager {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
                     LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
+                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
                     throw new ServerInitializationException(
                             "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
                 }
@@ -268,7 +270,15 @@ public class PerClientServerManager implements ServerManager {
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        pb.inheritIO();
+        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log lands
+        // where surfaceCrashDiagnostics() looks for it. Redirect stdio to per-
+        // server files instead of inheriting the parent JVM's handles -- on
+        // Windows inheritIO() duplicates surefire's stderr handle into the
+        // child, blocking the controller's pipe reader past parent exit and
+        // hanging CI.
+        pb.directory(tmpDir.toFile());
+        pb.redirectOutput(ServerProcessIO.stdoutLog(tmpDir));
+        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
 
         try {
             process = pb.start();
