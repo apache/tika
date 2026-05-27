@@ -33,6 +33,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -94,6 +95,15 @@ public class PipesServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
     public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
+
+    /** Env var the parent manager sets so the child can watch the parent's
+     *  process handle and exit promptly if the parent dies. */
+    public static final String PARENT_PID_ENV = "TIKA_PIPES_PARENT_PID";
+
+    /** Exit code used when the child self-terminates because its parent JVM
+     *  disappeared. Distinct from UNSPECIFIED_CRASH (19) so log readers can
+     *  tell the difference between "I crashed" and "my parent went away". */
+    public static final int PARENT_GONE_EXIT_CODE = 23;
 
     private final long heartbeatIntervalMs;
     private final String pipesClientId;
@@ -196,6 +206,10 @@ public class PipesServer implements AutoCloseable {
 
 
     public static void main(String[] args) throws Exception {
+        // Register parent-death watcher FIRST so that even bootstrap failures
+        // below don't strand us if the parent has already died.
+        watchParentProcess();
+
         // Check for shared mode: --shared <numConnections> <tikaConfigPath>
         if (args.length > 0 && "--shared".equals(args[0])) {
             String portEnv = System.getenv("TIKA_PIPES_PORT");
@@ -515,6 +529,46 @@ public class PipesServer implements AutoCloseable {
             LOG.debug("exiting: {}", exitCode);
         }
         System.exit(exitCode);
+    }
+
+    /**
+     * Registers a {@link ProcessHandle#onExit()} callback on the parent PID
+     * (read from the {@value #PARENT_PID_ENV} env var) so that this JVM
+     * self-terminates promptly if its parent disappears. Without this, an
+     * orphaned PipesServer would only notice the parent is gone when the
+     * next socket read fails -- which can take up to
+     * {@code socketTimeoutMs} (default 60s) and doesn't fire at all while
+     * the server is mid-parse. {@code System.exit} here lets the
+     * {@code AbstractExternalProcessParser} shutdown hook run, killing any
+     * in-flight external subprocess (e.g. tesseract) cleanly.
+     */
+    private static void watchParentProcess() {
+        String parentPidStr = System.getenv(PARENT_PID_ENV);
+        if (parentPidStr == null || parentPidStr.isEmpty()) {
+            LOG.info("{} not set; skipping parent-watch", PARENT_PID_ENV);
+            return;
+        }
+        long parentPid;
+        try {
+            parentPid = Long.parseLong(parentPidStr);
+        } catch (NumberFormatException e) {
+            LOG.warn("invalid {} value '{}'; skipping parent-watch",
+                    PARENT_PID_ENV, parentPidStr);
+            return;
+        }
+        Optional<ProcessHandle> parent = ProcessHandle.of(parentPid);
+        if (parent.isEmpty()) {
+            LOG.error("parent pid {} not found at startup; exiting to avoid orphan",
+                    parentPid);
+            System.exit(PARENT_GONE_EXIT_CODE);
+            return;
+        }
+        parent.get().onExit().thenRun(() -> {
+            LOG.error("parent pid {} exited; shutting down to avoid orphan",
+                    parentPid);
+            System.exit(PARENT_GONE_EXIT_CODE);
+        });
+        LOG.info("watching parent pid {} for exit", parentPid);
     }
 
     protected void initializeResources() throws TikaException, IOException, SAXException {

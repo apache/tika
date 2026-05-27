@@ -34,6 +34,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -270,15 +271,33 @@ public class PerClientServerManager implements ServerManager {
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log lands
-        // where surfaceCrashDiagnostics() looks for it. Redirect stdio to per-
-        // server files instead of inheriting the parent JVM's handles -- on
-        // Windows inheritIO() duplicates surefire's stderr handle into the
-        // child, blocking the controller's pipe reader past parent exit and
-        // hanging CI.
-        pb.directory(tmpDir.toFile());
-        pb.redirectOutput(ServerProcessIO.stdoutLog(tmpDir));
-        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
+        // Tell the child our PID so it can watch ProcessHandle.onExit() and
+        // self-terminate promptly if we die. Without this, an orphan child
+        // can only notice via socket-read timeout (default 60s) and can't
+        // notice at all while it is mid-parse -- the leak that TIKA-4740
+        // surfaced via @TempDir cleanup failures.
+        pb.environment().put(PipesServer.PARENT_PID_ENV,
+                Long.toString(ProcessHandle.current().pid()));
+        // Default: inherit stdio so the pipes-server's log records show up
+        // in the parent's stdio stream (the production case is Docker/K8s
+        // where container stdio is picked up by log aggregators -- writing
+        // to files in a container is anti-pattern). Set
+        // -Dtika.pipes.server.stdio=discard on the parent to suppress.
+        //
+        // The Windows surefire hang that previously made inheritIO() risky
+        // is mitigated by PipesServer.watchParentProcess(): when the parent
+        // exits, the child detects it via ProcessHandle.onExit() within
+        // milliseconds and System.exit()s, releasing its inherited stderr
+        // handle so upstream pipe readers see EOF promptly.
+        //
+        // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
+        // getCommandline() and surfaced via SLF4J on abnormal exit.
+        if (ServerProcessIO.inheritStdio()) {
+            pb.inheritIO();
+        } else {
+            pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        }
 
         try {
             process = pb.start();
@@ -383,6 +402,7 @@ public class PerClientServerManager implements ServerManager {
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
         boolean hasActiveProcessorCount = false;
+        boolean hasErrorFile = false;
         String origGCString = null;
         String newGCLogString = null;
 
@@ -402,10 +422,23 @@ public class PerClientServerManager implements ServerManager {
             if (arg.startsWith("-XX:ActiveProcessorCount=")) {
                 hasActiveProcessorCount = true;
             }
+            if (arg.startsWith("-XX:ErrorFile=")) {
+                hasErrorFile = true;
+            }
             if (arg.startsWith("-Xloggc:")) {
                 origGCString = arg;
                 newGCLogString = arg.replace("${pipesClientId}", "id-" + clientId);
             }
+        }
+
+        // Direct native-crash dumps (hs_err_pid<N>.log) into tmpDir so
+        // ServerProcessIO.surfaceCrashDiagnostics() can find and emit them on
+        // abnormal exit. The child JVM inherits the parent's CWD (we do NOT
+        // call pb.directory()), so without this the JVM would write hs_err
+        // wherever the parent was launched -- typically lost.
+        if (!hasErrorFile) {
+            configArgs.add("-XX:ErrorFile=" + tmpDir.resolve("hs_err_pid%p.log")
+                    .toAbsolutePath());
         }
 
         // If the user hasn't explicitly set -XX:ActiveProcessorCount, size each

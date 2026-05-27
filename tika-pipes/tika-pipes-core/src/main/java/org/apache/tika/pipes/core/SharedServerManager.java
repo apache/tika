@@ -283,15 +283,30 @@ public class SharedServerManager implements ServerManager {
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
         pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
-        // Run the child in tmpDir so any hs_err_pid<N>.log JVM crash log
-        // lands where surfaceCrashDiagnostics() looks for it. Keep stdout on
-        // a parent-owned pipe so we can read the READY:port signal. Redirect
-        // stderr to a file rather than INHERIT -- on Windows, inheriting
-        // stderr duplicates surefire's stderr handle into the child, blocking
-        // the controller's pipe reader past parent exit and hanging CI.
-        pb.directory(tmpDir.toFile());
+        // Tell the child our PID so it can watch ProcessHandle.onExit() and
+        // self-terminate promptly if we die. See PipesServer.watchParentProcess.
+        pb.environment().put(PipesServer.PARENT_PID_ENV,
+                Long.toString(ProcessHandle.current().pid()));
+        // stdout stays on a parent-owned pipe so we can read the READY:port
+        // signal. stderr defaults to INHERIT so the shared-server's log
+        // records show up in the parent's stdio stream (the production case
+        // is Docker/K8s where container stdio is picked up by log
+        // aggregators). Set -Dtika.pipes.server.stdio=discard on the parent
+        // to suppress.
+        //
+        // The Windows surefire hang that previously made INHERIT risky is
+        // mitigated by PipesServer.watchParentProcess(): when the parent
+        // exits, the child detects via ProcessHandle.onExit() in
+        // milliseconds and System.exit()s, releasing its inherited stderr.
+        //
+        // hs_err crash logs are pointed at tmpDir via -XX:ErrorFile in
+        // getCommandline() and surfaced via SLF4J on abnormal exit.
         pb.redirectErrorStream(false);
-        pb.redirectError(ServerProcessIO.stderrLog(tmpDir));
+        if (ServerProcessIO.inheritStdio()) {
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        } else {
+            pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        }
 
         try {
             process = pb.start();
@@ -417,6 +432,7 @@ public class SharedServerManager implements ServerManager {
         boolean hasHeadless = false;
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
+        boolean hasErrorFile = false;
 
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
@@ -431,6 +447,19 @@ public class SharedServerManager implements ServerManager {
             if (arg.startsWith("-Dlog4j.configuration") || arg.startsWith("-Dlog4j2.configuration")) {
                 hasLog4j = true;
             }
+            if (arg.startsWith("-XX:ErrorFile=")) {
+                hasErrorFile = true;
+            }
+        }
+
+        // Direct native-crash dumps (hs_err_pid<N>.log) into tmpDir so
+        // ServerProcessIO.surfaceCrashDiagnostics() can find and emit them on
+        // abnormal exit. The child JVM inherits the parent's CWD (we do NOT
+        // call pb.directory()), so without this the JVM would write hs_err
+        // wherever the parent was launched.
+        if (!hasErrorFile) {
+            configArgs.add("-XX:ErrorFile=" + tmpDir.resolve("hs_err_pid%p.log")
+                    .toAbsolutePath());
         }
 
         List<String> commandLine = new ArrayList<>();
