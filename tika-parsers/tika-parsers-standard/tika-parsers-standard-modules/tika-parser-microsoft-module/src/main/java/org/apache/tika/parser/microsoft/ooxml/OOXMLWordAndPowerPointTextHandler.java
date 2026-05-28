@@ -146,7 +146,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     //have we signaled the start of a p?
     //pPr can happen multiple times within a p
     //<p><pPr/><r><t>text</t></r><pPr></p>
-    private boolean pStarted = false;
+    //
+    //Stack rather than a single boolean: nested <w:p> (e.g., inside
+    //<w:txbxContent>) must not clobber the outer paragraph's "started" marker,
+    //or the outer </w:p> will skip its endParagraph and leave <p> open.
+    private final java.util.Deque<Boolean> pStartedStack = new java.util.ArrayDeque<>();
     //alternate content can be embedded in itself.
     //need to track depth.
     //preferACChoice controls which branch is processed:
@@ -238,6 +242,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (lastStartElementWasP) {
             // First child of <p> is not pPr — start paragraph immediately with defaults.
             bodyContentsHandler.startParagraph(currPProperties);
+            markCurrentParagraphStarted();
         }
 
         lastStartElementWasP = false;
@@ -271,16 +276,15 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             runBuffer.append(TAB_CHAR);
         } else if (P.equals(localName)) {
             lastStartElementWasP = true;
-            // Each <w:p> needs its own pStarted lifecycle. Without this,
-            // a nested <w:p> (e.g., inside <wps:txbx>/<w:txbxContent>) would
-            // inherit the outer paragraph's pStarted=true, suppress its own
-            // startParagraph in the </w:pPr> branch, then fire its
-            // endParagraph on </w:p> -- producing an unbalanced start/end
-            // count that desyncs the XHTML <p>/<p> stream.
-            pStarted = false;
+            // Push a fresh frame for this <w:p>. A nested <w:p> (e.g., inside
+            // <w:txbxContent>) must not share the outer paragraph's started-flag,
+            // or the outer </w:p>'s endParagraph either fires twice (older bug)
+            // or gets skipped (after the pStarted guard fix), and the XHTML
+            // <p>/<p> stream desyncs either way.
+            pStartedStack.push(Boolean.FALSE);
         } else if (B.equals(localName)) { //TODO: add bCs
             if (inR && inRPr) {
-                currRunProperties.setBold(true);
+                currRunProperties.setBold(getOnOff(atts, true));
             }
         } else if (TC.equals(localName)) {
             bodyContentsHandler.startTableCell();
@@ -290,11 +294,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (I.equals(localName)) { //TODO: add iCs
             //rprs don't have to be inR; ignore those that aren't
             if (inR && inRPr) {
-                currRunProperties.setItalics(true);
+                currRunProperties.setItalics(getOnOff(atts, true));
             }
         } else if (STRIKE.equals(localName)) {
             if (inR && inRPr) {
-                currRunProperties.setStrike(true);
+                currRunProperties.setStrike(getOnOff(atts, true));
             }
         } else if (U.equals(localName)) {
             if (inR && inRPr) {
@@ -491,6 +495,33 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         return "";
     }
 
+    /**
+     * Reads a {@code ST_OnOff} {@code w:val} attribute: {@code "0"}/{@code "false"}/
+     * {@code "off"} are off, anything else (including absent) follows the supplied
+     * default. The toggle elements (&lt;w:b/&gt;, &lt;w:i/&gt;, &lt;w:strike/&gt;)
+     * default to on when {@code w:val} is absent, but must respect an explicit
+     * {@code w:val="0"} that turns the toggle off (overriding a style-inherited on).
+     */
+    private boolean getOnOff(Attributes atts, boolean defaultValue) {
+        String v = atts.getValue(W_NS, VAL);
+        if (v == null) {
+            return defaultValue;
+        }
+        return !("0".equals(v) || "false".equals(v) || "off".equals(v));
+    }
+
+    private boolean isCurrentParagraphStarted() {
+        Boolean top = pStartedStack.peek();
+        return top != null && top;
+    }
+
+    private void markCurrentParagraphStarted() {
+        if (!pStartedStack.isEmpty()) {
+            pStartedStack.pop();
+        }
+        pStartedStack.push(Boolean.TRUE);
+    }
+
     private int getIntVal(Attributes atts) {
         String valString = atts.getValue(W_NS, VAL);
         if (valString != null) {
@@ -531,9 +562,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (PPR.equals(localName) && inParagraphLevelPPr) {
             // Only process as paragraph properties if this pPr was a direct child of <p>.
             // pPr inside other elements (e.g., <a:fld> fields) must be ignored.
-            if (!pStarted) {
+            if (!isCurrentParagraphStarted()) {
                 bodyContentsHandler.startParagraph(currPProperties);
-                pStarted = true;
+                markCurrentParagraphStarted();
             }
             currPProperties.reset();
             inParagraphLevelPPr = false;
@@ -544,8 +575,19 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 bodyContentsHandler.run(currRunProperties, runBuffer.toString());
                 runBuffer.setLength(0);
             }
-            pStarted = false;
-            bodyContentsHandler.endParagraph();
+            // Only fire endParagraph if startParagraph was actually called for this <w:p>.
+            // A self-closing <w:p/> (e.g., inside <w:txbxContent>) has no children, so
+            // neither the </pPr> branch nor the lastStartElementWasP branch fires
+            // startParagraph -- but endElement(p) still runs. Without this guard the
+            // body handler's pDepth counter desyncs and the outer paragraph's </p> gets
+            // emitted prematurely, leaving the XHTML stack mismatched at endDocument.
+            boolean started = pStartedStack.isEmpty() ? false : pStartedStack.pop();
+            if (started) {
+                bodyContentsHandler.endParagraph();
+            }
+            // Clear the "first child of p" trigger so the next outer-level startElement
+            // doesn't spuriously fire startParagraph for this already-closed <w:p/>.
+            lastStartElementWasP = false;
         } else if (TC.equals(localName)) {
             bodyContentsHandler.endTableCell();
         } else if (TR.equals(localName)) {

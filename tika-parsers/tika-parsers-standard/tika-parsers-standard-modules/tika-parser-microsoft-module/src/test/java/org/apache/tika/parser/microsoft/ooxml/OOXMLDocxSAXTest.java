@@ -265,6 +265,24 @@ public class OOXMLDocxSAXTest extends TikaTest {
     }
 
     @Test
+    public void testEmptyParagraphInTextbox() throws Exception {
+        // TIKA-4744: a self-closing <w:p/> inside <w:txbxContent> used to fire
+        // endParagraph without a matching startParagraph, prematurely closing
+        // the outer paragraph and leaving the XHTML stack mismatched at
+        // endDocument. Also exercises <w:b w:val="0"/>/<w:strike w:val="0"/>
+        // which used to be read as "on" regardless of the val attribute.
+        // getXML wraps the handler in StrictXHTMLValidator -- a balance error
+        // would throw before any assertions ran.
+        XMLResult r = getXML("testWORD_emptyParaInTextbox.docx");
+        // Confirm the toggle-off attribute is now respected: this file's body
+        // text has explicit <w:b w:val="0"/>, so no spurious <b>/<s> wrapping.
+        assertContains("<p>Meno, priezvisko, tituly", r.xml);
+        assertNotContained("<b><s>Meno", r.xml);
+        // And the picture-bearing paragraph stays in one <p>, not split.
+        assertContains("Vedný odbor:", r.xml);
+    }
+
+    @Test
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;
 
