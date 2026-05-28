@@ -365,6 +365,20 @@ public class ODFParserTest extends TikaTest {
                 xml);
     }
 
+    @Test //TIKA-4744
+    public void testSvgTitleInStyledSpan() throws Exception {
+        // Empty <svg:title/>/<svg:desc/> inside a <draw:connector> or
+        // <draw:custom-shape> that is itself wrapped in a styled <text:span>
+        // used to leave the SAX stack with the svg's <span> sitting above the
+        // outer <b>. The endElement closeStyleTags (TIKA-4728) then emitted
+        // </b> while <span> was topmost, which StrictXHTMLValidator rejects.
+        // getXML wraps the handler in StrictXHTMLValidator, so a desync would
+        // throw before any assertions ran.
+        String xml = getXML("testODT_svgTitleInStyledSpan.odt").xml;
+        assertContains("國立雲林科技大學國際", xml);
+        assertContains("學生簽章", xml);
+    }
+
     @Test
     public void testEmbedded() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testODTEmbedded.odt");
