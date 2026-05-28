@@ -41,23 +41,20 @@ import org.apache.tika.language.detect.LanguageResult;
  * trained on Wikipedia (primary corpus) with MADLAD supplements for thin languages.
  * <p>
  * Text is buffered via {@link #addText(char[], int, int)} up to
- * {@link CharSoupFeatureExtractor#MAX_TEXT_LENGTH} characters. At {@link #detectAll()} time,
- * the buffer is evaluated in independent {@value #CHUNK_SIZE}-character chunks.
- * Each chunk runs the full preprocessing pipeline (truncate → strip URLs/emails →
- * NFC normalize → extract bigram features → score via raw logits). If the first
- * chunk produces high entropy (indicating junk, code, or non-language content),
- * the next chunk is tried. The result from the chunk with the lowest entropy
- * is returned. This avoids polluting the language signal with leading junk while
- * keeping the implementation simple and predictable.
+ * {@link CharSoupFeatureExtractor#MAX_TEXT_LENGTH} characters (configurable
+ * via {@link #setMaxLength(int)}). At {@link #detectAll()} the entire buffer
+ * is fed through the full preprocessing pipeline (strip URLs/emails →
+ * NFC normalize → extract bigram features) and scored once. The verdict
+ * is the argmax of the (group-collapsed) logits over the whole input.
  * </p>
  * <p>
  * Inference uses raw logits throughout — no softmax distribution is ever computed.
-     * Confidence is based on the <em>margin</em> between the top two logits after
-     * confusable-group collapsing: {@code sigmoid(top_logit − second_logit)}.
-     * This is invariant to the number of classes and provides a stable confidence
-     * signal from short snippets up to full documents. Per-class {@code rawScore}
-     * is {@code sigmoid(logit_c − best_competitor_logit)}: the winner gets a value
-     * above 0.5, all others below.
+ * Confidence is based on the <em>margin</em> between the top two logits after
+ * confusable-group collapsing: {@code sigmoid(top_logit − second_logit)}.
+ * This is invariant to the number of classes and provides a stable confidence
+ * signal from short snippets up to full documents. Per-class {@code rawScore}
+ * is {@code sigmoid(logit_c − best_competitor_logit)}: the winner gets a value
+ * above 0.5, all others below.
  * </p>
  */
 @TikaComponent(name = "charsoup-language-detector")
@@ -74,35 +71,12 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
             "/org/apache/tika/langdetect/charsoup/langdetect-20260320.bin";
 
     /**
-     * Size (in chars) of each independent chunk evaluated during detection.
-     * If the first chunk yields high entropy (junk/code), the next chunk
-     * is tried, and so on, until a confident result is found or the buffer
-     * is exhausted. Each chunk is preprocessed and evaluated independently
-     * so that junk in one chunk does not pollute the signal in the next.
-     */
-    private static final int CHUNK_SIZE = 5_000;
-
-    /**
      * Buffer length at which {@link #hasEnoughText()} returns true.
-     * One chunk is more than sufficient for reliable language detection;
-     * this is set to two chunks so the detector has a fallback if the
-     * first chunk is junk.
+     * 10,000 characters is comfortably above the saturation point where
+     * the bigram-NB model has full discriminative signal on typical
+     * prose; streaming callers can stop feeding once this is reached.
      */
-    private static final int ENOUGH_TEXT_LENGTH = CHUNK_SIZE * 2;
-
-    /**
-     * Maximum entropy (in bits) for a chunk to be considered "confident
-     * enough" to return. If a chunk's collapsed-distribution entropy
-     * exceeds this threshold, the detector moves on to the next chunk.
-     * <p>
-     * Typical values:
-     * <ul>
-     *   <li>&lt; 1.0 — clean, single-language text</li>
-     *   <li>1.0–3.0 — confusable language or short text</li>
-     *   <li>&gt; 3.5 — likely junk (code, OCR garbage, binary, etc.)</li>
-     * </ul>
-     */
-    private static final float ENTROPY_THRESHOLD = 3.5f;
+    private static final int ENOUGH_TEXT_LENGTH = 10_000;
 
     /**
      * Confusable language groups — languages within the same group are nearly
@@ -721,40 +695,27 @@ public class CharSoupLanguageDetector extends LanguageDetector implements SelfCo
     @Override
     public List<LanguageResult> detectAll() {
         String text = buffer.toString();
-        if (text.isEmpty()) {
+        // Cheap empty/whitespace-only short-circuit so callers see the
+        // explicit NULL result instead of model-bias logits computed from
+        // an empty feature vector.
+        if (text.isBlank()) {
             lastEntropy = Float.NaN;
             return Collections.singletonList(LanguageResult.NULL);
         }
 
-        int len = text.length();
-        float[] bestLogits = null;
-        float bestEntropy = Float.MAX_VALUE;
-        String bestChunk = null;
+        // Single full-buffer extraction.  The feature extractor is
+        // whitespace-invariant (only letter-letter / sentinel-letter /
+        // letter-sentinel bigrams are emitted) and bounded internally
+        // at MAX_TEXT_LENGTH; the caller's buffer is already bounded
+        // by setMaxLength(...) so the work here is linear in
+        // min(buffer.length, MAX_TEXT_LENGTH).
         int[] features = new int[extractor.getNumBuckets()];
-
-        for (int start = 0; start < len; start += CHUNK_SIZE) {
-            int end = Math.min(start + CHUNK_SIZE, len);
-            String chunk = text.substring(start, end);
-
-            extractor.extractAndCount(chunk, features);
-            float[] logits = model.predictLogits(features);
-            logits = applyScriptGate(logits, chunk, classScript);
-            float[] collapsed = collapseGroups(logits, groupIndices);
-
-            float entropy = entropyFromLogits(collapsed);
-
-            if (entropy < bestEntropy) {
-                bestEntropy = entropy;
-                bestLogits = collapsed;
-                bestChunk = chunk;
-            }
-
-            if (entropy < ENTROPY_THRESHOLD) {
-                break;
-            }
-        }
-
-        return buildResults(bestLogits, bestEntropy);
+        extractor.extractAndCount(text, features);
+        float[] logits = model.predictLogits(features);
+        logits = applyScriptGate(logits, text, classScript);
+        float[] collapsed = collapseGroups(logits, groupIndices);
+        float entropy = entropyFromLogits(collapsed);
+        return buildResults(collapsed, entropy);
     }
 
     /**
