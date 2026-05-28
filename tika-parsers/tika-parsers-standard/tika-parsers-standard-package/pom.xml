@@ -353,6 +353,10 @@
             </Bundle-Activator>
             <Import-Package>
               org.w3c.dom,
+              <!-- SPI-only reference (class in tika-core, no bytecode in this bundle):
+                   bnd only scans bytecode for auto-detected imports, so this package
+                   is silently omitted by the wildcard below and must be listed explicitly. -->
+              org.apache.tika.parser.external,
               org.apache.tika.*,
               *;resolution:=optional
             </Import-Package>
