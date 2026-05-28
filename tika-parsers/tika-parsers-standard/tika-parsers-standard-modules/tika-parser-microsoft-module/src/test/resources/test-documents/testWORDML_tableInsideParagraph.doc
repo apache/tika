@@ -1,0 +1,1467 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Word.Document"?>
+
+<w:wordDocument xmlns:w="http://schemas.microsoft.com/office/word/2003/wordml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w10="urn:schemas-microsoft-com:office:word" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:dt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882" xmlns:wx="http://schemas.microsoft.com/office/word/2003/auxHint" xmlns:aml="http://schemas.microsoft.com/aml/2001/core" xml:space="preserve">
+	<o:DocumentProperties>
+		<o:Author/>
+		<o:Title/>
+		<o:Description/>
+		<o:Subject/>
+	</o:DocumentProperties>
+	<w:styles>
+		<w:style w:type="paragraph"  w:styleId="4">
+			<w:name w:val="toc 4"/>
+			<wx:uiName wx:val="catalog 4"/>
+			<w:autoRedefine/>
+			<w:semiHidden/>
+			<w:rsid w:val="009B3C8F"/>
+			<w:pPr>
+				<w:pStyle w:val="4"/>
+				<w:bidi w:val="off"/>
+			</w:pPr>
+			<w:rPr>
+				<wx:font wx:val="Times New Roman"/>
+			</w:rPr>
+		</w:style>
+		<w:style w:type="character" w:styleId="Hyperlink">
+			<w:name w:val="Hyperlink"/>
+			<w:rPr>
+				<w:u w:val="single"/>
+				<w:color w:val="0000ff"/>
+			</w:rPr>
+		</w:style>
+		<w:style w:type="table" w:default="on" styleId="TableNormal">
+			<w:name w:val="Normal Table"/>
+			<wx:uiName wx:val="Table Normal"/>
+			<w:rPr>
+				<wx:font wx:val="Calibri"/>
+				<w:lang w:val="EN-US" w:fareast="ZH-CN" w:bidi="AR-SA"/>
+			</w:rPr>
+			<w:tblPr>
+				<w:tblInd w:w="0" w:type="dxa"/>
+				<w:tblCellMar>
+					<w:top w:w="0" w:type="dxa"/>
+					<w:left w:w="108" w:type="dxa"/>
+					<w:bottom w:w="0" w:type="dxa"/>
+					<w:right w:w="108" w:type="dxa"/>
+				</w:tblCellMar>
+			</w:tblPr>
+		</w:style>
+	</w:styles>
+	<w:displayBackgroundShape/>
+	<w:docPr>
+		<w:view w:val="print"/>
+		<w:zoom w:percent="100"/>
+	</w:docPr>
+	<w:body>
+		<w:bgPict/>
+		<wx:sect>
+			<w:tbl>
+				<w:tblPr>
+					<w:tblInd w:w="0" w:type="dxa"/>
+					<w:tblStyle w:val="TableGrid"/>
+					<w:tblOverlap w:val="Never"/>
+					<w:tblW w:w="11520" w:type="dxa"/>
+					<w:tblLook w:val="01E0"/>
+					<w:tblLayout w:type="Fixed"/>
+					<w:tblBorders/>
+				</w:tblPr>
+				<w:tblGrid>
+					<w:gridCol w:val="3840"/>
+					<w:gridCol w:val="3840"/>
+					<w:gridCol w:val="3840"/>
+				</w:tblGrid>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[First Page]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+				</w:tr>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[Some Data]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[Second column]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[Third]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+				</w:tr>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="3840" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[tic-tac-toe]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+				</w:tr>
+			</w:tbl>
+			<w:p>
+				<w:pPr>
+					<w:sectPr>
+						<w:hdr w:type="odd">
+							<w:tbl>
+								<w:tblPr>
+									<w:tblW w:w="11520" w:type="dxa"/>
+									<w:tblLook w:val="01E0"/>
+									<w:tblLayout w:type="Fixed"/>
+								</w:tblPr>
+								<w:tr>
+									<w:trPr>
+										<w:trHeight w:val="720"/>
+									</w:trPr>
+									<w:tc>
+										<w:tcPr>
+											<w:tcW w:w="11520" w:type="dxa"/>
+										</w:tcPr>
+										<w:p>
+											<w:rPr>
+												<w:vanish w:val="on"/>
+											</w:rPr>
+										</w:p>
+									</w:tc>
+								</w:tr>
+							</w:tbl>
+						</w:hdr>
+						<w:ftr w:type="odd">
+							<w:tbl>
+								<w:tblPr>
+									<w:tblW w:w="11520" w:type="dxa"/>
+									<w:tblLook w:val="01E0"/>
+									<w:tblLayout w:type="Fixed"/>
+								</w:tblPr>
+								<w:tr>
+									<w:trPr>
+										<w:trHeight w:val="720"/>
+									</w:trPr>
+									<w:tc>
+										<w:tcPr>
+											<w:tcW w:w="11520" w:type="dxa"/>
+										</w:tcPr>
+										<w:p>
+											<w:rPr>
+												<w:vanish w:val="on"/>
+											</w:rPr>
+										</w:p>
+										<w:tbl>
+											<w:tblPr>
+												<w:tblInd w:w="0" w:type="dxa"/>
+												<w:tblStyle w:val="TableGrid"/>
+												<w:tblOverlap w:val="Never"/>
+												<w:tblW w:w="11520" w:type="dxa"/>
+												<w:tblLook w:val="01E0"/>
+												<w:tblLayout w:type="Fixed"/>
+												<w:tblBorders/>
+											</w:tblPr>
+											<w:tblGrid>
+												<w:gridCol w:val="3840"/>
+												<w:gridCol w:val="3840"/>
+												<w:gridCol w:val="3840"/>
+											</w:tblGrid>
+											<w:tr>
+												<w:trPr/>
+												<w:tc>
+													<w:tcPr>
+														<w:tcW w:w="3840" w:type="dxa"/>
+														<w:tcBorders/>
+														<w:vAlign w:val="baseline"/>
+														<w:noWrap w:val="off"/>
+													</w:tcPr>
+													<w:p>
+														<w:pPr>
+															<w:pBdr/>
+															<w:bidi w:val="off"/>
+														</w:pPr>
+														<w:r>
+															<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+															<w:sz w:val="20"/>
+															<w:sz-cs w:val="20"/>
+															<w:spacing w:val="0"/>
+															<w:fldChar w:fldCharType="begin"/>
+														</w:r>
+														<w:r>
+															<w:rPr>
+																<w:color w:val="000000"/>
+																<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+																<w:sz w:val="20"/>
+																<w:sz-cs w:val="20"/>
+																<w:spacing w:val="0"/>
+															</w:rPr>
+															<w:instrText>PAGE</w:instrText>
+														</w:r>
+														<w:r>
+															<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+															<w:sz w:val="20"/>
+															<w:sz-cs w:val="20"/>
+															<w:spacing w:val="0"/>
+															<w:fldChar w:fldCharType="end"/>
+														</w:r>
+													</w:p>
+												</w:tc>
+												<w:tc>
+													<w:tcPr>
+														<w:tcW w:w="3840" w:type="dxa"/>
+														<w:tcBorders/>
+														<w:vAlign w:val="baseline"/>
+														<w:noWrap w:val="off"/>
+													</w:tcPr>
+													<w:p>
+														<w:pPr>
+															<w:pBdr/>
+															<w:bidi w:val="off"/>
+														</w:pPr>
+														<w:r>
+															<w:rPr>
+																<w:color w:val="000000"/>
+																<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+																<w:sz w:val="20"/>
+																<w:sz-cs w:val="20"/>
+																<w:spacing w:val="0"/>
+															</w:rPr>
+															<w:t><![CDATA[/]]></w:t>
+														</w:r>
+													</w:p>
+												</w:tc>
+												<w:tc>
+													<w:tcPr>
+														<w:tcW w:w="3840" w:type="dxa"/>
+														<w:tcBorders/>
+														<w:vAlign w:val="baseline"/>
+														<w:noWrap w:val="off"/>
+													</w:tcPr>
+													<w:p>
+														<w:pPr>
+															<w:pBdr/>
+															<w:bidi w:val="off"/>
+														</w:pPr>
+														<w:r>
+															<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+															<w:sz w:val="20"/>
+															<w:sz-cs w:val="20"/>
+															<w:spacing w:val="0"/>
+															<w:fldChar w:fldCharType="begin"/>
+														</w:r>
+														<w:r>
+															<w:rPr>
+																<w:color w:val="000000"/>
+																<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+																<w:sz w:val="20"/>
+																<w:sz-cs w:val="20"/>
+																<w:spacing w:val="0"/>
+															</w:rPr>
+															<w:instrText>NUMPAGES</w:instrText>
+														</w:r>
+														<w:r>
+															<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+															<w:sz w:val="20"/>
+															<w:sz-cs w:val="20"/>
+															<w:spacing w:val="0"/>
+															<w:fldChar w:fldCharType="end"/>
+														</w:r>
+													</w:p>
+												</w:tc>
+											</w:tr>
+										</w:tbl>
+										<w:p>
+											<w:rPr>
+												<w:vanish w:val="on"/>
+											</w:rPr>
+										</w:p>
+									</w:tc>
+								</w:tr>
+							</w:tbl>
+						</w:ftr>
+						<w:pgSz w:w="12240" w:h="15840" w:orient="auto"/>
+						<w:pgMar w:top="360" w:bottom="360" w:left="360" w:right="360" w:header="360" w:footer="360"/>
+						<w:pgBorders w:offset-from="page"/>
+					</w:sectPr>
+				</w:pPr>
+			</w:p>
+		</wx:sect>
+		<wx:sect>
+			<w:p>
+				<w:rPr>
+					<w:vanish w:val="on"/>
+				</w:rPr>
+			</w:p>
+			<w:tbl>
+				<w:tblPr>
+					<w:tblInd w:w="0" w:type="dxa"/>
+					<w:tblStyle w:val="TableGrid"/>
+					<w:tblOverlap w:val="Never"/>
+					<w:tblW w:w="11520" w:type="dxa"/>
+					<w:tblLook w:val="01E0"/>
+					<w:tblLayout w:type="Fixed"/>
+					<w:tblBorders/>
+				</w:tblPr>
+				<w:tblGrid>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+					<w:gridCol w:val="576"/>
+				</w:tblGrid>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[1]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:pPr>
+								<w:pBdr/>
+								<w:bidi w:val="off"/>
+							</w:pPr>
+							<w:r>
+								<w:rPr>
+									<w:color w:val="000000"/>
+									<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+									<w:sz w:val="20"/>
+									<w:sz-cs w:val="20"/>
+									<w:spacing w:val="0"/>
+								</w:rPr>
+								<w:t><![CDATA[20]]></w:t>
+							</w:r>
+						</w:p>
+					</w:tc>
+				</w:tr>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+				</w:tr>
+				<w:tr>
+					<w:trPr/>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+					<w:tc>
+						<w:tcPr>
+							<w:tcW w:w="576" w:type="dxa"/>
+							<w:tcBorders/>
+							<w:vAlign w:val="baseline"/>
+							<w:noWrap w:val="off"/>
+						</w:tcPr>
+						<w:p>
+							<w:rPr>
+								<w:vanish w:val="on"/>
+							</w:rPr>
+						</w:p>
+					</w:tc>
+				</w:tr>
+			</w:tbl>
+			<w:sectPr>
+				<w:hdr w:type="odd">
+					<w:tbl>
+						<w:tblPr>
+							<w:tblW w:w="11520" w:type="dxa"/>
+							<w:tblLook w:val="01E0"/>
+							<w:tblLayout w:type="Fixed"/>
+						</w:tblPr>
+						<w:tr>
+							<w:trPr>
+								<w:trHeight w:val="720"/>
+							</w:trPr>
+							<w:tc>
+								<w:tcPr>
+									<w:tcW w:w="11520" w:type="dxa"/>
+								</w:tcPr>
+								<w:p>
+									<w:rPr>
+										<w:vanish w:val="on"/>
+									</w:rPr>
+								</w:p>
+							</w:tc>
+						</w:tr>
+					</w:tbl>
+				</w:hdr>
+				<w:ftr w:type="odd">
+					<w:tbl>
+						<w:tblPr>
+							<w:tblW w:w="11520" w:type="dxa"/>
+							<w:tblLook w:val="01E0"/>
+							<w:tblLayout w:type="Fixed"/>
+						</w:tblPr>
+						<w:tr>
+							<w:trPr>
+								<w:trHeight w:val="720"/>
+							</w:trPr>
+							<w:tc>
+								<w:tcPr>
+									<w:tcW w:w="11520" w:type="dxa"/>
+								</w:tcPr>
+								<w:p>
+									<w:rPr>
+										<w:vanish w:val="on"/>
+									</w:rPr>
+								</w:p>
+								<w:tbl>
+									<w:tblPr>
+										<w:tblInd w:w="0" w:type="dxa"/>
+										<w:tblStyle w:val="TableGrid"/>
+										<w:tblOverlap w:val="Never"/>
+										<w:tblW w:w="11520" w:type="dxa"/>
+										<w:tblLook w:val="01E0"/>
+										<w:tblLayout w:type="Fixed"/>
+										<w:tblBorders/>
+									</w:tblPr>
+									<w:tblGrid>
+										<w:gridCol w:val="3840"/>
+										<w:gridCol w:val="3840"/>
+										<w:gridCol w:val="3840"/>
+									</w:tblGrid>
+									<w:tr>
+										<w:trPr/>
+										<w:tc>
+											<w:tcPr>
+												<w:tcW w:w="3840" w:type="dxa"/>
+												<w:tcBorders/>
+												<w:vAlign w:val="baseline"/>
+												<w:noWrap w:val="off"/>
+											</w:tcPr>
+											<w:p>
+												<w:pPr>
+													<w:pBdr/>
+													<w:bidi w:val="off"/>
+												</w:pPr>
+												<w:r>
+													<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+													<w:sz w:val="20"/>
+													<w:sz-cs w:val="20"/>
+													<w:spacing w:val="0"/>
+													<w:fldChar w:fldCharType="begin"/>
+												</w:r>
+												<w:r>
+													<w:rPr>
+														<w:color w:val="000000"/>
+														<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+														<w:sz w:val="20"/>
+														<w:sz-cs w:val="20"/>
+														<w:spacing w:val="0"/>
+													</w:rPr>
+													<w:instrText>PAGE</w:instrText>
+												</w:r>
+												<w:r>
+													<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+													<w:sz w:val="20"/>
+													<w:sz-cs w:val="20"/>
+													<w:spacing w:val="0"/>
+													<w:fldChar w:fldCharType="end"/>
+												</w:r>
+											</w:p>
+										</w:tc>
+										<w:tc>
+											<w:tcPr>
+												<w:tcW w:w="3840" w:type="dxa"/>
+												<w:tcBorders/>
+												<w:vAlign w:val="baseline"/>
+												<w:noWrap w:val="off"/>
+											</w:tcPr>
+											<w:p>
+												<w:pPr>
+													<w:pBdr/>
+													<w:bidi w:val="off"/>
+												</w:pPr>
+												<w:r>
+													<w:rPr>
+														<w:color w:val="000000"/>
+														<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+														<w:sz w:val="20"/>
+														<w:sz-cs w:val="20"/>
+														<w:spacing w:val="0"/>
+													</w:rPr>
+													<w:t><![CDATA[/]]></w:t>
+												</w:r>
+											</w:p>
+										</w:tc>
+										<w:tc>
+											<w:tcPr>
+												<w:tcW w:w="3840" w:type="dxa"/>
+												<w:tcBorders/>
+												<w:vAlign w:val="baseline"/>
+												<w:noWrap w:val="off"/>
+											</w:tcPr>
+											<w:p>
+												<w:pPr>
+													<w:pBdr/>
+													<w:bidi w:val="off"/>
+												</w:pPr>
+												<w:r>
+													<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+													<w:sz w:val="20"/>
+													<w:sz-cs w:val="20"/>
+													<w:spacing w:val="0"/>
+													<w:fldChar w:fldCharType="begin"/>
+												</w:r>
+												<w:r>
+													<w:rPr>
+														<w:color w:val="000000"/>
+														<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+														<w:sz w:val="20"/>
+														<w:sz-cs w:val="20"/>
+														<w:spacing w:val="0"/>
+													</w:rPr>
+													<w:instrText>NUMPAGES</w:instrText>
+												</w:r>
+												<w:r>
+													<w:rFonts w:ascii="Arial" w:fareast="Arial" w:h-ansi="Arial" w:cs="Arial"/>
+													<w:sz w:val="20"/>
+													<w:sz-cs w:val="20"/>
+													<w:spacing w:val="0"/>
+													<w:fldChar w:fldCharType="end"/>
+												</w:r>
+											</w:p>
+										</w:tc>
+									</w:tr>
+								</w:tbl>
+								<w:p>
+									<w:rPr>
+										<w:vanish w:val="on"/>
+									</w:rPr>
+								</w:p>
+							</w:tc>
+						</w:tr>
+					</w:tbl>
+				</w:ftr>
+				<w:pgSz w:w="12240" w:h="15840" w:orient="auto"/>
+				<w:pgMar w:top="360" w:bottom="360" w:left="360" w:right="360" w:header="360" w:footer="360"/>
+				<w:pgBorders w:offset-from="page"/>
+			</w:sectPr>
+		</wx:sect>
+	</w:body>
+</w:wordDocument>

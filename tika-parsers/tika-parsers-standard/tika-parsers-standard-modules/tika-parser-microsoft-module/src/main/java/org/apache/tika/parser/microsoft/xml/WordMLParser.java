@@ -121,12 +121,26 @@ public class WordMLParser extends AbstractXML2003Parser {
                         //close p if already in a p to prevent nested <p>
                         if (inP) {
                             handler.endElement(XHTMLContentHandler.XHTML, P, P);
+                            inP = false;
                         }
-                        inP = true;
+                    } else if (html.equals(TABLE) && inP) {
+                        // WordML allows <w:tbl> nested inside <w:p>. XHTML
+                        // does not allow a block-level table inside an
+                        // inline <p>: the inline <p> would still be on the
+                        // SAX stack when the table's <tr>/<td> children
+                        // (and their inner <w:p>'s) emit, and the next
+                        // "close p before nested p" event would land on top
+                        // of <td>/<tr> instead of <p>. Close the open <p>
+                        // before opening the table.
+                        handler.endElement(XHTMLContentHandler.XHTML, P, P);
+                        inP = false;
                     }
                     handler.startElement(XHTMLContentHandler.XHTML, html, html, EMPTY_ATTRS);
                     if (html.equals(TABLE)) {
                         handler.startElement(XHTMLContentHandler.XHTML, TBODY, TBODY, EMPTY_ATTRS);
+                    }
+                    if (P.equals(localName)) {
+                        inP = true;
                     }
                 }
                 if (BR.equals(localName)) {
