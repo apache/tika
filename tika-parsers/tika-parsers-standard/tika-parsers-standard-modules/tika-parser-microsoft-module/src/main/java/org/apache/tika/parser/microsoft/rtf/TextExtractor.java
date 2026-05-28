@@ -311,6 +311,12 @@ final class TextExtractor {
     // Non-null if we've seen the url for a HYPERLINK but not yet
     // its text:
     private String pendingURL;
+    // Group depth at which the current <a href=...> was opened (in
+    // groupState.depth units). Used to defer </a> emission until we leave
+    // the fldrslt group that opened it, so a nested \field (e.g., PAGEREF
+    // inside a HYPERLINK's fldrslt) doesn't prematurely close the outer <a>
+    // via the fieldState==3 branch in processGroupEnd. -1 means no <a> open.
+    private int hyperlinkAnchorDepth = -1;
     // Used to process the sub-groups inside the upr
     // group:
     private int uprState = -1;
@@ -1365,8 +1371,18 @@ final class TextExtractor {
                 addOutputChar('\u201D');
             }
         } else if (equals("fldinst")) {
-            fieldState = 1;
-            groupState.ignore = false;
+            if (fieldState == 0) {
+                fieldState = 1;
+                groupState.ignore = false;
+            } else {
+                // Nested \fldinst inside an outer field (e.g., PAGEREF inside
+                // a HYPERLINK's fldrslt). Suppress the nested instruction text
+                // and leave the outer fieldState/pendingURL untouched: the
+                // outer field's closing group still needs to see fieldState==3
+                // to emit </a>. The accompanying \fldrslt of the nested field
+                // emits its display text into the outer hyperlink's <a>.
+                groupState.ignore = true;
+            }
         } else if (equals("fldrslt") && fieldState == 2) {
             assert pendingURL != null;
             lazyStartParagraph();
@@ -1375,6 +1391,10 @@ final class TextExtractor {
             out.startElement("", "a", "a", attrs);
             pendingURL = null;
             fieldState = 3;
+            // Remember which group depth owns this <a>. processGroupEnd only
+            // emits </a> once we leave this depth, so nested groups inside
+            // the fldrslt (e.g., a PAGEREF \field) don't trip the close early.
+            hyperlinkAnchorDepth = groupState.depth;
             groupState.ignore = false;
         }
     }
@@ -1547,8 +1567,17 @@ final class TextExtractor {
             // inlined, but fail to record them in metadata
             // as a field value.
         } else if (fieldState == 3) {
-            end("a");
-            fieldState = 0;
+            // Only close </a> once we've left the fldrslt group that opened
+            // it. groupState.depth here is the OUTER group we just restored
+            // to; if it's now below the recorded anchor depth, the fldrslt
+            // group has closed. This guards against nested-field group ends
+            // (e.g., a PAGEREF \fldinst inside the HYPERLINK fldrslt) closing
+            // the outer </a> too early.
+            if (hyperlinkAnchorDepth >= 0 && groupState.depth < hyperlinkAnchorDepth) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
         }
     }
 }

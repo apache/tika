@@ -60,6 +60,23 @@ public class RTFParserTest extends TikaTest {
         assertContains("indexation Word", content);
     }
 
+    @Test //TIKA-4744
+    public void testNestedHyperlinkPageRef() throws Exception {
+        // A HYPERLINK field with a PAGEREF \field nested inside its \fldrslt
+        // used to leak: the nested \fldinst would overwrite fieldState=3 with
+        // 1, so the outer fldrslt's group close skipped the </a> emission and
+        // <a> stayed open. The cascade surfaced at endDocument as the strict
+        // validator complaining </body> didn't match topmost <p>.
+        // getXML wraps the handler in StrictXHTMLValidator, so any imbalance
+        // would throw before the assertions.
+        XMLResult r = getXML("testRTF_nestedHyperlinkPageRef.rtf");
+        // PAGEREF result "42" should render INSIDE the outer hyperlink's <a>,
+        // not after a prematurely-closed </a>:
+        assertContains("<a href=\"#target\">42</a>", r.xml);
+        assertContains("Before", r.xml);
+        assertContains("after.", r.xml);
+    }
+
     @Test
     public void testUmlautSpacesExtraction2() throws Exception {
         String content = getText("testRTFUmlautSpaces2.rtf");
