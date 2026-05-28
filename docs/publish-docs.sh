@@ -40,12 +40,16 @@ mkdir -p "${DOCS_DIR}"
 
 # Strip the 'tika/' component dir prefix so URLs are /docs/X.Y.Z/...
 cp -r target/site/tika/* "${DOCS_DIR}/"
-# UI assets one level above docs/, since HTML uses ../../_/ relative paths
-cp -r target/site/_/ "${PUBLISH_DIR}/_/"
+# UI assets one level above docs/, since HTML uses ../../_/ relative paths.
+# Replace wholesale: cp -r into an existing directory nests source as a
+# subdirectory (publish/_/_/), so remove first to keep the layout flat.
+rm -rf "${PUBLISH_DIR}/_"
+cp -r target/site/_ "${PUBLISH_DIR}/_"
 # Fix the root redirect and sitemap to match the flattened layout
 sed 's|tika/||g' target/site/index.html > "${DOCS_DIR}/index.html"
 sed 's|/docs/tika/|/docs/|g' target/site/sitemap.xml > "${DOCS_DIR}/sitemap.xml"
 cp target/site/404.html "${DOCS_DIR}/"
-cp target/site/search-index.js "${DOCS_DIR}/"
+# Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js
+cp target/site/search-index.js "${PUBLISH_DIR}/"
 
 echo "Published to: ${DOCS_DIR}/"

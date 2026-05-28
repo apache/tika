@@ -230,4 +230,4 @@ The `release-tika-server` job builds from `tika-server-standard-<v>.zip`
 
 * xref:maintainers/release-guides/tika.adoc[Releasing Apache Tika]
 * xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images]
-* xref:maintainers/release-guides/site-updates.adoc[Updating the Website After a Release]
+* xref:maintainers/site.adoc[Updating the Website After a Release]
