@@ -1037,6 +1037,31 @@ public class PDFParserTest extends TikaTest {
         assertNotContained("Mount Rushmore National Memorial", xml);
     }
 
+    @Test //TIKA-4744
+    public void testMalformedXFADivBalanced() throws Exception {
+        // A PDF whose XFA stream is malformed used to leave <div class=
+        // "xfa_content"> open: XFAExtractor.extract opened the div first and
+        // then threw XMLStreamException from reader.next(), the caller logged
+        // and fell through to AcroForm fallback (which emitted its own divs
+        // nested inside the unclosed xfa_content), and endDocument failed
+        // with </body> not matching topmost <div>.
+        // getXML wraps the handler in StrictXHTMLValidator, so any imbalance
+        // would throw before the assertions.
+        XMLResult r = getXML("testPDF_malformedXFA.pdf");
+        // Caller recorded the XMLStreamException as a warning rather than a
+        // fatal -- confirm that didn't change.
+        String[] warnings = r.metadata.getValues(
+                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        boolean xfaWarningPresent = false;
+        for (String w : warnings) {
+            if (w.contains("XFAExtractor")) {
+                xfaWarningPresent = true;
+                break;
+            }
+        }
+        assertTrue(xfaWarningPresent, "expected an XFAExtractor warning");
+    }
+
     @Test
     public void testXMPMM() throws Exception {
 
