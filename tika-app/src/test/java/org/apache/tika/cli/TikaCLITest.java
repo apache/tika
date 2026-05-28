@@ -38,6 +38,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -772,11 +774,23 @@ public class TikaCLITest {
         String xmlPath = Paths.get(getClass().getResource("/xml-configs/tika-config-simple.xml").toURI()).toString();
         String content = getParamOutContent("--convert-config-xml-to-json=" + xmlPath);
 
-        // stdout should contain the converted JSON (and only the JSON)
-        assertTrue(content.contains("\"parsers\""), "Expected JSON parsers section, got: " + content);
-        assertTrue(content.contains("pdf-parser"), "Expected pdf-parser in output, got: " + content);
-        assertTrue(content.contains("\"sortByPosition\" : true"), "Expected converted param, got: " + content);
-        assertTrue(content.trim().startsWith("{"), "Output should be pure JSON, got: " + content);
+        // stdout should be pure JSON; parse and assert on structure, not formatting
+        JsonNode root = new ObjectMapper().readTree(content.trim());
+        JsonNode parsers = root.get("parsers");
+        assertNotNull(parsers, "Expected parsers section, got: " + content);
+        assertTrue(parsers.isArray() && parsers.size() > 0, "Expected non-empty parsers array, got: " + content);
+
+        JsonNode pdfEntry = null;
+        for (JsonNode entry : parsers) {
+            if (entry.has("pdf-parser")) {
+                pdfEntry = entry.get("pdf-parser");
+                break;
+            }
+        }
+        assertNotNull(pdfEntry, "Expected pdf-parser entry, got: " + content);
+        JsonNode sortByPosition = pdfEntry.findValue("sortByPosition");
+        assertNotNull(sortByPosition, "Expected sortByPosition under pdf-parser, got: " + content);
+        assertTrue(sortByPosition.asBoolean(), "Expected sortByPosition=true, got: " + sortByPosition);
     }
 
     /**

@@ -402,8 +402,9 @@ public class TikaCLI {
             }
         }
 
-        // Single .json file is a config file for async mode
-        if (args.length == 1 && args[0].endsWith(".json")) {
+        // Single .json file is a config file for async mode.
+        // Reject option-style args like `--config=foo.json` so they fall through to process().
+        if (args.length == 1 && !args[0].startsWith("-") && args[0].endsWith(".json")) {
             return true;
         }
 
@@ -623,8 +624,12 @@ public class TikaCLI {
 
         Path xmlPath = Paths.get(inputPath.trim());
 
-        if (!Files.exists(xmlPath)) {
-            System.err.println("Error: Input XML file not found: " + xmlPath);
+        if (!Files.isRegularFile(xmlPath)) {
+            System.err.println("Error: Input XML path is not a regular file: " + xmlPath);
+            return;
+        }
+        if (!Files.isReadable(xmlPath)) {
+            System.err.println("Error: Input XML file is not readable: " + xmlPath);
             return;
         }
 
@@ -782,7 +787,7 @@ public class TikaCLI {
         out.println("    -g  or --gui           Start the Apache Tika GUI");
         out.println();
         out.println("    --config=<tika-config.json>");
-        out.println("        TikaConfig file (JSON as of Tika 4.x). Must be specified before -g, -s or -f !");
+        out.println("        TikaConfig file (JSON as of Tika 4.x). Must be specified before -g or -f !");
         // TODO: TIKA-XXXX - Re-enable config dump options once JSON serialization is complete
         // These options are not yet implemented in 4.x due to the migration from XML to JSON config
         // out.println("    --dump-minimal-config  Print minimal TikaConfig");
