@@ -77,7 +77,7 @@ so you can read the interleaved output:
 
 * `pipesClientId=N` -- *the same value on both sides of a pair*. The
   parent's `PipesClient #N` always connects to the fork running with
-  `-DpipesClientId=N`, so the same N threads correlation across the
+  `-DpipesClientId=N`, so the same N enables correlation across the
   process boundary. Use it to gather every log line about one
   conversation, regardless of which side emitted them.
 

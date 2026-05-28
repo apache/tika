@@ -444,8 +444,8 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
             if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
-            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
-                    emitKey, columnName, s.length(), maxLength);
+            LOGGER.warn("truncating column '{}' from {} chars to {} chars",
+                    columnName, s.length(), maxLength);
             return s.substring(0, maxLength);
         }
     }
