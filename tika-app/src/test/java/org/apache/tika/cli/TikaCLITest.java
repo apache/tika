@@ -38,6 +38,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -758,6 +760,37 @@ public class TikaCLITest {
 
         content = getParamOutContent("--list-parser-details-apt");
         assertTrue(content.contains("application/vnd.oasis.opendocument.text-web"));
+    }
+
+    /**
+     * Tests --convert-config-xml-to-json with no separate config file.
+     * Regression test for TIKA-4734: the flag used to be misrouted to async
+     * mode (the input arg ended in ".json"), failing with a TikaConfigException
+     * unless a --config was also passed. It must now run standalone and write
+     * the converted JSON to stdout.
+     */
+    @Test
+    public void testConvertConfigXmlToJson() throws Exception {
+        String xmlPath = Paths.get(getClass().getResource("/xml-configs/tika-config-simple.xml").toURI()).toString();
+        String content = getParamOutContent("--convert-config-xml-to-json=" + xmlPath);
+
+        // stdout should be pure JSON; parse and assert on structure, not formatting
+        JsonNode root = new ObjectMapper().readTree(content.trim());
+        JsonNode parsers = root.get("parsers");
+        assertNotNull(parsers, "Expected parsers section, got: " + content);
+        assertTrue(parsers.isArray() && parsers.size() > 0, "Expected non-empty parsers array, got: " + content);
+
+        JsonNode pdfEntry = null;
+        for (JsonNode entry : parsers) {
+            if (entry.has("pdf-parser")) {
+                pdfEntry = entry.get("pdf-parser");
+                break;
+            }
+        }
+        assertNotNull(pdfEntry, "Expected pdf-parser entry, got: " + content);
+        JsonNode sortByPosition = pdfEntry.findValue("sortByPosition");
+        assertNotNull(sortByPosition, "Expected sortByPosition under pdf-parser, got: " + content);
+        assertTrue(sortByPosition.asBoolean(), "Expected sortByPosition=true, got: " + sortByPosition);
     }
 
     /**
