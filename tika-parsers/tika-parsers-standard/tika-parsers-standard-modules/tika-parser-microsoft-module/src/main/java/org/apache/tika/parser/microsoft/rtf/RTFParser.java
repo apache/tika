@@ -104,7 +104,11 @@ public class RTFParser implements Parser {
             tagged.throwIfCauseOf(e);
             balancer.drainOpenElements();
             throw new TikaException("Error parsing an RTF document", e);
-        } catch (SAXException e) {
+        } catch (SAXException | TikaException e) {
+            // Drain on any exception escaping parseInline. parseInline can
+            // throw TikaException too (memory limits, embedded extraction,
+            // etc.); without the drain, the finally's xhtml.endDocument()
+            // throws on the unbalanced stack and masks the real error.
             balancer.drainOpenElements();
             throw e;
         } finally {

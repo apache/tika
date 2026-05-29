@@ -119,7 +119,11 @@ public class FlatOpenDocumentParser implements Parser {
             if (detected != null) {
                 metadata.set(Metadata.CONTENT_TYPE, detected.toString());
             }
-        } catch (SAXException e) {
+        } catch (SAXException | IOException | TikaException e) {
+            // Drain the balancer on ANY exception that escapes the parse
+            // loop. Without this, the finally's xhtml.endDocument() throws
+            // on the unbalanced stack and the masked </body> vs <p>/<b>
+            // hides the real failure (truncated input, malformed XML, etc.).
             balancer.drainOpenElements();
             throw e;
         } finally {
@@ -228,9 +232,13 @@ public class FlatOpenDocumentParser implements Parser {
                 }
             } else if (outerSectionDepth > 0
                     && (META.equals(localName) || BODY.equals(localName)
-                        || SCRIPTS.equals(localName))) {
+                        || (extractMacros && SCRIPTS.equals(localName)))) {
                 // Track nested occurrences so the matching end doesn't
                 // prematurely flip currentHandler back to defaultHandler.
+                // SCRIPTS is gated on extractMacros to match the decrement
+                // condition in endElement -- otherwise a <office:scripts>
+                // inside an outer section would inflate the counter without
+                // a matching decrement, stranding currentHandler.
                 outerSectionDepth++;
             }
             currentHandler.startElement(namespaceURI, localName, qName, attrs);

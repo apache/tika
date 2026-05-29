@@ -248,6 +248,11 @@ public class EpubParser implements Parser {
                             normalizer.drainOpenElements();
                         } catch (IOException ioe) {
                             LOG.trace("epub spine read IOException on {}: {}", path, ioe.toString());
+                            // Same risk as the SAX path: the partial parse may
+                            // have left elements open. Drain before rethrow so
+                            // subsequent spine items and the outer </body>
+                            // don't land on a corrupted stack.
+                            normalizer.drainOpenElements();
                             throw ioe;
                         } finally {
                             processed.add(id);
@@ -351,6 +356,9 @@ public class EpubParser implements Parser {
             } catch (IOException e) {
                 failed++;
                 LOG.trace("epub fallback: IO failure on {}: {}", entry.getName(), e.toString());
+                // Same drain need as the SAX path: a partial parse before the
+                // IO failure may have left elements open for the next iter.
+                normalizer.drainOpenElements();
             }
         }
         LOG.trace("epub fallback summary: parsed={} failed={}", parsed, failed);

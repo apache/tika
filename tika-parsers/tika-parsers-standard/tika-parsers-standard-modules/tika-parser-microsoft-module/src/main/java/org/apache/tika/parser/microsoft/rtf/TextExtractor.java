@@ -1501,6 +1501,10 @@ final class TextExtractor {
                 embObjHandler.handleCompletedObject();
             } catch (TikaException | IOException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata);
+            } catch (SecurityException e) {
+                // Security-relevant exceptions must always propagate
+                // immediately -- never swallow them as a warning.
+                throw e;
             } catch (RuntimeException e) {
                 // POI dispatch on a zero-byte embedded object throws
                 // EmptyFileException; other malformed embedded payloads

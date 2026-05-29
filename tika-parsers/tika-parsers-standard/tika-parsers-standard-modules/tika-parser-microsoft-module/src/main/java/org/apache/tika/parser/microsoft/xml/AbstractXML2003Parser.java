@@ -111,6 +111,12 @@ public abstract class AbstractXML2003Parser implements Parser {
             // Close anything the aborted parse left open, then propagate.
             balancer.drainOpenElements();
             throw new TikaException("XML parse error", e);
+        } catch (IOException e) {
+            // Truncated streams etc. -- same problem as the SAX path: without
+            // a drain, the finally's xhtml.endDocument() throws on the
+            // unbalanced stack and masks the real IO error.
+            balancer.drainOpenElements();
+            throw e;
         } finally {
             tis.removeCloseShield();
             xhtml.endDocument();
