@@ -366,6 +366,21 @@ public class ODFParserTest extends TikaTest {
     }
 
     @Test //TIKA-4744
+    public void testFlatFodsEmbeddedChart() throws Exception {
+        // A flat ODS can embed a chart as a nested <office:document> inside
+        // <draw:object>. The dispatch handler in FlatOpenDocumentParser used
+        // to flip back to defaultHandler when the inner document's
+        // <office:meta>/<office:body> closed, sending the trailing
+        // </draw:object> / </table> / </office:body> to a no-op handler --
+        // <object>/<table> stayed open and the strict validator caught it.
+        // getXML wraps in StrictXHTMLValidator, so an imbalance throws here.
+        XMLResult r = getXML("testFODS_embeddedChart.fods");
+        // The outer <object> wrapper should close cleanly.
+        assertContains("<object>", r.xml);
+        assertContains("</object>", r.xml);
+    }
+
+    @Test //TIKA-4744
     public void testSvgTitleInStyledSpan() throws Exception {
         // Empty <svg:title/>/<svg:desc/> inside a <draw:connector> or
         // <draw:custom-shape> that is itself wrapped in a styled <text:span>

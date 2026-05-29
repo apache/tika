@@ -265,7 +265,16 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startTable() throws SAXException {
-
+        // A <w:tbl> can appear nested inside an outer <w:p> -- corrupt-ish but
+        // present in the corpus (e.g., <w:p><w:r>...<wps:txbx><w:txbxContent>
+        // <w:tbl>...). At that point a run-level <b>/<i>/<u>/<s>/<a> may be on
+        // the SAX stack just above where the <table> is about to land. When a
+        // later paragraph inside a cell ends, formattingTags.closeAll() tries
+        // to emit </b> for the outer-paragraph state, but <td> is topmost --
+        // strict validator rejects the mismatch. Close pending formatting now
+        // so the table opens at a clean layer and the outer style is forgotten.
+        // Mirrors startSDT()'s same-shape guard.
+        formattingTags.closeAll();
         xhtml.startElement("table");
         openStructuralTags.push("table");
         tableDepth++;

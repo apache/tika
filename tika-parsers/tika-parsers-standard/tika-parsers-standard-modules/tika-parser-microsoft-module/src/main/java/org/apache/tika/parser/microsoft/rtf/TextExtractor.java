@@ -473,7 +473,6 @@ final class TextExtractor {
     }
 
     private void extract(PushbackInputStream in) throws IOException, SAXException, TikaException {
-
         while (true) {
             final int b = in.read();
             if (b == -1) {
@@ -648,6 +647,16 @@ final class TextExtractor {
             lazyStartParagraph();
         }
         if (inParagraph || paragraphStack.size() > 0) {
+            // A HYPERLINK's <a> can be open mid-fldrslt when a \par is
+            // encountered. Closing </p> while <a> is topmost on the SAX
+            // stack trips StrictXHTMLValidator -- close </a> first and
+            // forget the hyperlink state (the paragraph break terminates
+            // the link visually anyway).
+            if (hyperlinkAnchorDepth >= 0) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
             if (groupState.italic) {
                 end("i");
                 groupState.italic = preserveStyles;
@@ -1385,6 +1394,13 @@ final class TextExtractor {
             }
         } else if (equals("fldrslt") && fieldState == 2) {
             assert pendingURL != null;
+            // Temporarily clear fieldState so lazyStartParagraph's endStyles
+            // actually flushes any pending <b>/<i>. endStyles short-circuits
+            // when fieldState != 0 to keep style flips inside an already-open
+            // <a> from leaking; but here we're about to OPEN the <a>, so any
+            // outer <b>/<i> still on the SAX stack must close first or <p>
+            // would land on top of <b> and the link's </b> later mismatches.
+            fieldState = 0;
             lazyStartParagraph();
             AttributesImpl attrs = new AttributesImpl();
             attrs.addAttribute(XHTML, "href", "href", "CDATA", pendingURL);
@@ -1485,6 +1501,12 @@ final class TextExtractor {
                 embObjHandler.handleCompletedObject();
             } catch (TikaException | IOException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata);
+            } catch (RuntimeException e) {
+                // POI dispatch on a zero-byte embedded object throws
+                // EmptyFileException; other malformed embedded payloads
+                // can surface as a variety of runtime exceptions. Record
+                // and continue rather than aborting the outer RTF parse.
+                EmbeddedDocumentUtil.recordException(e, metadata);
             }
             groupState.objdata = false;
         } else if (groupState.pictDepth > 0) {
@@ -1511,6 +1533,18 @@ final class TextExtractor {
         if (groupStates.size() > 0) {
             // Restore group state:
             final GroupState outerGroupState = groupStates.removeLast();
+            // If we're leaving the fldrslt group that owns the current <a>,
+            // close </a> BEFORE the style restore runs. Otherwise the
+            // restore's start("b") would land on top of <a>, and the next
+            // </a>/<b> would mismatch. Doing this here also flips fieldState
+            // to 0, which un-gates the style compare below so the outer
+            // bold/italic context is actually re-emitted.
+            if (fieldState == 3 && hyperlinkAnchorDepth >= 0
+                    && outerGroupState.depth < hyperlinkAnchorDepth) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
             //only modify styles if we're not in a hyperlink
             if (fieldState == 0) {
                 // Close italic, if outer does not have italic or

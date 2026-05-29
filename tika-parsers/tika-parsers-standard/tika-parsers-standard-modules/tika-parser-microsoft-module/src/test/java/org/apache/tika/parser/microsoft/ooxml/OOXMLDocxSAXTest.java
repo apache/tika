@@ -282,6 +282,34 @@ public class OOXMLDocxSAXTest extends TikaTest {
         assertContains("Vedný odbor:", r.xml);
     }
 
+    @Test //TIKA-4744
+    public void testTableInRunInsideParagraph() throws Exception {
+        // A <w:tbl> nested deeply inside an outer <w:p>'s run (via
+        // <mc:AlternateContent>/<w:drawing>/<wps:txbx>/<w:txbxContent>) used
+        // to leave the run's <b>/<i>/etc on the SAX stack below the new
+        // <table>. A subsequent paragraph end inside a cell then tried to
+        // closeFormattingTags() for the outer state, emitting </b> while
+        // <td> was topmost. startTable now closes pending formatting first,
+        // mirroring startSDT.
+        XMLResult r = getXML("testWORD_tableInRunInsideParagraph.docx");
+        assertContains("<table>", r.xml);
+    }
+
+    @Test //TIKA-4744
+    public void testFormattingFlipPreservesNestingOrder() throws Exception {
+        // FormattingTagManager.applyFormatting used to close </s> before </u>
+        // in the bold-flip and italic-flip branches, but XHTML nesting is
+        // <b><i><s><u> (u is innermost). A run with bold+strike+underline
+        // followed by a non-bold run trips the wrong-order close: </s>
+        // emitted while <u> is topmost, then the catch arm's closeAnyPending
+        // tries </u> against <s> -- the visible </u> vs <s> the validator
+        // flagged on three corpus files.
+        XMLResult r = getXML("testWORD_formattingFlipUnderlineOrder.docx");
+        // Just confirm something extracted -- the real check is no validator
+        // throw, which getXML enforces via StrictXHTMLValidator.
+        assertContains("<body>", r.xml);
+    }
+
     @Test
     public void testDOCXOverrideParagraphNumbering() throws Exception {
         String xml = getXML("testWORD_override_list_numbering.docx").xml;

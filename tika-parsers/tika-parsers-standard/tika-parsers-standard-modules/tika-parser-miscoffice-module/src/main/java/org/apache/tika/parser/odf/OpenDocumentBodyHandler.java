@@ -362,7 +362,7 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
      * branch where this check is used.
      */
     private static boolean closeStylesBeforeOpen(String uri, String localName) {
-        if (DRAW_NS.equals(uri) && "text-box".equals(localName)) {
+        if (DRAW_NS.equals(uri) && ("text-box".equals(localName) || "object".equals(localName))) {
             return true;
         }
         if (TABLE_NS.equals(uri) &&
@@ -406,6 +406,11 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             throws SAXException {
 
         if (DRAW_NS.equals(namespaceURI) && "image".equals(localName)) {
+            // Close any pending inline styles (e.g., a <b> opened lazily by a
+            // prior <text:span>) before emitting the <img> -- without this
+            // the <img> lands inside <b>, the styles are never flushed, and
+            // <b> reaches endDocument unbalanced.
+            closeStyleTags();
             String link = attrs.getValue(XLINK_NS, "href");
             AttributesImpl attr = new AttributesImpl();
             if (!StringUtils.isEmpty(link)) {

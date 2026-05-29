@@ -35,6 +35,7 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 
 /**
  * This class buffers data from embedded objects and pictures.
@@ -235,12 +236,24 @@ class RTFEmbObjHandler {
                     }
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
                 }
+                // Wrap the outer handler in a balancing handler so that if
+                // the embedded parser aborts mid-element (leaving <p>/<b>/etc
+                // open on the wire), we can drain those before propagating.
+                // Without this, the outer RTF parser's subsequent
+                // </b>/</p>/</body> sequence trips StrictXHTMLValidator on
+                // unbalanced nesting and surfaces as a misleading error at
+                // endDocument. Same shape as the SXWPF / Epub catch arms.
+                XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(handler);
                 try {
                     embeddedDocumentUtil
-                            .parseEmbedded(tis, new EmbeddedContentHandler(handler), metadata,
+                            .parseEmbedded(tis, new EmbeddedContentHandler(balancer), metadata,
                                     true);
                 } catch (IOException e) {
+                    balancer.drainOpenElements();
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                } catch (SAXException e) {
+                    balancer.drainOpenElements();
+                    EmbeddedDocumentUtil.recordException(e, metadata);
                 }
             }
         }

@@ -114,13 +114,15 @@ class FormattingTagManager {
         }
 
         if (runProperties.isBold() != isBold) {
-            if (isStrikeThrough) {
-                xhtml.endElement("s");
-                isStrikeThrough = false;
-            }
+            // Close inner tags before flipping <b>. Nesting is <b><i><s><u>
+            // (outermost to innermost), so close innermost first: u, s, i.
             if (isUnderline) {
                 xhtml.endElement("u");
                 isUnderline = false;
+            }
+            if (isStrikeThrough) {
+                xhtml.endElement("s");
+                isStrikeThrough = false;
             }
             if (isItalics) {
                 xhtml.endElement("i");
@@ -135,13 +137,14 @@ class FormattingTagManager {
         }
 
         if (runProperties.isItalics() != isItalics) {
-            if (isStrikeThrough) {
-                xhtml.endElement("s");
-                isStrikeThrough = false;
-            }
+            // Close inner tags before flipping <i>: u then s (u is innermost).
             if (isUnderline) {
                 xhtml.endElement("u");
                 isUnderline = false;
+            }
+            if (isStrikeThrough) {
+                xhtml.endElement("s");
+                isStrikeThrough = false;
             }
             if (runProperties.isItalics()) {
                 xhtml.startElement("i");

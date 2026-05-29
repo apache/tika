@@ -61,6 +61,22 @@ public class RTFParserTest extends TikaTest {
     }
 
     @Test //TIKA-4744
+    public void testParInsideHyperlink() throws Exception {
+        // A \par inside a HYPERLINK's \fldrslt used to leave <a> on the SAX
+        // stack while endParagraph emitted </p>, tripping the strict
+        // validator with </p> vs <a>. The exception was masked by the
+        // finally's xhtml.endDocument() throwing </body> vs <p>; visible
+        // end-state was just "<p> open at endDocument". Closing pending <a>
+        // before </p> drops the link span at the paragraph break, which is
+        // the right XHTML rendering.
+        XMLResult r = getXML("testRTF_parInsideHyperlink.rtf");
+        // First paragraph contains the link text, properly closed.
+        assertContains("<a href=\"#target\">line1</a>", r.xml);
+        // Second paragraph picks up the post-\par text without an open <a>.
+        assertContains("line2", r.xml);
+    }
+
+    @Test //TIKA-4744
     public void testNestedHyperlinkPageRef() throws Exception {
         // A HYPERLINK field with a PAGEREF \field nested inside its \fldrslt
         // used to leak: the nested \fldinst would overwrite fieldState=3 with

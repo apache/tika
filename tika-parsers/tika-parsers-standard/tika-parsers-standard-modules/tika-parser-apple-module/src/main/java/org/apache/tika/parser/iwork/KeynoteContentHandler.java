@@ -142,6 +142,12 @@ class KeynoteContentHandler extends DefaultHandler {
         } else if (inMetadata && "key:authors".equals(qName)) {
             inMetaDataAuthors = false;
         } else if (inSlide && "sf:tabular-model".equals(qName)) {
+            // If the final row has fewer cells than numberOfColumns,
+            // parseTableData never reaches its </tr> emit. Close any open
+            // row before </table> so the SAX stream stays balanced.
+            if (currentColumn != null && currentColumn != 0) {
+                xhtml.endElement("tr");
+            }
             xhtml.endElement("table");
             tableId = null;
             numberOfColumns = null;
