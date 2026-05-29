@@ -264,7 +264,7 @@ public class HwpTextExtractorV5 implements Serializable {
                 parse(reader, xhtml);
 
             } else {
-                LOG.warn("Unknown Entry '{}'({})", entry.getName(), entry);
+                LOG.debug("Unknown Entry '{}'({})", entry.getName(), entry);
             }
         }
     }
@@ -309,7 +309,7 @@ public class HwpTextExtractorV5 implements Serializable {
                     IOUtils.closeQuietly(input);
                 }
             } else {
-                LOG.warn("unknown Entry '{}'({})", entry.getName(), entry);
+                LOG.debug("unknown Entry '{}'({})", entry.getName(), entry);
             }
         }
     }

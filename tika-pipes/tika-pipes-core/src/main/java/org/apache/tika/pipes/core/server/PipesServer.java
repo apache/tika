@@ -131,7 +131,7 @@ public class PipesServer implements AutoCloseable {
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
-            LOG.debug("pipesClientId={}: connecting to client on port={}", pipesClientId, port);
+            LOG.debug("connecting to client on port={}", port);
             Socket socket = new Socket();
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), PipesClient.SOCKET_CONNECT_TIMEOUT_MS);
             socket.setTcpNoDelay(true); // Disable Nagle's algorithm to avoid ~40ms delays on small writes
@@ -152,7 +152,7 @@ public class PipesServer implements AutoCloseable {
             MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
             PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory);
             pipesServer.initializeResources();
-            LOG.debug("pipesClientId={}: PipesServer loaded and ready", pipesClientId);
+            LOG.debug("PipesServer loaded and ready");
             return pipesServer;
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
@@ -231,14 +231,14 @@ public class PipesServer implements AutoCloseable {
             int port = Integer.parseInt(args[0]);
             Path tikaConfig = Paths.get(args[1]);
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
-            LOG.debug("pipesClientId={}: starting pipes server on port={}", pipesClientId, port);
+            LOG.debug("starting pipes server on port={}", port);
             try (PipesServer server = PipesServer.load(port, tikaConfig)) {
                 server.mainLoop();
             } catch (Throwable t) {
-                LOG.error("pipesClientId={}: crashed", pipesClientId, t);
+                LOG.error("crashed", t);
                 throw t;
             } finally {
-                LOG.debug("pipesClientId={}: server shutting down", pipesClientId);
+                LOG.debug("server shutting down");
             }
         }
     }
@@ -324,11 +324,11 @@ public class PipesServer implements AutoCloseable {
         try {
             PipesMessage.ready().write(output);
         } catch (IOException e) {
-            LOG.error("pipesClientId={}: failed to send READY", pipesClientId, e);
+            LOG.error("failed to send READY", e);
             exit(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().orElse(19));
             return;
         }
-        LOG.debug("pipesClientId={}: sent READY, entering main loop", pipesClientId);
+        LOG.debug("sent READY, entering main loop");
         ArrayBlockingQueue<Metadata> intermediateResult = new ArrayBlockingQueue<>(1);
 
         //main loop
@@ -340,8 +340,7 @@ public class PipesServer implements AutoCloseable {
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     // Exit cleanly — PipesClient will restart the server if needed.
-                    LOG.info("pipesClientId={}: socket timeout while waiting for task, shutting down",
-                            pipesClientId);
+                    LOG.info("socket timeout while waiting for task, shutting down");
                     try {
                         close();
                     } catch (Exception ex) {
@@ -350,7 +349,7 @@ public class PipesServer implements AutoCloseable {
                     System.exit(0);
                     return; // unreachable, but needed for compilation
                 }
-                LOG.trace("pipesClientId={}: received message type={}", pipesClientId, msg.type());
+                LOG.trace("received message type={}", msg.type());
 
                 switch (msg.type()) {
                     case PING:
@@ -651,7 +650,7 @@ public class PipesServer implements AutoCloseable {
     }
 
     private void handleShutDown() {
-        LOG.info("pipesClientId={}: received SHUT_DOWN, shutting down gracefully", pipesClientId);
+        LOG.info("received SHUT_DOWN, shutting down gracefully");
         try {
             close();
         } catch (Exception e) {

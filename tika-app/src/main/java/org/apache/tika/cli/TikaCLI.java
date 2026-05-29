@@ -56,6 +56,7 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.io.output.CloseShieldOutputStream;
 import org.apache.logging.log4j.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -392,8 +393,18 @@ public class TikaCLI {
 
     private boolean testForAsync(String[] args) {
 
-        // Single .json file is a config file for async mode
-        if (args.length == 1 && args[0].endsWith(".json")) {
+        // Standalone utility flags are handled directly by process(), never via async mode.
+        // (Without this guard, --convert-config-xml-to-json=in.xml would be misread as a
+        // ".json"/batch arg and routed to async, failing with a TikaConfigException - TIKA-4734.)
+        for (String arg : args) {
+            if (arg.startsWith("--convert-config-xml-to-json=")) {
+                return false;
+            }
+        }
+
+        // Single .json file is a config file for async mode.
+        // Reject option-style args like `--config=foo.json` so they fall through to process().
+        if (args.length == 1 && !args[0].startsWith("-") && args[0].endsWith(".json")) {
             return true;
         }
 
@@ -604,27 +615,31 @@ public class TikaCLI {
         System.out.println(localConfig.getConfig().toString());
     }*/
 
-    private void convertConfigXmlToJson(String paths) throws Exception {
-        String[] parts = paths.split(",");
-        if (parts.length != 2) {
-            System.err.println("Error: --convert-config-xml-to-json requires input and output paths separated by comma");
-            System.err.println("Usage: --convert-config-xml-to-json=<input.xml>,<output.json>");
+    private void convertConfigXmlToJson(String inputPath) throws Exception {
+        if (inputPath == null || inputPath.trim().isEmpty()) {
+            System.err.println("Error: --convert-config-xml-to-json requires an input XML path");
+            System.err.println("Usage: --convert-config-xml-to-json=<input.xml> > <output.json>");
             return;
         }
 
-        Path xmlPath = Paths.get(parts[0].trim());
-        Path jsonPath = Paths.get(parts[1].trim());
+        Path xmlPath = Paths.get(inputPath.trim());
 
-        if (!Files.exists(xmlPath)) {
-            System.err.println("Error: Input XML file not found: " + xmlPath);
+        if (!Files.isRegularFile(xmlPath)) {
+            System.err.println("Error: Input XML path is not a regular file: " + xmlPath);
+            return;
+        }
+        if (!Files.isReadable(xmlPath)) {
+            System.err.println("Error: Input XML file is not readable: " + xmlPath);
             return;
         }
 
-        try {
-            XmlToJsonConfigConverter.convert(xmlPath, jsonPath);
-            System.out.println("Successfully converted XML config to JSON:");
-            System.out.println("  Input:  " + xmlPath.toAbsolutePath());
-            System.out.println("  Output: " + jsonPath.toAbsolutePath());
+        // Write JSON to stdout so the user can redirect it (e.g. > tika-config.json).
+        // Informational/diagnostic output from the converter goes to the logger (stderr),
+        // keeping stdout clean for the JSON payload. The converter closes the stream it
+        // is handed, so shield System.out from being closed out from under us.
+        try (InputStream in = Files.newInputStream(xmlPath)) {
+            XmlToJsonConfigConverter.convert(in, CloseShieldOutputStream.wrap(System.out));
+            System.out.flush();
         } catch (Exception e) {
             System.err.println("Error converting config: " + e.getMessage());
             throw e;
@@ -771,16 +786,18 @@ public class TikaCLI {
         out.println();
         out.println("    -g  or --gui           Start the Apache Tika GUI");
         out.println();
-        out.println("    --config=<tika-config.xml>");
-        out.println("        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
+        out.println("    --config=<tika-config.json>");
+        out.println("        TikaConfig file (JSON as of Tika 4.x). Must be specified before -g or -f !");
         // TODO: TIKA-XXXX - Re-enable config dump options once JSON serialization is complete
         // These options are not yet implemented in 4.x due to the migration from XML to JSON config
         // out.println("    --dump-minimal-config  Print minimal TikaConfig");
         // out.println("    --dump-current-config  Print current TikaConfig");
         // out.println("    --dump-static-config   Print static config");
         // out.println("    --dump-static-full-config  Print static explicit config");
-        out.println("    --convert-config-xml-to-json=<input.xml>,<output.json>");
-        out.println("        Convert legacy XML config to JSON format (parsers section only)");
+        out.println("    --convert-config-xml-to-json=<input.xml>");
+        out.println("        Convert a legacy 3.x XML config to 4.x JSON format (parsers section only),");
+        out.println("        writing the JSON to stdout. Redirect to save, e.g.:");
+        out.println("        --convert-config-xml-to-json=tika-config.xml > tika-config.json");
         out.println("");
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");

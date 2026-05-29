@@ -139,11 +139,11 @@ public class JDBCPipesIterator extends PipesIteratorBase {
                     try {
                         processRow(fetcherId, emitterId, headers, fetchEmitKeyIndices, rs);
                     } catch (SQLException e) {
-                        LOGGER.warn("Failed to insert: " + rs, e);
+                        LOGGER.warn("Failed to insert row", e);
                     }
                     rowCount++;
                     if (rowCount % 1000 == 0) {
-                        LOGGER.info("added " + rowCount + " rows to the queue");
+                        LOGGER.debug("added " + rowCount + " rows to the queue");
                     }
                 }
             }
@@ -190,7 +190,10 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             if (i == fetchEmitKeyIndices.fetchKeyIndex) {
                 fetchKey = getString(i, rs);
                 if (StringUtils.isBlank(fetchKey)) {
-                    LOGGER.debug("fetchKey is empty for record " + toString(rs));
+                    LOGGER.debug("fetchKey is empty for a record (enable TRACE on this class for row contents)");
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("fetchKey is empty for record {}", toString(rs));
+                    }
                 }
                 fetchKey = (fetchKey == null) ? "" : fetchKey;
                 isUsed = true;
@@ -198,7 +201,10 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             if (i == fetchEmitKeyIndices.emitKeyIndex) {
                 emitKey = getString(i, rs);
                 if (StringUtils.isBlank(emitKey)) {
-                    LOGGER.debug("emitKey is empty for record " + toString(rs));
+                    LOGGER.debug("emitKey is empty for a record (enable TRACE on this class for row contents)");
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("emitKey is empty for record {}", toString(rs));
+                    }
                 }
                 emitKey = (emitKey == null) ? "" : emitKey;
                 isUsed = true;
@@ -206,7 +212,10 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             if (i == fetchEmitKeyIndices.idIndex) {
                 id = getString(i, rs);
                 if (StringUtils.isBlank(id)) {
-                    LOGGER.warn("id is empty for record " + toString(rs));
+                    LOGGER.warn("id is empty for a record (enable TRACE on this class for row contents)");
+                    if (LOGGER.isTraceEnabled()) {
+                        LOGGER.trace("id is empty for record {}", toString(rs));
+                    }
                 }
                 id = (id == null) ? "" : id;
                 isUsed = true;

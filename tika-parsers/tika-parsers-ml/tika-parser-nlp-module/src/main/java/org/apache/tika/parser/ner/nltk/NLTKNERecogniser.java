@@ -79,7 +79,7 @@ public class NLTKNERecogniser implements NERecogniser {
             if (responseCode == 200) {
                 available = true;
             } else {
-                LOG.info("NLTKRest Server is not running");
+                LOG.debug("NLTKRest Server is not running");
             }
 
         } catch (Exception e) {

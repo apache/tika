@@ -291,7 +291,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
             int code = response
                     .getStatusLine()
                     .getStatusCode();
-            LOG.info("Fetch id {} status code {}", get.getURI(), code);
+            LOG.trace("Fetch fetchKey={} status code {}", get.getURI(), code);
             if (code < 200 || code > 299) {
                 throw new IOException("bad status code: " + code + " :: " + responseToString(response));
             }
@@ -307,8 +307,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                     .contains("Premature " + "end of " + "Content-Length delimited message")) {
                 //one trigger for this is if the server sends the uncompressed length
                 //and then compresses the stream. See HTTPCLIENT-2176
-                LOG.warn("premature end of content-length delimited message; retrying with " + "content compression" +
-                        " disabled for {}", get.getURI());
+                LOG.warn("premature end of content-length delimited message; retrying with content compression disabled");
                 return execute(get, metadata, noCompressHttpClient, false);
             }
             throw e;
@@ -414,7 +413,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                     metadata.set(HTTP_TARGET_IP_ADDRESS, inetAddress.getHostAddress());
                 }
             } catch (ConnectionShutdownException e) {
-                LOG.warn("connection shutdown while trying to get target URL: " + url);
+                LOG.warn("connection shutdown while trying to get target URL");
+                LOG.trace("connection shutdown for target URL: {}", url);
             }
         }
     }

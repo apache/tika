@@ -43,9 +43,10 @@ if [[ "${#PUBLISH_DIR}" -lt 4 || "${PUBLISH_DIR}" != *"/"* ]]; then
     exit 1
 fi
 # Confirm this looks like a tika-site 'publish/' dir: the documented argument
-# is always <tika-site-checkout>/publish, and the 'svn add publish/docs
-# publish/_' step downstream hardcodes that name. Refusing a non-'publish'
-# basename catches a wrong-but-valid checkout before we 'rm -rf' inside it.
+# is always <tika-site-checkout>/publish, and the downstream 'svn add' step
+# hardcodes that name for the things written here (publish/docs, publish/_,
+# publish/search-index.js). Refusing a non-'publish' basename catches a
+# wrong-but-valid checkout before we 'rm -rf' inside it.
 if [[ "$(basename "${PUBLISH_DIR}")" != "publish" ]]; then
     echo "PUBLISH_DIR '${PUBLISH_DIR}' does not look like a tika-site publish dir" >&2
     echo "(expected its name to be 'publish'). Refusing to modify it." >&2
@@ -79,7 +80,9 @@ cp -r target/site/_ "${PUBLISH_DIR}/_"
 sed 's|tika/||g' target/site/index.html > "${DOCS_DIR}/index.html"
 sed 's|/docs/tika/|/docs/|g' target/site/sitemap.xml > "${DOCS_DIR}/sitemap.xml"
 cp target/site/404.html "${DOCS_DIR}/"
-# Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js
+# Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js.
+# Remove the stale copy from its old publish/docs/ location left by earlier runs.
+rm -f "${DOCS_DIR}/search-index.js"
 cp target/site/search-index.js "${PUBLISH_DIR}/"
 
 echo "Published to: ${DOCS_DIR}/"

@@ -110,7 +110,7 @@ public class KafkaPipesIterator extends PipesIteratorBase {
             for (ConsumerRecord<String, String> r : records) {
                 long elapsed = System.currentTimeMillis() - start;
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("adding ({}) {} in {} ms", count, r.key(), elapsed);
+                    LOGGER.trace("adding ({}) {} in {} ms", count, r.key(), elapsed);
                 }
                 ParseContext parseContext = new ParseContext();
                 tryToAdd(new FetchEmitTuple(r.key(), new FetchKey(fetcherId, r.key()),

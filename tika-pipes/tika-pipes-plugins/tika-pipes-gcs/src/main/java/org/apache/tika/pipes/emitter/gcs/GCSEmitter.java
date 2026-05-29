@@ -127,7 +127,7 @@ public class GCSEmitter extends AbstractStreamEmitter {
             path += "." + fileExtension;
         }
 
-        LOGGER.debug("about to emit to target bucket: ({}) path:({})", config.bucket(), path);
+        LOGGER.trace("about to emit to target bucket: ({}) path:({})", config.bucket(), path);
         BlobId blobId = BlobId.of(config.bucket(), path);
         BlobInfo.Builder blobInfoBuilder = BlobInfo.newBuilder(blobId);
 

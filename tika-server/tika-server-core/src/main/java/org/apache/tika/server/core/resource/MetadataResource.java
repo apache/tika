@@ -149,7 +149,7 @@ public class MetadataResource {
             defaultErrorResponse = Response.Status.NOT_FOUND;
             success = true;
         } catch (Exception e) {
-            LOG.info("Failed to process field {}", field, e);
+            LOG.warn("Failed to process field {}", field, e);
         }
 
         if (success == false || metadata.get(field) == null) {

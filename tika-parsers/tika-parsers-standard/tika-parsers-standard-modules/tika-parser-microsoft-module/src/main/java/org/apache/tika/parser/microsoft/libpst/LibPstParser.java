@@ -101,7 +101,8 @@ public class LibPstParser implements Parser, Initializable {
                 throw new TikaException("Timeout exception: " + fileProcessResult.getProcessTimeMillis());
             }
             if (fileProcessResult.getExitValue() != 0) {
-                LOGGER.warn("libpst bad exit value {}: {}", fileProcessResult.getExitValue(), fileProcessResult.getStderr());
+                LOGGER.warn("libpst bad exit value {}", fileProcessResult.getExitValue());
+                LOGGER.debug("libpst stderr: {}", fileProcessResult.getStderr());
                 throw new TikaException("Bad exit value: " + fileProcessResult.getExitValue());
             }
             xhtml.endDocument();

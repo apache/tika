@@ -96,7 +96,7 @@ public class AZBlobFetcher extends AbstractTikaExtension implements Fetcher {
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
             throws TikaException, IOException {
 
-        LOGGER.debug("about to fetch fetchkey={} from endpoint ({})", fetchKey, config.getEndpoint());
+        LOGGER.trace("about to fetch fetchkey={} from endpoint ({})", fetchKey, config.getEndpoint());
 
         try {
             BlobClient blobClient = blobClientFactory.getClient(fetchKey);

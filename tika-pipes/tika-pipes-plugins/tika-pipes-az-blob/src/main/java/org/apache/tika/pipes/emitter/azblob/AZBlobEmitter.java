@@ -133,7 +133,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     private void write(String path, Metadata userMetadata, InputStream is, long length) {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
+        LOGGER.trace("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
         blobClient.upload(is, length, config.overwriteExisting());
@@ -141,7 +141,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     private void write(String path, Metadata userMetadata, Path file) {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
+        LOGGER.trace("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
         blobClient.uploadFromFile(file.toAbsolutePath().toString(), config.overwriteExisting());
@@ -149,7 +149,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     private void write(String path, Metadata userMetadata, byte[] bytes) throws IOException {
         String actualPath = getActualPath(path);
-        LOGGER.debug("about to emit to target container: ({}) path:({})", config.container(), actualPath);
+        LOGGER.trace("about to emit to target container: ({}) path:({})", config.container(), actualPath);
         BlobClient blobClient = blobContainerClient.getBlobClient(actualPath);
         updateMetadata(blobClient, userMetadata);
         blobClient.upload(UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get(), bytes.length, config.overwriteExisting());
