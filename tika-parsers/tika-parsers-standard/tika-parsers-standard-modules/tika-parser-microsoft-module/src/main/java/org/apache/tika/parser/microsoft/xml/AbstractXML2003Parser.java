@@ -38,6 +38,7 @@ import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -88,7 +89,15 @@ public abstract class AbstractXML2003Parser implements Parser {
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
-        TaggedContentHandler tagged = new TaggedContentHandler(xhtml);
+        // Wrap xhtml in a balancing handler so that if the inner SAX parser
+        // aborts mid-element (e.g., on truncated input -- common in crawled
+        // sources clipped to 1MB), we can drain the open elements before
+        // the finally block calls xhtml.endDocument(). Without this drain
+        // the trailing </body></html> mismatches the unclosed <p>/<tr>/etc.
+        // left on the wire, and StrictXHTMLValidator masks the real parse
+        // error with a misleading well-formedness exception.
+        final XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(xhtml);
+        TaggedContentHandler tagged = new TaggedContentHandler(balancer);
         tis.setCloseShield();
         try {
             //need to get new SAXParser because
@@ -99,7 +108,15 @@ public abstract class AbstractXML2003Parser implements Parser {
                             getContentHandler(tagged, metadata, context)));
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
+            // Close anything the aborted parse left open, then propagate.
+            balancer.drainOpenElements();
             throw new TikaException("XML parse error", e);
+        } catch (IOException e) {
+            // Truncated streams etc. -- same problem as the SAX path: without
+            // a drain, the finally's xhtml.endDocument() throws on the
+            // unbalanced stack and masks the real IO error.
+            balancer.drainOpenElements();
+            throw e;
         } finally {
             tis.removeCloseShield();
             xhtml.endDocument();

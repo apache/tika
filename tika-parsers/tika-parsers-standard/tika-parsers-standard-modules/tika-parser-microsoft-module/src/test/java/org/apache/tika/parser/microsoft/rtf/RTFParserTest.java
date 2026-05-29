@@ -60,6 +60,39 @@ public class RTFParserTest extends TikaTest {
         assertContains("indexation Word", content);
     }
 
+    @Test //TIKA-4744
+    public void testParInsideHyperlink() throws Exception {
+        // A \par inside a HYPERLINK's \fldrslt used to leave <a> on the SAX
+        // stack while endParagraph emitted </p>, tripping the strict
+        // validator with </p> vs <a>. The exception was masked by the
+        // finally's xhtml.endDocument() throwing </body> vs <p>; visible
+        // end-state was just "<p> open at endDocument". Closing pending <a>
+        // before </p> drops the link span at the paragraph break, which is
+        // the right XHTML rendering.
+        XMLResult r = getXML("testRTF_parInsideHyperlink.rtf");
+        // First paragraph contains the link text, properly closed.
+        assertContains("<a href=\"#target\">line1</a>", r.xml);
+        // Second paragraph picks up the post-\par text without an open <a>.
+        assertContains("line2", r.xml);
+    }
+
+    @Test //TIKA-4744
+    public void testNestedHyperlinkPageRef() throws Exception {
+        // A HYPERLINK field with a PAGEREF \field nested inside its \fldrslt
+        // used to leak: the nested \fldinst would overwrite fieldState=3 with
+        // 1, so the outer fldrslt's group close skipped the </a> emission and
+        // <a> stayed open. The cascade surfaced at endDocument as the strict
+        // validator complaining </body> didn't match topmost <p>.
+        // getXML wraps the handler in StrictXHTMLValidator, so any imbalance
+        // would throw before the assertions.
+        XMLResult r = getXML("testRTF_nestedHyperlinkPageRef.rtf");
+        // PAGEREF result "42" should render INSIDE the outer hyperlink's <a>,
+        // not after a prematurely-closed </a>:
+        assertContains("<a href=\"#target\">42</a>", r.xml);
+        assertContains("Before", r.xml);
+        assertContains("after.", r.xml);
+    }
+
     @Test
     public void testUmlautSpacesExtraction2() throws Exception {
         String content = getText("testRTFUmlautSpaces2.rtf");

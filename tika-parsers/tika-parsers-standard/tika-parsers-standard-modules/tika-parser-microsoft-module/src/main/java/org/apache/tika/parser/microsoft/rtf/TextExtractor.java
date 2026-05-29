@@ -311,6 +311,12 @@ final class TextExtractor {
     // Non-null if we've seen the url for a HYPERLINK but not yet
     // its text:
     private String pendingURL;
+    // Group depth at which the current <a href=...> was opened (in
+    // groupState.depth units). Used to defer </a> emission until we leave
+    // the fldrslt group that opened it, so a nested \field (e.g., PAGEREF
+    // inside a HYPERLINK's fldrslt) doesn't prematurely close the outer <a>
+    // via the fieldState==3 branch in processGroupEnd. -1 means no <a> open.
+    private int hyperlinkAnchorDepth = -1;
     // Used to process the sub-groups inside the upr
     // group:
     private int uprState = -1;
@@ -467,7 +473,6 @@ final class TextExtractor {
     }
 
     private void extract(PushbackInputStream in) throws IOException, SAXException, TikaException {
-
         while (true) {
             final int b = in.read();
             if (b == -1) {
@@ -642,6 +647,16 @@ final class TextExtractor {
             lazyStartParagraph();
         }
         if (inParagraph || paragraphStack.size() > 0) {
+            // A HYPERLINK's <a> can be open mid-fldrslt when a \par is
+            // encountered. Closing </p> while <a> is topmost on the SAX
+            // stack trips StrictXHTMLValidator -- close </a> first and
+            // forget the hyperlink state (the paragraph break terminates
+            // the link visually anyway).
+            if (hyperlinkAnchorDepth >= 0) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
             if (groupState.italic) {
                 end("i");
                 groupState.italic = preserveStyles;
@@ -1365,16 +1380,37 @@ final class TextExtractor {
                 addOutputChar('\u201D');
             }
         } else if (equals("fldinst")) {
-            fieldState = 1;
-            groupState.ignore = false;
+            if (fieldState == 0) {
+                fieldState = 1;
+                groupState.ignore = false;
+            } else {
+                // Nested \fldinst inside an outer field (e.g., PAGEREF inside
+                // a HYPERLINK's fldrslt). Suppress the nested instruction text
+                // and leave the outer fieldState/pendingURL untouched: the
+                // outer field's closing group still needs to see fieldState==3
+                // to emit </a>. The accompanying \fldrslt of the nested field
+                // emits its display text into the outer hyperlink's <a>.
+                groupState.ignore = true;
+            }
         } else if (equals("fldrslt") && fieldState == 2) {
             assert pendingURL != null;
+            // Temporarily clear fieldState so lazyStartParagraph's endStyles
+            // actually flushes any pending <b>/<i>. endStyles short-circuits
+            // when fieldState != 0 to keep style flips inside an already-open
+            // <a> from leaking; but here we're about to OPEN the <a>, so any
+            // outer <b>/<i> still on the SAX stack must close first or <p>
+            // would land on top of <b> and the link's </b> later mismatches.
+            fieldState = 0;
             lazyStartParagraph();
             AttributesImpl attrs = new AttributesImpl();
             attrs.addAttribute(XHTML, "href", "href", "CDATA", pendingURL);
             out.startElement("", "a", "a", attrs);
             pendingURL = null;
             fieldState = 3;
+            // Remember which group depth owns this <a>. processGroupEnd only
+            // emits </a> once we leave this depth, so nested groups inside
+            // the fldrslt (e.g., a PAGEREF \field) don't trip the close early.
+            hyperlinkAnchorDepth = groupState.depth;
             groupState.ignore = false;
         }
     }
@@ -1465,6 +1501,16 @@ final class TextExtractor {
                 embObjHandler.handleCompletedObject();
             } catch (TikaException | IOException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata);
+            } catch (SecurityException e) {
+                // Security-relevant exceptions must always propagate
+                // immediately -- never swallow them as a warning.
+                throw e;
+            } catch (RuntimeException e) {
+                // POI dispatch on a zero-byte embedded object throws
+                // EmptyFileException; other malformed embedded payloads
+                // can surface as a variety of runtime exceptions. Record
+                // and continue rather than aborting the outer RTF parse.
+                EmbeddedDocumentUtil.recordException(e, metadata);
             }
             groupState.objdata = false;
         } else if (groupState.pictDepth > 0) {
@@ -1491,6 +1537,18 @@ final class TextExtractor {
         if (groupStates.size() > 0) {
             // Restore group state:
             final GroupState outerGroupState = groupStates.removeLast();
+            // If we're leaving the fldrslt group that owns the current <a>,
+            // close </a> BEFORE the style restore runs. Otherwise the
+            // restore's start("b") would land on top of <a>, and the next
+            // </a>/<b> would mismatch. Doing this here also flips fieldState
+            // to 0, which un-gates the style compare below so the outer
+            // bold/italic context is actually re-emitted.
+            if (fieldState == 3 && hyperlinkAnchorDepth >= 0
+                    && outerGroupState.depth < hyperlinkAnchorDepth) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
             //only modify styles if we're not in a hyperlink
             if (fieldState == 0) {
                 // Close italic, if outer does not have italic or
@@ -1547,8 +1605,17 @@ final class TextExtractor {
             // inlined, but fail to record them in metadata
             // as a field value.
         } else if (fieldState == 3) {
-            end("a");
-            fieldState = 0;
+            // Only close </a> once we've left the fldrslt group that opened
+            // it. groupState.depth here is the OUTER group we just restored
+            // to; if it's now below the recorded anchor depth, the fldrslt
+            // group has closed. This guards against nested-field group ends
+            // (e.g., a PAGEREF \fldinst inside the HYPERLINK fldrslt) closing
+            // the outer </a> too early.
+            if (hyperlinkAnchorDepth >= 0 && groupState.depth < hyperlinkAnchorDepth) {
+                end("a");
+                fieldState = 0;
+                hyperlinkAnchorDepth = -1;
+            }
         }
     }
 }

@@ -337,25 +337,40 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
     }
 
     /**
-     * Returns true for ODF elements that map to block-level XHTML and so
-     * shouldn't sit inside open inline-style tags. When such an element opens
-     * while {@code <b>/<i>/<u>} are on the SAX stack, the inline tags would
-     * trap the new block element underneath them; subsequent style flips
-     * inside the block would emit close events that don't match the topmost
-     * open element. The startElement handler closes pending style tags
-     * before opening any of these.
+     * Returns true for ODF elements that shouldn't sit inside open inline-style
+     * tags. When such an element opens while {@code <b>/<i>/<u>} are on the SAX
+     * stack, the inline tags would trap the new element underneath them;
+     * subsequent style flips inside would emit close events that don't match
+     * the topmost open element. The startElement handler closes pending style
+     * tags before opening any of these.
      * <p>
+     * Two cases qualify:
+     * <ul>
+     *   <li>Block-level XHTML targets (draw:text-box, table/row/cell, list-item)
+     *       — opening a block under inline styles produces malformed XHTML even
+     *       if the SAX stream happened to balance.</li>
+     *   <li>svg:title / svg:desc — empty or near-empty inline elements that map
+     *       to {@code <span>} via MAPPINGS. When their parent {@code <text:span>}
+     *       had a bold/italic/underline style, the outer {@code <b>/<i>/<u>}
+     *       is still on top of the SAX stack when the svg's {@code <span>}
+     *       opens; the existing endElement closeStyleTags then tries to close
+     *       {@code </b>} while the svg span is topmost, which the strict
+     *       validator (correctly) rejects.</li>
+     * </ul>
      * text:p / text:h / text:list / annotation / note / notes / a are handled
      * by their own branches in startElement and never reach the default
      * branch where this check is used.
      */
-    private static boolean isBlockLevelOpen(String uri, String localName) {
-        if (DRAW_NS.equals(uri) && "text-box".equals(localName)) {
+    private static boolean closeStylesBeforeOpen(String uri, String localName) {
+        if (DRAW_NS.equals(uri) && ("text-box".equals(localName) || "object".equals(localName))) {
             return true;
         }
         if (TABLE_NS.equals(uri) &&
                 ("table".equals(localName) || "table-row".equals(localName)
                         || "table-cell".equals(localName))) {
+            return true;
+        }
+        if (SVG_NS.equals(uri) && ("title".equals(localName) || "desc".equals(localName))) {
             return true;
         }
         return TEXT_NS.equals(uri) && "list-item".equals(localName);
@@ -391,6 +406,11 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
             throws SAXException {
 
         if (DRAW_NS.equals(namespaceURI) && "image".equals(localName)) {
+            // Close any pending inline styles (e.g., a <b> opened lazily by a
+            // prior <text:span>) before emitting the <img> -- without this
+            // the <img> lands inside <b>, the styles are never flushed, and
+            // <b> reaches endDocument unbalanced.
+            closeStyleTags();
             String link = attrs.getValue(XLINK_NS, "href");
             AttributesImpl attr = new AttributesImpl();
             if (!StringUtils.isEmpty(link)) {
@@ -486,14 +506,15 @@ class OpenDocumentBodyHandler extends ElementMappingContentHandler {
                 // inside it. See updateStyleTags / closeStyleTags.
                 anchorDepth++;
                 super.startElement(namespaceURI, localName, qName, attrs);
-            } else if (isBlockLevelOpen(namespaceURI, localName)) {
-                // Block-level structural elements (draw:text-box -> <div>,
-                // table:table -> <table>, etc.) opened while <b>/<i>/<u> are
-                // on top would trap those inline tags. Subsequent style flips
-                // inside would emit </b> while the block is on top, producing
-                // cross-nested XHTML. Close pending styles before opening the
-                // block; if there's still text to emit at the same style after
-                // the block closes, updateStyleTags() will reopen them.
+            } else if (closeStylesBeforeOpen(namespaceURI, localName)) {
+                // Elements that mustn't open under <b>/<i>/<u>: block-level
+                // structural elements (draw:text-box -> <div>, table:table ->
+                // <table>, etc.) and svg:title / svg:desc inline shells that
+                // map to <span>. Closing pending style tags first ensures the
+                // new element opens at body/paragraph/span level, not nested
+                // under stale inline styling. If there's still text to emit at
+                // the same style after the element closes, updateStyleTags()
+                // will reopen them.
                 closeStyleTags();
                 super.startElement(namespaceURI, localName, qName, attrs);
             } else {

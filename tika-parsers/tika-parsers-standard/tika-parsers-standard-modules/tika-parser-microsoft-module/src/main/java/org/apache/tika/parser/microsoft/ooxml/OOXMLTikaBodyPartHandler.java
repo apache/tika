@@ -265,7 +265,16 @@ public class OOXMLTikaBodyPartHandler
 
     @Override
     public void startTable() throws SAXException {
-
+        // A <w:tbl> can appear nested inside an outer <w:p> -- corrupt-ish but
+        // present in the corpus (e.g., <w:p><w:r>...<wps:txbx><w:txbxContent>
+        // <w:tbl>...). At that point a run-level <b>/<i>/<u>/<s>/<a> may be on
+        // the SAX stack just above where the <table> is about to land. When a
+        // later paragraph inside a cell ends, formattingTags.closeAll() tries
+        // to emit </b> for the outer-paragraph state, but <td> is topmost --
+        // strict validator rejects the mismatch. Close pending formatting now
+        // so the table opens at a clean layer and the outer style is forgotten.
+        // Mirrors startSDT()'s same-shape guard.
+        formattingTags.closeAll();
         xhtml.startElement("table");
         openStructuralTags.push("table");
         tableDepth++;
@@ -377,14 +386,21 @@ public class OOXMLTikaBodyPartHandler
         // from the footnote/endnote parts (needed for picture resolution)
         Map<String, String> noteRelationships = inlinePartMap.getLinkedRelationships();
         xhtml.startElement("div", "class", cssClass);
+        // Track the inner handler so we can call its closeAnyPending() if
+        // the inline-note parseSAX aborts mid-element. Without the drain
+        // the surrounding </div> mismatches whatever the inner handler
+        // left on the SAX stack (<p>/<td>/etc.) and StrictXHTMLValidator
+        // propagates a misleading error.
+        OOXMLTikaBodyPartHandler innerHandler = new OOXMLTikaBodyPartHandler(xhtml);
         try {
             XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml),
                     new EmbeddedContentHandler(
                             new OOXMLWordAndPowerPointTextHandler(
-                                    new OOXMLTikaBodyPartHandler(xhtml),
+                                    innerHandler,
                                     noteRelationships)),
                     parseContext);
-        } catch (TikaException | IOException e) {
+        } catch (TikaException | IOException | SAXException e) {
+            innerHandler.closeAnyPending();
             xhtml.characters("[" + cssClass + " parse error]");
         }
         xhtml.endElement("div");

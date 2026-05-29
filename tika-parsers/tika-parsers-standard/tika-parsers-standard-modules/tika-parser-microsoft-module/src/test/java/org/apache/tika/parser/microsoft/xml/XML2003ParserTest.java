@@ -63,6 +63,21 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
 
     }
 
+    @Test //TIKA-4744
+    public void testTableInsideParagraph() throws Exception {
+        // WordML allows <w:tbl> nested inside <w:p>. The XHTML emission must
+        // close the <p> before opening the <table>, otherwise the inline
+        // <p> stays on the SAX stack while <tr>/<td> emit -- and the inner
+        // paragraphs inside cells trip the "close p before nested p" logic
+        // emitting </p> while <td> is topmost.
+        // getXML wraps the handler in StrictXHTMLValidator, so any imbalance
+        // would throw before the assertions.
+        XMLResult r = getXML("testWORDML_tableInsideParagraph.doc");
+        assertEquals("application/vnd.ms-wordml", r.metadata.get(Metadata.CONTENT_TYPE));
+        // Structural sanity: tables emit with tbody and rows.
+        assertContains("<table><tbody>", r.xml);
+    }
+
     @Test
     @Timeout(60000)
     public void testMultiThreaded() throws Exception {

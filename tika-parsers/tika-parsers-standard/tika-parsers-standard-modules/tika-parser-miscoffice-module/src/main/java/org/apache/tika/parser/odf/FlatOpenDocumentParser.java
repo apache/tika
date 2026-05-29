@@ -38,6 +38,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -100,9 +101,16 @@ public class FlatOpenDocumentParser implements Parser {
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
 
         xhtml.startDocument();
+        // A balancing handler so that if the inner SAX parser aborts mid-
+        // element (e.g., malformed flat-doc XML -- some corpus FODT files
+        // omit </text:note-citation>), we can drain pending opens before
+        // the finally's xhtml.endDocument() fires its </body>/</html>.
+        // Without the drain, that endDocument throws </body> vs <p>/etc
+        // and masks the real well-formedness error.
+        final XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(xhtml);
         tis.setCloseShield();
         try {
-            ContentHandler fodHandler = getContentHandler(xhtml, metadata, context);
+            ContentHandler fodHandler = getContentHandler(balancer, metadata, context);
             XMLReaderUtils.parseSAX(tis,
                     new EmbeddedContentHandler(fodHandler), context);
             //can only detect subtype (text/pres/sheet) during parse.
@@ -111,6 +119,13 @@ public class FlatOpenDocumentParser implements Parser {
             if (detected != null) {
                 metadata.set(Metadata.CONTENT_TYPE, detected.toString());
             }
+        } catch (SAXException | IOException | TikaException e) {
+            // Drain the balancer on ANY exception that escapes the parse
+            // loop. Without this, the finally's xhtml.endDocument() throws
+            // on the unbalanced stack and the masked </body> vs <p>/<b>
+            // hides the real failure (truncated input, malformed XML, etc.).
+            balancer.drainOpenElements();
+            throw e;
         } finally {
             tis.removeCloseShield();
             xhtml.endDocument();
@@ -144,6 +159,20 @@ public class FlatOpenDocumentParser implements Parser {
         private final boolean extractMacros;
         private ContentHandler currentHandler = defaultHandler;
         private MediaType detectedType = null;
+        // <office:document> can nest: a flat ODS can embed a full inner
+        // <office:document> inside <draw:object> (e.g., for an embedded
+        // chart). Each level has its own <office:meta>/<office:body>/
+        // <office:scripts>. We only honour those sections at the OUTER
+        // document level -- inner ones must stay inside whatever handler
+        // is already active (so the outer body's <draw:object> content
+        // keeps emitting through bodyHandler), or the trailing </draw:object>
+        // and surrounding events get routed to a no-op handler and leave
+        // <object>/<table> unclosed on the XHTML stream.
+        private int documentDepth = 0;
+        // Track outer-section depth so the matching close switches back to
+        // defaultHandler only when the section actually ends, not on a
+        // nested-doc occurrence.
+        private int outerSectionDepth = 0;
 
         private FlatOpenDocumentParserHandler(ContentHandler baseHandler, Metadata metadata,
                                               ParseContext parseContext, boolean extractMacros) {
@@ -169,27 +198,48 @@ public class FlatOpenDocumentParser implements Parser {
         @Override
         public void startElement(String namespaceURI, String localName, String qName,
                                  Attributes attrs) throws SAXException {
-
-            if (META.equals(localName)) {
-                currentHandler = metadataHandler;
-            } else if (BODY.equals(localName)) {
-                currentHandler = bodyHandler;
-            } else if (extractMacros && SCRIPTS.equals(localName)) {
-                currentHandler = macroHandler;
-            }
-
-            //trust the mimetype element if it exists for the subtype
             if (DOCUMENT.equals(localName)) {
-                String mime = XMLReaderUtils.getAttrValue("mimetype", attrs);
-                if (mime != null) {
-                    if (mime.equals(ODT.toString())) {
-                        detectedType = FLAT_ODT;
-                    } else if (mime.equals(ODP.toString())) {
-                        detectedType = FLAT_ODP;
-                    } else if (mime.equals(ODS.toString())) {
-                        detectedType = FLAT_ODS;
+                documentDepth++;
+                //trust the mimetype element if it exists for the subtype.
+                //Only consult the outer <office:document>; inner ones (e.g.,
+                //an embedded chart's document) would otherwise overwrite the
+                //container's detected subtype.
+                if (documentDepth == 1) {
+                    String mime = XMLReaderUtils.getAttrValue("mimetype", attrs);
+                    if (mime != null) {
+                        if (mime.equals(ODT.toString())) {
+                            detectedType = FLAT_ODT;
+                        } else if (mime.equals(ODP.toString())) {
+                            detectedType = FLAT_ODP;
+                        } else if (mime.equals(ODS.toString())) {
+                            detectedType = FLAT_ODS;
+                        }
                     }
                 }
+            } else if (documentDepth == 1 && outerSectionDepth == 0) {
+                // Only outermost-level META/BODY/SCRIPTS triggers a handler
+                // switch. Inner-document occurrences are forwarded to whichever
+                // outer section's handler is already active.
+                if (META.equals(localName)) {
+                    currentHandler = metadataHandler;
+                    outerSectionDepth = 1;
+                } else if (BODY.equals(localName)) {
+                    currentHandler = bodyHandler;
+                    outerSectionDepth = 1;
+                } else if (extractMacros && SCRIPTS.equals(localName)) {
+                    currentHandler = macroHandler;
+                    outerSectionDepth = 1;
+                }
+            } else if (outerSectionDepth > 0
+                    && (META.equals(localName) || BODY.equals(localName)
+                        || (extractMacros && SCRIPTS.equals(localName)))) {
+                // Track nested occurrences so the matching end doesn't
+                // prematurely flip currentHandler back to defaultHandler.
+                // SCRIPTS is gated on extractMacros to match the decrement
+                // condition in endElement -- otherwise a <office:scripts>
+                // inside an outer section would inflate the counter without
+                // a matching decrement, stranding currentHandler.
+                outerSectionDepth++;
             }
             currentHandler.startElement(namespaceURI, localName, qName, attrs);
         }
@@ -202,14 +252,20 @@ public class FlatOpenDocumentParser implements Parser {
         @Override
         public void endElement(String namespaceURI, String localName, String qName)
                 throws SAXException {
-            if (META.equals(localName)) {
-                currentHandler = defaultHandler;
-            } else if (BODY.equals(localName)) {
-                currentHandler = defaultHandler;
-            } else if (extractMacros && SCRIPTS.equals(localName)) {
-                currentHandler = defaultHandler;
-            }
+            // Forward the end event to the still-active handler BEFORE we
+            // consider switching back. Otherwise the </office:body> close
+            // itself would land on defaultHandler.
             currentHandler.endElement(namespaceURI, localName, qName);
+            if (DOCUMENT.equals(localName)) {
+                documentDepth--;
+            } else if (outerSectionDepth > 0
+                    && (META.equals(localName) || BODY.equals(localName)
+                        || (extractMacros && SCRIPTS.equals(localName)))) {
+                outerSectionDepth--;
+                if (outerSectionDepth == 0) {
+                    currentHandler = defaultHandler;
+                }
+            }
         }
     }
 }

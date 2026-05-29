@@ -35,6 +35,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -90,11 +91,26 @@ public class RTFParser implements Parser {
         TaggedInputStream tagged = new TaggedInputStream(tis);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
+        // Wrap xhtml in a balancing handler so the finally's endDocument
+        // doesn't fire on an unbalanced stack if the RTF state machine
+        // emits inconsistent SAX events (e.g., </b> while <p> is topmost
+        // due to state-vs-stack drift on certain corpus files). Without
+        // this, StrictXHTMLValidator's </body> vs <p>/<b> at endDocument
+        // masks the real well-formedness error from inside extract().
+        XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(xhtml);
         try {
-            parseInline(tis, xhtml, metadata, context);
+            parseInline(tis, balancer, metadata, context);
         } catch (IOException e) {
             tagged.throwIfCauseOf(e);
+            balancer.drainOpenElements();
             throw new TikaException("Error parsing an RTF document", e);
+        } catch (SAXException | TikaException e) {
+            // Drain on any exception escaping parseInline. parseInline can
+            // throw TikaException too (memory limits, embedded extraction,
+            // etc.); without the drain, the finally's xhtml.endDocument()
+            // throws on the unbalanced stack and masks the real error.
+            balancer.drainOpenElements();
+            throw e;
         } finally {
             xhtml.endDocument();
         }

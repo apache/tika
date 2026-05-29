@@ -239,6 +239,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     // the </tbody></table></div> emitted below land in the
                     // right place.
                     sheetExtractor.closeAnyPending();
+                } catch (IOException e) {
+                    // Truncated stream — same risk: partial <tr>/<td> still
+                    // open. Close them so the surrounding </tbody></table>
+                    // stays balanced, record the failure, and keep going.
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            ExceptionUtils.getStackTrace(e));
+                    sheetExtractor.closeAnyPending();
                 }
                 try {
                     getThreadedComments(container, sheetPart, xhtml);

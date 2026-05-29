@@ -74,77 +74,85 @@ class XFAExtractor {
 
     void extract(InputStream xfaIs, XHTMLContentHandler xhtml, Metadata m, ParseContext context)
             throws XMLStreamException, SAXException {
+        // The reader loop below can throw XMLStreamException on malformed XFA
+        // XML; the caller (AbstractPDF2XHTML.extractAcroForm) catches that and
+        // falls through to the AcroForm path, which emits more content. If the
+        // xfa_content div is left open at the throw point, that fallback
+        // content nests under it and the outer </body> can't balance. Wrap the
+        // body in try/finally so the open is always paired with a close.
         xhtml.startElement("div", "class", "xfa_content");
+        try {
+            //TODO - replace this with multivalued map? This isn't
+            //actually metadata, just a handy data structure.
+            Metadata pdfObjRToValues = new Metadata();
 
-        //TODO - replace this with multivalued map? This isn't
-        //actually metadata, just a handy data structure.
-        Metadata pdfObjRToValues = new Metadata();
+            //for now, store and dump the fields in insertion order
+            Map<String, XFAField> namedFields = new LinkedHashMap<>();
 
-        //for now, store and dump the fields in insertion order
-        Map<String, XFAField> namedFields = new LinkedHashMap<>();
+            //The strategy is to cache the fields in fields
+            //and cache the values in pdfObjRToValues while
+            //handling the text etc along the way.
+            //
+            //As a final step, dump the merged fields and the values.
 
-        //The strategy is to cache the fields in fields
-        //and cache the values in pdfObjRToValues while
-        //handling the text etc along the way.
-        //
-        //As a final step, dump the merged fields and the values.
-
-        XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
-        while (reader.hasNext()) {
-            switch (reader.next()) {
-                case XMLStreamConstants.START_ELEMENT:
-                    QName name = reader.getName();
-                    String localName = name.getLocalPart();
-                    if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find() &&
-                            FIELD_LN.equals(name.getLocalPart())) {
-                        handleField(reader, namedFields);
-                    } else if (XFA_DATA.equals(name)) { //full qname match is important!
-                        loadData(reader, pdfObjRToValues);
-                    } else if (textMatcher.reset(localName).find()) {
-                        scrapeTextUntil(reader, xhtml, name);
-                    }
-                    break;
-                case XMLStreamConstants.END_ELEMENT:
-                    break;
-            }
-        }
-
-        if (namedFields.size() == 0) {
-            xhtml.endElement("div");
-            return;
-        }
-        //now dump fields and values
-        xhtml.startElement("div", "class", "xfa_form");
-        xhtml.startElement("ol");
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, XFAField> e : namedFields.entrySet()) {
-            String fieldName = e.getKey();
-            XFAField field = e.getValue();
-            String displayFieldName =
-                    (field.toolTip == null || field.toolTip.isBlank()) ? fieldName :
-                            field.toolTip;
-            String[] fieldValues = pdfObjRToValues.getValues(fieldName);
-            if (fieldValues.length == 0) {
-                fieldValues = new String[]{""};
-            }
-            for (String fieldValue : fieldValues) {
-                AttributesImpl attrs = new AttributesImpl();
-                attrs.addAttribute("", "fieldName", "fieldName", "CDATA", fieldName);
-
-                sb.append(displayFieldName).append(": ");
-                if (fieldValue != null) {
-                    sb.append(fieldValue);
+            XMLStreamReader reader =
+                    XMLReaderUtils.getXMLInputFactory(context).createXMLStreamReader(xfaIs);
+            while (reader.hasNext()) {
+                switch (reader.next()) {
+                    case XMLStreamConstants.START_ELEMENT:
+                        QName name = reader.getName();
+                        String localName = name.getLocalPart();
+                        if (xfaTemplateMatcher.reset(name.getNamespaceURI()).find() &&
+                                FIELD_LN.equals(name.getLocalPart())) {
+                            handleField(reader, namedFields);
+                        } else if (XFA_DATA.equals(name)) { //full qname match is important!
+                            loadData(reader, pdfObjRToValues);
+                        } else if (textMatcher.reset(localName).find()) {
+                            scrapeTextUntil(reader, xhtml, name);
+                        }
+                        break;
+                    case XMLStreamConstants.END_ELEMENT:
+                        break;
                 }
-
-                xhtml.startElement("li", attrs);
-                xhtml.characters(sb.toString());
-                xhtml.endElement("li");
-                sb.setLength(0);
             }
+
+            if (namedFields.size() == 0) {
+                return;
+            }
+            //now dump fields and values
+            xhtml.startElement("div", "class", "xfa_form");
+            xhtml.startElement("ol");
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, XFAField> e : namedFields.entrySet()) {
+                String fieldName = e.getKey();
+                XFAField field = e.getValue();
+                String displayFieldName =
+                        (field.toolTip == null || field.toolTip.isBlank()) ? fieldName :
+                                field.toolTip;
+                String[] fieldValues = pdfObjRToValues.getValues(fieldName);
+                if (fieldValues.length == 0) {
+                    fieldValues = new String[]{""};
+                }
+                for (String fieldValue : fieldValues) {
+                    AttributesImpl attrs = new AttributesImpl();
+                    attrs.addAttribute("", "fieldName", "fieldName", "CDATA", fieldName);
+
+                    sb.append(displayFieldName).append(": ");
+                    if (fieldValue != null) {
+                        sb.append(fieldValue);
+                    }
+
+                    xhtml.startElement("li", attrs);
+                    xhtml.characters(sb.toString());
+                    xhtml.endElement("li");
+                    sb.setLength(0);
+                }
+            }
+            xhtml.endElement("ol");
+            xhtml.endElement("div");
+        } finally {
+            xhtml.endElement("div");
         }
-        xhtml.endElement("ol");
-        xhtml.endElement("div");
-        xhtml.endElement("div");
     }
 
     //try to scrape the text until the endElement
