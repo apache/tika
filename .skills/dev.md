@@ -86,6 +86,12 @@ provide the suggested commit message for the user to execute.
 - Spotless formatter runs during build — don't fight it
 - Tests use `@TempDir Path tmp` for temp directories
 - No emojis in code or comments
+- **No local/machine-specific paths** in committed code, tests, docs, or
+  config — never `/home/<user>`, `/Users/<user>`, `C:\Users\<user>`, or a
+  personal `~/data/...`.  Use a placeholder (`<workdir>/`, `<corpus>`),
+  `@TempDir`, or an in-repo `src/test/resources` fixture instead.  *Only*
+  legitimate exception: a path that is the data under test (e.g. an expected
+  metadata value extracted from a test document) — leave those untouched.
 
 ## Testing an End-to-End Change
 
@@ -103,4 +109,14 @@ See `.skills/tika-eval-compare.md` for the full procedure.
 # Run module tests
 ./mvnw clean test -pl <module> \
   -Dmaven.repo.local=$(pwd)/.local_m2_repo
+```
+
+Scan the staged diff for machine-specific local paths before committing
+(see Code Conventions). Added lines only; review any hit by hand — a test
+fixture's expected value is allowed, a real config/doc/code path is not:
+
+```bash
+git diff --cached -U0 | grep -E '^\+' \
+  | grep -nE '/home/[A-Za-z0-9._-]+|/Users/[A-Za-z0-9._-]+|[A-Za-z]:\\+Users|~/data/' \
+  && echo "^ local path in staged diff — replace with a placeholder/fixture"
 ```

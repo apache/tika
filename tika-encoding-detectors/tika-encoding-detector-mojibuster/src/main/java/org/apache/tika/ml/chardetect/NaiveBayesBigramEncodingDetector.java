@@ -26,7 +26,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 
@@ -104,23 +106,15 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     public static final double MARGIN_THRESHOLD_NATS_PER_BIGRAM = 0.20;
 
     /**
-     * Per-bigram cross-class total-contribution cap (Type C clipping).
-     * For each distinct bigram in the probe, the top-scoring class's
-     * total contribution (count × logP × idf, after dequantization) is
-     * capped at the runner-up class's contribution + this many nats.
-     *
-     * <p>Defends against corpus-skew pathologies where one class
-     * accumulates extreme bigram mass that swings classification on
-     * one or two byte-pairs alone (e.g., Czech "ČR" digraph in
-     * ISO-8859-2 contributing +186 nats over win-1252 on Italian text).
-     * Length-invariant by construction: the cap is on per-bigram
-     * advantage, regardless of how many times the bigram appears.</p>
-     *
-     * <p>20 nats = e^20 ≈ 5×10^8 probability-ratio advantage per
-     * bigram — preserves legitimate CJK-vs-Latin and other cross-script
-     * signal while bounding the diffuse-corpus-skew tail.</p>
+     * Per-distinct-bigram cap: top-scoring class's contribution is
+     * clipped to the best <em>cross-cohort</em> class's contribution +
+     * this many nats.  Bounds both single-bigram corpus skew and the
+     * diffuse coverage asymmetry where broad-vocab cohorts (CJK,
+     * EBCDIC) collectively swamp narrow-vocab cohorts (LATIN) on
+     * rare-ASCII bigrams that fall to the unseen floor in the narrow
+     * cohort.  See {@link Cohort}.
      */
-    public static final double CAP_PER_BIGRAM_NATS = 20.0;
+    public static final double CAP_PER_BIGRAM_NATS = 10.0;
 
     /**
      * Minimum distinct bigrams required before the per-bigram cap
@@ -149,9 +143,60 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
      */
     public static final int MIN_BIGRAMS_FOR_DIVERSITY_GATE = 100;
 
+    /**
+     * Script / writing-system family used by {@link #CAP_PER_BIGRAM_NATS}.
+     * UTF-8 stands alone so the cap engages on UTF-vs-anything pairs
+     * (UTF-8 misread as win-1252 or as GBK).
+     */
+    public enum Cohort {
+        LATIN, CJK, CYRILLIC, GREEK, HEBREW, ARABIC, THAI, EBCDIC, UTF
+    }
+
+    /**
+     * Class label → cohort.  Must cover every NB-model label; load
+     * fails fast on an unmapped label (model and code travel together
+     * in git, no BWC layer).
+     */
+    private static final Map<String, Cohort> COHORT_TABLE = buildCohortTable();
+
+    private static Map<String, Cohort> buildCohortTable() {
+        Map<String, Cohort> m = new HashMap<>();
+        for (String label : new String[]{
+                "windows-1252", "windows-1250", "windows-1254", "windows-1257",
+                "windows-1258", "ISO-8859-2", "ISO-8859-3", "ISO-8859-16",
+                "x-MacRoman", "IBM850", "IBM852"}) {
+            m.put(label, Cohort.LATIN);
+        }
+        for (String label : new String[]{
+                "Big5-HKSCS", "EUC-JP", "GB18030", "Shift_JIS",
+                "x-EUC-TW", "x-windows-949"}) {
+            m.put(label, Cohort.CJK);
+        }
+        for (String label : new String[]{
+                "windows-1251", "KOI8-R", "KOI8-U", "IBM855", "IBM866",
+                "x-mac-cyrillic"}) {
+            m.put(label, Cohort.CYRILLIC);
+        }
+        m.put("windows-1253", Cohort.GREEK);
+        m.put("windows-1255", Cohort.HEBREW);
+        m.put("windows-1256", Cohort.ARABIC);
+        m.put("windows-874", Cohort.THAI);
+        // Bidi-suffix variants (-ltr/-rtl) share a cohort; toJavaCharsetName
+        // collapses them at Charset lookup, but their bigram tables differ.
+        for (String label : new String[]{
+                "IBM1047", "IBM500", "IBM420-ltr", "IBM420-rtl",
+                "IBM424-ltr", "IBM424-rtl"}) {
+            m.put(label, Cohort.EBCDIC);
+        }
+        m.put("UTF-8", Cohort.UTF);
+        return Collections.unmodifiableMap(m);
+    }
+
     private final String[] labels;
     /** Charset objects cached at load — one {@code Charset.forName} per class, ever. */
     private final Charset[] charsets;
+    /** Per-class cohort, parallel to {@link #labels}. */
+    private final Cohort[] cohorts;
     /**
      * Bigram-major int8 logP layout.  Quantized at load time via
      * per-class scale {@code scale[c] = maxAbs(class c's logP column) / 127}.
@@ -198,6 +243,7 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             this.numClasses = dis.readInt();
             this.labels = new String[numClasses];
             this.charsets = new Charset[numClasses];
+            this.cohorts = new Cohort[numClasses];
 
             // Read quantized IDF table + scale.
             float idfScale = dis.readFloat();
@@ -228,6 +274,14 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                     cs = null;
                 }
                 charsets[c] = cs;
+                Cohort cohort = COHORT_TABLE.get(labels[c]);
+                if (cohort == null) {
+                    throw new IOException(
+                            "NB model class label \"" + labels[c]
+                                    + "\" has no cohort assignment; "
+                                    + "update NaiveBayesBigramEncodingDetector.COHORT_TABLE.");
+                }
+                cohorts[c] = cohort;
 
                 scale[c] = dis.readFloat();
                 unseenQ[c] = dis.readByte();
@@ -245,6 +299,23 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                     byte q = dis.readByte();
                     logP8[bigram * numClasses + c] = q;
                 }
+            }
+
+            // The cohort cap needs a cross-cohort competitor to cap against;
+            // require >=2 cohorts so scoreClassesAndCount never sees an empty
+            // cross-cohort set. Always true for the bundled 9-cohort model;
+            // fails fast only on a single-cohort model shift.
+            boolean multiCohort = false;
+            for (int c = 1; c < numClasses; c++) {
+                if (cohorts[c] != cohorts[0]) {
+                    multiCohort = true;
+                    break;
+                }
+            }
+            if (!multiCohort) {
+                throw new IOException("NB model must span at least two cohorts; got "
+                        + numClasses + " class(es) all in cohort "
+                        + (numClasses == 0 ? "<none>" : cohorts[0]));
             }
 
             // Per-class dequant constant = scale[c] × idfScale.
@@ -454,21 +525,30 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             }
 
             // logPs are negative; "best" class for the bigram = highest
-            // (least negative) contribution after dequant.
+            // (least negative) contribution after dequant.  Cap reference
+            // is the best contribution from a class outside top-1's
+            // cohort, so the cap engages on cross-cohort gaps that a
+            // max-vs-overall-runner-up cap missed when multiple classes
+            // in top-1's cohort sat close together.
+            int topClass = -1;
             double max = Double.NEGATIVE_INFINITY;
-            double secondMax = Double.NEGATIVE_INFINITY;
             for (int c = 0; c < numClasses; c++) {
                 double contrib = logP8[base + c] * countTimesIdf * perClassDequant[c];
                 contributions[c] = contrib;
                 if (contrib > max) {
-                    secondMax = max;
                     max = contrib;
-                } else if (contrib > secondMax) {
-                    secondMax = contrib;
+                    topClass = c;
                 }
             }
-            // Cap any class whose contribution exceeds runner-up + cap.
-            double capValue = secondMax + CAP_PER_BIGRAM_NATS;
+            Cohort topCohort = cohorts[topClass];
+            double bestCrossCohort = Double.NEGATIVE_INFINITY;
+            for (int c = 0; c < numClasses; c++) {
+                if (cohorts[c] != topCohort && contributions[c] > bestCrossCohort) {
+                    bestCrossCohort = contributions[c];
+                }
+            }
+            // bestCrossCohort is always finite here: load requires >=2 cohorts.
+            double capValue = bestCrossCohort + CAP_PER_BIGRAM_NATS;
             if (max > capValue) {
                 for (int c = 0; c < numClasses; c++) {
                     if (contributions[c] > capValue) {
