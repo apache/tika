@@ -20,14 +20,14 @@ unzip -q tika-app/target/tika-app-*.zip -d /tmp/tika-app-current
 # two configs (any combination of detectors)
 java -jar /tmp/tika-app-current/tika-app-*.jar \
   --config=tika-config-3x-default.json \
-  -i <corpus> -o ~/data/extracts/A -n 6
+  -i <corpus> -o <workdir>/extracts/A -n 6
 java -jar /tmp/tika-app-current/tika-app-*.jar \
   --config=tika-config-junkfilter-combiner.json \
-  -i <corpus> -o ~/data/extracts/B -n 6
+  -i <corpus> -o <workdir>/extracts/B -n 6
 
 # normal Compare
 java -jar /tmp/tika-eval-current/tika-eval-app-*.jar Compare \
-  -a ~/data/extracts/A -b ~/data/extracts/B -d ~/data/extracts/A-vs-B -r -rd ~/data/extracts/A-vs-B-reports
+  -a <workdir>/extracts/A -b <workdir>/extracts/B -d <workdir>/extracts/A-vs-B -r -rd <workdir>/extracts/A-vs-B-reports
 ```
 
 ### Canonical 3.x-default encoding chain config
@@ -42,8 +42,6 @@ java -jar /tmp/tika-eval-current/tika-eval-app-*.jar Compare \
 }
 ```
 
-Existing copy: `~/data/claude-work/tika-config-3x-default.json`.
-
 ### Canonical 4.x junkfilter chain config
 
 ```json
@@ -57,11 +55,9 @@ Existing copy: `~/data/claude-work/tika-config-3x-default.json`.
 }
 ```
 
-Existing copy: `~/data/smoke/eval-runtime/tika-config-junkfilter-combiner.json`.
-
 ### Per-detector isolation configs
 
-Each detector wired alone lives in `~/data/commoncrawl/cc-html-eval/configs/`:
+Each detector wired alone lives in `<workdir>/configs/`:
 `tika-config-bom.json`, `tika-config-html.json`, `tika-config-htmlstandard.json`,
 `tika-config-universal.json`, `tika-config-icu4j.json`,
 `tika-config-mojibuster.json`, `tika-config-junkfilter-chain.json`.

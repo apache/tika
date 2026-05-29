@@ -301,6 +301,23 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 }
             }
 
+            // The cohort cap needs a cross-cohort competitor to cap against;
+            // require >=2 cohorts so scoreClassesAndCount never sees an empty
+            // cross-cohort set. Always true for the bundled 9-cohort model;
+            // fails fast only on a single-cohort model shift.
+            boolean multiCohort = false;
+            for (int c = 1; c < numClasses; c++) {
+                if (cohorts[c] != cohorts[0]) {
+                    multiCohort = true;
+                    break;
+                }
+            }
+            if (!multiCohort) {
+                throw new IOException("NB model must span at least two cohorts; got "
+                        + numClasses + " class(es) all in cohort "
+                        + (numClasses == 0 ? "<none>" : cohorts[0]));
+            }
+
             // Per-class dequant constant = scale[c] × idfScale.
             // (B-3 per-class score normalization by log V(c) was
             // removed after empirically backfiring on probes where a
@@ -530,6 +547,7 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                     bestCrossCohort = contributions[c];
                 }
             }
+            // bestCrossCohort is always finite here: load requires >=2 cohorts.
             double capValue = bestCrossCohort + CAP_PER_BIGRAM_NATS;
             if (max > capValue) {
                 for (int c = 0; c < numClasses; c++) {
