@@ -74,7 +74,7 @@ public class GrobidNERecogniser implements NERecogniser {
             this.available = isServerAlive(restHostUrlStr);
 
         } catch (Exception e) {
-            LOG.info(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
         }
     }
 
@@ -88,10 +88,10 @@ public class GrobidNERecogniser implements NERecogniser {
             if (responseCode == 200) {
                 available = true;
             } else {
-                LOG.info("Grobid Quantities REST Server is not running");
+                LOG.warn("Grobid Quantities REST Server is not running");
             }
         } catch (Exception e) {
-            LOG.info("Grobid Quantities REST Server is not running", e);
+            LOG.warn("Grobid Quantities REST Server is not running", e);
         }
 
         return available;
@@ -146,7 +146,7 @@ public class GrobidNERecogniser implements NERecogniser {
         try {
             jsonArray = (JSONArray) obj.get(key);
         } catch (Exception e) {
-            LOG.info(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
         }
         return jsonArray;
     }
@@ -162,7 +162,7 @@ public class GrobidNERecogniser implements NERecogniser {
         try {
             jsonObject = (JSONObject) parser.parse(jsonString);
         } catch (Exception e) {
-            LOG.info(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
         }
         return jsonObject;
     }
@@ -261,7 +261,7 @@ public class GrobidNERecogniser implements NERecogniser {
                 }
             }
         } catch (Exception e) {
-            LOG.info(e.getMessage(), e);
+            LOG.warn(e.getMessage(), e);
 
         }
         ENTITY_TYPES.clear();

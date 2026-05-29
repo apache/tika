@@ -117,7 +117,7 @@ public class AZBlobPipesIterator extends PipesIteratorBase {
             }
             long elapsed = System.currentTimeMillis() - start;
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
+                LOGGER.trace("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
             }
             //TODO -- extract metadata about content length etc from properties
             ParseContext parseContext = new ParseContext();

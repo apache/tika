@@ -560,7 +560,7 @@ public class POIFSContainerDetector implements Detector {
         Path file = stream.getPath();
 
         if (file == null) {
-            LOG.warn("Stream does not support file access; skipping POIFS detection");
+            LOG.debug("Stream does not support file access; skipping POIFS detection");
             return Collections.emptySet();
         }
 

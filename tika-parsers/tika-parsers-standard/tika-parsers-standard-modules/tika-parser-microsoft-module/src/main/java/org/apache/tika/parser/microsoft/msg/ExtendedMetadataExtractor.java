@@ -261,7 +261,7 @@ public class ExtendedMetadataExtractor {
         if (knownClassIDs.containsKey(s)) {
             return knownClassIDs.get(s);
         }
-        LOGGER.warn("Add '{}' to list of known property set IDs", s);
+        LOGGER.debug("Add '{}' to list of known property set IDs", s);
         ClassID classID = new ClassID(s);
         knownClassIDs.put(classID.toUUIDString(), classID);
         return classID;

@@ -81,7 +81,7 @@ public class LanguageResource {
                 .loadModels()
                 .detect(string);
         String detectedLang = toIso1(language.getLanguage());
-        LOG.info("Detecting language for incoming resource: [{}]", detectedLang);
+        LOG.debug("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;
     }
 

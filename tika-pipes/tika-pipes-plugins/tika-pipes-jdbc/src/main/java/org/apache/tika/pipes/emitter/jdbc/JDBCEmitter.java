@@ -217,11 +217,11 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
         } else {
             insertAll(emitKey, metadataList);
         }
-        if (LOGGER.isDebugEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             long start = System.currentTimeMillis();
             insertStatement.executeBatch();
             connection.commit();
-            LOGGER.debug("took {}ms to insert row for key: {}", System.currentTimeMillis() - start, emitKey);
+            LOGGER.trace("took {}ms to insert row for key: {}", System.currentTimeMillis() - start, emitKey);
         } else {
             insertStatement.executeBatch();
             connection.commit();
@@ -444,8 +444,8 @@ public class JDBCEmitter extends AbstractEmitter implements Closeable {
             if (maxLength < 0 || s.length() <= maxLength) {
                 return s;
             }
-            LOGGER.warn("truncating {}->'{}' from {} chars to {} chars",
-                    emitKey, columnName, s.length(), maxLength);
+            LOGGER.warn("truncating column '{}' from {} chars to {} chars",
+                    columnName, s.length(), maxLength);
             return s.substring(0, maxLength);
         }
     }

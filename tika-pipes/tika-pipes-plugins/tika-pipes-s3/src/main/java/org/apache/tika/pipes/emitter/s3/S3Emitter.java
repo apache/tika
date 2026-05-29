@@ -198,7 +198,7 @@ public class S3Emitter extends AbstractStreamEmitter {
             path += "." + fileExtension;
         }
 
-        LOGGER.debug("about to emit to target bucket: ({}) path:({})", config.bucket(), path);
+        LOGGER.trace("about to emit to target bucket: ({}) path:({})", config.bucket(), path);
 
         Map<String, String> metadataMap = new HashMap<>();
         for (String n : userMetadata.names()) {

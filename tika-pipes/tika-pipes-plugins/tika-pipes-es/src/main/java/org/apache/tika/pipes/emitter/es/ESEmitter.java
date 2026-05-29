@@ -79,7 +79,7 @@ public class ESEmitter extends AbstractEmitter {
         try {
             LOG.debug("about to emit {} docs", emitData.size());
             esClient.emitDocuments(emitData);
-            LOG.info("successfully emitted {} docs", emitData.size());
+            LOG.debug("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
             LOG.warn("problem emitting docs", e);
             throw new IOException(e.getMessage(), e);
@@ -97,7 +97,7 @@ public class ESEmitter extends AbstractEmitter {
             LOG.debug("about to emit one doc with {} metadata entries",
                     metadataList.size());
             esClient.emitDocument(emitKey, metadataList);
-            LOG.info("successfully emitted one doc");
+            LOG.debug("successfully emitted one doc");
         } catch (TikaClientException e) {
             LOG.warn("problem emitting doc", e);
             throw new IOException("failed to add document", e);

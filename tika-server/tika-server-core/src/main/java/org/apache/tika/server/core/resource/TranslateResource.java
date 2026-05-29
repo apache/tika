@@ -91,11 +91,11 @@ public class TranslateResource {
     }
 
     private String doTranslate(String content, String translator, String sLang, String dLang) throws TikaException, IOException {
-        LOG.info("Using translator: [{}]: src: [{}]: dest: [{}]", translator, sLang, dLang);
+        LOG.debug("Using translator: [{}]: src: [{}]: dest: [{}]", translator, sLang, dLang);
         Translator translate = byClassName(translator);
         if (translate == null) {
             translate = this.defaultTranslator;
-            LOG.info("Using default translator");
+            LOG.debug("Using default translator");
         }
         long taskId = serverStatus.start(ServerStatus.TASK.TRANSLATE, null);
         try {
@@ -117,7 +117,7 @@ public class TranslateResource {
         }
 
         String sLang = language.getLanguage();
-        LOG.info("LanguageIdentifier: detected source lang: [{}]", sLang);
+        LOG.debug("LanguageIdentifier: detected source lang: [{}]", sLang);
 
         return doTranslate(content, translator, sLang, dLang);
     }

@@ -163,12 +163,12 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         String prefix = config.getPrefix();
         String theFetchKey = StringUtils.isBlank(prefix) ? fetchKey : prefix + fetchKey;
 
-        if (LOGGER.isDebugEnabled()) {
+        if (LOGGER.isTraceEnabled()) {
             if (startRange > -1) {
-                LOGGER.debug("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
+                LOGGER.trace("about to fetch fetchkey={} (start={} end={}) from bucket ({})",
                         theFetchKey, startRange, endRange, config.getBucket());
             } else {
-                LOGGER.debug("about to fetch fetchkey={} from bucket ({})",
+                LOGGER.trace("about to fetch fetchkey={} from bucket ({})",
                         theFetchKey, config.getBucket());
             }
         }

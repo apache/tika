@@ -66,7 +66,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
         try {
             LOG.debug("about to emit {} docs", emitData.size());
             openSearchClient.emitDocuments(emitData);
-            LOG.info("successfully emitted {} docs", emitData.size());
+            LOG.debug("successfully emitted {} docs", emitData.size());
         } catch (TikaClientException e) {
             LOG.warn("problem emitting docs", e);
             throw new IOException(e.getMessage(), e);
@@ -81,9 +81,9 @@ public class OpenSearchEmitter extends AbstractEmitter {
             return;
         }
         try {
-            LOG.warn("about to emit one doc {}", metadataList.size());
+            LOG.debug("about to emit one doc {}", metadataList.size());
             openSearchClient.emitDocument(emitKey, metadataList);
-            LOG.info("successfully emitted one doc");
+            LOG.debug("successfully emitted one doc");
         } catch (TikaClientException e) {
             LOG.warn("problem emitting doc", e);
             throw new IOException("failed to add document", e);
