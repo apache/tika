@@ -64,6 +64,11 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
 
     @Override
+    protected boolean isEnableUnsecureFeatures() {
+        return true; // exercises per-request config injection
+    }
+
+    @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
         sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
