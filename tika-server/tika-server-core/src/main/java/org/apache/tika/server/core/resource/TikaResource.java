@@ -37,9 +37,12 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -85,6 +88,9 @@ public class TikaResource {
     private static ServerStatus SERVER_STATUS = null;
     private static PipesParsingHelper PIPES_PARSING_HELPER = null;
     private static MetadataWriteLimiterFactory DEFAULT_METADATA_WRITE_LIMITER_FACTORY = null;
+    // Whether per-request config injection (multipart "config" parts) is permitted.
+    // Enforced in setupMultipartConfig so every config-consuming endpoint honors it.
+    private static boolean ENABLE_UNSECURE_FEATURES = false;
 
     /**
      * Initialize TikaResource with pipes-based parsing for process isolation.
@@ -92,12 +98,14 @@ public class TikaResource {
      * @param tikaLoader the Tika loader
      * @param serverStatus server status tracker
      * @param pipesParsingHelper helper for pipes-based parsing, may be null if /tika endpoint is not enabled
+     * @param enableUnsecureFeatures whether per-request config injection is permitted
      */
     public static void init(TikaLoader tikaLoader, ServerStatus serverStatus,
-                            PipesParsingHelper pipesParsingHelper) {
+                            PipesParsingHelper pipesParsingHelper, boolean enableUnsecureFeatures) {
         TIKA_LOADER = tikaLoader;
         SERVER_STATUS = serverStatus;
         PIPES_PARSING_HELPER = pipesParsingHelper;
+        ENABLE_UNSECURE_FEATURES = enableUnsecureFeatures;
         // MetadataWriteLimiterFactory is now loaded dynamically via loadParseContext()
     }
 
@@ -262,6 +270,16 @@ public class TikaResource {
                 // Unnamed attachment treated as the file (for simple single-file uploads)
                 fileAtt = att;
             }
+        }
+
+        // Enforce the per-request config gate where the config part is actually
+        // consumed, so every endpoint that accepts a config part honors
+        // enableUnsecureFeatures uniformly.
+        if (configAtt != null && !ENABLE_UNSECURE_FEATURES) {
+            throw new WebApplicationException(Response.status(Response.Status.FORBIDDEN)
+                    .entity("Per-request configuration is disabled. Set enableUnsecureFeatures=true in server config.")
+                    .type(MediaType.TEXT_PLAIN)
+                    .build());
         }
 
         if (fileAtt == null) {

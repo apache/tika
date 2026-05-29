@@ -185,7 +185,8 @@ public class TikaServerProcess {
             LOG.info("Pipes-based parsing enabled for /tika and /rmeta endpoints");
         }
 
-        TikaResource.init(tikaLoader, serverStatus, pipesParsingHelper);
+        TikaResource.init(tikaLoader, serverStatus, pipesParsingHelper,
+                tikaServerConfig.isEnableUnsecureFeatures());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();

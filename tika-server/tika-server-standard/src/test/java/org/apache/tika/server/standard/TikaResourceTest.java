@@ -65,6 +65,11 @@ public class TikaResourceTest extends CXFTestBase {
     private static final int UNPROCESSEABLE = 422;
 
     @Override
+    protected boolean isEnableUnsecureFeatures() {
+        return true; // exercises per-request config injection
+    }
+
+    @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
         sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));

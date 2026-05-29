@@ -73,6 +73,11 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     private Path unpackTempDir;
 
     @Override
+    protected boolean isEnableUnsecureFeatures() {
+        return true; // exercises per-request config injection
+    }
+
+    @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(UnpackerResource.class);
         sf.setResourceProvider(UnpackerResource.class, new SingletonResourceProvider(new UnpackerResource()));

@@ -216,7 +216,7 @@ public abstract class CXFTestBase {
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
                     inputTempDirectory, getUnpackEmitterBasePath());
 
-            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper);
+            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper, isEnableUnsecureFeatures());
         } finally {
             // Only delete tika config, keep pipes config for child processes
             Files.deleteIfExists(tmp);
@@ -365,6 +365,15 @@ public abstract class CXFTestBase {
      */
     protected Path getUnpackEmitterBasePath() throws IOException {
         return null;
+    }
+
+    /**
+     * Whether per-request config injection is permitted. Defaults to false, matching
+     * the production default. Tests that POST a multipart "config" part must override
+     * this to return true, otherwise the config part is rejected with 403.
+     */
+    protected boolean isEnableUnsecureFeatures() {
+        return false;
     }
 
     protected InputStream getPipesConfigInputStream() throws IOException {

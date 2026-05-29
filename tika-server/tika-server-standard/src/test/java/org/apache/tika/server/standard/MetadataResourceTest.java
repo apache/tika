@@ -59,6 +59,11 @@ public class MetadataResourceTest extends CXFTestBase {
     private static final String META_PATH = "/meta";
 
     @Override
+    protected boolean isEnableUnsecureFeatures() {
+        return true; // exercises per-request config injection
+    }
+
+    @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(MetadataResource.class, XMPMetadataResource.class);
         sf.setResourceProvider(MetadataResource.class, new SingletonResourceProvider(new MetadataResource()));
