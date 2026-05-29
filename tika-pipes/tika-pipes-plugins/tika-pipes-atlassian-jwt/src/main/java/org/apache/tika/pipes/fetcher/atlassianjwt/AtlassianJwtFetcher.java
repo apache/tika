@@ -306,7 +306,8 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
                     metadata.set(HTTP_TARGET_IP_ADDRESS, inetAddress.getHostAddress());
                 }
             } catch (ConnectionShutdownException e) {
-                LOG.warn("connection shutdown while trying to get target URL: " + url);
+                LOG.warn("connection shutdown while trying to get target URL");
+                LOG.trace("connection shutdown for target URL: {}", url);
             }
         }
     }

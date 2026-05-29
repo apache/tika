@@ -143,7 +143,7 @@ public class S3PipesIterator extends PipesIteratorBase {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, key, elapsed);
+            LOGGER.trace("adding ({}) {} in {} ms", count, key, elapsed);
             ParseContext parseContext = new ParseContext();
             tryToAdd(new FetchEmitTuple(key, new FetchKey(fetcherId, key), new EmitKey(emitterId, key), new Metadata(), parseContext,
                     FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));

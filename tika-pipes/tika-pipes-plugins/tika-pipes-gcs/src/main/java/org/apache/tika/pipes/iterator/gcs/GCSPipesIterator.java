@@ -89,7 +89,7 @@ public class GCSPipesIterator extends PipesIteratorBase {
                 continue;
             }
             long elapsed = System.currentTimeMillis() - start;
-            LOGGER.debug("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
+            LOGGER.trace("adding ({}) {} in {} ms", count, blob.getName(), elapsed);
             //TODO -- allow user specified metadata as the "id"?
             ParseContext parseContext = new ParseContext();
             tryToAdd(new FetchEmitTuple(blob.getName(), new FetchKey(fetcherId, blob.getName()), new EmitKey(emitterId, blob.getName()), new Metadata(), parseContext,
