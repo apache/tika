@@ -28,6 +28,31 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 PUBLISH_DIR="${1:?usage: publish-docs.sh <tika-site-publish-dir>}"
+
+# Guard the 'rm -rf' below: the publish dir must already exist (it's a
+# tika-site checkout, not something we create) and not be a dangerously
+# short/root path that a typo could expand to.
+if [[ ! -d "${PUBLISH_DIR}" ]]; then
+    echo "PUBLISH_DIR '${PUBLISH_DIR}' is not an existing directory." >&2
+    echo "Point it at a tika-site 'publish/' checkout." >&2
+    exit 1
+fi
+PUBLISH_DIR="$(cd "${PUBLISH_DIR}" && pwd -P)"
+if [[ "${#PUBLISH_DIR}" -lt 4 || "${PUBLISH_DIR}" != *"/"* ]]; then
+    echo "Refusing to operate on suspiciously short PUBLISH_DIR '${PUBLISH_DIR}'." >&2
+    exit 1
+fi
+# Confirm this looks like a tika-site 'publish/' dir: the documented argument
+# is always <tika-site-checkout>/publish, and the downstream 'svn add' step
+# hardcodes that name for the things written here (publish/docs, publish/_,
+# publish/search-index.js). Refusing a non-'publish' basename catches a
+# wrong-but-valid checkout before we 'rm -rf' inside it.
+if [[ "$(basename "${PUBLISH_DIR}")" != "publish" ]]; then
+    echo "PUBLISH_DIR '${PUBLISH_DIR}' does not look like a tika-site publish dir" >&2
+    echo "(expected its name to be 'publish'). Refusing to modify it." >&2
+    exit 1
+fi
+
 DOCS_DIR="${PUBLISH_DIR}/docs"
 
 if [[ ! -d target/site ]]; then
@@ -40,12 +65,24 @@ mkdir -p "${DOCS_DIR}"
 
 # Strip the 'tika/' component dir prefix so URLs are /docs/X.Y.Z/...
 cp -r target/site/tika/* "${DOCS_DIR}/"
-# UI assets one level above docs/, since HTML uses ../../_/ relative paths
-cp -r target/site/_/ "${PUBLISH_DIR}/_/"
+# UI assets one level above docs/, since HTML uses ../../_/ relative paths.
+# Replace wholesale: cp -r into an existing directory nests source as a
+# subdirectory (publish/_/_/), so remove first to keep the layout flat.
+# Refuse if '_' is a symlink: 'rm -rf _/' would follow it and wipe the
+# target's contents, and the cp below needs a real directory here anyway.
+if [[ -L "${PUBLISH_DIR}/_" ]]; then
+    echo "Refusing to remove '${PUBLISH_DIR}/_': it is a symlink, not a directory." >&2
+    exit 1
+fi
+rm -rf "${PUBLISH_DIR}/_"
+cp -r target/site/_ "${PUBLISH_DIR}/_"
 # Fix the root redirect and sitemap to match the flattened layout
 sed 's|tika/||g' target/site/index.html > "${DOCS_DIR}/index.html"
 sed 's|/docs/tika/|/docs/|g' target/site/sitemap.xml > "${DOCS_DIR}/sitemap.xml"
 cp target/site/404.html "${DOCS_DIR}/"
-cp target/site/search-index.js "${DOCS_DIR}/"
+# Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js.
+# Remove the stale copy from its old publish/docs/ location left by earlier runs.
+rm -f "${DOCS_DIR}/search-index.js"
+cp target/site/search-index.js "${PUBLISH_DIR}/"
 
 echo "Published to: ${DOCS_DIR}/"

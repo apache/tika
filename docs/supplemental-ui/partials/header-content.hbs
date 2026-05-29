@@ -1,11 +1,16 @@
 <header class="header">
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Main">
     <div class="navbar-brand">
       <a class="navbar-item" href="{{or siteRootPath (or site.url '/')}}">
         <img src="{{{uiRootPath}}}/img/ASF_Tika-colour.svg" alt="Apache Tika" style="height: 2rem; margin-right: 0.5rem; background: white; padding: 2px 4px; border-radius: 3px;">
         {{site.title}}
       </a>
-      <button class="navbar-burger" aria-label="Toggle navigation" data-target="topbar-nav">
+      <div class="navbar-item search hide-for-print" role="search">
+        <div id="search-field" class="field">
+          <input id="search-input" type="search" aria-label="Search the docs" placeholder="Search the docs"{{#if page.home}} autofocus{{/if}}>
+        </div>
+      </div>
+      <button class="navbar-burger" aria-controls="topbar-nav" aria-expanded="false" aria-label="Toggle main menu" data-target="topbar-nav">
         <span></span>
         <span></span>
         <span></span>
@@ -13,14 +18,6 @@
     </div>
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
-        <div class="navbar-item search">
-          <div class="field has-addons">
-            <p class="control">
-              <input id="search-input" class="input" type="text" placeholder="Search docs...">
-            </p>
-          </div>
-          <div id="search-results"></div>
-        </div>
         <a class="navbar-item" href="https://tika.apache.org">Apache Tika</a>
         <a class="navbar-item" href="https://github.com/apache/tika">GitHub</a>
       </div>
