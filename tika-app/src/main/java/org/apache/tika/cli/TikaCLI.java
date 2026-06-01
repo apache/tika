@@ -1128,12 +1128,7 @@ public class TikaCLI {
         // time by the @TikaComponent annotation processor. (The annotation
         // itself has CLASS retention, so reflection on the class can't see it
         // at runtime — the .idx file is the authoritative source.)
-        ComponentRegistry registry;
-        try {
-            registry = new ComponentRegistry(indexFileName, Thread.currentThread().getContextClassLoader());
-        } catch (TikaException e) {
-            throw e;
-        }
+        ComponentRegistry registry = new ComponentRegistry(indexFileName, Thread.currentThread().getContextClassLoader());
         // Sort by class name for stable output; tab-separated so downstream
         // scripts can `cut -f2` to get the JSON-config names.
         List<Class<?>> sorted = new ArrayList<>(classes);

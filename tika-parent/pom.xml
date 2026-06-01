@@ -299,8 +299,8 @@
     <maven.assembly.version>3.8.0</maven.assembly.version>
     <maven.bundle.version>6.0.2</maven.bundle.version>
     <maven.compiler.plugin.version>3.15.0</maven.compiler.plugin.version>
-    <maven.failsafe.version>3.5.5</maven.failsafe.version>
-    <maven.surefire.version>3.5.5</maven.surefire.version>
+    <maven.failsafe.version>3.5.6</maven.failsafe.version>
+    <maven.surefire.version>3.5.6</maven.surefire.version>
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.5.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.68.0</google.cloud.version>
-    <aws2.version>2.44.12</aws2.version>
+    <aws2.version>2.45.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -366,7 +366,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.3</jackrabbit.version>
-    <jackson.version>2.21.3</jackson.version>
+    <jackson.version>2.21.4</jackson.version>
     <jackcess.version>4.0.10</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -464,7 +464,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <zstd.version>1.5.7-9</zstd.version>
-    <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
+    <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
 
@@ -1259,7 +1259,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.10.0</version>
+          <version>3.11.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -1582,7 +1582,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.5.1</version>
+        <version>3.6.0</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>
