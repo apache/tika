@@ -82,6 +82,14 @@ public class ThreadSafeUnzipper {
             LOG.warn("destination {} exists without a completion marker; "
                     + "treating as stale partial extraction and removing", destination);
             deleteRecursively(destination);
+            // deleteRecursively is best-effort and logs-but-swallows IOExceptions
+            // (e.g. Windows file locks). If anything survived, bail out now with a
+            // clear message rather than letting the caller hit a misleading
+            // "timed out waiting for extraction to complete" sixty seconds later.
+            if (Files.exists(destination)) {
+                throw new IOException("could not remove stale partial extraction at "
+                        + destination + "; remove it manually and retry");
+            }
         }
 
         // Extract to a unique temp directory

@@ -21,7 +21,7 @@
 
 == Overview
 
-Tika Server 4.x introduces pipes-based parsing, which provides process isolation for all parsing operations. This improves stability and resource management but introduces some breaking changes.
+Tika Server 4.x introduces pipes-based parsing for the main content-extraction endpoints (`/tika`, `/rmeta`, `/unpack`), which provides process isolation for those operations. This improves stability and resource management but introduces some breaking changes. A few endpoints (notably `/meta`) still parse in-process in the request-handling JVM.
 
 == New `/tika` Endpoint Structure
 

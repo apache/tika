@@ -198,10 +198,18 @@ Tika uses https://logging.apache.org/log4j/2.x/[Log4j 2] for both tika-app and t
 
 === Default log4j2 configuration
 
-Each distribution ships its own `log4j2.xml` bundled inside the jar:
+Each distribution ships its own `log4j2.xml` at the root of the jar (i.e., the entry is just `log4j2.xml`, not under a package path):
 
-* tika-app: `org/apache/tika/cli/log4j2.xml` (in `tika-app-<version>.jar`).
-* tika-server: `org/apache/tika/server/log4j2.xml` (in the relevant `tika-server-*.jar`).
+* tika-app: bundled in `tika-app-<version>.jar`.
+* tika-server: bundled in `tika-server-standard-<version>.jar`.
+
+To inspect or extract the bundled config:
+
+[source,bash]
+----
+unzip -p tika-app-<version>.jar log4j2.xml
+unzip -p tika-server-standard-<version>.jar log4j2.xml
+----
 
 Root level defaults to `INFO`. The bundled configurations are the source of truth — pull them out of the jar if you want to see exactly which loggers are tuned.
 

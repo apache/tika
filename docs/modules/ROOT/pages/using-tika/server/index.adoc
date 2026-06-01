@@ -24,10 +24,12 @@ This section covers running Apache Tika as a REST server via `tika-server`.
 Tika Server provides a RESTful HTTP interface for parsing documents and extracting
 content. It can be deployed as a standalone service or in a containerized environment.
 
-In Tika 4.x, all parsing happens in forked child processes via the Tika Pipes
-infrastructure — the request-handling process never loads parser libraries directly.
-This provides process isolation (a parser crash or OOM cannot take down the server)
-at the cost of requiring a Pipes configuration. See
+In Tika 4.x, the main content-extraction endpoints — `/tika`, `/rmeta`, and
+`/unpack` — parse in forked child processes via the Tika Pipes infrastructure.
+This provides process isolation (a parser crash or OOM in a child cannot take
+down the request-handling process) at the cost of requiring a Pipes
+configuration. A few endpoints (notably `/meta`) still parse in-process in the
+request-handling JVM; treat those as best-effort under load. See
 xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating Tika Server to 4.x]
 for the full breaking-change list when upgrading from 3.x.
 
