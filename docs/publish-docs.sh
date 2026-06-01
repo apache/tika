@@ -83,6 +83,11 @@ cp target/site/404.html "${DOCS_DIR}/"
 # Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js.
 # Remove the stale copy from its old publish/docs/ location left by earlier runs.
 rm -f "${DOCS_DIR}/search-index.js"
-cp target/site/search-index.js "${PUBLISH_DIR}/"
+# Rewrite URLs in the search index from /tika/X.Y.Z/... (Antora's component-
+# prefixed publish path) to /docs/X.Y.Z/... (the deployed layout). The HTML
+# pages and sitemap.xml above are similarly flattened; without this rewrite,
+# clicking a search result lands on https://tika.apache.org/tika/... which
+# 404s. See TIKA-4743.
+sed 's|"url":"/tika/|"url":"/docs/|g' target/site/search-index.js > "${PUBLISH_DIR}/search-index.js"
 
 echo "Published to: ${DOCS_DIR}/"
