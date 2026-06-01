@@ -70,7 +70,7 @@ sed_atomic() {
     local script="$1" input="$2" output="$3"
     if [[ ! -f "${input}" ]]; then
         echo "${input} not found." >&2
-        echo "Re-run 'mvn package -pl docs' to regenerate it." >&2
+        echo "Re-run the docs build: cd .. && ./mvnw package -pl docs" >&2
         exit 1
     fi
     sed "${script}" "${input}" > "${output}.tmp"
