@@ -61,6 +61,22 @@ if [[ ! -d target/site ]]; then
     exit 1
 fi
 
+# Run sed and replace $output atomically. The plain 'sed IN > OUT' form
+# truncates OUT before sed runs, so a missing input or sed failure leaves an
+# empty file behind; this writes to OUT.tmp first and only renames on success.
+# Important for PUBLISH_DIR/search-index.js, which persists across runs (a
+# corrupted one would stay corrupted until the next successful publish).
+sed_atomic() {
+    local script="$1" input="$2" output="$3"
+    if [[ ! -f "${input}" ]]; then
+        echo "${input} not found." >&2
+        echo "Re-run 'mvn package -pl docs' to regenerate it." >&2
+        exit 1
+    fi
+    sed "${script}" "${input}" > "${output}.tmp"
+    mv "${output}.tmp" "${output}"
+}
+
 mkdir -p "${DOCS_DIR}"
 
 # Strip the 'tika/' component dir prefix so URLs are /docs/X.Y.Z/...
@@ -77,8 +93,8 @@ fi
 rm -rf "${PUBLISH_DIR}/_"
 cp -r target/site/_ "${PUBLISH_DIR}/_"
 # Fix the root redirect and sitemap to match the flattened layout
-sed 's|tika/||g' target/site/index.html > "${DOCS_DIR}/index.html"
-sed 's|/docs/tika/|/docs/|g' target/site/sitemap.xml > "${DOCS_DIR}/sitemap.xml"
+sed_atomic 's|tika/||g' target/site/index.html "${DOCS_DIR}/index.html"
+sed_atomic 's|/docs/tika/|/docs/|g' target/site/sitemap.xml "${DOCS_DIR}/sitemap.xml"
 cp target/site/404.html "${DOCS_DIR}/"
 # Lunr index lives next to _/ (one level above docs/), since HTML uses ../../search-index.js.
 # Remove the stale copy from its old publish/docs/ location left by earlier runs.
@@ -88,6 +104,6 @@ rm -f "${DOCS_DIR}/search-index.js"
 # pages and sitemap.xml above are similarly flattened; without this rewrite,
 # clicking a search result lands on https://tika.apache.org/tika/... which
 # 404s. See TIKA-4743.
-sed 's|"url":"/tika/|"url":"/docs/|g' target/site/search-index.js > "${PUBLISH_DIR}/search-index.js"
+sed_atomic 's|"url":"/tika/|"url":"/docs/|g' target/site/search-index.js "${PUBLISH_DIR}/search-index.js"
 
 echo "Published to: ${DOCS_DIR}/"
