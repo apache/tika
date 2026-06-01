@@ -35,10 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "endpoint": "https://account.blob.core.windows.net",
  *     "container": "my-container",
  *     "prefix": "documents/",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

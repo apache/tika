@@ -33,10 +33,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *   "file-system-pipes-iterator": {
  *     "basePath": "/path/to/files",
  *     "countTotal": true,
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

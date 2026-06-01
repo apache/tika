@@ -32,10 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * "pipes-iterator": {
  *   "json-pipes-iterator": {
  *     "jsonPath": "/path/to/files.json",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

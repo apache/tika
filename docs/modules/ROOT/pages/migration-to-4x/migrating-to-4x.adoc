@@ -25,6 +25,21 @@ See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
 
 * Java 17 or later (upgraded from Java 11 in 3.x)
 
+== `tika-app` distribution: jar -> zip
+
+In 3.x, `tika-app-<version>.jar` was a self-contained fat jar — you could drop it anywhere and run `java -jar tika-app.jar`. In 4.x it is a thin launcher that depends on the parsers, the Tika Pipes processor, and other modules living in an adjacent `lib/` directory. Running the bare jar by itself will fail with `NoClassDefFoundError`.
+
+Download `tika-app-<version>.zip` and run from inside the unzipped directory so `lib/` (and `plugins/`) sit alongside the jar:
+
+[source,bash]
+----
+unzip tika-app-<version>.zip
+cd tika-app-<version>
+java -jar tika-app-<version>.jar [option...] [file...]
+----
+
+If you have build scripts or container images that drop in just the jar, update them to unpack the zip and run from inside it.
+
 == Configuration: XML to JSON
 
 Tika 4.x uses JSON configuration files instead of XML. The legacy `tika-config.xml` format

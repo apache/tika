@@ -212,7 +212,7 @@ Benefits:
 [source,json]
 ----
 {
-  "parseContext": {
+  "parse-context": {
     "pdf-parser": {
       "ocrStrategy": "AUTO",
       "extractInlineImages": true
@@ -231,7 +231,7 @@ For components that need immediate deserialization (not lazy loading):
 [source,json]
 ----
 {
-  "parseContext": {
+  "parse-context": {
     "typed": {
       "handler-config": {
         "type": "XML",
@@ -299,23 +299,27 @@ public class UpperCaseFilter implements MetadataFilter {
 }
 ----
 
-Configure in JSON:
+Configure in JSON. Metadata filters are loaded via `parse-context` (they
+implement the `MetadataFilter` interface, which is a `ParseContext`-keyed
+component):
 
 [source,json]
 ----
 {
-  "metadata-filters": [
-    {"upper-case-filter": {"fieldName": "dc:title"}}
-  ]
+  "parse-context": {
+    "upper-case-filter": {"fieldName": "dc:title"}
+  }
 }
 ----
 
-Or with defaults:
+Or with defaults (string form constructs with no overrides):
 
 [source,json]
 ----
 {
-  "metadata-filters": ["upper-case-filter"]
+  "parse-context": {
+    "upper-case-filter": {}
+  }
 }
 ----
 

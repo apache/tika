@@ -1,0 +1,16 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "exclude": ["pdf-parser"]
+      }
+    },
+    {
+      "claude-vlm-parser": {
+        "apiKey": "sk-ant-your-key-here",
+        "model": "claude-sonnet-4-20250514",
+        "prompt": "Extract all text from this document. Return the text in markdown format, preserving the original structure (headings, lists, tables, paragraphs). Do not describe the document. Only return the extracted text."
+      }
+    }
+  ]
+}

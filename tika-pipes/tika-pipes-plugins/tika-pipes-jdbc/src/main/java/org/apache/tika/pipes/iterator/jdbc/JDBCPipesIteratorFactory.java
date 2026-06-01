@@ -35,10 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "select": "select id, path from documents",
  *     "fetchKeyColumn": "path",
  *     "idColumn": "id",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

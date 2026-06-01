@@ -16,6 +16,7 @@
 //
 
 = Getting Started with Apache Tika
+:toc:
 
 Apache Tika can be used in several ways depending on your needs. Choose the approach
 that best fits your use case.

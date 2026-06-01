@@ -19,6 +19,17 @@
 
 This section covers advanced usage and internals of Apache Tika.
 
+NOTE: Most pages here are written from a Java-API perspective. Where a topic
+has a JSON-config or CLI equivalent, look first under
+xref:configuration/index.adoc[Configuration] (per-parser options),
+xref:pipes/index.adoc[Tika Pipes] (pipeline + Pipes-mode tuning),
+xref:using-tika/server/index.adoc[Tika Server] (REST + server config), or
+xref:using-tika/cli/index.adoc[Tika CLI] (`tika-app` flags). The
+xref:advanced/setting-limits.adoc[Setting Limits] page is the model — it
+covers Java, JSON, and CLI side by side. Filing issues against specific
+advanced pages where the JSON/CLI equivalent isn't documented yet helps us
+prioritize the gap.
+
 == Topics
 
 * xref:advanced/language-detection.adoc[Language Detection] - Built-in bigram language detector, training pipeline, and comparison with OpenNLP

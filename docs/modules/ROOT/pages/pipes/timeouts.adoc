@@ -154,11 +154,41 @@ For processing many small documents where you want fast failure:
 
 == CLI Usage
 
-When using `tika-app` with `--fork`, the `--fork-timeout` flag sets `progressTimeoutMillis`:
+=== Standard mode (single file)
+
+For single-document parsing, `--fork` runs the parser in a forked JVM and `--fork-timeout` (milliseconds) caps how long it may run:
 
 [source,bash]
 ----
-java -jar tika-app.jar --fork --fork-timeout=120000 -i /input -o /output
+java -jar tika-app.jar --fork --fork-timeout=120000 document.pdf
+----
+
+=== Pipes mode (`-i` / `-o`)
+
+In Pipes mode the parser ALREADY runs in forked JVMs — that's what `numClients` controls — so `--fork` does not apply. Setting it on the command line is silently ignored because tika-app routes `-i`/`-o` straight into the async dispatcher before its standard-mode flags are processed.
+
+Set per-parse timeouts in your `tika-config.json` instead:
+
+[source,json]
+----
+{
+  "pipes": {
+    "numClients": 4
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 120000,
+      "totalTaskTimeoutMillis": 3600000
+    }
+  }
+}
+----
+
+Then run:
+
+[source,bash]
+----
+java -jar tika-app.jar --config=tika-config.json -i /input -o /output
 ----
 
 == Living Code Reference

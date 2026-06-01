@@ -84,6 +84,14 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |`maxWaitForClientMillis`
 |`60000`
 |Maximum time (ms) to wait for an available forked process when all are busy.
+
+|`staleFetcherTimeoutSeconds`
+|`600`
+|How long (seconds) a fetcher-emitter pairing can sit idle in the cache before it is eligible for eviction. Increase if your pipeline has long quiet periods between tuples that reuse the same fetcher/emitter.
+
+|`staleFetcherDelaySeconds`
+|`60`
+|How often (seconds) the stale-fetcher reaper runs.
 |===
 
 == Parse Behavior
@@ -131,7 +139,53 @@ These settings control how parsed results are batched before sending to emitters
 
 |`emitIntermediateResults`
 |`false`
-|Emit partial results as they become available (rather than waiting for the full parse to complete).
+|When `false`, only successfully-parsed tuples reach the emitter — files that crash, time out, or otherwise fail are dropped from the output. When `true`, every tuple is emitted, including failures (the metadata carries the exception). Turn this on if you need a complete record of what was attempted (audit, retry logic, chaos-monkey tests).
+|===
+
+== Emit Strategy
+
+`emitStrategy` controls whether parsed extracts are emitted directly from the forked PipesServer or passed back to the parent process first. The default is balanced for typical workloads — tune only if you have a memory or throughput problem.
+
+[source,json]
+----
+{
+  "pipes": {
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 100000
+    }
+  }
+}
+----
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`type`
+|`DYNAMIC`
+|One of `DYNAMIC`, `EMIT_ALL`, `PASSBACK_ALL`. `DYNAMIC` switches per-extract based on size (see `thresholdBytes`). `EMIT_ALL` always emits from the forked process. `PASSBACK_ALL` always passes extracts back to the parent for emission.
+
+|`thresholdBytes`
+|`100000`
+|Only used when `type` is `DYNAMIC`. Extracts larger than this are emitted directly from the forked PipesServer; smaller ones are passed back to the parent. Setting `thresholdBytes` with type `EMIT_ALL` or `PASSBACK_ALL` is a config error.
+|===
+
+== Distributed Config Store
+
+For multi-host pipelines (e.g., shared-server clusters) you can store fetcher/emitter configuration in a distributed backend instead of memory. Most users should leave the defaults.
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`configStoreType`
+|`"memory"`
+|Backend for storing fetcher/emitter configurations. `"memory"` (default) is in-process; `"ignite"` uses Apache Ignite for shared state across nodes.
+
+|`configStoreParams`
+|`"{}"`
+|JSON object (as a string) with backend-specific parameters. Structure depends on `configStoreType`.
 |===
 
 == Shared Server Mode (Experimental)
@@ -162,7 +216,7 @@ include::example$pipes-fs-pipeline.json[]
 
 icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
 
-Tokens (`FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`) are substituted by the test harness — replace them with real paths in production configs.
+Tokens (`FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, `EMIT_INTERMEDIATE_RESULTS`) are substituted by the test harness — replace them with real values in production configs. The first three are paths; `EMIT_INTERMEDIATE_RESULTS` is the boolean `emitIntermediateResults` flag.
 
 [#emit-all]
 === Emit-all variant

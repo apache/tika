@@ -192,6 +192,40 @@ response-body bytes for HTTP-style fetchers (configurable via
 log catches the thrown exception. Lower `maxErrMsgSize` -- or set it to
 zero -- if your responses can contain sensitive data.
 
+== Logging
+
+Tika uses https://logging.apache.org/log4j/2.x/[Log4j 2] for both tika-app and tika-server. Default output goes to `SYSTEM_ERR` with the pattern `%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n`. Each forked PipesServer logs with its own line prefix so parent and child output stays distinguishable; see <<_telling_fork_lines_from_parent_lines,Telling fork lines from parent lines>>.
+
+=== Default log4j2 configuration
+
+Each distribution ships its own `log4j2.xml` bundled inside the jar:
+
+* tika-app: `org/apache/tika/cli/log4j2.xml` (in `tika-app-<version>.jar`).
+* tika-server: `org/apache/tika/server/log4j2.xml` (in the relevant `tika-server-*.jar`).
+
+Root level defaults to `INFO`. The bundled configurations are the source of truth — pull them out of the jar if you want to see exactly which loggers are tuned.
+
+=== Changing the log level
+
+In order of increasing reach:
+
+. **`tika-app` `-v` / `--verbose`** — sets the root logger to `DEBUG` for the current invocation only. Cheapest knob if you just want a noisier one-off run.
+. **`tika-server` `logLevel` config field** — set `"server": {"logLevel": "debug"}` (or `"info"`) in `tika-config.json`. Applied at server startup.
+. **Custom `log4j2.xml`** — for fine-grained control (per-logger levels, custom appenders, JSON output, file rotation), supply your own configuration via the standard Log4j 2 system property:
++
+[source,bash]
+----
+java -Dlog4j.configurationFile=/path/to/my-log4j2.xml -jar tika-app.jar ...
+----
++
+Your file overrides the bundled one entirely. Start from a copy of the bundled config and tighten or relax loggers from there.
+
+=== Forked-process logging
+
+Forked PipesServer JVMs inherit the parent's log4j2 configuration unless `tika.pipes.server.stdio=discard` is set (in which case all child stdout/stderr is suppressed at the OS level — see <<_configuration_knobs_reference,Configuration knobs reference>>).
+
+To debug a specific fork, leave stdio on `inherit` (the default) and grep parent log output for the `pipesClientId=<n>` marker that each fork includes.
+
 == Configuration knobs reference
 
 [cols="2,3"]

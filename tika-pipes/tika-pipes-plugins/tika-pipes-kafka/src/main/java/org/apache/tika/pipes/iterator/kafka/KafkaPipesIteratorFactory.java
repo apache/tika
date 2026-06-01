@@ -35,10 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "bootstrapServers": "localhost:9092",
  *     "groupId": "my-group",
  *     "autoOffsetReset": "earliest",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

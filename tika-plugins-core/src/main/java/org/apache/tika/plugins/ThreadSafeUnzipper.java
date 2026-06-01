@@ -71,6 +71,19 @@ public class ThreadSafeUnzipper {
             return;
         }
 
+        // Destination exists but has no completion marker. Possible causes:
+        // a previous extraction was killed mid-stream, the marker was deleted
+        // out from under us, or something other than our extractor put files
+        // there. Without this cleanup the subsequent Files.move() below will
+        // fail with DirectoryNotEmptyException on every run until a human
+        // manually removes the directory. Treat the half-extracted state as
+        // garbage and rebuild.
+        if (Files.exists(destination)) {
+            LOG.warn("destination {} exists without a completion marker; "
+                    + "treating as stale partial extraction and removing", destination);
+            deleteRecursively(destination);
+        }
+
         // Extract to a unique temp directory
         Path tempDir = destination.resolveSibling(
                 destination.getFileName() + ".tmp." + UUID.randomUUID());

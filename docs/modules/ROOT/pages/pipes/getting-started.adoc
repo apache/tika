@@ -66,13 +66,13 @@ include::example$pipes-fs-pipeline.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
 
-NOTE: The values shown like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, and `PLUGINS_PATHS` are placeholders the integration tests substitute at runtime. Replace them with real paths in your own config.
+NOTE: The values shown like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, and `EMIT_INTERMEDIATE_RESULTS` are placeholders the integration tests substitute at runtime. Replace them with real paths (or, for `EMIT_INTERMEDIATE_RESULTS`, the boolean `true`/`false`) in your own config.
 
 Run it with:
 
 [source,bash]
 ----
-java -jar tika-app.jar --config tika-config.json -i /data/input -o /data/output
+java -jar tika-app.jar --config=tika-config.json -i /data/input -o /data/output
 ----
 
 NOTE: The `-i` and `-o` flags override the `basePath` values in the config when used

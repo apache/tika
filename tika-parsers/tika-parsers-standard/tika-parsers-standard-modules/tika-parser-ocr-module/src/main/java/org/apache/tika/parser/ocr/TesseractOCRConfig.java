@@ -440,7 +440,7 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @param resize the resize to set. Valid range of values is 100-900.
-     *               Default value is 900.
+     *               Default value is 200 (see the {@code resize} field initializer).
      */
     public void setResize(int resize) {
         for (int i = 1; i < 10; i++) {

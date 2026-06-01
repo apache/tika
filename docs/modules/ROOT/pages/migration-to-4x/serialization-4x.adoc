@@ -31,6 +31,48 @@ Jackson dependencies are kept out of core modules to maintain flexibility.
 Implementation uses friendly names like `pdf-parser` rather than full class names. These friendly
 names are applied to configured items rather than configuration class names.
 
+[#discovering-friendly-names]
+==== Discovering the friendly name for a component
+
+The 4.x JSON config refers to parsers, detectors, fetchers, emitters, and other components
+by their friendly name (e.g., `pdf-parser`, `file-system-fetcher`). To map a Java class
+to its friendly name (or vice versa), use any of:
+
+. **`tika-app --list-parser-names` / `--list-detector-names`** — emits each
+  registered class with its friendly name as tab-separated `class<TAB>friendly-name`:
++
+[source,bash]
+----
+java -jar tika-app.jar --list-parser-names
+# org.apache.tika.parser.pdf.PDFParser     pdf-parser
+# org.apache.tika.parser.html.JSoupParser  jsoup-parser
+# ...
+----
++
+The mapping comes from the `META-INF/tika/parsers.idx` / `detectors.idx` files
+generated at compile time by the `@TikaComponent` annotation processor. The
+underlying lookup is `o.a.t.config.loader.ComponentRegistry.getFriendlyName(Class)`.
+. **Per-parser configuration pages** under xref:configuration/index.adoc[Configuration]
+  show the friendly name in their page title and JSON examples.
+. **The naming convention** — when `@TikaComponent` has no explicit `name`, the
+  friendly name is derived from the class's simple name via the kebab-case rule
+  in `o.a.t.config.loader.KebabCaseConverter`. Examples:
++
+[cols="2,2"]
+|===
+|Class |Friendly name
+
+|`PDFParser` |`pdf-parser`
+|`TesseractOCRParser` |`tesseract-ocr-parser`
+|`AutoDetectParser` |`auto-detect-parser`
+|`FileSystemFetcher` |`file-system-fetcher`
+|`SolrEmitter` |`solr-emitter`
+|===
+
+NOTE: The `--list-parsers`, `--list-detectors`, and `--list-parser-details` commands
+print the hierarchical, human-oriented view (class names with composite parsers
+indented). Use the `--list-*-names` variants when you want a machine-readable mapping.
+
 === Custom Class Support
 
 The design permits users to add custom classes through Jackson's polymorphic handling:

@@ -153,56 +153,29 @@ back to the general model transparently.
 
 === Overriding Model Selection
 
-The selection strategy can be overridden at construction time or per-document
-via `ParseContext`:
+The automatic gates (200-char length, 200-feature density) and the strategy
+choice (always-short / always-general / automatic) are currently fixed in
+`CharSoupLanguageDetector`. Programmatic knobs are limited to
+`setMaxLength(int)` for the rolling buffer and `setPriors(Map)` for language
+priors.
 
-[source,java]
+`CharSoupLanguageDetector` is registered as `@TikaComponent(name =
+"charsoup-language-detector")` and implements `SelfConfiguring`, so once a
+config record is added, declarative tuning will be available via the standard
+`parse-context` JSON section:
+
+[source,json]
 ----
-// Always use the short-text model (e.g. for a title-only pipeline)
-CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-    Map.of("strategy", "SHORT_TEXT"));
-CharSoupLanguageDetector detector = new CharSoupLanguageDetector(cfg);
-
-// Always use the general model (e.g. for full-document body text)
-CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(
-    Map.of("strategy", "STANDARD"));
-
-// Per-document override via ParseContext
-ParseContext context = new ParseContext();
-context.set(CharSoupDetectorConfig.class, CharSoupDetectorConfig.fromMap(
-    Map.of("strategy", "SHORT_TEXT")));
-detector.reset(context);
-----
-
-The three strategies are:
-
-[cols="1,3"]
-|===
-| Strategy | Behaviour
-
-| `AUTOMATIC` (default)
-| Use length and feature-density gates to choose between models per chunk.
-
-| `SHORT_TEXT`
-| Always use the short-text model (no-op if the binary is absent).
-
-| `STANDARD`
-| Always use the general model regardless of input length.
-|===
-
-The thresholds can also be tuned via `CharSoupDetectorConfig`:
-
-[source,java]
-----
-CharSoupDetectorConfig cfg = CharSoupDetectorConfig.fromMap(Map.of(
-    "strategy",          "AUTOMATIC",
-    "lengthThreshold",   300,   // chars; default 200
-    "featureThreshold",  300    // n-gram emissions; default 200
-));
+{
+  "parse-context": {
+    "charsoup-language-detector": {
+      /* future tuning fields will go here */
+    }
+  }
+}
 ----
 
-Or via Tika's JSON configuration mechanism if you are using `SelfConfiguring`
-component loading.
+See xref:migration-to-4x/serialization-4x.adoc#discovering-friendly-names[Discovering the friendly name for a component] for how `SelfConfiguring` components are resolved at runtime.
 
 == Training the Models
 

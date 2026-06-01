@@ -35,10 +35,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "solrUrls": ["http://localhost:8983/solr"],
  *     "idField": "id",
  *     "rows": 5000,
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

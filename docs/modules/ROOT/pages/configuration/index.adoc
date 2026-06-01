@@ -16,28 +16,69 @@
 //
 
 = Configuration
+:toc:
 
 This section covers configuring Apache Tika.
 
 == Overview
 
 Tika 4.x uses JSON configuration files. Configuration controls parsers, detectors,
-content handlers, and other components.
+content handlers, server behavior, and the Tika Pipes pipeline.
 
 NOTE: Tika 3.x and earlier used XML configuration (`tika-config.xml`). See the
 xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JSON.
+
+== Top-level JSON structure
+
+A `tika-config.json` is a single JSON object whose keys are the top-level sections
+listed below. Every section is optional — omit what you don't need. Defaults are
+used wherever a section is missing.
+
+[source,json]
+----
+{
+  "parsers": [ /* parser declarations */ ],
+  "detectors": [ /* detector declarations */ ],
+  "encoding-detectors": [ /* encoding detector declarations */ ],
+  "content-handler-factory": { /* handler type for emitted content */ },
+  "parse-context": {
+    "timeout-limits": { /* progress + total task timeouts */ },
+    "unpack-config": { /* embedded-byte extraction */ }
+    /* other SelfConfiguring components by component name */
+  },
+  "server": { /* tika-server options: enableUnsecureFeatures, cors, ... */ },
+  "pipes": { /* Pipes process management: numClients, parseMode, ... */ },
+  "fetchers": { /* named fetcher instances */ },
+  "emitters": { /* named emitter instances */ },
+  "pipes-iterator": { /* iterator (one per pipeline) */ },
+  "pipes-reporters": { /* per-document status reporters */ },
+  "plugin-roots": "/path/to/plugins"
+}
+----
+
+Per-section documentation:
+
+* `parsers`, `detectors`, `encoding-detectors`, `content-handler-factory`,
+  `parse-context` — covered below under <<_topics,Topics>>.
+* `server` — see xref:using-tika/server/index.adoc[Tika Server].
+* `pipes`, `fetchers`, `emitters`, `pipes-iterator`, `pipes-reporters`,
+  `plugin-roots` — see xref:pipes/configuration.adoc[Pipes Configuration]
+  and xref:pipes/index.adoc[Tika Pipes].
 
 == Topics
 
 === Parser Configuration
 
-* xref:configuration/parsers/pdf-parser.adoc[PDFParser] - PDF parsing options
-* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] - OCR options for image-based text extraction
+* xref:configuration/parsers/pdf-parser.adoc[PDFParser] — PDF parsing options
+* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR options for image-based text extraction
+* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNI bindings
+* xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers] — Claude, Gemini, OpenAI, Ollama, vLLM
+* xref:configuration/parsers/external-parser.adoc[External Parser] — wrap external tools (ffmpeg, exiftool, etc.)
 
 === Other Configuration
 
-* xref:configuration/digesters.adoc[Digesters] - Computing cryptographic hashes of documents
-* xref:configuration/encoding-detectors.adoc[Encoding Detectors] - Configuring charset/encoding detection
+* xref:configuration/digesters.adoc[Digesters] — Computing cryptographic hashes of documents
+* xref:configuration/encoding-detectors.adoc[Encoding Detectors] — Configuring charset/encoding detection
 
 // Add links to specific topics as they are created
 // * xref:json-config.adoc[JSON Configuration Reference]
