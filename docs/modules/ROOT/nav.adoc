@@ -27,6 +27,7 @@
 ** xref:pipes/iterators.adoc[Iterators]
 ** xref:pipes/reporters.adoc[Reporters]
 ** xref:pipes/configuration.adoc[Pipeline Configuration]
+** xref:pipes/shared-server-mode.adoc[Shared Server Mode]
 ** xref:pipes/parse-modes.adoc[Parse Modes]
 ** xref:pipes/unpack-config.adoc[Extracting Embedded Bytes]
 ** xref:pipes/timeouts.adoc[Timeouts]

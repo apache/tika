@@ -16,6 +16,7 @@
 //
 
 = For Maintainers
+:toc:
 
 This section contains documentation for Apache Tika project maintainers and committers.
 

@@ -19,9 +19,10 @@
 :toc:
 :toclevels: 3
 
-Tika Pipes uses `ParseMode` to control how documents are parsed and how results are emitted.
-The parse mode is configured in the `pipes` section of the JSON config, or overridden per-request
-in the `parseContext` field of a `FetchEmitTuple`.
+Tika Pipes uses parse modes to control how documents are parsed and how results are emitted.
+The mode is set as `parseMode` in the `pipes` section of the JSON config, and can be overridden
+per-request from Java code by attaching a `ParseMode` to the `ParseContext` on the
+`FetchEmitTuple` you submit.
 
 == Available Parse Modes
 
@@ -51,9 +52,24 @@ See <<no-parse-mode>>.
 
 == Content Handler Types
 
-The content handler type determines the format of the extracted text. It is set on the
-`ContentHandlerFactory` configured in `parseContext` (or via the CLI `--handler` flag), and applies
-to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`).
+The content handler type determines the format of the extracted text. It is set in the
+top-level `content-handler-factory` section of the JSON config (or via the CLI `--handler` flag),
+and applies to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`).
+
+[source,json]
+----
+{
+  "content-handler-factory": {
+    "basic-content-handler-factory": {
+      "type": "TEXT"
+    }
+  }
+}
+----
+
+Accepted `type` values: `TEXT`, `HTML`, `XML`, `MARKDOWN`, `BODY`, `IGNORE`. The CLI
+`--handler` flag uses single-letter shortcuts (`t`, `h`, `x`, `m`, `b`, `i`) that map onto
+these values.
 
 [cols="1,1,2"]
 |===
@@ -147,7 +163,7 @@ only `X-TIKA:content` and `X-TIKA:container_exception`. If you set your own
 
 === CLI usage
 
-The `tika-app` batch processor supports `CONTENT_ONLY` via the `--content-only`
+The `tika-app` Pipes processor supports `CONTENT_ONLY` via the `--content-only`
 flag:
 
 [source,bash]
@@ -166,7 +182,7 @@ extracted markdown content. See <<_content_handler_types>> for the available han
 [source,json]
 ----
 {
-  "parseContext": {
+  "pipes": {
     "parseMode": "NO_PARSE"
   }
 }

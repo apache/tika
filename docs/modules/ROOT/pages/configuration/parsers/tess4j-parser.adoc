@@ -177,6 +177,10 @@ throwing an exception.
 |`2147483647` (~2 GB)
 |Maximum input file size in bytes. Larger files are skipped.
 
+|`maxImagePixels`
+|`100000000` (100 megapixels)
+|Maximum decoded-image area. Larger images are skipped. Guards against decompression-bomb inputs that would blow up memory before OCR even starts.
+
 |`skipOcr`
 |`false`
 |Runtime kill-switch to disable the parser entirely.

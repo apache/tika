@@ -316,8 +316,10 @@ When the byte limit is reached:
 [source,json]
 ----
 {
-  "parseContext": {
-    "parseMode": "UNPACK",
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
     "unpack-config": {
       "maxUnpackBytes": 104857600
     }

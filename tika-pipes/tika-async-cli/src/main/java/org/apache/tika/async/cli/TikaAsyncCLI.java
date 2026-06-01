@@ -57,7 +57,11 @@ import org.apache.tika.utils.StringUtils;
 public class TikaAsyncCLI {
 
     private static final long TIMEOUT_MS = 600_000;
-    private static final Logger LOG = LoggerFactory.getLogger(TikaAsyncCLI.class);
+    // Use the user-facing "tika.pipes" name rather than the FQ class name so
+    // the internal TikaAsyncCLI detail doesn't leak into user-visible logs.
+    // tika-app users invoke the Pipes processor via -i/-o flags and shouldn't
+    // need to know about the underlying async CLI class.
+    private static final Logger LOG = LoggerFactory.getLogger("tika.pipes");
 
     private static Options getOptions() {
         Options options = new Options();

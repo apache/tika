@@ -15,31 +15,61 @@
 // limitations under the License.
 //
 
-= UnpackConfig: Extracting Embedded Document Bytes
+= unpack-config: Extracting Embedded Document Bytes
 
 When processing container files (ZIP, DOCX, PDF with attachments, etc.), you may want to
-extract the raw bytes of embedded documents in addition to parsing them. `UnpackConfig`
-controls how embedded bytes are extracted and emitted.
+extract the raw bytes of embedded documents in addition to parsing them. The
+`unpack-config` component (Java: `UnpackConfig`) controls how embedded bytes are
+extracted and emitted.
 
 == Quick Start
 
-Use `ParseMode.UNPACK` to automatically extract embedded document bytes:
+To turn on byte extraction for every document the pipeline processes, set
+`parseMode` to `UNPACK` in the `pipes` section of your `tika-config.json`.
+That's the minimum configuration — extraction defaults are fine for most cases.
 
 [source,json]
 ----
 {
-  "id": "doc1",
-  "fetchKey": {"fetcherId": "fsf", "fetchKey": "container.docx"},
-  "emitKey": {"emitterId": "fse", "emitKey": "container.docx"},
-  "parseContext": {
+  "pipes": {
     "parseMode": "UNPACK"
+  }
+}
+----
+
+To tune extraction (size limits, naming, ZIP output, etc.), add an `unpack-config`
+block under the top-level `parse-context` section. All the options listed below
+live inside that block:
+
+[source,json]
+----
+{
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
+    "unpack-config": {
+      "maxUnpackBytes": 104857600,
+      "zipEmbeddedFiles": true
+    }
   }
 }
 ----
 
 This extracts both metadata (like `RMETA` mode) and embedded document bytes.
 
+[NOTE]
+====
+You can also set `UnpackConfig` programmatically per request from Java code by
+calling `parseContext.set(UnpackConfig.class, ...)` on the `ParseContext`
+attached to your `FetchEmitTuple`. The JSON `parse-context` section above is the
+declarative equivalent.
+====
+
 == Configuration Options
+
+All options below are fields of the `unpack-config` block — nest them inside
+`parse-context.unpack-config` as shown in the Quick Start.
 
 [cols="2,1,2,3"]
 |===
@@ -105,7 +135,7 @@ Extract embedded bytes with default naming:
 [source,json]
 ----
 {
-  "parseContext": {
+  "pipes": {
     "parseMode": "UNPACK"
   }
 }
@@ -118,8 +148,10 @@ Collect all embedded files into a ZIP with metadata:
 [source,json]
 ----
 {
-  "parseContext": {
-    "parseMode": "UNPACK",
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
     "unpack-config": {
       "zipEmbeddedFiles": true,
       "includeMetadataInZip": true,
@@ -136,8 +168,10 @@ Control output file naming:
 [source,json]
 ----
 {
-  "parseContext": {
-    "parseMode": "UNPACK",
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
     "unpack-config": {
       "zeroPadName": 8,
       "suffixStrategy": "DETECTED",
@@ -156,8 +190,10 @@ Prevent unbounded extraction from malicious files:
 [source,json]
 ----
 {
-  "parseContext": {
-    "parseMode": "UNPACK",
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
     "unpack-config": {
       "maxUnpackBytes": 104857600
     }
@@ -200,13 +236,15 @@ manifest with file checksums and MIME types, making it easy to verify and proces
 
 === Enabling Frictionless Output
 
-Set `outputFormat` to `FRICTIONLESS` in your UnpackConfig:
+Set `outputFormat` to `FRICTIONLESS` in your `unpack-config`:
 
 [source,json]
 ----
 {
-  "parseContext": {
-    "parseMode": "UNPACK",
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
     "unpack-config": {
       "outputFormat": "FRICTIONLESS",
       "includeFullMetadata": true
@@ -256,12 +294,19 @@ The `datapackage.json` file contains:
 
 === CLI Usage
 
-Extract files in Frictionless format using the CLI:
+Extract files in Frictionless format using the CLI. The `-Z` flag turns on recursive
+unpack (the Pipes-mode counterpart of standard-mode `-z`), and `-i`/`-o` are the
+Pipes input/output directories:
 
 [source,bash]
 ----
-java -jar tika-app.jar --unpack --unpack-format=FRICTIONLESS -i input.docx -o output/
+java -jar tika-app.jar -Z --unpack-format=FRICTIONLESS -i /path/to/input -o /path/to/output
 ----
+
+NOTE: `-i` expects a directory of containers to unpack, not a single file. For
+one-off unpacking of a single document, see the standard-mode `-z`/`--extract`
+flag — though as of 4.x that path also routes through the Pipes machinery and
+expects an input directory.
 
 == Code Examples
 

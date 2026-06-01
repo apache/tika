@@ -23,6 +23,7 @@
         "outputType": "TXT",
         "pageSeparator": "",
         "pageSegMode": "1",
+        "preloadLangs": false,
         "preserveInterwordSpacing": false,
         "resize": 200,
         "skipOcr": false,

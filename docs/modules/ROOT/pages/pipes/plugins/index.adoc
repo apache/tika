@@ -68,7 +68,7 @@ Many plugins implement more than one (e.g., the S3 plugin provides fetcher, emit
 |—
 |✓
 
-|xref:pipes/plugins/solr.adoc[Solr]
+|xref:pipes/plugins/solr.adoc[Apache Solr]
 |—
 |✓
 |✓
@@ -80,7 +80,7 @@ Many plugins implement more than one (e.g., the S3 plugin provides fetcher, emit
 |✓
 |✓
 
-|xref:pipes/plugins/kafka.adoc[Kafka]
+|xref:pipes/plugins/kafka.adoc[Apache Kafka]
 |—
 |✓
 |✓

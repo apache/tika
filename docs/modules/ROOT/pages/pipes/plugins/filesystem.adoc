@@ -44,7 +44,7 @@ The File System plugin (`tika-pipes-file-system`) is the most common starting po
 
 == Complete Pipeline Example
 
-The example below is the canonical filesystem-to-filesystem integration test config. Tokens like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, and `PLUGINS_PATHS` are placeholders the test harness substitutes; replace them with real paths in your own config.
+The example below is the canonical filesystem-to-filesystem integration test config. Tokens like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, and `EMIT_INTERMEDIATE_RESULTS` are placeholders the test harness substitutes; replace the path tokens with real paths and `EMIT_INTERMEDIATE_RESULTS` with the boolean `true` or `false`. See xref:pipes/configuration.adoc[Pipes Configuration] for what each setting does.
 
 [source,json,subs=none]
 ----
@@ -208,7 +208,7 @@ Maintains a JSON status file that summarizes pipeline progress. The reporter wri
 
 |`statusFile`
 |_required_
-|Path of the JSON status file. The file is created on first write and overwritten in place.
+|Path of the JSON status file. Absolute paths are written as given; relative paths resolve against the JVM's working directory at startup. Parent directories that don't exist are created automatically on first write. Always include a parent component (e.g., `./status.json` rather than bare `status.json`) — the auto-create step fails on a path with no parent. The file is created on first write and overwritten in place.
 
 |`reportUpdateMs`
 |_no default_
@@ -219,13 +219,16 @@ Maintains a JSON status file that summarizes pipeline progress. The reporter wri
 
 The reporter serializes an `AsyncStatus` object to JSON, containing:
 
+* `started` — ISO-8601 timestamp of when the reporter was constructed.
+* `lastUpdate` — ISO-8601 timestamp of the most recent write.
 * `asyncStatus` — current pipeline phase (`STARTED`, `COMPLETED`, `CRASHED`).
-* `counts` — map of `RESULT_STATUS` to count (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`, `TIMEOUT`, `OOM`).
-* `totalCountResult` — total documents processed and whether the enumeration is complete.
-* `timestamp` — when the file was last written.
-* `crashMessage` — populated only on fatal pipeline failure.
+* `statusCounts` — map of `PipesResult.RESULT_STATUS` to count (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`, `TIMEOUT`, `OOM`, `EMIT_SUCCESS`, `EMIT_EXCEPTION`).
+* `totalCountResult` — total documents discovered by the iterator and whether the enumeration is complete.
+* `crashMessage` — empty string under normal operation; populated with a stack trace on fatal pipeline failure.
 
 The file is rewritten in full on each tick, not appended.
+
+NOTE: The write is **not** atomic — the reporter opens the target path with `Files.newBufferedWriter`, truncates, and streams the JSON. A watcher reading concurrently with a write can observe a truncated or partial document. Have the watcher treat a parse error as "stale read, try again on the next poll" rather than as a real error.
 
 [#watching]
 === Live status for watching applications
@@ -237,7 +240,7 @@ The reporter is designed to support external "watchers" — UIs, dashboards, or 
 "reportUpdateMs": 250
 ----
 
-The watcher polls `statusFile` on its own interval and reads the most recent snapshot. Because the file is rewritten in full with the latest status, watchers do not need to handle partial reads.
+The watcher polls `statusFile` on its own interval and reads the most recent snapshot. Each tick rewrites the file in full, so successive snapshots are always coherent — but because the write is not atomic, a watcher reading mid-write can see a truncated document. Tolerate JSON parse errors as transient and retry on the next poll (see the NOTE under <<_status_file_schema,Status file schema>>).
 
 This pattern is used by `tika-gui-v2` to drive its progress UI: the GUI starts a pipeline subprocess, points the reporter at a temp file, and polls that file every few hundred milliseconds.
 

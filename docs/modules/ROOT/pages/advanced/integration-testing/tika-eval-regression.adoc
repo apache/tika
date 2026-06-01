@@ -200,7 +200,7 @@ Options:
 * `-i` / `--inputDir` — original binary input directory (optional, lets
   tika-eval pair extracts to source files even if A or B failed on some)
 * `-d` / `--db` — H2 database name/path.  A short label is fine —
-  tika-eval will create `{label}.mv.db` and a `{label}-reports/` dir
+  tika-eval will create `\{label}.mv.db` and a `\{label}-reports/` dir
   alongside.  Persist the db if you want to re-run Report later.
 * `-r` / `--report` — automatically run the Report step after Compare,
   and zip the reports directory.

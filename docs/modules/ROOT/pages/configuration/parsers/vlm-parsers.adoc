@@ -209,6 +209,18 @@ text into the parent document's content stream. Mirrors
 |`maxFileSizeToOcr`
 |`52428800` (50 MB)
 |Maximum input file size in bytes.
+
+|`maxImagePixels`
+|`100000000` (100 megapixels)
+|Maximum decoded image area in pixels. Larger images are rejected before being sent to the model. Set to `-1` to disable the limit. Guards against decompression-bomb inputs and runaway VLM cost on a single huge image.
+
+|`allowRuntimePrompt`
+|`false`
+|When `false` (default), the `prompt` is fixed at initialization time and per-request overrides are rejected. When `true`, the prompt can be overridden per request via the `ParseContext` `VLMOCRConfig`. Security-relevant: a runtime-controllable prompt is effectively a prompt-injection surface for any caller that can set the `ParseContext`. Only enable when callers are trusted.
+
+|`completionsPath`
+|`/v1/chat/completions` (OpenAI/vLLM only)
+|HTTP path appended to `baseUrl` for the chat-completions endpoint. Used by the OpenAI-compatible parser only. Claude and Gemini hardcode their own API paths (`/v1/messages` and `/v1beta/models/\{model}:generateContent` respectively) and ignore this field.
 |===
 
 == Markdown-to-XHTML conversion

@@ -34,7 +34,7 @@ The iterator runs on its own thread; the pipeline reads tuples as fast as the wo
 [#wiring]
 == Wiring an Iterator Into a Pipeline
 
-The iterator lives under the singular top-level `pipes-iterator` key. The inner map key is the iterator's component name. `fetcherId` and `emitterId` are *flat fields* on the iterator config — they are not wrapped in a `baseConfig` block.
+The iterator lives under the singular top-level `pipes-iterator` key. The inner map key is the iterator's component name. `fetcherId` and `emitterId` are flat fields on the iterator config, alongside the iterator-specific options:
 
 [source,json]
 ----

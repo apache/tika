@@ -20,12 +20,22 @@
 WARNING: The tika-app command line interface is still in flux for 4.x. Options and
 behavior may change before the final release.
 
-This section covers using Apache Tika from the command line via `tika-app`.
+This section covers using Apache Tika from the command line via `tika-app`. The
+authoritative option list is `java -jar tika-app.jar --help` — this page mirrors
+that output and adds usage context. If the two disagree, `--help` wins; please
+file a ticket.
 
 == Overview
 
 The Tika application (`tika-app`) is a command line utility for extracting
-text content and metadata from all sorts of files.
+text content and metadata from all sorts of files. It operates in three modes:
+
+* **Standard mode** — parse a single file, URL, or stdin and write the result
+  to stdout.
+* **GUI mode** — `--gui` launches a desktop window for drag-and-drop parsing.
+* **Tika Pipes mode** — process many documents from a directory (or S3, GCS,
+  Azure, JDBC, etc.) via the asynchronous Pipes pipeline. Activated by any of
+  the Pipes-only flags listed below.
 
 == Installation
 
@@ -54,7 +64,13 @@ unzipped distribution.
 java -jar tika-app.jar [option...] [file|port...]
 ----
 
-== Command Line Options
+If no file or URL is given (or `-` is given), `tika-app` parses standard input.
+If no arguments are given at all and no stdin is piped in, the GUI launches.
+
+== Standard-mode Options
+
+These options apply to single-document parsing (the default mode). For Pipes-mode
+options see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 
 === Help and Information
 
@@ -63,29 +79,36 @@ java -jar tika-app.jar [option...] [file|port...]
 |Option |Description
 
 |`-?` or `--help`
-|Display usage instructions
+|Print the usage message
 
 |`-v` or `--verbose`
-|Enable debug-level output
+|Print debug-level messages
 
 |`-V` or `--version`
-|Show version details
+|Print the Apache Tika version
 |===
 
-=== Operation Modes
+=== GUI
 
 [cols="1,3"]
 |===
 |Option |Description
 
 |`-g` or `--gui`
-|Launch the graphical interface
+|Launch the graphical interface (drag-and-drop parsing)
+|===
 
-|`-s` or `--server`
-|Start the web server
+=== Configuration
 
-|`-f` or `--fork`
-|Enable fork mode for isolated extraction
+[cols="1,3"]
+|===
+|Option |Description
+
+|`--config=<tika-config.json>`
+|TikaConfig file (JSON as of Tika 4.x). Must appear before `-g` or `-f`.
+
+|`--convert-config-xml-to-json=<input.xml>`
+|Convert a legacy 3.x XML config to 4.x JSON format (parsers section only) and write to stdout. Redirect to save, e.g. `--convert-config-xml-to-json=tika-config.xml > tika-config.json`.
 |===
 
 === Output Formatting
@@ -95,22 +118,150 @@ java -jar tika-app.jar [option...] [file|port...]
 |Option |Description
 
 |`-x` or `--xml`
-|Output XHTML (default)
+|Output XHTML content (default)
 
 |`-h` or `--html`
-|Output HTML
+|Output HTML content
 
 |`-t` or `--text`
-|Output plain text
+|Output plain text content (body)
 
 |`--md`
-|Output Markdown
+|Output Markdown content (body)
+
+|`-T` or `--text-main`
+|Output plain text — main content only, via the boilerpipe handler
+
+|`-A` or `--text-all`
+|Output all text content
 
 |`-m` or `--metadata`
 |Output metadata only
 
 |`-j` or `--json`
-|Output JSON metadata
+|Output metadata in JSON
+
+|`-y` or `--xmp`
+|Output metadata in XMP
+
+|`-J` or `--jsonRecursive`
+|Output metadata and content from all embedded files. Combine with `-x`/`-h`/`-t`/`-m` to choose the content type (default: `-x`).
+
+|`-r` or `--pretty-print`
+|For JSON, XML, and XHTML output, add newlines and whitespace for readability.
+
+|`-e<X>` or `--encoding=<X>`
+|Use output encoding `<X>` (e.g. `UTF-8`).
+|===
+
+=== Detection and Language
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-d` or `--detect`
+|Detect the document type and print the media type.
+
+|`-l` or `--language`
+|Detect and print only the language.
+|===
+
+=== Content Options
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-p<X>` or `--password=<X>`
+|Use document password `<X>` (for encrypted PDFs, OOXML, etc.).
+
+|`--digest=<X>`
+|Include a digest of the parsed bytes. Supported via `--digest`: `md2`, `md5`, `sha1`, `sha256`, `sha384`, `sha512` (the flag uses `CommonsDigester`, which doesn't cover SHA3). If you need SHA3-256/384/512, configure the BouncyCastle digester through a JSON config file instead — see xref:configuration/digesters.adoc#bouncycastle-sha3[Using BouncyCastle for SHA3 Algorithms].
+|===
+
+=== Attachment Extraction (single-document)
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-z` or `--extract`
+|Extract all attachments into the current directory.
+
+WARNING: As of 4.x `-z` routes through the async (Pipes) machinery, which expects an input directory, not a single file. Single-file attachment extraction is currently broken in this mode — see <<_tika_pipes_processing,Tika Pipes Processing>> below for the working `-Z` alternative.
+
+|`--extract-dir=<dir>`
+|Target directory for `-z`.
+
+|`--on-exists=<mode>`
+|Behavior when an output file already exists: `exception` (default), `replace`, or `skip`.
+
+|`--maxEmbeddedDepth=<X>`
+|Maximum depth for embedded document extraction.
+
+|`--maxEmbeddedCount=<X>`
+|Maximum number of embedded documents to extract.
+|===
+
+=== Async Mode
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-a` or `--async`
+|Run Tika in async mode. Requires a `tikaConfig` file describing the pipeline. Activates Tika Pipes mode — see below.
+|===
+
+=== Listing and Inspection
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`--list-parsers`
+|List the available document parsers.
+
+|`--list-parser-details`
+|List the available parsers and their supported mime types.
+
+|`--list-parser-details-apt`
+|Same as `--list-parser-details` in apt format.
+
+|`--list-detectors`
+|List the available document detectors.
+
+|`--list-met-models`
+|List the available metadata models and their supported keys.
+
+|`--list-supported-types`
+|List all known media types and related information.
+
+|`--compare-file-magic=<dir>`
+|Compare Tika's known media types to the `file(1)` tool's magic directory.
+|===
+
+=== Fork Mode (process isolation)
+
+Fork mode parses the document in a separate JVM, protecting the main process
+from parser crashes, OOM, and timeouts.
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-f` or `--fork`
+|Run parsing in a forked JVM process.
+
+|`--fork-timeout=<ms>`
+|Parse timeout in milliseconds (default: 60000).
+
+|`--fork-jvm-args=<args>`
+|JVM args for the forked process, comma-separated. Example: `--fork-jvm-args=-Xmx512m,-Dsome.prop=value`.
+
+|`--fork-plugins-dir=<dir>`
+|Directory containing plugin zips for the forked process.
 |===
 
 == Examples
@@ -129,7 +280,14 @@ java -jar tika-app.jar --text document.pdf
 java -jar tika-app.jar --json document.docx
 ----
 
-=== Pipeline processing
+=== Extract Markdown from a file
+
+[source,bash]
+----
+java -jar tika-app.jar --md document.docx
+----
+
+=== Reading from stdin
 
 Extract text from a remote document and search for keywords:
 
@@ -138,22 +296,7 @@ Extract text from a remote document and search for keywords:
 curl http://example.com/document.doc | java -jar tika-app.jar --text | grep -q keyword
 ----
 
-=== Tika Pipes processing
-
-Process many documents by specifying input and output paths. Inputs can be a
-local directory, S3, GCS, Azure, JDBC, and others via Tika Pipes fetchers:
-
-[source,bash]
-----
-java -jar tika-app.jar -i /path/to/input -o /path/to/output
-----
-
-=== Extract Markdown from a file
-
-[source,bash]
-----
-java -jar tika-app.jar --md document.docx
-----
+`tika-app` reads from standard input when no file argument is given (or when `-` is given). For batch processing of many documents, see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 
 === Custom configuration
 
@@ -178,12 +321,24 @@ it switches into Pipes mode so you can confirm which path is running.
 
 * Two positional arguments are given and the first is an existing directory
   (`tika-app.jar /in /out`).
-* Any of these options are present: `-i`, `-o`, `--input`, `--output`,
-  `--fileList`, `-z`/`-Z`/`--extract`/`--extract-dir`, or `-a`/`--async`.
 * A single `.json` argument is given — it is treated as a Tika Pipes config file.
+* Any of these options are present: `-i`, `--input`, `-o`, `--output`,
+  `--fileList`, `-z`, `--extract`, `--extract-dir`, `-Z`, or `-a`/`--async`.
 
-Anything else (single file, URL, stdin, `--gui`, `--server`) stays in standard
+Anything else (single file, URL, stdin, `--gui`) stays in standard
 single-document mode.
+
+NOTE: The activation list mixes standard-mode and Pipes-only flags (`-z`,
+`--extract`, `--extract-dir`). Passing one of those with a single file routes
+into Pipes mode and then fails because the async dispatcher expects an input
+directory. If you want unpack-while-pipes behaviour, use the Pipes-specific
+`-Z` instead.
+
+CAUTION: Use the GNU-style double-dash form for long flags. `--input /path`
+works; `-input /path` (single dash plus the long name) does not — `tika-app`
+rejects single-dash long names with an `IllegalArgumentException` pointing
+you at the right form. Single-letter short flags use one dash
+(e.g., `-i`, `-eUTF-8`, `-X512m`).
 
 === Basic Pipes Usage
 
@@ -192,41 +347,92 @@ single-document mode.
 java -jar tika-app.jar -i /path/to/input -o /path/to/output
 ----
 
-This processes all files in the input directory and writes JSON metadata (RMETA format)
-to the output directory.
+This processes all files in the input directory and writes JSON metadata
+(RMETA format) to the output directory.
 
 === Tika Pipes Options
+
+==== Input and output
 
 [cols="1,3"]
 |===
 |Option |Description
 
-|`-i`
-|Input directory
+|`-i` or `--input=<dir>`
+|Input directory.
 
-|`-o`
-|Output directory
+|`-o` or `--output=<dir>`
+|Output directory.
 
-|`--handler`
-|Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore (default: `t`)
+|`--fileList=<path>`
+|File list (one path per line, relative to `-i` or absolute).
+
+|`--on-exists=<mode>`
+|Behavior when an output file already exists: `exception` (default), `replace`, or `skip`.
+|===
+
+==== Output formatting
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`--handler=<X>`
+|Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore. Default: `t`.
 
 |`--concatenate`
-|Concatenate content from all embedded documents into a single content field
+|Concatenate content from all embedded documents into a single content field.
 
 |`--content-only`
-|Output only extracted content (no metadata, no JSON wrapper); implies `--concatenate`
+|Output only the extracted content (no metadata, no JSON wrapper). Implies `--concatenate`.
+|===
 
-|`--on-exists`
-|Behavior when an output file already exists: `exception` (default), `replace` or `skip`
+==== Execution
 
-|`-T` or `--timeoutMs`
-|Timeout for each parse in milliseconds
+[cols="1,3"]
+|===
+|Option |Description
 
-|`-n` or `--numClients`
-|Number of parallel forked processes
+|`-n` or `--numClients=<N>`
+|Number of parallel forked processes.
 
-|`-p` or `--pluginsDir`
-|Plugins directory
+|`-X<size>`
+|`-Xmx` size for the forked processes (e.g. `-X512m`).
+
+|`-T` or `--timeoutMs=<ms>`
+|Timeout for each parse in milliseconds.
+|===
+
+==== Configuration
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-c` or `--config=<file>`
+|Tika config file. `--config=<file>` (the standard-mode long form) also works in Pipes mode.
+
+|`-p` or `--pluginsDir=<dir>`
+|Plugins directory.
+|===
+
+==== Unpack (recursive attachment extraction)
+
+[cols="1,3"]
+|===
+|Option |Description
+
+|`-Z`
+|Recursively unpack all attachments. This is the Pipes-mode counterpart to standard-mode `-z`.
+
+|`--unpack-format=<format>`
+|Output format: `REGULAR` (default) or `FRICTIONLESS`.
+
+|`--unpack-mode=<mode>`
+|Output mode: `ZIPPED` (default) or `DIRECTORY`.
+
+|`--unpack-include-metadata`
+|Include `metadata.json` in Frictionless output.
 |===
 
 === Tika Pipes Examples
@@ -254,4 +460,11 @@ Use a Tika config file alongside the Pipes options. Both `--config=foo.json`
 [source,bash]
 ----
 java -jar tika-app.jar -i /path/to/input -o /path/to/output --config=tika-config.json
+----
+
+Recursively unpack attachments into the output directory:
+
+[source,bash]
+----
+java -jar tika-app.jar -i /path/to/input -o /path/to/output -Z
 ----

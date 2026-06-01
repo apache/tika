@@ -34,10 +34,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "projectId": "my-project",
  *     "bucket": "my-bucket",
  *     "prefix": "documents/",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

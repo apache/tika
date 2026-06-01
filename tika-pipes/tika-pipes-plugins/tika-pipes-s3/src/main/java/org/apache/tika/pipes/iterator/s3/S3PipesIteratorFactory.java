@@ -36,10 +36,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "prefix": "documents/",
  *     "credentialsProvider": "profile",
  *     "profile": "default",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>

@@ -1,11 +1,1 @@
-{
-  "parsers": [
-    {
-      "openai-vlm-parser": {
-        "baseUrl": "http://127.0.0.1:8000",
-        "model": "jinaai/jina-vlm",
-        "timeoutSeconds": 300
-      }
-    }
-  ]
-}
+../../../../tika-parsers/tika-parsers-ml/tika-vlm/src/test/resources/config-examples/openai-vlm-basic.json

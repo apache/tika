@@ -38,11 +38,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -68,6 +70,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
@@ -470,9 +473,15 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser") || arg.equals("--list-parsers")) {
             pipeMode = false;
             displayParsers(false, false);
+        } else if (arg.equals("--list-parser-names")) {
+            pipeMode = false;
+            displayParserNames();
         } else if (arg.equals("--list-detector") || arg.equals("--list-detectors")) {
             pipeMode = false;
             displayDetectors();
+        } else if (arg.equals("--list-detector-names")) {
+            pipeMode = false;
+            displayDetectorNames();
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
             displayParsers(true, false);
@@ -560,13 +569,28 @@ public class TikaCLI {
             maxEmbeddedCount = Integer.parseInt(arg.substring("--maxEmbeddedCount=".length()));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
-        } else if (arg.equals("-p") || arg.equals("--port") || arg.equals("-s") || arg.equals("--server")) {
-            throw new IllegalArgumentException("As of Tika 2.0, the server option is no longer supported in tika-app.\n" + "See https://wiki.apache.org/tika/TikaJAXRS for usage.");
         } else if (arg.startsWith("-c")) {
             networkURI = new URI(arg.substring("-c".length()));
         } else if (arg.startsWith("--client=")) {
             networkURI = new URI(arg.substring("--client=".length()));
         } else {
+            // Any arg that reaches here is either "-" (stdin), an existing
+            // file, a URL, or an unknown/typo'd flag. The default fallthrough
+            // lets typos like "-input /path" hit new URL("-input") and
+            // surface as a confusing MalformedURLException. Catch dash-prefixed
+            // args that aren't the stdin marker or an existing file and emit
+            // an actionable error before that happens.
+            if (arg.startsWith("-") && !arg.equals("-") && !new File(arg).exists()) {
+                String hint = " Run with --help for the full option list.";
+                // Heuristic: single-dash + multi-letter (e.g. "-input") is
+                // usually a long-form-with-one-dash typo. Single-dash + one
+                // letter (e.g. "-s") or "--<unknown>" is just an unknown flag.
+                if (arg.length() > 2 && !arg.startsWith("--")) {
+                    hint = " Long-form flags require two dashes (try '-"
+                            + arg + "' instead of '" + arg + "')." + hint;
+                }
+                throw new IllegalArgumentException("Unknown option '" + arg + "'." + hint);
+            }
             pipeMode = false;
             configure();
 
@@ -815,7 +839,7 @@ public class TikaCLI {
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");
-        out.println("                               sha256, sha384, sha512");
+        out.println("                               sha256, sha384, sha512)");
         out.println("    -eX or --encoding=X    Use output encoding X");
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
@@ -837,12 +861,17 @@ public class TikaCLI {
         out.println();
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
+        out.println("    --list-parser-names");
+        out.println("         List parsers as tab-separated class-name<TAB>friendly-name");
+        out.println("         (friendly names are the kebab-case keys used in JSON config)");
         out.println("    --list-parser-details");
         out.println("         List the available document parsers and their supported mime types");
         out.println("    --list-parser-details-apt");
         out.println("         List the available document parsers and their supported mime types in apt format.");
         out.println("    --list-detectors");
         out.println("         List the available document detectors");
+        out.println("    --list-detector-names");
+        out.println("         List detectors as tab-separated class-name<TAB>friendly-name");
         out.println("    --list-met-models");
         out.println("         List the available metadata models, and their supported keys");
         out.println("    --list-supported-types");
@@ -878,8 +907,8 @@ public class TikaCLI {
         out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
         out.println("Tika Pipes Options:");
-        out.println("    -i                         Input directory");
-        out.println("    -o                         Output directory");
+        out.println("    -i, --input=<dir>          Input directory");
+        out.println("    -o, --output=<dir>         Output directory");
         out.println("    -n, --numClients           Number of forked processes");
         out.println("    -X                         -Xmx in the forked processes");
         out.println("    -T, --timeoutMs            Timeout for each parse in milliseconds");
@@ -1053,6 +1082,60 @@ public class TikaCLI {
             for (Detector sd : subDetectors) {
                 displayDetector(sd, i + 2);
             }
+        }
+    }
+
+    private void displayParserNames() throws TikaException, IOException, SAXException {
+        configure();
+        Set<Class<?>> seen = new LinkedHashSet<>();
+        collectParserClasses(parser, seen);
+        printNames(seen, "parsers");
+    }
+
+    private void displayDetectorNames() throws TikaException, IOException, SAXException {
+        configure();
+        Set<Class<?>> seen = new LinkedHashSet<>();
+        collectDetectorClasses(detector, seen);
+        printNames(seen, "detectors");
+    }
+
+    private void collectParserClasses(Parser p, Set<Class<?>> out) {
+        if (p instanceof ParserDecorator) {
+            p = ((ParserDecorator) p).getWrappedParser();
+        }
+        if (p instanceof CompositeParser) {
+            for (Parser sub : ((CompositeParser) p).getParsers().values()) {
+                collectParserClasses(sub, out);
+            }
+        } else {
+            out.add(p.getClass());
+        }
+    }
+
+    private void collectDetectorClasses(Detector d, Set<Class<?>> out) {
+        if (d instanceof CompositeDetector) {
+            for (Detector sub : ((CompositeDetector) d).getDetectors()) {
+                collectDetectorClasses(sub, out);
+            }
+        } else {
+            out.add(d.getClass());
+        }
+    }
+
+    private void printNames(Set<Class<?>> classes, String indexFileName) throws TikaException {
+        // Look up friendly names via ComponentRegistry, which reads them from
+        // the META-INF/tika/<indexFileName>.idx files generated at compile
+        // time by the @TikaComponent annotation processor. (The annotation
+        // itself has CLASS retention, so reflection on the class can't see it
+        // at runtime — the .idx file is the authoritative source.)
+        ComponentRegistry registry = new ComponentRegistry(indexFileName, Thread.currentThread().getContextClassLoader());
+        // Sort by class name for stable output; tab-separated so downstream
+        // scripts can `cut -f2` to get the JSON-config names.
+        List<Class<?>> sorted = new ArrayList<>(classes);
+        sorted.sort(Comparator.comparing(Class::getName));
+        for (Class<?> cls : sorted) {
+            String fname = registry.getFriendlyName(cls);
+            System.out.println(cls.getName() + "\t" + (fname != null ? fname : "(not registered)"));
         }
     }
 

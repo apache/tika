@@ -34,10 +34,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "csvPath": "/path/to/files.csv",
  *     "fetchKeyColumn": "path",
  *     "emitKeyColumn": "id",
- *     "baseConfig": {
- *       "fetcherId": "my-fetcher",
- *       "emitterId": "my-emitter"
- *     }
+ *     "fetcherId": "my-fetcher",
+ *     "emitterId": "my-emitter"
  *   }
  * }
  * </pre>
