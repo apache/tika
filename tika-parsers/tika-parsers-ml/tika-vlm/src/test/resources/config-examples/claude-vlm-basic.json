@@ -2,7 +2,7 @@
   "parsers": [
     {
       "claude-vlm-parser": {
-        "apiKey": "sk-ant-your-key-here",
+        "apiKey": "YOUR_ANTHROPIC_API_KEY",
         "model": "claude-sonnet-4-20250514"
       }
     }

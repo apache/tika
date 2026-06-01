@@ -7,7 +7,7 @@
         "prompt": "Extract all visible text from this image. Return the text in markdown format, preserving the original structure (headings, lists, tables, paragraphs). Do not describe the image. Only return the extracted text.",
         "maxTokens": 4096,
         "timeoutSeconds": 300,
-        "apiKey": "sk-ant-your-key-here",
+        "apiKey": "YOUR_ANTHROPIC_API_KEY",
         "inlineContent": true,
         "skipOcr": false,
         "minFileSizeToOcr": 0,

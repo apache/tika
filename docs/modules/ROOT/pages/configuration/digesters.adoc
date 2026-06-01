@@ -55,6 +55,7 @@ This example configures multiple digest algorithms:
 }
 ----
 
+[#bouncycastle-sha3]
 === Using BouncyCastle for SHA3 Algorithms
 
 For SHA3 algorithms, use the BouncyCastle digester:

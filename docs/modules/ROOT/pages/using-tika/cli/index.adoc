@@ -177,7 +177,7 @@ options see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 |Use document password `<X>` (for encrypted PDFs, OOXML, etc.).
 
 |`--digest=<X>`
-|Include a digest of the parsed bytes. Supported: `md2`, `md5`, `sha1`, `sha256`, `sha384`, `sha512`, `sha3_256`, `sha3_384`, `sha3_512`. See xref:configuration/digesters.adoc[Digesters] for the underlying providers.
+|Include a digest of the parsed bytes. Supported via `--digest`: `md2`, `md5`, `sha1`, `sha256`, `sha384`, `sha512` (the flag uses `CommonsDigester`, which doesn't cover SHA3). If you need SHA3-256/384/512, configure the BouncyCastle digester through a JSON config file instead — see xref:configuration/digesters.adoc#bouncycastle-sha3[Using BouncyCastle for SHA3 Algorithms].
 |===
 
 === Attachment Extraction (single-document)

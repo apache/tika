@@ -839,8 +839,7 @@ public class TikaCLI {
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");
-        out.println("                               sha256, sha384, sha512,");
-        out.println("                               sha3_256, sha3_384, sha3_512)");
+        out.println("                               sha256, sha384, sha512)");
         out.println("    -eX or --encoding=X    Use output encoding X");
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
