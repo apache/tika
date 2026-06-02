@@ -409,8 +409,8 @@
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.14.Final</netty.version>
-    <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
+    <netty.version>4.2.15.Final</netty.version>
+    <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
