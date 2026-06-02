@@ -377,7 +377,7 @@
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
-    <jaxb.runtime.version>4.0.8</jaxb.runtime.version>
+    <jaxb.runtime.version>4.0.9</jaxb.runtime.version>
     <jbig2.version>3.0.5</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
@@ -415,13 +415,13 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.6</micronaut.version>
+    <micronaut.version>3.10.7</micronaut.version>
     <mime4j.version>0.8.14</mime4j.version>
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.14.Final</netty.version>
-    <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
+    <netty.version>4.2.15.Final</netty.version>
+    <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.9</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
