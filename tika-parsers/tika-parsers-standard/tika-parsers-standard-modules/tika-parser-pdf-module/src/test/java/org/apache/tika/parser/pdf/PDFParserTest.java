@@ -47,7 +47,6 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
@@ -62,7 +61,9 @@ import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.metadata.XMPPDF;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.MetadataOnlyParse;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -1358,7 +1359,7 @@ public class PDFParserTest extends TikaTest {
         config.setExtractInlineImageMetadataOnly(true);
         context.set(PDFParserConfig.class, config);
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", context);
-        assertNull(context.get(ZeroByteFileException.IgnoreZeroByteFileException.class));
+        assertNull(context.get(MetadataOnlyParse.class));
         assertEquals(2, metadataList.size());
         assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
         assertEquals("/image-0.png",
@@ -1366,6 +1367,37 @@ public class PDFParserTest extends TikaTest {
         assertEquals(261, (int) metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
         assertEquals(934, (int) metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
         assertEquals("image-0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
+
+    @Test
+    public void testExtractInlineImageMetadataThrowOnZeroBytesFalse() throws Exception {
+        //TIKA-4749: in metadata-only mode the inline image is registered via a
+        //placeholder pseudo-parse. With throwOnZeroBytes=false that placeholder used
+        //to be handed to a real parser (image/OCR), recording a spurious embedded
+        //exception. The MetadataOnlyParse marker must make it skip the parse instead.
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImageMetadataOnly(true);
+        context.set(PDFParserConfig.class, config);
+
+        AutoDetectParser p = new AutoDetectParser();
+        AutoDetectParserConfig adpc = new AutoDetectParserConfig();
+        adpc.setThrowOnZeroBytes(false);
+        p.setAutoDetectParserConfig(adpc);
+
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testOCR.pdf", p, new Metadata(), context, false);
+        assertNull(context.get(MetadataOnlyParse.class));
+        assertEquals(2, metadataList.size());
+        Metadata image = metadataList.get(1);
+        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
+        assertEquals(261, (int) image.getInt(Metadata.IMAGE_LENGTH));
+        assertEquals(934, (int) image.getInt(Metadata.IMAGE_WIDTH));
+        //the placeholder must not be dispatched to any content parser. Without the
+        //fix it is (EmptyParser here; ImageParser+TesseractOCRParser when tesseract
+        //is installed, which is what records the spurious embedded exception).
+        assertEquals(0, image.getValues(TikaCoreProperties.TIKA_PARSED_BY).length);
+        assertNull(image.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
     }
 
     /**

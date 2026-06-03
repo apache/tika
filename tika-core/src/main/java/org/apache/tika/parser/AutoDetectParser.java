@@ -160,6 +160,10 @@ public class AutoDetectParser extends CompositeParser {
         // don't leak into CONTENT_TYPE
         metadata.set(Metadata.CONTENT_TYPE,
                 EmbeddedDocumentUtil.normalizeMediaType(type.toString()));
+        // Metadata-only pseudo-parse: register the entry, skip the content parse.
+        if (context.get(MetadataOnlyParse.class) != null) {
+            return;
+        }
         //check for zero-byte inputstream
         if (tis.getOpenContainer() == null) {
             if (autoDetectParserConfig.getThrowOnZeroBytes()) {

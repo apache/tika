@@ -57,7 +57,6 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
-import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
@@ -65,6 +64,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
+import org.apache.tika.parser.MetadataOnlyParse;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.pdf.PDMetadataExtractor;
@@ -448,16 +448,14 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(Metadata.IMAGE_WIDTH, pdImage.getWidth());
         metadata.set(Metadata.IMAGE_LENGTH, pdImage.getHeight());
         //TODO: what else can we extract from the PDImage without rendering?
-        ZeroByteFileException.IgnoreZeroByteFileException before =
-                parseContext.get(ZeroByteFileException.IgnoreZeroByteFileException.class);
+        //Register the image's metadata entry without decoding it (marker skips the parse).
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
-            parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class,
-                    ZeroByteFileException.IGNORE_ZERO_BYTE_FILE_EXCEPTION);
+            parseContext.set(MetadataOnlyParse.class, MetadataOnlyParse.INSTANCE);
             embeddedDocumentExtractor.parseEmbedded(tis,
                     new EmbeddedContentHandler(xhtml), metadata, parseContext, false);
         } finally {
-            //replace whatever was there before
-            parseContext.set(ZeroByteFileException.IgnoreZeroByteFileException.class, before);
+            //clear so it can't leak to the next image
+            parseContext.set(MetadataOnlyParse.class, null);
         }
     }
 
