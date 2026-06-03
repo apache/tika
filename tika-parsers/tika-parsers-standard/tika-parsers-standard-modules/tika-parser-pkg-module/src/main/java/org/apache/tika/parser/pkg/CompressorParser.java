@@ -368,8 +368,11 @@ public class CompressorParser implements Parser {
      */
     private static boolean isPack200(TikaInputStream tis) {
         try {
-            return CompressorStreamFactory.PACK200.equals(CompressorStreamFactory.detect(tis));
-        } catch (CompressorException e) {
+            byte[] sig = new byte[4];
+            return tis.peek(sig) == 4 &&
+                    (sig[0] == (byte) 0xCA) && (sig[1] == (byte) 0xFE) &&
+                    (sig[2] == (byte) 0xD0) && (sig[3] == (byte) 0x0D);
+        } catch (IOException e) {
             return false;
         }
     }
