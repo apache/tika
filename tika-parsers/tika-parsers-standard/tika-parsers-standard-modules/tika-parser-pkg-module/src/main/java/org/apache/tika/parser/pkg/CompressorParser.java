@@ -36,6 +36,7 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -114,6 +115,9 @@ public class CompressorParser implements Parser {
 
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
+
+    //pack200 archives start with the 4-byte magic 0xCAFED00D
+    private static final byte[] PACK200_MAGIC = {(byte) 0xCA, (byte) 0xFE, (byte) 0xD0, (byte) 0x0D};
 
     private Config defaultConfig = new Config();
 
@@ -368,10 +372,8 @@ public class CompressorParser implements Parser {
      */
     private static boolean isPack200(TikaInputStream tis) {
         try {
-            byte[] sig = new byte[4];
-            return tis.peek(sig) == 4 &&
-                    (sig[0] == (byte) 0xCA) && (sig[1] == (byte) 0xFE) &&
-                    (sig[2] == (byte) 0xD0) && (sig[3] == (byte) 0x0D);
+            byte[] sig = new byte[PACK200_MAGIC.length];
+            return tis.peek(sig) == PACK200_MAGIC.length && Arrays.equals(sig, PACK200_MAGIC);
         } catch (IOException e) {
             return false;
         }
