@@ -67,6 +67,79 @@ public class JunkFilterEncodingDetectorTest {
         }
     }
 
+    /**
+     * Functional stub for the CJK-vs-non-CJK family gate.  Returns one of four
+     * controlled z-scores per scored string, keyed on whether the string
+     * contains Han ideographs (CJK family) and whether it is a "diff" string
+     * (script-letters only, i.e. every codepoint &ge; 0x80) vs whole text.
+     * Lets us drive {@code JunkFilterEncodingDetector}'s gate deterministically
+     * without the real model: the detector scores both the whole decoded text
+     * (champion metric) and its script-letter diff (family-gate metric) for
+     * each candidate, so the four cells fully determine the gate's decision.
+     */
+    private static final class ZStub implements TextQualityDetector {
+        private final double wholeCjk;
+        private final double wholeNonCjk;
+        private final double diffCjk;
+        private final double diffNonCjk;
+
+        ZStub(double wholeCjk, double wholeNonCjk, double diffCjk, double diffNonCjk) {
+            this.wholeCjk = wholeCjk;
+            this.wholeNonCjk = wholeNonCjk;
+            this.diffCjk = diffCjk;
+            this.diffNonCjk = diffNonCjk;
+        }
+
+        private static boolean isCjk(String s) {
+            return s.codePoints().anyMatch(c -> c >= 0x4E00 && c <= 0x9FFF);
+        }
+
+        /** Diff string = script-letters only: non-empty, every codepoint &ge; 0x80. */
+        private static boolean isDiff(String s) {
+            return !s.isEmpty() && s.codePoints().allMatch(c -> c >= 0x80);
+        }
+
+        @Override
+        public TextQualityScore score(String text) {
+            boolean cjk = isCjk(text);
+            double z = isDiff(text)
+                    ? (cjk ? diffCjk : diffNonCjk)
+                    : (cjk ? wholeCjk : wholeNonCjk);
+            return new TextQualityScore((float) z, Float.NaN, Float.NaN, Float.NaN,
+                    cjk ? "HAN" : "LATIN");
+        }
+
+        @Override
+        public TextQualityComparison compare(String labelA, String candidateA,
+                                             String labelB, String candidateB) {
+            // Not exercised by the gate path (which uses score()); provided only
+            // to satisfy the interface.
+            return new TextQualityComparison("A", 0.0f,
+                    score(candidateA), score(candidateB), labelA, labelB);
+        }
+    }
+
+    /**
+     * ASCII filler + 20 copies of the byte pair {@code {0xC4, 0xE3}}: decodes to
+     * Han ideographs (你…) under GB18030 but accented Latin (Ä ã…) under
+     * windows-1252.  A clean false-CJK vs real-CJK probe — the ASCII keeps the
+     * whole-text strings out of the "diff" bucket, while the high bytes are the
+     * only place the two decodes disagree.
+     */
+    private static byte[] cjkAmbiguousBytes() {
+        byte[] ascii = "the quick brown fox jumps over the lazy dog "
+                .getBytes(StandardCharsets.US_ASCII);
+        byte[] hi = new byte[40];
+        for (int i = 0; i < 20; i++) {
+            hi[2 * i] = (byte) 0xC4;
+            hi[2 * i + 1] = (byte) 0xE3;
+        }
+        byte[] out = new byte[ascii.length + hi.length];
+        System.arraycopy(ascii, 0, out, 0, ascii.length);
+        System.arraycopy(hi, 0, out, ascii.length, hi.length);
+        return out;
+    }
+
     private static ParseContext contextWith(EncodingResult... results) {
         EncodingDetectorContext ctx = new EncodingDetectorContext();
         ctx.addResult(List.of(results), "stub");
@@ -253,5 +326,111 @@ public class JunkFilterEncodingDetectorTest {
         String input = "ത&#3405;ര";
         String expected = "ത്ര";
         assertEquals(expected, JunkFilterEncodingDetector.expandHtmlEntities(input));
+    }
+
+    // ----- CJK-vs-non-CJK family gate (the demote-only false-CJK fix) -----
+    //
+    // The whole-text z coin-flips on the CJK/non-CJK boundary for
+    // COMMON-dominated docs: markup/digits/punctuation decode identically under
+    // every candidate and swamp the few discriminating high bytes, so the junk
+    // model's whole-text argmax sometimes crowns a garbage CJK decode over the
+    // correct single-byte one (false-CJK), and sometimes the reverse.  The
+    // script-letter "diff" z reads that boundary cleanly (coherent CJK vs
+    // ideograph mojibake), so the gate uses it to decide ONLY the family.
+    // Measured at 29k, the diff z reliably DEMOTES (CJK champion -> non-CJK; OOV
+    // improves on every flip) but UNreliably promotes, so the gate is
+    // demote-only and fires only past FAMILY_DIFF_MARGIN.  These four tests lock
+    // each arm of that decision against the {@link ZStub}.
+
+    @Test
+    public void familyGate_demotesFalseCjkToNonCjk() throws Exception {
+        // Whole-text champion is the CJK pick (the coin-flip), but the diff z
+        // clearly prefers the non-CJK decode (coherent Latin >> ideograph
+        // mojibake, margin 7.0 > 2.0) -> gate must demote to windows-1252.
+        Charset gb = Charset.forName("GB18030");
+        Charset win1252 = Charset.forName("windows-1252");
+        ParseContext pc = contextWith(
+                new EncodingResult(gb, 0.8f, "GB18030",
+                        EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(win1252, 0.7f, "windows-1252",
+                        EncodingResult.ResultType.STATISTICAL));
+        // wholeCjk(-1.0) > wholeNonCjk(-1.5); diffNonCjk(-1.0) >> diffCjk(-8.0)
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new ZStub(-1.0, -1.5, -8.0, -1.0));
+        try (TikaInputStream tis = TikaInputStream.get(cjkAmbiguousBytes())) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(win1252, out.get(0).getCharset(),
+                    "diff z prefers non-CJK by > FAMILY_DIFF_MARGIN -> CJK "
+                            + "champion must be demoted to windows-1252");
+        }
+    }
+
+    @Test
+    public void familyGate_keepsRealCjkWhenDiffAgrees() throws Exception {
+        // Whole-text champion is CJK and the diff z AGREES (ideographs coherent,
+        // Latin garbage) -> gate must NOT fire; real CJK stays CJK.
+        Charset gb = Charset.forName("GB18030");
+        Charset win1252 = Charset.forName("windows-1252");
+        ParseContext pc = contextWith(
+                new EncodingResult(gb, 0.8f, "GB18030",
+                        EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(win1252, 0.7f, "windows-1252",
+                        EncodingResult.ResultType.STATISTICAL));
+        // diffCjk(-1.0) >> diffNonCjk(-8.0): non-CJK does not beat CJK -> no demote
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new ZStub(-1.0, -1.5, -1.0, -8.0));
+        try (TikaInputStream tis = TikaInputStream.get(cjkAmbiguousBytes())) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(gb, out.get(0).getCharset(),
+                    "diff z agrees with the CJK champion -> must not demote");
+        }
+    }
+
+    @Test
+    public void familyGate_isDemoteOnly_neverPromotesNonCjkToCjk() throws Exception {
+        // Whole-text champion is NON-CJK; even though the diff z would prefer
+        // CJK, the gate is demote-only (the promote direction regressed at 29k),
+        // so the non-CJK champion must stand.
+        Charset gb = Charset.forName("GB18030");
+        Charset win1252 = Charset.forName("windows-1252");
+        ParseContext pc = contextWith(
+                new EncodingResult(gb, 0.7f, "GB18030",
+                        EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(win1252, 0.8f, "windows-1252",
+                        EncodingResult.ResultType.STATISTICAL));
+        // wholeNonCjk(-1.0) > wholeCjk(-1.5) -> champion non-CJK; diffCjk strong but ignored
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new ZStub(-1.5, -1.0, -1.0, -8.0));
+        try (TikaInputStream tis = TikaInputStream.get(cjkAmbiguousBytes())) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(win1252, out.get(0).getCharset(),
+                    "gate is demote-only: a non-CJK champion is never promoted to CJK");
+        }
+    }
+
+    @Test
+    public void familyGate_respectsDiffMargin() throws Exception {
+        // Non-CJK diff z beats CJK diff z, but by LESS than FAMILY_DIFF_MARGIN
+        // (2.0): a boundary-noise tie, not a clear signal -> no demote.
+        Charset gb = Charset.forName("GB18030");
+        Charset win1252 = Charset.forName("windows-1252");
+        ParseContext pc = contextWith(
+                new EncodingResult(gb, 0.8f, "GB18030",
+                        EncodingResult.ResultType.STATISTICAL),
+                new EncodingResult(win1252, 0.7f, "windows-1252",
+                        EncodingResult.ResultType.STATISTICAL));
+        // diffNonCjk(-1.0) - diffCjk(-2.0) = 1.0 < margin 2.0 -> no demote
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new ZStub(-1.0, -1.5, -2.0, -1.0));
+        try (TikaInputStream tis = TikaInputStream.get(cjkAmbiguousBytes())) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(gb, out.get(0).getCharset(),
+                    "diff margin below FAMILY_DIFF_MARGIN -> no demote "
+                            + "(boundary-noise guard)");
+        }
     }
 }

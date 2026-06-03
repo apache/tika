@@ -54,9 +54,17 @@ public class ExtractProfiler extends ProfilerBase {
             new ColInfo(Cols.ATTACHMENT_TYPE, Types.VARCHAR, 32), new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12), new ColInfo(Cols.MIME_ID, Types.INTEGER),
             new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER), new ColInfo(Cols.NUM_ATTACHMENTS, Types.INTEGER), new ColInfo(Cols.NUM_METADATA_VALUES, Types.INTEGER),
             new ColInfo(Cols.NUM_PAGES, Types.INTEGER), new ColInfo(Cols.NUM_OCR_PAGES, Types.INTEGER), new ColInfo(Cols.HAS_CONTENT, Types.BOOLEAN));
+    /** Charset detection per file (one row only when detection ran): final pick,
+     * winning detector, declared charset from metadata (Content-Type-Hint). */
+    public static TableInfo ENCODINGS_TABLE = new TableInfo("encodings",
+            new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
+            new ColInfo(Cols.DETECTED_ENCODING, Types.VARCHAR, 64),
+            new ColInfo(Cols.ENCODING_DETECTOR, Types.VARCHAR, 64),
+            new ColInfo(Cols.DECLARED_METADATA, Types.VARCHAR, 128));
     public static TableInfo EMBEDDED_FILE_PATH_TABLE =
             new TableInfo("emb_file_names", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.EMBEDDED_FILE_PATH, Types.VARCHAR, 1024));
     public static TableInfo CONTENTS_TABLE = new TableInfo("contents", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.CONTENT_LENGTH, Types.INTEGER),
+            new ColInfo(Cols.NUM_REPLACEMENT, Types.INTEGER), new ColInfo(Cols.NUM_NON_ASCII, Types.INTEGER),
             new ColInfo(Cols.NUM_UNIQUE_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_TOKENS, Types.INTEGER), new ColInfo(Cols.COMMON_TOKENS_LANG, Types.VARCHAR, 12),
             new ColInfo(Cols.NUM_UNIQUE_COMMON_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_COMMON_TOKENS, Types.INTEGER),
             new ColInfo(Cols.NUM_UNIQUE_ALPHABETIC_TOKENS, Types.INTEGER), new ColInfo(Cols.NUM_ALPHABETIC_TOKENS, Types.INTEGER), new ColInfo(Cols.OOV, Types.DOUBLE),
@@ -146,6 +154,7 @@ public class ExtractProfiler extends ProfilerBase {
             String fileId = (i == 0) ? containerIdString : Integer.toString(ID.incrementAndGet());
             writeTagData(fileId, contentTags, TAGS_TABLE);
             writeProfileData(fps, i, contentTags, m, fileId, containerIdString, numAttachments, PROFILE_TABLE);
+            writeEncodingData(fileId, m, ENCODINGS_TABLE);
             writeEmbeddedPathData(i, fileId, m, EMBEDDED_FILE_PATH_TABLE);
             writeExceptionData(fileId, m, EXCEPTION_TABLE);
             try {

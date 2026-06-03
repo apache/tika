@@ -339,7 +339,8 @@ waiting on stdin).
 
 Key tables: `profiles_a`/`profiles_b` (one row per extracted file: `file_name`,
 `mime_id`, `length`, …), `contents_a`/`contents_b` (text profile: `oov`,
-`languageness`, `num_tokens`, `lang_id_1`, …), `content_comparisons`
+`languageness`, `num_tokens`, `lang_id_1`, `num_replacement` (U+FFFD count),
+`num_non_ascii`, …), `content_comparisons`
 (`dice_coefficient`, `overlap`), `mimes`, `containers`. *A and B are paired by
 `id`* — the same row `id` is the same file in both runs (this is how the built-in
 reports join: `join profiles_b pb on pa.id = pb.id`). Always join on `id`.
@@ -350,6 +351,24 @@ reports join: `join profiles_b pb on pa.id = pb.id`). Always join on `id`.
 SELECT SUM(CASE WHEN cb.oov < ca.oov THEN 1 ELSE 0 END) AS oov_better,
        SUM(CASE WHEN cb.oov > ca.oov THEN 1 ELSE 0 END) AS oov_worse
 FROM contents_a ca JOIN contents_b cb ON ca.id = cb.id;
+
+-- NOTE: OOV is one signal, not the verdict -- read it with languageness and the
+-- FFFD rate (use OOV as a secondary signal).  OOV can mislead (a langid shift,
+-- e.g. a CJK decode recovered in B, inflates oov_worse even when B is correct; a
+-- wrong decode that fragments words can LOWER OOV), and languageness can mislead
+-- on SBCS-cross-script mojibake -- each is right where the other is blind.  When
+-- OOV-worse and languageness disagree, that file needs a look (split below):
+SELECT SUM(CASE WHEN cb.languageness > ca.languageness + 0.2 THEN 1 ELSE 0 END) AS lang_better_oov_lied,
+       SUM(CASE WHEN cb.languageness < ca.languageness - 0.2 THEN 1 ELSE 0 END) AS lang_worse_real_candidate
+FROM contents_a ca JOIN contents_b cb ON ca.id = cb.id
+WHERE cb.oov > ca.oov + 0.02 AND ca.languageness > -90 AND cb.languageness > -90;
+
+-- FFFD decode-failure rate, un-diluted (over non-ASCII chars, NOT total length,
+-- which dilutes to ~0 on ASCII-dominated docs)
+SELECT ROUND(100.0 * cb.num_replacement / NULLIF(cb.num_non_ascii, 0), 1) AS fffd_pct,
+       cb.num_replacement, cb.num_non_ascii
+FROM contents_b cb WHERE cb.num_replacement > 0
+ORDER BY cb.num_replacement DESC FETCH FIRST 20 ROWS ONLY;
 
 -- net common-tokens A vs B (headline "more real text recovered" metric)
 SELECT SUM(ca.num_common_tokens) AS common_a,

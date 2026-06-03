@@ -18,9 +18,13 @@ package org.apache.tika.ml.junkdetect;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -29,8 +33,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaComponent;
+import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -79,6 +85,16 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
      *  nothing above this, the junk-filter defers to a DECLARATIVE/STRUCTURAL
      *  anchor instead of arbitrating near-identical decodes by quality. */
     private static final float NO_INFO_CONFIDENCE = 0.1f;
+
+    // Adaptive candidate band (TIKA speed lever).  The tournament only needs
+    // NB's top-2 statistical candidates plus any lower-ranked candidate still
+    // within MIN_TAIL_CONFIDENCE of the top; deeper, low-confidence candidates
+    // are clearly dominated and almost never win (measured: δ=0.5 retains
+    // ~98-99% of selected winners, ~20% smaller pool).  Anchors (DECLARATIVE,
+    // STRUCTURAL) are always kept regardless of confidence.  Quality impact is
+    // validated by a full common-token/OOV eval, NOT assumed.
+    private static final int ALWAYS_KEEP_TOP_N = 2;
+    private static final float MIN_TAIL_CONFIDENCE = 0.5f;
 
     /** Cached quality detector.  {@code null} if none is on the classpath. */
     private final TextQualityDetector qualityDetector;
@@ -152,24 +168,25 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // become codepoints whose cross-script transitions expose mojibake
         // under a wrong decoding (AIT5 case).
         Map<Charset, String> candidates = new LinkedHashMap<>();
-        for (Charset cs : uniqueCharsets) {
-            String decoded = safeDecode(bytes, cs);
-            if (decoded != null && !decoded.isEmpty()) {
-                decoded = HtmlContentCleaner.clean(decoded);
+        // Dedup: charsets that decode the raw probe to the identical string
+        // (e.g. GB18030/GBK, x-windows-949/EUC-KR on non-extension content)
+        // share one clean() call — the cleaned result is identical by
+        // construction, so this is quality-neutral, purely a work saving.
+        Map<String, String> cleanedByRaw = new HashMap<>();
+        Set<Charset> candidateCharsets = bandFilter(context, uniqueCharsets);
+        for (Charset cs : candidateCharsets) {
+            String raw = safeDecode(bytes, cs);
+            if (raw == null || raw.isEmpty()) {
+                LOG.trace("junk-filter decode {} -> null/empty", cs.name());
+                continue;
+            }
+            String decoded = cleanedByRaw.get(raw);
+            if (decoded == null) {
+                decoded = HtmlContentCleaner.clean(raw);
+                cleanedByRaw.put(raw, decoded);
             }
             if (decoded != null && !decoded.isEmpty()) {
                 candidates.put(cs, decoded);
-                if (LOG.isTraceEnabled()) {
-                    int sampleLen = Math.min(400, decoded.length());
-                    String sample = decoded.substring(0, sampleLen)
-                            .replace('\n', ' ').replace('\r', ' ');
-                    LOG.trace("junk-filter decoded {}: '{}{}' (len={})",
-                            cs.name(), sample,
-                            decoded.length() > sampleLen ? "…" : "",
-                            decoded.length());
-                }
-            } else {
-                LOG.trace("junk-filter decode {} -> null/empty", cs.name());
             }
         }
         if (candidates.size() <= 1) {
@@ -228,17 +245,31 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         Charset champion = null;
         double championZ = Double.NEGATIVE_INFINITY;
         Map<Charset, Double> scoreByCharset = new LinkedHashMap<>();
+        Map<Charset, Double> diffByCharset = new LinkedHashMap<>();
+        // Dedup by text: [0] = whole-text z (the champion + anchor metric, kept
+        // exactly as before); [1] = script-letter "diff" z (codepoints >= 0x80
+        // that are letters/ideographs — the high bytes where the candidate
+        // decodes actually differ), used ONLY for the family gate below.
+        Map<String, float[]> zByText = new HashMap<>();
         for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
-            org.apache.tika.quality.TextQualityScore sc =
-                    qualityDetector.score(entry.getValue());
-            float rawZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
-            scoreByCharset.put(entry.getKey(), (double) rawZ);
-            LOG.trace("junk-filter score {} z={} script={}",
-                    entry.getKey().name(),
-                    String.format(java.util.Locale.ROOT, "%.3f", rawZ),
-                    sc.isUnknown() ? "UNKNOWN" : sc.getDominantScript());
-            if (rawZ > championZ) {
-                championZ = rawZ;
+            String text = entry.getValue();
+            float[] zs = zByText.get(text);
+            if (zs == null) {
+                org.apache.tika.quality.TextQualityScore sc = qualityDetector.score(text);
+                float wholeZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
+                String diff = scriptLetters(text);
+                float diffZ = Float.NEGATIVE_INFINITY;
+                if (!diff.isEmpty()) {
+                    org.apache.tika.quality.TextQualityScore d = qualityDetector.score(diff);
+                    diffZ = d.isUnknown() ? Float.NEGATIVE_INFINITY : d.getZScore();
+                }
+                zs = new float[]{wholeZ, diffZ};
+                zByText.put(text, zs);
+            }
+            scoreByCharset.put(entry.getKey(), (double) zs[0]);
+            diffByCharset.put(entry.getKey(), (double) zs[1]);
+            if (zs[0] > championZ) {
+                championZ = zs[0];
                 champion = entry.getKey();
             }
         }
@@ -247,6 +278,48 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             // has no opinion, so keep the first (highest-confidence) candidate.
             champion = candidates.keySet().iterator().next();
         }
+
+        // CJK-vs-non-CJK family gate.  The whole-text z coin-flips on the
+        // CJK/non-CJK BOUNDARY for COMMON-dominated docs (markup/digits/punct
+        // decode identically and swamp the few discriminating high bytes),
+        // producing false-CJK and real-CJK demotion.  The script-letter "diff" z
+        // reads that boundary cleanly (coherent CJK vs garbage), so use it to
+        // decide ONLY the family; within a family the whole-text champion stands
+        // (Latin-vs-Latin etc. untouched — a blanket diff-score regressed there).
+        // Override only on a clear diff margin.
+        double bestCjkDiff = Double.NEGATIVE_INFINITY;
+        double bestNonCjkDiff = Double.NEGATIVE_INFINITY;
+        for (Map.Entry<Charset, Double> e : diffByCharset.entrySet()) {
+            if (isCjkCharset(e.getKey().name())) {
+                bestCjkDiff = Math.max(bestCjkDiff, e.getValue());
+            } else {
+                bestNonCjkDiff = Math.max(bestNonCjkDiff, e.getValue());
+            }
+        }
+        // DEMOTE-ONLY: fire only to demote a CJK champion to non-CJK when the
+        // diff z clearly prefers non-CJK (the false-CJK fix).  The reverse
+        // (promote non-CJK -> CJK) is NOT done: measured at 29k, the diff z
+        // reliably says "this CJK pick is really non-CJK" (OOV improves on every
+        // such flip) but UNreliably says "this non-CJK pick is really CJK" (the
+        // junk model over-rates ideograph mojibake vs sparse Latin letters — OOV
+        // worsened on every promote flip).  The promote direction is also
+        // unnecessary: genuine CJK is html-meta-declared upstream.
+        if (isCjkCharset(champion.name())
+                && bestNonCjkDiff > bestCjkDiff + FAMILY_DIFF_MARGIN) {
+            Charset reFam = bestInFamily(scoreByCharset, false);
+            if (reFam != null) {
+                LOG.trace("junk-filter family gate: {} (CJK) -> {} (non-CJK by diff z)",
+                        champion.name(), reFam.name());
+                champion = reFam;
+            }
+        }
+
+        // Within-Latin letter gate (demote-only).  Sibling to the CJK gate,
+        // for the other boundary the whole-text z can't see: a DOS-OEM / Mac
+        // pick whose high bytes decode to box-drawing/symbols beating the
+        // windows-1252 truth under COMMON-dilution.  Cased-letter count reads
+        // it where typicality ties.  See {@link #applyLatinLetterGate}.
+        champion = applyLatinLetterGate(bytes, champion, candidates.keySet());
 
         // "No-info" guard: if the statistical layer produced no confident
         // answer — no STRUCTURAL proof, and its best STATISTICAL candidate is
@@ -272,6 +345,153 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         float confidence = context.getTopConfidenceFor(champion);
         context.setArbitrationInfo("junk-filter-selected");
         return List.of(new EncodingResult(champion, confidence));
+    }
+
+    /** Minimum diff-z margin by which the other family must beat the champion's
+     *  family before the family gate overrides.  Large enough to ignore the
+     *  noise-level boundary ties; real CJK-vs-garbage diffs are far larger. */
+    private static final double FAMILY_DIFF_MARGIN = 2.0;
+
+    private static boolean isCjkCharset(String name) {
+        String n = name.toLowerCase(java.util.Locale.ROOT);
+        return n.contains("gb") || n.contains("big5") || n.contains("euc")
+                || n.contains("shift") || n.contains("jis") || n.contains("2022")
+                || n.contains("949");
+    }
+
+    /** Highest whole-text-z candidate within the requested family (CJK or not). */
+    private static Charset bestInFamily(Map<Charset, Double> wholeZ, boolean cjk) {
+        Charset best = null;
+        double bz = Double.NEGATIVE_INFINITY;
+        for (Map.Entry<Charset, Double> e : wholeZ.entrySet()) {
+            if (isCjkCharset(e.getKey().name()) == cjk && e.getValue() > bz) {
+                bz = e.getValue();
+                best = e.getKey();
+            }
+        }
+        return best;
+    }
+
+    /** Script-letter "diff" content: codepoints &ge; 0x80 that are letters/
+     *  ideographs — the high bytes where candidate decodes differ.  Shared ASCII
+     *  and non-ASCII punctuation/symbols are dropped (they dilute toward a
+     *  COMMON-dominated tie).  Used only for the CJK-vs-non-CJK family gate. */
+    private static String scriptLetters(String s) {
+        StringBuilder b = new StringBuilder();
+        s.codePoints().forEach(c -> {
+            if (c >= 0x80 && Character.isLetter(c)) {
+                b.appendCodePoint(c);
+            }
+        });
+        return b.toString();
+    }
+
+    /** Canonical {@code Charset.name()} of the WHATWG-default Latin fallback. */
+    private static final String WIN1252 = "windows-1252";
+
+    /** Latin single-byte charsets the within-Latin letter gate may arbitrate.
+     *  EXCLUDES non-Latin SBCS (Cyrillic windows-1251 / ISO-8859-5, Greek
+     *  -1253 / -7, Hebrew -1255 / -8, Arabic -1256 / -6, Thai) whose cased
+     *  letters would pollute the count, and all multi-byte CJK (the family
+     *  gate's territory). */
+    private static final Set<String> LATIN_SBCS = new HashSet<>(Arrays.asList(
+            "windows-1252", "windows-1250", "windows-1254", "windows-1257", "windows-1258",
+            "ISO-8859-1", "ISO-8859-2", "ISO-8859-3", "ISO-8859-4", "ISO-8859-9",
+            "ISO-8859-10", "ISO-8859-13", "ISO-8859-14", "ISO-8859-15", "ISO-8859-16",
+            "IBM437", "IBM850", "IBM852", "IBM858", "IBM860", "IBM861", "IBM863", "IBM865",
+            "x-MacRoman", "x-MacCentralEurope", "x-MacRomania", "x-MacIceland"));
+
+    /** Probe must have at least this many high bytes for the gate to act —
+     *  below it the letter gap is noise (most over-picks are sparse). */
+    private static final int LATIN_GATE_MIN_HIGH_BYTES = 16;
+    /** windows-1252 must win the cased-letter count by &gt; max(FLOOR, FRACTION
+     *  * highBytes).  The margin lets the gate cover Central-European / DOS
+     *  siblings safely — genuine CE text wins MORE letters under its true
+     *  charset so the gate stays silent — without the tie-flip that forces the
+     *  mojibuster Western-Latin fallback to scope itself out of those families. */
+    private static final double LATIN_GATE_MARGIN_FLOOR = 6.0;
+    private static final double LATIN_GATE_MARGIN_FRACTION = 0.20;
+
+    /**
+     * Within-Latin letter-plausibility gate (demote-only).  Demotes {@code
+     * champion} to windows-1252 only when windows-1252 is a live candidate, both
+     * are Latin SBCS, the probe is high-byte-dense, and windows-1252 decodes
+     * clearly MORE cased high-byte letters than the champion — the box-drawing
+     * signature, where a wrong IBM850 / x-MacRoman decode maps high bytes to
+     * symbols.  The compare is directional: a genuine Central-European / DOS doc
+     * wins MORE letters under its true charset, so the gate leaves it untouched.
+     * Latin-scoped so it never crosses the CJK boundary (the family gate above)
+     * or touches non-Latin SBCS.  Returns the (possibly demoted) charset.
+     */
+    static Charset applyLatinLetterGate(byte[] probe, Charset champion,
+                                        Set<Charset> candidates) {
+        String name = champion.name();
+        if (WIN1252.equals(name) || !LATIN_SBCS.contains(name)) {
+            return champion;
+        }
+        Charset win = null;
+        for (Charset c : candidates) {
+            if (WIN1252.equals(c.name())) {
+                win = c;
+                break;
+            }
+        }
+        if (win == null) {
+            return champion;
+        }
+        int high = HighByteLetterStats.countHighBytes(probe);
+        if (high < LATIN_GATE_MIN_HIGH_BYTES) {
+            return champion;
+        }
+        int winLetters = HighByteLetterStats.countCasedHighByteLetters(probe, win);
+        int champLetters = HighByteLetterStats.countCasedHighByteLetters(probe, champion);
+        double margin = Math.max(LATIN_GATE_MARGIN_FLOOR, LATIN_GATE_MARGIN_FRACTION * high);
+        if (winLetters > champLetters + margin) {
+            LOG.trace("junk-filter latin gate: {} -> windows-1252 (cased high-byte "
+                    + "letters {} vs {}, high={})", name, champLetters, winLetters, high);
+            return win;
+        }
+        return champion;
+    }
+
+    /**
+     * Restrict the candidate set the tournament will decode+clean+score: keep
+     * every DECLARATIVE/STRUCTURAL anchor (author intent / byte-grammar proof),
+     * plus the top {@link #ALWAYS_KEEP_TOP_N} STATISTICAL candidates by
+     * confidence, plus any deeper STATISTICAL candidate still within
+     * {@link #MIN_TAIL_CONFIDENCE}.  Drops the dominated low-confidence tail —
+     * the speed lever — without removing any anchor or NB's real contenders.
+     * Returns a subset of {@code all}, preserving its iteration order.
+     */
+    private static Set<Charset> bandFilter(EncodingDetectorContext context, Set<Charset> all) {
+        Set<Charset> anchors = new HashSet<>();
+        List<EncodingResult> stats = new ArrayList<>();
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                EncodingResult.ResultType t = er.getResultType();
+                if (t == EncodingResult.ResultType.DECLARATIVE
+                        || t == EncodingResult.ResultType.STRUCTURAL) {
+                    anchors.add(er.getCharset());
+                } else if (t == EncodingResult.ResultType.STATISTICAL) {
+                    stats.add(er);
+                }
+            }
+        }
+        stats.sort((a, b) -> Float.compare(b.getConfidence(), a.getConfidence()));
+        Set<Charset> keepStat = new HashSet<>();
+        for (int i = 0; i < stats.size(); i++) {
+            if (i < ALWAYS_KEEP_TOP_N
+                    || stats.get(i).getConfidence() >= MIN_TAIL_CONFIDENCE) {
+                keepStat.add(stats.get(i).getCharset());
+            }
+        }
+        Set<Charset> kept = new LinkedHashSet<>();
+        for (Charset cs : all) {
+            if (anchors.contains(cs) || keepStat.contains(cs)) {
+                kept.add(cs);
+            }
+        }
+        return kept;
     }
 
     /**
@@ -369,10 +589,17 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     }
 
     private static String safeDecode(byte[] bytes, Charset charset) {
+        // Score CJK candidates on their vendor superset, not the strict base
+        // (which U+FFFDs vendor-extension chars and unfairly penalizes real
+        // CJK). AutoDetectReader re-applies the same superset for content.
+        Charset decodeAs = CharsetSupersets.supersetOf(charset);
+        if (decodeAs == null) {
+            decodeAs = charset;
+        }
         try {
-            return new String(bytes, charset);
+            return new String(bytes, decodeAs);
         } catch (Exception e) {
-            LOG.debug("Decode failed for {}: {}", charset.name(), e.toString());
+            LOG.debug("Decode failed for {}: {}", decodeAs.name(), e.toString());
             return null;
         }
     }

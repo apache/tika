@@ -144,6 +144,22 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     public static final int MIN_BIGRAMS_FOR_DIVERSITY_GATE = 100;
 
     /**
+     * Sublinear count weighting ("count clipping").  A distinct bigram's raw
+     * repetition count {@code n} is replaced by {@code 1 + ln(n)} before it
+     * weights the per-class contribution, so a bigram repeated hundreds of
+     * times (e.g. a {@code "--"} separator run, observed 864× on one page)
+     * can no longer dominate the score by sheer volume.
+     *
+     * <p>Length-dynamic by construction (no fixed cap) and <em>class-agnostic</em>:
+     * it bounds <em>repetition</em>, an axis orthogonal to the Type C cap
+     * (which bounds a single class's per-bigram cross-class advantage) and the
+     * Type A diversity gate (which abstains only on globally-degenerate input).
+     * Partial concentration — one bigram repeated heavily inside an otherwise
+     * diverse probe — falls through all three of those guards; this closes it.</p>
+     */
+    public static final boolean SUBLINEAR_COUNT = true;
+
+    /**
      * Script / writing-system family used by {@link #CAP_PER_BIGRAM_NATS}.
      * UTF-8 stands alone so the cap engages on UTF-vs-anything pairs
      * (UTF-8 misread as win-1252 or as GBK).
@@ -513,7 +529,10 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             }
             int n = counts.countAt(slot);
             int w = idf8[bigram];
-            double countTimesIdf = (double) n * w;
+            // Sublinear count weighting: cap a repeated bigram's volume so a
+            // separator run (e.g. "--" x864) can't dominate by repetition.
+            double tf = (SUBLINEAR_COUNT && n > 1) ? (1.0 + Math.log(n)) : n;
+            double countTimesIdf = tf * w;
             int base = bigram * numClasses;
 
             if (!applyCap) {

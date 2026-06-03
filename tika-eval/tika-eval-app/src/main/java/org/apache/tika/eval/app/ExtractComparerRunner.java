@@ -343,6 +343,7 @@ public class ExtractComparerRunner {
             tableInfosA.add(ExtractComparer.EXCEPTION_TABLE_A);
             tableInfosA.add(ExtractComparer.TAGS_TABLE_A);
             tableInfosA.add(ExtractComparer.CONTENTS_TABLE_A);
+            tableInfosA.add(ExtractComparer.ENCODINGS_TABLE_A);
             tableInfosA.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_A);
             tableInfosA.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_A);
 
@@ -351,6 +352,7 @@ public class ExtractComparerRunner {
             tableInfosB.add(ExtractComparer.EXTRACT_EXCEPTION_TABLE_B);
             tableInfosB.add(ExtractComparer.TAGS_TABLE_B);
             tableInfosB.add(ExtractComparer.CONTENTS_TABLE_B);
+            tableInfosB.add(ExtractComparer.ENCODINGS_TABLE_B);
             tableInfosB.add(ExtractComparer.EMBEDDED_FILE_PATH_TABLE_B);
 
             tableInfosAandB.add(ExtractComparer.COMPARISON_CONTAINERS);

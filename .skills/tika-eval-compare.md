@@ -120,6 +120,16 @@ directory, plus a `summary.md` with key metrics:
 | Exception count | ≤ A | > A |
 | Total files (B) vs (A) | equal or higher | lower — missing embedded docs |
 
+### Encoding-detection evals
+
+For charset/encoding-detector changes, the summary reports don't cover it — query
+the db directly (see the **tika-eval-h2-query** skill). The detected encoding is in
+the `ENCODINGS_A`/`ENCODINGS_B` tables (`DETECTED_ENCODING`, `ENCODING_DETECTOR`,
+`DECLARED_METADATA`), **not** `PROFILES`. Key signals: per-encoding counts (e.g. CJK
+total), A→B flips by direction, and OOV on the flipped files (a flip that *worsens*
+OOV is a regression; one that *improves* it is a fix). Pair on `ID`; map back to the
+source file via `PROFILES_*.FILE_NAME` (the content hash).
+
 ### CRITICAL: Review Checklist
 
 The purpose of tika-eval is to find regressions BEFORE a release. After

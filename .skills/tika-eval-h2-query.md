@@ -40,6 +40,7 @@ it then waits on stdin and appears to hang).
 |---|---|
 | `PROFILES_A` / `PROFILES_B` | one row per extracted file: `FILE_NAME`, `MD5`, `MIME_ID`, `CONTAINER_ID`, `EMBEDDED_FILE_PATH`, `LENGTH`, `NUM_PAGES`, … (A = "before"/-a, B = "after"/-b) |
 | `CONTENTS_A` / `CONTENTS_B` | text profile per file (join on `ID`): `OOV`, `LANGUAGENESS`, `NUM_TOKENS`, `NUM_COMMON_TOKENS`, `LANG_ID_1`/`LANG_ID_PROB_1`, `TOKEN_ENTROPY_RATE`, … |
+| `ENCODINGS_A` / `ENCODINGS_B` | detected-encoding per file (join on `ID`): `DETECTED_ENCODING`, `ENCODING_DETECTOR`, `DECLARED_METADATA`. **`DETECTED_ENCODING` lives HERE, not on `PROFILES` — moved out in the encodings-table refactor; querying `PROFILES_*.DETECTED_ENCODING` now errors "Column not found".** A file with no detected encoding has no row. |
 | `CONTENT_COMPARISONS` | per-file A↔B comparison (`ID`): `DICE_COEFFICIENT`, `OVERLAP`, top token diffs |
 | `MIMES` | `MIME_ID` → `MIME_STRING` |
 | `CONTAINERS` | container id → input file path |
@@ -85,6 +86,56 @@ FROM CONTENTS_A ca JOIN CONTENTS_B cb ON ca.ID = cb.ID;
 
 To bring in mime/path, join `PROFILES_A pa ON pa.ID = ca.ID` (and `pb`/`cc`
 likewise on the same `id`) — all on `id`.
+
+Detected-encoding queries — `DETECTED_ENCODING` is on `ENCODINGS_A`/`ENCODINGS_B`
+(join on `ID`), NOT `PROFILES`. CJK count in B (LOWER() — `REGEXP` is case-sensitive,
+see below):
+
+```sql
+SELECT COUNT(*) FROM ENCODINGS_B
+WHERE LOWER(DETECTED_ENCODING) REGEXP 'gb|big5|euc|shift|jis|2022|949';
+```
+
+Encoding flips A→B by direction (what changed between runs):
+
+```sql
+SELECT ea.DETECTED_ENCODING a_enc, eb.DETECTED_ENCODING b_enc, COUNT(*) n
+FROM ENCODINGS_A ea JOIN ENCODINGS_B eb ON ea.ID = eb.ID
+WHERE ea.DETECTED_ENCODING <> eb.DETECTED_ENCODING
+GROUP BY a_enc, b_enc ORDER BY n DESC;
+```
+
+Map a flipped file back to its source file — `PROFILES_*.FILE_NAME` is the content
+hash (the input file is `<corpus>/<first-2-hex>/<FILE_NAME>`); join `CONTENTS` for OOV:
+
+```sql
+SELECT pb.FILE_NAME, ea.DETECTED_ENCODING a_enc, eb.DETECTED_ENCODING b_enc,
+       ca.OOV oov_a, cb.OOV oov_b
+FROM ENCODINGS_A ea JOIN ENCODINGS_B eb ON ea.ID = eb.ID
+  JOIN PROFILES_B pb ON ea.ID = pb.ID
+  JOIN CONTENTS_A ca ON ea.ID = ca.ID JOIN CONTENTS_B cb ON ea.ID = cb.ID
+WHERE LOWER(eb.DETECTED_ENCODING) REGEXP 'gb|big5|euc|shift|jis|2022|949'
+  AND NOT (LOWER(ea.DETECTED_ENCODING) REGEXP 'gb|big5|euc|shift|jis|2022|949');
+```
+
+## Gotcha: `REGEXP` is case-sensitive (silent wrong results)
+
+H2's `REGEXP` operator is **case-sensitive**, so `DETECTED_ENCODING REGEXP
+'big5|gb|euc'` does **not** match `Big5-HKSCS` or `GB18030` — and it fails
+*silently*, quietly dropping/keeping the wrong rows instead of erroring. Always
+either lowercase the column or use the inline case-insensitive flag:
+
+```sql
+-- right:
+WHERE LOWER(DETECTED_ENCODING) REGEXP 'big5|gb|euc|shift|jis|2022|949'
+-- or:
+WHERE DETECTED_ENCODING REGEXP '(?i)big5|gb|euc|shift|jis|2022|949'
+-- wrong (misses Big5-HKSCS, GB18030, Shift_JIS, ...):
+WHERE DETECTED_ENCODING REGEXP 'big5|gb|euc|shift|jis|2022|949'
+```
+
+(`DETECTED_ENCODING` is on `ENCODINGS_A`/`ENCODINGS_B` — join to `PROFILES`/`CONTENTS`
+on `ID` — populated from `X-TIKA:detectedEncoding`.)
 
 ## Tip
 

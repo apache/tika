@@ -51,6 +51,8 @@ import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;
 import org.apache.tika.eval.core.textstats.CompositeTextStatsCalculator;
 import org.apache.tika.eval.core.textstats.ContentLengthCalculator;
+import org.apache.tika.eval.core.textstats.NonAsciiCharCounter;
+import org.apache.tika.eval.core.textstats.ReplacementCharCounter;
 import org.apache.tika.eval.core.textstats.TextStatsCalculator;
 import org.apache.tika.eval.core.textstats.TokenEntropy;
 import org.apache.tika.eval.core.textstats.TokenLengths;
@@ -324,6 +326,8 @@ public abstract class ProfilerBase {
         calculators.add(new TopNTokens(10));
         calculators.add(new BasicTokenCountStatsCalculator());
         calculators.add(new ContentLengthCalculator());
+        calculators.add(new ReplacementCharCounter());
+        calculators.add(new NonAsciiCharCounter());
         calculators.add(new UnicodeBlockCounter(maxContentLengthForLangId));
 
         return new CompositeTextStatsCalculator(calculators, analyzerManager, langIder);
@@ -497,6 +501,19 @@ public abstract class ProfilerBase {
                 return;
             }
             data.put(Cols.CONTENT_LENGTH, Integer.toString(length));
+            Integer numReplacement = (Integer) textStats.get(ReplacementCharCounter.class);
+            if (numReplacement != null) {
+                data.put(Cols.NUM_REPLACEMENT, Integer.toString(numReplacement));
+            }
+            // Store raw counts only; derive the FFFD rate in SQL.  Decode failures
+            // come only from high bytes, so num_replacement/num_non_ascii is the
+            // un-diluted rate (num_replacement/content_length dilutes to ~0 on
+            // ASCII-dominated docs).  U+FFFD is itself >= 0x80, so it is counted in
+            // num_non_ascii and both ratios stay in [0,1].
+            Integer numNonAscii = (Integer) textStats.get(NonAsciiCharCounter.class);
+            if (numNonAscii != null) {
+                data.put(Cols.NUM_NON_ASCII, Integer.toString(numNonAscii));
+            }
         }
         langid(textStats, data);
 
@@ -536,6 +553,35 @@ public abstract class ProfilerBase {
         unicodeBlocks(textStats, data);
         try {
             writer.writeRow(contentsTable, data);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Per-file charset-detection record: the final detected encoding, the
+     * detector that won, and the declared charset from metadata
+     * (Content-Type-Hint).  Writes a row only when a detected encoding is
+     * present, so the table holds only files that ran charset detection.
+     */
+    protected void writeEncodingData(String fileId, Metadata m, TableInfo encodingsTable) {
+        String detected = m.get(TikaCoreProperties.DETECTED_ENCODING);
+        if (detected == null) {
+            return;
+        }
+        Map<Cols, String> data = new HashMap<>();
+        data.put(Cols.ID, fileId);
+        data.put(Cols.DETECTED_ENCODING, detected);
+        String detector = m.get(TikaCoreProperties.ENCODING_DETECTOR);
+        if (detector != null) {
+            data.put(Cols.ENCODING_DETECTOR, detector);
+        }
+        String declared = m.get(TikaCoreProperties.CONTENT_TYPE_HINT);
+        if (declared != null) {
+            data.put(Cols.DECLARED_METADATA, declared);
+        }
+        try {
+            writer.writeRow(encodingsTable, data);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
