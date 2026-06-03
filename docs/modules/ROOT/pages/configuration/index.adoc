@@ -67,6 +67,8 @@ Per-section documentation:
 
 == The `parsers` list and `default-parser`
 
+Tika configuration files are JSON, with optional support for `//` and `/* */` comments.
+
 A `parsers` list loads *only* the parsers it names — every other parser is dropped.
 To customize one parser while keeping all the others, add a `default-parser` entry:
 
