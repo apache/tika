@@ -1,36 +1,65 @@
 {
+  // A "parsers" list loads ONLY the parsers it names; the "default-parser" entry at
+  // the bottom keeps all the others (needed so PDFs/Office docs still reach OCR).
+  // Windows paths in JSON need forward slashes or escaped backslashes.
   "parsers": [
     {
       "tesseract-ocr-parser": {
+        // Calculate skew and rotate (via ImageMagick) before OCR. Needs ImageMagick.
         "applyRotation": false,
+        // Colorspace of the preprocessed image (preprocessing only).
         "colorspace": "gray",
+        // Resolution (dpi) of the preprocessed image.
         "density": 300,
+        // Bits per color sample in the preprocessed image.
         "depth": 4,
+        // Run ImageMagick preprocessing (density/depth/colorspace/filter/resize) before OCR.
         "enableImagePreprocessing": false,
+        // ImageMagick resize filter.
         "filter": "triangle",
+        // Directory holding the ImageMagick program (empty = on PATH). ImageMagick is
+        // OPTIONAL -- used only when enableImagePreprocessing or applyRotation is true.
         "imageMagickPath": "",
+        // Write OCR output from embedded images inline into the parent document.
         "inlineContent": false,
+        // Tesseract language(s); join multiple with '+', e.g. "eng+fra".
         "language": "eng",
+        // Skip OCR for files larger than this many bytes.
         "maxFileSizeToOcr": 2147483647,
+        // Skip OCR for files smaller than this many bytes.
         "minFileSizeToOcr": 0,
-        // Additional Tesseract configuration parameters as key-value pairs
+        // Additional raw Tesseract config variables (key-value).
         "otherTesseractConfig": {
           "preserve_interword_spaces": "1",
           "textord_initialx_ile": "0.75",
           "textord_noise_hfract": "0.15625"
         },
+        // Tesseract output format.
         // Options: TXT, HOCR
         "outputType": "TXT",
+        // Inserted between OCR'd pages (empty overrides Tesseract 4's form-feed).
         "pageSeparator": "",
+        // Page segmentation mode (0-13); 1 = auto with orientation/script detection.
         "pageSegMode": "1",
+        // Load Tesseract language data at startup instead of on first use.
         "preloadLangs": false,
+        // Preserve interword spacing in the output.
         "preserveInterwordSpacing": false,
+        // Scale percent (100-900) applied during preprocessing.
         "resize": 200,
+        // Runtime kill-switch to disable OCR.
         "skipOcr": false,
+        // Directory with tessdata language files (empty = Tesseract default).
         "tessdataPath": "",
+        // Directory with the tesseract binary (empty = on PATH).
         "tesseractPath": "",
+        // Max seconds to wait for the OCR process.
         "timeoutSeconds": 120
       }
+    },
+    {
+      // Keep Tika's other default parsers. Without this, only image files are OCR'd.
+      "default-parser": {}
     }
   ]
 }

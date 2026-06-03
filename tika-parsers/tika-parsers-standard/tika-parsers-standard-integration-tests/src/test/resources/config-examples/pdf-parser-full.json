@@ -1,54 +1,104 @@
 {
+  // A "parsers" list loads ONLY the parsers it names; the "default-parser" entry at
+  // the bottom keeps all the others. Windows paths in JSON need forward slashes or
+  // escaped backslashes.
   "parsers": [
     {
       "pdf-parser": {
+        // Enforce the PDF's access permissions. DONT_CHECK ignores them.
         // Options: DONT_CHECK, ALLOW_EXTRACTION_FOR_ACCESSIBILITY, IGNORE_ACCESSIBILITY_ALLOWANCE
         "accessCheckMode": "DONT_CHECK",
+        // Character-width tolerance for inserting spaces (PDFBox).
         "averageCharTolerance": 0.3,
+        // Collect per-stream IOExceptions in metadata and rethrow after parsing.
         "catchIntermediateIOExceptions": true,
+        // Detect and correct rotated (angled) text runs within a page.
         "detectAngles": false,
+        // Line-height multiple that starts a new paragraph (PDFBox).
         "dropThreshold": 2.5,
+        // Estimate where spaces belong between words (most PDFs lack explicit spaces).
         "enableAutoSpace": true,
+        // Extract AcroForm field content.
         "extractAcroFormContent": true,
+        // Extract PDF actions; JavaScript macros become embedded documents.
         "extractActions": false,
+        // Extract annotation text (comments, form-field captions).
         "extractAnnotationText": true,
+        // Extract outline / bookmark text.
         "extractBookmarksText": true,
+        // Record font names in metadata.
         "extractFontNames": false,
+        // Record metadata about incremental updates (whether present, how many).
         "extractIncrementalUpdateInfo": true,
+        // Record inline-image metadata only, without rendering (faster than extractInlineImages).
         "extractInlineImageMetadataOnly": false,
+        // Render and extract inline images from content streams.
         "extractInlineImages": false,
+        // Extract marked-content / structure tags, falling back to plain text.
         "extractMarkedContent": false,
+        // Emit each unique inline image (by object id) only once.
         "extractUniqueInlineImagesOnly": true,
+        // If the PDF has an XFA form, process only it.
         "ifXFAExtractOnlyXFA": false,
+        // Ignore content-stream space glyphs; rely on the spacing algorithm (PDFBOX-3774).
         "ignoreContentStreamSpaceGlyphs": false,
+        // EXPERT: replace the inline-image factory; give a class implementing
+        // ImageGraphicsEngineFactory, e.g.:
+        //   "imageGraphicsEngineFactoryClass": "com.example.MyImageGraphicsEngineFactory"
+        // How to render page images; NONE renders nothing.
         // Options: NONE, RAW_IMAGES, RENDER_PAGES_BEFORE_PARSE, RENDER_PAGES_AT_PAGE_END
         "imageStrategy": "NONE",
+        // Max incremental updates to parse when parseIncrementalUpdates is true.
         "maxIncrementalUpdates": 10,
+        // Max memory to load a PDF before buffering to a temp file (default 512MB).
         "maxMainMemoryBytes": 536870912,
+        // Max pages to process; -1 = no limit.
         "maxPages": -1,
+        // OCR settings. Requires an OCR engine (e.g. Tesseract) installed.
         "ocr": {
+          // Render resolution (dpi) for OCR.
           "dpi": 300,
+          // Image format sent to the OCR engine.
           // Options: PNG, TIFF, JPEG
           "imageFormat": "PNG",
+          // Image quality (0.0-1.0) for lossy formats.
           "imageQuality": 1.0,
+          // Rendered-image color model.
           // Options: RGB, GRAY
           "imageType": "GRAY",
+          // Skip OCR for rendered pages larger than this area (w x h); -1 = no limit.
+          "maxImagePixels": 100000000,
+          // Max pages to OCR per document; -1 = no limit.
+          "maxPagesToOcr": -1,
+          // Which page content to render for OCR.
           // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
           "renderingStrategy": "ALL",
+          // When to run OCR; AUTO runs it only on text-poor pages.
           // Options: AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION
           "strategy": "AUTO",
+          // Per-page character thresholds that trigger AUTO OCR.
           "strategyAuto": {
             "totalCharsPerPage": 10,
             "unmappedUnicodeCharsPerPage": 10
           }
         },
+        // Parse prior incremental-update versions as embedded documents.
         "parseIncrementalUpdates": false,
+        // EXPERT: set the Sun KCMS color-management system property. Default false.
         "setKCMS": false,
+        // Sort text by x/y position; helps some PDFs, can interleave columns in others.
         "sortByPosition": false,
+        // Space-width tolerance for inserting spaces (PDFBox).
         "spacingTolerance": 0.5,
+        // Remove text drawn twice over the same region (faked bold); can be slow.
         "suppressDuplicateOverlappingText": false,
+        // Throw on an encrypted payload instead of skipping it.
         "throwOnEncryptedPayload": false
       }
+    },
+    {
+      // Keep Tika's other default parsers. Without this, this config is PDF-only.
+      "default-parser": {}
     }
   ]
 }

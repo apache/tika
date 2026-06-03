@@ -94,16 +94,18 @@ The converter currently supports:
         "sortByPosition": true,
         "maxMainMemoryBytes": 1000000
       }
+    },
+    {
+      "default-parser": {}
     }
   ]
 }
 ----
 
-NOTE: When you configure a parser with specific settings in JSON, the loader automatically
-excludes it from SPI loading. The parser (e.g., `pdf-parser`) is not even instantiated in
-`default-parser` if there's a definition for it in the tika-config.json. Explicit `exclude`
-directives are only needed when you want to disable a parser entirely without providing
-custom configuration.
+NOTE: A `parsers` list loads *only* the parsers it names. The `default-parser` entry above
+restores all the other parsers (it is the JSON equivalent of the 3.x `DefaultParser`).
+Configuring a parser automatically excludes its default copy, so there is no duplication;
+explicit `exclude` directives are only needed to disable a parser without replacing it.
 
 === Key Differences
 

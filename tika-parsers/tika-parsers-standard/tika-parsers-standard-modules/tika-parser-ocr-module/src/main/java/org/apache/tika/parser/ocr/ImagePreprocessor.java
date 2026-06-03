@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ocr.tess4j.ImageDeskew;
-import org.apache.tika.utils.SystemUtils;
 
 class ImagePreprocessor implements Serializable {
 
@@ -58,10 +57,17 @@ class ImagePreprocessor implements Serializable {
 
         if (config.isEnableImagePreprocessing() || (config.isApplyRotation() && angle != 0)) {
             // process the image - parameter values can be set in TesseractOCRConfig.properties
+            //
+            // On Windows TesseractOCRParser.getImageMagickProg() returns "magick", i.e. the
+            // ImageMagick 7 program. IM7's native command form is
+            //     magick [read settings] input [operators] output
+            // We intentionally do NOT prepend the legacy "convert" subcommand: "magick convert"
+            // runs IM7 in deprecated IM6-compatibility mode and emits a deprecation warning.
+            // Operators (-depth, -colorspace, -filter, -resize, -rotate) must follow the input
+            // image; only read-time settings such as -density may precede it. This ordering is
+            // also accepted by the legacy "convert" program used on non-Windows systems, so a
+            // single argument layout works on every platform.
             CommandLine commandLine = new CommandLine(fullImageMagickPath);
-            if (SystemUtils.IS_OS_WINDOWS) {
-                commandLine.addArgument("convert");
-            }
 
             // Arguments for ImageMagick
             final List<String> density =
@@ -79,19 +85,19 @@ class ImagePreprocessor implements Serializable {
             Stream<List<String>> stream = Stream.empty();
             if (angle == 0) {
                 if (config.isEnableImagePreprocessing()) {
-                    // Do pre-processing, but don't do any rotation
-                    stream = Stream.of(density, depth, colorspace, filter, resize, sourceFileArg,
+                    // Pre-processing, no rotation. -density precedes the input; the image
+                    // operators follow it.
+                    stream = Stream.of(density, sourceFileArg, depth, colorspace, filter, resize,
                             targFileArg);
                 }
             } else if (config.isEnableImagePreprocessing()) {
-                // Do pre-processing with rotation
-                stream =
-                        Stream.of(density, depth, colorspace, filter, resize, rotate, sourceFileArg,
-                                targFileArg);
+                // Pre-processing with rotation
+                stream = Stream.of(density, sourceFileArg, depth, colorspace, filter, resize, rotate,
+                        targFileArg);
 
             } else if (config.isApplyRotation()) {
                 // Just rotation
-                stream = Stream.of(rotate, sourceFileArg, targFileArg);
+                stream = Stream.of(sourceFileArg, rotate, targFileArg);
             }
             final String[] args = stream.flatMap(Collection::stream).toArray(String[]::new);
             commandLine.addArguments(args, true);
