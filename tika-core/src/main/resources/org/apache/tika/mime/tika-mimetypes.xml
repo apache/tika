@@ -352,6 +352,21 @@
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.apk"/>
   </mime-type>
+  <mime-type type="application/vnd.android.axml">
+    <acronym>AXML</acronym>
+    <_comment>Android Binary XML</_comment>
+    <tika:link>https://developer.android.com/guide/topics/manifest/manifest-intro</tika:link>
+    <!-- Compiled binary form of AndroidManifest.xml and res/*.xml inside an APK.
+         These carry a .xml extension and live inside a zip, so the *.xml glob would
+         otherwise route them to application/xml and the XML parser, which fails on the
+         binary header. Detect by the leading ResChunk_header: type=RES_XML_TYPE(0x0003)
+         + headerSize(0x0008) -> 0x00080003 little-endian. The following 4 bytes are the
+         per-file chunk size, so the signature is only the first 4 bytes. Deliberately
+         NOT a sub-class-of application/xml: it is not XML and must not reach an XML parser. -->
+    <magic priority="50">
+      <match value="0x03000800" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-tika-java-enterprise-archive">
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.ear"/>
