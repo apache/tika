@@ -87,12 +87,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     private static final float NO_INFO_CONFIDENCE = 0.1f;
 
     // Adaptive candidate band (TIKA speed lever).  The tournament only needs
-    // NB's top-2 statistical candidates plus any lower-ranked candidate still
-    // within MIN_TAIL_CONFIDENCE of the top; deeper, low-confidence candidates
-    // are clearly dominated and almost never win (measured: δ=0.5 retains
-    // ~98-99% of selected winners, ~20% smaller pool).  Anchors (DECLARATIVE,
-    // STRUCTURAL) are always kept regardless of confidence.  Quality impact is
-    // validated by a full common-token/OOV eval, NOT assumed.
+    // NB's top-2 statistical candidates plus any lower-ranked candidate whose
+    // confidence is still at least MIN_TAIL_CONFIDENCE (an absolute floor, not
+    // a band relative to the top); deeper, low-confidence candidates are clearly
+    // dominated and almost never win (measured: a 0.5 floor retains ~98-99% of
+    // selected winners, ~20% smaller pool).  Anchors (DECLARATIVE, STRUCTURAL)
+    // are always kept regardless of confidence.  Quality impact is validated by
+    // a full common-token/OOV eval, NOT assumed.
     private static final int ALWAYS_KEEP_TOP_N = 2;
     private static final float MIN_TAIL_CONFIDENCE = 0.5f;
 
@@ -458,8 +459,9 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
      * Restrict the candidate set the tournament will decode+clean+score: keep
      * every DECLARATIVE/STRUCTURAL anchor (author intent / byte-grammar proof),
      * plus the top {@link #ALWAYS_KEEP_TOP_N} STATISTICAL candidates by
-     * confidence, plus any deeper STATISTICAL candidate still within
-     * {@link #MIN_TAIL_CONFIDENCE}.  Drops the dominated low-confidence tail —
+     * confidence, plus any deeper STATISTICAL candidate whose confidence is at
+     * least {@link #MIN_TAIL_CONFIDENCE} (an absolute floor).  Drops the
+     * dominated low-confidence tail —
      * the speed lever — without removing any anchor or NB's real contenders.
      * Returns a subset of {@code all}, preserving its iteration order.
      */

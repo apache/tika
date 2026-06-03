@@ -113,9 +113,13 @@ public class JunkFilterEncodingDetectorTest {
         public TextQualityComparison compare(String labelA, String candidateA,
                                              String labelB, String candidateB) {
             // Not exercised by the gate path (which uses score()); provided only
-            // to satisfy the interface.
-            return new TextQualityComparison("A", 0.0f,
-                    score(candidateA), score(candidateB), labelA, labelB);
+            // to satisfy the interface.  Honor the contract: winner() must be
+            // labelA or labelB, picked by the higher (cleaner) z-score.
+            TextQualityScore a = score(candidateA);
+            TextQualityScore b = score(candidateB);
+            String winner = a.getZScore() >= b.getZScore() ? labelA : labelB;
+            float delta = Math.abs(a.getZScore() - b.getZScore());
+            return new TextQualityComparison(winner, delta, a, b, labelA, labelB);
         }
     }
 
