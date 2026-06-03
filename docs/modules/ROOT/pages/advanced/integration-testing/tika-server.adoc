@@ -255,7 +255,7 @@ curl -s -X POST -F "file=@testPDF.pdf" -H "Accept: application/json" http://loca
 [source,bash]
 ----
 curl -s -X POST -F "file=@testPDF.pdf" \
-  -F 'config={"parsers":[{"pdf-parser":{"ocrStrategy":"NO_OCR"}}]}' \
+  -F 'config={"parsers":[{"pdf-parser":{"ocr":{"strategy":"NO_OCR"}}}]}' \
   -H "Accept: application/json" \
   http://localhost:9998/meta/config
 ----

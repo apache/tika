@@ -55,7 +55,7 @@ Tika uses a compact format for component configuration:
 Components can be specified as:
 
 * **String**: `"pdf-parser"` - creates instance with defaults
-* **Object**: `{"pdf-parser": {"ocrStrategy": "AUTO"}}` - creates configured instance
+* **Object**: `{"pdf-parser": {"ocr": {"strategy": "AUTO"}}}` - creates configured instance
 
 == The @TikaComponent Annotation
 
@@ -214,7 +214,9 @@ Benefits:
 {
   "parse-context": {
     "pdf-parser": {
-      "ocrStrategy": "AUTO",
+      "ocr": {
+        "strategy": "AUTO"
+      },
       "extractInlineImages": true
     },
     "commons-digester-factory": {

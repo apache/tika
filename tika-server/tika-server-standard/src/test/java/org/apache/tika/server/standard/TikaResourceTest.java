@@ -263,7 +263,9 @@ public class TikaResourceTest extends CXFTestBase {
         String configJson = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "OCR_ONLY"
+                    "ocr": {
+                      "strategy": "OCR_ONLY"
+                    }
                   },
                   "tesseract-ocr-parser": {
                     "language": "eng+fra",
@@ -297,7 +299,9 @@ public class TikaResourceTest extends CXFTestBase {
         String configJson = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "NO_OCR"
+                    "ocr": {
+                      "strategy": "NO_OCR"
+                    }
                   }
                 }
                 """;
@@ -335,7 +339,9 @@ public class TikaResourceTest extends CXFTestBase {
         configJson = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "OCR_ONLY"
+                    "ocr": {
+                      "strategy": "OCR_ONLY"
+                    }
                   }
                 }
                 """;
@@ -356,7 +362,9 @@ public class TikaResourceTest extends CXFTestBase {
         configJson = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "non-sense-value"
+                    "ocr": {
+                      "strategy": "non-sense-value"
+                    }
                   }
                 }
                 """;

@@ -255,7 +255,9 @@ Create `/tmp/tika-app-test/my-config.json`:
       "pdf-parser": {
         "extractActions": true,
         "extractInlineImages": true,
-        "ocrStrategy": "NO_OCR"
+        "ocr": {
+          "strategy": "NO_OCR"
+        }
       }
     },
     {

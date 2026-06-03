@@ -102,7 +102,7 @@ public class TestParseContextSerialization {
         ParseContext pc = new ParseContext();
 
         // Add friendly-named configurations via setJsonConfig
-        pc.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\",\"extractInlineImages\":true}");
+        pc.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"AUTO\"},\"extractInlineImages\":true}");
         pc.setJsonConfig("html-parser", "{\"extractScripts\":false}");
 
         String json = serializeParseContext(pc);
@@ -116,7 +116,8 @@ public class TestParseContextSerialization {
         assertTrue(root.has("html-parser"), "Should have html-parser field");
         assertEquals("AUTO", root
                 .get("pdf-parser")
-                .get("ocrStrategy")
+                .get("ocr")
+                .get("strategy")
                 .asText());
         assertEquals(false, root
                 .get("html-parser")
@@ -169,7 +170,7 @@ public class TestParseContextSerialization {
         ParseContext pc = new ParseContext();
 
         // Simulate a PDFParserConfig as JSON
-        String pdfConfig = "{\"extractInlineImages\":true,\"ocrStrategy\":\"AUTO\"}";
+        String pdfConfig = "{\"extractInlineImages\":true,\"ocr\":{\"strategy\":\"AUTO\"}}";
         pc.setJsonConfig("pdf-parser", pdfConfig);
 
         // Test hasConfig
@@ -188,7 +189,9 @@ public class TestParseContextSerialization {
         String json = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "AUTO",
+                    "ocr": {
+                      "strategy": "AUTO"
+                    },
                     "extractInlineImages": true
                   },
                   "html-parser": {
@@ -216,7 +219,9 @@ public class TestParseContextSerialization {
                 {
                   "parse-context": {
                     "pdf-parser": {
-                      "ocrStrategy": "NO_OCR"
+                      "ocr": {
+                        "strategy": "NO_OCR"
+                      }
                     }
                   }
                 }
@@ -233,7 +238,7 @@ public class TestParseContextSerialization {
         // Test with multiple different config types
         ParseContext pc = new ParseContext();
 
-        pc.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
+        pc.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"AUTO\"}}");
         pc.setJsonConfig("html-parser", "{\"extractScripts\":true}");
         pc.setJsonConfig("timeout-limits",
                 "{\"progressTimeoutMillis\":5000,\"totalTaskTimeoutMillis\":60000}");

@@ -64,7 +64,7 @@ import org.apache.tika.serialization.serdes.ParseContextSerializer;
  * Supports two formats:
  * <ol>
  *   <li>Simple string: {@code "text-parser"} → instance with defaults</li>
- *   <li>Object with type as key: {@code {"pdf-parser": {"ocrStrategy": "AUTO"}}} → instance with config</li>
+ *   <li>Object with type as key: {@code {"pdf-parser": {"ocr": {"strategy": "AUTO"}}}} → instance with config</li>
  * </ol>
  * <p>
  * For components implementing {@link SelfConfiguring}, uses the {@link JsonConfig} constructor.

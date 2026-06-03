@@ -110,7 +110,7 @@ public class ParseContext implements Serializable {
      * <p>
      * Example:
      * <pre>
-     * parseContext.setJsonConfig("pdf-parser", () -&gt; "{\"ocrStrategy\": \"AUTO\"}");
+     * parseContext.setJsonConfig("pdf-parser", () -&gt; "{\"ocr\": {\"strategy\": \"AUTO\"}}");
      * parseContext.setJsonConfig("handler-config", () -&gt; "{\"type\": \"XML\"}");
      * </pre>
      *

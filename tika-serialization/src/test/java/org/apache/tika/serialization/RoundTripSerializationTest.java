@@ -66,7 +66,7 @@ public class RoundTripSerializationTest {
     @Test
     void testSingleConfigRoundTrip() throws Exception {
         ParseContext original = new ParseContext();
-        original.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\",\"extractInlineImages\":true}");
+        original.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"AUTO\"},\"extractInlineImages\":true}");
 
         String json = mapper.writeValueAsString(original);
         ParseContext reloaded = mapper.readValue(json, ParseContext.class);
@@ -80,7 +80,7 @@ public class RoundTripSerializationTest {
     @Test
     void testMultipleConfigsRoundTrip() throws Exception {
         ParseContext original = new ParseContext();
-        original.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
+        original.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"AUTO\"}}");
         original.setJsonConfig("html-parser", "{\"extractScripts\":false}");
         original.setJsonConfig("timeout-limits",
                 "{\"progressTimeoutMillis\":30000,\"totalTaskTimeoutMillis\":120000}");
@@ -116,7 +116,7 @@ public class RoundTripSerializationTest {
     @Test
     void testMultipleRoundTripsStability() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"NO_OCR\"}");
+        context.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"NO_OCR\"}}");
         context.setJsonConfig("timeout-limits",
                 "{\"progressTimeoutMillis\":45000,\"totalTaskTimeoutMillis\":180000}");
 
@@ -223,7 +223,7 @@ public class RoundTripSerializationTest {
         String wrappedJson = """
             {
               "parse-context": {
-                "pdf-parser": {"ocrStrategy": "AUTO"}
+                "pdf-parser": {"ocr": {"strategy": "AUTO"}}
               }
             }
             """;
@@ -238,7 +238,7 @@ public class RoundTripSerializationTest {
     void testFlatFormatPreferred() throws Exception {
         // Verify serialization uses flat format (no wrapper)
         ParseContext original = new ParseContext();
-        original.setJsonConfig("pdf-parser", "{\"ocrStrategy\":\"AUTO\"}");
+        original.setJsonConfig("pdf-parser", "{\"ocr\":{\"strategy\":\"AUTO\"}}");
 
         String json = mapper.writeValueAsString(original);
 

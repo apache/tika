@@ -69,10 +69,10 @@ import org.apache.tika.exception.TikaConfigException;
  * {
  *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
- *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO", ... } },
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocr": {"strategy": "AUTO"}, ... } },
  *     { "html-parser": { ... } },
  *     { "default-parser": { "exclude": ["some-parser"] } }
- *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocrStrategy": "AUTO" } },
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocr": {"strategy": "AUTO"} } },
  *     "html-parser",                    // String shorthand for no-config components
  *     { "default-parser": { "exclude": ["ocr-parser"] } }
  *   ],

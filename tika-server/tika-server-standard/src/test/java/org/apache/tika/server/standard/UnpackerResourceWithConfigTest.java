@@ -132,8 +132,10 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 {
                   "pdf-parser": {
                     "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
-                    "ocrImageType": "RGB",
-                    "ocrImageFormat": "TIFF"
+                    "ocr": {
+                      "imageType": "RGB",
+                      "imageFormat": "TIFF"
+                    }
                   }
                 }
                 """;
@@ -203,8 +205,10 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
                 {
                   "pdf-parser": {
                     "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
-                    "ocrImageType": "GRAY",
-                    "ocrImageFormat": "JPEG"
+                    "ocr": {
+                      "imageType": "GRAY",
+                      "imageFormat": "JPEG"
+                    }
                   }
                 }
                 """;
