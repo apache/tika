@@ -16,6 +16,7 @@
  */
 package org.apache.tika.cli;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -315,5 +318,61 @@ public class XmlToJsonConfigConverterTest {
         Parser parser = loader.loadParsers();
         assertNotNull(parser);
         assertTrue(parser instanceof CompositeParser);
+    }
+
+    @Test
+    public void testOcrNestedMapMergedWithLegacyFlatParams(@TempDir Path tempDir) throws Exception {
+        // A pdf-parser config that carries BOTH an explicit nested "ocr" map and
+        // legacy flat ocr* params. nestOcrParams must merge them into a single
+        // "ocr" object: explicitly-nested values win, and flat params only fill
+        // the keys the nested map doesn't supply (TIKA-4748 review follow-up).
+        String xmlConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<properties>\n" +
+                "    <parsers>\n" +
+                "        <parser class=\"org.apache.tika.parser.pdf.PDFParser\">\n" +
+                "            <params>\n" +
+                "                <param name=\"ocr\" type=\"map\">\n" +
+                "                    <strategy>NO_OCR</strategy>\n" +
+                "                </param>\n" +
+                "                <param name=\"ocrStrategy\" type=\"string\">OCR_AND_TEXT_EXTRACTION</param>\n" +
+                "                <param name=\"ocrDPI\" type=\"int\">200</param>\n" +
+                "            </params>\n" +
+                "        </parser>\n" +
+                "    </parsers>\n" +
+                "</properties>";
+
+        Path xmlPath = tempDir.resolve("pdf-ocr-merge.xml");
+        Path jsonPath = tempDir.resolve("pdf-ocr-merge.json");
+        Files.write(xmlPath, xmlConfig.getBytes(StandardCharsets.UTF_8));
+
+        XmlToJsonConfigConverter.convert(xmlPath, jsonPath);
+
+        // Locate the pdf-parser config object within the parsers list.
+        JsonNode root = new ObjectMapper().readTree(jsonPath.toFile());
+        JsonNode pdf = null;
+        for (JsonNode entry : root.get("parsers")) {
+            if (entry.has("pdf-parser")) {
+                pdf = entry.get("pdf-parser");
+                break;
+            }
+        }
+        assertNotNull(pdf, "pdf-parser entry should be present");
+
+        // Legacy flat ocr* keys must have moved out of the top-level parser config...
+        assertFalse(pdf.has("ocrStrategy"), "flat ocrStrategy should be nested, not left at top level");
+        assertFalse(pdf.has("ocrDPI"), "flat ocrDPI should be nested, not left at top level");
+
+        // ...and merged into the single nested "ocr" object.
+        JsonNode ocr = pdf.get("ocr");
+        assertNotNull(ocr, "merged nested ocr object should be present");
+        assertEquals("NO_OCR", ocr.get("strategy").asText(),
+                "explicit nested strategy must win over the legacy flat ocrStrategy");
+        assertEquals(200, ocr.get("dpi").asInt(),
+                "legacy flat ocrDPI must be migrated into ocr.dpi");
+
+        // The merged config must still load.
+        TikaLoader loader = TikaLoader.load(jsonPath);
+        Parser parser = loader.loadParsers();
+        assertNotNull(parser);
     }
 }

@@ -53,6 +53,11 @@ import org.apache.tika.utils.XMLReaderUtils;
  * Currently supports converting the "parsers" section of tika-config.xml files
  * for parsers in the tika-parsers-standard module.
  * <p>
+ * <strong>Best-effort starting point, not a complete translation.</strong> Only the
+ * {@code parsers} section is converted, and some 3.x options were genuinely removed or
+ * restructured in 4.x with no mechanical equivalent. Review the generated JSON before
+ * relying on it.
+ * <p>
  * Supports parameter types: bool, int, long, double, float, string, list, and map.
  * <p>
  * <strong>Special Case:</strong> TesseractOCR's {@code otherTesseractSettings} list
@@ -397,32 +402,32 @@ public class XmlToJsonConfigConverter {
      * {@code PDFParserConfig} ({@code OcrConfig}). The flat {@code ocr*} JSON keys were
      * removed in 4.x, so a verbatim copy would no longer load.
      */
-private static void nestOcrParams(Map<String, Object> config) {
-    Map<String, Object> ocr = new LinkedHashMap<>();
-
-    Object existingOcr = config.get("ocr");
-    if (existingOcr instanceof Map<?, ?> existingMap) {
-        for (Map.Entry<?, ?> e : existingMap.entrySet()) {
-            if (e.getKey() instanceof String k) {
-                ocr.put(k, e.getValue());
+    private static void nestOcrParams(Map<String, Object> config) {
+        Map<String, Object> ocr = new LinkedHashMap<>();
+        // Seed from an explicitly-configured nested "ocr" map (<param name="ocr" type="map">)
+        // so those values win; legacy flat ocr* params only fill keys it doesn't supply.
+        Object existingOcr = config.get("ocr");
+        if (existingOcr instanceof Map<?, ?> existingMap) {
+            for (Map.Entry<?, ?> e : existingMap.entrySet()) {
+                if (e.getKey() instanceof String k) {
+                    ocr.put(k, e.getValue());
+                }
             }
         }
-    }
 
-    Iterator<Map.Entry<String, Object>> it = config.entrySet().iterator();
-    while (it.hasNext()) {
-        Map.Entry<String, Object> entry = it.next();
-        String nestedKey = OCR_PARAM_TO_NESTED_KEY.get(entry.getKey());
-        if (nestedKey != null) {
-            // Preserve any explicitly-configured nested values
-            ocr.putIfAbsent(nestedKey, entry.getValue());
-            it.remove();
+        Iterator<Map.Entry<String, Object>> it = config.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Object> entry = it.next();
+            String nestedKey = OCR_PARAM_TO_NESTED_KEY.get(entry.getKey());
+            if (nestedKey != null) {
+                ocr.putIfAbsent(nestedKey, entry.getValue());
+                it.remove();
+            }
+        }
+        if (!ocr.isEmpty()) {
+            config.put("ocr", ocr);
         }
     }
-    if (!ocr.isEmpty()) {
-        config.put("ocr", ocr);
-    }
-}
 
     /**
      * Converts a &lt;params&gt; element to a map of parameter names to values.

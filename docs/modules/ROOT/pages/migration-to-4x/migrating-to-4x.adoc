@@ -64,6 +64,10 @@ The converter currently supports:
 * **Special handling** - TesseractOCR's `otherTesseractSettings` list is automatically
   converted to the `otherTesseractConfig` map format
 
+IMPORTANT: The converter is a starting point, not a complete translation. It handles only
+the `parsers` section, and some 3.x options were genuinely removed or restructured in 4.x
+with no mechanical equivalent. Review the generated JSON and confirm it loads before relying on it.
+
 === Example Conversion
 
 **XML Format (3.x):**
