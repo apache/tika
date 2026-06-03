@@ -65,6 +65,32 @@ Per-section documentation:
   `plugin-roots` — see xref:pipes/configuration.adoc[Pipes Configuration]
   and xref:pipes/index.adoc[Tika Pipes].
 
+== The `parsers` list and `default-parser`
+
+Tika configuration files are JSON, with optional support for `//` and `/* */` comments.
+
+A `parsers` list loads *only* the parsers it names — every other parser is dropped.
+To customize one parser while keeping all the others, add a `default-parser` entry:
+
+[source,json]
+----
+{
+  "parsers": [
+    { "pdf-parser": { "sortByPosition": true } },
+    { "default-parser": {} }
+  ]
+}
+----
+
+Configuring a parser automatically excludes its default copy, so there is no duplication.
+Omit `default-parser` only when you want a Tika limited to the parsers you listed.
+
+== Windows file paths
+
+JSON uses the backslash as an escape character, so path options (e.g. `tesseractPath`,
+`imageMagickPath`) must use forward slashes (`C:/Tools/...`) or escaped backslashes
+(`C:\\Tools\\...`). A single backslash is a JSON parse error.
+
 == Topics
 
 === Parser Configuration

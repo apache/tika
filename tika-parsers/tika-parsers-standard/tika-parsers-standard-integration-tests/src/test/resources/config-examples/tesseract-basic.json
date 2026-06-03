@@ -5,6 +5,10 @@
         "language": "eng",
         "timeoutSeconds": 120
       }
+    },
+    {
+      // Keep Tika's other default parsers. Without this, only image files are OCR'd.
+      "default-parser": {}
     }
   ]
 }

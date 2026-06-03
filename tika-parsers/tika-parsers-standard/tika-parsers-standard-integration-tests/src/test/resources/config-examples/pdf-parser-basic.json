@@ -5,6 +5,10 @@
         "extractInlineImages": true,
         "sortByPosition": true
       }
+    },
+    {
+      // Keep Tika's other default parsers. Without this, this config is PDF-only.
+      "default-parser": {}
     }
   ]
 }

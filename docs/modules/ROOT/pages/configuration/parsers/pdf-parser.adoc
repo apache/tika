@@ -29,8 +29,9 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 
 == Full Configuration
 
-The following example shows all available configuration options with their default values.
-Comments indicate the available options for enum fields.
+The example below lists every option with its default value and an inline comment describing
+it. It also includes a `default-parser` entry so the config works as-is; see
+xref:configuration/index.adoc[Configuration] for why that entry matters.
 
 [source,json]
 ----
