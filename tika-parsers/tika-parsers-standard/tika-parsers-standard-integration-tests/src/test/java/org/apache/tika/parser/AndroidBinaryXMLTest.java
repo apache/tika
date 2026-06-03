@@ -37,7 +37,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 /**
  * Android Binary XML (AXML) is the compiled binary form of AndroidManifest.xml and the
  * res/*.xml resources packed inside an APK. Those entries keep a .xml extension and live
- * inside the (zip) APK, so before TIKA-4748 the *.xml glob caused them to be detected as
+ * inside the (zip) APK, so before TIKA-4747 the *.xml glob caused them to be detected as
  * application/xml and handed to the XML parser, which failed on the binary header with
  * "Invalid byte 1 of 1-byte UTF-8 sequence". This was a large source of exceptions in
  * regression runs over APK-heavy corpora.

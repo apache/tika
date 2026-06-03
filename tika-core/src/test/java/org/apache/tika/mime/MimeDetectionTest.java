@@ -88,7 +88,7 @@ public class MimeDetectionTest {
 
         // Android Binary XML (compiled AndroidManifest.xml / res/*.xml inside an APK).
         // Carries a .xml extension, so magic must win over the *.xml glob and it must
-        // NOT be routed to application/xml / the XML parser. See TIKA-4748.
+        // NOT be routed to application/xml / the XML parser. See TIKA-4747.
         testFile("application/vnd.android.axml", "test-android-binary.xml");
     }
 
