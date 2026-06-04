@@ -53,7 +53,7 @@ results are collected into an `EncodingDetectorContext` on the
 | `MojibusterEncodingDetector`
 | `tika-encoding-detector-mojibuster`
 | Structural UTF-32 and UTF-16 detection, UTF-8 grammar gate, HTML
-  attribute-aware stripping, then a 33-class byte-bigram NB
+  attribute-aware stripping, then a 34-class byte-bigram NB
   classifier.  STRUCTURAL for structural hits; STATISTICAL for NB
   predictions.  See <<nb-pipeline>>.
 
@@ -135,6 +135,21 @@ sequences.  Three outcomes:
 * `AMBIGUOUS` — no complete multi-byte sequence (pure ASCII, or only
   a truncated lead at probe-end).  No emission.
 
+=== ISO-2022-JP/KR/CN structural detection (pure-ASCII branch)
+
+ISO-2022 encodings are 7-bit and escape-based (`ESC $ B`, `ESC $ ) C`, …),
+so they carry no high bytes and are invisible to the byte-bigram
+classifier; without a structural check a real ISO-2022-JP page would fall
+through to the windows-1252 default and decode to gibberish.  On a
+pure-ASCII probe — the only place ISO-2022 can occur — the pipeline scans
+for the ISO-2022 designation escape and, if found, *verifies* by decoding:
+the result must contain real CJK at a near-zero replacement rate.  The
+verify rejects a stray `ESC $` in ordinary ASCII (which yields no CJK).
+On success an ISO-2022-JP/KR/CN STRUCTURAL candidate is emitted.  High-byte
+binary that happens to contain an escape sequence never reaches this
+check — it fails the pure-ASCII gate and takes the normal NB path, so it
+cannot trigger a false ISO-2022 detection.
+
 === Layer 4 — HTML stripping (content-type aware)
 
 When the probe looks like HTML/XML (explicit content-type or unknown),
@@ -155,10 +170,10 @@ just content bytes for NB feature extraction.  Optimizations:
 
 === Layer 5 — Naive Bayes byte-bigram classifier
 
-33 classes: CJK multibyte (Big5-HKSCS, EUC-JP, GB18030, Shift_JIS,
+34 classes: CJK multibyte (Big5-HKSCS, EUC-JP, GB18030, Shift_JIS,
 x-EUC-TW, x-windows-949), EBCDIC family (IBM420/424-ltr/rtl, IBM500,
 IBM1047), DOS OEM (IBM850/852/855/866), Cyrillic (KOI8-R, KOI8-U),
-Windows single-byte (1250-1258, 874), ISO-8859-3/16, Mac (x-MacRoman,
+Windows single-byte (1250-1258, 874), ISO-8859-2/3/16, Mac (x-MacRoman,
 x-mac-cyrillic), and UTF-8.
 
 Features are **stride-1 byte bigrams** — for probe bytes `b[0..N]`,
@@ -212,9 +227,10 @@ every probe length we've measured.
 
 * **Empty / near-empty probes (< 2 bytes)** → windows-1252 @ 0.1
   confidence.  WHATWG default; never returns empty result.
-* **Pure ASCII probes** (no bytes ≥ 0x80, no nulls) → windows-1252.
-  Bigram NB cannot discriminate Latin code pages on pure-ASCII
-  content; return the HTML5-canonical answer directly.
+* **Pure ASCII probes** (no bytes ≥ 0x80, no nulls) → ISO-2022 structural
+  detection first (see above); otherwise windows-1252.  Bigram NB cannot
+  discriminate Latin code pages on pure-ASCII content; return the
+  HTML5-canonical answer directly.
 * **Latin-sibling → windows-1252 rewrite** — on low-evidence probes
   (< 5 high bytes), if the top NB candidate is a non-1252 member of
   the Latin family and the probe decodes byte-identically under
@@ -222,6 +238,34 @@ every probe length we've measured.
 * **MIN_EMIT_CONFIDENCE = 0.01** — noise candidates below this
   threshold are not emitted into the pool.  Prevents JunkFilter from
   scoring weak coincidence picks against NB's confident top.
+
+==== CJK decode-failure veto (`CjkDecodeValidator`)
+
+A legacy multi-byte CJK class (GB18030, Big5-HKSCS, Shift_JIS, EUC-JP,
+x-windows-949, x-EUC-TW) that NB picks on Latin/Cyrillic/garbage bytes is
+*false-CJK*: those bytes don't validate under the charset, so decoding
+produces many malformed/unmappable events, whereas real CJK decodes
+cleanly.  After NB, each legacy-CJK candidate is decoded under its vendor
+superset (`CharsetSupersets`) and its failure rate measured as
+`failures / high-bytes`; above ~2.5% the candidate is dropped — and if it
+was NB's only pick, the pool empties and windows-1252 wins.  Two
+corrections make the rate trustworthy:
+
+* **Decode under the vendor superset, not the strict base** — real
+  vendor-extension chars (NEC/IBM for Shift_JIS/EUC-JP, HKSCS for Big5)
+  would otherwise count as failures and penalize genuine CJK.
+* **Discount embedded UTF-8** — mixed-encoding pages (legacy CJK body +
+  UTF-8 widgets) would otherwise read as 2–9.5% failure.  The validator
+  walks the bytes and *skips* positions that begin a valid UTF-8 sequence
+  (it does NOT physically strip them — that would misalign a pure
+  legacy-CJK stream and manufacture failures), decoding the legacy charset
+  in place elsewhere.  Post-discount, real CJK (pure or mixed) is ≤1.6%
+  while genuine false-CJK stays ≥5.3%, so ~2.5% separates them.
+
+This veto catches *structurally-illegal* false-CJK only.  The
+*legal-but-wrong* class — Latin/Cyrillic bytes that form a *valid* CJK
+decode at ~0 failure — is the typicality layer's job (<<junk-filter>>),
+not this veto's.
 
 [[junk-filter]]
 == JunkFilterEncodingDetector — text-quality arbitration
@@ -260,6 +304,36 @@ For plain first-match-wins, omit JunkFilter (see <<opting-out-of-arbitration>>).
 . **All decodings identical, no DECLARATIVE** — abstain.
 . **Pairwise tournament** — first candidate seeds champion; each
   challenger compared via `JunkDetector.compare`; higher z-score wins.
+
+=== Post-tournament demote gates
+
+Two demote-only refinements run after the champion is chosen.  Each fires only
+to *demote* the champion across one boundary the whole-text z-score reads
+poorly under COMMON-dilution; neither can promote, so they cannot cost a
+confident detection.
+
+* **CJK family gate** — the whole-text z coin-flips on the CJK/non-CJK boundary
+  when markup and digits decode identically and swamp the few discriminating
+  high bytes.  A script-letter "diff" z — scored over only the `>= 0x80`
+  letters/ideographs, where candidates actually differ — reads that boundary
+  cleanly.  If the champion is CJK and the best non-CJK diff-z beats the best
+  CJK diff-z by `FAMILY_DIFF_MARGIN` (2.0), demote to the best non-CJK
+  candidate.  The reverse (promote to CJK) regressed at scale and is
+  unnecessary — genuine CJK is `<meta>`-declared upstream.
+
+* **Within-Latin letter gate** — among single-byte Latin siblings the z also
+  coin-flips, occasionally promoting a DOS-OEM / Mac charset (IBM850,
+  x-MacRoman) whose high bytes decode to box-drawing / symbols over the
+  windows-1252 truth.  Cased-letter count reads this where typicality cannot:
+  if the champion is a Latin SBCS, a windows-1252 candidate is present, the
+  probe is high-byte-dense, and windows-1252 decodes clearly more cased
+  high-byte letters (by a margin), demote to windows-1252.  Directional — a
+  genuine Central-European / DOS document has *more* letters under its true
+  charset, so the gate stays silent.  Latin-scoped, so it never crosses the
+  CJK boundary (the family gate's job) or touches a non-Latin SBCS, whose
+  Cyrillic/Greek cased letters would pollute the count.  Shares the
+  `HighByteLetterStats` letter counter with Mojibuster's Western-Latin sibling
+  fallback.
 
 === JunkDetector scoring
 
@@ -485,7 +559,7 @@ can't encode typographic characters).
   value, vocabulary size, and each trained bigram as
   `(uint16 bigram, int8 logP)` pairs.
 
-Files for the shipped 33-class model are ~1 MB on disk.  Loader
+Files for the shipped 34-class model are ~1 MB on disk.  Loader
 materializes a dense `logP8[65 536 × numClasses]` array filled with
 per-class unseen floors, overwritten by trained pairs.  Working-set
 memory: ~2 MB.
@@ -498,7 +572,7 @@ with feature hashing.  The move to NB was driven by:
 * **Speed**: direct bigram indexing removes the hash + bucket-lookup
   cost.  Inner loop is `score[c] += logP[b × numClasses + c] × idf[b]`
   with no branching (zero-IDF bigrams are skipped before the class
-  loop).  Measured ~15 µs on a full 1 KB probe for 33 classes.
+  loop).  Measured ~15 µs on a full 1 KB probe for 34 classes.
 * **Memory layout**: bigram-major byte arrays fit in L3 cache for the
   full table.  Sequential access through the hot loop is cache-line
   efficient.

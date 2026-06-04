@@ -42,6 +42,7 @@ import java.util.Map;
  *   <li>GB2312 → GB18030 (GB18030 is a strict superset of both GB2312 and GBK)</li>
  *   <li>GBK → GB18030 (GB18030 is a strict superset; enables 4-byte extension sequences)</li>
  *   <li>Shift_JIS → windows-31j (MS932 is a strict superset with NEC/IBM extensions)</li>
+ *   <li>EUC-JP → x-eucJP-Open (EUC packing of the NEC/IBM vendor extensions)</li>
  * </ul>
  */
 public final class CharsetSupersets {
@@ -59,6 +60,7 @@ public final class CharsetSupersets {
         m.put("GB2312",    "GB18030");
         m.put("GBK",       "GB18030");
         m.put("Shift_JIS", "windows-31j");
+        m.put("EUC-JP",    "x-eucJP-Open");
         SUPERSET_MAP = Collections.unmodifiableMap(m);
     }
 

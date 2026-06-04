@@ -478,7 +478,9 @@ public class MarkdownSummaryWriter {
                 "round(avg(cb.oov) - avg(ca.oov), 4) as OOV_DELTA, " +
                 "round(avg(ca.languageness), 2) as MEAN_LANG_A, " +
                 "round(avg(cb.languageness), 2) as MEAN_LANG_B, " +
-                "round(avg(cb.languageness) - avg(ca.languageness), 2) as LANG_DELTA " +
+                "round(avg(cb.languageness) - avg(ca.languageness), 2) as LANG_DELTA, " +
+                "round(avg(ca.num_replacement), 1) as MEAN_FFFD_A, " +
+                "round(avg(cb.num_replacement), 1) as MEAN_FFFD_B " +
                 "from contents_a ca " +
                 "join contents_b cb on ca.id = cb.id " +
                 "join profiles_a pa on ca.id = pa.id " +
@@ -498,6 +500,8 @@ public class MarkdownSummaryWriter {
                 "round(cb.oov - ca.oov, 4) as OOV_DELTA, " +
                 "round(ca.languageness, 2) as LANG_A, " +
                 "round(cb.languageness, 2) as LANG_B, " +
+                "ca.num_replacement as FFFD_A, " +
+                "cb.num_replacement as FFFD_B, " +
                 "ca.lang_id_1 as LANG_ID_A, " +
                 "cb.lang_id_1 as LANG_ID_B " +
                 "from contents_a ca " +
@@ -523,6 +527,8 @@ public class MarkdownSummaryWriter {
                 "round(cb.languageness - ca.languageness, 2) as LANG_DELTA, " +
                 "round(ca.oov, 4) as OOV_A, " +
                 "round(cb.oov, 4) as OOV_B, " +
+                "ca.num_replacement as FFFD_A, " +
+                "cb.num_replacement as FFFD_B, " +
                 "ca.lang_id_1 as LANG_ID_A, " +
                 "cb.lang_id_1 as LANG_ID_B " +
                 "from contents_a ca " +

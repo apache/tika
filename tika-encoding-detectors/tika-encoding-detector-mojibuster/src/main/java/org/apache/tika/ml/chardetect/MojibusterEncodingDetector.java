@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -124,6 +125,19 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final float UTF8_STRUCTURAL_CONF = 0.95f;
 
+    /** Confidence for an ISO-2022-JP/KR/CN structural candidate (7-bit, escape-based). */
+    private static final float ISO2022_STRUCTURAL_CONF = 0.95f;
+
+    /** ISO-2022 decode-verify: a stray {@code ESC $} in plain ASCII must not win, so
+     *  require the decode to yield real CJK at near-zero replacement rate. */
+    private static final int ISO2022_MIN_CJK = 4;
+    private static final double ISO2022_MAX_FFFD_RATE = 0.05;
+
+    /** False-CJK veto: drop an NB legacy-CJK candidate whose UTF-8-stripped decode
+     *  fails above this rate.  Post-strip, real CJK (pure or mixed) is ≤1.6% and
+     *  genuine false-CJK ≥5.3%, so ~2.5% separates them (see CjkDecodeValidator). */
+    private static final double CJK_FAILURE_VETO_THRESHOLD = 0.025;
+
     /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes. */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
@@ -212,7 +226,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     public List<EncodingResult> detect(byte[] probe, Metadata metadata) {
         if (LOG.isTraceEnabled()) {
             int probeLen = probe == null ? 0 : probe.length;
-            int highBytes = probe == null ? 0 : countHighBytes(probe);
+            int highBytes = probe == null ? 0 : HighByteLetterStats.countHighBytes(probe);
             LOG.trace("mojibuster enter probe={}B highBytes={}", probeLen, highBytes);
         }
         // Empty / near-empty probes: return the WHATWG default so
@@ -233,6 +247,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // consulting NB so we don't hand back a bias-driven x-MacRoman
         // or IBM850 pick.
         if (isPureAscii(probe)) {
+            // ISO-2022-JP/KR/CN are 7-bit escape-based encodings: NB sees no high
+            // bytes, so without this they fall to the windows-1252 default and
+            // decode to gibberish (a 4.x-vs-3.x regression; icu4j catches them).
+            // Gated to the pure-ASCII branch on purpose — high-byte binary that
+            // happens to contain an ESC sequence never reaches here, it takes the
+            // normal NB path.  decode-verify guards the rare 7-bit stray-ESC case.
+            Charset iso2022 = detectIso2022Verified(probe);
+            if (iso2022 != null) {
+                LOG.trace("mojibuster -> {} (iso-2022 structural)", iso2022.name());
+                return List.of(new EncodingResult(iso2022, ISO2022_STRUCTURAL_CONF,
+                        iso2022.name(), EncodingResult.ResultType.STRUCTURAL));
+            }
             LOG.trace("mojibuster -> windows-1252 fallback (pure ASCII)");
             return windows1252Fallback();
         }
@@ -327,7 +353,13 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
-        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8) {
+        // Emit a structural UTF-8 candidate when the grammar is clean (LIKELY)
+        // OR essentially-UTF-8 (NOT_UTF8 with malformed bytes within tolerance —
+        // a few corrupt bytes in otherwise-valid UTF-8).  Both exclude legacy
+        // CJK, which produces many grammar errors (measured: 0/321K labeled CJK
+        // samples return LIKELY or fall within tolerance).  The type-priority
+        // sort in sortAndDedup then ranks this above NB's statistical pick.
+        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8 || utf8Tolerated) {
             pool.add(new EncodingResult(
                     java.nio.charset.StandardCharsets.UTF_8,
                     UTF8_STRUCTURAL_CONF, "UTF-8",
@@ -360,6 +392,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                     && utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8
                     && !utf8Tolerated) {
                 continue;
+            }
+            // False-CJK veto: a legacy multi-byte CJK pick whose bytes don't
+            // validate (high decode-failure on the UTF-8-stripped remainder) is
+            // Latin/Cyrillic/garbage mis-read as CJK.  Drop it — if it was NB's
+            // only candidate the pool empties and the windows-1252 fallback wins.
+            if (CjkDecodeValidator.appliesTo(name)) {
+                double failRate = CjkDecodeValidator.strippedFailureRate(nbInput, r.getCharset());
+                if (failRate >= CJK_FAILURE_VETO_THRESHOLD) {
+                    LOG.trace("mojibuster veto {} (cjk decode-failure {}%)", name,
+                            String.format(Locale.ROOT, "%.2f", failRate * 100));
+                    continue;
+                }
             }
             pool.add(r);
         }
@@ -402,6 +446,50 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         Charset cs = Charset.forName(WIN1252);
         return List.of(new EncodingResult(cs, FALLBACK_CONFIDENCE, WIN1252,
                 EncodingResult.ResultType.STATISTICAL));
+    }
+
+    /**
+     * Detect ISO-2022-JP/KR/CN by escape sequence, then verify the decode is
+     * real CJK (not a stray {@code ESC $} in ASCII text).  Returns the charset
+     * or {@code null}.  Caller guarantees {@code probe} is pure 7-bit ASCII.
+     */
+    private static Charset detectIso2022Verified(byte[] probe) {
+        Charset cs = StructuralEncodingRules.detectIso2022(probe);
+        if (cs == null) {
+            return null;
+        }
+        String decoded;
+        try {
+            decoded = new String(probe, cs); // REPLACE on malformed/unmappable
+        } catch (Exception e) {
+            return null;
+        }
+        int cjk = 0;
+        int fffd = 0;
+        for (int i = 0; i < decoded.length(); ) {
+            int cp = decoded.codePointAt(i);
+            i += Character.charCount(cp);
+            if (cp == 0xFFFD) {
+                fffd++;
+            } else if (isCjkChar(cp)) {
+                cjk++;
+            }
+        }
+        if (cjk >= ISO2022_MIN_CJK
+                && fffd <= decoded.length() * ISO2022_MAX_FFFD_RATE) {
+            return cs;
+        }
+        return null;
+    }
+
+    /** Han / kana / hangul / CJK punctuation — the scripts ISO-2022-JP/KR/CN carry. */
+    private static boolean isCjkChar(int cp) {
+        return (cp >= 0x3040 && cp <= 0x30FF)     // hiragana + katakana
+                || (cp >= 0x4E00 && cp <= 0x9FFF) // CJK unified
+                || (cp >= 0x3400 && cp <= 0x4DBF) // CJK ext A
+                || (cp >= 0xAC00 && cp <= 0xD7A3) // hangul syllables
+                || (cp >= 0xFF66 && cp <= 0xFF9F) // halfwidth katakana
+                || (cp >= 0x3000 && cp <= 0x303F); // CJK symbols/punctuation
     }
 
     /**
@@ -542,8 +630,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             return ranked;
         }
         Charset win1252 = Charset.forName(WIN1252);
-        int winLetters = countHighByteLetters(probe, win1252);
-        int topLetters = countHighByteLetters(probe, top.getCharset());
+        int winLetters = HighByteLetterStats.countCasedHighByteLetters(probe, win1252);
+        int topLetters = HighByteLetterStats.countCasedHighByteLetters(probe, top.getCharset());
         // Tie goes to windows-1252 (WHATWG-canonical default).
         if (winLetters < topLetters) {
             return ranked;
@@ -558,85 +646,23 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     /**
-     * Decode the probe under {@code cs} and count codepoints that
-     * are Unicode "cased letters" (Lu / Ll / Lt) at codepoints &ge;
-     * 0x80.  Used by the Latin sibling fallback to compare decoded-
-     * text quality between two candidate SBCS encodings.
-     *
-     * <p>Deliberately excludes a few "letter-ish but typographic"
-     * categories that {@link Character#isLetter(int)} would otherwise
-     * count, because they fooled the rule in earlier evals:</p>
-     * <ul>
-     *   <li><b>Modifier letters (Lm)</b>: spacing-modifier letterlike
-     *       symbols (ʰ ʷ ˆ ˜ ʻ etc.) that some encodings put at
-     *       byte positions where the truthful encoding has a symbol /
-     *       punctuation.</li>
-     *   <li><b>Ordinal indicators</b>: U+00AA (ª), U+00BA (º),
-     *       U+207F (ⁿ), U+2122 (™ — not Ll, included for safety).
-     *       MacRoman's 0xBB and 0xBC are ª / º respectively; the
-     *       windows-1252 truth for byte 0xBB is » (final punctuation,
-     *       not a letter).  Without this exclusion, MacRoman's
-     *       letter count beats win-1252's on probes where » appears.</li>
-     *   <li><b>Other letter (Lo)</b>: covers CJK / Korean letterlike
-     *       codepoints that occasionally fall out of byte-level
-     *       decodes; counting those as "Latin letters" would mislead
-     *       the Latin-sibling comparison.</li>
-     * </ul>
-     */
-    private static int countHighByteLetters(byte[] probe, Charset cs) {
-        String decoded;
-        try {
-            decoded = new String(probe, cs);
-        } catch (Exception e) {
-            return 0;
-        }
-        int count = 0;
-        for (int i = 0; i < decoded.length(); ) {
-            int cp = decoded.codePointAt(i);
-            if (cp >= 0x80 && isCasedLatinishLetter(cp)) {
-                count++;
-            }
-            i += Character.charCount(cp);
-        }
-        return count;
-    }
-
-    /**
-     * Returns true for codepoints in Unicode's "cased letter"
-     * categories (Lu / Ll / Lt) but EXCLUDING specific letterlike
-     * typographic symbols (ª, º, ⁿ).  See {@link #countHighByteLetters}.
-     */
-    private static boolean isCasedLatinishLetter(int cp) {
-        if (cp == 0x00AA || cp == 0x00BA || cp == 0x207F) {
-            return false; // ª, º, ⁿ — ordinal / superscript indicators
-        }
-        int type = Character.getType(cp);
-        return type == Character.UPPERCASE_LETTER
-                || type == Character.LOWERCASE_LETTER
-                || type == Character.TITLECASE_LETTER;
-    }
-
-    private static int countHighBytes(byte[] probe) {
-        int n = 0;
-        for (byte b : probe) {
-            if ((b & 0xFF) >= 0x80) {
-                n++;
-            }
-        }
-        return n;
-    }
-
-    /**
-     * Sort pool by confidence descending, deduplicate by charset name
-     * keeping the highest-confidence instance.  Stable ordering is
-     * good enough for current needs; if we need trust-type tiebreaks
-     * (STRUCTURAL > DECLARATIVE > STATISTICAL) later, add here.
+     * Sort pool by trust type (STRUCTURAL &gt; DECLARATIVE &gt; STATISTICAL),
+     * then by confidence within a type, and deduplicate by charset name keeping
+     * the first (highest-priority) instance.  Type priority is load-bearing:
+     * NB pins its statistical winner to confidence 1.0, so a structural
+     * candidate (UTF-8 grammar proof, UTF-32 codepoint validity) emitted below
+     * 1.0 would otherwise lose the sort to NB despite being the stronger signal.
      */
     private static List<EncodingResult> sortAndDedup(List<EncodingResult> pool) {
         if (pool.isEmpty()) {
             return Collections.emptyList();
         }
-        pool.sort((a, b) -> Float.compare(b.getConfidence(), a.getConfidence()));
+        pool.sort((a, b) -> {
+            int byType = Integer.compare(typeRank(a.getResultType()),
+                    typeRank(b.getResultType()));
+            return byType != 0 ? byType
+                    : Float.compare(b.getConfidence(), a.getConfidence());
+        });
         java.util.Set<String> seen = new java.util.LinkedHashSet<>();
         List<EncodingResult> out = new java.util.ArrayList<>(pool.size());
         for (EncodingResult r : pool) {
@@ -645,6 +671,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         return out;
+    }
+
+    /** Trust-type priority for sorting: lower wins. */
+    private static int typeRank(EncodingResult.ResultType t) {
+        switch (t) {
+            case STRUCTURAL:
+                return 0;
+            case DECLARATIVE:
+                return 1;
+            default:
+                return 2;
+        }
     }
 
     /**

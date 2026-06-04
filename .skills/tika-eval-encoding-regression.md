@@ -123,6 +123,41 @@ WHERE <enc_a/enc_b filter as above>
 ORDER BY delta ASC LIMIT 15;
 ```
 
+## Reading the signals — OOV, languageness, and FFFD together
+
+No single signal is authoritative. Use `oov` as a **secondary** signal alongside
+`languageness` (the junk-model coherence z-score) and the U+FFFD rate — each is
+right where the others are blind, so cross-check rather than ranking on any one.
+(Established 2026-06-03: a 40-file OOV-"worse" set was mostly metric artifacts
+once languageness/FFFD were brought in — only ~6 were real. But OOV is also the
+*correct* signal where languageness is blind, so neither dominates.)
+
+- **OOV can mislead** when langid shifts — a CJK/UTF-8 recovery in B is scored
+  against a different vocab → higher OOV though B is right — or when a wrong
+  decode fragments words into more short common tokens (→ higher count for the
+  WORSE decode). A common-token delta is a signal, not proof.
+- **languageness can mislead** on SBCS↔SBCS cross-script mojibake — Greek decoded
+  as KOI8-R is "coherent" Cyrillic, so `languageness` stays flat while `oov`
+  correctly flags it. Conversely languageness catches OOV's CJK/script-recovery
+  blind spot. Each covers the other's blind spot.
+- **FFFD rate** flags decode failures (illegal bytes): `num_replacement /
+  num_non_ascii` (un-diluted; `/ content_length` dilutes to ~0 on ASCII-heavy
+  docs). Tika strips C0 controls at extraction, so legal-but-wrong (C1) mojibake
+  does not surface here — that signal belongs in the detector chain, not the eval.
+- **In practice:** when the signals agree, high confidence; when they disagree
+  (OOV-worse but languageness-better, or vice versa), that file needs a look —
+  the disagreement points you at WHICH files to inspect, it does not by itself
+  declare OOV or languageness "wrong." Split OOV-worse by languageness direction
+  (query in `tika-eval-regression.adoc`).
+
+### Isolate a change against the PRIOR run, not just 3.x
+
+To see what one chain change actually did, Compare the new run against the
+*previous* 4.x run (B-new vs B-prior), not only vs 3.x. The diff should be
+*surgical* — e.g. the within-Latin letter gate moved exactly 6 files
+(IBM850 / x-MacRoman → windows-1252) vs the prior run and nothing else. A
+bigger-than-expected diff means the change fired more broadly than intended.
+
 ## Per-file detector attribution (`X-TIKA:encodingDetectionTrace`)
 
 Every JSON extract from a chain with multiple detectors carries

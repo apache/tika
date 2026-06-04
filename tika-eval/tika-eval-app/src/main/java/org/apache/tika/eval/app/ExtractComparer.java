@@ -68,6 +68,8 @@ public class ExtractComparer extends ProfilerBase {
     public static TableInfo EMBEDDED_FILE_PATH_TABLE_B = new TableInfo("emb_path_b", ExtractProfiler.EMBEDDED_FILE_PATH_TABLE.getColInfos());
     public static TableInfo CONTENTS_TABLE_A = new TableInfo("contents_a", ExtractProfiler.CONTENTS_TABLE.getColInfos());
     public static TableInfo CONTENTS_TABLE_B = new TableInfo("contents_b", ExtractProfiler.CONTENTS_TABLE.getColInfos());
+    public static TableInfo ENCODINGS_TABLE_A = new TableInfo("encodings_a", ExtractProfiler.ENCODINGS_TABLE.getColInfos());
+    public static TableInfo ENCODINGS_TABLE_B = new TableInfo("encodings_b", ExtractProfiler.ENCODINGS_TABLE.getColInfos());
     public static TableInfo TAGS_TABLE_A = new TableInfo("tags_a", ExtractProfiler.TAGS_TABLE.getColInfos());
     public static TableInfo TAGS_TABLE_B = new TableInfo("tags_b", ExtractProfiler.TAGS_TABLE.getColInfos());
     public static TableInfo EXCEPTION_TABLE_A = new TableInfo("exceptions_a", ExtractProfiler.EXCEPTION_TABLE.getColInfos());
@@ -207,6 +209,7 @@ public class ExtractComparer extends ProfilerBase {
                 writeTagData(fileId, contentTagsA, TAGS_TABLE_A);
 
                 writeProfileData(fpsA, i, contentTagsA, metadataA, fileId, containerID, numAttachmentsA, PROFILES_A);
+                writeEncodingData(fileId, metadataA, ENCODINGS_TABLE_A);
                 writeExceptionData(fileId, metadataA, EXCEPTION_TABLE_A);
                 int matchIndex = getMatch(i, sharedDigestKey, emptyDigest, handledB, metadataListA, metadataListB);
 
@@ -218,6 +221,7 @@ public class ExtractComparer extends ProfilerBase {
                     contentTagsB = getContent(fpsB, metadataB);
                     writeTagData(fileId, contentTagsB, TAGS_TABLE_B);
                     writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
+                    writeEncodingData(fileId, metadataB, ENCODINGS_TABLE_B);
                     writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
                 }
                 writeEmbeddedFilePathData(i, fileId, metadataA, metadataB);
@@ -263,6 +267,7 @@ public class ExtractComparer extends ProfilerBase {
                 String fileId = (i == 0) ? containerID : Integer.toString(ID.getAndIncrement());
                 writeTagData(fileId, contentTagsB, TAGS_TABLE_B);
                 writeProfileData(fpsB, i, contentTagsB, metadataB, fileId, containerID, numAttachmentsB, PROFILES_B);
+                writeEncodingData(fileId, metadataB, ENCODINGS_TABLE_B);
                 writeEmbeddedFilePathData(i, fileId, null, metadataB);
                 writeExceptionData(fileId, metadataB, EXCEPTION_TABLE_B);
 

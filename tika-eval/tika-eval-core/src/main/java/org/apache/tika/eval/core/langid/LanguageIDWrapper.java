@@ -38,8 +38,22 @@ public class LanguageIDWrapper implements StringStatsCalculator<List<LanguageRes
     public List<LanguageResult> calculate(String txt) {
         CharSoupLanguageDetector detector = new CharSoupLanguageDetector();
         detector.setMaxLength(MAX_TEXT_LENGTH);
-        detector.addText(txt);
+        detector.addText(normalizeWhitespace(txt));
         return detector.detectAll();
+    }
+
+    /**
+     * Collapse whitespace runs and trim before langid: the truncation window
+     * counts whitespace, so extracts differing only in whitespace can flip the
+     * detected language and pick different common-token dictionaries in an A/B
+     * eval. CharSoup features are whitespace-invariant, so this only stabilizes
+     * the window, not the scoring.
+     */
+    static String normalizeWhitespace(String txt) {
+        if (txt == null) {
+            return "";
+        }
+        return txt.replaceAll("\\s+", " ").trim();
     }
 
 

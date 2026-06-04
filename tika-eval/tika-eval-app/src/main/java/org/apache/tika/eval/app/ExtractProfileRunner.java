@@ -256,6 +256,7 @@ public class ExtractProfileRunner {
             tableInfos.add(ExtractProfiler.EXTRACT_EXCEPTION_TABLE);
             tableInfos.add(ExtractProfiler.EXCEPTION_TABLE);
             tableInfos.add(ExtractProfiler.CONTENTS_TABLE);
+            tableInfos.add(ExtractProfiler.ENCODINGS_TABLE);
             tableInfos.add(ExtractProfiler.TAGS_TABLE);
             tableInfos.add(ExtractProfiler.EMBEDDED_FILE_PATH_TABLE);
             this.tableInfos = Collections.unmodifiableList(tableInfos);
