@@ -61,8 +61,7 @@ public class AndroidBinaryXMLTest extends TikaTest {
         ByteBuffer bb = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
         bb.putShort((short) 0x0003);   // RES_XML_TYPE
         bb.putShort((short) 0x0008);   // headerSize
-        bb.putInt(0x00000038);         // string pool chunk size
-        // remaining bytes (string/style counts, flags, offsets) left zero
+        bb.putInt(0x00000038);         // chunk size (bytes)
         return bb.array();
     }
 
