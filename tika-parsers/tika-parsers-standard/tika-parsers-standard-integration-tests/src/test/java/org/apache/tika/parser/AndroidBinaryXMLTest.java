@@ -63,7 +63,7 @@ public class AndroidBinaryXMLTest extends TikaTest {
         bb.putInt(64);                 // total chunk size == file length (skipped by magic)
         bb.putShort((short) 0x0001);   // RES_STRING_POOL_TYPE (checked at offset 8)
         bb.putShort((short) 0x001C);   // string-pool headerSize
-        bb.putInt(0x0000003C);         // string-pool chunk size
+        bb.putInt(0x00000038);         // string-pool chunk size == 64 - 8 (spans offset 8..EOF)
         // remaining bytes (string/style counts, flags, offsets) left zero
         return bb.array();
     }
