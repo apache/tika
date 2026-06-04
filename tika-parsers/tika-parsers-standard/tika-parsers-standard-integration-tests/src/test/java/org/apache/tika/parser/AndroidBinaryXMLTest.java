@@ -52,16 +52,18 @@ public class AndroidBinaryXMLTest extends TikaTest {
     private static final String AXML = "application/vnd.android.axml";
 
     /**
-     * Minimal but structurally-plausible Android Binary XML header:
-     * ResChunk_header {type=RES_XML_TYPE(0x0003), headerSize=0x0008, size=&lt;total&gt;}
-     * followed by a zeroed ResStringPool_header. Only the leading 4 bytes (0x00080003 LE)
-     * are the detection signature; the following 4 bytes are the per-file size.
+     * Minimal compiled-AXML header: a RES_XML_TYPE ResChunk_header plus the ResStringPool
+     * chunk real AXML always carries. The magic matches 0x00080003 (LE) at offset 0 and the
+     * string-pool type 0x0001 at offset 8, so both must be present.
      */
     private static byte[] axmlBytes() {
         ByteBuffer bb = ByteBuffer.allocate(64).order(ByteOrder.LITTLE_ENDIAN);
         bb.putShort((short) 0x0003);   // RES_XML_TYPE
         bb.putShort((short) 0x0008);   // headerSize
-        bb.putInt(0x00000038);         // string pool chunk size
+        bb.putInt(64);                 // total chunk size == file length (skipped by magic)
+        bb.putShort((short) 0x0001);   // RES_STRING_POOL_TYPE (checked at offset 8)
+        bb.putShort((short) 0x001C);   // string-pool headerSize
+        bb.putInt(0x0000003C);         // string-pool chunk size
         // remaining bytes (string/style counts, flags, offsets) left zero
         return bb.array();
     }
