@@ -209,7 +209,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.config = config;
         this.renderer = renderer;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (config.getOcrStrategy() == NO_OCR) {
+        if (config.getOcr().getStrategy() == NO_OCR) {
             ocrParser = null;
         } else {
             ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
@@ -557,11 +557,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         // Enforce maxPagesToOcr limit
-        int maxPagesToOcr = config.getOcrMaxPagesToOcr();
+        int maxPagesToOcr = config.getOcr().getMaxPagesToOcr();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
             return;
         }
-        MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcrImageFormat().getFormatName());
+        MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName());
         if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
@@ -624,7 +624,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Renderer thisRenderer = getPDFRenderer(renderer);
         //if there's a configured renderer and if the rendering strategy is "all"
         if (thisRenderer != null &&
-                config.getOcrRenderingStrategy() == OcrConfig.RenderingStrategy.ALL) {
+                config.getOcr().getRenderingStrategy() == OcrConfig.RenderingStrategy.ALL) {
             PageRangeRequest pageRangeRequest =
                     new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
@@ -673,7 +673,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                                                     TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderer renderer = null;
-        switch (config.getOcrRenderingStrategy()) {
+        switch (config.getOcr().getRenderingStrategy()) {
             case NO_TEXT:
                 renderer = new NoTextPDFRenderer(pdDocument);
                 break;
@@ -688,7 +688,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 break;
         }
 
-        int dpi = config.getOcrDPI();
+        int dpi = config.getOcr().getDpi();
         Path tmpFile = null;
 
         RenderingTracker renderingTracker = parseContext.get(RenderingTracker.class);
@@ -701,7 +701,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try {
             // Check estimated pixel dimensions before rendering to
             // prevent OOM on pathologically large pages
-            long maxPixels = config.getOcrMaxImagePixels();
+            long maxPixels = config.getOcr().getMaxImagePixels();
             if (maxPixels > 0) {
                 PDPage currentPage = pdDocument.getPage(pageIndex);
                 PDRectangle mediaBox = currentPage.getMediaBox();
@@ -720,14 +720,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
 
             BufferedImage image =
-                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcrImageType().getPdfBoxImageType());
+                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcr().getImageType().getPdfBoxImageType());
 
             //TODO -- get suffix based on OcrImageType
             tmpFile = tmpResources.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOcrImageFormat().getFormatName(), os, dpi,
-                        config.getOcrImageQuality());
+                ImageIOUtil.writeImage(image, config.getOcr().getImageFormat().getFormatName(), os, dpi,
+                        config.getOcr().getImageQuality());
             }
         } catch (SecurityException e) {
             //throw SecurityExceptions immediately
@@ -754,21 +754,21 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
-            if (config.getOcrStrategy() == OCR_AND_TEXT_EXTRACTION) {
+            if (config.getOcr().getStrategy() == OCR_AND_TEXT_EXTRACTION) {
                 doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
-            } else if (config.getOcrStrategy() == AUTO) {
+            } else if (config.getOcr().getStrategy() == AUTO) {
                 boolean unmappedExceedsLimit = false;
-                if (totalCharsPerPage > config.getOcrStrategyAuto().getTotalCharsPerPage()) {
+                if (totalCharsPerPage > config.getOcr().getStrategyAuto().getTotalCharsPerPage()) {
                     // There are enough characters to not have to do OCR.  Check number of unmapped characters
                     final float percentUnmapped =
                             (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
                     final float unmappedCharacterLimit =
-                            config.getOcrStrategyAuto().getUnmappedUnicodeCharsPerPage();
+                            config.getOcr().getStrategyAuto().getUnmappedUnicodeCharsPerPage();
                     unmappedExceedsLimit = (unmappedCharacterLimit < 1) ?
                             percentUnmapped > unmappedCharacterLimit :
                             unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
                 }
-                if (totalCharsPerPage <= config.getOcrStrategyAuto().getTotalCharsPerPage() ||
+                if (totalCharsPerPage <= config.getOcr().getStrategyAuto().getTotalCharsPerPage() ||
                         unmappedExceedsLimit) {
                     doOCROnCurrentPage(page, AUTO);
                 }

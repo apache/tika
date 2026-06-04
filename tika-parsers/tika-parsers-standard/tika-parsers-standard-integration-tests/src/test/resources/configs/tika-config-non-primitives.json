@@ -3,8 +3,10 @@
     {
       "pdf-parser": {
         "sortByPosition": true,
-        "ocrImageType": "RGB",
-        "ocrStrategy": "OCR_ONLY"
+        "ocr": {
+          "imageType": "RGB",
+          "strategy": "OCR_ONLY"
+        }
       }
     }
   ]

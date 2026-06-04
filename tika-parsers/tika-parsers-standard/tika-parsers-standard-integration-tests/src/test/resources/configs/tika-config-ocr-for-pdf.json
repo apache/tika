@@ -11,7 +11,9 @@
     {
       "pdf-parser": {
         "extractInlineImages": false,
-        "ocrStrategy": "OCR_ONLY"
+        "ocr": {
+          "strategy": "OCR_ONLY"
+        }
       }
     }
   ]

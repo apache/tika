@@ -36,7 +36,7 @@ public class TSDParserTest extends TikaTest {
     public void testBrokenPdf() throws Exception {
         ParseContext parseContext = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
-        config.setOcrStrategy(OcrConfig.Strategy.NO_OCR);
+        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
         parseContext.set(PDFParserConfig.class, config);
         //make sure that embedded file appears in list
         //and make sure embedded exception is recorded

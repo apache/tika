@@ -336,7 +336,9 @@ public class UnpackerResourceTest extends CXFTestBase {
         String configJson = """
                 {
                   "pdf-parser": {
-                    "ocrStrategy": "OCR_ONLY"
+                    "ocr": {
+                      "strategy": "OCR_ONLY"
+                    }
                   }
                 }
                 """;
@@ -369,7 +371,9 @@ public class UnpackerResourceTest extends CXFTestBase {
                 {
                   "pdf-parser": {
                     "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
-                    "ocrImageType": "RGB"
+                    "ocr": {
+                      "imageType": "RGB"
+                    }
                   }
                 }
                 """;

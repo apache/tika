@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -51,6 +52,11 @@ import org.apache.tika.utils.XMLReaderUtils;
  * <p>
  * Currently supports converting the "parsers" section of tika-config.xml files
  * for parsers in the tika-parsers-standard module.
+ * <p>
+ * <strong>Best-effort starting point, not a complete translation.</strong> Only the
+ * {@code parsers} section is converted, and some 3.x options were genuinely removed or
+ * restructured in 4.x with no mechanical equivalent. Review the generated JSON before
+ * relying on it.
  * <p>
  * Supports parameter types: bool, int, long, double, float, string, list, and map.
  * <p>
@@ -367,9 +373,60 @@ public class XmlToJsonConfigConverter {
             config.put("exclude", excludes);
         }
 
+        if ("pdf-parser".equals(componentName)) {
+            // 4.x PDFParserConfig groups OCR settings under a nested "ocr" object
+            // (OcrConfig); the legacy flat ocr* keys were removed.
+            nestOcrParams(config);
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         result.put(componentName, config);
         return result;
+    }
+
+    // Maps the legacy flat PDFParser ocr* params to their nested OcrConfig keys.
+    private static final Map<String, String> OCR_PARAM_TO_NESTED_KEY = Map.ofEntries(
+            Map.entry("ocrStrategy", "strategy"),
+            Map.entry("ocrStrategyAuto", "strategyAuto"),
+            Map.entry("ocrRenderingStrategy", "renderingStrategy"),
+            Map.entry("ocrImageFormat", "imageFormat"),
+            Map.entry("ocrImageType", "imageType"),
+            Map.entry("ocrDPI", "dpi"),
+            Map.entry("ocrImageQuality", "imageQuality"),
+            Map.entry("ocrMaxImagePixels", "maxImagePixels"),
+            Map.entry("ocrMaxPagesToOcr", "maxPagesToOcr"));
+
+    /**
+     * Moves the legacy flat {@code ocr*} PDFParser params (e.g. {@code ocrStrategy},
+     * {@code ocrDPI}) into the nested {@code "ocr"} object used by 4.x
+     * {@code PDFParserConfig} ({@code OcrConfig}). The flat {@code ocr*} JSON keys were
+     * removed in 4.x, so a verbatim copy would no longer load.
+     */
+    private static void nestOcrParams(Map<String, Object> config) {
+        Map<String, Object> ocr = new LinkedHashMap<>();
+        // Seed from an explicitly-configured nested "ocr" map (<param name="ocr" type="map">)
+        // so those values win; legacy flat ocr* params only fill keys it doesn't supply.
+        Object existingOcr = config.get("ocr");
+        if (existingOcr instanceof Map<?, ?> existingMap) {
+            for (Map.Entry<?, ?> e : existingMap.entrySet()) {
+                if (e.getKey() instanceof String k) {
+                    ocr.put(k, e.getValue());
+                }
+            }
+        }
+
+        Iterator<Map.Entry<String, Object>> it = config.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, Object> entry = it.next();
+            String nestedKey = OCR_PARAM_TO_NESTED_KEY.get(entry.getKey());
+            if (nestedKey != null) {
+                ocr.putIfAbsent(nestedKey, entry.getValue());
+                it.remove();
+            }
+        }
+        if (!ocr.isEmpty()) {
+            config.put("ocr", ocr);
+        }
     }
 
     /**

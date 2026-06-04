@@ -9,9 +9,11 @@
         "accessCheckMode": "ALLOW_EXTRACTION_FOR_ACCESSIBILITY",
         "catchIntermediateIOExceptions": false,
         "extractUniqueInlineImagesOnly": false,
-        "ocrDPI": 314,
-        "ocrImageQuality": 2.1,
-        "ocrImageFormat": "JPEG",
+        "ocr": {
+          "dpi": 314,
+          "imageQuality": 2.1,
+          "imageFormat": "JPEG"
+        },
         "maxMainMemoryBytes": 524288000
       }
     }

@@ -213,7 +213,7 @@ public class PDFParser implements Parser, RenderingParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOcrStrategy()
+                } else if (localConfig.getOcr().getStrategy()
                         .equals(OcrConfig.Strategy.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig, renderer);
@@ -432,7 +432,7 @@ public class PDFParser implements Parser, RenderingParser {
             return true;
         }
 
-        if (localConfig.getOcrStrategy() == OcrConfig.Strategy.NO_OCR) {
+        if (localConfig.getOcr().getStrategy() == OcrConfig.Strategy.NO_OCR) {
             return false;
         }
         //TODO: test that this is not AUTO with no OCR parser installed
@@ -751,9 +751,9 @@ public class PDFParser implements Parser, RenderingParser {
         }
         //set a default renderer if nothing was defined
         PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
-        pdfBoxRenderer.setDPI(config.getOcrDPI());
-        pdfBoxRenderer.setImageType(config.getOcrImageType().getPdfBoxImageType());
-        pdfBoxRenderer.setImageFormatName(config.getOcrImageFormat().getFormatName());
+        pdfBoxRenderer.setDPI(config.getOcr().getDpi());
+        pdfBoxRenderer.setImageType(config.getOcr().getImageType().getPdfBoxImageType());
+        pdfBoxRenderer.setImageFormatName(config.getOcr().getImageFormat().getFormatName());
         this.renderer = pdfBoxRenderer;
     }
 

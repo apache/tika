@@ -202,7 +202,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         if (pdfParserConfig == null) {
             return defaultDPI;
         }
-        return pdfParserConfig.getOcrDPI();
+        return pdfParserConfig.getOcr().getDpi();
     }
 
     protected ImageType getImageType(ParseContext parseContext) {
@@ -210,7 +210,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         if (pdfParserConfig == null) {
             return defaultImageType;
         }
-        return pdfParserConfig.getOcrImageType().getPdfBoxImageType();
+        return pdfParserConfig.getOcr().getImageType().getPdfBoxImageType();
     }
 
     protected String getImageFormatName(ParseContext parseContext) {
@@ -218,6 +218,6 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         if (pdfParserConfig == null) {
             return defaultImageFormatName;
         }
-        return pdfParserConfig.getOcrImageFormat().getFormatName();
+        return pdfParserConfig.getOcr().getImageFormat().getFormatName();
     }
 }

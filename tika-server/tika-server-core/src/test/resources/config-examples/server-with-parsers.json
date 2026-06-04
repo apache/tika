@@ -9,7 +9,9 @@
     {
       "pdf-parser": {
         "extractInlineImages": true,
-        "ocrStrategy": "AUTO"
+        "ocr": {
+          "strategy": "AUTO"
+        }
       }
     },
     {

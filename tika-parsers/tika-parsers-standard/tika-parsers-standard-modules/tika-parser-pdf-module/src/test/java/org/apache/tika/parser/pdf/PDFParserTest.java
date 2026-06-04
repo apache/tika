@@ -1160,8 +1160,8 @@ public class PDFParserTest extends TikaTest {
         //this tests that a new PDFParserConfig completely resets
         //behavior
         config = new PDFParserConfig();
-        config.setOcrDPI(10000);
-        config.setOcrStrategy(OcrConfig.Strategy.NO_OCR);
+        config.getOcr().setDpi(10000);
+        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
         pc.set(PDFParserConfig.class, config);
         text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
         text = text.replaceAll("\\s+", " ");
@@ -1207,9 +1207,9 @@ public class PDFParserTest extends TikaTest {
                 pdfParserConfig.getAccessCheckMode());
         assertEquals(true, pdfParserConfig.isExtractInlineImages());
         assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
-        assertEquals(314, pdfParserConfig.getOcrDPI());
-        assertEquals(2.1f, pdfParserConfig.getOcrImageQuality(), .01f);
-        assertEquals(OcrConfig.ImageFormat.JPEG, pdfParserConfig.getOcrImageFormat());
+        assertEquals(314, pdfParserConfig.getOcr().getDpi());
+        assertEquals(2.1f, pdfParserConfig.getOcr().getImageQuality(), .01f);
+        assertEquals(OcrConfig.ImageFormat.JPEG, pdfParserConfig.getOcr().getImageFormat());
         assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
         assertEquals(false, pdfParserConfig.isCatchIntermediateIOExceptions());
     }

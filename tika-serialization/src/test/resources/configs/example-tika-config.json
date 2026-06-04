@@ -4,7 +4,9 @@
       "pdf-parser": {
         "_mime-include": ["application/pdf"],
         "_mime-exclude": ["application/pdf+fdf"],
-        "ocrStrategy": "AUTO",
+        "ocr": {
+          "strategy": "AUTO"
+        },
         "extractInlineImages": true
       }
     },

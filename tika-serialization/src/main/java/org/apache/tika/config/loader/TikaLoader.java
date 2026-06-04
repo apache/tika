@@ -79,7 +79,7 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  *       "pdf-parser": {
  *         "_mime-include": ["application/pdf"],
  *         "_mime-exclude": ["application/pdf+fdf"],
- *         "ocrStrategy": "AUTO",
+ *         "ocr": {"strategy": "AUTO"},
  *         "extractInlineImages": true
  *       }
  *     }
@@ -434,7 +434,7 @@ public class TikaLoader {
      *
      * // At runtime, create per-request overrides
      * PDFParserConfig requestConfig = new PDFParserConfig();
-     * requestConfig.setOcrStrategy(PDFParserConfig.OCR_STRATEGY.NO_OCR);
+     * requestConfig.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
      *
      * // Merge: base config values + request overrides
      * // (Note: for runtime merging, use JsonMergeUtils directly or loadConfig on a runtime loader)

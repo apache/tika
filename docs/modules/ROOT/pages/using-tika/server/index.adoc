@@ -99,7 +99,7 @@ POST with multipart for custom per-request configuration:
 ----
 curl -X POST http://localhost:9998/tika/json \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"ocrStrategy\":\"no_ocr\"}};type=application/json"
+  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
 ----
 
 Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json`. For

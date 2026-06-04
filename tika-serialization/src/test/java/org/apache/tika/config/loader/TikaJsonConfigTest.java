@@ -39,7 +39,7 @@ public class TikaJsonConfigTest {
             {
               "parsers": [
                 "html-parser",
-                { "pdf-parser": { "ocrStrategy": "AUTO" } },
+                { "pdf-parser": { "ocr": { "strategy": "AUTO" } } },
                 "txt-parser"
               ]
             }
@@ -57,7 +57,8 @@ public class TikaJsonConfigTest {
 
         // Second parser: full object syntax
         assertEquals("pdf-parser", parsers.get(1).getKey());
-        assertEquals("AUTO", parsers.get(1).getValue().get("ocrStrategy").asText());
+        assertEquals("AUTO",
+                parsers.get(1).getValue().get("ocr").get("strategy").asText());
 
         // Third parser: string shorthand
         assertEquals("txt-parser", parsers.get(2).getKey());

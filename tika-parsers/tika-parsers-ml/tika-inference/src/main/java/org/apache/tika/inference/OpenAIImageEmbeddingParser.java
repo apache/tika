@@ -64,7 +64,7 @@ import org.apache.tika.utils.StringUtils;
  * <p>
  * This parser registers for the same {@code image/ocr-*} media types
  * used by the PDF renderer's OCR pipeline, so it slots into the
- * existing {@code ocrStrategy} mechanism. When configured, each
+ * existing {@code ocr.strategy} mechanism. When configured, each
  * rendered page image is sent to the embedding endpoint and the
  * vector is stored as a serialized {@link Chunk} with a
  * {@link PaginatedLocator} (when page number metadata is available).
