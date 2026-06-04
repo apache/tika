@@ -17,11 +17,15 @@
 package org.apache.tika.parser.pkg;
 
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
@@ -31,6 +35,8 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
@@ -69,6 +75,22 @@ public class CompressorParserTest extends TikaTest {
                 fail("CompressorParser should support: " + mt.toString());
             }
         }
+    }
+
+    @Test
+    public void testPack200() throws Exception {
+        //TIKA-4221: commons-compress' Pack200CompressorInputStream throws an
+        //InaccessibleObjectException on Java 17+ when handed a FilterInputStream or a
+        //FileInputStream (a TikaInputStream is a FilterInputStream). CompressorParser must route
+        //pack200 through the spool-to-file workaround so it unpacks cleanly.
+        //testPACK200.pack is borrowed from Apache Commons Compress (HelloWorld.pack).
+        List<Metadata> metadataList = getRecursiveMetadata("testPACK200.pack");
+        assertEquals("application/x-java-pack200", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION),
+                "pack200 should unpack without an exception");
+        //the pack200 archive must have been unpacked into at least one embedded document
+        assertTrue(metadataList.size() > 1,
+                "pack200 should have been unpacked into embedded content");
     }
 
     @Test

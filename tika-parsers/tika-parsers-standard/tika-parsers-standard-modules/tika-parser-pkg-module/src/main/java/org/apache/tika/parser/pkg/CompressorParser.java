@@ -34,6 +34,9 @@ import static org.apache.tika.detect.zip.CompressorConstants.ZSTD;
 import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -112,6 +115,9 @@ public class CompressorParser implements Parser {
 
     private static Set<MediaType> SUPPORTED_TYPES;
     private static Map<String, String> MIMES_TO_NAME;
+
+    //pack200 archives start with the 4-byte magic 0xCAFED00D
+    private static final byte[] PACK200_MAGIC = {(byte) 0xCA, (byte) 0xFE, (byte) 0xD0, (byte) 0x0D};
 
     private Config defaultConfig = new Config();
 
@@ -233,7 +239,30 @@ public class CompressorParser implements Parser {
             //trust that and go with the appropriate name
             //to avoid calling CompressorStreamFactory.detect() twice
             String name = getStreamName(metadata);
-            if (name != null) {
+            boolean pack200 = CompressorStreamFactory.PACK200.equals(name);
+            if (name == null) {
+                //No content-type hint: peek to see whether this is pack200 so we can route it
+                //through the workaround below. Anything else falls through to autodetect unchanged.
+                pack200 = isPack200(tis);
+            }
+            if (pack200) {
+                // TIKA-4221 / COMPRESS-721 workaround: commons-compress' Pack200CompressorInputStream
+                // reflects into java.io internals (FilterInputStream.in / FileInputStream.path) to
+                // bound its input, which throws InaccessibleObjectException on Java 17+. A
+                // TikaInputStream is a FilterInputStream, so it triggers this. Spool to a file and
+                // reopen via Files.newInputStream (a ChannelInputStream) -- the one input type
+                // commons-compress does not reflect into. Pack200CompressorInputStream reads its
+                // input fully in the constructor (IN_MEMORY) and then serves bytes from an in-memory
+                // buffer, so the channel stream can be closed immediately afterward. Remove this once
+                // Tika depends on a commons-compress release that contains the COMPRESS-721 fix.
+                try (InputStream packStream = Files.newInputStream(tis.getPath())) {
+                    cis = factory.createCompressorInputStream(CompressorStreamFactory.PACK200,
+                            packStream);
+                }
+                if (name == null) {
+                    metadata.set(CONTENT_TYPE, PACK.toString());
+                }
+            } else if (name != null) {
                 cis = factory.createCompressorInputStream(name, tis);
             } else {
                 cis = factory.createCompressorInputStream(tis);
@@ -248,6 +277,11 @@ public class CompressorParser implements Parser {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
             throw new TikaException("Unable to uncompress document stream", e);
+        } catch (IOException e) {
+            //the pack200 workaround (getPath()/Files.newInputStream) can throw IOException;
+            //make sure the close shield is removed before propagating
+            tis.removeCloseShield();
+            throw e;
         }
 
 
@@ -326,6 +360,23 @@ public class CompressorParser implements Parser {
             return null;
         }
         return MIMES_TO_NAME.get(mimeString);
+    }
+
+    /**
+     * Peeks at the stream signature to determine whether it is a pack200 archive, without
+     * consuming the stream. Used so pack200 can be routed through the COMPRESS-721 workaround in
+     * {@link #parse}.
+     *
+     * @param tis the input, which must support mark/reset (a TikaInputStream always does)
+     * @return {@code true} if the signature matches pack200
+     */
+    private static boolean isPack200(TikaInputStream tis) {
+        try {
+            byte[] sig = new byte[PACK200_MAGIC.length];
+            return tis.peek(sig) == PACK200_MAGIC.length && Arrays.equals(sig, PACK200_MAGIC);
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public Config getDefaultConfig() {
