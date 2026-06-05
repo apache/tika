@@ -352,6 +352,21 @@
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.apk"/>
   </mime-type>
+  <mime-type type="application/vnd.android.axml">
+    <acronym>AXML</acronym>
+    <_comment>Android Binary XML</_comment>
+    <tika:link>https://developer.android.com/guide/topics/manifest/manifest-intro</tika:link>
+    <!-- Compiled AndroidManifest.xml / res/*.xml inside an APK. The .xml extension would
+         otherwise route it to the XML parser, which fails on the binary header. Signature:
+         RES_XML_TYPE(0x0003)+headerSize(0x0008)=0x00080003 LE, plus RES_STRING_POOL_TYPE
+         (0x0001) at offset 8 (the variable per-file size at offset 4 is skipped). Not a
+         sub-class-of application/xml: must not reach an XML parser. -->
+    <magic priority="50">
+      <match value="0x03000800" type="string" offset="0">
+        <match value="0x0001" type="little16" offset="8"/>
+      </match>
+    </magic>
+  </mime-type>
   <mime-type type="application/x-tika-java-enterprise-archive">
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.ear"/>
