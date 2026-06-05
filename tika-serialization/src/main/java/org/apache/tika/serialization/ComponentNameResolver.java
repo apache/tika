@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.config.loader.ComponentInfo;
@@ -113,10 +114,50 @@ public final class ComponentNameResolver {
                 }
             }
         }
-        throw new ClassNotFoundException(
-                "Component '" + name + "' is not registered. " +
-                "Components must be registered via @TikaComponent annotation or .idx file. " +
-                "Arbitrary class names are not allowed for security reasons.");
+        throw new ClassNotFoundException(unregisteredMessage(name));
+    }
+
+    /**
+     * Builds a diagnostic message for an unregistered component name. It calls out the
+     * two usual causes -- the name is misspelled, or the module that provides it is not
+     * on the classpath (optional components such as the Tess4J OCR parser ship in
+     * separate jars that must be added explicitly) -- and lists the names that
+     * <em>are</em> registered so the caller can find the right one (or notice that
+     * nothing registered, which means no {@code .idx} files were on the classpath).
+     */
+    private static String unregisteredMessage(String name) {
+        TreeSet<String> known = new TreeSet<>();
+        for (ComponentRegistry registry : REGISTRIES.values()) {
+            known.addAll(registry.getAllComponents().keySet());
+        }
+        StringBuilder sb = new StringBuilder()
+                .append("Component '").append(name).append("' is not registered. ")
+                .append("Either the name is misspelled, or the module that provides it is ")
+                .append("not on the classpath -- optional components (for example the Tess4J ")
+                .append("OCR parser in tika-parser-tess4j-module) ship as separate jars that ")
+                .append("must be added explicitly. ");
+        if (known.isEmpty()) {
+            sb.append("No components are currently registered "
+                    + "(no META-INF/tika/*.idx files were found on the classpath). ");
+        } else {
+            sb.append(known.size()).append(" registered component(s): ");
+            int shown = 0;
+            int cap = 50;
+            for (String registered : known) {
+                if (shown == cap) {
+                    sb.append(", ...");
+                    break;
+                }
+                if (shown > 0) {
+                    sb.append(", ");
+                }
+                sb.append(registered);
+                shown++;
+            }
+            sb.append(". ");
+        }
+        sb.append("Arbitrary class names are not allowed for security reasons.");
+        return sb.toString();
     }
 
     /**
