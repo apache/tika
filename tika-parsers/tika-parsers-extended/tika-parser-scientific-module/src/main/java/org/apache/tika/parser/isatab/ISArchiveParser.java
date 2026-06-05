@@ -19,6 +19,7 @@ package org.apache.tika.parser.isatab;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Set;
 
@@ -27,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -134,12 +136,15 @@ public class ISArchiveParser implements Parser {
 
     private void parseAssay(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        // location starts with "/C:" on windows, so build the directory Path from a File
+        // rather than Paths.get(). The assay file names come from the investigation file and
+        // are resolved within this directory.
+        Path locationDir = new File(this.location).toPath();
         for (String assayFileName : metadata.getValues(studyAssayFileNameField)) {
             xhtml.startElement("div");
             xhtml.element("h3", "ASSAY " + assayFileName);
-            // location starts with "/C:" on windows, can't use Paths.get()
-            try (InputStream stream = TikaInputStream.get(new File(this.location + assayFileName).toPath()))
-            {
+            Path assayFile = FilenameUtils.resolveWithin(locationDir, assayFileName);
+            try (InputStream stream = TikaInputStream.get(assayFile)) {
                 ISATabUtils.parseAssay(stream, xhtml, metadata, context);
             }
             xhtml.endElement("div");
