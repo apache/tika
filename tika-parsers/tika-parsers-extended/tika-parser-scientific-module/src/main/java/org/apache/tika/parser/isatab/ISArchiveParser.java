@@ -138,11 +138,26 @@ public class ISArchiveParser implements Parser {
             xhtml.startElement("div");
             xhtml.element("h3", "ASSAY " + assayFileName);
             // location starts with "/C:" on windows, can't use Paths.get()
-            try (InputStream stream = TikaInputStream.get(new File(this.location + assayFileName).toPath()))
-            {
+            File assayFile = resolveWithinLocation(assayFileName);
+            try (InputStream stream = TikaInputStream.get(assayFile.toPath())) {
                 ISATabUtils.parseAssay(stream, xhtml, metadata, context);
             }
             xhtml.endElement("div");
         }
+    }
+
+    /**
+     * Resolves an assay file name taken from the (untrusted) investigation file against
+     * the ISA-Tab location, rejecting names that escape that directory via "../" or a
+     * symlink.
+     */
+    private File resolveWithinLocation(String fileName) throws IOException, TikaException {
+        File candidate = new File(this.location + fileName);
+        String locationCanonical = new File(this.location).getCanonicalPath();
+        if (!candidate.getCanonicalPath().startsWith(locationCanonical + File.separator)) {
+            throw new TikaException(
+                    "assay file name '" + fileName + "' resolves outside the ISA-Tab directory");
+        }
+        return candidate;
     }
 }
