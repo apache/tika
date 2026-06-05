@@ -163,6 +163,8 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         List<EncodingResult> encResults = encodingDetector.detect(tis, metadata, context);
         Charset charset = encResults.isEmpty() ? DEFAULT_CHARSET
                 : encResults.get(0).getCharset();
+        Charset decodeAs = encResults.isEmpty() ? DEFAULT_CHARSET
+                : encResults.get(0).getDecodeAs();
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;
         if (previous == null || previous.startsWith("text/html")) {
@@ -195,7 +197,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         tis.setCloseShield();
         Document document;
         try {
-            document = Jsoup.parse(tis, charset.name(), "",
+            document = Jsoup.parse(tis, decodeAs.name(), "",
                     Parser.htmlParser().tagSet(tagSet));
         } finally {
             tis.removeCloseShield();

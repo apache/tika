@@ -88,4 +88,15 @@ public final class CharsetSupersets {
             return null;
         }
     }
+
+    /**
+     * The charset to decode with: {@link #supersetOf(Charset) superset} of
+     * {@code detected} if one exists, else {@code detected} (null only if
+     * {@code detected} is null). For bare-{@link Charset} callers; detection
+     * results can use {@link EncodingResult#getDecodeAs()}.
+     */
+    public static Charset decodeAs(Charset detected) {
+        Charset superset = supersetOf(detected);
+        return superset != null ? superset : detected;
+    }
 }
