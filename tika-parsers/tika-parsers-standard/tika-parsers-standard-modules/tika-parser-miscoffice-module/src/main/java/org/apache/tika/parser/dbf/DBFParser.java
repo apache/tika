@@ -147,8 +147,10 @@ public class DBFParser implements Parser {
             }
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 List<EncodingResult> results =
-                        detector.detect(TikaInputStream.get(bytes), new Metadata(), parseContext);
-                charset = results.isEmpty() ? null : results.get(0).getCharset();
+                        detector.detect(tis, new Metadata(), parseContext);
+                if (!results.isEmpty() && results.get(0).getCharset() != null) {
+                    charset = results.get(0).getCharset();
+                }
             }
         }
         return charset;
