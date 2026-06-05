@@ -118,7 +118,7 @@ options see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 |Option |Description
 
 |`-x` or `--xml`
-|Output XHTML content (default)
+|Output XHTML content
 
 |`-h` or `--html`
 |Output HTML content
@@ -127,7 +127,7 @@ options see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 |Output plain text content (body)
 
 |`--md`
-|Output Markdown content (body)
+|Output Markdown content (body) (default)
 
 |`-T` or `--text-main`
 |Output plain text — main content only, via the boilerpipe handler
@@ -145,7 +145,7 @@ options see <<_tika_pipes_processing,Tika Pipes Processing>> below.
 |Output metadata in XMP
 
 |`-J` or `--jsonRecursive`
-|Output metadata and content from all embedded files. Combine with `-x`/`-h`/`-t`/`-m` to choose the content type (default: `-x`).
+|Output metadata and content from all embedded files. Combine with `-x`/`-h`/`-t`/`-m` to choose the content type (default: `--md`).
 
 |`-r` or `--pretty-print`
 |For JSON, XML, and XHTML output, add newlines and whitespace for readability.
@@ -378,7 +378,7 @@ This processes all files in the input directory and writes JSON metadata
 |Option |Description
 
 |`--handler=<X>`
-|Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore. Default: `t`.
+|Content handler type: `t`=text, `h`=html, `x`=xml, `m`=markdown, `b`=body, `i`=ignore. Default: `m`.
 
 |`--concatenate`
 |Concatenate content from all embedded documents into a single content field.

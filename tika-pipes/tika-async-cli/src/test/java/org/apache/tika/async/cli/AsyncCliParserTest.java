@@ -46,6 +46,8 @@ public class AsyncCliParserTest {
         assertEquals(1, simpleAsyncConfig.getNumClients());
         assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
         assertEquals("-Xmx1g", simpleAsyncConfig.getXmx());
+        // TIKA-4663: default content handler is markdown
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"-o", "output", "-i", "input"});
         assertEquals("input", simpleAsyncConfig.getInputDir());
@@ -54,6 +56,7 @@ public class AsyncCliParserTest {
         assertNull(simpleAsyncConfig.getNumClients());
         assertNull(simpleAsyncConfig.getTimeoutMs());
         assertNull(simpleAsyncConfig.getXmx());
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"-output", "output", "-input", "input"});
         assertEquals("input", simpleAsyncConfig.getInputDir());

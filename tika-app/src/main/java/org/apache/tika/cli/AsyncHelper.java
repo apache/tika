@@ -78,6 +78,10 @@ public class AsyncHelper {
                 // Translate TikaCLI xml output to the TikaAsyncCLI handler type.
                 argList.add("--handler");
                 argList.add("x");
+            } else if (arg.equals("--md")) {
+                // Translate TikaCLI markdown output to the TikaAsyncCLI handler type.
+                argList.add("--handler");
+                argList.add("m");
             } else if (arg.equals("-J") || arg.equals("--jsonRecursive")) {
                 // TikaAsyncCLI always outputs JSON with recursive metadata (RMETA mode)
                 // This is already the default, so we just skip this arg

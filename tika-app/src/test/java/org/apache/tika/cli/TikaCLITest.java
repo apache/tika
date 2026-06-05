@@ -259,7 +259,7 @@ public class TikaCLITest {
 
     @Test
     public void testExtractJavascript() throws Exception {
-        String json = getParamOutContent("-J", resourcePrefix + "testPDFPackage.pdf");
+        String json = getParamOutContent("-J", "-x", resourcePrefix + "testPDFPackage.pdf");
         assertTrue(json.contains("type=\\\"PDActionJavaScript\\\""));
         assertTrue(json.contains("MACRO"));
         assertTrue(json.contains("NAMES_TREE"));
@@ -341,7 +341,7 @@ public class TikaCLITest {
      */
     @Test
     public void testListMetModels() throws Exception {
-        String content = getParamOutContent("--list-met-models", resourcePrefix + "alice.cli.test");
+        String content = getParamOutContent("--list-met-models", "-x", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("text/plain"));
     }
 
@@ -663,7 +663,7 @@ public class TikaCLITest {
 
     @Test
     public void testConfig() throws Exception {
-        String content = getParamOutContent("--config=" + CONFIGS_DIR.toString() + "/tika-config1.json", resourcePrefix + "bad_xml.xml");
+        String content = getParamOutContent("--config=" + CONFIGS_DIR.toString() + "/tika-config1.json", "-x", resourcePrefix + "bad_xml.xml");
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.JSoupParser"));
     }
@@ -679,8 +679,12 @@ public class TikaCLITest {
 
     @Test
     public void testJsonRecursiveMetadataParserDefault() throws Exception {
+        // TIKA-4663: default handler is markdown, so recursive content is markdown, not XHTML.
         String content = getParamOutContent("-J", "-r", resourcePrefix + "test_recursive_embedded.docx");
-        assertTrue(content.contains("\"X-TIKA:content\" : \"<html xmlns=\\\"http://www.w3.org/1999/xhtml"));
+        assertFalse(content.contains("<html xmlns=\\\"http://www.w3.org/1999/xhtml"),
+                "default recursive content should be markdown, not XHTML");
+        assertTrue(content.contains("# embed1.zip"),
+                "default recursive content should be markdown (heading syntax)");
     }
 
     @Test

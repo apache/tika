@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -70,6 +71,25 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
+    }
+
+    @Test
+    public void testDefaultHandlerIsMarkdown() throws Exception {
+        // TIKA-4663: /rmeta with no handler now defaults to markdown (was xml).
+        String defaultContent = rmetaContent("");
+        assertEquals(rmetaContent("/markdown"), defaultContent,
+                "default /rmeta handler should be markdown");
+        assertNotEquals(rmetaContent("/xml"), defaultContent,
+                "default /rmeta handler should no longer be xml");
+    }
+
+    private String rmetaContent(String handlerSuffix) throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH + handlerSuffix)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_NULL_POINTER));
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        return JsonMetadataList.fromJson(reader).get(0).get(TikaCoreProperties.TIKA_CONTENT);
     }
     /*
     @Test

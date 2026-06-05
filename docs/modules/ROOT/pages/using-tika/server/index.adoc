@@ -117,7 +117,7 @@ For the root `/tika` PUT endpoint you can also pick the handler with a header:
 curl -T document.pdf -H "X-Tika-Handler: markdown" http://localhost:9998/tika
 ----
 
-Accepted values: `text`, `html`, `xml`, `markdown` (or `md`), `body`, `ignore`.
+Accepted values: `text`, `html`, `xml`, `markdown` (or `md`), `body`, `ignore`. The default is `markdown`.
 
 === Recursive Metadata (`/rmeta`)
 
@@ -126,7 +126,7 @@ array of metadata objects. The handler controls the content field of each entry:
 
 [source,bash]
 ----
-curl -T document.pdf http://localhost:9998/rmeta            # default: text
+curl -T document.pdf http://localhost:9998/rmeta            # default: markdown
 curl -T document.pdf http://localhost:9998/rmeta/text
 curl -T document.pdf http://localhost:9998/rmeta/html
 curl -T document.pdf http://localhost:9998/rmeta/xml

@@ -243,7 +243,7 @@ public class TikaCLI {
             return getTransformerHandler(output, "xml", encoding, prettyPrint);
         }
     };
-    private OutputType type = XML;
+    private OutputType type = MARKDOWN;
     private final OutputType HTML = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
@@ -793,6 +793,8 @@ public class TikaCLI {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
         } else if (type.equals(TEXT_MAIN)) {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.BODY;
+        } else if (type.equals(MARKDOWN)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
         } else if (type.equals(METADATA)) {
             handlerType = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
         }
@@ -823,10 +825,10 @@ public class TikaCLI {
         out.println("        writing the JSON to stdout. Redirect to save, e.g.:");
         out.println("        --convert-config-xml-to-json=tika-config.xml > tika-config.json");
         out.println("");
-        out.println("    -x  or --xml           Output XHTML content (default)");
+        out.println("    -x  or --xml           Output XHTML content");
         out.println("    -h  or --html          Output HTML content");
         out.println("    -t  or --text          Output plain text content (body)");
-        out.println("    --md                   Output Markdown content (body)");
+        out.println("    --md                   Output Markdown content (body) (default)");
         out.println("    -T  or --text-main     Output plain text content (main content only via boilerpipe handler)");
         out.println("    -A  or --text-all      Output all text content");
         out.println("    -m  or --metadata      Output only metadata");
@@ -834,7 +836,7 @@ public class TikaCLI {
         out.println("    -y  or --xmp           Output metadata in XMP");
         out.println("    -J  or --jsonRecursive Output metadata and content from all");
         out.println("                           embedded files (choose content type");
-        out.println("                           with -x, -h, -t or -m; default is -x)");
+        out.println("                           with -x, -h, -t or -m; default is --md)");
         out.println("    -a  or --async         Run Tika in async mode; must specify details in a" + " tikaConfig file");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
@@ -915,7 +917,7 @@ public class TikaCLI {
         out.println("    -c, --config=<file>        Tika config file (--config=<file> also accepted)");
         out.println("    -p, --pluginsDir           Plugins directory");
         out.println("    --fileList                 File list (one path per line, relative to -i or absolute)");
-        out.println("    --handler                  Handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
+        out.println("    --handler                  Handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore (default: m)");
         out.println("    --concatenate              Concatenate content from all embedded documents");
         out.println("    --content-only             Output only extracted content (no JSON wrapper); implies --concatenate");
         out.println("    --on-exists                Behavior when an output file exists: exception (default), replace, skip");

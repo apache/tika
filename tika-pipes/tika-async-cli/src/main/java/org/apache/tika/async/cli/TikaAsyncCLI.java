@@ -71,7 +71,7 @@ public class TikaAsyncCLI {
         options.addOption(null, "Xmx", true, "heap for the forked clients, e.g. --Xmx 1g");
         options.addOption("h", "help", false, "this help message");
         options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
-        options.addOption(null, "handler", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore");
+        options.addOption(null, "handler", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore (default: m)");
         options.addOption("p", "pluginsDir", true, "plugins directory");
         options.addOption("l", "fileList", true,
                 "file containing one path per line (relative to inputDir or absolute)");
@@ -164,7 +164,7 @@ public class TikaAsyncCLI {
         if (args.length == 2 && ! args[0].startsWith("-")) {
             return new SimpleAsyncConfig(args[0], args[1], 1,
                     30000L, "-Xmx1g", null, null,
-                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN,
                     SimpleAsyncConfig.ExtractBytesMode.NONE, null);
         }
 
@@ -185,7 +185,7 @@ public class TikaAsyncCLI {
         String tikaConfig = null;
         String asyncConfig = null;
         String pluginsDir = null;
-        BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+        BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
         SimpleAsyncConfig.ExtractBytesMode extractBytesMode = SimpleAsyncConfig.ExtractBytesMode.NONE;
         if (line.hasOption("i")) {
             inputDir = line.getOptionValue("i");

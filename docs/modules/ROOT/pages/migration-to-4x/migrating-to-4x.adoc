@@ -40,6 +40,16 @@ java -jar tika-app-<version>.jar [option...] [file...]
 
 If you have build scripts or container images that drop in just the jar, update them to unpack the zip and run from inside it.
 
+== Default content handler: XHTML/XML -> Markdown
+
+In 3.x the default content handler produced XHTML/XML. In 4.x the default is **Markdown** everywhere:
+
+* `tika-app` outputs Markdown by default (was XHTML). Pass `-x`/`--xml`, `-h`/`--html`, or `-t`/`--text` to choose another format.
+* `tika-server` — the `/tika` and `/rmeta` endpoints return Markdown content by default (was XHTML/XML). Use an explicit handler path (`/tika/xml`, `/rmeta/xml`, ...) or the `X-Tika-Handler` header to choose another format.
+* The async/pipes CLI emits Markdown by default (was plain text). Use `--handler x` (etc.) to choose another format.
+
+If you parse the extracted content programmatically and expect XHTML/XML, request it explicitly as shown above (TIKA-4663).
+
 == Configuration: XML to JSON
 
 Tika 4.x uses JSON configuration files instead of XML. The legacy `tika-config.xml` format
