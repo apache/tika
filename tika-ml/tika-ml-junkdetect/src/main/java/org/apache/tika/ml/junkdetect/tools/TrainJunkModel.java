@@ -84,6 +84,19 @@ public class TrainJunkModel {
     static final float CONTROL_BYTE_MIN_SIGMA = 0.005f;
 
     /**
+     * Minimum sigma for the per-script z1 calibration.  Well-trained scripts
+     * (&gt;1000 dev windows) reach sigma in [0.38, 1.29]; below ~0.38 the value is
+     * an artifact of too few windows (TIFINAGH at 2 windows gave sigma=0.0006).  A
+     * garbage doc that scatters a few codepoints into such a degenerate bucket then
+     * gets z1 = numerator/sigma in the thousands, dragging the count-weighted doc z1
+     * to −700+ (languageness ≈ −458) — correct sign, absurd magnitude.  Flooring at
+     * the reliable-training floor caps under-trained scripts to the genuine z1 scale
+     * (worst ≈ −60) and leaves well-trained scripts untouched (their sigma already
+     * exceeds the floor, so no real garbage is clipped).
+     */
+    static final float Z1_MIN_SIGMA = 0.4f;
+
+    /**
      * Full-text byte-level mojibake pairs used by {@link #byteLevelMojibake}.
      * Each entry is {sourceCodec, wrongCodec}: training text gets encoded in
      * sourceCodec, then the resulting bytes are re-decoded as wrongCodec to
@@ -259,11 +272,14 @@ public class TrainJunkModel {
         }
 
         // -----------------------------------------------------------------------
-        // Phase 1 — bucket-by-script bigram tables (per real script + COMMON).
-        // ONE tally pass over every train file via forEachScriptBigram: digits
-        // skipped, COMMON glue folded into the adjacent script, both-COMMON
-        // bigrams charged to the COMMON bucket.  No runs, no sentinels.  COMMON
-        // is a normal bucket (its own table + calibration + combiner weight).
+        // Phase 1 — per-script bigram tables.  ONE tally pass over every train
+        // file via forEachScriptBigram (the SAME tokenizer inference uses): the
+        // text is split into maximal same-script LETTER runs (marks attach), each
+        // run wrapped TOKEN_START..TOKEN_END, and the within-run bigrams (incl. the
+        // ^/$ edges) tallied to the run's script.  Non-letters are boundaries and
+        // emit nothing, so the trained tables hold exactly the bigrams inference
+        // scores.  The COMMON bucket is now effectively vestigial (only the rare
+        // COMMON-scripted letter lands there).
         // -----------------------------------------------------------------------
         System.out.println("\n--- Phase 1: bucket-by-script F1 tables ---");
         Map<String, HashMap<Long, long[]>> pairsByScript = new HashMap<>();
@@ -312,6 +328,7 @@ public class TrainJunkModel {
         for (String script : f1TablesByScript.keySet()) {
             List<Double> scores = z1ScoresByScript.getOrDefault(script, new ArrayList<>());
             float[] cal = scores.isEmpty() ? new float[]{0f, 1f} : muSigma(scores);
+            cal[1] = Math.max(cal[1], Z1_MIN_SIGMA);   // floor degenerate (under-trained) sigma
             f1Calibrations.put(script, cal);
             System.out.printf("  [%s] mu=%.4f sigma=%.4f (%,d windows)%n",
                     script, cal[0], cal[1], scores.size());
@@ -446,11 +463,9 @@ public class TrainJunkModel {
                 end++;
             }
             String s = new String(bytes, start, end - start, StandardCharsets.UTF_8);
-            // NFD-normalize on read so calibration/training feature math
-            // matches JunkDetector.scoreText's NFD path.  On-disk corpus
-            // may be NFC (older builds of BuildJunkTrainingData); NFD is
-            // idempotent on already-NFD text.
-            s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFC);
+            // NFKC-normalize so training matches JunkDetector inference (folds
+            // compatibility forms incl. half-width katakana -> full-width).
+            s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFKC);
             result.add(s);
         }
         return result;
@@ -479,7 +494,7 @@ public class TrainJunkModel {
                     continue;
                 }
                 String norm = java.text.Normalizer.normalize(
-                        line, java.text.Normalizer.Form.NFC);
+                        line, java.text.Normalizer.Form.NFKC);
                 int[] cps = norm.codePoints().toArray();
                 JunkDetector.forEachScriptBigram(cps, (script, a, b) -> {
                     HashMap<Long, long[]> pairs = pairsByScript.computeIfAbsent(
@@ -579,7 +594,9 @@ public class TrainJunkModel {
                 scores.add(bk[0] / bk[1]);
             }
         }
-        return scores.isEmpty() ? new float[]{0f, 1f} : muSigma(scores);
+        float[] cal = scores.isEmpty() ? new float[]{0f, 1f} : muSigma(scores);
+        cal[1] = Math.max(cal[1], Z1_MIN_SIGMA);       // floor degenerate (under-trained) sigma
+        return cal;
     }
 
     /** Single GLOBAL z3 (control-byte) calibration, pooled over all files. */
@@ -693,6 +710,29 @@ public class TrainJunkModel {
         for (int i = 0; i < codepoints.length; i++) {
             if (rng.nextDouble() < rate) {
                 codepoints[i] = 0xE000 + rng.nextInt(puaSpan);
+            }
+        }
+        return new String(codepoints, 0, codepoints.length);
+    }
+
+    /**
+     * Replaces a fraction of HIGH (non-ASCII) codepoints with U+FFFD, simulating
+     * bytes the chosen charset could not decode.  ASCII is never touched (a
+     * decode failure is a high byte, never clean ASCII).  Used two ways: a LOW
+     * rate over coherent text for mixed-encoding CLEAN positives (real text with
+     * a few undecodable widget bytes), and a HIGH rate over already-incoherent
+     * text for FFFD-heavy NEGATIVES.  Pairing the two teaches the combiner that
+     * FFFD (z6) is junk evidence only when z1/coherence is ALSO low — so removing
+     * FFFD from z1 does not make z6/z7 over-penalize mixed-encoding pages.
+     */
+    static String injectReplacementChars(String text, double rate, Random rng) {
+        if (text.isEmpty()) {
+            return text;
+        }
+        int[] codepoints = text.codePoints().toArray();
+        for (int i = 0; i < codepoints.length; i++) {
+            if (codepoints[i] >= 0x80 && rng.nextDouble() < rate) {
+                codepoints[i] = 0xFFFD;
             }
         }
         return new String(codepoints, 0, codepoints.length);
@@ -1118,6 +1158,37 @@ public class TrainJunkModel {
                     addContrastivePair(fx, w, byteLevelMojibake(w, pr[0], pr[1]),
                             fc, pairCorrect, pairWrong);
                 }
+
+                // Mixed-encoding (korA-class) pair: coherent text with heavy
+                // undecodable FFFD widget bytes (~15-20% of high bytes) must BEAT
+                // coherent-looking mojibake of the same bytes.  As a contrastive
+                // PAIR (not a pointwise positive) it adds no class imbalance, and
+                // it forces z1/coherence to stay the discriminator: the correct
+                // side has MORE FFFD (z6 favors the wrong side) and equal z7
+                // (FFFD excluded), so only z1 can rank it correctly.  This is what
+                // keeps removing FFFD from z1 from letting z6/z7 sink korA.
+                String mixed = injectReplacementChars(w, 0.15 + rng.nextDouble() * 0.05, rng);
+                float[] fMixed = featureVector(fx, mixed);
+                if (fMixed != null) {
+                    String[] pr = BYTE_LEVEL_MOJIBAKE_PAIRS[
+                            rng.nextInt(BYTE_LEVEL_MOJIBAKE_PAIRS.length)];
+                    addContrastivePair(fx, mixed, byteLevelMojibake(w, pr[0], pr[1]),
+                            fMixed, pairCorrect, pairWrong);
+                }
+
+                // All-caps pair (cased scripts only): all-caps CLEAN (z1 recovered
+                // by the case-folded backoff) must beat all-caps mojibake of the
+                // same bytes (no seen lowercase twin -> still floored).
+                String upper = w.toUpperCase(java.util.Locale.ROOT);
+                if (!upper.equals(w)) {
+                    float[] fUpper = featureVector(fx, upper);
+                    if (fUpper != null) {
+                        String[] pr = BYTE_LEVEL_MOJIBAKE_PAIRS[
+                                rng.nextInt(BYTE_LEVEL_MOJIBAKE_PAIRS.length)];
+                        addContrastivePair(fx, upper, byteLevelMojibake(upper, pr[0], pr[1]),
+                                fUpper, pairCorrect, pairWrong);
+                    }
+                }
                 if ("LATIN".equals(script)) {
                     String[] pr = LATIN_TO_CJK_PAIRS[
                             rng.nextInt(LATIN_TO_CJK_PAIRS.length)];
@@ -1129,15 +1200,33 @@ public class TrainJunkModel {
                             pairCorrect, pairWrong);
                 }
 
+                // Monotonicity anchor: the SAME clean text with its non-ASCII chars
+                // replaced by U+FFFD must rank BELOW the clean text.  This leaves z1
+                // HIGH (often higher: FFFD removes the hard accented bigram and the
+                // surviving fragments are common -- de_correct z1=0.27 vs de_fffd
+                // 0.55) and z7 high, so z6 (replacement ratio) is the ONLY feature
+                // that separates it from clean -- forcing the combiner to weight z6
+                // enough to overrule z1's perverse FFFD gain (the deu/gsw, deu/frr
+                // cases).  (A generalized real-charset-mojibake variant was tried for
+                // the within-Latin SIBLING case but reverted -- it cost korA/z6
+                // without fixing the siblings; see LANGUAGENESS_RESIDUAL_FAILURES.md.)
+                String fffdSame = injectReplacementChars(w, 0.5 + rng.nextDouble() * 0.5, rng);
+                addContrastivePair(fx, w, fffdSame, fc, pairCorrect, pairWrong);
+
                 // Pointwise garbage anchor (generic junk, no correct counterpart).
                 String junk;
-                int mode = rng.nextInt(3);
+                int mode = rng.nextInt(4);
                 if (mode == 0) {
                     junk = injectControlChars(w, 0.15, rng);
                 } else if (mode == 1) {
                     junk = shuffleChars(w, rng);
-                } else {
+                } else if (mode == 2) {
                     junk = injectPrivateUseAreaChars(w, 0.12, rng);
+                } else {
+                    // FFFD-heavy junk: incoherent (shuffled) AND mostly-undecodable.
+                    // Pairs with the mixed-encoding clean positive above so the
+                    // combiner learns FFFD is junk evidence only when z1 is low.
+                    junk = injectReplacementChars(shuffleChars(w, rng), 0.4, rng);
                 }
                 float[] fb = featureVector(fx, junk);
                 if (fb != null) {

@@ -463,8 +463,12 @@ public final class JunkDetector implements TextQualityDetector {
      * produces the logit.  No runs, no sentinels, no per-script z2/z3.
      */
     private Agg aggregate(String text) {
-        // NFC-normalize so inference matches the trainer's tally.
-        text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC);
+        // NFKC-normalize so inference matches the trainer's tally AND legacy
+        // compatibility forms fold to canonical — critically half-width katakana
+        // (U+FF66-FF9F) -> full-width, which the HAN bigram table is trained on.
+        // Without this, half-width-katakana pages (Shift_JIS-era Japanese
+        // e-commerce) floor every bigram as "unseen" (z1 ~-9, false-junk).
+        text = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFKC);
         int[] cps = text.codePoints().toArray();
 
         Map<String, double[]> buckets = new HashMap<>(); // script -> {sumLogP, count}
@@ -522,12 +526,15 @@ public final class JunkDetector implements TextQualityDetector {
         agg.totalBigrams = (int) z1Count;
 
         if (z1Count == 0 || agg.dominantScript == null) {
-            // No scoreable script — doc-level fallback (same anchors as before):
+            // No scoreable LETTER at all (zero runs) — doc-level fallback:
             // density=0 -> very negative; density=1 coherence=1 -> positive
             // (unmodeled coherent script); density=1 coherence=0 -> very negative.
+            // z6 is included so a letter-free but FFFD/anomaly-heavy doc (which can
+            // no longer flood z1) is still penalized here — no path ignores the
+            // replacement ratio.  For unmodeled-but-clean script z6~0, so it's inert.
             agg.dominantScript = null;
             agg.z1 = Float.NaN;
-            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8;
+            agg.logit = -7f + 4f * agg.z7 + 6f * agg.z8 + 4f * agg.z6;
             return agg;
         }
         agg.z1 = (float) (weightedZ1 / z1Count);
@@ -973,14 +980,69 @@ public final class JunkDetector implements TextQualityDetector {
      * once when scanning the text (avoiding a redundant binary search per
      * codepoint).
      */
+    /** Small per-bigram log-prob penalty subtracted from the case-folded
+     *  (lowercase) value when scoring an uppercase pair.  All-caps is a genuinely
+     *  weaker/rarer signal than lowercase, so it should score a hair BELOW its
+     *  lowercase form, not equal to it — and the margin guards the edge case where
+     *  an all-caps *mojibake* decode whose lowercase twin happens to be a seen
+     *  bigram would otherwise score like real lowercase text.  Kept small (0.25):
+     *  the lowercase/junk margin is ~0.8 logit, and δ=0.5 thinned it to ~0.1, so
+     *  0.25 leaves all-caps clearly clean (~0.5 above junk) while honoring the
+     *  "somewhat less languagey" principle. */
+    private static final double CASE_FOLD_PENALTY = 0.25;
+
     private static double scorePairF1(int cpA, int idxA, int cpB, int idxB,
                                          BigramTables tables) {
+        double direct = Double.NaN;
         if (idxA >= 0 && idxB >= 0) {
             int slot = lookupBigramSlot(tables, idxA, idxB);
             if (slot >= 0) {
-                return dequantize(tables.bigramValues[slot],
+                direct = dequantize(tables.bigramValues[slot],
                         tables.bigramQuantMin, tables.bigramQuantMax);
             }
+        }
+        // Case-folded backoff: an ALL-UPPERCASE pair that is the case variant of
+        // a SEEN lowercase pair is real text wearing a different case (all-caps
+        // headings / emphasis, e.g. Greek "ΚΑΤΑΛΟΓΟΣ", Russian "МУЗЕЙ"), NOT junk.
+        // Score it as the BETTER of its own log-prob and its lowercase twin's —
+        // i.e. max(direct, fold).  max (not fold-only-on-miss) is essential: real
+        // all-caps bigrams ARE present in training (from headings) but rare, so the
+        // direct lookup hits a low value (МУ −12.4 vs lowercase му −6.7) and would
+        // otherwise bypass the fold and floor.  This is the discriminator raw
+        // probability cannot be: all-caps real text and all-caps mojibake are both
+        // improbable, but only real text has a SEEN lowercase twin.  Gated on BOTH
+        // codepoints being uppercase (case-CONSISTENT) so alternating-case junk
+        // ("tHiS") stays unfolded and floors; and only the lowercase twin's value
+        // is borrowed when that pair is actually seen, so all-caps mojibake
+        // (lowercase form also unseen) floors.
+        // Gate = "at least one uppercase letter AND no LOWERCASE letter" — so it
+        // folds both an interior all-caps pair (МУ) AND an edge pair where the other
+        // side is a sentinel or glue (^М, Й$, "М."), but NOT a mixed-case pair (the
+        // lowercase letter in "aB"/"tHiS" trips the gate, so case-inconsistent junk
+        // still floors).  Each uppercase letter is folded; sentinels/digits/glue
+        // pass through unchanged.  Folding the edges too is what fully rescues short
+        // all-caps headings, whose ^X/X$ bigrams would otherwise floor on the rare
+        // uppercase-letter unigram backoff.
+        if ((Character.isUpperCase(cpA) || Character.isUpperCase(cpB))
+                && !Character.isLowerCase(cpA) && !Character.isLowerCase(cpB)) {
+            int lcA = Character.isUpperCase(cpA) ? Character.toLowerCase(cpA) : cpA;
+            int lcB = Character.isUpperCase(cpB) ? Character.toLowerCase(cpB) : cpB;
+            if (lcA != cpA || lcB != cpB) {
+                int lcIdxA = codepointToIndex(tables, lcA);
+                int lcIdxB = codepointToIndex(tables, lcB);
+                if (lcIdxA >= 0 && lcIdxB >= 0) {
+                    int slot = lookupBigramSlot(tables, lcIdxA, lcIdxB);
+                    if (slot >= 0) {
+                        double fold = dequantize(tables.bigramValues[slot],
+                                tables.bigramQuantMin, tables.bigramQuantMax)
+                                - CASE_FOLD_PENALTY;
+                        return Double.isNaN(direct) ? fold : Math.max(direct, fold);
+                    }
+                }
+            }
+        }
+        if (!Double.isNaN(direct)) {
+            return direct;
         }
         // Unigram backoff for unseen pair or for codepoints absent from the
         // per-script index.  α=1.0 = plain independence.
@@ -1068,6 +1130,15 @@ public final class JunkDetector implements TextQualityDetector {
     /** Model script key for the pooled COMMON (digits/punctuation/symbols) table. */
     public static final String COMMON_SCRIPT = "COMMON";
 
+    /** Sentinel "codepoints" (above the Unicode maximum U+10FFFF, so they cannot
+     *  collide with real text) that wrap each letter token: TOKEN_START (^) before
+     *  the first letter of a run and TOKEN_END ($) after the last.  Emitted by
+     *  {@link #forEachScriptBigram} so the bigram LM learns word-initial / word-
+     *  final letter typicality, and so z1 never empties for text containing even a
+     *  single letter. */
+    public static final int TOKEN_START = 0x110000;
+    public static final int TOKEN_END = 0x110001;
+
     /** COMMON-class predicate: COMMON, INHERITED, UNKNOWN all pool into COMMON. */
     static String classKey(int cp) {
         Character.UnicodeScript s = Character.UnicodeScript.of(cp);
@@ -1095,21 +1166,29 @@ public final class JunkDetector implements TextQualityDetector {
     }
 
     // -----------------------------------------------------------------------
-    // Bucket-by-script bigram enumeration (the keystone).
+    // Word-level bigram enumeration (the keystone).
     // Single source of truth for BOTH inference z1 scoring and training tally.
-    // A bigram (a,b) is:
-    //   - skipped if either codepoint is charset-invariant (digit) — digits
-    //     never enter any bucket;
-    //   - assigned to the adjacent real script when one side is COMMON glue
-    //     (space/punct fold into the neighbouring word);
-    //   - assigned to the COMMON bucket when BOTH sides are COMMON — so that
-    //     symbol/punctuation salad ("*^&(...") scores against the COMMON table
-    //     (unseen → junky), while a formatted number (digits skipped, its
-    //     punctuation digit-adjacent) lands almost nothing → neutral;
-    //   - skipped if a and b are two DIFFERENT real scripts (cross-script
-    //     boundary — not comparable, would mix tables).
-    // COMMON is a normal bucket (its own table + calibration + combiner weight),
-    // scored through this same path.
+    // The codepoint stream is tokenized into maximal same-script runs:
+    //   - LETTERs (Lu/Ll/Lt/Lm/Lo) are the scoreable content, bucketed by script;
+    //   - combining MARKs (Mn/Me/Mc) attach to the current run (so NFD accents,
+    //     Arabic harakat, Indic matras, Thai vowel signs stay inside their word);
+    //   - GLUE — every other non-letter that is NOT whitespace/NUL and NOT a decode
+    //     anomaly (punctuation, symbols, numbers) — ALSO attaches to the open run
+    //     and IS scored, at codepoint resolution.  This is what lets z1 catch a
+    //     wrong-charset symbol wedged mid-word: the LM learns letter->'.' is common
+    //     but letter->U+2030 is ~0, so 'Hausj‰rven' (Latin-sibling misdecode) floors
+    //     while 'Hausjärven' (a real accented letter) does not.  Resolution is the
+    //     codepoint, never the Unicode category — '%', U+2030, U+2020 are all Po
+    //     like '.', so a typed/binned boundary would hide them behind the period's
+    //     frequency (measured: letter->'.' = 235k vs letter->U+2030 = 0 in LATIN);
+    //   - BOUNDARIES that split a run and emit NOTHING: whitespace and NUL (word /
+    //     structure separators) and the decode-anomaly set (U+FFFD / C1 / anomalous
+    //     Cc / PUA), whose penalty is carried solely by z6 (anomaly ratio) and z3,
+    //     NEVER z1 — keeping anomalies out of z1 is what stops z1 cannibalizing the
+    //     FFFD signal z6 owns;
+    //   - a letter-script change is also a boundary (cross-script structure is z4/z9).
+    // Each run is wrapped TOKEN_START (^) ... TOKEN_END ($) so the LM learns
+    // word-initial/final typicality and never empties for text with even one letter.
     // -----------------------------------------------------------------------
 
     /** Sink for {@link #forEachScriptBigram}: (modelScript, cpA, cpB). */
@@ -1118,9 +1197,22 @@ public final class JunkDetector implements TextQualityDetector {
         void accept(String script, int a, int b);
     }
 
-    /** Charset-invariant content excluded from per-script bigram scoring. */
-    static boolean isSkipCodepoint(int cp) {
-        return Character.isDigit(cp);
+    /** True for letter codepoints (Lu/Ll/Lt/Lm/Lo) — the scoreable token content
+     *  that forms per-script runs.  {@code type} is {@link Character#getType}. */
+    static boolean isLetterCp(int type) {
+        return type == Character.UPPERCASE_LETTER
+                || type == Character.LOWERCASE_LETTER
+                || type == Character.TITLECASE_LETTER
+                || type == Character.MODIFIER_LETTER
+                || type == Character.OTHER_LETTER;
+    }
+
+    /** True for combining marks (Mn/Me/Mc) — they attach to the current run
+     *  rather than splitting it.  {@code type} is {@link Character#getType}. */
+    static boolean isMarkCp(int type) {
+        return type == Character.NON_SPACING_MARK
+                || type == Character.ENCLOSING_MARK
+                || type == Character.COMBINING_SPACING_MARK;
     }
 
     /**
@@ -1154,64 +1246,67 @@ public final class JunkDetector implements TextQualityDetector {
         return buckets;
     }
 
-    /** "Real" structural whitespace collapses to canonical U+0020 before bigram
-     *  emission.  Matches {@link #computeZ3ControlByte}'s definition of
-     *  non-anomalous whitespace: HT (0x09), LF (0x0A), CR (0x0D), regular
-     *  space (0x20), plus the Zs/Zl/Zp Unicode categories (NBSP, ideographic
-     *  space, line/paragraph separators).
-     *
-     *  <p><strong>Anomalous Cc (0x01-0x08, 0x0B, 0x0C, 0x0E-0x1F, 0x7F, U+0085
-     *  NEL, U+0080-0x009F C1 controls) and Cf (format chars) are DELIBERATELY
-     *  NOT normalized.</strong>  Their OOV-floor signal is carrying real
-     *  evidence that the decode is wrong — e.g., windows-1252 bytes 0x80-0x9F
-     *  decode to printable curly quotes / em-dashes; ISO-8859-16 misdecodes
-     *  them as C1 control codepoints; the bigram-table OOV-floor on those
-     *  Cc-touching bigrams is what correctly penalizes the wrong decode.
-     *  z3 has had this distinction since v15; this brings z1 in line. */
-    static int normalizeWhitespace(int cp) {
-        if (cp == 0x20) {
-            return cp;
-        }
-        if (cp == 0x09 || cp == 0x0A || cp == 0x0D) {
-            return 0x20;
-        }
-        int t = Character.getType(cp);
-        if (t == Character.SPACE_SEPARATOR
-                || t == Character.LINE_SEPARATOR
-                || t == Character.PARAGRAPH_SEPARATOR) {
-            return 0x20;
-        }
-        return cp;
-    }
-
     public static void forEachScriptBigram(int[] cps, BigramSink sink) {
-        if (cps == null || cps.length < 2) {
+        if (cps == null || cps.length == 0) {
             return;
         }
-        for (int i = 0; i + 1 < cps.length; i++) {
-            int a = normalizeWhitespace(cps[i]);
-            int b = normalizeWhitespace(cps[i + 1]);
-            if (isSkipCodepoint(a) || isSkipCodepoint(b)) {
-                continue;
+        String curScript = null;   // script of the run in progress; null = no open run
+        int prev = -1;             // previous codepoint in the open run (left side of next bigram)
+        for (int cp : cps) {
+            int type = Character.getType(cp);
+            if (isLetterCp(type)) {
+                String sc = classKey(cp);
+                if (curScript != null && sc.equals(curScript)) {
+                    sink.accept(curScript, prev, cp);          // within-run letter bigram
+                } else {
+                    if (curScript != null) {
+                        sink.accept(curScript, prev, TOKEN_END);   // close the prior run
+                    }
+                    curScript = sc;
+                    sink.accept(curScript, TOKEN_START, cp);        // open a new run
+                }
+                prev = cp;
+            } else if (isBoundaryCp(cp)) {
+                // WORD/STRUCTURE boundary (whitespace, NUL) or a decode anomaly
+                // (U+FFFD / C1 / anomalous Cc / PUA — scored by z6/z3, never z1):
+                // close the run, emit nothing.
+                if (curScript != null) {
+                    sink.accept(curScript, prev, TOKEN_END);
+                    curScript = null;
+                    prev = -1;
+                }
+            } else if (curScript != null) {
+                // GLUE (punctuation / symbol / number) or a combining MARK inside an
+                // open run: attach and SCORE it at codepoint resolution.  This is the
+                // intrusion signal: the LM learns letter->'.' is common but
+                // letter->U+2030 (per-mille) is ~0, so a wrong-charset symbol wedged
+                // mid-word (the Latin-sibling misdecode, e.g. 'Hausj‰rven') floors
+                // z1, while a clean accented letter (a real letter, scored as a letter
+                // bigram) does not.  Resolution is the codepoint, never the Unicode
+                // category: '%', U+2030, U+2020 are all Po like '.', so binning by
+                // category would hide them behind the period's huge frequency.
+                sink.accept(curScript, prev, cp);
+                prev = cp;
             }
-            String ka = classKey(a);
-            String kb = classKey(b);
-            boolean aCommon = COMMON_SCRIPT.equals(ka);
-            boolean bCommon = COMMON_SCRIPT.equals(kb);
-            String script;
-            if (aCommon && bCommon) {
-                script = COMMON_SCRIPT;        // symbol/punct salad → COMMON bucket
-            } else if (aCommon) {
-                script = kb;                   // glue folds into the real side
-            } else if (bCommon) {
-                script = ka;
-            } else if (ka.equals(kb)) {
-                script = ka;                   // same real script
-            } else {
-                continue;                      // cross-script boundary
-            }
-            sink.accept(script, a, b);
+            // else: orphan glue/mark with no open run -> nothing to attach to, skip.
         }
+        if (curScript != null) {
+            sink.accept(curScript, prev, TOKEN_END);            // close the final run
+        }
+    }
+
+    /** True for codepoints that BREAK a run without being scored in z1: whitespace
+     *  and NUL (word/structure boundaries) plus the z6/z3 decode-anomaly set
+     *  ({@link TextQualityFeatures#isAnomalyCodepoint} — U+FFFD, C1, anomalous Cc,
+     *  private-use).  Every other non-letter (punctuation, symbol, number) is GLUE:
+     *  it attaches to the open run and is scored, so the LM can floor a symbol
+     *  wedged mid-word while keeping the anomaly penalty solely in z6 (so z1 never
+     *  cannibalizes the FFFD signal). */
+    static boolean isBoundaryCp(int cp) {
+        return cp == 0x00
+                || Character.isWhitespace(cp)
+                || Character.isSpaceChar(cp)
+                || TextQualityFeatures.isAnomalyCodepoint(cp);
     }
 
     /**

@@ -229,17 +229,29 @@ public final class TextQualityFeatures {
         if (text == null || text.isEmpty()) {
             return Double.NaN;
         }
-        int total = 0;
+        int denom = 0;     // high bytes + sub-0x80 anomalies = codepoints that CAN be decode failures
         int anomaly = 0;
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            total++;
-            if (isAnomalyCodepoint(cp)) {
+            boolean anom = isAnomalyCodepoint(cp);
+            if (anom) {
                 anomaly++;
             }
+            if (cp >= 0x80 || anom) {
+                denom++;
+            }
         }
-        return total == 0 ? Double.NaN : (double) anomaly / total;
+        // Denominator is non-ASCII (+ sub-0x80 control anomalies), NOT total
+        // codepoints: anomalies only arise from undecodable HIGH bytes, so this is
+        // the fraction "of the bytes that COULD fail, how many did" — undiluted by
+        // ASCII.  PURE ratio (no smoothing, no min-denom cliff): a page whose few
+        // non-ASCII chars all failed (1 FFFD / 1 non-ASCII = 1.0) is a strong wrong-
+        // charset signal and must register fully, while a content-rich page with a
+        // few stray FFFD has a naturally-tiny ratio (1/500 ≈ 0).  This is the signal
+        // that distinguishes Latin wrong-charset (ratio→1) from CJK mixed-encoding
+        // (ratio→0.06).  All-ASCII (denom 0) → 0 (clean).
+        return denom == 0 ? 0.0 : (double) anomaly / denom;
     }
 
     /** True if {@code cp} is in the z6 anomaly set: U+FFFD, anomalous Cc
@@ -364,6 +376,14 @@ public final class TextQualityFeatures {
      * signal) from "all-whitespace / digit-only content" (zero density
      * → strong negative signal in JunkDetector's bigram-based judgment,
      * mild signal for general-purpose junk filtering).
+     *
+     * <p><strong>U+FFFD is excluded</strong> from both numerator and
+     * denominator: it is a decode-failure marker scored by the dedicated
+     * replacement-char feature (z6), so counting it here too would (a) double-
+     * count FFFD and (b) re-create the FFFD-drag when this feature dominates —
+     * a permissive wrong decode (few FFFD) would out-score a correct mixed-
+     * encoding decode (many FFFD from undecodable widget bytes).  This measures
+     * the composition of the *decodable* content only.
      */
     public static double scriptDensity(String text) {
         if (text == null || text.isEmpty()) {
@@ -374,6 +394,9 @@ public final class TextQualityFeatures {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
+            if (cp == 0xFFFD) {
+                continue;
+            }
             total++;
             Character.UnicodeScript s = Character.UnicodeScript.of(cp);
             if (s != Character.UnicodeScript.COMMON

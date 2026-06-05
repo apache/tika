@@ -25,6 +25,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TreeMap;
@@ -273,25 +274,104 @@ public class JunkDetectorRoundTripTest {
                 -10.0f, 1.0f);
     }
 
-    /** Expected z1: mean log-prob over every non-digit adjacent bigram scored
-     *  against the single-script {@code tables}, calibrated.  Mirrors
-     *  {@link JunkDetector}'s aggregate for single-script text. */
+    @Test
+    void tokenizationScoresGlueButKeepsAnomaliesAndWhitespaceAsBoundaries() {
+        // A letter run is wrapped ^...$.  GLUE (punctuation, symbols, numbers)
+        // attaches to the open run and IS scored at codepoint resolution, so a
+        // symbol wedged mid-word becomes a real (rare) bigram the LM can floor.
+        // But DECODE ANOMALIES (here U+FFFD; also C1 / PUA) and WHITESPACE stay
+        // boundaries that split the run and emit nothing — the anomaly penalty
+        // lives solely in z6, never z1, so z1 cannot cannibalize the FFFD signal.
+        String fffd = String.valueOf((char) 0xFFFD);
+        // all-letter run
+        assertEquals(List.of("^-a", "a-b", "b-c", "c-d", "d-$"), bigrams("abcd"));
+        // glue (period, U+2030 per-mille) is SCORED inside the run, not dropped
+        assertEquals(List.of("^-a", "a-b", "b-.", ".-c", "c-d", "d-$"), bigrams("ab.cd"));
+        assertEquals(List.of("^-a", "a-b", "b-\u2030", "\u2030-c", "c-d", "d-$"),
+                bigrams("ab\u2030cd"));
+        // U+FFFD (decode anomaly) is still a BOUNDARY: splits, emits nothing
+        assertEquals(List.of("^-a", "a-b", "b-$", "^-c", "c-d", "d-$"),
+                bigrams("ab" + fffd + "cd"));
+        assertEquals(List.of("^-a", "a-b", "b-$"), bigrams("ab" + fffd + fffd));
+        // whitespace is a boundary too
+        assertEquals(List.of("^-a", "a-b", "b-$", "^-c", "c-d", "d-$"),
+                bigrams("ab cd"));
+    }
+
+    /** Collects {@link JunkDetector#forEachScriptBigram} output as "a-b" strings,
+     *  rendering the run-boundary sentinels as {@code ^} (start) / {@code $} (end). */
+    private static List<String> bigrams(String s) {
+        List<String> out = new ArrayList<>();
+        JunkDetector.forEachScriptBigram(s.codePoints().toArray(), (script, a, b) ->
+                out.add(fmtCp(a) + "-" + fmtCp(b)));
+        return out;
+    }
+
+    private static String fmtCp(int cp) {
+        if (cp == JunkDetector.TOKEN_START) return "^";
+        if (cp == JunkDetector.TOKEN_END) return "$";
+        return new String(Character.toChars(cp));
+    }
+
+    @Test
+    void caseFoldedBackoffRescuesAllCapsButNotMixedOrMojibake() {
+        // Synthetic LATIN table: index ['a','b'], the lowercase pair (a,b) seen
+        // at a high log-prob (-1.0).  Uppercase 'A'/'B' are absent from the index.
+        BigramTables t = buildLatinTablesLowerAB();
+        double seenLower = JunkDetector.computeF1MeanLogP(new int[]{'a', 'b'}, t);
+        double allCaps = JunkDetector.computeF1MeanLogP(new int[]{'A', 'B'}, t);
+        double mixed = JunkDetector.computeF1MeanLogP(new int[]{'a', 'B'}, t);
+        double noTwin = JunkDetector.computeF1MeanLogP(new int[]{'B', 'A'}, t);
+        // All-caps "AB" folds to the SEEN lowercase "ab", landing a small case-fold
+        // penalty BELOW it (all-caps is a slightly weaker signal) -- but nowhere near
+        // the independence floor the mixed/mojibake cases hit below.
+        assertTrue(allCaps < seenLower && allCaps > seenLower - 0.5,
+                "all-caps AB must fold to ~ the seen lowercase ab (minus a small penalty); "
+                + "seenLower=" + seenLower + " allCaps=" + allCaps);
+        // Mixed-case "aB" is case-INCONSISTENT -> not folded -> independence floor.
+        assertTrue(mixed < allCaps - 1.0,
+                "mixed-case aB must not fold (consistency gate)");
+        // All-caps "BA" whose lowercase twin (b,a) is UNSEEN -> floors (mojibake case).
+        assertTrue(noTwin < allCaps - 1.0,
+                "all-caps with no seen lowercase twin must floor");
+    }
+
+    /** Like {@link #buildLatinTablesAB} but indexed on LOWERCASE ['a','b'] with
+     *  the lowercase pair (a,b) seen at -1.0 — exercises the case-folded backoff
+     *  (uppercase 'A'/'B' are absent from the index, so they must fold). */
+    private static BigramTables buildLatinTablesLowerAB() {
+        int[] cpIndex = new int[]{'a', 'b'};
+        int[] keys = new int[4];
+        Arrays.fill(keys, BigramTables.EMPTY_KEY);
+        byte[] values = new byte[4];
+        float bMin = -10.0f;
+        float bMax = -1.0f;
+        insertOA(keys, values, JunkDetector.packBigramKey(0, 1),
+                quantizeOne(-1.0f, bMin, bMax));
+        float uMin = -5.0f;
+        float uMax = -2.0f;
+        byte[] unigramBytes = new byte[]{
+                quantizeOne(-2.0f, uMin, uMax),
+                quantizeOne(-2.0f, uMin, uMax),
+        };
+        return new BigramTables(cpIndex, keys, values, unigramBytes,
+                bMin, bMax, uMin, uMax, -10.0f, 1.0f);
+    }
+
+    /** Expected z1: mean log-prob over the bigrams {@link
+     *  JunkDetector#forEachScriptBigram} emits (word-run tokenization with ^/$
+     *  wrapping), scored against the single-script {@code tables}, calibrated.
+     *  Delegates to the production tokenizer so it cannot drift from inference. */
     private static float expectedRunZ(BigramTables tables, String text, float mu, float sigma) {
-        int[] cps = text.codePoints().toArray();
-        double sum = 0;
-        long n = 0;
-        for (int i = 0; i + 1 < cps.length; i++) {
-            if (Character.isDigit(cps[i]) || Character.isDigit(cps[i + 1])) {
-                continue;
+        double[] acc = new double[2]; // {sum, count}
+        JunkDetector.forEachScriptBigram(text.codePoints().toArray(), (script, a, b) -> {
+            double f1 = JunkDetector.computeF1MeanLogP(new int[]{a, b}, tables);
+            if (!Double.isNaN(f1)) {
+                acc[0] += f1;
+                acc[1] += 1;
             }
-            double f1 = JunkDetector.computeF1MeanLogP(new int[]{cps[i], cps[i + 1]}, tables);
-            if (Double.isNaN(f1)) {
-                continue;
-            }
-            sum += f1;
-            n++;
-        }
-        return (float) ((sum / n - mu) / sigma);
+        });
+        return (float) ((acc[0] / acc[1] - mu) / sigma);
     }
 
     /** Quantize a single float to 8-bit unsigned using the explicit range. */
