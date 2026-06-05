@@ -1161,7 +1161,8 @@ public class TrainJunkModel {
 
                 // Mixed-encoding (korA-class) pair: coherent text with heavy
                 // undecodable FFFD widget bytes (~15-20% of high bytes) must BEAT
-                // coherent-looking mojibake of the same bytes.  As a contrastive
+                // coherent-looking mojibake of the same source text (the clean w,
+                // without the FFFD widgets).  As a contrastive
                 // PAIR (not a pointwise positive) it adds no class imbalance, and
                 // it forces z1/coherence to stay the discriminator: the correct
                 // side has MORE FFFD (z6 favors the wrong side) and equal z7

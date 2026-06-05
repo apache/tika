@@ -371,6 +371,9 @@ public class JunkDetectorRoundTripTest {
                 acc[1] += 1;
             }
         });
+        if (acc[1] == 0) {
+            throw new IllegalArgumentException("no scorable bigrams for: " + text);
+        }
         return (float) ((acc[0] / acc[1] - mu) / sigma);
     }
 
