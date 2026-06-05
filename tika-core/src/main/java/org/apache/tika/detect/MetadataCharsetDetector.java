@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
@@ -33,10 +34,13 @@ import org.apache.tika.parser.ParseContext;
  * reading any bytes from the stream.  Returns a single
  * {@link EncodingResult.ResultType#DECLARATIVE} result when a charset is found.
  *
- * <p>Two metadata keys are consulted in order:
+ * <p>Three metadata keys are consulted in order:
  * <ol>
  *   <li>{@link Metadata#CONTENT_TYPE} — the {@code charset} parameter of the
  *       HTTP/MIME Content-Type header (e.g. {@code text/html; charset=UTF-8}).</li>
+ *   <li>{@link TikaCoreProperties#CONTENT_TYPE_HINT} — the {@code charset} parameter
+ *       of a content-type a source <em>claimed</em> for the bytes (e.g. an HTML
+ *       {@code <meta>} tag, or a zip entry's UTF-8 (EFS) flag). A hint, not a verdict.</li>
  *   <li>{@link Metadata#CONTENT_ENCODING} — a bare charset label set by parsers
  *       such as {@code RFC822Parser}, which splits Content-Type into a bare
  *       media-type key and a separate charset key.</li>
@@ -57,6 +61,9 @@ public class MetadataCharsetDetector implements EncodingDetector {
                                        ParseContext context) throws IOException {
         Charset cs = charsetFromContentType(metadata);
         if (cs == null) {
+            cs = charsetFromContentTypeHint(metadata);
+        }
+        if (cs == null) {
             cs = charsetFromContentEncoding(metadata);
         }
         if (cs == null) {
@@ -71,7 +78,20 @@ public class MetadataCharsetDetector implements EncodingDetector {
      * {@link Metadata#CONTENT_TYPE} value, or {@code null} if absent or unparseable.
      */
     public static Charset charsetFromContentType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        return charsetFromMediaType(metadata.get(Metadata.CONTENT_TYPE));
+    }
+
+    /**
+     * Returns the charset named in the {@code charset} parameter of the
+     * {@link TikaCoreProperties#CONTENT_TYPE_HINT} value — a content-type a source
+     * claimed for the bytes (HTML {@code <meta>}, a zip entry's UTF-8 flag, ...) —
+     * or {@code null} if absent or unparseable.
+     */
+    public static Charset charsetFromContentTypeHint(Metadata metadata) {
+        return charsetFromMediaType(metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
+    }
+
+    private static Charset charsetFromMediaType(String contentType) {
         if (contentType == null) {
             return null;
         }
@@ -79,8 +99,7 @@ public class MetadataCharsetDetector implements EncodingDetector {
         if (mediaType == null) {
             return null;
         }
-        String label = mediaType.getParameters().get("charset");
-        return parseCharset(label);
+        return parseCharset(mediaType.getParameters().get("charset"));
     }
 
     /**
