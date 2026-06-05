@@ -68,6 +68,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -903,7 +904,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 try (TikaInputStream tis = TikaInputStream.get(html.getBytes(UTF_8))) {
                     List<EncodingResult> encResults =
                             detector.detect(tis, EMPTY_METADATA, context);
-                    charset = encResults.isEmpty() ? null : encResults.get(0).getCharset();
+                    charset = encResults.isEmpty() ? null : encResults.get(0).getDecodeAs();
                 } catch (IOException e) {
                     //swallow
                 }
@@ -921,9 +922,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             CharsetDetector detector = new CharsetDetector();
             detector.setText(text.getRawValue());
             CharsetMatch match = detector.detect();
-            if (match != null && match.getConfidence() > 35 &&
-                    tryToSet7BitEncoding(msg, match.getName())) {
-                return;
+            if (match != null && match.getConfidence() > 35) {
+                String charsetName = match.getName();
+                try {
+                    charsetName = CharsetSupersets.decodeAs(Charset.forName(charsetName)).name();
+                } catch (IllegalArgumentException e) {
+                    //ICU name not a resolvable Java charset; use as-is
+                }
+                if (tryToSet7BitEncoding(msg, charsetName)) {
+                    return;
+                }
             }
         }
     }
