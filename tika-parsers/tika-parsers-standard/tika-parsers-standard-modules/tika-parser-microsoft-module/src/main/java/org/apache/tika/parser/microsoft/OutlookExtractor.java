@@ -68,7 +68,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.detect.CharsetSupersets;
+import org.apache.tika.detect.DefaultEncodingDetector;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -81,14 +82,11 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.microsoft.rtf.jflex.RTFHtmlDecapsulator;
-import org.apache.tika.parser.txt.CharsetDetector;
-import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -183,7 +181,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final DirectoryNode root;
     private final MAPIMessage msg;
     private final ParseContext parseContext;
-    HtmlEncodingDetector detector = new HtmlEncodingDetector();
+    private static final EncodingDetector DEFAULT_ENCODING_DETECTOR = new DefaultEncodingDetector();
 
 
     public OutlookExtractor(DirectoryNode root, Metadata metadata, ParseContext context) throws TikaException {
@@ -848,42 +846,83 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             return;
         }
 
+        // A declared charset (message codepage, else a Content-Type header) is a hint,
+        // not a verdict -- the detector evaluates it against the raw body bytes below.
+        String declared = declaredCharset(msg, mainChunks);
+
+        // Detect on the raw body bytes -- the HTML binary chunk if present, else the
+        // text body. (msg.getHtmlBody() is an already-decoded String, so detecting its
+        // re-encoded bytes would just report the re-encoding charset.)
+        byte[] body = null;
+        ByteChunk htmlBinary = mainChunks.getHtmlBodyChunkBinary();
+        if (htmlBinary != null && htmlBinary.getValue() != null) {
+            body = htmlBinary.getValue();
+        } else if (mainChunks.getTextBodyChunk() != null) {
+            body = mainChunks.getTextBodyChunk().getRawValue();
+        }
+
+        EncodingDetector encodingDetector = context.get(EncodingDetector.class);
+        if (encodingDetector == null) {
+            encodingDetector = DEFAULT_ENCODING_DETECTOR;
+        }
+
+        if (body != null && body.length > 0) {
+            Metadata metadata = new Metadata();
+            if (declared != null) {
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_HINT,
+                        "text/plain; charset=" + declared);
+            }
+            try (TikaInputStream tis = TikaInputStream.get(body)) {
+                List<EncodingResult> results = encodingDetector.detect(tis, metadata, context);
+                if (!results.isEmpty() && results.get(0).getConfidence() > 0.35f
+                        && tryToSet7BitEncoding(msg, results.get(0).getDecodeAs().name())) {
+                    return;
+                }
+            } catch (IOException e) {
+                //swallow
+            }
+        }
+
+        // No body to adjudicate against (or detection abstained): trust the declaration.
+        if (declared != null) {
+            tryToSet7BitEncoding(msg, declared);
+        }
+    }
+
+    /**
+     * The charset a 7-bit message declares for itself: its codepage property
+     * (MESSAGE_CODEPAGE / INTERNET_CPID), else a {@code charset} on a Content-Type
+     * header. A hint for the detector, not a verdict. {@code null} if none.
+     */
+    private static String declaredCharset(MAPIMessage msg, Chunks mainChunks) {
         Map<MAPIProperty, List<PropertyValue>> props = mainChunks.getProperties();
         if (props != null) {
-            // First choice is a codepage property
-            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE, MAPIProperty.INTERNET_CPID}) {
+            for (MAPIProperty prop : new MAPIProperty[]{MAPIProperty.MESSAGE_CODEPAGE,
+                    MAPIProperty.INTERNET_CPID}) {
                 List<PropertyValue> val = props.get(prop);
                 if (val != null && val.size() > 0) {
                     int codepage = ((PropertyValue.LongPropertyValue) val.get(0)).getValue();
-                    String encoding = null;
                     try {
-                        encoding = CodePageUtil.codepageToEncoding(codepage, true);
-                    } catch (UnsupportedEncodingException e) {
-                        //swallow
-                    }
-                    if (tryToSet7BitEncoding(msg, encoding)) {
-                        return;
+                        String encoding = CodePageUtil.codepageToEncoding(codepage, true);
+                        if (encoding != null && Charset.isSupported(encoding)) {
+                            return encoding;
+                        }
+                    } catch (UnsupportedEncodingException | IllegalArgumentException e) {
+                        //swallow, try the next source
                     }
                 }
             }
         }
-
-        // Second choice is a charset on a content type header
         try {
             String[] headers = msg.getHeaders();
-            if (headers != null && headers.length > 0) {
-                // Look for a content type with a charset
-                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?", Pattern.CASE_INSENSITIVE);
-
+            if (headers != null) {
+                Pattern p = Pattern.compile(
+                        "Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?", Pattern.CASE_INSENSITIVE);
                 for (String header : headers) {
                     if (header.startsWith("Content-Type")) {
                         Matcher m = p.matcher(header);
                         if (m.matches()) {
-                            // Found it! Tell all the string chunks
-                            String charset = m.group(1);
-                            if (tryToSet7BitEncoding(msg, charset)) {
-                                return;
-                            }
+                            return m.group(1);
                         }
                     }
                 }
@@ -891,49 +930,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } catch (ChunkNotFoundException e) {
             //swallow
         }
-
-        // Nothing suitable in the headers, try HTML
-        // TODO: do we need to replicate this in Tika? If we wind up
-        // parsing the html version of the email, this is duplicative??
-        // Or do we need to reset the header strings based on the html
-        // meta header if there is no other information?
-        try {
-            String html = msg.getHtmlBody();
-            if (html != null && html.length() > 0) {
-                Charset charset = null;
-                try (TikaInputStream tis = TikaInputStream.get(html.getBytes(UTF_8))) {
-                    List<EncodingResult> encResults =
-                            detector.detect(tis, EMPTY_METADATA, context);
-                    charset = encResults.isEmpty() ? null : encResults.get(0).getDecodeAs();
-                } catch (IOException e) {
-                    //swallow
-                }
-                if (charset != null && tryToSet7BitEncoding(msg, charset.name())) {
-                    return;
-                }
-            }
-        } catch (ChunkNotFoundException e) {
-            //swallow
-        }
-
-        //absolute last resort, try charset detector
-        StringChunk text = mainChunks.getTextBodyChunk();
-        if (text != null) {
-            CharsetDetector detector = new CharsetDetector();
-            detector.setText(text.getRawValue());
-            CharsetMatch match = detector.detect();
-            if (match != null && match.getConfidence() > 35) {
-                String charsetName = match.getName();
-                try {
-                    charsetName = CharsetSupersets.decodeAs(Charset.forName(charsetName)).name();
-                } catch (IllegalArgumentException e) {
-                    //ICU name not a resolvable Java charset; use as-is
-                }
-                if (tryToSet7BitEncoding(msg, charsetName)) {
-                    return;
-                }
-            }
-        }
+        return null;
     }
 
     private boolean tryToSet7BitEncoding(MAPIMessage msg, String charsetName) {

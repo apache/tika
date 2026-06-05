@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.CharsetSupersets;
+import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
@@ -40,7 +41,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -57,6 +57,7 @@ public class DBFParser implements Parser {
     private static final int ROWS_TO_BUFFER_FOR_CHARSET_DETECTION = 10;
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
+    private static final EncodingDetector DEFAULT_ENCODING_DETECTOR = new DefaultEncodingDetector();
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-dbf"));
@@ -140,7 +141,10 @@ public class DBFParser implements Parser {
         }
         byte[] bytes = bos.toByteArray();
         if (bytes.length > 20) {
-            EncodingDetector detector = new Icu4jEncodingDetector();
+            EncodingDetector detector = parseContext.get(EncodingDetector.class);
+            if (detector == null) {
+                detector = DEFAULT_ENCODING_DETECTOR;
+            }
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 List<EncodingResult> results =
                         detector.detect(TikaInputStream.get(bytes), new Metadata(), parseContext);
