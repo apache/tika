@@ -40,7 +40,9 @@ import org.apache.tika.parser.ParseContext;
  *       HTTP/MIME Content-Type header (e.g. {@code text/html; charset=UTF-8}).</li>
  *   <li>{@link TikaCoreProperties#CONTENT_TYPE_HINT} — the {@code charset} parameter
  *       of a content-type a source <em>claimed</em> for the bytes (e.g. an HTML
- *       {@code <meta>} tag, or a zip entry's UTF-8 (EFS) flag). A hint, not a verdict.</li>
+ *       {@code <meta>} tag, or a zip entry's UTF-8 (EFS) flag). A hint, not a verdict.
+ *       This key is only consulted when {@link MetadataCharsetDetector} is included in
+ *       the active {@link org.apache.tika.detect.EncodingDetector} chain.</li>
  *   <li>{@link Metadata#CONTENT_ENCODING} — a bare charset label set by parsers
  *       such as {@code RFC822Parser}, which splits Content-Type into a bare
  *       media-type key and a separate charset key.</li>
