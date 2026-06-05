@@ -188,24 +188,30 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
         }
 
-        // If a password was supplied, use it, otherwise the default
-        Biff8EncryptionKey.setCurrentUserPassword(getPassword());
+        // Use the supplied password, otherwise the default. POI keeps it in a ThreadLocal;
+        // save/restore so it doesn't carry over to the next parse on this thread.
+        String previousPassword = Biff8EncryptionKey.getCurrentUserPassword();
+        try {
+            Biff8EncryptionKey.setCurrentUserPassword(getPassword());
 
-        // Have the file processed in event mode
-        TikaHSSFListener listener =
-                new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
-        listener.processFile(root, isListenForAllRecords());
-        listener.throwStoredException();
-        updateMetadata(listener);
+            // Have the file processed in event mode
+            TikaHSSFListener listener =
+                    new TikaHSSFListener(workbookEntryName, xhtml, locale, this, officeParserConfig);
+            listener.processFile(root, isListenForAllRecords());
+            listener.throwStoredException();
+            updateMetadata(listener);
 
-        for (Entry entry : root) {
-            if (entry.getName().startsWith("MBD") && entry instanceof DirectoryEntry) {
-                try {
-                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml, true);
-                } catch (TikaException e) {
-                    // ignore parse errors from embedded documents
+            for (Entry entry : root) {
+                if (entry.getName().startsWith("MBD") && entry instanceof DirectoryEntry) {
+                    try {
+                        handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml, true);
+                    } catch (TikaException e) {
+                        // ignore parse errors from embedded documents
+                    }
                 }
             }
+        } finally {
+            Biff8EncryptionKey.setCurrentUserPassword(previousPassword);
         }
     }
 

@@ -25,7 +25,9 @@ import java.io.InputStream;
 import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
+import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
 import org.apache.poi.util.LocaleUtil;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -207,6 +209,34 @@ public class ExcelParserTest extends TikaTest {
             String content = handler.toString();
             assertContains("This is an Encrypted Excel spreadsheet", content);
             assertNotContained("9.0", content);
+        }
+    }
+
+    @Test
+    public void testPasswordThreadLocalRestored() throws Exception {
+        String sentinel = "sentinel-" + UUID.randomUUID();
+        String original = Biff8EncryptionKey.getCurrentUserPassword();
+        try {
+            Biff8EncryptionKey.setCurrentUserPassword(sentinel);
+
+            try (InputStream tis = getResourceAsStream(
+                    "/test-documents/testEXCEL_protected_passtika.xls")) {
+                ParseContext context = new ParseContext();
+                context.set(PasswordProvider.class, metadata -> "tika");
+                new OfficeParser().parse(tis, new BodyContentHandler(), new Metadata(), context);
+            }
+            assertEquals(sentinel, Biff8EncryptionKey.getCurrentUserPassword());
+
+            try (InputStream tis = getResourceAsStream(
+                    "/test-documents/testEXCEL_protected_passtika.xls")) {
+                new OfficeParser().parse(tis, new BodyContentHandler(), new Metadata(),
+                        new ParseContext());
+                fail("Document is encrypted, shouldn't parse");
+            } catch (EncryptedDocumentException e) {
+                assertEquals(sentinel, Biff8EncryptionKey.getCurrentUserPassword());
+            }
+        } finally {
+            Biff8EncryptionKey.setCurrentUserPassword(original);
         }
     }
 
