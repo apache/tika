@@ -198,7 +198,7 @@ public class PipesParsingHelper {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("status", result.status().name());
-        if (result.message() != null) {
+        if (result.message() != null && !result.message().isBlank()) {
             node.put("message", result.message());
         }
         String json;
