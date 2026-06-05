@@ -1023,10 +1023,13 @@ public final class JunkDetector implements TextQualityDetector {
         // pass through unchanged.  Folding the edges too is what fully rescues short
         // all-caps headings, whose ^X/X$ bigrams would otherwise floor on the rare
         // uppercase-letter unigram backoff.
-        if ((Character.isUpperCase(cpA) || Character.isUpperCase(cpB))
-                && !Character.isLowerCase(cpA) && !Character.isLowerCase(cpB)) {
-            int lcA = Character.isUpperCase(cpA) ? Character.toLowerCase(cpA) : cpA;
-            int lcB = Character.isUpperCase(cpB) ? Character.toLowerCase(cpB) : cpB;
+        boolean upperA = Character.isValidCodePoint(cpA) && Character.isUpperCase(cpA);
+        boolean upperB = Character.isValidCodePoint(cpB) && Character.isUpperCase(cpB);
+        boolean lowerA = Character.isValidCodePoint(cpA) && Character.isLowerCase(cpA);
+        boolean lowerB = Character.isValidCodePoint(cpB) && Character.isLowerCase(cpB);
+        if ((upperA || upperB) && !(lowerA || lowerB)) {
+            int lcA = upperA ? Character.toLowerCase(cpA) : cpA;
+            int lcB = upperB ? Character.toLowerCase(cpB) : cpB;
             if (lcA != cpA || lcB != cpB) {
                 int lcIdxA = codepointToIndex(tables, lcA);
                 int lcIdxB = codepointToIndex(tables, lcB);
