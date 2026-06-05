@@ -167,7 +167,7 @@ JSON body whose shape matches the `PipesResult` status:
 {"status": "TIMEOUT", "message": "Task timed out after 60000ms"}
 ----
 
-The `status` field is the `PipesResult.STATUS` enum name. The `message` field is
+The `status` field is the `PipesResult.RESULT_STATUS` enum name. The `message` field is
 present when Tika provided one, absent otherwise.
 
 [cols="1,1,3"]
