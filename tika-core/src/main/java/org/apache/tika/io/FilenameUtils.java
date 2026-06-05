@@ -16,6 +16,8 @@
  */
 package org.apache.tika.io;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -266,6 +268,51 @@ public class FilenameUtils {
             return namePart + extension;
         }
         return retPath;
+    }
+
+    /**
+     * Resolves {@code name} against {@code dir} and returns the result only if it stays
+     * within {@code dir}.
+     * <p>
+     * The result is {@link Path#normalize() normalized} before it is checked. This is the
+     * load-bearing step: without it, resolving a name such as {@code ../x} yields the literal
+     * path {@code dir/../x}, whose path elements still begin with {@code dir}, so the
+     * {@link Path#startsWith(Path)} check below would wrongly accept it. Normalizing first
+     * collapses the {@code ..} so the check sees the real location.
+     * <p>
+     * Containment is tested with {@link Path#startsWith(Path)} (element by element) rather
+     * than by comparing path strings, so a sibling whose name merely shares a textual prefix
+     * with {@code dir} (for example {@code /a/bc} against {@code /a/b}) is correctly treated
+     * as being outside {@code dir}.
+     *
+     * @param dir  the directory the resolved path must stay within
+     * @param name the child name to resolve against {@code dir}; may contain relative
+     *             segments such as {@code ..}
+     * @return the resolved, normalized path, guaranteed to start with the normalized
+     *         {@code dir}
+     * @throws IOException if {@code name} resolves to a location outside {@code dir}
+     */
+    public static Path resolveWithin(Path dir, String name) throws IOException {
+        Path normalizedDir = dir.normalize();
+        Path resolved = normalizedDir.resolve(name).normalize();
+        if (!resolved.startsWith(normalizedDir)) {
+            throw new IOException(
+                    "'" + name + "' resolves to '" + resolved + "', which is outside of '" +
+                            normalizedDir + "'");
+        }
+
+        // Defense in depth against symlink traversal (only possible if the paths exist).
+        if (java.nio.file.Files.exists(resolved) && java.nio.file.Files.exists(normalizedDir)) {
+            Path realDir = normalizedDir.toRealPath();
+            Path realResolved = resolved.toRealPath();
+            if (!realResolved.startsWith(realDir)) {
+                throw new IOException(
+                        "'" + name + "' resolves to '" + realResolved + "', which is outside of '" +
+                                realDir + "'");
+            }
+        }
+
+        return resolved;
     }
 
     private static int getPrefixLength(String path) {
