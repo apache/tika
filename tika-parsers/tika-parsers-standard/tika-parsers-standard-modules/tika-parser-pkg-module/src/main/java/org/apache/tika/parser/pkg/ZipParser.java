@@ -565,7 +565,7 @@ public class ZipParser extends AbstractArchiveParser {
             try (TikaInputStream detectStream = TikaInputStream.get(entryName)) {
                 List<EncodingResult> encResults =
                         getEncodingDetector().detect(detectStream, parentMetadata, context);
-                Charset candidate = encResults.isEmpty() ? null : encResults.get(0).getCharset();
+                Charset candidate = encResults.isEmpty() ? null : encResults.get(0).getDecodeAs();
                 if (candidate != null) {
                     return new String(entry.getRawName(), candidate);
                 }

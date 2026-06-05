@@ -126,8 +126,22 @@ public class EncodingResult {
         this.resultType = resultType;
     }
 
+    /**
+     * The detected charset. For <em>decoding</em> bytes prefer {@link #getDecodeAs()};
+     * this is the charset to <em>report</em> (Content-Type / detected-encoding).
+     */
     public Charset getCharset() {
         return charset;
+    }
+
+    /**
+     * The charset to decode with: {@link #getCharset()} widened to its superset when
+     * one exists (e.g. GBK &rarr; GB18030), else the detected charset unchanged.
+     *
+     * @see CharsetSupersets
+     */
+    public Charset getDecodeAs() {
+        return CharsetSupersets.decodeAs(charset);
     }
 
     /**

@@ -100,13 +100,12 @@ public class AutoDetectReader extends BufferedReader {
         // Ask all given detectors for the character encoding
         List<EncodingResult> results = detector.detect(tis, metadata, new ParseContext());
         if (!results.isEmpty()) {
-            Charset detected = results.get(0).getCharset();
-            Charset superset = CharsetSupersets.supersetOf(detected);
-            if (superset != null) {
-                metadata.set(TikaCoreProperties.DECODED_CHARSET, superset.name());
-                return superset;
+            EncodingResult result = results.get(0);
+            Charset decodeAs = result.getDecodeAs();
+            if (!decodeAs.equals(result.getCharset())) {
+                metadata.set(TikaCoreProperties.DECODED_CHARSET, decodeAs.name());
             }
-            return detected;
+            return decodeAs;
         }
 
         // Try determining the encoding based on hints in document metadata.
