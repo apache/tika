@@ -300,6 +300,18 @@ public class FilenameUtils {
                     "'" + name + "' resolves to '" + resolved + "', which is outside of '" +
                             normalizedDir + "'");
         }
+
+        // Defense in depth against symlink traversal (only possible if the paths exist).
+        if (java.nio.file.Files.exists(resolved) && java.nio.file.Files.exists(normalizedDir)) {
+            Path realDir = normalizedDir.toRealPath();
+            Path realResolved = resolved.toRealPath();
+            if (!realResolved.startsWith(realDir)) {
+                throw new IOException(
+                        "'" + name + "' resolves to '" + realResolved + "', which is outside of '" +
+                                realDir + "'");
+            }
+        }
+
         return resolved;
     }
 
