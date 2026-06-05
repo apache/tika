@@ -19,16 +19,18 @@ package org.apache.tika.eval.core.langid;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 
 public class LangIdTest {
 
@@ -36,27 +38,36 @@ public class LangIdTest {
     @Test
     @Disabled("run manually when updating common tokens or the language model")
     public void testCommonTokensCoverage() throws Exception {
-        //make sure that there is a common tokens file for every
-        //language
-        CommonTokenCountManager commonTokens = new CommonTokenCountManager(null, "eng");
+        //make sure that there is a common tokens (source) list for every language and no extras.
+        //The shipped runtime resources are Bloom filters (not enumerable), so check the raw
+        //token lists under src/test/resources/common_tokens instead.
+        Path commonTokensDir = Paths.get(getClass().getResource("/common_tokens").toURI());
 
         Set<String> supported = LanguageIDWrapper.getSupportedLanguages();
         String[] langs = supported.toArray(new String[0]);
         Arrays.sort(langs);
         for (String lang : langs) {
-            Set<String> tokens = commonTokens.getTokens(lang);
-            if (tokens.size() == 0) {
+            Path f = commonTokensDir.resolve(lang);
+            if (!Files.isRegularFile(f)) {
                 fail(String.format(Locale.US, "missing common tokens for: %s", lang));
-            } else if (tokens.size() < 250) {
-                fail(String.format(Locale.US, "common tokens too small (%s) for: %s",
-                        tokens.size(), lang));
+            }
+            long tokens = countTokens(f);
+            if (tokens < 250) {
+                fail(String.format(Locale.US, "common tokens too small (%d) for: %s", tokens, lang));
             }
         }
-        Path p = Paths.get(getClass().getResource("/common_tokens").toURI());
-        for (File f : p.toFile().listFiles()) {
+        for (File f : commonTokensDir.toFile().listFiles()) {
             if (!supported.contains(f.getName())) {
                 fail("extra common tokens for: " + f.getName());
             }
+        }
+    }
+
+    private static long countTokens(Path f) throws IOException {
+        try (Stream<String> lines = Files.lines(f, StandardCharsets.UTF_8)) {
+            return lines.map(String::trim)
+                    .filter(l -> !l.isEmpty() && !l.startsWith("#"))
+                    .count();
         }
     }
 }

@@ -16,63 +16,31 @@
  */
 package org.apache.tika.eval.core.tokens;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import org.apache.commons.collections4.bloomfilter.BloomFilter;
 
+/**
+ * The set of "common tokens" for a single language, backed by a Bloom filter.
+ * <p>
+ * Membership is approximate: {@link #contains(String)} may occasionally return {@code true}
+ * for a token that is not actually common (a false positive), but never returns {@code false}
+ * for one that is. See {@link CommonTokensBloom} for the rationale and false-positive rate.
+ */
 public class LangModel {
-    public static LangModel EMPTY_MODEL = new LangModel(-1);
 
-    private final long totalTokens;
-    private final double unseenPercentage;
+    /** Model used when a language has no common-tokens resource; nothing is "common". */
+    public static final LangModel EMPTY_MODEL = new LangModel(null);
 
+    private final BloomFilter filter;
 
-    private Map<String, Double> percentages = new HashMap<>();
-    private Map<String, Long> counts = new HashMap<>();
-
-    public LangModel(long totalTokens) {
-        this.totalTokens = totalTokens;
-        this.unseenPercentage = (double) 1 / (double) totalTokens;
+    public LangModel(BloomFilter filter) {
+        this.filter = filter;
     }
 
-
+    /**
+     * @return {@code true} if {@code token} is (probably) one of the common tokens for this
+     * language; {@code false} means it is definitely not.
+     */
     public boolean contains(String token) {
-        return (percentages.containsKey(token));
-    }
-
-    public Set<String> getTokens() {
-        return percentages.keySet();
-    }
-
-    public double getProbability(String token) {
-        Double p = percentages.get(token);
-        if (p != null) {
-            return p;
-        } else {
-            return unseenPercentage;
-        }
-    }
-
-    public void add(String t, long tf) {
-        double p = (double) tf / (double) totalTokens;
-        percentages.put(t, p);
-        counts.put(t, tf);
-    }
-
-    public double getUnseenProbability() {
-        return unseenPercentage;
-    }
-
-    public long getCount(String token) {
-        Long cnt = counts.get(token);
-        if (cnt == null) {
-            return 0;
-        } else {
-            return cnt;
-        }
-    }
-
-    public Map<String, Long> getCounts() {
-        return counts;
+        return filter != null && CommonTokensBloom.mightContain(filter, token);
     }
 }
