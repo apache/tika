@@ -287,6 +287,42 @@ public class HtmlParserTest extends TikaTest {
     }
 
     /**
+     * A page that declares {@code charset=euc-kr} but actually uses UHC (MS949)
+     * extension Hangul must be decoded with the superset {@code x-windows-949},
+     * not strict EUC-KR (which U+FFFDs the extension syllables).  Mirrors the
+     * promotion {@code AutoDetectReader} already applies for non-HTML.
+     * {@code CONTENT_ENCODING} still reports the detected charset; the superset
+     * actually used is recorded in {@code DECODED_CHARSET}.
+     *
+     * @see org.apache.tika.detect.CharsetSupersets
+     */
+    @Test
+    public void testEucKrPromotedToMs949Superset() throws Exception {
+        // U+AC02 is outside EUC-KR (KS X 1001) but inside x-windows-949 (MS949);
+        // its MS949 bytes 0x81 0x41 decode to U+FFFD followed by 'A' under strict
+        // EUC-KR, so a correct decode proves the superset was used.  U+D55C U+AD6D
+        // ("Korea") is a normal EUC-KR syllable pair.
+        String test = "<html><head><meta charset=\"euc-kr\" />" +
+                "<title>title</title></head>" +
+                "<body><p>\uAC02 \uD55C\uAD6D</p></body></html>";
+        Metadata metadata = new Metadata();
+        BodyContentHandler handler = new BodyContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(test.getBytes("x-windows-949"))) {
+            new JSoupParser().parse(tis, handler, metadata, new ParseContext());
+        }
+        // Metadata reports the *detected* charset ...
+        assertEquals("EUC-KR", metadata.get(Metadata.CONTENT_ENCODING));
+        // ... but decoding used the superset, recorded in DECODED_CHARSET.
+        assertEquals(java.nio.charset.Charset.forName("x-windows-949").name(),
+                metadata.get(TikaCoreProperties.DECODED_CHARSET));
+        // The UHC-only syllable round-trips; under strict EUC-KR it would be U+FFFD.
+        String content = handler.toString();
+        assertContains("\uAC02", content);
+        assertFalse(content.contains("\uFFFD"),
+                "no replacement chars expected under the MS949 superset decode");
+    }
+
+    /**
      * Test case for TIKA-334
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>

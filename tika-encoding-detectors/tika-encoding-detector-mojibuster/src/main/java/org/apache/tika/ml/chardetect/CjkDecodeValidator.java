@@ -68,10 +68,7 @@ public final class CjkDecodeValidator {
      *         little legacy evidence (legacy high bytes &lt; {@link #MIN_HIGH_BYTES})
      */
     public static double strippedFailureRate(byte[] bytes, Charset cjkCharset) {
-        Charset decodeAs = CharsetSupersets.supersetOf(cjkCharset);
-        if (decodeAs == null) {
-            decodeAs = cjkCharset;
-        }
+        Charset decodeAs = CharsetSupersets.decodeAs(cjkCharset);
         CharsetDecoder dec = decodeAs.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPORT)
                 .onUnmappableCharacter(CodingErrorAction.REPORT);

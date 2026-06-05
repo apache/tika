@@ -53,6 +53,7 @@ import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
@@ -165,6 +166,9 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                 : encResults.get(0).getCharset();
         Charset decodeAs = encResults.isEmpty() ? DEFAULT_CHARSET
                 : encResults.get(0).getDecodeAs();
+        if (!decodeAs.equals(charset)) {
+            metadata.set(TikaCoreProperties.DECODED_CHARSET, decodeAs.name());
+        }
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;
         if (previous == null || previous.startsWith("text/html")) {

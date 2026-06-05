@@ -594,10 +594,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // Score CJK candidates on their vendor superset, not the strict base
         // (which U+FFFDs vendor-extension chars and unfairly penalizes real
         // CJK). AutoDetectReader re-applies the same superset for content.
-        Charset decodeAs = CharsetSupersets.supersetOf(charset);
-        if (decodeAs == null) {
-            decodeAs = charset;
-        }
+        Charset decodeAs = CharsetSupersets.decodeAs(charset);
         try {
             return new String(bytes, decodeAs);
         } catch (Exception e) {
