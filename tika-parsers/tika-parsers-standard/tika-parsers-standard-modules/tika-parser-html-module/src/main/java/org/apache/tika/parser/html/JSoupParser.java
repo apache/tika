@@ -48,7 +48,6 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
-import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
@@ -167,6 +166,9 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                 : encResults.get(0).getCharset();
         Charset decodeAs = encResults.isEmpty() ? DEFAULT_CHARSET
                 : encResults.get(0).getDecodeAs();
+        if (!decodeAs.equals(charset)) {
+            metadata.set(TikaCoreProperties.DECODED_CHARSET, decodeAs.name());
+        }
         String previous = metadata.get(Metadata.CONTENT_TYPE);
         MediaType contentType = null;
         if (previous == null || previous.startsWith("text/html")) {
