@@ -89,6 +89,25 @@ The separate `/config` endpoints have been removed. Configuration is now handled
 
 **Migration:** Use `POST /tika` or `POST /tika/json` with a `config` part in your multipart request.
 
+=== Error Response Bodies Are Now JSON
+
+In 3.x, error responses from `/tika`, `/rmeta`, and `/unpack` returned a plain-text
+body such as `"Parse failed: TIMEOUT"`. In 4.x these endpoints return a JSON body:
+
+[source,json]
+----
+{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}
+----
+
+The HTTP status codes are also more precise:
+
+* `UNSPECIFIED_CRASH` changed from `500` to `503` — it is a transient process failure
+  in the same category as `TIMEOUT` and `OOM`, not a server misconfiguration.
+
+**Migration:** Clients that parse plain-text error bodies must switch to JSON. Clients
+that branch only on HTTP status code are unaffected unless they were treating
+`UNSPECIFIED_CRASH` as a `500`.
+
 === Accept Header Routing Removed
 
 The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit paths instead:

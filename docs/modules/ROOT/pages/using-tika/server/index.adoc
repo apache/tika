@@ -156,6 +156,41 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 * `/translate/all/\{translator}/\{src}/\{dest}` — translation
 * `/pipes`, `/async` — Pipes-based bulk processing
 
+== Error Responses
+
+When parsing fails due to a process-level problem — the forked child process timed out,
+ran out of memory, or crashed unexpectedly — the server returns an HTTP error with a
+JSON body whose shape matches the `PipesResult` status:
+
+[source,json]
+----
+{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}
+----
+
+The `status` field is the `PipesResult.STATUS` enum name. The `message` field is
+present when Tika provided one, absent otherwise.
+
+[cols="1,1,3"]
+|===
+|HTTP status |`status` values |Meaning
+
+|`503 Service Unavailable`
+|`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`, `CLIENT_UNAVAILABLE_WITHIN_MS`
+|The forked parse process failed. The server is still healthy; the client may retry.
+
+|`500 Internal Server Error`
+|`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
+`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`,
+`FETCHER_INITIALIZATION_EXCEPTION`, `EMITTER_INITIALIZATION_EXCEPTION`
+|Server misconfiguration or a task-level infrastructure error. Retrying the same
+document on the same server is unlikely to succeed without a configuration fix.
+|===
+
+NOTE: A successful parse that encountered internal parser errors (e.g. a truncated
+embedded document) still returns `200 OK`. The partial-parse exception is surfaced
+in the `X-TIKA:CONTAINER_EXCEPTION` metadata field of the response, not as an HTTP
+error code.
+
 == Configuration
 
 Server behavior beyond host/port is controlled by a JSON config file passed via

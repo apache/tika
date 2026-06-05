@@ -24,7 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -185,32 +188,52 @@ public class PipesParsingHelper {
     }
 
     /**
+     * Builds a JSON error response whose shape matches PipesResult serialization:
+     * {@code {"status": "TIMEOUT", "message": "..."}}
+     * <p>
+     * This allows clients to distinguish failure modes (TIMEOUT, OOM, UNSPECIFIED_CRASH, …)
+     * without parsing plain-text bodies or inspecting custom headers.
+     */
+    private static Response buildProcessFailureResponse(PipesResult result) {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+        node.put("status", result.status().name());
+        if (result.message() != null) {
+            node.put("message", result.message());
+        }
+        String json;
+        try {
+            json = mapper.writeValueAsString(node);
+        } catch (Exception e) {
+            json = "{\"status\":\"" + result.status().name() + "\"}";
+        }
+        return Response.status(mapStatusToHttpResponse(result.status()))
+                .entity(json)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    /**
      * Processes the PipesResult and returns the metadata list.
      */
     private List<Metadata> processResult(PipesResult result) {
         if (result.isProcessCrash()) {
-            // Process crashed (OOM, timeout, etc.) - return 503
+            // Process crashed (OOM, timeout, unspecified crash) — 503 with JSON status body
             LOG.warn("Parse process crashed: {}", result.status());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    mapStatusToHttpResponse(result.status()));
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         if (result.isFatal() || result.isInitializationFailure()) {
-            // Fatal or initialization error - return 500
+            // Server misconfiguration — 500 with JSON status body
             LOG.error("Parse initialization/fatal error: {} - {}",
                     result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    mapStatusToHttpResponse(result.status()));
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         if (result.isTaskException()) {
-            // Task-level exception (fetch/emit error) - return 500
+            // Task-level exception (fetch/emit error) — 500 with JSON status body
             LOG.warn("Parse task exception: {} - {}", result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         // Get metadata from result
@@ -241,9 +264,9 @@ public class PipesParsingHelper {
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
                  PARSE_EXCEPTION_NO_EMIT ->
                     Response.Status.OK;
-            case TIMEOUT, OOM, CLIENT_UNAVAILABLE_WITHIN_MS ->
+            case TIMEOUT, OOM, UNSPECIFIED_CRASH, CLIENT_UNAVAILABLE_WITHIN_MS ->
                     Response.Status.SERVICE_UNAVAILABLE;
-            case UNSPECIFIED_CRASH, FETCH_EXCEPTION, EMIT_EXCEPTION,
+            case FETCH_EXCEPTION, EMIT_EXCEPTION,
                  FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
                  FETCHER_INITIALIZATION_EXCEPTION, EMITTER_INITIALIZATION_EXCEPTION,
                  FAILED_TO_INITIALIZE ->
@@ -359,16 +382,12 @@ public class PipesParsingHelper {
             // Check for errors
             if (result.isProcessCrash() || result.isFatal() || result.isInitializationFailure()) {
                 LOG.warn("UNPACK parse failed: {} - {}", result.status(), result.message());
-                throw new WebApplicationException(
-                        "Parse failed: " + result.status(),
-                        mapStatusToHttpResponse(result.status()));
+                throw new WebApplicationException(buildProcessFailureResponse(result));
             }
 
             if (result.isTaskException()) {
                 LOG.warn("UNPACK task exception: {} - {}", result.status(), result.message());
-                throw new WebApplicationException(
-                        "Parse failed: " + result.message(),
-                        Response.Status.INTERNAL_SERVER_ERROR);
+                throw new WebApplicationException(buildProcessFailureResponse(result));
             }
 
             // Get metadata list from result
