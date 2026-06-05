@@ -16,7 +16,9 @@
  */
 package org.apache.tika.ml.junkdetect;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedWriter;
@@ -51,6 +53,21 @@ import org.apache.tika.quality.TextQualityScore;
  * production training corpus.
  */
 public class JunkDetectorRoundTripTest {
+
+    @Test
+    void requireUsableSigmaRejectsNonPositiveOrNonFinite() {
+        assertDoesNotThrow(() -> JunkDetector.requireUsableSigma("ok", new float[]{-3f, 0.5f}));
+        for (float badSigma : new float[]{0f, -0.1f, Float.NaN,
+                Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
+            assertThrows(IOException.class,
+                    () -> JunkDetector.requireUsableSigma("bad", new float[]{0f, badSigma}),
+                    "sigma=" + badSigma + " must be rejected");
+        }
+        assertThrows(IOException.class,
+                () -> JunkDetector.requireUsableSigma("null", null));
+        assertThrows(IOException.class,
+                () -> JunkDetector.requireUsableSigma("short", new float[]{1f}));
+    }
 
     @Test
     void roundTripSeenPairAndUnigramBackoff(@TempDir Path tmp) throws IOException {

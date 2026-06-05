@@ -353,6 +353,16 @@ public final class JunkDetector implements TextQualityDetector {
                 f1TablesByScript.put(script, BigramTables.readFrom(dis));
             }
 
+            requireUsableSigma("scriptTransition", scriptTransitionCalibration);
+            requireUsableSigma("block", blockCalibration);
+            requireUsableSigma("control", controlCalibration);
+            requireUsableSigma("z5", z5Calibration);
+            requireUsableSigma("z6", z6Calibration);
+            requireUsableSigma("z9", z9Calibration);
+            for (Map.Entry<String, float[]> e : calibrations.entrySet()) {
+                requireUsableSigma("z1[" + e.getKey() + "]", e.getValue());
+            }
+
             return new JunkDetector(calibrations,
                     blockTable, blockTableQuant, blockCalibration,
                     controlCalibration, combinerWeights,
@@ -360,6 +370,22 @@ public final class JunkDetector implements TextQualityDetector {
                     scriptTransitionCalibration,
                     scriptBucketIndex, numScriptBuckets, f1TablesByScript,
                     z5Calibration, z6Calibration, z9Calibration);
+        }
+    }
+
+    /**
+     * Validates a calibration {@code {mu, sigma}} from the model file: sigma is the
+     * divisor in every z-score, so it must be finite and &gt; 0.  Single enforcement
+     * point for that invariant -- inference divides without re-checking.
+     */
+    static void requireUsableSigma(String name, float[] calibration) throws IOException {
+        boolean ok = calibration != null && calibration.length >= 2
+                && Float.isFinite(calibration[1]) && calibration[1] > 0f;
+        if (!ok) {
+            String sigma = (calibration == null || calibration.length < 2)
+                    ? "absent" : Float.toString(calibration[1]);
+            throw new IOException("Invalid model: " + name
+                    + " calibration sigma must be finite and > 0 but was " + sigma);
         }
     }
 
@@ -642,7 +668,7 @@ public final class JunkDetector implements TextQualityDetector {
      */
     public float computeZ5LetterAdjacentToMarkRatio(String text) {
         double raw = TextQualityFeatures.letterAdjacentToMarkRatio(text);
-        if (Double.isNaN(raw) || z5Calibration == null || z5Calibration[1] <= 0) {
+        if (Double.isNaN(raw) || z5Calibration == null) {
             return 0f;
         }
         return ((float) raw - z5Calibration[0]) / z5Calibration[1];
@@ -658,7 +684,7 @@ public final class JunkDetector implements TextQualityDetector {
      */
     public float computeZ6ReplacementRatio(String text) {
         double raw = TextQualityFeatures.replacementRatio(text);
-        if (Double.isNaN(raw) || z6Calibration == null || z6Calibration[1] <= 0) {
+        if (Double.isNaN(raw) || z6Calibration == null) {
             return 0f;
         }
         // Flip sign: higher replacement = lower quality, so feature is
@@ -676,7 +702,7 @@ public final class JunkDetector implements TextQualityDetector {
      */
     public float computeZ9AlternationRatio(String text) {
         double raw = TextQualityFeatures.scriptAlternationRatio(text);
-        if (Double.isNaN(raw) || z9Calibration == null || z9Calibration[1] <= 0) {
+        if (Double.isNaN(raw) || z9Calibration == null) {
             return 0f;
         }
         // Higher alternation = junkier; (mu - raw) / sigma so clean text → positive z9.
