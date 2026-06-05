@@ -264,7 +264,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
-        assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //extra slash
         response = WebClient
@@ -278,7 +279,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
-        assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //unparseable
         response = WebClient
@@ -292,7 +294,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
-        assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //xml
         response = WebClient
@@ -371,7 +374,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
-        assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //unparseable
         attachmentPart =
@@ -389,7 +393,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT)
                 .trim();
-        assertTrue(content.startsWith("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
+        assertFalse(content.startsWith("<html"));
+        assertContains("plundered our seas", content);
 
         //xml
         attachmentPart =
