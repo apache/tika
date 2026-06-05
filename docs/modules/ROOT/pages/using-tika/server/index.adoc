@@ -176,7 +176,9 @@ present when Tika provided one, absent otherwise.
 
 |`503 Service Unavailable`
 |`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`, `CLIENT_UNAVAILABLE_WITHIN_MS`
-|The forked parse process failed. The server is still healthy; the client may retry.
+|The forked parse process failed, or no parse client became available within the
+configured wait time (`CLIENT_UNAVAILABLE_WITHIN_MS`). The server is still healthy;
+the client may retry.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,

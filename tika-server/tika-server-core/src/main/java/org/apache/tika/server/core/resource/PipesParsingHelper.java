@@ -188,8 +188,10 @@ public class PipesParsingHelper {
     }
 
     /**
-     * Builds a JSON error response whose shape matches PipesResult serialization:
-     * {@code {"status": "TIMEOUT", "message": "..."}}
+     * Builds a JSON error response carrying a subset of the {@code PipesResult}
+     * serialization — the {@code status} and, when present, a non-blank {@code message}:
+     * {@code {"status": "TIMEOUT", "message": "..."}}. Successful-parse fields such as
+     * {@code emitData} are never part of an error body.
      * <p>
      * This allows clients to distinguish failure modes (TIMEOUT, OOM, UNSPECIFIED_CRASH, …)
      * without parsing plain-text bodies or inspecting custom headers.

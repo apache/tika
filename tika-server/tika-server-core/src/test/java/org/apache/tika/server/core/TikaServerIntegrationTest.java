@@ -29,7 +29,6 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -231,7 +230,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
      */
     private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
         try (InputStream is = (InputStream) response.getEntity()) {
-            String body = IOUtils.toString(is, StandardCharsets.UTF_8);
+            String body = IOUtils.toString(is, UTF_8);
             JsonNode node = new ObjectMapper().readTree(body);
             assertEquals(expectedStatus, node.path("status").asText(null),
                     "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
