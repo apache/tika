@@ -224,7 +224,8 @@ public class PipesParsingHelper {
         }
 
         if (result.isFatal() || result.isInitializationFailure()) {
-            // Server misconfiguration — 500 with JSON status body
+            // Initialization/fatal error — JSON status body, HTTP status per mapStatusToHttpResponse
+            // (500, or 503 for CLIENT_UNAVAILABLE_WITHIN_MS)
             LOG.error("Parse initialization/fatal error: {} - {}",
                     result.status(), result.message());
             throw new WebApplicationException(buildProcessFailureResponse(result));

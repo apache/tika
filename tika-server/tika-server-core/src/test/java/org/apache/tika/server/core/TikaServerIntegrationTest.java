@@ -229,14 +229,14 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
      * Asserts that an error response body is JSON with a {@code status} field matching
      * {@code expectedStatus} (a {@code PipesResult.RESULT_STATUS} enum name).
      */
-private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
-    try (InputStream is = (InputStream) response.getEntity()) {
-        String body = IOUtils.toString(is, StandardCharsets.UTF_8);
-        JsonNode node = new ObjectMapper().readTree(body);
-        assertEquals(expectedStatus, node.path("status").asText(null),
-                "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
+    private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
+        try (InputStream is = (InputStream) response.getEntity()) {
+            String body = IOUtils.toString(is, StandardCharsets.UTF_8);
+            JsonNode node = new ObjectMapper().readTree(body);
+            assertEquals(expectedStatus, node.path("status").asText(null),
+                    "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
+        }
     }
-}
 
 
     private String getConfig(String configName) {
