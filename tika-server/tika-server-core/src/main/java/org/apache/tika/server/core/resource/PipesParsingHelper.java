@@ -217,6 +217,7 @@ public class PipesParsingHelper {
         try {
             json = mapper.writeValueAsString(node);
         } catch (Exception e) {
+            LOG.warn("Failed to serialize PipesResult error response as JSON; falling back to status-only body", e);
             json = "{\"status\":\"" + result.status().name() + "\"}";
         }
         return Response.status(mapStatusToHttpResponse(result.status()))
