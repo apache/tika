@@ -214,7 +214,7 @@ public abstract class CXFTestBase {
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
-                    inputTempDirectory, getUnpackEmitterBasePath());
+                    inputTempDirectory, getUnpackEmitterBasePath(), false);
 
             TikaResource.init(tika, new ServerStatus(), pipesParsingHelper, isEnableUnsecureFeatures());
         } finally {

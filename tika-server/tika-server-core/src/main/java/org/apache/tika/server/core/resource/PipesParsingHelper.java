@@ -70,6 +70,7 @@ public class PipesParsingHelper {
     private final PipesConfig pipesConfig;
     private final Path inputTempDirectory;
     private final Path unpackEmitterBasePath;
+    private final boolean returnStackTrace;
 
     /**
      * Creates a PipesParsingHelper.
@@ -81,13 +82,19 @@ public class PipesParsingHelper {
      * @param unpackEmitterBasePath the basePath where the unpack-emitter writes files.
      *                              This is where the server will find the zip files created
      *                              by UNPACK mode. May be null if UNPACK mode won't be used.
+     * @param returnStackTrace whether failure responses may include the (potentially
+     *                         stack-trace-bearing) {@code PipesResult} message. When false
+     *                         (the default), error bodies carry only the status. Mirrors
+     *                         {@code TikaServerConfig.isReturnStackTrace()}.
      */
     public PipesParsingHelper(PipesParser pipesParser, PipesConfig pipesConfig,
-                              Path inputTempDirectory, Path unpackEmitterBasePath) {
+                              Path inputTempDirectory, Path unpackEmitterBasePath,
+                              boolean returnStackTrace) {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
         this.inputTempDirectory = inputTempDirectory;
         this.unpackEmitterBasePath = unpackEmitterBasePath;
+        this.returnStackTrace = returnStackTrace;
 
         if (inputTempDirectory == null || !Files.isDirectory(inputTempDirectory)) {
             throw new IllegalArgumentException(
@@ -189,18 +196,21 @@ public class PipesParsingHelper {
 
     /**
      * Builds a JSON error response carrying a subset of the {@code PipesResult}
-     * serialization — the {@code status} and, when present, a non-blank {@code message}:
-     * {@code {"status": "TIMEOUT", "message": "..."}}. Successful-parse fields such as
-     * {@code emitData} are never part of an error body.
+     * serialization. By default the body is just {@code {"status": "TIMEOUT"}}. The
+     * {@code PipesResult} message frequently contains a server-side stack trace
+     * (e.g. for {@code *_EXCEPTION} statuses), so the {@code message} field is included
+     * only when {@code returnStackTrace} is enabled — matching the legacy
+     * {@code TikaServerParseExceptionMapper}, which gates stack traces the same way.
+     * Successful-parse fields such as {@code emitData} are never part of an error body.
      * <p>
      * This allows clients to distinguish failure modes (TIMEOUT, OOM, UNSPECIFIED_CRASH, …)
      * without parsing plain-text bodies or inspecting custom headers.
      */
-    private static Response buildProcessFailureResponse(PipesResult result) {
+    private Response buildProcessFailureResponse(PipesResult result) {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("status", result.status().name());
-        if (result.message() != null && !result.message().isBlank()) {
+        if (returnStackTrace && result.message() != null && !result.message().isBlank()) {
             node.put("message", result.message());
         }
         String json;

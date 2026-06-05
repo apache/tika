@@ -164,11 +164,13 @@ JSON body whose shape matches the `PipesResult` status:
 
 [source,json]
 ----
-{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}
+{"status": "TIMEOUT"}
 ----
 
-The `status` field is the `PipesResult.RESULT_STATUS` enum name. The `message` field is
-present when Tika provided one, absent otherwise.
+The `status` field is the `PipesResult.RESULT_STATUS` enum name. By default the body
+carries only the `status`. When the server is configured with `returnStackTrace=true`,
+a `message` field is also included (it often contains a server-side stack trace), e.g.
+`{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 [cols="1,1,3"]
 |===
@@ -190,8 +192,8 @@ document on the same server is unlikely to succeed without a configuration fix.
 
 NOTE: A successful parse that encountered internal parser errors (e.g. a truncated
 embedded document) still returns `200 OK`. The partial-parse exception is surfaced
-in the `X-TIKA:CONTAINER_EXCEPTION` metadata field of the response, not as an HTTP
-error code.
+in the `X-TIKA:EXCEPTION:container_exception` metadata field of the response, not as an
+HTTP error code.
 
 == Configuration
 

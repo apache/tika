@@ -510,7 +510,7 @@ public class TikaServerProcess {
 
         // Create and return the helper
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
-                inputTempDirectory, unpackTempDirectory);
+                inputTempDirectory, unpackTempDirectory, tikaServerConfig.isReturnStackTrace());
 
         // Register shutdown hook to clean up PipesParser and temp directories
         final Path inputDirToClean = inputTempDirectory;
