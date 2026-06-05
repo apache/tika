@@ -313,7 +313,8 @@ public class HtmlParserTest extends TikaTest {
         // Metadata reports the *detected* charset ...
         assertEquals("EUC-KR", metadata.get(Metadata.CONTENT_ENCODING));
         // ... but decoding used the superset, recorded in DECODED_CHARSET.
-        assertEquals("x-windows-949", metadata.get(TikaCoreProperties.DECODED_CHARSET));
+        assertEquals(java.nio.charset.Charset.forName("x-windows-949").name(),
+                metadata.get(TikaCoreProperties.DECODED_CHARSET));
         // The UHC-only syllable round-trips; under strict EUC-KR it would be U+FFFD.
         String content = handler.toString();
         assertContains("\uAC02", content);
