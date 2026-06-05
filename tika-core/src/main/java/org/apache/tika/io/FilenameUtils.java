@@ -16,6 +16,8 @@
  */
 package org.apache.tika.io;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -129,5 +131,35 @@ public class FilenameUtils {
             }
         }
         return StringUtils.EMPTY;
+    }
+
+    /**
+     * Resolves {@code name} under {@code dir}, rejecting anything that escapes it (zip-slip
+     * guard). Normalizes first so {@code ..} is collapsed before the element-wise containment
+     * check.
+     *
+     * @throws IOException if {@code name} resolves outside {@code dir}
+     */
+    public static Path resolveWithin(Path dir, String name) throws IOException {
+        Path normalizedDir = dir.normalize();
+        Path resolved = normalizedDir.resolve(name).normalize();
+        if (!resolved.startsWith(normalizedDir)) {
+            throw new IOException(
+                    "'" + name + "' resolves to '" + resolved + "', which is outside of '" +
+                            normalizedDir + "'");
+        }
+
+        // Defense in depth against symlink traversal (only possible if the paths exist).
+        if (java.nio.file.Files.exists(resolved) && java.nio.file.Files.exists(normalizedDir)) {
+            Path realDir = normalizedDir.toRealPath();
+            Path realResolved = resolved.toRealPath();
+            if (!realResolved.startsWith(realDir)) {
+                throw new IOException(
+                        "'" + name + "' resolves to '" + realResolved + "', which is outside of '" +
+                                realDir + "'");
+            }
+        }
+
+        return resolved;
     }
 }

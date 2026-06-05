@@ -17,8 +17,13 @@
 package org.apache.tika.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
@@ -100,6 +105,32 @@ public class FilenameUtilsTest {
         testFilenameEquality("quick", "C:////../the/D:/quick");
         testFilenameEquality("file.ppt", "path:to:file.ppt");
         testFilenameEquality("HW.txt", "_1457338542/HW.txt");
+    }
+
+    @Test
+    public void testResolveWithin() throws Exception {
+        Path dir = Paths.get("base", "isa");
+
+        // plain and nested children resolve to a path under dir
+        assertEquals(Paths.get("base", "isa", "a_assay.txt"),
+                FilenameUtils.resolveWithin(dir, "a_assay.txt"));
+        assertEquals(Paths.get("base", "isa", "sub", "a_assay.txt"),
+                FilenameUtils.resolveWithin(dir, "sub/a_assay.txt"));
+
+        // resolving the directory itself stays within it
+        assertEquals(dir.normalize(), FilenameUtils.resolveWithin(dir, "."));
+
+        // names that resolve out of dir are rejected. These also pin the normalize() call:
+        // without it the resolved path would still textually begin with dir and be accepted.
+        assertThrows(IOException.class, () -> FilenameUtils.resolveWithin(dir, "../outside.txt"));
+        assertThrows(IOException.class, () -> FilenameUtils.resolveWithin(dir, "../../outside.txt"));
+        assertThrows(IOException.class,
+                () -> FilenameUtils.resolveWithin(dir, "sub/../../outside.txt"));
+
+        // element-wise (not string-prefix) containment: a/bc is not within a/b even though
+        // the string "a/bc" starts with the string "a/b".
+        assertThrows(IOException.class,
+                () -> FilenameUtils.resolveWithin(Paths.get("a", "b"), "../bc"));
     }
 
     @Test
