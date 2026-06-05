@@ -24,7 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +70,7 @@ public class PipesParsingHelper {
     private final PipesConfig pipesConfig;
     private final Path inputTempDirectory;
     private final Path unpackEmitterBasePath;
+    private final boolean returnStackTrace;
 
     /**
      * Creates a PipesParsingHelper.
@@ -78,13 +82,19 @@ public class PipesParsingHelper {
      * @param unpackEmitterBasePath the basePath where the unpack-emitter writes files.
      *                              This is where the server will find the zip files created
      *                              by UNPACK mode. May be null if UNPACK mode won't be used.
+     * @param returnStackTrace whether failure responses may include the (potentially
+     *                         stack-trace-bearing) {@code PipesResult} message. When false
+     *                         (the default), error bodies carry only the status. Mirrors
+     *                         {@code TikaServerConfig.isReturnStackTrace()}.
      */
     public PipesParsingHelper(PipesParser pipesParser, PipesConfig pipesConfig,
-                              Path inputTempDirectory, Path unpackEmitterBasePath) {
+                              Path inputTempDirectory, Path unpackEmitterBasePath,
+                              boolean returnStackTrace) {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
         this.inputTempDirectory = inputTempDirectory;
         this.unpackEmitterBasePath = unpackEmitterBasePath;
+        this.returnStackTrace = returnStackTrace;
 
         if (inputTempDirectory == null || !Files.isDirectory(inputTempDirectory)) {
             throw new IllegalArgumentException(
@@ -185,32 +195,59 @@ public class PipesParsingHelper {
     }
 
     /**
+     * Builds a JSON error response carrying a subset of the {@code PipesResult}
+     * serialization. By default the body is just {@code {"status": "TIMEOUT"}}. The
+     * {@code PipesResult} message frequently contains a server-side stack trace
+     * (e.g. for {@code *_EXCEPTION} statuses), so the {@code message} field is included
+     * only when {@code returnStackTrace} is enabled — matching the legacy
+     * {@code TikaServerParseExceptionMapper}, which gates stack traces the same way.
+     * Successful-parse fields such as {@code emitData} are never part of an error body.
+     * <p>
+     * This allows clients to distinguish failure modes (TIMEOUT, OOM, UNSPECIFIED_CRASH, …)
+     * without parsing plain-text bodies or inspecting custom headers.
+     */
+    private Response buildProcessFailureResponse(PipesResult result) {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = mapper.createObjectNode();
+        node.put("status", result.status().name());
+        if (returnStackTrace && result.message() != null && !result.message().isBlank()) {
+            node.put("message", result.message());
+        }
+        String json;
+        try {
+            json = mapper.writeValueAsString(node);
+        } catch (Exception e) {
+            LOG.warn("Failed to serialize PipesResult error response as JSON; falling back to status-only body", e);
+            json = "{\"status\":\"" + result.status().name() + "\"}";
+        }
+        return Response.status(mapStatusToHttpResponse(result.status()))
+                .entity(json)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    /**
      * Processes the PipesResult and returns the metadata list.
      */
     private List<Metadata> processResult(PipesResult result) {
         if (result.isProcessCrash()) {
-            // Process crashed (OOM, timeout, etc.) - return 503
+            // Process crashed (OOM, timeout, unspecified crash) — 503 with JSON status body
             LOG.warn("Parse process crashed: {}", result.status());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    mapStatusToHttpResponse(result.status()));
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         if (result.isFatal() || result.isInitializationFailure()) {
-            // Fatal or initialization error - return 500
+            // Initialization/fatal error — JSON status body, HTTP status per mapStatusToHttpResponse
+            // (500, or 503 for CLIENT_UNAVAILABLE_WITHIN_MS)
             LOG.error("Parse initialization/fatal error: {} - {}",
                     result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    mapStatusToHttpResponse(result.status()));
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         if (result.isTaskException()) {
-            // Task-level exception (fetch/emit error) - return 500
+            // Task-level exception (fetch/emit error) — 500 with JSON status body
             LOG.warn("Parse task exception: {} - {}", result.status(), result.message());
-            throw new WebApplicationException(
-                    "Parse failed: " + result.status(),
-                    Response.Status.INTERNAL_SERVER_ERROR);
+            throw new WebApplicationException(buildProcessFailureResponse(result));
         }
 
         // Get metadata from result
@@ -241,9 +278,9 @@ public class PipesParsingHelper {
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
                  PARSE_EXCEPTION_NO_EMIT ->
                     Response.Status.OK;
-            case TIMEOUT, OOM, CLIENT_UNAVAILABLE_WITHIN_MS ->
+            case TIMEOUT, OOM, UNSPECIFIED_CRASH, CLIENT_UNAVAILABLE_WITHIN_MS ->
                     Response.Status.SERVICE_UNAVAILABLE;
-            case UNSPECIFIED_CRASH, FETCH_EXCEPTION, EMIT_EXCEPTION,
+            case FETCH_EXCEPTION, EMIT_EXCEPTION,
                  FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
                  FETCHER_INITIALIZATION_EXCEPTION, EMITTER_INITIALIZATION_EXCEPTION,
                  FAILED_TO_INITIALIZE ->
@@ -359,16 +396,12 @@ public class PipesParsingHelper {
             // Check for errors
             if (result.isProcessCrash() || result.isFatal() || result.isInitializationFailure()) {
                 LOG.warn("UNPACK parse failed: {} - {}", result.status(), result.message());
-                throw new WebApplicationException(
-                        "Parse failed: " + result.status(),
-                        mapStatusToHttpResponse(result.status()));
+                throw new WebApplicationException(buildProcessFailureResponse(result));
             }
 
             if (result.isTaskException()) {
                 LOG.warn("UNPACK task exception: {} - {}", result.status(), result.message());
-                throw new WebApplicationException(
-                        "Parse failed: " + result.message(),
-                        Response.Status.INTERNAL_SERVER_ERROR);
+                throw new WebApplicationException(buildProcessFailureResponse(result));
             }
 
             // Get metadata list from result

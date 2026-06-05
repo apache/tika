@@ -35,6 +35,8 @@ import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
@@ -136,6 +138,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         // Server should return 503 (Service Unavailable) for OOM, not crash
         assertEquals(503, response.getStatus());
+        assertErrorResponseStatus(response, "OOM");
 
         // Server should still be running - verify with a successful request
         testBaseline();
@@ -155,6 +158,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         // Server should return 503 (Service Unavailable) for OOM, not crash
         assertEquals(503, response.getStatus());
+        assertErrorResponseStatus(response, "OOM");
 
         // Server should still be running - verify with a successful request
         testBaseline();
@@ -172,8 +176,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
 
-        // Server should return 500 (Internal Server Error) for unspecified crash
-        assertEquals(500, response.getStatus());
+        // UNSPECIFIED_CRASH is a transient process failure — 503, same category as OOM/TIMEOUT
+        assertEquals(503, response.getStatus());
+        assertErrorResponseStatus(response, "UNSPECIFIED_CRASH");
 
         // Server should still be running - verify with a successful request
         testBaseline();
@@ -191,8 +196,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
 
-        // Server should return 500 (Internal Server Error) for unspecified crash
-        assertEquals(500, response.getStatus());
+        // UNSPECIFIED_CRASH is a transient process failure — 503, same category as OOM/TIMEOUT
+        assertEquals(503, response.getStatus());
+        assertErrorResponseStatus(response, "UNSPECIFIED_CRASH");
 
         // Server should still be running - verify with a successful request
         testBaseline();
@@ -212,9 +218,23 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
         // Server should return 503 (Service Unavailable) for timeout
         assertEquals(503, response.getStatus());
+        assertErrorResponseStatus(response, "TIMEOUT");
 
         // Server should still be running - verify with a successful request
         testBaseline();
+    }
+
+    /**
+     * Asserts that an error response body is JSON with a {@code status} field matching
+     * {@code expectedStatus} (a {@code PipesResult.RESULT_STATUS} enum name).
+     */
+    private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
+        try (InputStream is = (InputStream) response.getEntity()) {
+            String body = IOUtils.toString(is, UTF_8);
+            JsonNode node = new ObjectMapper().readTree(body);
+            assertEquals(expectedStatus, node.path("status").asText(null),
+                    "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
+        }
     }
 
 
