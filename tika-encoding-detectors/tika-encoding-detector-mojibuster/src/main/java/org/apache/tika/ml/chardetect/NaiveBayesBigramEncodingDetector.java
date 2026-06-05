@@ -309,9 +309,19 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 for (int bg = 0; bg < BIGRAM_SPACE; bg++) {
                     logP8[bg * numClasses + c] = u;
                 }
-                // Overwrite with trained pairs.
+                // Overwrite with trained pairs. Bigram ids are sorted ascending and
+                // stored as varint deltas (LEB128) from the previous id.
+                int bigram = 0;
                 for (int i = 0; i < vocabSize; i++) {
-                    int bigram = dis.readUnsignedShort();
+                    int delta = 0;
+                    int shift = 0;
+                    int b;
+                    do {
+                        b = dis.readUnsignedByte();
+                        delta |= (b & 0x7F) << shift;
+                        shift += 7;
+                    } while ((b & 0x80) != 0);
+                    bigram += delta;
                     byte q = dis.readByte();
                     logP8[bigram * numClasses + c] = q;
                 }

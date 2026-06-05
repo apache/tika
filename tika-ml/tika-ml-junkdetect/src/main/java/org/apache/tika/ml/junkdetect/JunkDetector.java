@@ -970,22 +970,6 @@ public final class JunkDetector implements TextQualityDetector {
         return java.util.Arrays.binarySearch(tables.codepointIndex, cp);
     }
 
-    /**
-     * Mixing function used to scatter packed (idxA, idxB) keys across
-     * the open-addressing table.  A simple integer finalizer (splitmix32
-     * style) gives good distribution for sequential index values.
-     *
-     * <p>Public so the trainer's open-addressing insertion routine uses
-     * the same probe order as inference — drift here would silently
-     * corrupt every lookup.
-     */
-    public static int mixIndexKey(int packedKey) {
-        int x = packedKey;
-        x = (x ^ (x >>> 16)) * 0x7feb352d;
-        x = (x ^ (x >>> 15)) * 0x846ca68b;
-        x = x ^ (x >>> 16);
-        return x;
-    }
 
     /**
      * Packed bigram key for indices {@code (a, b)} where each index fits in
@@ -1085,20 +1069,12 @@ public final class JunkDetector implements TextQualityDetector {
      * for {@code (idxA, idxB)}, or {@code -1} if not present (probe hit an
      * empty slot first).
      *
-     * <p>Linear probing with the same mix-hash used at training time —
-     * required for the table to be readable, not just writable.
+     * <p>{@code bigramKeys} is sorted ascending (signed), so this is a binary search.
      */
     static int lookupBigramSlot(BigramTables tables, int idxA, int idxB) {
         int packedKey = packBigramKey(idxA, idxB);
-        int[] keys = tables.bigramKeys;
-        int mask = keys.length - 1;
-        int h = mixIndexKey(packedKey) & mask;
-        while (true) {
-            int k = keys[h];
-            if (k == BigramTables.EMPTY_KEY) return -1;
-            if (k == packedKey) return h;
-            h = (h + 1) & mask;
-        }
+        int slot = java.util.Arrays.binarySearch(tables.bigramKeys, packedKey);
+        return slot >= 0 ? slot : -1;
     }
 
     private static double unigramLogProb(BigramTables tables, int idx) {

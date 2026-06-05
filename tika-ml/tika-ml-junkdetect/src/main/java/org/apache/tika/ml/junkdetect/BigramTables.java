@@ -36,12 +36,11 @@ import java.nio.ByteOrder;
  *       script.  Codepoint → dense index is a binary search; index →
  *       codepoint is direct array access.  Typical sizes: ~7K-15K for HAN,
  *       ~200-500 for most other scripts.
- *   <li>{@code bigramKeys} / {@code bigramValues} — parallel arrays
- *       implementing an open-addressed hash table with linear probing.
- *       Each key is a 32-bit value {@code (idxA << 16) | idxB}; key {@code
- *       -1} means "empty slot."  Indices are bounded at 16 bits (65535),
- *       which is comfortably above the largest per-script codepoint count
- *       we observe.
+ *   <li>{@code bigramKeys} / {@code bigramValues} — parallel arrays of the
+ *       occupied entries only, sorted ascending by key for binary-search
+ *       lookup.  Each key is a 32-bit value {@code (idxA << 16) | idxB}.
+ *       Indices are bounded at 16 bits (65535), comfortably above the
+ *       largest per-script codepoint count we observe.
  *   <li>{@code unigramTable} — {@code byte[numCodepoints]}, quantized
  *       unigram log-probabilities indexed by the same codepoint→index map.
  *   <li>{@code bigramQuantMin/Max}, {@code unigramQuantMin/Max} —
@@ -56,10 +55,9 @@ import java.nio.ByteOrder;
  *       independence sum.
  * </ul>
  *
- * <p>Membership semantics: no Bloom filter.  The empty-slot sentinel is
- * the membership oracle — a pair is "seen" iff binary-search finds both
- * codepoints in the index AND a probe sequence hits a matching key before
- * an empty slot.  Lookups are therefore exact.
+ * <p>Membership semantics: no Bloom filter.  A pair is "seen" iff
+ * binary-search finds both codepoints in the index AND finds the packed
+ * key in {@code bigramKeys}.  Lookups are therefore exact.
  *
  * <p>Fields are package-private so the
  * {@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel} trainer can

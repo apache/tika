@@ -29,6 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.EncodingDetectorContext;
+import org.apache.tika.detect.EncodingProbeCache;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.io.TikaInputStream;
@@ -208,7 +210,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     @Override
     public List<EncodingResult> detect(TikaInputStream tis, Metadata metadata,
                                        ParseContext parseContext) throws IOException {
-        byte[] probe = readProbe(tis);
+        byte[] probe = readProbe(tis, parseContext);
         return detect(probe, metadata);
     }
 
@@ -749,7 +751,20 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         return lower.contains("html") || lower.contains("xml");
     }
 
-    private static byte[] readProbe(TikaInputStream tis) throws IOException {
-        return AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+    private static byte[] readProbe(TikaInputStream tis, ParseContext parseContext)
+            throws IOException {
+        EncodingDetectorContext context = parseContext.get(EncodingDetectorContext.class);
+        EncodingProbeCache cache = context == null ? null : context.getProbeCache();
+        if (cache != null) {
+            byte[] cached = cache.get(PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+            if (cached != null) {
+                return cached;
+            }
+        }
+        byte[] probe = AdaptiveProbe.read(tis, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+        if (cache != null) {
+            cache.put(probe, PROBE_CONTENT_TARGET, PROBE_RAW_CAP);
+        }
+        return probe;
     }
 }

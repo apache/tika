@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
+import org.apache.tika.detect.EncodingProbeCache;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.detect.MetaEncodingDetector;
@@ -156,7 +157,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return Collections.emptyList();
         }
 
-        byte[] bytes = readProbe(tis);
+        byte[] bytes = readProbe(tis, context);
         if (bytes == null || bytes.length == 0) {
             context.setArbitrationInfo("junk-filter-empty-stream");
             return Collections.emptyList();
@@ -584,9 +585,21 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         return true;
     }
 
-    private byte[] readProbe(TikaInputStream tis) throws IOException {
+    private byte[] readProbe(TikaInputStream tis, EncodingDetectorContext context)
+            throws IOException {
         // readLimit is the tag-stripped content target; cap raw reads at 512 KB.
-        byte[] probe = AdaptiveProbe.read(tis, readLimit, AdaptiveProbe.DEFAULT_RAW_CAP);
+        int rawCap = AdaptiveProbe.DEFAULT_RAW_CAP;
+        EncodingProbeCache cache = context == null ? null : context.getProbeCache();
+        if (cache != null) {
+            byte[] cached = cache.get(readLimit, rawCap);
+            if (cached != null) {
+                return cached.length == 0 ? null : cached;
+            }
+        }
+        byte[] probe = AdaptiveProbe.read(tis, readLimit, rawCap);
+        if (cache != null) {
+            cache.put(probe, readLimit, rawCap);
+        }
         return probe.length == 0 ? null : probe;
     }
 
