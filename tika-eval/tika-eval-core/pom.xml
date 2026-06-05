@@ -57,6 +57,10 @@
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
+      <artifactId>commons-collections4</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
     </dependency>
     <dependency>
@@ -99,8 +103,10 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <inputExcludes>
-            <inputExclude>src/main/resources/common_tokens/*</inputExclude>
+            <!-- binary per-language Bloom filters; cannot carry a license header -->
+            <inputExclude>src/main/resources/common_tokens_bloom/*</inputExclude>
             <inputExclude>src/main/resources/*.json</inputExclude>
+            <!-- raw token lists used only to (re)generate the Bloom filters -->
             <inputExclude>src/test/resources/common_tokens/*</inputExclude>
             <inputExclude>src/test/resources/test-dirs/**</inputExclude>
           </inputExcludes>

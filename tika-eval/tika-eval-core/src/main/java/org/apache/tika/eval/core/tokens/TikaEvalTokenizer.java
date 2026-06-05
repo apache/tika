@@ -105,6 +105,43 @@ public class TikaEvalTokenizer {
     }
 
     /**
+     * Tests whether {@code token} could be a {@link Mode#COMMON_TOKENS} candidate, i.e. whether
+     * it is the kind of token the common-token lists are built from. Use this to gate
+     * common-token membership lookups on tokens produced in {@link Mode#STANDARD} mode (which
+     * also emits numbers and short tokens): a token that could never be in a list should not be
+     * tested against it, since the only possible outcome is a false positive.
+     * <p>
+     * Mirrors {@link #flushWord}: alphabetic/ideographic only (no digits or punctuation),
+     * length 1..{@link #MAX_TOKEN_LENGTH}, at least {@link #MIN_ALPHA_TOKEN_LENGTH} characters
+     * for non-ideographic tokens (CJK tokens are exempt), and not an excluded HTML term.
+     */
+    public static boolean isCommonTokenCandidate(String token) {
+        int len = token.length();
+        if (len == 0 || len > MAX_TOKEN_LENGTH) {
+            return false;
+        }
+        boolean ideographic = false;
+        int i = 0;
+        while (i < len) {
+            int cp = token.codePointAt(i);
+            i += Character.charCount(cp);
+            if (Character.isDigit(cp)) {
+                return false;
+            }
+            if (!Character.isAlphabetic(cp) && !Character.isIdeographic(cp) && cp != '_') {
+                return false;
+            }
+            if (Character.isIdeographic(cp)) {
+                ideographic = true;
+            }
+        }
+        if (!ideographic && len < MIN_ALPHA_TOKEN_LENGTH) {
+            return false;
+        }
+        return !SKIP_SET.contains(token);
+    }
+
+    /**
      * Tokenize in {@link Mode#COMMON_TOKENS} mode and return tokens as a list.
      *
      * @param rawText raw input text

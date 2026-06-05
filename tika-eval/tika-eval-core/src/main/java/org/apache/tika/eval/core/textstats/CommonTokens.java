@@ -18,7 +18,6 @@ package org.apache.tika.eval.core.textstats;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.commons.lang3.tuple.Pair;
@@ -26,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.eval.core.tokens.CommonTokenCountManager;
 import org.apache.tika.eval.core.tokens.CommonTokenResult;
 import org.apache.tika.eval.core.tokens.LangModel;
+import org.apache.tika.eval.core.tokens.TikaEvalTokenizer;
 import org.apache.tika.eval.core.tokens.TokenCounts;
 import org.apache.tika.language.detect.LanguageResult;
 
@@ -65,7 +65,9 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
         Pair<String, LangModel> pair =
                 commonTokenCountManager.getLangTokens(languages.get(0).getLanguage());
         String actualLangCode = pair.getKey();
-        Set<String> commonTokens = pair.getValue().getTokens();
+        // Membership is via a Bloom filter, so a token not in the common-tokens list may
+        // very occasionally be counted as common (false positive); never the reverse.
+        LangModel commonTokens = pair.getValue();
         int numUniqueCommonTokens = 0;
         int numCommonTokens = 0;
         int numUniqueAlphabeticTokens = 0;
@@ -77,7 +79,10 @@ public class CommonTokens implements LanguageAwareTokenCountStats<CommonTokenRes
                 numAlphabeticTokens += count;
                 numUniqueAlphabeticTokens++;
             }
-            if (commonTokens.contains(token)) {
+            // Only test tokens that could actually be in a common-token list. A number,
+            // short token, or HTML term is never in the list, so testing it can only yield a
+            // (Bloom) false positive; skipping them is a no-op for the exact list.
+            if (TikaEvalTokenizer.isCommonTokenCandidate(token) && commonTokens.contains(token)) {
                 numCommonTokens += count;
                 numUniqueCommonTokens++;
             }
