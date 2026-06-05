@@ -92,12 +92,16 @@ The separate `/config` endpoints have been removed. Configuration is now handled
 === Error Response Bodies Are Now JSON
 
 In 3.x, error responses from `/tika`, `/rmeta`, and `/unpack` returned a plain-text
-body such as `"Parse failed: TIMEOUT"`. In 4.x these endpoints return a JSON body:
+body such as "Parse failed: TIMEOUT". In 4.x these endpoints return a JSON body with
+at least a `status` field:
 
 [source,json]
 ----
-{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}
+{"status": "TIMEOUT"}
 ----
+
+When the server is configured with `returnStackTrace=true`, a `message` field is also
+included (it may contain a server-side stack trace), e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 The HTTP status codes are also more precise:
 
