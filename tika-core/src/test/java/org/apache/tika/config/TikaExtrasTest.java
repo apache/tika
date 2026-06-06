@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarEntry;
@@ -62,10 +63,12 @@ public class TikaExtrasTest {
             jos.closeEntry();
         }
         ClassLoader prevCtx = Thread.currentThread().getContextClassLoader();
+        ClassLoader[] installed = new ClassLoader[1];
         try {
             withProperty(tmp.toString(), () -> {
                 assertEquals(1, TikaExtras.extraJars().size());
                 ClassLoader cl = TikaExtras.install();
+                installed[0] = cl;
                 assertNotNull(cl, "extras dir with a jar should install a classloader");
                 assertNotNull(cl.getResource(MARKER), "the extra jar must be on the classloader");
                 assertSame(cl, Thread.currentThread().getContextClassLoader());
@@ -73,6 +76,12 @@ public class TikaExtrasTest {
         } finally {
             Thread.currentThread().setContextClassLoader(prevCtx);
             ServiceLoader.setContextClassLoader(prevCtx);
+            // Close the URLClassLoader so it releases its handle on extra.jar before
+            // @TempDir cleanup runs; otherwise the delete fails on Windows, where an
+            // open file cannot be removed.
+            if (installed[0] instanceof URLClassLoader) {
+                ((URLClassLoader) installed[0]).close();
+            }
         }
     }
 

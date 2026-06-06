@@ -510,12 +510,8 @@ public class PerClientServerManager implements ServerManager {
 
     private Path writeArgFile() throws IOException {
         Path argFile = tmpDir.resolve("jvm-args.txt");
-        String classpath = System.getProperty("java.class.path");
         // forward any tika.extras.dir jars to the forked PipesServer
-        for (Path extra : TikaExtras.extraJars()) {
-            classpath = classpath + System.getProperty("path.separator")
-                    + extra.toAbsolutePath();
-        }
+        String classpath = TikaExtras.appendJarsToClasspath(System.getProperty("java.class.path"));
         String normalizedClasspath = classpath.replace("\\", "/");
         String content = "-cp\n\"" + normalizedClasspath + "\"\n";
         Files.writeString(argFile, content, StandardCharsets.UTF_8);

@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -109,7 +110,33 @@ public final class TikaExtras {
         } catch (Exception e) {
             LOG.warn("Could not scan {}={}: {}", EXTRAS_DIR_PROPERTY, dir, e.toString());
         }
+        // Sort by file name so jar load order (classloader URL order / forked-child
+        // classpath order, hence SPI precedence) is deterministic across platforms
+        // and filesystems rather than depending on directory iteration order.
+        jars.sort(Comparator.comparing(jar -> jar.getFileName().toString()));
         return jars;
+    }
+
+    /**
+     * Appends the {@link #extraJars()} (as absolute paths, joined with the
+     * platform path separator) to the given classpath string — for extending a
+     * forked process's {@code -cp} with the extras jars.  Returns {@code classpath}
+     * unchanged when the feature is off or the directory has no jars.
+     *
+     * @param classpath the base classpath to extend
+     * @return the classpath with any extras jars appended
+     */
+    public static String appendJarsToClasspath(String classpath) {
+        List<Path> jars = extraJars();
+        if (jars.isEmpty()) {
+            return classpath;
+        }
+        StringBuilder sb = new StringBuilder(classpath);
+        String separator = System.getProperty("path.separator");
+        for (Path jar : jars) {
+            sb.append(separator).append(jar.toAbsolutePath());
+        }
+        return sb.toString();
     }
 
     /** The configured extras directory, or {@code null} if the feature is off. */
