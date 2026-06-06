@@ -44,6 +44,46 @@ public final class TextQualityFeatures {
     }
 
     // -----------------------------------------------------------------------
+    // Memoized Unicode-script lookup
+    // -----------------------------------------------------------------------
+
+    /** Cached {@code UnicodeScript.values()} so an ordinal-&gt;enum lookup never
+     *  re-allocates the values array. */
+    private static final Character.UnicodeScript[] SCRIPT_VALUES =
+            Character.UnicodeScript.values();
+
+    /**
+     * Memoized {@link Character.UnicodeScript#of(int)} for the BMP.  Scoring a
+     * document classifies every codepoint's script ~5 times (z4/z7/z8/z9 plus the
+     * z1 bigram bucketing), and {@code UnicodeScript.of} is a binary search over
+     * the script-range table (measured ~12 ns/cp, 10-20x {@code Character.getType}).
+     * The result is a pure function of the codepoint for a given JVM, so cache it:
+     * BMP codepoints (&gt;99% of text) become an O(1) array lookup after first
+     * sight, shared across every call site and every document.  Slot 0 means "not
+     * yet computed"; otherwise {@code ordinal + 1}.  The fill is a benign data race
+     * — every writer stores the same deterministic value and {@code short} writes
+     * do not tear.
+     */
+    private static final short[] BMP_SCRIPT_CACHE = new short[0x10000];
+
+    /**
+     * Script of {@code codePoint}, memoized for the BMP — identical result to
+     * {@link Character.UnicodeScript#of(int)} (the same singleton enum constant).
+     */
+    static Character.UnicodeScript scriptOf(int codePoint) {
+        if (codePoint >= 0 && codePoint < 0x10000) {
+            short v = BMP_SCRIPT_CACHE[codePoint];
+            if (v != 0) {
+                return SCRIPT_VALUES[v - 1];
+            }
+            Character.UnicodeScript s = Character.UnicodeScript.of(codePoint);
+            BMP_SCRIPT_CACHE[codePoint] = (short) (s.ordinal() + 1);
+            return s;
+        }
+        return Character.UnicodeScript.of(codePoint);
+    }
+
+    // -----------------------------------------------------------------------
     // Strip modes
     // -----------------------------------------------------------------------
 
@@ -99,7 +139,7 @@ public final class TextQualityFeatures {
                 return type == Character.CONTROL || type == Character.FORMAT;
             }
             case ALL_COMMON: {
-                Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+                Character.UnicodeScript s = scriptOf(cp);
                 return s == Character.UnicodeScript.COMMON
                         || s == Character.UnicodeScript.INHERITED
                         || s == Character.UnicodeScript.UNKNOWN;
@@ -398,7 +438,7 @@ public final class TextQualityFeatures {
                 continue;
             }
             total++;
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = scriptOf(cp);
             if (s != Character.UnicodeScript.COMMON
                     && s != Character.UnicodeScript.INHERITED
                     && s != Character.UnicodeScript.UNKNOWN) {
@@ -442,7 +482,7 @@ public final class TextQualityFeatures {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -508,7 +548,7 @@ public final class TextQualityFeatures {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -538,7 +578,7 @@ public final class TextQualityFeatures {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -616,7 +656,7 @@ public final class TextQualityFeatures {
     }
 
     private static String scriptClusterOf(int cp) {
-        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+        Character.UnicodeScript s = scriptOf(cp);
         switch (s) {
             case HAN:
             case HIRAGANA:

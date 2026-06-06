@@ -498,6 +498,16 @@ public final class JunkDetector implements TextQualityDetector {
         int[] cps = text.codePoints().toArray();
 
         Map<String, double[]> buckets = new HashMap<>(); // script -> {sumLogP, count}
+        // Left-index memo.  forEachScriptBigram emits (^,x),(x,y),(y,$)... so within
+        // a run each pair's right codepoint b is the next pair's left codepoint a.
+        // Reuse the previous pair's right-index as this pair's left-index when they
+        // match (same codepoint AND same script => same table), so each codepoint is
+        // binary-searched in the script's index once instead of twice.  Bit-identical
+        // to scoring each pair independently; the guard falls back to a fresh search
+        // whenever the overlap doesn't hold (run boundary, sentinel, script change).
+        String[] lastScript = {null};
+        int[] lastB = {Integer.MIN_VALUE};
+        int[] lastBIdx = {-1};
         forEachScriptBigram(cps, (script, a, b) -> {
             if (!calibrations.containsKey(script)) {
                 return;
@@ -506,7 +516,13 @@ public final class JunkDetector implements TextQualityDetector {
             if (t == null) {
                 return;
             }
-            double lp = computeF1MeanLogP(new int[]{a, b}, t);
+            int idxA = (a == lastB[0] && script.equals(lastScript[0]))
+                    ? lastBIdx[0] : codepointToIndex(t, a);
+            int idxB = codepointToIndex(t, b);
+            lastScript[0] = script;
+            lastB[0] = b;
+            lastBIdx[0] = idxB;
+            double lp = scorePairF1(a, idxA, b, idxB, t);
             if (Double.isNaN(lp)) {
                 return;
             }
@@ -839,7 +855,7 @@ public final class JunkDetector implements TextQualityDetector {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -1110,7 +1126,7 @@ public final class JunkDetector implements TextQualityDetector {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -1146,7 +1162,7 @@ public final class JunkDetector implements TextQualityDetector {
 
     /** COMMON-class predicate: COMMON, INHERITED, UNKNOWN all pool into COMMON. */
     static String classKey(int cp) {
-        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+        Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
         if (s == Character.UnicodeScript.COMMON
                 || s == Character.UnicodeScript.INHERITED
                 || s == Character.UnicodeScript.UNKNOWN) {
@@ -1357,7 +1373,7 @@ public final class JunkDetector implements TextQualityDetector {
         Map<Character.UnicodeScript, Integer> counts = new HashMap<>();
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s != Character.UnicodeScript.COMMON
                     && s != Character.UnicodeScript.INHERITED
                     && s != Character.UnicodeScript.UNKNOWN) {
