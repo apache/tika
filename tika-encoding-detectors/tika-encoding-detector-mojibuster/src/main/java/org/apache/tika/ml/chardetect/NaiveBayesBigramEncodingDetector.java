@@ -312,23 +312,24 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                 // stored as varint deltas (LEB128) from the previous id.
                 int bigram = 0;
                 for (int i = 0; i < vocabSize; i++) {
-                    int delta = 0;
+                    long delta = 0;
                     int shift = 0;
                     int b;
                     do {
-                        if (shift >= 32) {
+                        if (shift >= 35) {
                             throw new IOException(
                                     "Malformed varint in bigram-id deltas (too long)");
                         }
                         b = dis.readUnsignedByte();
-                        delta |= (b & 0x7F) << shift;
+                        delta |= (long) (b & 0x7F) << shift;
                         shift += 7;
                     } while ((b & 0x80) != 0);
-                    bigram += delta;
-                    if (bigram < 0 || bigram >= BIGRAM_SPACE) {
-                        throw new IOException("Bigram id out of range: " + bigram
+                    long next = bigram + delta;
+                    if (next < 0 || next >= BIGRAM_SPACE) {
+                        throw new IOException("Bigram id out of range: " + next
                                 + " (expected [0, " + BIGRAM_SPACE + "))");
                     }
+                    bigram = (int) next;
                     byte q = dis.readByte();
                     logP8[bigram * numClasses + c] = q;
                 }

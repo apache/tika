@@ -59,9 +59,8 @@ import java.nio.ByteOrder;
  * binary-search finds both codepoints in the index AND finds the packed
  * key in {@code bigramKeys}.  Lookups are therefore exact.
  *
- * <p>Fields are package-private so the
- * {@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel} trainer can
- * construct instances directly without going through accessors.
+ * <p>Instances are built by the trainer ({@code TrainJunkModel}, in the
+ * tika-ml-junkdetect-tools module) and read back via {@link #readFrom}.
  */
 public final class BigramTables {
 
@@ -132,9 +131,9 @@ public final class BigramTables {
             dos.writeInt(bigramKeys[0]);
             for (int i = 1; i < bigramKeys.length; i++) {
                 long delta = (long) bigramKeys[i] - (long) bigramKeys[i - 1];
-                if (delta < 0) {
-                    throw new IOException("bigramKeys must be sorted ascending; "
-                            + "non-monotonic at index " + i);
+                if (delta <= 0) {
+                    throw new IOException("bigramKeys must be strictly ascending "
+                            + "(no duplicates); non-increasing at index " + i);
                 }
                 writeVarLong(dos, delta);
             }
@@ -212,7 +211,7 @@ public final class BigramTables {
      * Returns a one-line summary for trainer progress output.
      */
     public String statsString() {
-        return String.format(
+        return String.format(java.util.Locale.ROOT,
                 "  cp_index=%d, bigram_slots=%d (load≈%.2f), "
                 + "bigram_range=[%.3f, %.3f], unigram_range=[%.3f, %.3f]",
                 codepointIndex.length, bigramKeys.length,

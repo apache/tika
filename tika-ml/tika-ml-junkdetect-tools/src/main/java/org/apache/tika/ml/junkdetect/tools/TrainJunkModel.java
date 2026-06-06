@@ -46,7 +46,7 @@ import org.apache.tika.ml.junkdetect.JunkDetector;
  *
  * <p>z1 (codepoint-bigram log-probability) is trained per script by bucketing
  * every bigram to its script ({@link JunkDetector#forEachScriptBigram}) and
- * building a per-script open-addressing bigram table with unigram backoff.
+ * building a per-script sorted-occupied bigram table with unigram backoff.
  * z2 (Unicode block-transition), z3 (control-byte fraction), and z4
  * (script-transition) are single global document-level features.  All features
  * are calibrated (mu/sigma) and combined by a single global contrastive
@@ -932,7 +932,7 @@ public class TrainJunkModel {
      *
      * @param trainFile         the per-script {@code *.train.gz}
      * @param minBigramCount    drop pairs whose count is below this
-     * @param loadFactor        target OA table load factor (e.g. 0.5)
+     * @param loadFactor        unused (retained for signature compatibility)
      * @param keyIndexBits      bit-width per index in the packed key
      *                          (each side of the pair must fit)
      */
@@ -970,9 +970,12 @@ public class TrainJunkModel {
     /**
      * Builds the {@link BigramTables} carrier from pre-tallied pair/unigram
      * counts.  Drops pairs below
-     * {@code minBigramCount}, assigns dense codepoint indices, and packs an
-     * open-addressing bigram table; unigram log-probs use {@code unigramTotal}
+     * {@code minBigramCount}, assigns dense codepoint indices, and packs the
+     * sorted-occupied bigram table; unigram log-probs use {@code unigramTotal}
      * as the denominator.
+     *
+     * <p>{@code loadFactor} is retained for signature compatibility but unused:
+     * the sorted-occupied table (binary-search lookup) has no load factor.
      */
     public static BigramTables buildBigramTablesFromCounts(
             HashMap<Long, long[]> pairCounts,
