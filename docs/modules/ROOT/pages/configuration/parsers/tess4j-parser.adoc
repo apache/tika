@@ -17,6 +17,27 @@
 
 = Tess4J OCR Parser
 
+[IMPORTANT]
+====
+*Advanced users only.* `Tess4JParser` loads the Tesseract native library
+directly into your JVM through https://github.com/java-native-access/jna[JNA]
+(Java Native Access). Operating it safely means locating and linking the
+correct platform-specific native libraries, reasoning about the Java/native
+boundary, and accepting that a fault in the native code can crash the entire
+JVM. In short, it assumes you are comfortable working with native-library
+integration via JNA.
+
+If that doesn't describe you, please don't reach for this parser — and that's
+perfectly fine. The standard
+xref:configuration/parsers/tesseract-ocr-parser.adoc[`TesseractOCRParser`]
+performs the same OCR by running the `tesseract` command-line program in a
+separate process. It needs no native linking, is far easier to set up, and a
+crash in Tesseract can never take down your application, so it is the
+recommended choice for almost everyone. Choose `Tess4JParser` only when you
+have a measured need for in-process OCR throughput *and* the expertise to run
+native bindings safely.
+====
+
 The `Tess4JParser` is an OCR parser that calls the Tesseract native library
 in-process via https://github.com/nguyenq/tess4j[Tess4J] and JNA, rather
 than spawning a `tesseract` child process for every image. This eliminates
