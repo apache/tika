@@ -47,7 +47,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
 
     /**
      * No-arg constructor for bean-style configuration (e.g., Jackson deserialization).
-     * Creates a factory with TEXT handler type, unlimited write, and throwOnWriteLimitReached=true.
+     * Creates a factory with MARKDOWN handler type, unlimited write, and throwOnWriteLimitReached=true.
      */
     public BasicContentHandlerFactory() {
     }

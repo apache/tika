@@ -69,7 +69,7 @@ and applies to all modes that produce content (`RMETA`, `CONCATENATE`, `CONTENT_
 
 Accepted `type` values: `TEXT`, `HTML`, `XML`, `MARKDOWN`, `BODY`, `IGNORE`. The CLI
 `--handler` flag uses single-letter shortcuts (`t`, `h`, `x`, `m`, `b`, `i`) that map onto
-these values.
+these values. If unset, the default is `MARKDOWN`.
 
 [cols="1,1,2"]
 |===

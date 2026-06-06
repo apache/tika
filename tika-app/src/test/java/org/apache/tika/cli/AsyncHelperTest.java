@@ -58,6 +58,13 @@ public class AsyncHelperTest {
     }
 
     @Test
+    public void testMarkdownHandler() throws Exception {
+        String[] args = new String[]{"--md", "input", "output"};
+        String[] expected = new String[]{"--handler", "m", "input", "output"};
+        assertArrayEquals(expected, AsyncHelper.translateArgs(args));
+    }
+
+    @Test
     public void testExtractLongFormTranslatedToZ() throws Exception {
         // TIKA-4736: tika-app's --extract is the long form of -z. It must be
         // translated to -z (which TikaAsyncCLI recognizes); otherwise it falls

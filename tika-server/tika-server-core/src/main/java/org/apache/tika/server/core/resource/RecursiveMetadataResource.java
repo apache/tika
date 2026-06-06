@@ -51,7 +51,7 @@ import org.apache.tika.server.core.MetadataList;
 public class RecursiveMetadataResource {
 
     protected static final String HANDLER_TYPE_PARAM = "handler";
-    protected static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE = BasicContentHandlerFactory.HANDLER_TYPE.XML;
+    protected static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE = BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
     private static final Logger LOG = LoggerFactory.getLogger(RecursiveMetadataResource.class);
 
     /**

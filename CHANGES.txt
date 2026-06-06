@@ -1,3 +1,15 @@
+Release 4.0.0-beta-1 - unreleased
+
+  BREAKING CHANGES
+
+   * The default content handler is now Markdown. tika-app, tika-server
+     (the /tika and /rmeta endpoints), and the async/pipes CLI now emit
+     Markdown content by default instead of XHTML/XML (plain text for the
+     async CLI). Request the previous format explicitly, e.g. tika-app
+     -x/--xml, the server /tika/xml and /rmeta/xml paths (or the
+     X-Tika-Handler header), and the async CLI --handler x (TIKA-4663).
+
+
 Release 4.0.0-alpha-1 - 5/4/2026
 
   BREAKING CHANGES

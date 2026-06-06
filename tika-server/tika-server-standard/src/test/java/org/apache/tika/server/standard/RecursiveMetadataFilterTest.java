@@ -68,8 +68,9 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
 
     @Test
     public void testBasicFilter() throws Exception {
+        // request xml so the response exceeds the server's gzip threshold (markdown is too short)
         Response response = WebClient
-                .create(endPoint + META_PATH)
+                .create(endPoint + META_PATH + "/xml")
                 .accept("application/json")
                 .acceptEncoding("gzip")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));

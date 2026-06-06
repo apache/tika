@@ -53,7 +53,7 @@ java -jar tika-app.jar -i /data/input -o /data/output --handler t
 java -jar tika-app.jar -i /data/input -o /data/output -Z
 ----
 
-Handler types: `t` (text), `h` (html), `x` (xml), `m` (markdown), `b` (body), `i` (ignore/metadata only).
+Handler types: `t` (text), `h` (html), `x` (xml), `m` (markdown), `b` (body), `i` (ignore/metadata only). The default is `m` (markdown).
 
 == JSON Configuration
 
