@@ -111,14 +111,12 @@ public class JunkDetectorRoundTripTest {
         // Same shape as the first test but with BOTH (A,B) and (B,A) in the
         // bigram table.  mean log-prob = -1.0, z1 = +4.0, logit = +4.0.
         int[] cpIndex = new int[]{'A', 'B'};
-        int[] keys = new int[4];
-        Arrays.fill(keys, BigramTables.EMPTY_KEY);
-        byte[] values = new byte[4];
         float bMin = -10.0f;
         float bMax = -1.0f;
         byte b = quantizeOne(-1.0f, bMin, bMax);
-        insertOA(keys, values, JunkDetector.packBigramKey(0, 1), b);
-        insertOA(keys, values, JunkDetector.packBigramKey(1, 0), b);
+        // sorted-occupied: packBigramKey(0,1)=1 < packBigramKey(1,0)=65536
+        int[] keys = {JunkDetector.packBigramKey(0, 1), JunkDetector.packBigramKey(1, 0)};
+        byte[] values = {b, b};
 
         float uMin = -5.0f;
         float uMax = -2.0f;
@@ -266,17 +264,14 @@ public class JunkDetectorRoundTripTest {
     private static BigramTables buildLatinTablesAB() {
         int[] cpIndex = new int[]{'A', 'B'};
 
-        // 4 slots ≈ 25% load for 1 pair.  Open-addressing with linear probe.
-        int[] keys = new int[4];
-        Arrays.fill(keys, BigramTables.EMPTY_KEY);
-        byte[] values = new byte[4];
-
         // Manual quantization with a chosen range so we don't hit the
         // degenerate single-element case.  range=[-10, -1] → -1.0 → byte 255.
         float bMin = -10.0f;
         float bMax = -1.0f;
         byte b = quantizeOne(-1.0f, bMin, bMax);
-        insertOA(keys, values, JunkDetector.packBigramKey(0, 1), b);
+        // sorted-occupied table with a single trained pair.
+        int[] keys = {JunkDetector.packBigramKey(0, 1)};
+        byte[] values = {b};
 
         float uMin = -5.0f;
         float uMax = -2.0f;
@@ -358,13 +353,10 @@ public class JunkDetectorRoundTripTest {
      *  (uppercase 'A'/'B' are absent from the index, so they must fold). */
     private static BigramTables buildLatinTablesLowerAB() {
         int[] cpIndex = new int[]{'a', 'b'};
-        int[] keys = new int[4];
-        Arrays.fill(keys, BigramTables.EMPTY_KEY);
-        byte[] values = new byte[4];
         float bMin = -10.0f;
         float bMax = -1.0f;
-        insertOA(keys, values, JunkDetector.packBigramKey(0, 1),
-                quantizeOne(-1.0f, bMin, bMax));
+        int[] keys = {JunkDetector.packBigramKey(0, 1)};
+        byte[] values = {quantizeOne(-1.0f, bMin, bMax)};
         float uMin = -5.0f;
         float uMax = -2.0f;
         byte[] unigramBytes = new byte[]{
@@ -401,25 +393,6 @@ public class JunkDetectorRoundTripTest {
         if (q < 0) q = 0;
         else if (q > 255) q = 255;
         return (byte) q;
-    }
-
-    /**
-     * Replica of {@code TrainJunkModel.insertOA} (package-private) for the
-     * test's hand-constructed tables.  Uses the same mix-hash as the
-     * production code path.
-     */
-    private static void insertOA(int[] keys, byte[] values, int packedKey, byte value) {
-        int mask = keys.length - 1;
-        int h = JunkDetector.mixIndexKey(packedKey) & mask;
-        while (keys[h] != BigramTables.EMPTY_KEY) {
-            if (keys[h] == packedKey) {
-                values[h] = value;
-                return;
-            }
-            h = (h + 1) & mask;
-        }
-        keys[h] = packedKey;
-        values[h] = value;
     }
 
     /**

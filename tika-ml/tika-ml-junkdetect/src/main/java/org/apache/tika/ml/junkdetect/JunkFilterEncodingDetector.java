@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
+import org.apache.tika.detect.EncodingProbeCache;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.detect.MetaEncodingDetector;
@@ -156,7 +157,7 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             return Collections.emptyList();
         }
 
-        byte[] bytes = readProbe(tis);
+        byte[] bytes = readProbe(tis, context);
         if (bytes == null || bytes.length == 0) {
             context.setArbitrationInfo("junk-filter-empty-stream");
             return Collections.emptyList();
@@ -246,31 +247,20 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         Charset champion = null;
         double championZ = Double.NEGATIVE_INFINITY;
         Map<Charset, Double> scoreByCharset = new LinkedHashMap<>();
-        Map<Charset, Double> diffByCharset = new LinkedHashMap<>();
-        // Dedup by text: [0] = whole-text z (the champion + anchor metric, kept
-        // exactly as before); [1] = script-letter "diff" z (codepoints >= 0x80
-        // that are letters/ideographs — the high bytes where the candidate
-        // decodes actually differ), used ONLY for the family gate below.
-        Map<String, float[]> zByText = new HashMap<>();
+        // Whole-text z (the champion + anchor metric), deduped by decoded text.
+        Map<String, Float> wholeZByText = new HashMap<>();
         for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
             String text = entry.getValue();
-            float[] zs = zByText.get(text);
-            if (zs == null) {
+            Float wholeZ = wholeZByText.get(text);
+            if (wholeZ == null) {
                 org.apache.tika.quality.TextQualityScore sc = qualityDetector.score(text);
-                float wholeZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
-                String diff = scriptLetters(text);
-                float diffZ = Float.NEGATIVE_INFINITY;
-                if (!diff.isEmpty()) {
-                    org.apache.tika.quality.TextQualityScore d = qualityDetector.score(diff);
-                    diffZ = d.isUnknown() ? Float.NEGATIVE_INFINITY : d.getZScore();
-                }
-                zs = new float[]{wholeZ, diffZ};
-                zByText.put(text, zs);
+                wholeZ = sc.isUnknown() ? Float.NEGATIVE_INFINITY : sc.getZScore();
+                wholeZByText.put(text, wholeZ);
             }
-            scoreByCharset.put(entry.getKey(), (double) zs[0]);
-            diffByCharset.put(entry.getKey(), (double) zs[1]);
-            if (zs[0] > championZ) {
-                championZ = zs[0];
+            double z = wholeZ;
+            scoreByCharset.put(entry.getKey(), z);
+            if (z > championZ) {
+                championZ = z;
                 champion = entry.getKey();
             }
         }
@@ -284,34 +274,53 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // CJK/non-CJK BOUNDARY for COMMON-dominated docs (markup/digits/punct
         // decode identically and swamp the few discriminating high bytes),
         // producing false-CJK and real-CJK demotion.  The script-letter "diff" z
-        // reads that boundary cleanly (coherent CJK vs garbage), so use it to
-        // decide ONLY the family; within a family the whole-text champion stands
-        // (Latin-vs-Latin etc. untouched — a blanket diff-score regressed there).
-        // Override only on a clear diff margin.
-        double bestCjkDiff = Double.NEGATIVE_INFINITY;
-        double bestNonCjkDiff = Double.NEGATIVE_INFINITY;
-        for (Map.Entry<Charset, Double> e : diffByCharset.entrySet()) {
-            if (isCjkCharset(e.getKey().name())) {
-                bestCjkDiff = Math.max(bestCjkDiff, e.getValue());
-            } else {
-                bestNonCjkDiff = Math.max(bestNonCjkDiff, e.getValue());
+        // (codepoints >= 0x80 that are letters/ideographs — the high bytes where
+        // candidate decodes actually differ) reads that boundary cleanly, so use
+        // it to decide ONLY the family; within a family the whole-text champion
+        // stands (Latin-vs-Latin etc. untouched — a blanket diff-score regressed).
+        //
+        // DEMOTE-ONLY and CJK-champion-only: the gate fires only to demote a CJK
+        // champion to non-CJK (the false-CJK fix).  The reverse (promote non-CJK
+        // -> CJK) is NOT done: measured at 29k, the diff z reliably says "this CJK
+        // pick is really non-CJK" (OOV improves on every such flip) but UNreliably
+        // the reverse (the junk model over-rates ideograph mojibake vs sparse
+        // Latin letters); the promote direction is also unnecessary — genuine CJK
+        // is html-meta-declared upstream.  Because the gate can only act when the
+        // champion is CJK, the second "diff" score per candidate is needed ONLY
+        // then — compute it lazily and skip it entirely for the common non-CJK
+        // champion (halving the score() calls there).
+        if (isCjkCharset(champion.name())) {
+            double bestCjkDiff = Double.NEGATIVE_INFINITY;
+            double bestNonCjkDiff = Double.NEGATIVE_INFINITY;
+            Map<String, Float> diffZByText = new HashMap<>();
+            for (Map.Entry<Charset, String> entry : candidates.entrySet()) {
+                String text = entry.getValue();
+                Float diffZ = diffZByText.get(text);
+                if (diffZ == null) {
+                    String diff = scriptLetters(text);
+                    float dz = Float.NEGATIVE_INFINITY;
+                    if (!diff.isEmpty()) {
+                        org.apache.tika.quality.TextQualityScore d = qualityDetector.score(diff);
+                        dz = d.isUnknown() ? Float.NEGATIVE_INFINITY : d.getZScore();
+                    }
+                    diffZ = dz;
+                    diffZByText.put(text, diffZ);
+                }
+                double dz = diffZ;
+                if (isCjkCharset(entry.getKey().name())) {
+                    bestCjkDiff = Math.max(bestCjkDiff, dz);
+                } else {
+                    bestNonCjkDiff = Math.max(bestNonCjkDiff, dz);
+                }
             }
-        }
-        // DEMOTE-ONLY: fire only to demote a CJK champion to non-CJK when the
-        // diff z clearly prefers non-CJK (the false-CJK fix).  The reverse
-        // (promote non-CJK -> CJK) is NOT done: measured at 29k, the diff z
-        // reliably says "this CJK pick is really non-CJK" (OOV improves on every
-        // such flip) but UNreliably says "this non-CJK pick is really CJK" (the
-        // junk model over-rates ideograph mojibake vs sparse Latin letters — OOV
-        // worsened on every promote flip).  The promote direction is also
-        // unnecessary: genuine CJK is html-meta-declared upstream.
-        if (isCjkCharset(champion.name())
-                && bestNonCjkDiff > bestCjkDiff + FAMILY_DIFF_MARGIN) {
-            Charset reFam = bestInFamily(scoreByCharset, false);
-            if (reFam != null) {
-                LOG.trace("junk-filter family gate: {} (CJK) -> {} (non-CJK by diff z)",
-                        champion.name(), reFam.name());
-                champion = reFam;
+            // Override only on a clear diff margin.
+            if (bestNonCjkDiff > bestCjkDiff + FAMILY_DIFF_MARGIN) {
+                Charset reFam = bestInFamily(scoreByCharset, false);
+                if (reFam != null) {
+                    LOG.trace("junk-filter family gate: {} (CJK) -> {} (non-CJK by diff z)",
+                            champion.name(), reFam.name());
+                    champion = reFam;
+                }
             }
         }
 
@@ -584,9 +593,21 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         return true;
     }
 
-    private byte[] readProbe(TikaInputStream tis) throws IOException {
+    private byte[] readProbe(TikaInputStream tis, EncodingDetectorContext context)
+            throws IOException {
         // readLimit is the tag-stripped content target; cap raw reads at 512 KB.
-        byte[] probe = AdaptiveProbe.read(tis, readLimit, AdaptiveProbe.DEFAULT_RAW_CAP);
+        int rawCap = AdaptiveProbe.DEFAULT_RAW_CAP;
+        EncodingProbeCache cache = context == null ? null : context.getProbeCache();
+        if (cache != null) {
+            byte[] cached = cache.get(readLimit, rawCap);
+            if (cached != null) {
+                return cached.length == 0 ? null : cached;
+            }
+        }
+        byte[] probe = AdaptiveProbe.read(tis, readLimit, rawCap);
+        if (cache != null) {
+            cache.put(probe, readLimit, rawCap);
+        }
         return probe.length == 0 ? null : probe;
     }
 

@@ -244,9 +244,17 @@ public class CharSoupFeatureExtractor {
      * @return cleaned, NFC-normalized text
      */
     public static String preprocessNoTruncate(String rawText) {
-        // Strip URLs and emails
-        String text = URL_REGEX.matcher(rawText).replaceAll(" ");
-        text = MAIL_REGEX.matcher(text).replaceAll(" ");
+        // Strip URLs and emails. Both regexes scan the entire input on every call;
+        // skip each unless its required marker is present ("://" for URL_REGEX, "@"
+        // for MAIL_REGEX). This is a no-op for the common (markerless) case — the
+        // output is identical — but avoids a full-buffer regex scan + Matcher alloc.
+        String text = rawText;
+        if (text.indexOf("://") >= 0) {
+            text = URL_REGEX.matcher(text).replaceAll(" ");
+        }
+        if (text.indexOf('@') >= 0) {
+            text = MAIL_REGEX.matcher(text).replaceAll(" ");
+        }
 
         // NFC normalize
         if (!Normalizer.isNormalized(text, Normalizer.Form.NFC)) {

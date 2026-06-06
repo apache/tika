@@ -30,10 +30,13 @@
   <name>Apache Tika html parser module</name>
 
   <dependencies>
+    <!-- Test scope: shipped parser stays decoupled from any specific
+         EncodingDetector; tests still exercise real <meta charset> handling. -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-encoding-detector-html</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>

@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -85,6 +84,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
     private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN =
             Pattern.compile(("(?is)\\bcharset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)"));
     private static final Charset ASCII = Charset.forName("US-ASCII");
+    private static final Pattern HTML_COMMENT_PATTERN = Pattern.compile("<!--.*?(-->|$)");
     /**
      * HTML can include non-iana supported charsets that Java
      * recognizes, e.g. "unicode".  This can lead to incorrect detection/mojibake.
@@ -162,10 +162,20 @@ public class HtmlEncodingDetector implements EncodingDetector {
         }
         tis.reset();
 
-        String head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n)).toString();
-        String headNoComments = head.replaceAll("<!--.*?(-->|$)", " ");
+        // findCharset only ever matches a meta tag (HTTP_META_PATTERN = "<\s*meta...").
+        // If the probe has no such tag, the full ASCII decode + comment-stripping
+        // regex below can only produce null — skip them. Byte-level, no allocation;
+        // a strict necessary condition for any non-empty result.
+        if (!containsMetaTag(buffer, n)) {
+            return Collections.emptyList();
+        }
+
+        String head = new String(buffer, 0, n, ASCII);
+        boolean hasComment = head.indexOf("<!--") >= 0;
+        String headNoComments =
+                hasComment ? HTML_COMMENT_PATTERN.matcher(head).replaceAll(" ") : head;
         Charset charset = findCharset(headNoComments);
-        if (charset == null) {
+        if (charset == null && hasComment) {
             charset = findCharset(head);
         }
         if (charset == null) {
@@ -173,6 +183,39 @@ public class HtmlEncodingDetector implements EncodingDetector {
         }
         return List.of(new EncodingResult(charset, 1.0f, charset.name(),
                 EncodingResult.ResultType.DECLARATIVE));
+    }
+
+    /**
+     * Byte-level scan for an opening meta tag, mirroring the {@code <\s*meta} prefix of
+     * {@link #HTTP_META_PATTERN} (ASCII, case-insensitive). Lets {@link #detect} skip the
+     * full ASCII decode + comment-stripping regex on probes that cannot contain a meta
+     * charset declaration. {@code <}, ASCII whitespace and {@code meta} are all ASCII, so a
+     * raw-byte scan is equivalent to scanning the decoded head.
+     */
+    private static boolean containsMetaTag(byte[] buf, int len) {
+        for (int i = 0; i < len; i++) {
+            if (buf[i] != '<') {
+                continue;
+            }
+            int j = i + 1;
+            while (j < len) {
+                int c = buf[j] & 0xFF;
+                if (c == ' ' || c == '\t' || c == '\n' || c == 0x0B || c == '\f'
+                        || c == '\r') {
+                    j++;
+                } else {
+                    break;
+                }
+            }
+            if (j + 4 <= len
+                    && (((buf[j] & 0xFF) | 0x20) == 'm')
+                    && (((buf[j + 1] & 0xFF) | 0x20) == 'e')
+                    && (((buf[j + 2] & 0xFF) | 0x20) == 't')
+                    && (((buf[j + 3] & 0xFF) | 0x20) == 'a')) {
+                return true;
+            }
+        }
+        return false;
     }
 
     //returns null if no charset was found

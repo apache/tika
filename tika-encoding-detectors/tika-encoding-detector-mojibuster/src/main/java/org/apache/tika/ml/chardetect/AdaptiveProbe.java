@@ -55,11 +55,20 @@ public final class AdaptiveProbe {
             throws IOException {
         tis.mark(rawCap);
         try {
-            byte[] buf = new byte[rawCap];
-            byte[] stripDst = new byte[rawCap];
+            // Grow on demand rather than allocating (and zeroing) the full rawCap
+            // (e.g. 512 KB) twice up front: the vast majority of probes are far
+            // smaller. Bytes returned are identical to the eager-allocation version.
+            int cap = Math.min(rawCap, contentTarget);
+            byte[] buf = new byte[cap];
+            byte[] stripDst = new byte[cap];
             int total = 0;
             while (total < rawCap) {
                 int want = Math.min(rawCap - total, contentTarget);
+                if (total + want > buf.length) {
+                    int newCap = Math.min(rawCap, Math.max(buf.length * 2, total + want));
+                    buf = Arrays.copyOf(buf, newCap);
+                    stripDst = Arrays.copyOf(stripDst, newCap);
+                }
                 int n = IOUtils.read(tis, buf, total, want);
                 total += n;
                 HtmlByteStripper.Result r =
@@ -72,7 +81,7 @@ public final class AdaptiveProbe {
             if (total == 0) {
                 return new byte[0];
             }
-            return total == rawCap ? buf : Arrays.copyOf(buf, total);
+            return total == buf.length ? buf : Arrays.copyOf(buf, total);
         } finally {
             tis.reset();
         }

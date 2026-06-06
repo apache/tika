@@ -427,8 +427,8 @@ public class TrainNaiveBayesBigram {
      *     float32 scale                      (per-class dequant)
      *     byte    unseenQ                    (int8 quantized unseen floor)
      *     int32 vocabSize                    (number of trained pairs)
-     *     for each kept bigram:
-     *       uint16 bigramKey
+     *     bigram keys sorted ascending, each pair stored as:
+     *       varint deltaFromPrevKey         (LEB128; first delta is the key itself)
      *       byte   logP8                     (int8 quantized)
      *
      * <p>Sparse representation: only trained bigram pairs are stored;
@@ -497,11 +497,22 @@ public class TrainNaiveBayesBigram {
                 dos.writeByte(unseenQ[c]);
                 float scale = perClassScale[c];
                 dos.writeInt(logProbsPerClass[c].size());
-                for (Map.Entry<Integer, Float> e : logProbsPerClass[c].entrySet()) {
-                    int q = Math.round(e.getValue() / scale);
+                // Bigram ids sorted ascending, stored as varint (LEB128) deltas from
+                // the previous id — most deltas fit in a single byte.
+                int[] keys = logProbsPerClass[c].keySet().stream()
+                        .mapToInt(Integer::intValue).sorted().toArray();
+                int prev = 0;
+                for (int key : keys) {
+                    int q = Math.round(logProbsPerClass[c].get(key) / scale);
                     if (q > 127) q = 127;
                     if (q < -127) q = -127;
-                    dos.writeShort(e.getKey());
+                    int delta = key - prev;
+                    prev = key;
+                    while ((delta & ~0x7F) != 0) {
+                        dos.writeByte((delta & 0x7F) | 0x80);
+                        delta >>>= 7;
+                    }
+                    dos.writeByte(delta);
                     dos.writeByte(q);
                 }
             }

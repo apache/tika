@@ -61,18 +61,6 @@
     </dependency>
 
     <!-- Test dependencies -->
-    <!--
-      tika-serialization is test-scope only because the one consumer
-      (BuildJunkAugmentationData) lives in src/test/java — it's a corpus-prep
-      tool, not part of the runtime detector. Keeps the production classpath of
-      tika-ml-junkdetect free of the serialization dep.
-    -->
-    <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-serialization</artifactId>
-      <version>${revision}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
@@ -108,7 +96,7 @@
           </inputExcludes>
         </configuration>
       </plugin>
-      <!-- Tools package uses System.out/printf freely -->
+      <!-- Diagnostic tests print to stdout / use default-locale formatting freely. -->
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
@@ -118,57 +106,6 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <!--
-        Build a self-contained fat JAR for model training and evaluation.
-        Usage:
-          ./mvnw package -pl tika-ml/tika-ml-junkdetect -am -Ptrain -DskipTests \
-              -Dmaven.repo.local=.local_m2_repo
-          java -jar tika-ml/tika-ml-junkdetect/target/tika-ml-junkdetect-*-tools.jar \
-              [BuildJunkTrainingData|TrainJunkModel|EvalJunkDetector] \
-              [args...]
-      -->
-      <id>train</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-shade-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>package</phase>
-                <goals><goal>shade</goal></goals>
-                <configuration>
-                  <shadedArtifactAttached>true</shadedArtifactAttached>
-                  <shadedClassifierName>tools</shadedClassifierName>
-                  <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                      <mainClass>org.apache.tika.ml.junkdetect.tools.TrainJunkModel</mainClass>
-                    </transformer>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
-                  </transformers>
-                  <filters>
-                    <filter>
-                      <artifact>*:*</artifact>
-                      <excludes>
-                        <exclude>META-INF/*.SF</exclude>
-                        <exclude>META-INF/*.DSA</exclude>
-                        <exclude>META-INF/*.RSA</exclude>
-                      </excludes>
-                    </filter>
-                  </filters>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <scm>
     <tag>3.0.0-rc1</tag>

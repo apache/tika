@@ -46,7 +46,7 @@ import org.apache.tika.ml.junkdetect.JunkDetector;
  *
  * <p>z1 (codepoint-bigram log-probability) is trained per script by bucketing
  * every bigram to its script ({@link JunkDetector#forEachScriptBigram}) and
- * building a per-script open-addressing bigram table with unigram backoff.
+ * building a per-script sorted-occupied bigram table with unigram backoff.
  * z2 (Unicode block-transition), z3 (control-byte fraction), and z4
  * (script-transition) are single global document-level features.  All features
  * are calibrated (mu/sigma) and combined by a single global contrastive
@@ -932,7 +932,7 @@ public class TrainJunkModel {
      *
      * @param trainFile         the per-script {@code *.train.gz}
      * @param minBigramCount    drop pairs whose count is below this
-     * @param loadFactor        target OA table load factor (e.g. 0.5)
+     * @param loadFactor        unused (retained for signature compatibility)
      * @param keyIndexBits      bit-width per index in the packed key
      *                          (each side of the pair must fit)
      */
@@ -970,9 +970,12 @@ public class TrainJunkModel {
     /**
      * Builds the {@link BigramTables} carrier from pre-tallied pair/unigram
      * counts.  Drops pairs below
-     * {@code minBigramCount}, assigns dense codepoint indices, and packs an
-     * open-addressing bigram table; unigram log-probs use {@code unigramTotal}
+     * {@code minBigramCount}, assigns dense codepoint indices, and packs the
+     * sorted-occupied bigram table; unigram log-probs use {@code unigramTotal}
      * as the denominator.
+     *
+     * <p>{@code loadFactor} is retained for signature compatibility but unused:
+     * the sorted-occupied table (binary-search lookup) has no load factor.
      */
     public static BigramTables buildBigramTablesFromCounts(
             HashMap<Long, long[]> pairCounts,
@@ -1037,12 +1040,8 @@ public class TrainJunkModel {
         // Quantize unigram log-probs.
         QuantizedFloats qUnigram = quantizeFloats(unigramLogP);
 
-        // --- Build the open-addressing bigram table. ---
-        int slots = nextPowerOfTwo((int) Math.max(2, Math.ceil(keptPairs / loadFactor)));
-        int[] keys = new int[slots];
-        java.util.Arrays.fill(keys, BigramTables.EMPTY_KEY);
-        // Compute log-probs first, quantize once, then write into the table
-        // alongside its key.
+        // --- Build the sorted-occupied bigram table (binary-search lookup). ---
+        // Compute log-probs first, quantize once, then sort by key.
         float[] keptLogP = new float[keptPairs];
         int[] keptKeys = new int[keptPairs];
         int writeIdx = 0;
@@ -1067,16 +1066,25 @@ public class TrainJunkModel {
         }
         // Quantize all kept log-probs together so they share min/max.
         QuantizedFloats qBigram = quantizeFloats(keptLogP);
-        byte[] values = new byte[slots];
+        // Sort (key, value) ascending by signed key so the loader can binary-search.
+        // Pack into a long (key in high 32 bits, value byte in low 8) for one sort.
+        long[] sortable = new long[keptPairs];
         for (int i = 0; i < keptPairs; i++) {
-            insertOA(keys, values, keptKeys[i], qBigram.bytes[i]);
+            sortable[i] = (((long) keptKeys[i]) << 32) | (qBigram.bytes[i] & 0xFFL);
+        }
+        java.util.Arrays.sort(sortable);
+        int[] keys = new int[keptPairs];
+        byte[] values = new byte[keptPairs];
+        for (int i = 0; i < keptPairs; i++) {
+            keys[i] = (int) (sortable[i] >> 32);
+            values[i] = (byte) (sortable[i] & 0xFF);
         }
 
         System.out.printf(
                 "    pair_counts: distinct=%,d, kept=%,d (>=%d), dropped=%,d  "
-                + "cp_index=%,d  slots=%,d (load=%.2f)%n",
+                + "cp_index=%,d  bigram_entries=%,d%n",
                 totalDistinct, keptPairs, minBigramCount, dropped,
-                cpIndex.length, slots, keptPairs / (double) slots);
+                cpIndex.length, keptPairs);
 
         return new BigramTables(cpIndex, keys, values, qUnigram.bytes,
                 qBigram.min, qBigram.max,
@@ -1084,32 +1092,6 @@ public class TrainJunkModel {
                 unigramFallbackLogP, BACKOFF_ALPHA);
     }
 
-    /**
-     * Inserts a {@code (packedKey, value)} pair into the open-addressing
-     * table.  The caller is responsible for sizing the table large enough
-     * to avoid an infinite probe (any load &lt; 1.0 is safe).
-     */
-    private static void insertOA(int[] keys, byte[] values, int packedKey, byte value) {
-        int mask = keys.length - 1;
-        int h = JunkDetector.mixIndexKey(packedKey) & mask;
-        while (keys[h] != BigramTables.EMPTY_KEY) {
-            if (keys[h] == packedKey) {
-                // Same key twice — shouldn't happen with our dedup, but be
-                // defensive and overwrite rather than corrupt.
-                values[h] = value;
-                return;
-            }
-            h = (h + 1) & mask;
-        }
-        keys[h] = packedKey;
-        values[h] = value;
-    }
-
-    private static int nextPowerOfTwo(int n) {
-        if (n < 1) return 1;
-        int p = Integer.highestOneBit(n - 1) << 1;
-        return Math.max(1, p);
-    }
 
     // -----------------------------------------------------------------------
     // Global contrastive combiner training

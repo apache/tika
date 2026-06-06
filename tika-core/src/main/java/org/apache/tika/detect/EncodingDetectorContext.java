@@ -40,7 +40,18 @@ import java.util.Set;
 public class EncodingDetectorContext {
 
     private final List<Result> results = new ArrayList<>();
+    private final EncodingProbeCache probeCache = new EncodingProbeCache();
     private String arbitrationInfo;
+
+    /**
+     * Per-detection cache of the raw detection probe, shared across the detectors in
+     * this chain so they don't each re-read the same leading bytes. It lives and dies
+     * with this context (which is removed after detection), so it never leaks into
+     * recursive/attachment parsing.
+     */
+    public EncodingProbeCache getProbeCache() {
+        return probeCache;
+    }
 
     /**
      * Record the ranked results from a child detector.

@@ -36,12 +36,11 @@ import java.nio.ByteOrder;
  *       script.  Codepoint → dense index is a binary search; index →
  *       codepoint is direct array access.  Typical sizes: ~7K-15K for HAN,
  *       ~200-500 for most other scripts.
- *   <li>{@code bigramKeys} / {@code bigramValues} — parallel arrays
- *       implementing an open-addressed hash table with linear probing.
- *       Each key is a 32-bit value {@code (idxA << 16) | idxB}; key {@code
- *       -1} means "empty slot."  Indices are bounded at 16 bits (65535),
- *       which is comfortably above the largest per-script codepoint count
- *       we observe.
+ *   <li>{@code bigramKeys} / {@code bigramValues} — parallel arrays of the
+ *       occupied entries only, sorted ascending by key for binary-search
+ *       lookup.  Each key is a 32-bit value {@code (idxA << 16) | idxB}.
+ *       Indices are bounded at 16 bits (65535), comfortably above the
+ *       largest per-script codepoint count we observe.
  *   <li>{@code unigramTable} — {@code byte[numCodepoints]}, quantized
  *       unigram log-probabilities indexed by the same codepoint→index map.
  *   <li>{@code bigramQuantMin/Max}, {@code unigramQuantMin/Max} —
@@ -56,14 +55,12 @@ import java.nio.ByteOrder;
  *       independence sum.
  * </ul>
  *
- * <p>Membership semantics: no Bloom filter.  The empty-slot sentinel is
- * the membership oracle — a pair is "seen" iff binary-search finds both
- * codepoints in the index AND a probe sequence hits a matching key before
- * an empty slot.  Lookups are therefore exact.
+ * <p>Membership semantics: no Bloom filter.  A pair is "seen" iff
+ * binary-search finds both codepoints in the index AND finds the packed
+ * key in {@code bigramKeys}.  Lookups are therefore exact.
  *
- * <p>Fields are package-private so the
- * {@link org.apache.tika.ml.junkdetect.tools.TrainJunkModel} trainer can
- * construct instances directly without going through accessors.
+ * <p>Instances are built by the trainer ({@code TrainJunkModel}, in the
+ * tika-ml-junkdetect-tools module) and read back via {@link #readFrom}.
  */
 public final class BigramTables {
 
@@ -124,14 +121,23 @@ public final class BigramTables {
         cpBuf.asIntBuffer().put(codepointIndex);
         dos.write(cpBuf.array());
 
-        // Bigram open-addressing table (keys + values).
+        // Bigram table: sorted-occupied keys (ascending) + parallel values.
+        // Store key[0] raw, then varint (LEB128) deltas from the previous key;
+        // deltas are small because the keys are sorted and dense.
         dos.writeInt(bigramKeys.length);
         dos.writeFloat(bigramQuantMin);
         dos.writeFloat(bigramQuantMax);
-        ByteBuffer keyBuf = ByteBuffer.allocate(bigramKeys.length * 4)
-                .order(ByteOrder.BIG_ENDIAN);
-        keyBuf.asIntBuffer().put(bigramKeys);
-        dos.write(keyBuf.array());
+        if (bigramKeys.length > 0) {
+            dos.writeInt(bigramKeys[0]);
+            for (int i = 1; i < bigramKeys.length; i++) {
+                long delta = (long) bigramKeys[i] - (long) bigramKeys[i - 1];
+                if (delta <= 0) {
+                    throw new IOException("bigramKeys must be strictly ascending "
+                            + "(no duplicates); non-increasing at index " + i);
+                }
+                writeVarLong(dos, delta);
+            }
+        }
         dos.write(bigramValues);
 
         // Unigram table.
@@ -153,9 +159,18 @@ public final class BigramTables {
         int slots = dis.readInt();
         float bMin = dis.readFloat();
         float bMax = dis.readFloat();
-        byte[] keyBytes = dis.readNBytes(slots * 4);
         int[] keys = new int[slots];
-        ByteBuffer.wrap(keyBytes).order(ByteOrder.BIG_ENDIAN).asIntBuffer().get(keys);
+        if (slots > 0) {
+            keys[0] = dis.readInt();
+            for (int i = 1; i < slots; i++) {
+                long next = (long) keys[i - 1] + readVarLong(dis);
+                if (next <= keys[i - 1] || next > Integer.MAX_VALUE) {
+                    throw new IOException("Corrupt bigram keys: not strictly "
+                            + "ascending / out of range at index " + i);
+                }
+                keys[i] = (int) next;
+            }
+        }
         byte[] values = dis.readNBytes(slots);
 
         float uMin = dis.readFloat();
@@ -167,11 +182,36 @@ public final class BigramTables {
                 bMin, bMax, uMin, uMax, uFallback, backoffAlpha);
     }
 
+    /** Writes a non-negative long as an unsigned LEB128 varint. */
+    private static void writeVarLong(DataOutputStream dos, long v) throws IOException {
+        while ((v & ~0x7FL) != 0) {
+            dos.writeByte((int) ((v & 0x7F) | 0x80));
+            v >>>= 7;
+        }
+        dos.writeByte((int) v);
+    }
+
+    /** Reads an unsigned LEB128 varint written by {@link #writeVarLong}. */
+    private static long readVarLong(DataInputStream dis) throws IOException {
+        long v = 0;
+        int shift = 0;
+        int b;
+        do {
+            if (shift >= 64) {
+                throw new IOException("Malformed varint in bigram key deltas (too long)");
+            }
+            b = dis.readUnsignedByte();
+            v |= (long) (b & 0x7F) << shift;
+            shift += 7;
+        } while ((b & 0x80) != 0);
+        return v;
+    }
+
     /**
      * Returns a one-line summary for trainer progress output.
      */
     public String statsString() {
-        return String.format(
+        return String.format(java.util.Locale.ROOT,
                 "  cp_index=%d, bigram_slots=%d (load≈%.2f), "
                 + "bigram_range=[%.3f, %.3f], unigram_range=[%.3f, %.3f]",
                 codepointIndex.length, bigramKeys.length,

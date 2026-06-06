@@ -235,41 +235,41 @@ public final class JunkDetector implements TextQualityDetector {
      *   [4 bytes]    num_scripts (int BE)
      *   [1 byte]     block_scheme_version  (must equal
      *                {@link UnicodeBlockRanges#SCHEME_VERSION})
+     *   // z4 — global script-transition section
      *   [1 byte]     num_script_buckets
      *   for each bucket:
      *     [2 bytes]      name length (ushort BE)
      *     [name bytes]   bucket name (UTF-8)
-     *   [num_script_buckets² × 4 bytes]  script-transition log-prob table (F4)
-     *   [4 bytes]    mu4 (float32 BE)
-     *   [4 bytes]    sigma4 (float32 BE)
+     *   [4 bytes]    scriptTrans_quant_min (float32 BE)
+     *   [4 bytes]    scriptTrans_quant_max (float32 BE)
+     *   [num_script_buckets² × 2 bytes]  script-transition table (z4, int16-quantized)
+     *   [4 bytes]    mu4 (z4 calibration, float32 BE)
+     *   [4 bytes]    sigma4
+     *   // z2 — global block-transition section
+     *   [4 bytes]    block_quant_min (float32 BE)
+     *   [4 bytes]    block_quant_max (float32 BE)
+     *   [block_N² × 2 bytes]  block-transition table (z2, int16-quantized)
+     *   [4 bytes]    mu2 (z2 calibration)
+     *   [4 bytes]    sigma2
+     *   // global per-feature calibrations, {mu, sigma} float32 pairs
+     *   [8 bytes]    z3 calibration (control-byte ratio)
+     *   [8 bytes]    z5 calibration (letter-adjacent-to-mark)
+     *   [8 bytes]    z6 calibration (replacement-char ratio)
+     *   [8 bytes]    z9 calibration (script-alternation)
+     *   // global combiner
+     *   [1 byte]     num_features
+     *   [(num_features+1) × 4 bytes]  combiner weights w1..wN and bias
+     *   // per-script section
      *   for each script (sorted by name):
      *     [2 bytes]      name length
      *     [name bytes]   script name (UTF-8)
-     *     [4 bytes]      mu1 (F1 calibration, codepoint-bigram mean log-prob)
+     *     [4 bytes]      mu1 (z1 calibration, codepoint-bigram mean log-prob)
      *     [4 bytes]      sigma1
-     *     // bigram tables for this script — see {@link BigramTables#writeTo}
-     *     [4 bytes]      backoff_alpha (float32 BE)
-     *     [4 bytes]      codepoint_count
-     *     [codepoint_count × 4 bytes]  codepoint index (sorted, ascending)
-     *     [4 bytes]      bigram_slots (power of 2)
-     *     [4 bytes]      bigram_quant_min (float32 BE)
-     *     [4 bytes]      bigram_quant_max (float32 BE)
-     *     [bigram_slots × 4 bytes]  bigram open-addressing keys
-     *                                ((idxA<<16)|idxB, or {@link BigramTables#EMPTY_KEY})
-     *     [bigram_slots bytes]      bigram values (8-bit quantized log-probs)
-     *     [4 bytes]      unigram_quant_min (float32 BE)
-     *     [4 bytes]      unigram_quant_max (float32 BE)
-     *     [4 bytes]      unigram_fallback_log_prob (float32 BE; used for
-     *                                                codepoints not in index)
-     *     [codepoint_count bytes]   unigram values (8-bit quantized log-probs)
-     *     // F2/F3/classifier
-     *     [4 bytes]      mu2 (F2 calibration)
-     *     [4 bytes]      sigma2
-     *     [block_N² × 4 bytes]  block-transition log-prob table (F2)
-     *     [4 bytes]      mu3 (F3 calibration)
-     *     [4 bytes]      sigma3
-     *     [1 byte]       num_features
-     *     [(num_features+1) × 4 bytes]  classifier weights w1..wN and bias
+     *     [variable]     bigram + unigram tables — exact layout in
+     *                    {@link BigramTables#writeTo}: codepoint index, then the
+     *                    sorted-occupied bigram keys (key[0] as int32 BE followed
+     *                    by LEB128 varint deltas) and 8-bit quantized bigram and
+     *                    unigram log-prob values
      * </pre>
      */
     public static JunkDetector load(InputStream rawIs) throws IOException {
@@ -498,6 +498,16 @@ public final class JunkDetector implements TextQualityDetector {
         int[] cps = text.codePoints().toArray();
 
         Map<String, double[]> buckets = new HashMap<>(); // script -> {sumLogP, count}
+        // Left-index memo.  forEachScriptBigram emits (^,x),(x,y),(y,$)... so within
+        // a run each pair's right codepoint b is the next pair's left codepoint a.
+        // Reuse the previous pair's right-index as this pair's left-index when they
+        // match (same codepoint AND same script => same table), so each codepoint is
+        // binary-searched in the script's index once instead of twice.  Bit-identical
+        // to scoring each pair independently; the guard falls back to a fresh search
+        // whenever the overlap doesn't hold (run boundary, sentinel, script change).
+        String[] lastScript = {null};
+        int[] lastB = {Integer.MIN_VALUE};
+        int[] lastBIdx = {-1};
         forEachScriptBigram(cps, (script, a, b) -> {
             if (!calibrations.containsKey(script)) {
                 return;
@@ -506,7 +516,13 @@ public final class JunkDetector implements TextQualityDetector {
             if (t == null) {
                 return;
             }
-            double lp = computeF1MeanLogP(new int[]{a, b}, t);
+            int idxA = (a == lastB[0] && script.equals(lastScript[0]))
+                    ? lastBIdx[0] : codepointToIndex(t, a);
+            int idxB = codepointToIndex(t, b);
+            lastScript[0] = script;
+            lastB[0] = b;
+            lastBIdx[0] = idxB;
+            double lp = scorePairF1(a, idxA, b, idxB, t);
             if (Double.isNaN(lp)) {
                 return;
             }
@@ -839,7 +855,7 @@ public final class JunkDetector implements TextQualityDetector {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -970,22 +986,6 @@ public final class JunkDetector implements TextQualityDetector {
         return java.util.Arrays.binarySearch(tables.codepointIndex, cp);
     }
 
-    /**
-     * Mixing function used to scatter packed (idxA, idxB) keys across
-     * the open-addressing table.  A simple integer finalizer (splitmix32
-     * style) gives good distribution for sequential index values.
-     *
-     * <p>Public so the trainer's open-addressing insertion routine uses
-     * the same probe order as inference — drift here would silently
-     * corrupt every lookup.
-     */
-    public static int mixIndexKey(int packedKey) {
-        int x = packedKey;
-        x = (x ^ (x >>> 16)) * 0x7feb352d;
-        x = (x ^ (x >>> 15)) * 0x846ca68b;
-        x = x ^ (x >>> 16);
-        return x;
-    }
 
     /**
      * Packed bigram key for indices {@code (a, b)} where each index fits in
@@ -1085,20 +1085,12 @@ public final class JunkDetector implements TextQualityDetector {
      * for {@code (idxA, idxB)}, or {@code -1} if not present (probe hit an
      * empty slot first).
      *
-     * <p>Linear probing with the same mix-hash used at training time —
-     * required for the table to be readable, not just writable.
+     * <p>{@code bigramKeys} is sorted ascending (signed), so this is a binary search.
      */
     static int lookupBigramSlot(BigramTables tables, int idxA, int idxB) {
         int packedKey = packBigramKey(idxA, idxB);
-        int[] keys = tables.bigramKeys;
-        int mask = keys.length - 1;
-        int h = mixIndexKey(packedKey) & mask;
-        while (true) {
-            int k = keys[h];
-            if (k == BigramTables.EMPTY_KEY) return -1;
-            if (k == packedKey) return h;
-            h = (h + 1) & mask;
-        }
+        int slot = java.util.Arrays.binarySearch(tables.bigramKeys, packedKey);
+        return slot >= 0 ? slot : -1;
     }
 
     private static double unigramLogProb(BigramTables tables, int idx) {
@@ -1134,7 +1126,7 @@ public final class JunkDetector implements TextQualityDetector {
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
             i += Character.charCount(cp);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s == Character.UnicodeScript.COMMON
                     || s == Character.UnicodeScript.INHERITED
                     || s == Character.UnicodeScript.UNKNOWN) {
@@ -1170,7 +1162,7 @@ public final class JunkDetector implements TextQualityDetector {
 
     /** COMMON-class predicate: COMMON, INHERITED, UNKNOWN all pool into COMMON. */
     static String classKey(int cp) {
-        Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+        Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
         if (s == Character.UnicodeScript.COMMON
                 || s == Character.UnicodeScript.INHERITED
                 || s == Character.UnicodeScript.UNKNOWN) {
@@ -1381,7 +1373,7 @@ public final class JunkDetector implements TextQualityDetector {
         Map<Character.UnicodeScript, Integer> counts = new HashMap<>();
         for (int i = 0; i < text.length(); ) {
             int cp = text.codePointAt(i);
-            Character.UnicodeScript s = Character.UnicodeScript.of(cp);
+            Character.UnicodeScript s = TextQualityFeatures.scriptOf(cp);
             if (s != Character.UnicodeScript.COMMON
                     && s != Character.UnicodeScript.INHERITED
                     && s != Character.UnicodeScript.UNKNOWN) {
