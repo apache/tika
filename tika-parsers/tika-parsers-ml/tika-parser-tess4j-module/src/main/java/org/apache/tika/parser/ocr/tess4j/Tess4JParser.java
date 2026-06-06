@@ -63,7 +63,7 @@ import org.apache.tika.utils.StringUtils;
  * directly into the JVM via JNA (Java Native Access). Using it safely requires
  * locating and linking the correct platform-specific native libraries and
  * accepting that a fault in the native code can crash the entire JVM. If you are
- * not comfortable with native-library integration (JNA/JNI), please prefer the
+ * not comfortable with native-library integration via JNA, please prefer the
  * standard {@code TesseractOCRParser}, which performs the same OCR by running the
  * {@code tesseract} command-line program in a separate process: it needs no
  * native linking and a crash in Tesseract can never take down your application,

@@ -25,7 +25,7 @@ directly into your JVM through https://github.com/java-native-access/jna[JNA]
 correct platform-specific native libraries, reasoning about the Java/native
 boundary, and accepting that a fault in the native code can crash the entire
 JVM. In short, it assumes you are comfortable working with native-library
-integration (JNA/JNI).
+integration via JNA.
 
 If that doesn't describe you, please don't reach for this parser — and that's
 perfectly fine. The standard
