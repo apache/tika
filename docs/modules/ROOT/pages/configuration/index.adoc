@@ -97,7 +97,7 @@ JSON uses the backslash as an escape character, so path options (e.g. `tesseract
 
 * xref:configuration/parsers/pdf-parser.adoc[PDFParser] — PDF parsing options
 * xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR options for image-based text extraction
-* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNI bindings
+* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNI bindings (advanced users only; most users should prefer the TesseractOCRParser above)
 * xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers] — Claude, Gemini, OpenAI, Ollama, vLLM
 * xref:configuration/parsers/external-parser.adoc[External Parser] — wrap external tools (ffmpeg, exiftool, etc.)
 
