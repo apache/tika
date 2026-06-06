@@ -122,14 +122,18 @@ public final class BigramTables {
         cpBuf.asIntBuffer().put(codepointIndex);
         dos.write(cpBuf.array());
 
-        // Bigram open-addressing table (keys + values).
+        // Bigram table: sorted-occupied keys (ascending) + parallel values.
+        // Store key[0] raw, then varint (LEB128) deltas from the previous key;
+        // deltas are small because the keys are sorted and dense.
         dos.writeInt(bigramKeys.length);
         dos.writeFloat(bigramQuantMin);
         dos.writeFloat(bigramQuantMax);
-        ByteBuffer keyBuf = ByteBuffer.allocate(bigramKeys.length * 4)
-                .order(ByteOrder.BIG_ENDIAN);
-        keyBuf.asIntBuffer().put(bigramKeys);
-        dos.write(keyBuf.array());
+        if (bigramKeys.length > 0) {
+            dos.writeInt(bigramKeys[0]);
+            for (int i = 1; i < bigramKeys.length; i++) {
+                writeVarLong(dos, (long) bigramKeys[i] - (long) bigramKeys[i - 1]);
+            }
+        }
         dos.write(bigramValues);
 
         // Unigram table.
@@ -151,9 +155,13 @@ public final class BigramTables {
         int slots = dis.readInt();
         float bMin = dis.readFloat();
         float bMax = dis.readFloat();
-        byte[] keyBytes = dis.readNBytes(slots * 4);
         int[] keys = new int[slots];
-        ByteBuffer.wrap(keyBytes).order(ByteOrder.BIG_ENDIAN).asIntBuffer().get(keys);
+        if (slots > 0) {
+            keys[0] = dis.readInt();
+            for (int i = 1; i < slots; i++) {
+                keys[i] = (int) (keys[i - 1] + readVarLong(dis));
+            }
+        }
         byte[] values = dis.readNBytes(slots);
 
         float uMin = dis.readFloat();
@@ -163,6 +171,28 @@ public final class BigramTables {
 
         return new BigramTables(codepoints, keys, values, unigramTable,
                 bMin, bMax, uMin, uMax, uFallback, backoffAlpha);
+    }
+
+    /** Writes a non-negative long as an unsigned LEB128 varint. */
+    private static void writeVarLong(DataOutputStream dos, long v) throws IOException {
+        while ((v & ~0x7FL) != 0) {
+            dos.writeByte((int) ((v & 0x7F) | 0x80));
+            v >>>= 7;
+        }
+        dos.writeByte((int) v);
+    }
+
+    /** Reads an unsigned LEB128 varint written by {@link #writeVarLong}. */
+    private static long readVarLong(DataInputStream dis) throws IOException {
+        long v = 0;
+        int shift = 0;
+        int b;
+        do {
+            b = dis.readUnsignedByte();
+            v |= (long) (b & 0x7F) << shift;
+            shift += 7;
+        } while ((b & 0x80) != 0);
+        return v;
     }
 
     /**
