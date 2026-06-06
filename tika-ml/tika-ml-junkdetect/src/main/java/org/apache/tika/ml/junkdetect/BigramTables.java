@@ -131,7 +131,12 @@ public final class BigramTables {
         if (bigramKeys.length > 0) {
             dos.writeInt(bigramKeys[0]);
             for (int i = 1; i < bigramKeys.length; i++) {
-                writeVarLong(dos, (long) bigramKeys[i] - (long) bigramKeys[i - 1]);
+                long delta = (long) bigramKeys[i] - (long) bigramKeys[i - 1];
+                if (delta < 0) {
+                    throw new IOException("bigramKeys must be sorted ascending; "
+                            + "non-monotonic at index " + i);
+                }
+                writeVarLong(dos, delta);
             }
         }
         dos.write(bigramValues);
@@ -159,7 +164,12 @@ public final class BigramTables {
         if (slots > 0) {
             keys[0] = dis.readInt();
             for (int i = 1; i < slots; i++) {
-                keys[i] = (int) (keys[i - 1] + readVarLong(dis));
+                long next = (long) keys[i - 1] + readVarLong(dis);
+                if (next <= keys[i - 1] || next > Integer.MAX_VALUE) {
+                    throw new IOException("Corrupt bigram keys: not strictly "
+                            + "ascending / out of range at index " + i);
+                }
+                keys[i] = (int) next;
             }
         }
         byte[] values = dis.readNBytes(slots);
