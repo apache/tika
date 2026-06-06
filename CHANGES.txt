@@ -9,6 +9,15 @@ Release 4.0.0-beta-1 - unreleased
      -x/--xml, the server /tika/xml and /rmeta/xml paths (or the
      X-Tika-Handler header), and the async CLI --handler x (TIKA-4663).
 
+  NEW FEATURES
+
+   * tika-app and tika-server can load extra jars (additional EncodingDetectors,
+     Parsers, etc.) from the directory named by the -Dtika.extras.dir system
+     property, without repackaging the application. Off by default; the directory
+     is a trusted code location whose contents run with full process privileges.
+     The extra jars are also forwarded onto forked pipes/server worker processes,
+     so they are available where parsing actually happens (TIKA-4755).
+
 
 Release 4.0.0-alpha-1 - 5/4/2026
 

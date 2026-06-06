@@ -28,6 +28,33 @@ content handlers, server behavior, and the Tika Pipes pipeline.
 NOTE: Tika 3.x and earlier used XML configuration (`tika-config.xml`). See the
 xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JSON.
 
+== Adding extra jars (`tika.extras.dir`)
+
+To add extra components — additional ``EncodingDetector``s, ``Parser``s, or their
+dependencies — without repackaging the application, drop their jars in a directory
+and point the `tika.extras.dir` system property at it:
+
+[source,bash]
+----
+java -Dtika.extras.dir=/path/to/extras -jar tika-app.jar ...
+java -Dtika.extras.dir=/path/to/extras -jar tika-server-standard.jar ...
+----
+
+Every `*.jar` in that directory is added to the classpath that Tika's
+service-loading scans, so SPI-registered components in those jars are picked up
+automatically. The jars are also forwarded onto forked Pipes/server worker
+processes, so they are available where parsing happens.
+
+This is *off by default* — nothing is loaded unless `tika.extras.dir` is set, and
+the working directory is never used. Treat the directory as a trusted code
+location: anything in it runs with the full privileges of the Tika process, so it
+must not be writable by less-trusted principals (and, for a server, must not be
+reachable by request handling).
+
+NOTE: In the Docker images you can instead mount a directory to `/tika-extras`.
+PF4J-managed plugins are a separate mechanism — see
+xref:pipes/plugins/index.adoc[Pipes Plugins].
+
 == Top-level JSON structure
 
 A `tika-config.json` is a single JSON object whose keys are the top-level sections

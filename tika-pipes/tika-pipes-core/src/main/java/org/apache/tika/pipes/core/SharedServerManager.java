@@ -37,6 +37,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TikaExtras;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -498,6 +499,11 @@ public class SharedServerManager implements ServerManager {
     private Path writeArgFile() throws IOException {
         Path argFile = tmpDir.resolve("jvm-args.txt");
         String classpath = System.getProperty("java.class.path");
+        // forward any tika.extras.dir jars to the forked PipesServer
+        for (Path extra : TikaExtras.extraJars()) {
+            classpath = classpath + System.getProperty("path.separator")
+                    + extra.toAbsolutePath();
+        }
         String normalizedClasspath = classpath.replace("\\", "/");
         String content = "-cp\n\"" + normalizedClasspath + "\"\n";
         Files.writeString(argFile, content, StandardCharsets.UTF_8);

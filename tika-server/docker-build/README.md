@@ -215,6 +215,12 @@ As of 2.5.0.2, if you'd like to add extra jars from your local `my-jars` directo
 You may want to do this to add optional components, such as the tika-eval metadata filter, or optional
 dependencies such as jai-imageio-jpeg2000 (check license compatibility first!).
 
+Outside Docker (e.g. `java -jar tika-app.jar` or `tika-server-standard.jar`), point the
+`tika.extras.dir` system property at a directory of extra jars instead, e.g.
+`java -Dtika.extras.dir=my-jars -jar tika-server-standard.jar`. Either way the extra jars
+are also forwarded onto forked worker processes. The directory is a trusted code location
+whose contents run with the full privileges of the Tika process.
+
 ### Docker Compose Examples
 
 There are a number of sample Docker Compose files included in the repos to allow you to test some different scenarios.
