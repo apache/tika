@@ -62,12 +62,11 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     private static final int BIGRAM_SPACE = 65_536;
 
     /**
-     * Cap probe scanning at 10 KB.  Bigram-based identification
+     * Cap probe scanning at 16 KB.  Bigram-based identification
      * saturates quickly — beyond the first 500-1000 bytes every
      * additional bigram nudges scores by &lt; 0.1 log-likelihood and
-     * doesn't change the argmax.  Reducing the cap from 4 KB to 1 KB
-     * quartes the inner-loop work on long probes at no measurable
-     * accuracy cost.
+     * doesn't change the argmax, so capping the scan bounds the
+     * inner-loop work on long probes at no measurable accuracy cost.
      */
     private static final int MAX_PROBE_BYTES = 16 * 1024;
 
@@ -216,8 +215,8 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     /**
      * Bigram-major int8 logP layout.  Quantized at load time via
      * per-class scale {@code scale[c] = maxAbs(class c's logP column) / 127}.
-     * In-memory footprint: {@code 65_536 × numClasses} bytes ≈ 2 MB for
-     * 32 classes, 4× smaller than float32.  The hot-loop accumulates
+     * In-memory footprint: {@code 65_536 × numClasses} bytes ≈ 2.1 MB for
+     * 34 classes, 4× smaller than float32.  The hot-loop accumulates
      * raw int8 products and applies dequantization once at the end of
      * the probe, CharSoup-style.
      */
@@ -317,11 +316,19 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                     int shift = 0;
                     int b;
                     do {
+                        if (shift >= 32) {
+                            throw new IOException(
+                                    "Malformed varint in bigram-id deltas (too long)");
+                        }
                         b = dis.readUnsignedByte();
                         delta |= (b & 0x7F) << shift;
                         shift += 7;
                     } while ((b & 0x80) != 0);
                     bigram += delta;
+                    if (bigram < 0 || bigram >= BIGRAM_SPACE) {
+                        throw new IOException("Bigram id out of range: " + bigram
+                                + " (expected [0, " + BIGRAM_SPACE + "))");
+                    }
                     byte q = dis.readByte();
                     logP8[bigram * numClasses + c] = q;
                 }
@@ -531,6 +538,7 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
         // diagnostic path.
         double[] score = new double[numClasses];
         double[] contributions = new double[numClasses];
+        double[] bestPerCohort = new double[Cohort.values().length];
         int hashCap = counts.capacity();
         for (int slot = 0; slot < hashCap; slot++) {
             int bigram = counts.keyAt(slot);
@@ -559,6 +567,15 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             // cohort, so the cap engages on cross-cohort gaps that a
             // max-vs-overall-runner-up cap missed when multiple classes
             // in top-1's cohort sat close together.
+            //
+            // Single per-class pass computes the contributions, the running
+            // max/topClass, AND the best contribution per cohort; bestCrossCohort
+            // then reduces over the (few) cohorts instead of a second full
+            // per-class pass, and the clip is fused into the accumulate.
+            // Bit-identical to the prior four-pass form: max/cross-cohort are exact
+            // (comparisons over the same value set), and the contribution formula
+            // and score[] accumulation order are unchanged.
+            java.util.Arrays.fill(bestPerCohort, Double.NEGATIVE_INFINITY);
             int topClass = -1;
             double max = Double.NEGATIVE_INFINITY;
             for (int c = 0; c < numClasses; c++) {
@@ -568,25 +585,27 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
                     max = contrib;
                     topClass = c;
                 }
+                int co = cohorts[c].ordinal();
+                if (contrib > bestPerCohort[co]) {
+                    bestPerCohort[co] = contrib;
+                }
             }
-            Cohort topCohort = cohorts[topClass];
+            int topCohort = cohorts[topClass].ordinal();
             double bestCrossCohort = Double.NEGATIVE_INFINITY;
-            for (int c = 0; c < numClasses; c++) {
-                if (cohorts[c] != topCohort && contributions[c] > bestCrossCohort) {
-                    bestCrossCohort = contributions[c];
+            for (int k = 0; k < bestPerCohort.length; k++) {
+                if (k != topCohort && bestPerCohort[k] > bestCrossCohort) {
+                    bestCrossCohort = bestPerCohort[k];
                 }
             }
             // bestCrossCohort is always finite here: load requires >=2 cohorts.
             double capValue = bestCrossCohort + CAP_PER_BIGRAM_NATS;
-            if (max > capValue) {
-                for (int c = 0; c < numClasses; c++) {
-                    if (contributions[c] > capValue) {
-                        contributions[c] = capValue;
-                    }
-                }
-            }
+            boolean clip = max > capValue;
             for (int c = 0; c < numClasses; c++) {
-                score[c] += contributions[c];
+                double v = contributions[c];
+                if (clip && v > capValue) {
+                    v = capValue;
+                }
+                score[c] += v;
             }
         }
         return new ScoreResult(score, scored, total);

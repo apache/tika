@@ -753,7 +753,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
 
     private static byte[] readProbe(TikaInputStream tis, ParseContext parseContext)
             throws IOException {
-        EncodingDetectorContext context = parseContext.get(EncodingDetectorContext.class);
+        EncodingDetectorContext context =
+                parseContext == null ? null : parseContext.get(EncodingDetectorContext.class);
         EncodingProbeCache cache = context == null ? null : context.getProbeCache();
         if (cache != null) {
             byte[] cached = cache.get(PROBE_CONTENT_TARGET, PROBE_RAW_CAP);

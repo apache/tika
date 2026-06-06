@@ -235,41 +235,41 @@ public final class JunkDetector implements TextQualityDetector {
      *   [4 bytes]    num_scripts (int BE)
      *   [1 byte]     block_scheme_version  (must equal
      *                {@link UnicodeBlockRanges#SCHEME_VERSION})
+     *   // z4 — global script-transition section
      *   [1 byte]     num_script_buckets
      *   for each bucket:
      *     [2 bytes]      name length (ushort BE)
      *     [name bytes]   bucket name (UTF-8)
-     *   [num_script_buckets² × 4 bytes]  script-transition log-prob table (F4)
-     *   [4 bytes]    mu4 (float32 BE)
-     *   [4 bytes]    sigma4 (float32 BE)
+     *   [4 bytes]    scriptTrans_quant_min (float32 BE)
+     *   [4 bytes]    scriptTrans_quant_max (float32 BE)
+     *   [num_script_buckets² × 2 bytes]  script-transition table (z4, int16-quantized)
+     *   [4 bytes]    mu4 (z4 calibration, float32 BE)
+     *   [4 bytes]    sigma4
+     *   // z2 — global block-transition section
+     *   [4 bytes]    block_quant_min (float32 BE)
+     *   [4 bytes]    block_quant_max (float32 BE)
+     *   [block_N² × 2 bytes]  block-transition table (z2, int16-quantized)
+     *   [4 bytes]    mu2 (z2 calibration)
+     *   [4 bytes]    sigma2
+     *   // global per-feature calibrations, {mu, sigma} float32 pairs
+     *   [8 bytes]    z3 calibration (control-byte ratio)
+     *   [8 bytes]    z5 calibration (letter-adjacent-to-mark)
+     *   [8 bytes]    z6 calibration (replacement-char ratio)
+     *   [8 bytes]    z9 calibration (script-alternation)
+     *   // global combiner
+     *   [1 byte]     num_features
+     *   [(num_features+1) × 4 bytes]  combiner weights w1..wN and bias
+     *   // per-script section
      *   for each script (sorted by name):
      *     [2 bytes]      name length
      *     [name bytes]   script name (UTF-8)
-     *     [4 bytes]      mu1 (F1 calibration, codepoint-bigram mean log-prob)
+     *     [4 bytes]      mu1 (z1 calibration, codepoint-bigram mean log-prob)
      *     [4 bytes]      sigma1
-     *     // bigram tables for this script — see {@link BigramTables#writeTo}
-     *     [4 bytes]      backoff_alpha (float32 BE)
-     *     [4 bytes]      codepoint_count
-     *     [codepoint_count × 4 bytes]  codepoint index (sorted, ascending)
-     *     [4 bytes]      bigram_slots (power of 2)
-     *     [4 bytes]      bigram_quant_min (float32 BE)
-     *     [4 bytes]      bigram_quant_max (float32 BE)
-     *     [bigram_slots × 4 bytes]  bigram open-addressing keys
-     *                                ((idxA<<16)|idxB, or {@link BigramTables#EMPTY_KEY})
-     *     [bigram_slots bytes]      bigram values (8-bit quantized log-probs)
-     *     [4 bytes]      unigram_quant_min (float32 BE)
-     *     [4 bytes]      unigram_quant_max (float32 BE)
-     *     [4 bytes]      unigram_fallback_log_prob (float32 BE; used for
-     *                                                codepoints not in index)
-     *     [codepoint_count bytes]   unigram values (8-bit quantized log-probs)
-     *     // F2/F3/classifier
-     *     [4 bytes]      mu2 (F2 calibration)
-     *     [4 bytes]      sigma2
-     *     [block_N² × 4 bytes]  block-transition log-prob table (F2)
-     *     [4 bytes]      mu3 (F3 calibration)
-     *     [4 bytes]      sigma3
-     *     [1 byte]       num_features
-     *     [(num_features+1) × 4 bytes]  classifier weights w1..wN and bias
+     *     [variable]     bigram + unigram tables — exact layout in
+     *                    {@link BigramTables#writeTo}: codepoint index, then the
+     *                    sorted-occupied bigram keys (key[0] as int32 BE followed
+     *                    by LEB128 varint deltas) and 8-bit quantized bigram and
+     *                    unigram log-prob values
      * </pre>
      */
     public static JunkDetector load(InputStream rawIs) throws IOException {

@@ -188,6 +188,9 @@ public final class BigramTables {
         int shift = 0;
         int b;
         do {
+            if (shift >= 64) {
+                throw new IOException("Malformed varint in bigram key deltas (too long)");
+            }
             b = dis.readUnsignedByte();
             v |= (long) (b & 0x7F) << shift;
             shift += 7;
