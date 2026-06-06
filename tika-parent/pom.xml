@@ -449,7 +449,7 @@
      -->
     <solrj.version>9.10.1</solrj.version>
     <spring.version>7.0.7</spring.version>
-    <sqlite.version>3.53.1.0</sqlite.version>
+    <sqlite.version>3.53.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -463,7 +463,7 @@
     <woodstox.core.version>7.2.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
-    <zstd.version>1.5.7-9</zstd.version>
+    <zstd.version>1.5.7-10</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.3</maven.exec.version>
@@ -1313,7 +1313,7 @@
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.14</version>
+        <version>0.8.15</version>
         <configuration>
           <skip>${skipTests}</skip>
         </configuration>
