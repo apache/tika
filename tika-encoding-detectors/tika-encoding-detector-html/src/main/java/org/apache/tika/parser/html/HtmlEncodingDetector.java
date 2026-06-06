@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -85,6 +84,7 @@ public class HtmlEncodingDetector implements EncodingDetector {
     private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN =
             Pattern.compile(("(?is)\\bcharset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)"));
     private static final Charset ASCII = Charset.forName("US-ASCII");
+    private static final Pattern HTML_COMMENT_PATTERN = Pattern.compile("<!--.*?(-->|$)");
     /**
      * HTML can include non-iana supported charsets that Java
      * recognizes, e.g. "unicode".  This can lead to incorrect detection/mojibake.
@@ -170,10 +170,12 @@ public class HtmlEncodingDetector implements EncodingDetector {
             return Collections.emptyList();
         }
 
-        String head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n)).toString();
-        String headNoComments = head.replaceAll("<!--.*?(-->|$)", " ");
+        String head = new String(buffer, 0, n, ASCII);
+        boolean hasComment = head.indexOf("<!--") >= 0;
+        String headNoComments =
+                hasComment ? HTML_COMMENT_PATTERN.matcher(head).replaceAll(" ") : head;
         Charset charset = findCharset(headNoComments);
-        if (charset == null) {
+        if (charset == null && hasComment) {
             charset = findCharset(head);
         }
         if (charset == null) {
