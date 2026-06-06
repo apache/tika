@@ -390,7 +390,7 @@
     <jsoup.version>1.22.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <!-- junit 6.x requires jdk 17 -->
-    <junit5.version>5.14.3</junit5.version>
+    <junit5.version>5.14.4</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.6.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
@@ -436,7 +436,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.53.1.0</sqlite.version>
+    <sqlite.version>3.53.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -452,9 +452,9 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.6</zookeeper.version>
-    <zstd.version>1.5.7-9</zstd.version>
+    <zstd.version>1.5.7-10</zstd.version>
     <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
-    <logback.version>1.5.32</logback.version>
+    <logback.version>1.5.34</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
     <maven.exec.version>3.6.3</maven.exec.version>
