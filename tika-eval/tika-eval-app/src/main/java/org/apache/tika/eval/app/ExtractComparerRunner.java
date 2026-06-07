@@ -92,6 +92,7 @@ public class ExtractComparerRunner {
                 .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
                 .addOption(Option.builder("r").longOpt("report").desc("automatically run Report and tgz after Compare").get())
                 .addOption(Option.builder("rd").longOpt("reportsDir").hasArg().desc("directory for reports (default: 'reports')").get())
+                .addOption(Option.builder("z").longOpt("gzip").desc("gzip the H2 db file (<db>.mv.db.gz) after Compare for transfer; requires -d").get())
                 ;
     }
 
@@ -131,11 +132,15 @@ public class ExtractComparerRunner {
                 ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
                 Path reportsDirPath = Paths.get(reportsDir);
                 if (Files.isDirectory(reportsDirPath)) {
-                    Path tgzPath = reportsDirPath.resolveSibling(reportsDir + ".tar.gz");
+                    Path tgzPath = reportsDirPath.resolveSibling(reportsDir + ".tgz");
                     LOG.info("Creating {}", tgzPath);
                     createTarGz(reportsDirPath, tgzPath);
                     LOG.info("Reports archived to {}", tgzPath);
                 }
+            }
+
+            if (commandLine.hasOption('z')) {
+                gzipDb(dbPath, usesTempDb);
             }
         } finally {
             if (usesTempDb && tempDbDir != null) {
@@ -260,6 +265,40 @@ public class ExtractComparerRunner {
                             LOG.warn("Failed to delete {}", p, e);
                         }
                     });
+        }
+    }
+
+    /**
+     * Gzip the H2 db file (&lt;dbPath&gt;.mv.db -&gt; &lt;dbPath&gt;.mv.db.gz) so it can be
+     * transferred. The db connection is already closed by {@link #execute} before
+     * this runs, so the file is unlocked. No-op (with a warning) when there is no
+     * on-disk file db to gzip: a temp db (no -d) or an explicit jdbc connection string.
+     */
+    private static void gzipDb(String dbPath, boolean usesTempDb) throws IOException {
+        if (usesTempDb) {
+            LOG.warn("-z (gzip) ignored: no -d db specified, so there is no db file to transfer");
+            return;
+        }
+        if (dbPath.startsWith("jdbc:")) {
+            LOG.warn("-z (gzip) ignored: db is an explicit jdbc connection ({}), not a local file", dbPath);
+            return;
+        }
+        Path dbFile = Paths.get(dbPath + ".mv.db");
+        if (!Files.isRegularFile(dbFile)) {
+            LOG.warn("-z (gzip) ignored: expected db file {} not found", dbFile);
+            return;
+        }
+        Path gzPath = dbFile.resolveSibling(dbFile.getFileName() + ".gz");
+        LOG.info("Creating {}", gzPath);
+        gzipFile(dbFile, gzPath);
+        LOG.info("Db archived to {}", gzPath);
+    }
+
+    private static void gzipFile(Path source, Path output) throws IOException {
+        try (InputStream is = Files.newInputStream(source);
+             OutputStream fos = Files.newOutputStream(output);
+             GzipCompressorOutputStream gzo = new GzipCompressorOutputStream(fos)) {
+            is.transferTo(gzo);
         }
     }
 

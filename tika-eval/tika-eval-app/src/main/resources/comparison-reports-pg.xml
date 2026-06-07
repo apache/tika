@@ -838,6 +838,208 @@
   </report>
 
 
+  <!-- CHARSET / ENCODING DETECTION
+       Reports over the encodings_a / encodings_b tables.  One row per file that ran
+       charset detection: detected_encoding (final pick), encoding_detector (winning
+       detector), declared_metadata (charset declared via Content-Type-Hint).  A row
+       exists only when an encoding was detected, so counts are over text-y files and
+       joins to encodings are effectively inner.  A and B are paired by id.  These
+       tables are not covered by any other report. -->
+
+  <report reportName="Charset Detection Coverage"
+          reportFilename="charset/charset_coverage.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select 'paired_files' as METRIC, count(1) as CNT
+      from profiles_a pa join profiles_b pb on pa.id=pb.id
+      union all
+      select 'detected_in_a', count(1) from encodings_a
+      union all
+      select 'detected_in_b', count(1) from encodings_b
+      union all
+      select 'detected_in_both', count(1)
+      from encodings_a ea join encodings_b eb on ea.id=eb.id
+      union all
+      select 'flipped_a_to_b', count(1)
+      from encodings_a ea join encodings_b eb on ea.id=eb.id
+      where ea.detected_encoding &lt;&gt; eb.detected_encoding
+    </sql>
+  </report>
+
+  <report reportName="Detected Encoding Distribution A"
+          reportFilename="charset/detected_encoding_distribution_A.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select detected_encoding as DETECTED_ENCODING, count(1) as COUNT
+      from encodings_a
+      group by detected_encoding
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Detected Encoding Distribution B"
+          reportFilename="charset/detected_encoding_distribution_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select detected_encoding as DETECTED_ENCODING, count(1) as COUNT
+      from encodings_b
+      group by detected_encoding
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Encoding Differences A -> B"
+          reportFilename="charset/encoding_diffs_A_to_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select concat(ea.detected_encoding, ' -&gt; ', eb.detected_encoding) as ENCODING_A_TO_ENCODING_B,
+      count(1) as COUNT
+      from encodings_a ea
+      join encodings_b eb on ea.id=eb.id
+      where ea.detected_encoding &lt;&gt; eb.detected_encoding
+      group by ENCODING_A_TO_ENCODING_B
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Encoding Differences A -> B Details"
+          reportFilename="charset/encoding_diffs_A_to_B_details.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path as FILE_PATH,
+      case
+        when pb.embedded_depth &gt; 0
+        then pb.embedded_file_path
+        else pb.file_name
+      end as FILE_NAME_B,
+      ea.detected_encoding as ENCODING_A,
+      eb.detected_encoding as ENCODING_B,
+      ea.encoding_detector as DETECTOR_A,
+      eb.encoding_detector as DETECTOR_B,
+      eb.declared_metadata as DECLARED_B,
+      mb.mime_string as MIME_B,
+      ca.oov as OOV_A, cb.oov as OOV_B,
+      cb.oov - ca.oov as OOV_DELTA_B,
+      ca.languageness as LANGUAGENESS_A, cb.languageness as LANGUAGENESS_B,
+      cb.languageness - ca.languageness as LANGUAGENESS_DELTA_B,
+      ca.num_replacement as FFFD_A, cb.num_replacement as FFFD_B,
+      ca.num_non_ascii as NON_ASCII_A, cb.num_non_ascii as NON_ASCII_B,
+      round(100.0*cb.num_replacement/nullif(cb.num_non_ascii,0),2) as FFFD_PCT_B,
+      ca.num_common_tokens as COMMON_TOKENS_A, cb.num_common_tokens as COMMON_TOKENS_B,
+      coalesce(cb.num_common_tokens,0)-coalesce(ca.num_common_tokens,0) as COMMON_TOKENS_DELTA_B,
+      ca.lang_id_1 as LANG_A, cb.lang_id_1 as LANG_B
+      from encodings_a ea
+      join encodings_b eb on ea.id=eb.id
+      join profiles_b pb on pb.id=ea.id
+      join containers c on c.container_id=pb.container_id
+      left join contents_a ca on ca.id=ea.id
+      left join contents_b cb on cb.id=ea.id
+      left join mimes mb on mb.mime_id=pb.mime_id
+      where ea.detected_encoding &lt;&gt; eb.detected_encoding
+      order by coalesce(cb.num_common_tokens,0)-coalesce(ca.num_common_tokens,0) asc
+      limit 100000
+    </sql>
+  </report>
+
+  <report reportName="SBCS-Western to CJK Flips A -> B"
+          reportFilename="charset/sbcs_to_cjk_flips_A_to_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select concat(ea.detected_encoding, ' -&gt; ', eb.detected_encoding) as ENCODING_A_TO_ENCODING_B,
+      count(1) as COUNT
+      from encodings_a ea
+      join encodings_b eb on ea.id=eb.id
+      where lower(ea.detected_encoding) in
+        ('windows-1252','iso-8859-1','iso-8859-15','iso-8859-2','iso-8859-3',
+         'windows-1250','windows-1254','windows-1257','iso-8859-13','windows-1258',
+         'x-macroman','ibm850','ibm852')
+      and lower(eb.detected_encoding) in
+        ('gb18030','gbk','gb2312','big5','big5-hkscs','shift_jis','euc-jp','euc-kr',
+         'x-euc-tw','x-windows-874','x-windows-949','iso-2022-jp','iso-2022-kr','iso-2022-cn')
+      group by ENCODING_A_TO_ENCODING_B
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Encoding Detector Distribution A"
+          reportFilename="charset/encoding_detector_distribution_A.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select encoding_detector as ENCODING_DETECTOR, count(1) as COUNT
+      from encodings_a
+      group by encoding_detector
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Encoding Detector Distribution B"
+          reportFilename="charset/encoding_detector_distribution_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select encoding_detector as ENCODING_DETECTOR, count(1) as COUNT
+      from encodings_b
+      group by encoding_detector
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Detector Quality B (by detector and encoding)"
+          reportFilename="charset/detector_quality_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select eb.encoding_detector as ENCODING_DETECTOR,
+      eb.detected_encoding as DETECTED_ENCODING,
+      count(1) as COUNT,
+      round(avg(cb.oov),4) as AVG_OOV,
+      round(avg(cb.languageness),2) as AVG_LANGUAGENESS,
+      sum(cb.num_replacement) as TOTAL_FFFD,
+      sum(cb.num_non_ascii) as TOTAL_NON_ASCII,
+      round(100.0*sum(cb.num_replacement)/nullif(sum(cb.num_non_ascii),0),2) as FFFD_PCT
+      from encodings_b eb
+      join contents_b cb on cb.id=eb.id
+      group by eb.encoding_detector, eb.detected_encoding
+      order by AVG_OOV desc
+    </sql>
+  </report>
+
+  <report reportName="Declared vs Detected B"
+          reportFilename="charset/declared_vs_detected_B.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select eb.declared_metadata as DECLARED, eb.detected_encoding as DETECTED,
+      count(1) as COUNT
+      from encodings_b eb
+      where eb.declared_metadata is not null
+      group by eb.declared_metadata, eb.detected_encoding
+      order by COUNT desc
+    </sql>
+  </report>
+
+  <report reportName="Declared vs Detected A"
+          reportFilename="charset/declared_vs_detected_A.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select ea.declared_metadata as DECLARED, ea.detected_encoding as DETECTED,
+      count(1) as COUNT
+      from encodings_a ea
+      where ea.declared_metadata is not null
+      group by ea.declared_metadata, ea.detected_encoding
+      order by COUNT desc
+    </sql>
+  </report>
+
+
   <!-- Exceptions -->
   <report reportName="AllExceptionsByMimeA"
           reportFilename="exceptions/exceptions_by_mime_A.xlsx"
