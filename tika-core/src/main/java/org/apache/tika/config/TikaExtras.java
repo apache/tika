@@ -36,8 +36,9 @@ import org.slf4j.LoggerFactory;
  *
  * <p><b>Off by default.</b> Nothing is loaded unless the
  * {@value #EXTRAS_DIR_PROPERTY} system property points at a directory; then every
- * {@code *.jar} in it is made visible to service-loading.  There is no implicit
- * directory, and the working directory is never used.
+ * {@code *.jar} in it is made visible to service-loading.  There is no implicit or
+ * default directory — the feature is off unless the property is set.  (A relative
+ * property value is resolved against the process working directory, like any path.)
  *
  * <p><b>Security:</b> this is a trusted code directory — anything in it runs with
  * the full privileges of the Tika process.  Treat write access to it exactly like
@@ -60,7 +61,9 @@ public final class TikaExtras {
      * {@code *.jar} files in that directory as the thread + Tika
      * {@link ServiceLoader} context classloader, so they join SPI discovery.
      * No-op (returns {@code null}) when the property is unset or the directory is
-     * missing/empty.  Call once, before any Tika component is loaded.
+     * missing/empty.  Call exactly once at startup, before any Tika component is
+     * loaded: each call builds a new classloader, so repeated calls stack them and
+     * leave the earlier ones' open jar handles dangling.
      *
      * @return the installed classloader, or {@code null} if extras are off/empty
      */

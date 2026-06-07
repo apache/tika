@@ -123,7 +123,8 @@ public class TikaServerProcess {
     public static void main(String[] args) throws Exception {
         // Install any tika.extras.dir jars before loading components, so the
         // server's in-process SPI discovery sees them too (forked PipesServer
-        // children get them via the classpath in *ServerManager.writeArgFile).
+        // children get them via the classpath in PerClientServerManager /
+        // SharedServerManager writeArgFile).
         TikaExtras.install();
         LOG.info("Starting {} server", Tika.getString());
         try {
