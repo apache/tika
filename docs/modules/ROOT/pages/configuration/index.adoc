@@ -30,9 +30,10 @@ xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JS
 
 == Adding extra jars (`tika.extras.dir`)
 
-To add extra components — additional ``EncodingDetector``s, ``Parser``s, or their
-dependencies — without repackaging the application, drop their jars in a directory
-and point the `tika.extras.dir` system property at it:
+To add extra components — additional `EncodingDetector` or `Parser`
+implementations, or their dependencies — without repackaging the application,
+drop their jars in a directory and point the `tika.extras.dir` system property
+at it:
 
 [source,bash]
 ----

@@ -75,7 +75,10 @@ public class TikaExtrasTest {
             });
         } finally {
             Thread.currentThread().setContextClassLoader(prevCtx);
-            ServiceLoader.setContextClassLoader(prevCtx);
+            // ServiceLoader.CONTEXT_CLASS_LOADER defaults to null and this is the
+            // only test that sets it; reset to null rather than to the thread's
+            // context loader so we don't leak global state into later tests.
+            ServiceLoader.setContextClassLoader(null);
             // Close the URLClassLoader so it releases its handle on extra.jar before
             // @TempDir cleanup runs; otherwise the delete fails on Windows, where an
             // open file cannot be removed.
@@ -83,6 +86,32 @@ public class TikaExtrasTest {
                 ((URLClassLoader) installed[0]).close();
             }
         }
+    }
+
+    @Test
+    public void appendJarsToClasspathOffReturnsInput() throws Exception {
+        withProperty(null, () -> {
+            assertNull(TikaExtras.appendJarsToClasspath(null));
+            assertEquals("base", TikaExtras.appendJarsToClasspath("base"));
+        });
+    }
+
+    @Test
+    public void appendJarsToClasspathNoLeadingSeparator(@TempDir Path tmp) throws Exception {
+        Path jar = tmp.resolve("extra.jar");
+        try (JarOutputStream jos = new JarOutputStream(Files.newOutputStream(jar))) {
+            jos.putNextEntry(new JarEntry(MARKER));
+            jos.closeEntry();
+        }
+        String sep = System.getProperty("path.separator");
+        String abs = jar.toAbsolutePath().toString();
+        withProperty(tmp.toString(), () -> {
+            // null/empty base must not produce a leading separator
+            assertEquals(abs, TikaExtras.appendJarsToClasspath(null));
+            assertEquals(abs, TikaExtras.appendJarsToClasspath(""));
+            // non-empty base gets the separator between it and the jar
+            assertEquals("base" + sep + abs, TikaExtras.appendJarsToClasspath("base"));
+        });
     }
 
     private interface Body {

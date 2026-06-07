@@ -70,9 +70,11 @@ public final class TikaExtras {
             return null;
         }
         List<URL> urls = new ArrayList<>(jars.size());
+        List<Path> loaded = new ArrayList<>(jars.size());
         for (Path jar : jars) {
             try {
                 urls.add(jar.toUri().toURL());
+                loaded.add(jar);
             } catch (Exception e) {
                 LOG.warn("Skipping extra jar {}: {}", jar, e.toString());
             }
@@ -87,7 +89,7 @@ public final class TikaExtras {
         URLClassLoader cl = new URLClassLoader(urls.toArray(new URL[0]), parent);
         Thread.currentThread().setContextClassLoader(cl);
         ServiceLoader.setContextClassLoader(cl);
-        LOG.info("{}: loaded {} extra jar(s): {}", EXTRAS_DIR_PROPERTY, urls.size(), jars);
+        LOG.info("{}: loaded {} extra jar(s): {}", EXTRAS_DIR_PROPERTY, loaded.size(), loaded);
         return cl;
     }
 
@@ -131,10 +133,16 @@ public final class TikaExtras {
         if (jars.isEmpty()) {
             return classpath;
         }
-        StringBuilder sb = new StringBuilder(classpath);
         String separator = System.getProperty("path.separator");
+        StringBuilder sb = new StringBuilder();
+        if (classpath != null && !classpath.isEmpty()) {
+            sb.append(classpath);
+        }
         for (Path jar : jars) {
-            sb.append(separator).append(jar.toAbsolutePath());
+            if (sb.length() > 0) {
+                sb.append(separator);
+            }
+            sb.append(jar.toAbsolutePath());
         }
         return sb.toString();
     }
