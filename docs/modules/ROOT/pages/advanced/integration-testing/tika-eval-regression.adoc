@@ -191,8 +191,8 @@ java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar \
 
 The `Compare` subcommand keyword is optional — the CLI infers it from
 the `-a` / `-b` flags.  The `-r` flag both runs the Report stage and
-tgz's the resulting reports directory (`<reportsDir>.tgz`) for easy
-archiving.
+creates a `.tgz` archive of the resulting reports directory
+(`<reportsDir>.tgz`) for easy archiving.
 
 Options:
 

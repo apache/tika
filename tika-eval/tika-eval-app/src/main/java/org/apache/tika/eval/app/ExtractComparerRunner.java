@@ -132,7 +132,7 @@ public class ExtractComparerRunner {
                 ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
                 Path reportsDirPath = Paths.get(reportsDir);
                 if (Files.isDirectory(reportsDirPath)) {
-                    Path tgzPath = reportsDirPath.resolveSibling(reportsDir + ".tgz");
+                    Path tgzPath = reportsDirPath.resolveSibling(reportsDirPath.getFileName() + ".tgz");
                     LOG.info("Creating {}", tgzPath);
                     createTarGz(reportsDirPath, tgzPath);
                     LOG.info("Reports archived to {}", tgzPath);
@@ -272,18 +272,31 @@ public class ExtractComparerRunner {
      * Gzip the H2 db file (&lt;dbPath&gt;.mv.db -&gt; &lt;dbPath&gt;.mv.db.gz) so it can be
      * transferred. The db connection is already closed by {@link #execute} before
      * this runs, so the file is unlocked. No-op (with a warning) when there is no
-     * on-disk file db to gzip: a temp db (no -d) or an explicit jdbc connection string.
+     * on-disk file db to gzip: a temp db (no -d), or a non-file jdbc connection
+     * (e.g. mem/tcp). A {@code jdbc:h2:file:} URL is supported by extracting its
+     * file path.
      */
     private static void gzipDb(String dbPath, boolean usesTempDb) throws IOException {
         if (usesTempDb) {
             LOG.warn("-z (gzip) ignored: no -d db specified, so there is no db file to transfer");
             return;
         }
+        String filePath = dbPath;
         if (dbPath.startsWith("jdbc:")) {
-            LOG.warn("-z (gzip) ignored: db is an explicit jdbc connection ({}), not a local file", dbPath);
-            return;
+            String prefix = "jdbc:h2:file:";
+            if (!dbPath.startsWith(prefix)) {
+                LOG.warn("-z (gzip) ignored: db is a non-file jdbc connection ({}), no local file to transfer",
+                        dbPath);
+                return;
+            }
+            // Strip the jdbc:h2:file: prefix and any ;OPTION=... suffix to get the file base path.
+            filePath = dbPath.substring(prefix.length());
+            int semi = filePath.indexOf(';');
+            if (semi >= 0) {
+                filePath = filePath.substring(0, semi);
+            }
         }
-        Path dbFile = Paths.get(dbPath + ".mv.db");
+        Path dbFile = Paths.get(filePath + ".mv.db");
         if (!Files.isRegularFile(dbFile)) {
             LOG.warn("-z (gzip) ignored: expected db file {} not found", dbFile);
             return;
