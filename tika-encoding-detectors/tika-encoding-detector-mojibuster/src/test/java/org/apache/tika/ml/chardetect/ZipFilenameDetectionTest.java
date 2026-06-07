@@ -20,7 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.DefaultEncodingDetector;
@@ -59,7 +58,6 @@ public class ZipFilenameDetectionTest {
      * sequentially on two entries differing only in byte 5 (0x31 vs 0x32), simulating
      * what ZipParser does when iterating entries with the same ParseContext.
      */
-    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void fullPipelineDetectsBothSjisEntries() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();
@@ -80,7 +78,6 @@ public class ZipFilenameDetectionTest {
     /**
      * Full pipeline should detect GBK-encoded entry names as GB18030.
      */
-    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void fullPipelineDetectsGbkEntry() throws Exception {
         DefaultEncodingDetector detector = new DefaultEncodingDetector();

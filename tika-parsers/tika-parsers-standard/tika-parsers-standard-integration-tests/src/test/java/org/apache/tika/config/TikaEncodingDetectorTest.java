@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,13 +60,16 @@ public class TikaEncodingDetectorTest extends TikaTest {
         EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
         assertTrue(detector instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors = ((CompositeEncodingDetector) detector).getDetectors();
-        // TIKA-4683: rolled-back 3.x-style chain (Html, Universal, Icu4j) — first non-empty wins
-        assertEquals(3, detectors.size());
+        // 4.x default chain: BOM, metadata, html, mojibuster, junk-filter.
+        assertEquals(5, detectors.size());
         Set<String> baseClassNames = detectors.stream()
                 .map(d -> d.getClass().getName()).collect(Collectors.toSet());
+        assertTrue(baseClassNames.contains("org.apache.tika.detect.BOMDetector"));
+        assertTrue(baseClassNames.contains("org.apache.tika.detect.MetadataCharsetDetector"));
         assertTrue(baseClassNames.contains(HtmlEncodingDetector.class.getName()));
-        assertTrue(baseClassNames.contains("org.apache.tika.parser.txt.UniversalEncodingDetector"));
-        assertTrue(baseClassNames.contains("org.apache.tika.parser.txt.Icu4jEncodingDetector"));
+        assertTrue(baseClassNames.contains(MojibusterEncodingDetector.class.getName()));
+        assertTrue(baseClassNames.contains(
+                "org.apache.tika.ml.junkdetect.JunkFilterEncodingDetector"));
     }
 
     @Test
@@ -81,12 +85,16 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertTrue(detector1 instanceof CompositeEncodingDetector);
         List<EncodingDetector> detectors1Children =
                 ((CompositeEncodingDetector) detector1).getDetectors();
-        // TIKA-4683: rolled-back chain (Html, Universal, Icu4j); html excluded leaves 2.
-        assertEquals(2, detectors1Children.size());
+        // default chain minus excluded html: BOM, metadata, mojibuster, junk-filter.
+        assertEquals(4, detectors1Children.size());
         Set<String> innerClassNames = detectors1Children.stream()
                 .map(d -> d.getClass().getName()).collect(Collectors.toSet());
-        assertTrue(innerClassNames.contains("org.apache.tika.parser.txt.UniversalEncodingDetector"));
-        assertTrue(innerClassNames.contains("org.apache.tika.parser.txt.Icu4jEncodingDetector"));
+        assertFalse(innerClassNames.contains(HtmlEncodingDetector.class.getName()));
+        assertTrue(innerClassNames.contains("org.apache.tika.detect.BOMDetector"));
+        assertTrue(innerClassNames.contains("org.apache.tika.detect.MetadataCharsetDetector"));
+        assertTrue(innerClassNames.contains(MojibusterEncodingDetector.class.getName()));
+        assertTrue(innerClassNames.contains(
+                "org.apache.tika.ml.junkdetect.JunkFilterEncodingDetector"));
 
         assertTrue(detectors.get(1) instanceof OverrideEncodingDetector);
 
@@ -114,16 +122,14 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
     @Test
     public void testEncodingDetectorConfigurability() throws Exception {
-        // CP500 (EBCDIC) is now detected by MojibusterEncodingDetector's structural IBM500 rule.
-        // We must hint Content-Type=text/plain so that TXTParser is selected; without the filename
-        // extension the byte-level MIME sniffer classifies the EBCDIC data as octet-stream.
+        // CP500/EBCDIC: mojibuster's IBM500 rule detects it. Hint text/plain so
+        // TXTParser runs (else the byte sniffer calls it octet-stream).
         Metadata md = new Metadata();
         md.set("Content-Type", "text/plain");
         Metadata metadata = getXML("english.cp500.txt", md).metadata;
         assertNotNull(metadata.get(TikaCoreProperties.DETECTED_ENCODING));
 
-        // Excluding ICU4J from the config (which is already not in the default chain)
-        // should still work — ML handles EBCDIC detection.
+        // Excluding the (already-absent) icu4j still works; ML handles EBCDIC.
         TikaLoader tikaLoader = TikaLoaderHelper.getLoader("TIKA-2273-no-icu4j-encoding-detector.json");
         Parser p = tikaLoader.loadAutoDetectParser();
         md = new Metadata();
@@ -178,20 +184,16 @@ public class TikaEncodingDetectorTest extends TikaTest {
                     ((AbstractEncodingDetectorParser) encodingDetectingParser)
                             .getEncodingDetector();
             assertTrue(encodingDetector instanceof CompositeEncodingDetector);
-            // TIKA-4683: rolled-back chain (Html, Universal, Icu4j); icu4j excluded leaves 2.
-            assertEquals(2, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
+            // icu4j not in default chain; excluding it is a no-op -> full chain (5).
+            assertEquals(5, ((CompositeEncodingDetector) encodingDetector).getDetectors().size());
             for (EncodingDetector child : ((CompositeEncodingDetector) encodingDetector)
                     .getDetectors()) {
                 assertNotContained("cu4j", child.getClass().getCanonicalName());
             }
         }
 
-        // TIKA-4683: with the rolled-back 3.x-style chain (Html, Universal, Icu4j minus
-        // the excluded icu4j), CP500/EBCDIC isn't reliably detected here. 3.x relied on
-        // a different code path (parser-layer charset honouring) for this kind of input.
-        // Re-enable when EBCDIC detection lands on a chain detector.
-        // Metadata metadata = getXML("english.cp500.txt", p).metadata;
-        // assertNotNull(metadata.get(TikaCoreProperties.DETECTED_ENCODING));
+        // CP500/EBCDIC detection is covered by testEncodingDetectorConfigurability
+        // (needs a text/plain hint, omitted here).
     }
 
     @Test
@@ -213,7 +215,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
             assertTrue(children.get(0) instanceof MojibusterEncodingDetector,
                     childParser.getClass().toString());
             HtmlEncodingDetector htmlDet = (HtmlEncodingDetector) children.get(1);
-            assertEquals(100000, htmlDet.getDefaultConfig().getMarkLimit(),
+            assertEquals(700000, htmlDet.getDefaultConfig().getMarkLimit(),
                     childParser.getClass().toString());
             assertTrue(children.get(2) instanceof StandardHtmlEncodingDetector,
                     childParser.getClass().toString());
@@ -226,8 +228,9 @@ public class TikaEncodingDetectorTest extends TikaTest {
     public void testMarkLimitIntegration() throws Exception {
         StringBuilder sb = new StringBuilder();
         sb.append("<html><head><script>");
-        // script length = ~80000 bytes, beyond the default mark limit of 65536
-        for (int i = 0; i < 16000; i++) {
+        // ~600 KB of script: past mojibuster's 512 KB probe and the html mark
+        // limit, so the buried meta + UTF-8 body aren't reached by default.
+        for (int i = 0; i < 120000; i++) {
             sb.append("blah ");
         }
         sb.append("</script>");
@@ -238,11 +241,10 @@ public class TikaEncodingDetectorTest extends TikaTest {
 
         byte[] bytes = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-        // Default: the meta charset is buried at ~byte 80,000, past the default
-        // mark limit of 65536. The detector falls back to windows-1252 for the
-        // pure-ASCII probe. HTML entities (&#248;) render correctly regardless;
-        // raw UTF-8 multibyte sequences (e.g. ø in "økologisk") are garbled.
-        // Raise the mark limit via config to fix this (see below).
+        // Default: meta buried at ~byte 600,000, past mojibuster's probe and the
+        // html mark limit, so mojibuster sees pure ASCII and returns windows-1252.
+        // Entities (&#248;) survive; raw UTF-8 (ø in "økologisk") is garbled.
+        // Raised mark limit fixes it (see below).
         Parser p = AUTO_DETECT_PARSER;
 
         Metadata metadata = new Metadata();
@@ -253,8 +255,7 @@ public class TikaEncodingDetectorTest extends TikaTest {
         assertNotContained("gr\u00F8nt", xml);
         assertNotContained("g\u00E5 til", xml);
 
-        // With a raised mark limit the detector reaches the meta charset and
-        // correctly decodes UTF-8 content.
+        // Raised mark limit reaches the meta and decodes UTF-8.
         p = TikaLoaderHelper.getLoader("TIKA-2485-encoding-detector-mark-limits.json").loadAutoDetectParser();
 
         metadata = new Metadata();
@@ -272,11 +273,10 @@ public class TikaEncodingDetectorTest extends TikaTest {
     // -----------------------------------------------------------------------
 
     /**
-     * ASCII HTML with an explicit {@code <meta charset="UTF-8">} must be
-     * detected as UTF-8.  The HTML detector produces a DECLARATIVE UTF-8
-     * result; {@code JunkFilterEncodingDetector} arbitrates the tie in its
-     * favour (pure-ASCII bytes decode identically as UTF-8 and windows-1252,
-     * so the DECLARATIVE hint wins).
+     * Pure-ASCII HTML with {@code <meta charset="UTF-8">} detects as UTF-8.
+     * The bytes decode identically as UTF-8 and windows-1252, so the statistical
+     * signal is neutral and the declarative hint is left to decide. Strong
+     * statistical evidence would override the declarative hint.
      */
     @Test
     public void testAsciiHtmlWithMetaIsDetectedAsUtf8() throws Exception {
@@ -290,6 +290,53 @@ public class TikaEncodingDetectorTest extends TikaTest {
             assertFalse(results.isEmpty(), "detector returned no result for ASCII HTML with meta");
             assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset(),
                     "ASCII HTML with <meta charset=UTF-8> should be detected as UTF-8, got: "
+                            + results.get(0).getCharset().name());
+        }
+    }
+
+    /**
+     * Strong statistical evidence overrides a wrong declaration: a clearly-UTF-8
+     * body that declares windows-1252 is still detected as UTF-8.
+     */
+    @Test
+    public void testStatisticalOverridesWrongDeclaration() throws Exception {
+        String body = "Съешь же ещё этих мягких французских булок да выпей чаю. ".repeat(10);
+        byte[] bytes = ("<html><head><meta charset=\"windows-1252\"></head><body>"
+                + body + "</body></html>").getBytes(StandardCharsets.UTF_8);
+        EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> results =
+                    detector.detect(tis, new Metadata(), new ParseContext());
+            assertFalse(results.isEmpty(), "no result for strong-UTF-8 body");
+            assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset(),
+                    "strong UTF-8 must override the windows-1252 declaration, got: "
+                            + results.get(0).getCharset().name());
+        }
+    }
+
+    /**
+     * Strong statistical evidence overrides a wrong BOM: a windows-1252 body that
+     * is invalid as UTF-8 but carries a UTF-8 BOM is still detected as
+     * windows-1252.
+     */
+    @Test
+    public void testStatisticalOverridesWrongBom() throws Exception {
+        Charset win1252 = Charset.forName("windows-1252");
+        String body = ("He said “Hello” — it’s 100% © "
+                + "café, naïve, résumé. ").repeat(8);
+        byte[] win = body.getBytes(win1252);
+        byte[] bytes = new byte[3 + win.length];
+        bytes[0] = (byte) 0xEF;
+        bytes[1] = (byte) 0xBB;
+        bytes[2] = (byte) 0xBF; // UTF-8 BOM
+        System.arraycopy(win, 0, bytes, 3, win.length);
+        EncodingDetector detector = TikaLoader.loadDefault().loadEncodingDetectors();
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> results =
+                    detector.detect(tis, new Metadata(), new ParseContext());
+            assertFalse(results.isEmpty(), "no result for windows-1252 body with UTF-8 BOM");
+            assertEquals(win1252, results.get(0).getCharset(),
+                    "windows-1252 body must override the UTF-8 BOM, got: "
                             + results.get(0).getCharset().name());
         }
     }

@@ -63,15 +63,10 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- junk arbiter so tests use the full default chain -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-universal</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <artifactId>tika-ml-junkdetect</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
