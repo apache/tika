@@ -460,7 +460,7 @@
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>7.2.0</woodstox.core.version>
+    <woodstox.core.version>7.2.1</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <zstd.version>1.5.7-10</zstd.version>
