@@ -614,7 +614,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         }
         for (HSLFShape shape : shapes) {
             if (shape instanceof HSLFPictureShape) {
-                HSLFPictureData pd = ((HSLFPictureShape) shape).getPictureData();
+                HSLFPictureData pd;
+                try {
+                    pd = ((HSLFPictureShape) shape).getPictureData();
+                } catch (Exception e) {
+                    // corrupt Escher BSE record -- skip page anchoring for this shape
+                    continue;
+                }
                 if (pd != null) {
                     picToSlides.computeIfAbsent(pd.getIndex(), k -> new HashSet<>()).add(slideNum);
                 }
