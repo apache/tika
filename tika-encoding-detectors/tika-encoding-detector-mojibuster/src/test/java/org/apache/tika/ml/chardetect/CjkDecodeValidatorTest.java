@@ -69,6 +69,27 @@ public class CjkDecodeValidatorTest {
         assertEquals(-1.0, CjkDecodeValidator.strippedFailureRate(b, Charset.forName("GB18030")));
     }
 
+    /**
+     * Pure UTF-8 file (zero legacy CJK bytes, many UTF-8 multi-byte sequences):
+     * strippedFailureRate must return 1.0 so the CJK veto fires for all CJK charsets.
+     * This covers the regression where Shift_JIS / Big5-HKSCS / GB18030 were wrongly
+     * chosen over UTF-8 STRUCTURAL for pure-UTF-8 Latin/Cyrillic/etc. files.
+     */
+    @Test
+    public void pureUtf8ReturnsCjkVeto() throws Exception {
+        // Croatian text encoded as UTF-8 — all high bytes are valid UTF-8 sequences,
+        // none are legacy CJK lead bytes.
+        byte[] b = ("Ovo je čist UTF-8 tekst s hrvatskim slovima: "
+                + "čćžšđ ČĆŽŠĐ.  Ponavljamo dovoljno puta da premašimo prag od "
+                + "trideset UTF-8 sekvenci: šššššššššš čččččččččč đđđđđđđđđđ.")
+                .getBytes("UTF-8");
+        for (String cs : new String[]{"Shift_JIS", "Big5-HKSCS", "GB18030", "EUC-JP"}) {
+            double rate = CjkDecodeValidator.strippedFailureRate(b, Charset.forName(cs));
+            assertEquals(1.0, rate, 0.0,
+                    "pure UTF-8 must return 1.0 (veto) for " + cs + ", got " + rate);
+        }
+    }
+
     @Test
     public void appliesToLegacyCjkButNotIso2022OrLatin() {
         assertTrue(CjkDecodeValidator.appliesTo("GB18030"));

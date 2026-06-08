@@ -64,8 +64,18 @@ public final class CjkDecodeValidator {
      * Failure rate of {@code bytes} under {@code cjkCharset}'s vendor superset,
      * counting only legacy high bytes (embedded UTF-8 is skipped, not counted).
      *
-     * @return failures / legacy-high-bytes, or {@code -1.0} when there is too
-     *         little legacy evidence (legacy high bytes &lt; {@link #MIN_HIGH_BYTES})
+     * <p>Special case: if every high byte is a valid UTF-8 sequence (i.e.,
+     * {@code nHigh == 0}) and there are at least {@link #MIN_HIGH_BYTES} UTF-8
+     * multi-byte sequences, the probe is pure UTF-8 — no legacy CJK content at
+     * all.  In that case {@code 1.0} is returned to trigger the CJK veto.
+     * Real legacy CJK encodings (Shift_JIS, Big5, EUC-JP, GB18030 …) always
+     * have lead bytes in 0x81–0x9F or 0xF5–0xFF that are not valid UTF-8 starts,
+     * so {@code nHigh > 0} for any genuine CJK document.
+     *
+     * @return failures / legacy-high-bytes, {@code 1.0} when the probe is pure
+     *         UTF-8 (nHigh==0, nUTF8seqs&ge;{@link #MIN_HIGH_BYTES}), or
+     *         {@code -1.0} when there is too little evidence either way
+     *         (legacy high bytes &lt; {@link #MIN_HIGH_BYTES} and not pure UTF-8)
      */
     public static double strippedFailureRate(byte[] bytes, Charset cjkCharset) {
         Charset decodeAs = CharsetSupersets.decodeAs(cjkCharset);
@@ -77,6 +87,7 @@ public final class CjkDecodeValidator {
         int n = bytes.length;
         int fail = 0;
         int nHigh = 0;
+        int nUtf8Seqs = 0;
         while (i < n) {
             int x = bytes[i] & 0xFF;
             if (x < 0x80) {
@@ -85,6 +96,7 @@ public final class CjkDecodeValidator {
             }
             int ulen = utf8SequenceLength(bytes, i);
             if (ulen > 0) {
+                nUtf8Seqs++;
                 i += ulen; // embedded UTF-8 — not legacy content, skip
                 continue;
             }
@@ -102,6 +114,11 @@ public final class CjkDecodeValidator {
             }
         }
         if (nHigh < MIN_HIGH_BYTES) {
+            // Pure UTF-8: no legacy high bytes at all but enough UTF-8 sequences
+            // to be confident.  Return 1.0 so the CJK veto fires.
+            if (nHigh == 0 && nUtf8Seqs >= MIN_HIGH_BYTES) {
+                return 1.0;
+            }
             return -1.0;
         }
         return (double) fail / nHigh;

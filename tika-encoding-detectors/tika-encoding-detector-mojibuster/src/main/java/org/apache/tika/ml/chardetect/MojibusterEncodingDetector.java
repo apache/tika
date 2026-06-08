@@ -427,17 +427,30 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             LOG.trace("mojibuster pool empty -> windows-1252 fallback");
             return windows1252Fallback();
         }
+        // When the top result is STRUCTURAL (clean UTF-8/UTF-32/ISO-2022 grammar),
+        // return only that one result.  JunkFilter must not re-open Mojibuster's
+        // internal ordering and pick a lower-ranked STATISTICAL CJK candidate
+        // over the STRUCTURAL winner on non-languagey content — that was the 11k
+        // regression root cause.  With a single STRUCTURAL result, JunkFilter
+        // still arbitrates when *another* detector disagrees (lying HTML headers),
+        // which is the intended use case.
+        //
+        // When the top result is STATISTICAL, keep the full ranked list so that
+        // JunkFilter can arbitrate within-family ambiguities (e.g. GB18030 vs
+        // x-windows-949: NB scores Chinese higher than Korean on JS-heavy files
+        // because ASCII bigram distributions differ between training corpora, but
+        // JunkFilter's language-quality scoring correctly prefers Korean text).
+        EncodingResult top = finalResults.get(0);
+        List<EncodingResult> toReturn = (top.getResultType() == EncodingResult.ResultType.STRUCTURAL)
+                ? List.of(top) : finalResults;
         if (LOG.isTraceEnabled()) {
-            StringBuilder sb = new StringBuilder();
-            for (EncodingResult r : finalResults) {
-                if (sb.length() > 0) sb.append(", ");
-                sb.append(r.getCharset().name())
-                  .append("[").append(r.getResultType()).append("]")
-                  .append("@").append(String.format(Locale.ROOT, "%.2f", r.getConfidence()));
-            }
-            LOG.trace("mojibuster exit ({} results) [{}]", finalResults.size(), sb);
+            LOG.trace("mojibuster exit ({}) {}[{}]@{}",
+                    top.getResultType() == EncodingResult.ResultType.STRUCTURAL ? "top1" : "full",
+                    top.getCharset().name(),
+                    top.getResultType(),
+                    String.format(Locale.ROOT, "%.2f", top.getConfidence()));
         }
-        return finalResults;
+        return toReturn;
     }
 
     /**
