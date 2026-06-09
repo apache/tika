@@ -47,7 +47,7 @@ automatically. The jars are also forwarded onto forked Pipes/server worker
 processes, so they are available where parsing happens.
 
 This is *off by default* — nothing is loaded unless `tika.extras.dir` is set, and
-the working directory is never used. Treat the directory as a trusted code
+there is no implicit default directory (Tika does not scan the working directory automatically). Treat the directory as a trusted code
 location: anything in it runs with the full privileges of the Tika process, so it
 must not be writable by less-trusted principals (and, for a server, must not be
 reachable by request handling).

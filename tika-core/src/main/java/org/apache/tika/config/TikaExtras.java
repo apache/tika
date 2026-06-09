@@ -156,6 +156,11 @@ public final class TikaExtras {
         if (prop == null || prop.isBlank()) {
             return null;
         }
-        return Path.of(prop.trim());
+        try {
+            return Path.of(prop.trim());
+        } catch (java.nio.file.InvalidPathException e) {
+            LOG.warn("Ignoring invalid {}: {}", EXTRAS_DIR_PROPERTY, e.getMessage());
+            return null;
+        }
     }
 }
