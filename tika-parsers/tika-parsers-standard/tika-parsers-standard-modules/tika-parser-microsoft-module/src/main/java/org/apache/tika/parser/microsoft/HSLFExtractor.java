@@ -617,8 +617,9 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 HSLFPictureData pd;
                 try {
                     pd = ((HSLFPictureShape) shape).getPictureData();
-                } catch (Exception e) {
+                } catch (IndexOutOfBoundsException e) {
                     // corrupt Escher BSE record -- skip page anchoring for this shape
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                     continue;
                 }
                 if (pd != null) {
