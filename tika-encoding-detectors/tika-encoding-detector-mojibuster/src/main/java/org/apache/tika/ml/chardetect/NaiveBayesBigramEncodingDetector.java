@@ -239,6 +239,8 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
      */
     private final double[] perClassDequant;
     private final int numClasses;
+    // BETA-1 WORKAROUND: GB18030 class index for markup-bigram suppression — see isOffendingAscii.
+    private final int gb18030ClassIdx;
 
     public NaiveBayesBigramEncodingDetector(Path modelPath) throws IOException {
         this(Files.newInputStream(modelPath));
@@ -364,6 +366,16 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             for (int c = 0; c < numClasses; c++) {
                 perClassDequant[c] = (double) scale[c] * idfScale;
             }
+
+            // Locate GB18030's class index for the markup-bigram suppression.
+            int gb18030Idx = -1;
+            for (int c = 0; c < numClasses; c++) {
+                if ("GB18030".equalsIgnoreCase(labels[c])) {
+                    gb18030Idx = c;
+                    break;
+                }
+            }
+            this.gb18030ClassIdx = gb18030Idx;
         }
     }
 
@@ -377,6 +389,13 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
     private static boolean isWhitespace(int b) {
         return b == 0x09 || b == 0x0a || b == 0x0b || b == 0x0c
                 || b == 0x0d || b == 0x20;
+    }
+
+    // BETA-1 WORKAROUND: bigrams containing these HTML/JS markup chars are
+    // over-represented in GB18030 training data and cause misclassification.
+    // Suppressed only for GB18030 in scoreClassesAndCount.
+    static boolean isOffendingAscii(int b) {
+        return b == '{' || b == '"' || b == '&' || b == '<' || b == '>';
     }
 
     public List<EncodingResult> detect(byte[] probe) {
@@ -554,9 +573,17 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             double countTimesIdf = tf * w;
             int base = bigram * numClasses;
 
+            // BETA-1 WORKAROUND: skip this bigram for GB18030 if either byte is
+            // an HTML/JS markup char that inflates GB18030 scores on Latin pages.
+            int bg0 = (bigram >> 8) & 0xFF;
+            int bg1 = bigram & 0xFF;
+            boolean skipGb18030 = gb18030ClassIdx >= 0
+                    && (isOffendingAscii(bg0) || isOffendingAscii(bg1));
+
             if (!applyCap) {
                 // Fast path: no cap, just accumulate.
                 for (int c = 0; c < numClasses; c++) {
+                    if (skipGb18030 && c == gb18030ClassIdx) continue;
                     score[c] += logP8[base + c] * countTimesIdf * perClassDequant[c];
                 }
                 continue;
@@ -602,6 +629,7 @@ public class NaiveBayesBigramEncodingDetector implements EncodingDetector {
             double capValue = bestCrossCohort + CAP_PER_BIGRAM_NATS;
             boolean clip = max > capValue;
             for (int c = 0; c < numClasses; c++) {
+                if (skipGb18030 && c == gb18030ClassIdx) continue;
                 double v = contributions[c];
                 if (clip && v > capValue) {
                     v = capValue;
