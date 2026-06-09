@@ -13,8 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-# tika-core's part of the default 4.x chain; html, mojibuster, and the
-# junk-filter arbitrator register from their own modules.
-org.apache.tika.detect.BOMDetector
-org.apache.tika.detect.MetadataCharsetDetector
-
+# MetaEncodingDetector: arbitrates the base detectors' candidates by decode
+# quality, always running last.
+org.apache.tika.ml.junkdetect.JunkFilterEncodingDetector

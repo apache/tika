@@ -40,11 +40,24 @@
       <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- Icu4jEncodingDetector moved from tika-parser-text-module here -->
+    <!-- default chain for tests: html + mojibuster base detectors + junk arbiter -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <artifactId>tika-encoding-detector-html</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-ml-junkdetect</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

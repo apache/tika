@@ -53,7 +53,7 @@ public class TXTParserTest extends TikaTest {
         }
         String content = writer.toString();
 
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         // TIKA-501: Remove language detection from TXTParser
         assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
@@ -87,22 +87,19 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("\n", handler.toString());
     }
 
     /**
-     * Test for the heuristics that we use to assign an eight-bit character
-     * encoding to mostly ASCII sequences. If a more specific match can not
-     * be made, a string with a CR(LF) in it is most probably windows-1252,
-     * otherwise ISO-8859-1, except if it contains the currency/euro symbol
-     * (byte 0xa4) in which case it's more likely to be ISO-8859-15.
+     * Short mostly-ASCII samples. 3.x used per-encoding heuristics (CRLF =>
+     * windows-1252, else ISO-8859-1, 0xA4 => ISO-8859-15); the 4.x statistical
+     * chain doesn't, so these short samples resolve to the windows-1252 default.
      */
     @Test
     public void testLatinDetectionHeuristics() throws Exception {
         String windows = "test\r\n";
         String unix = "test\n";
-        String euro = "test \u20ac\n";
 
         Metadata metadata;
 
@@ -111,20 +108,14 @@ public class TXTParserTest extends TikaTest {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("UniversalEncodingDetector", metadata.get(TikaCoreProperties.ENCODING_DETECTOR));
+        assertEquals("MojibusterEncodingDetector", metadata.get(TikaCoreProperties.ENCODING_DETECTOR));
         assertEquals("windows-1252", metadata.get(TikaCoreProperties.DETECTED_ENCODING));
 
         metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(unix.getBytes("ISO-8859-15"))) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-
-        metadata = new Metadata();
-        try (TikaInputStream tis = TikaInputStream.get(euro.getBytes("ISO-8859-15"))) {
-            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
-        }
-        assertEquals("text/plain; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     /**
@@ -157,8 +148,8 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
         metadata.set(Metadata.CONTENT_TYPE, "text/plain; charset=ISO-8859-15");
         try (TikaInputStream tis = TikaInputStream.get(test2.getBytes(ISO_8859_1))) {
@@ -185,8 +176,8 @@ public class TXTParserTest extends TikaTest {
         }
         parser.parse(TikaInputStream.get(test2.getBytes(ISO_8859_1)), new BodyContentHandler(),
                 metadata, new ParseContext());
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("windows-1252", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-15");
@@ -256,7 +247,7 @@ public class TXTParserTest extends TikaTest {
             parser.parse(tis, new WriteOutContentHandler(writer), metadata, new ParseContext());
         }
 
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
     }
 
     /**
@@ -272,7 +263,7 @@ public class TXTParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(text.getBytes(UTF_8))) {
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadata.get(Metadata.CONTENT_TYPE));
 
         // Now verify that if we tell the parser the encoding is UTF-8, that's what
         // we get back (see TIKA-868)
@@ -287,7 +278,7 @@ public class TXTParserTest extends TikaTest {
     @Test
     public void testSubclassingMimeTypesRemain() throws Exception {
         XMLResult r = getXML("testVCalendar.vcs");
-        assertEquals("text/x-vcalendar; charset=ISO-8859-1", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/x-vcalendar; charset=windows-1252", r.metadata.get(Metadata.CONTENT_TYPE));
     }
 
 }

@@ -186,7 +186,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         expected.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
         expected.add("application/pdf");
         expected.add("application/xml");
-        expected.add("text/plain; charset=ISO-8859-1");
+        expected.add("text/plain; charset=windows-1252");
         //test that we're correctly handling attachment variants for
         // files created by WPS 表格 (https://www.wps.cn/)
         for (String suffix : new String[]{

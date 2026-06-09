@@ -43,15 +43,16 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
     </dependency>
+    <!-- full default chain for tests: html base detector + junk arbiter -->
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <artifactId>tika-encoding-detector-html</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-encoding-detector-universal</artifactId>
+      <artifactId>tika-ml-junkdetect</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

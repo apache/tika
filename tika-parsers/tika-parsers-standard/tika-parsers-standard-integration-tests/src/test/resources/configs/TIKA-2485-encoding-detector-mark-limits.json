@@ -5,12 +5,12 @@
     },
     {
       "html-encoding-detector": {
-        "markLimit": 100000
+        "markLimit": 700000
       }
     },
     {
       "standard-html-encoding-detector": {
-        "markLimit": 100000
+        "markLimit": 700000
       }
     },
     {

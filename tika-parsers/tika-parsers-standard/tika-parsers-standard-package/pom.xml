@@ -75,12 +75,12 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-icu4j</artifactId>
+      <artifactId>tika-encoding-detector-mojibuster</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-encoding-detector-universal</artifactId>
+      <artifactId>tika-ml-junkdetect</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
