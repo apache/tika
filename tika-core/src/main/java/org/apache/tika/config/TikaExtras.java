@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config;
 
+import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.DirectoryStream;
@@ -136,7 +137,7 @@ public final class TikaExtras {
         if (jars.isEmpty()) {
             return classpath;
         }
-        String separator = System.getProperty("path.separator");
+        String separator = File.pathSeparator;
         StringBuilder sb = new StringBuilder();
         if (classpath != null && !classpath.isEmpty()) {
             sb.append(classpath);
