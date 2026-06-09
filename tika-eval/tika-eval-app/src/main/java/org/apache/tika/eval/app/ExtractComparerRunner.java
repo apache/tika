@@ -129,7 +129,11 @@ public class ExtractComparerRunner {
             if (commandLine.hasOption('r')) {
                 String reportsDir = commandLine.getOptionValue("rd", "reports");
                 LOG.info("Running Report...");
-                ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
+                if (dbPath.startsWith("jdbc:")) {
+                    ResultsReporter.main(new String[]{"-jdbc", dbPath, "-rd", reportsDir});
+                } else {
+                    ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
+                }
                 Path reportsDirPath = Paths.get(reportsDir);
                 if (Files.isDirectory(reportsDirPath)) {
                     Path tgzPath = reportsDirPath.resolveSibling(reportsDirPath.getFileName() + ".tgz");

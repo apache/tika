@@ -209,7 +209,7 @@ Options:
   default derived from `-d`).
 * `-z` / `--gzip` — gzip the H2 db file to `<db>.mv.db.gz` after Compare
   so it can be transferred.  Requires `-d` (no-op with a warning for a
-  temp db or a jdbc connection string).  Combine with `-r` to package
+  temp db or a non-file jdbc connection (e.g. `jdbc:h2:mem:`, tcp)).  Combine with `-r` to package
   both the reports and the db.
 * `-n` / `--numWorkers` — comparison worker count.
 * `-c` / `--config` — optional tika-eval JSON config.
