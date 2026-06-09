@@ -191,7 +191,8 @@ java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar \
 
 The `Compare` subcommand keyword is optional — the CLI infers it from
 the `-a` / `-b` flags.  The `-r` flag both runs the Report stage and
-zips the resulting reports directory for easy archiving.
+creates a `.tgz` archive of the resulting reports directory
+(`<reportsDir>.tgz`) for easy archiving.
 
 Options:
 
@@ -203,9 +204,13 @@ Options:
   tika-eval will create `\{label}.mv.db` and a `\{label}-reports/` dir
   alongside.  Persist the db if you want to re-run Report later.
 * `-r` / `--report` — automatically run the Report step after Compare,
-  and zip the reports directory.
+  and tgz the reports directory to `<reportsDir>.tgz`.
 * `-rd` / `--reportsDir` — explicit reports directory (overrides the
   default derived from `-d`).
+* `-z` / `--gzip` — gzip the H2 db file to `<db>.mv.db.gz` after Compare
+  so it can be transferred.  Requires `-d` (no-op with a warning for a
+  temp db or a non-file jdbc connection (e.g. `jdbc:h2:mem:`, tcp)).  Combine with `-r` to package
+  both the reports and the db.
 * `-n` / `--numWorkers` — comparison worker count.
 * `-c` / `--config` — optional tika-eval JSON config.
 
@@ -296,7 +301,7 @@ java -jar tika-eval-app-{tika-version}.jar \
     -b ~/data/extracts/cc-html-sample-B
 ----
 +
-Produces `cc-html-29k-A-vs-B-reports/` plus a `.tar.gz` of the same
+Produces `cc-html-29k-A-vs-B-reports/` plus a `.tgz` of the same
 alongside `cc-html-29k-A-vs-B.mv.db`.
 
 For a 29 K-file HTML sample on a typical workstation (8 forked workers,

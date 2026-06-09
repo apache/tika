@@ -88,8 +88,9 @@ java -jar <tika-eval>/tika-eval-app-*.jar Compare \
 | `-a` | Directory of "before" extracts (required) |
 | `-b` | Directory of "after" extracts (required) |
 | `-d` | H2 database path (temp file if omitted) |
-| `-r` | Auto-run Report + tar.gz after Compare |
+| `-r` | Auto-run Report + tgz the reports dir (`<reportsDir>.tgz`) after Compare |
 | `-rd` | Reports output directory (default: `reports`) |
+| `-z` | Gzip the H2 db (`<db>.mv.db.gz`) after Compare for transfer; requires `-d` (no-op + warning for a temp db). Combine with `-r` to package both. |
 | `-n` | Number of worker threads |
 
 ## Step 3 — Review Results

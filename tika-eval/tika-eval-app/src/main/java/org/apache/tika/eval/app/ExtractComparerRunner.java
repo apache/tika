@@ -92,6 +92,7 @@ public class ExtractComparerRunner {
                 .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
                 .addOption(Option.builder("r").longOpt("report").desc("automatically run Report and tgz after Compare").get())
                 .addOption(Option.builder("rd").longOpt("reportsDir").hasArg().desc("directory for reports (default: 'reports')").get())
+                .addOption(Option.builder("z").longOpt("gzip").desc("gzip the H2 db file (<db>.mv.db.gz) after Compare for transfer; requires -d").get())
                 ;
     }
 
@@ -128,14 +129,22 @@ public class ExtractComparerRunner {
             if (commandLine.hasOption('r')) {
                 String reportsDir = commandLine.getOptionValue("rd", "reports");
                 LOG.info("Running Report...");
-                ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
+                if (dbPath.startsWith("jdbc:")) {
+                    ResultsReporter.main(new String[]{"-jdbc", dbPath, "-rd", reportsDir});
+                } else {
+                    ResultsReporter.main(new String[]{"-d", dbPath, "-rd", reportsDir});
+                }
                 Path reportsDirPath = Paths.get(reportsDir);
                 if (Files.isDirectory(reportsDirPath)) {
-                    Path tgzPath = reportsDirPath.resolveSibling(reportsDir + ".tar.gz");
+                    Path tgzPath = reportsDirPath.resolveSibling(reportsDirPath.getFileName() + ".tgz");
                     LOG.info("Creating {}", tgzPath);
                     createTarGz(reportsDirPath, tgzPath);
                     LOG.info("Reports archived to {}", tgzPath);
                 }
+            }
+
+            if (commandLine.hasOption('z')) {
+                gzipDb(dbPath, usesTempDb);
             }
         } finally {
             if (usesTempDb && tempDbDir != null) {
@@ -260,6 +269,53 @@ public class ExtractComparerRunner {
                             LOG.warn("Failed to delete {}", p, e);
                         }
                     });
+        }
+    }
+
+    /**
+     * Gzip the H2 db file (&lt;dbPath&gt;.mv.db -&gt; &lt;dbPath&gt;.mv.db.gz) so it can be
+     * transferred. The db connection is already closed by {@link #execute} before
+     * this runs, so the file is unlocked. No-op (with a warning) when there is no
+     * on-disk file db to gzip: a temp db (no -d), or a non-file jdbc connection
+     * (e.g. mem/tcp). A {@code jdbc:h2:file:} URL is supported by extracting its
+     * file path.
+     */
+    private static void gzipDb(String dbPath, boolean usesTempDb) throws IOException {
+        if (usesTempDb) {
+            LOG.warn("-z (gzip) ignored: no -d db specified, so there is no db file to transfer");
+            return;
+        }
+        String filePath = dbPath;
+        if (dbPath.startsWith("jdbc:")) {
+            String prefix = "jdbc:h2:file:";
+            if (!dbPath.startsWith(prefix)) {
+                LOG.warn("-z (gzip) ignored: db is a non-file jdbc connection ({}), no local file to transfer",
+                        dbPath);
+                return;
+            }
+            // Strip the jdbc:h2:file: prefix and any ;OPTION=... suffix to get the file base path.
+            filePath = dbPath.substring(prefix.length());
+            int semi = filePath.indexOf(';');
+            if (semi >= 0) {
+                filePath = filePath.substring(0, semi);
+            }
+        }
+        Path dbFile = Paths.get(filePath + ".mv.db");
+        if (!Files.isRegularFile(dbFile)) {
+            LOG.warn("-z (gzip) ignored: expected db file {} not found", dbFile);
+            return;
+        }
+        Path gzPath = dbFile.resolveSibling(dbFile.getFileName() + ".gz");
+        LOG.info("Creating {}", gzPath);
+        gzipFile(dbFile, gzPath);
+        LOG.info("Db archived to {}", gzPath);
+    }
+
+    private static void gzipFile(Path source, Path output) throws IOException {
+        try (InputStream is = Files.newInputStream(source);
+             OutputStream fos = Files.newOutputStream(output);
+             GzipCompressorOutputStream gzo = new GzipCompressorOutputStream(fos)) {
+            is.transferTo(gzo);
         }
     }
 
