@@ -144,6 +144,13 @@ auto-registered detectors:
 }
 ----
 
+NOTE: Do not combine `default-encoding-detector` with other explicit detector
+entries in the same list.  When combined, the loader wraps everything in an
+outer composite that has no `MetaEncodingDetector` at its top level, so
+collect-all arbitration is silently lost and the explicit detectors are never
+reached.  Use an explicit chain (see below) when you need to configure
+individual detectors.
+
 === Specify the chain explicitly
 
 To replace the SPI-discovered chain with an explicit ordered list.  Include
@@ -169,16 +176,18 @@ blocks before the meta tag (TIKA-2485).  (`mojibuster-encoding-detector` reads a
 larger content probe, so in the default chain this limit matters mainly for very
 large preambles.)
 
+To configure `markLimit`, specify the full chain explicitly.  An explicit list
+that includes `junk-filter-encoding-detector` keeps collect-all arbitration; the
+configured `html-encoding-detector` participates as a base detector alongside
+Mojibuster, and the junk filter arbitrates as usual:
+
 [source,json]
 ----
 {
   "encoding-detectors": [
-    {
-      "default-encoding-detector": {
-        "exclude": ["html-encoding-detector"]
-      }
-    },
-    {"html-encoding-detector": {"markLimit": 131072}}
+    {"html-encoding-detector": {"markLimit": 131072}},
+    {"mojibuster-encoding-detector": {}},
+    {"junk-filter-encoding-detector": {}}
   ]
 }
 ----
