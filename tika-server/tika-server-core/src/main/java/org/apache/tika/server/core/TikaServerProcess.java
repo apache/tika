@@ -60,6 +60,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaExtras;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
@@ -120,6 +121,11 @@ public class TikaServerProcess {
     }
 
     public static void main(String[] args) throws Exception {
+        // Install any tika.extras.dir jars before loading components, so the
+        // server's in-process SPI discovery sees them too (forked PipesServer
+        // children get them via the classpath in PerClientServerManager /
+        // SharedServerManager writeArgFile).
+        TikaExtras.install();
         LOG.info("Starting {} server", Tika.getString());
         try {
             Options options = getOptions();

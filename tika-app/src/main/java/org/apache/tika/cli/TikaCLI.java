@@ -69,6 +69,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.Tika;
 import org.apache.tika.async.cli.TikaAsyncCLI;
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.TikaExtras;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.TikaLoader;
@@ -256,6 +257,7 @@ public class TikaCLI {
     }
 
     public static void main(String[] args) throws Exception {
+        TikaExtras.install();
         TikaCLI cli = new TikaCLI();
 
         if (cli.testForHelp(args)) {
