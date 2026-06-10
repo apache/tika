@@ -209,7 +209,10 @@ public class SharedServerChaosMonkeyTest {
                     observedOom.incrementAndGet();
                 } else if (result.status() == PipesResult.RESULT_STATUS.TIMEOUT) {
                     observedTimeout.incrementAndGet();
-                } else if (result.isProcessCrash()) {
+                } else {
+                    // Covers PROCESS_CRASH category (UNSPECIFIED_CRASH) as well as
+                    // FATAL (FAILED_TO_INITIALIZE) and INITIALIZATION_FAILURE statuses
+                    // that can occur under resource pressure when the server fails to start.
                     observedCrash.incrementAndGet();
                     // In shared mode, OK files may fail if server crashed during their processing
                     if (expectedType == FileType.OK) {
