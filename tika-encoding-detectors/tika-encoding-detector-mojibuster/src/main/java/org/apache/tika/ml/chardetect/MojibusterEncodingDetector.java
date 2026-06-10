@@ -355,13 +355,16 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
-        // Emit a structural UTF-8 candidate when the grammar is clean (LIKELY)
-        // OR essentially-UTF-8 (NOT_UTF8 with malformed bytes within tolerance —
-        // a few corrupt bytes in otherwise-valid UTF-8).  Both exclude legacy
-        // CJK, which produces many grammar errors (measured: 0/321K labeled CJK
-        // samples return LIKELY or fall within tolerance).  The type-priority
-        // sort in sortAndDedup then ranks this above NB's statistical pick.
-        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8 || utf8Tolerated) {
+        // Emit a structural UTF-8 candidate only when the grammar is definitively
+        // clean (LIKELY_UTF8).  When the probe is NOT_UTF8 but within the error
+        // tolerance (utf8Tolerated), NB's UTF-8 result is already kept as a
+        // STATISTICAL candidate (see NOT_UTF8 disqualifier above) — promoting it
+        // to STRUCTURAL here would cause the "return only top-1 STRUCTURAL" path
+        // to short-circuit JunkFilter, preventing it from comparing UTF-8 against
+        // windows-1252.  For short probes a single bad byte in otherwise-ASCII
+        // content is more likely a genuine Latin-1/windows-1252 byte than a
+        // corrupt UTF-8 sequence; JunkFilter has enough signal to arbitrate.
+        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8) {
             pool.add(new EncodingResult(
                     java.nio.charset.StandardCharsets.UTF_8,
                     UTF8_STRUCTURAL_CONF, "UTF-8",
