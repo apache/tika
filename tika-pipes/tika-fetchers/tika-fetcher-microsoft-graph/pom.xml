@@ -31,8 +31,8 @@
   <properties>
     <microsoft-graph.version>6.65.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.23.1</msal4j.version>
-    <microsoft-kiota.version>1.9.2</microsoft-kiota.version>
+    <msal4j.version>1.25.0</msal4j.version>
+    <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
