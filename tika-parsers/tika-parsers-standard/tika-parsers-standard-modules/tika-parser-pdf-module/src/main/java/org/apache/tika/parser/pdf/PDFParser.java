@@ -53,6 +53,7 @@ import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -398,8 +399,14 @@ public class PDFParser implements Parser, RenderingParser {
     }
 
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
+        List<PDSignatureField> signatureFields = pdfDocument.getSignatureFields();
+        if (!signatureFields.isEmpty()) {
+            metadata.set(PDF.HAS_SIGNATURE_FIELDS, true);
+        }
+
         boolean hasSignature = false;
-        for (PDSignature signature : pdfDocument.getSignatureDictionaries()) {
+        for (PDSignatureField sigField : signatureFields) {
+            PDSignature signature = sigField.getSignature();
             if (signature == null) {
                 continue;
             }
@@ -414,11 +421,10 @@ public class PDFParser implements Parser, RenderingParser {
             PDMetadataExtractor.addNotNull(signature.getLocation(), metadata, TikaCoreProperties.SIGNATURE_LOCATION);
             PDMetadataExtractor.addNotNull(signature.getReason(), metadata, TikaCoreProperties.SIGNATURE_REASON);
             hasSignature = true;
-
         }
 
         if (hasSignature) {
-            metadata.set(TikaCoreProperties.HAS_SIGNATURE, hasSignature);
+            metadata.set(TikaCoreProperties.HAS_SIGNATURE, true);
         }
     }
 

@@ -151,6 +151,13 @@ public interface PDF {
      */
     Property HAS_ACROFORM_FIELDS = Property.internalBoolean(PDF_PREFIX + "hasAcroFormFields");
 
+    /**
+     * Has > 0 AcroForm signature fields (/FT /Sig), regardless of whether a signature
+     * has been applied. Use {@link TikaCoreProperties#HAS_SIGNATURE} to check for
+     * an actual applied digital signature.
+     */
+    Property HAS_SIGNATURE_FIELDS = Property.internalBoolean(PDF_PREFIX + "hasSignatureFields");
+
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "hasMarkedContent");
 
     /**

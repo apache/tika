@@ -629,7 +629,17 @@ public class PDFParserTest extends TikaTest {
         assertEquals("true", m.get(PDF.HAS_XMP));
         assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
         assertEquals("false", m.get(PDF.HAS_XFA));
+        assertEquals("true", m.get(PDF.HAS_SIGNATURE_FIELDS));
+        assertNull(m.get(TikaCoreProperties.HAS_SIGNATURE));
         assertContains("<li>aTextField: TIKA-1226</li>", result.xml);
+    }
+
+    //TIKA-4756
+    @Test
+    public void testUnsignedSignatureField() throws Exception {
+        Metadata m = getXML("testPDF_unsigned_sig_field.pdf").metadata;
+        assertEquals("true", m.get(PDF.HAS_SIGNATURE_FIELDS));
+        assertNull(m.get(TikaCoreProperties.HAS_SIGNATURE));
     }
 
     @Test
