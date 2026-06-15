@@ -636,13 +636,6 @@
         <artifactId>error_prone_annotations</artifactId>
         <version>2.50.0</version>
       </dependency>
-      <!-- avoid dependency convergence error in Google Cloud Storage fetcher
-           starting with grpc 1.79.0 with google cloud 2.62.1 -->
-      <dependency>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>animal-sniffer-annotations</artifactId>
-        <version>1.27</version>
-      </dependency>
       <dependency>
         <groupId>com.googlecode.json-simple</groupId>
         <artifactId>json-simple</artifactId>
