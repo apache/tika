@@ -37,7 +37,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrQuery;
-import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.impl.HttpJettySolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
@@ -190,7 +190,7 @@ public abstract class TikaPipesSolrTestBase {
         }
         LOG.info("Created Solr collection '{}': {}", collection, createResult.getStdout().trim());
 
-        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
+        try (SolrClient solrClient = new HttpJettySolrClient.Builder(solrEndpoint).build()) {
 
             addBasicSchemaFields(solrEndpoint + "/" + collection);
             addSchemaFieldsForNestedDocs(solrEndpoint + "/" + collection);
@@ -262,7 +262,7 @@ public abstract class TikaPipesSolrTestBase {
 
         TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
-        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
+        try (SolrClient solrClient = new HttpJettySolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
                             new SolrQuery("mime_s:text/html*")).getResults()
@@ -296,7 +296,7 @@ public abstract class TikaPipesSolrTestBase {
 
         TikaCLI.main(new String[]{"-a", "-c", tikaConfigFile.toAbsolutePath().toString()});
 
-        try (SolrClient solrClient = new Http2SolrClient.Builder(solrEndpoint).build()) {
+        try (SolrClient solrClient = new HttpJettySolrClient.Builder(solrEndpoint).build()) {
             solrClient.commit(collection, true, true);
             assertEquals(numDocs, solrClient.query(collection,
                             new SolrQuery("mime_s:text/html*")).getResults()
