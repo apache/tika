@@ -443,9 +443,8 @@
          SolrJ 10 renames Http2SolrClient -> HttpJettySolrClient (in solr-solrj-jetty)
          and LBHttpSolrClient -> LBJettySolrClient; the solr-solrj-jetty artifact must
          be added alongside solr-solrj wherever those classes are used.
-         NOTE: LBJettySolrClient no longer accepts an external Apache HttpClient via
-         withHttpClient(); proxy/auth config via HttpClientFactory needs rework in a
-         follow-up. -->
+         NOTE: proxy and basic auth are wired via HttpJettySolrClient.Builder;
+         only basic auth is supported (non-basic schemes are rejected at startup). -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.8</spring.version>
     <sqlite.version>3.53.2.0</sqlite.version>

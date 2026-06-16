@@ -110,16 +110,7 @@ public class SolrEmitter extends AbstractEmitter {
         if (config.solrUrls() == null || config.solrUrls().isEmpty()) {
             // Use ZooKeeper-based CloudSolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
-                if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
-                    throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
-                            + httpClientFactory.getAuthScheme() + "'");
-                }
-                jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
-            }
-            if (!StringUtils.isBlank(config.proxyHost()) && config.proxyPort() != null && config.proxyPort() > 0) {
-                jettyClientBuilder.withProxyConfiguration(config.proxyHost(), config.proxyPort(), false, false);
-            }
+            applyAuthAndProxy(jettyClientBuilder, httpClientFactory, config.proxyHost(), config.proxyPort());
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
@@ -130,16 +121,7 @@ public class SolrEmitter extends AbstractEmitter {
         } else {
             // Use direct URL-based LBJettySolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
-                if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
-                    throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
-                            + httpClientFactory.getAuthScheme() + "'");
-                }
-                jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
-            }
-            if (!StringUtils.isBlank(config.proxyHost()) && config.proxyPort() != null && config.proxyPort() > 0) {
-                jettyClientBuilder.withProxyConfiguration(config.proxyHost(), config.proxyPort(), false, false);
-            }
+            applyAuthAndProxy(jettyClientBuilder, httpClientFactory, config.proxyHost(), config.proxyPort());
             jettyClientBuilder
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
                     .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
@@ -148,6 +130,20 @@ public class SolrEmitter extends AbstractEmitter {
                     .map(LBSolrClient.Endpoint::new)
                     .toArray(LBSolrClient.Endpoint[]::new);
             return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
+        }
+    }
+
+    private static void applyAuthAndProxy(HttpJettySolrClient.Builder builder, HttpClientFactory factory,
+                                          String proxyHost, Integer proxyPort) throws TikaConfigException {
+        if (!StringUtils.isBlank(factory.getUserName())) {
+            if (!"basic".equalsIgnoreCase(factory.getAuthScheme())) {
+                throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
+                        + factory.getAuthScheme() + "'");
+            }
+            builder.withBasicAuthCredentials(factory.getUserName(), factory.getPassword());
+        }
+        if (!StringUtils.isBlank(proxyHost) && proxyPort != null && proxyPort > 0) {
+            builder.withProxyConfiguration(proxyHost, proxyPort, false, false);
         }
     }
 
