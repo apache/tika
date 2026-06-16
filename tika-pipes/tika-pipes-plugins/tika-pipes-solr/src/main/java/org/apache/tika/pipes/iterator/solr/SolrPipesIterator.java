@@ -26,11 +26,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.solr.client.solrj.SolrClient;
-import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
-import org.apache.solr.client.solrj.impl.HttpJettySolrClient;
-import org.apache.solr.client.solrj.impl.LBJettySolrClient;
+import org.apache.solr.client.solrj.impl.LBSolrClient;
+import org.apache.solr.client.solrj.jetty.HttpJettySolrClient;
+import org.apache.solr.client.solrj.jetty.LBJettySolrClient;
+import org.apache.solr.client.solrj.request.SolrQuery;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.CursorMarkParams;
@@ -180,10 +181,13 @@ public class SolrPipesIterator extends PipesIteratorBase {
         List<String> solrZkHosts = config.getSolrZkHosts() != null ? config.getSolrZkHosts() : Collections.emptyList();
 
         if (solrUrls.isEmpty()) {
-            //TODO -- there's more that we need to pass through, including ssl etc.
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
                 jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+            }
+            if (!StringUtils.isBlank(httpClientFactory.getProxyHost())) {
+                jettyClientBuilder.withProxyConfiguration(httpClientFactory.getProxyHost(),
+                        httpClientFactory.getProxyPort(), false, false);
             }
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
@@ -192,14 +196,22 @@ public class SolrPipesIterator extends PipesIteratorBase {
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(config.getSolrZkChroot()))
                     .withInternalClientBuilder(jettyClientBuilder)
                     .build();
-
         }
-        // TODO: LBJettySolrClient no longer accepts Apache HttpClient; proxy/auth via
-        //  HttpClientFactory needs rework using Jetty's native HTTP client in a follow-up.
-        return new LBJettySolrClient.Builder()
-                .withConnectionTimeout(config.getConnectionTimeoutMillis())
-                .withSocketTimeout(config.getSocketTimeoutMillis())
-                .withBaseSolrUrls(solrUrls.toArray(new String[]{}))
-                .build();
+        HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
+        if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+            jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+        }
+        if (!StringUtils.isBlank(httpClientFactory.getProxyHost())) {
+            jettyClientBuilder.withProxyConfiguration(httpClientFactory.getProxyHost(),
+                    httpClientFactory.getProxyPort(), false, false);
+        }
+        jettyClientBuilder
+                .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS)
+                .withIdleTimeout(config.getSocketTimeoutMillis(), TimeUnit.MILLISECONDS);
+        HttpJettySolrClient jettyClient = jettyClientBuilder.build();
+        LBSolrClient.Endpoint[] endpoints = solrUrls.stream()
+                .map(LBSolrClient.Endpoint::new)
+                .toArray(LBSolrClient.Endpoint[]::new);
+        return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
     }
 }

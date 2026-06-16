@@ -25,8 +25,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
-import org.apache.solr.client.solrj.impl.HttpJettySolrClient;
-import org.apache.solr.client.solrj.impl.LBJettySolrClient;
+import org.apache.solr.client.solrj.impl.LBSolrClient;
+import org.apache.solr.client.solrj.jetty.HttpJettySolrClient;
+import org.apache.solr.client.solrj.jetty.LBJettySolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -112,6 +113,10 @@ public class SolrEmitter extends AbstractEmitter {
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
                 jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
             }
+            if (!StringUtils.isBlank(config.proxyHost())) {
+                jettyClientBuilder.withProxyConfiguration(config.proxyHost(),
+                        config.proxyPort() != null ? config.proxyPort() : 0, false, false);
+            }
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
@@ -120,14 +125,23 @@ public class SolrEmitter extends AbstractEmitter {
                     .withInternalClientBuilder(jettyClientBuilder)
                     .build();
         } else {
-            // TODO: LBJettySolrClient no longer accepts Apache HttpClient; proxy/auth via
-            //  HttpClientFactory (userName, password, proxyHost, proxyPort) needs rework
-            //  using Jetty's native HTTP client configuration in a follow-up.
-            return new LBJettySolrClient.Builder()
+            // Use direct URL-based LBJettySolrClient
+            HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
+            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
+            }
+            if (!StringUtils.isBlank(config.proxyHost())) {
+                jettyClientBuilder.withProxyConfiguration(config.proxyHost(),
+                        config.proxyPort() != null ? config.proxyPort() : 0, false, false);
+            }
+            jettyClientBuilder
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
-                    .withSocketTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
-                    .withBaseEndpoints(config.solrUrls().toArray(new String[]{}))
-                    .build();
+                    .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
+            HttpJettySolrClient jettyClient = jettyClientBuilder.build();
+            LBSolrClient.Endpoint[] endpoints = config.solrUrls().stream()
+                    .map(LBSolrClient.Endpoint::new)
+                    .toArray(LBSolrClient.Endpoint[]::new);
+            return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
         }
     }
 
