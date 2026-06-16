@@ -183,9 +183,13 @@ public class SolrPipesIterator extends PipesIteratorBase {
         if (solrUrls.isEmpty()) {
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
+                    throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
+                            + httpClientFactory.getAuthScheme() + "'");
+                }
                 jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
             }
-            if (!StringUtils.isBlank(httpClientFactory.getProxyHost())) {
+            if (!StringUtils.isBlank(httpClientFactory.getProxyHost()) && httpClientFactory.getProxyPort() > 0) {
                 jettyClientBuilder.withProxyConfiguration(httpClientFactory.getProxyHost(),
                         httpClientFactory.getProxyPort(), false, false);
             }
@@ -199,9 +203,13 @@ public class SolrPipesIterator extends PipesIteratorBase {
         }
         HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
         if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+            if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
+                throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
+                        + httpClientFactory.getAuthScheme() + "'");
+            }
             jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
         }
-        if (!StringUtils.isBlank(httpClientFactory.getProxyHost())) {
+        if (!StringUtils.isBlank(httpClientFactory.getProxyHost()) && httpClientFactory.getProxyPort() > 0) {
             jettyClientBuilder.withProxyConfiguration(httpClientFactory.getProxyHost(),
                     httpClientFactory.getProxyPort(), false, false);
         }

@@ -111,11 +111,14 @@ public class SolrEmitter extends AbstractEmitter {
             // Use ZooKeeper-based CloudSolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
+                    throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
+                            + httpClientFactory.getAuthScheme() + "'");
+                }
                 jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
             }
-            if (!StringUtils.isBlank(config.proxyHost())) {
-                jettyClientBuilder.withProxyConfiguration(config.proxyHost(),
-                        config.proxyPort() != null ? config.proxyPort() : 0, false, false);
+            if (!StringUtils.isBlank(config.proxyHost()) && config.proxyPort() != null && config.proxyPort() > 0) {
+                jettyClientBuilder.withProxyConfiguration(config.proxyHost(), config.proxyPort(), false, false);
             }
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
@@ -128,11 +131,14 @@ public class SolrEmitter extends AbstractEmitter {
             // Use direct URL-based LBJettySolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
             if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
+                if (!"basic".equalsIgnoreCase(httpClientFactory.getAuthScheme())) {
+                    throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
+                            + httpClientFactory.getAuthScheme() + "'");
+                }
                 jettyClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
             }
-            if (!StringUtils.isBlank(config.proxyHost())) {
-                jettyClientBuilder.withProxyConfiguration(config.proxyHost(),
-                        config.proxyPort() != null ? config.proxyPort() : 0, false, false);
+            if (!StringUtils.isBlank(config.proxyHost()) && config.proxyPort() != null && config.proxyPort() > 0) {
+                jettyClientBuilder.withProxyConfiguration(config.proxyHost(), config.proxyPort(), false, false);
             }
             jettyClientBuilder
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
