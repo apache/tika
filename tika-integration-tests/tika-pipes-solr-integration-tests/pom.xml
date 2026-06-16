@@ -76,6 +76,12 @@
       <version>${solrj.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.apache.solr</groupId>
+      <artifactId>solr-solrj-jetty</artifactId>
+      <version>${solrj.version}</version>
+      <scope>test</scope>
+    </dependency>
 
 
   </dependencies>

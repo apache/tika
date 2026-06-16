@@ -282,10 +282,10 @@
 
   <properties>
     <revision>4.0.0-SNAPSHOT</revision>
-    <javaVersion>21</javaVersion>
-    <maven.compiler.source>21</maven.compiler.source>
-    <maven.compiler.target>21</maven.compiler.target>
-    <maven.compiler.release>21</maven.compiler.release>
+    <javaVersion>17</javaVersion>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <project.build.outputTimestamp>2026-05-04T23:37:57Z</project.build.outputTimestamp>
@@ -342,9 +342,9 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.12.0</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <!-- can't use 4.1.0, fails in tika server core because it uses jetty 12, which we can't
-         use due to the problems explained there -->
-    <cxf.version>4.0.11</cxf.version>
+    <!-- Upgraded to 4.1.7 (from 4.0.11) as part of the Jetty 12 migration (CVE-2026-2332).
+         CXF 4.1.x ships cxf-rt-transports-http-jetty built against Jetty 12. -->
+    <cxf.version>4.1.7</cxf.version>
     <ddplist.version>1.29</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -382,17 +382,14 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <!-- Updated from 11.0.26 to 11.0.28 to address CVE-2026-2332 (HTTP request smuggling,
-         CVSS 9.1 Critical). Jetty 11.x is EOL; full migration to Jetty 12.x is tracked in
-         TIKA-4757 and requires resolving Http2SolrClient (solrj) compatibility with the
-         Jetty 12 API (org.eclipse.jetty.client.util.InputStreamResponseListener moved to
-         org.eclipse.jetty.client). See migration guide:
+    <!-- Upgraded from 11.0.26 to 12.0.35 to fix CVE-2026-2332 (HTTP/1.1 request smuggling,
+         CVSS 9.1 Critical). Jetty 11.x is EOL and 11.0.28 was never released; the fix
+         is only available in the Jetty 12 line (>=12.0.33). Jetty 12.0.x requires Java 17,
+         the same minimum as this project. Migration guide:
          https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html
-         When upgrading further, see TODO in PipesBiDirectionalStreamingIntegrationTest
-         and add jakarta.servlet jakarta.servlet-api 6.0.0 to tika-server-core.
     -->
-    <jetty.version>11.0.28</jetty.version>
-    <jetty.http2.version>11.0.28</jetty.http2.version>
+    <jetty.version>12.0.35</jetty.version>
+    <jetty.http2.version>12.0.35</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -440,13 +437,15 @@
     <slf4j.version>2.0.18</slf4j.version>
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
-    <!-- TODO (incomplete) if updating to solrj 10:
-     https://solr.apache.org/guide/solr/latest/upgrade-notes/major-changes-in-solr-10.html
-     add solr-solrj-jetty artifact, add log4j
-     Http2SolrClient -> HttpJettySolrClient
-     LBHttpSolrClient -> LBHttp2SolrClient -> LBJettySolrClient (doesn't work)
-     -->
-    <solrj.version>9.10.1</solrj.version>
+    <!-- Upgraded to 10.0.0 (from 9.10.1): SolrJ 9.x bundles Jetty 11 HTTP client APIs
+         internally (Http2SolrClient / solr-solrj-jetty), which conflict with Jetty 12.
+         SolrJ 10 renames Http2SolrClient -> HttpJettySolrClient (in solr-solrj-jetty)
+         and LBHttpSolrClient -> LBJettySolrClient; the solr-solrj-jetty artifact must
+         be added alongside solr-solrj wherever those classes are used.
+         NOTE: LBJettySolrClient no longer accepts an external Apache HttpClient via
+         withHttpClient(); proxy/auth config via HttpClientFactory needs rework in a
+         follow-up. -->
+    <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.8</spring.version>
     <sqlite.version>3.53.2.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
@@ -573,30 +572,30 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- avoid outdated http2 dependencies when using solr 8 -->
+      <!-- Jetty 12 renamed all http2 artifacts with a jetty- prefix -->
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>http2-http-client-transport</artifactId>
+        <artifactId>jetty-http2-client-transport</artifactId>
         <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>http2-hpack</artifactId>
+        <artifactId>jetty-http2-hpack</artifactId>
         <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>http2-client</artifactId>
+        <artifactId>jetty-http2-client</artifactId>
         <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>http2-common</artifactId>
+        <artifactId>jetty-http2-common</artifactId>
         <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
-        <artifactId>http2-server</artifactId>
+        <artifactId>jetty-http2-server</artifactId>
         <version>${jetty.http2.version}</version>
       </dependency>
       <dependency>
@@ -1334,7 +1333,7 @@
         <configuration>
           <showDeprecation>true</showDeprecation>
           <compilerArgument>-Xlint:deprecation</compilerArgument>
-          <release>21</release>
+          <release>17</release>
         </configuration>
       </plugin>
       <!--
@@ -1360,11 +1359,11 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
-            <!-- [CVE-2025-1948], used in the Solr emitter. CVE-2026-2332 is fixed in 11.0.28. -->
+            <!-- [CVE-2025-1948] check if still present in 12.0.35; CVE-2026-2332 is fixed. -->
             <coordinate>
               <groupId>org.eclipse.jetty.http2</groupId>
-              <artifactId>http2-common</artifactId>
-              <version>11.0.28</version>
+              <artifactId>jetty-http2-common</artifactId>
+              <version>12.0.35</version>
             </coordinate>
             <!-- used only in tests and in tika-eval, and this problem requires the use of the console.
                  https://github.com/h2database/h2database/issues/1294 -->
