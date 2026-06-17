@@ -46,6 +46,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorBase;
+import org.apache.tika.pipes.plugin.solr.SolrClientHelper;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -182,17 +183,18 @@ public class SolrPipesIterator extends PipesIteratorBase {
 
         if (solrUrls.isEmpty()) {
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
+            SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+                    .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS)
+                    .withIdleTimeout(config.getSocketTimeoutMillis(), TimeUnit.MILLISECONDS);
 
             return new CloudSolrClient.Builder(solrZkHosts, Optional.ofNullable(config.getSolrZkChroot()))
                     .withInternalClientBuilder(jettyClientBuilder)
                     .build();
         }
         HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-        applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
+        SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
         jettyClientBuilder
                 .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS)
@@ -204,17 +206,4 @@ public class SolrPipesIterator extends PipesIteratorBase {
         return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
     }
 
-    private static void applyAuthAndProxy(HttpJettySolrClient.Builder builder,
-                                          HttpClientFactory factory) throws TikaConfigException {
-        if (!StringUtils.isBlank(factory.getUserName())) {
-            if (!"basic".equalsIgnoreCase(factory.getAuthScheme())) {
-                throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
-                        + factory.getAuthScheme() + "'");
-            }
-            builder.withBasicAuthCredentials(factory.getUserName(), factory.getPassword());
-        }
-        if (!StringUtils.isBlank(factory.getProxyHost()) && factory.getProxyPort() > 0) {
-            builder.withProxyConfiguration(factory.getProxyHost(), factory.getProxyPort(), false, false);
-        }
-    }
 }

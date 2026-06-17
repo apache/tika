@@ -40,6 +40,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.pipes.plugin.solr.SolrClientHelper;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -110,10 +111,11 @@ public class SolrEmitter extends AbstractEmitter {
         if (config.solrUrls() == null || config.solrUrls().isEmpty()) {
             // Use ZooKeeper-based CloudSolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            applyAuthAndProxy(jettyClientBuilder, httpClientFactory, config.proxyHost(), config.proxyPort());
+            SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
+                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
+                    .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
 
             return new CloudSolrClient.Builder(config.solrZkHosts(), Optional.ofNullable(config.solrZkChroot()))
                     .withInternalClientBuilder(jettyClientBuilder)
@@ -121,7 +123,7 @@ public class SolrEmitter extends AbstractEmitter {
         } else {
             // Use direct URL-based LBJettySolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            applyAuthAndProxy(jettyClientBuilder, httpClientFactory, config.proxyHost(), config.proxyPort());
+            SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
@@ -131,20 +133,6 @@ public class SolrEmitter extends AbstractEmitter {
                     .map(LBSolrClient.Endpoint::new)
                     .toArray(LBSolrClient.Endpoint[]::new);
             return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
-        }
-    }
-
-    private static void applyAuthAndProxy(HttpJettySolrClient.Builder builder, HttpClientFactory factory,
-                                          String proxyHost, Integer proxyPort) throws TikaConfigException {
-        if (!StringUtils.isBlank(factory.getUserName())) {
-            if (!"basic".equalsIgnoreCase(factory.getAuthScheme())) {
-                throw new TikaConfigException("Only 'basic' auth scheme is supported by HttpJettySolrClient; got: '"
-                        + factory.getAuthScheme() + "'");
-            }
-            builder.withBasicAuthCredentials(factory.getUserName(), factory.getPassword());
-        }
-        if (!StringUtils.isBlank(proxyHost) && proxyPort != null && proxyPort > 0) {
-            builder.withProxyConfiguration(proxyHost, proxyPort, false, false);
         }
     }
 
