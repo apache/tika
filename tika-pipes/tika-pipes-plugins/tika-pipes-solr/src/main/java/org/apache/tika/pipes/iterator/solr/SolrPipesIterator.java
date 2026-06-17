@@ -194,6 +194,7 @@ public class SolrPipesIterator extends PipesIteratorBase {
         HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
         applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
         jettyClientBuilder
+                .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .withConnectionTimeout(config.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS)
                 .withIdleTimeout(config.getSocketTimeoutMillis(), TimeUnit.MILLISECONDS);
         HttpJettySolrClient jettyClient = jettyClientBuilder.build();

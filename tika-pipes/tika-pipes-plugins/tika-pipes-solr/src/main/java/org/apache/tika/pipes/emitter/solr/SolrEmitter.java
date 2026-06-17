@@ -123,6 +123,7 @@ public class SolrEmitter extends AbstractEmitter {
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
             applyAuthAndProxy(jettyClientBuilder, httpClientFactory, config.proxyHost(), config.proxyPort());
             jettyClientBuilder
+                    .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
                     .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
             HttpJettySolrClient jettyClient = jettyClientBuilder.build();
