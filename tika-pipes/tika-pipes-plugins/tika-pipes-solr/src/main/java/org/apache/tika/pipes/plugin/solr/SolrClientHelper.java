@@ -28,8 +28,10 @@ public final class SolrClientHelper {
 
     /**
      * Applies authentication and proxy settings to a {@link HttpJettySolrClient.Builder}.
-     * Only basic auth is supported; a non-basic auth scheme will throw {@link TikaConfigException}.
-     * Proxy is only configured when both host and a positive port are present on the factory.
+     * When a username is configured, only the basic auth scheme is supported; any other scheme
+     * throws {@link TikaConfigException}. When no username is set, auth is skipped regardless
+     * of the configured scheme (matching the behaviour of the original Http2SolrClient code).
+     * Proxy is only configured when both a non-blank host and a positive port are present.
      */
     public static void applyAuthAndProxy(HttpJettySolrClient.Builder builder,
                                          HttpClientFactory factory) throws TikaConfigException {
