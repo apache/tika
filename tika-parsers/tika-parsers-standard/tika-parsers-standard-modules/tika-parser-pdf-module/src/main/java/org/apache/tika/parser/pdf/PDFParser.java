@@ -55,6 +55,7 @@ import org.apache.pdfbox.pdmodel.fixup.PDDocumentFixup;
 import org.apache.pdfbox.pdmodel.fixup.processor.AcroFormDefaultsProcessor;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -363,13 +364,19 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
     }
 
     private void extractSignatures(PDDocument pdfDocument, Metadata metadata) {
+        List<PDSignatureField> sigFields = pdfDocument.getSignatureFields();
+        if (sigFields.isEmpty()) {
+            return;
+        }
+        metadata.set(PDF.HAS_SIGNATURE_FIELDS, true);
+
         boolean hasSignature = false;
-        for (PDSignature signature : pdfDocument.getSignatureDictionaries()) {
+        for (PDSignatureField sigField : sigFields) {
+            PDSignature signature = sigField.getSignature();
             if (signature == null) {
                 continue;
             }
             PDMetadataExtractor.addNotNull(signature.getName(), metadata, TikaCoreProperties.SIGNATURE_NAME);
-
             Calendar date = signature.getSignDate();
             if (date != null) {
                 metadata.add(TikaCoreProperties.SIGNATURE_DATE, date);
@@ -379,11 +386,10 @@ public class PDFParser implements Parser, RenderingParser, Initializable {
             PDMetadataExtractor.addNotNull(signature.getLocation(), metadata, TikaCoreProperties.SIGNATURE_LOCATION);
             PDMetadataExtractor.addNotNull(signature.getReason(), metadata, TikaCoreProperties.SIGNATURE_REASON);
             hasSignature = true;
-
         }
 
         if (hasSignature) {
-            metadata.set(TikaCoreProperties.HAS_SIGNATURE, hasSignature);
+            metadata.set(TikaCoreProperties.HAS_SIGNATURE, true);
         }
     }
 

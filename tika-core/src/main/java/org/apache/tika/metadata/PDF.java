@@ -151,6 +151,12 @@ public interface PDF {
      */
     Property HAS_ACROFORM_FIELDS = Property.internalBoolean(PDF_PREFIX + "hasAcroFormFields");
 
+    /**
+     * Has at least one AcroForm signature field (/FT /Sig), whether or not it has been signed.
+     * For documents that have been actually signed, see {@link TikaCoreProperties#HAS_SIGNATURE}.
+     */
+    Property HAS_SIGNATURE_FIELDS = Property.internalBoolean(PDF_PREFIX + "hasSignatureFields");
+
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "hasMarkedContent");
 
     /**

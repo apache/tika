@@ -623,15 +623,25 @@ public class PDFParserTest extends TikaTest {
     //TIKA-1226
     @Test
     public void testSignatureInAcroForm() throws Exception {
-        //The current test doc does not contain any content in the signature area.
-        //This just tests that a RuntimeException is not thrown.
-        //TODO: find a better test file for this issue.
         XMLResult result = getXML("testPDF_acroform3.pdf");
         Metadata m = result.metadata;
         assertEquals("true", m.get(PDF.HAS_XMP));
         assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
         assertEquals("false", m.get(PDF.HAS_XFA));
+        assertEquals("true", m.get(PDF.HAS_SIGNATURE_FIELDS));
+        assertNull(m.get(TikaCoreProperties.HAS_SIGNATURE));
         assertContains("<li>aTextField: TIKA-1226</li>", result.xml);
+    }
+
+    //TIKA-4756
+    @Test
+    public void testUnsignedSignatureField() throws Exception {
+        // PDF has an AcroForm with /SigFlags 1 and a /Sig type field, but no actual signature value.
+        // Should detect the signature field but not report hasSignature.
+        Metadata m = getXML("testPDF_sigflags.pdf").metadata;
+        assertEquals("true", m.get(PDF.HAS_ACROFORM_FIELDS));
+        assertEquals("true", m.get(PDF.HAS_SIGNATURE_FIELDS));
+        assertNull(m.get(TikaCoreProperties.HAS_SIGNATURE));
     }
 
     @Test
