@@ -150,7 +150,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "img":
                 String alt = atts.getValue("alt");
                 String src = atts.getValue("src");
-                write("![" + (alt != null ? alt : "") + "](" + (src != null ? src : "") + ")");
+                write("![" + escapeMarkdown(alt != null ? alt : "") + "](" +
+                        formatLinkDestination(src) + ")");
                 break;
             case "ul":
             case "ol":
@@ -282,9 +283,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
                 break;
             case "a":
                 if (linkText != null) {
-                    String text = linkText.toString();
-                    String href = linkHref != null ? linkHref : "";
-                    write("[" + text + "](" + href + ")");
+                    write("[" + escapeMarkdown(linkText.toString()) + "](" +
+                            formatLinkDestination(linkHref) + ")");
                     linkText = null;
                     linkHref = null;
                 }
@@ -343,7 +343,7 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "th":
             case "td":
                 if (tableDepth == 1 && currentRow != null && currentCell != null) {
-                    currentRow.add(currentCell.toString().trim());
+                    currentRow.add(escapeTableCell(currentCell.toString()));
                     currentCell = null;
                 }
                 break;
@@ -523,6 +523,28 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             }
         }
         return sb.toString();
+    }
+
+    private static String escapeTableCell(String text) {
+        // a newline ends a GFM table row and a pipe ends a cell; fold the former and
+        // escape the latter (with the other markers) so cell content can't break out
+        // of its column or row.
+        return escapeMarkdown(text.replaceAll("[\\r\\n]+", " ").trim());
+    }
+
+    private static String formatLinkDestination(String url) {
+        if (url == null || url.isEmpty()) {
+            return "";
+        }
+        // angle brackets and line breaks can't appear in any markdown destination
+        String cleaned = url.replaceAll("[\\u0000-\\u001f<>]", "");
+        // a space or paren would otherwise close the bare (url) form early, so wrap
+        // those in <>, where spaces and parens are allowed
+        if (cleaned.indexOf(' ') >= 0 || cleaned.indexOf('(') >= 0
+                || cleaned.indexOf(')') >= 0) {
+            return "<" + cleaned + ">";
+        }
+        return cleaned;
     }
 
     private static String repeatChar(char c, int count) {
