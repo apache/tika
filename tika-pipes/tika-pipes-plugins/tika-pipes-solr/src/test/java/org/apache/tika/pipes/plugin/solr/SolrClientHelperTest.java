@@ -25,6 +25,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
+
+import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.jetty.HttpJettySolrClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +54,7 @@ class SolrClientHelperTest {
         factory.setUserName("alice");
         factory.setPassword("secret");
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder).withBasicAuthCredentials("alice", "secret");
     }
@@ -62,7 +65,7 @@ class SolrClientHelperTest {
         factory.setPassword("secret");
         factory.setAuthScheme("basic");
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder).withBasicAuthCredentials("alice", "secret");
     }
@@ -73,7 +76,7 @@ class SolrClientHelperTest {
         factory.setPassword("secret");
         factory.setAuthScheme("BASIC");
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder).withBasicAuthCredentials("alice", "secret");
     }
@@ -87,7 +90,7 @@ class SolrClientHelperTest {
         factory.setAuthScheme("ntlm");
 
         assertThrows(TikaConfigException.class,
-                () -> SolrClientHelper.applyAuthAndProxy(builder, factory));
+                () -> SolrClientHelper.applyClientSettings(builder, factory));
     }
 
     @Test
@@ -97,14 +100,14 @@ class SolrClientHelperTest {
         factory.setAuthScheme("digest");
 
         assertThrows(TikaConfigException.class,
-                () -> SolrClientHelper.applyAuthAndProxy(builder, factory));
+                () -> SolrClientHelper.applyClientSettings(builder, factory));
     }
 
     // ── auth: no credentials when username is blank ──────────────────────────
 
     @Test
     void noAuthApplied_whenUsernameBlank() throws TikaConfigException {
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder, never()).withBasicAuthCredentials(any(), any());
     }
@@ -116,7 +119,7 @@ class SolrClientHelperTest {
         // behaviour of the original Http2SolrClient code on main.
         factory.setAuthScheme("ntlm");
 
-        assertDoesNotThrow(() -> SolrClientHelper.applyAuthAndProxy(builder, factory));
+        assertDoesNotThrow(() -> SolrClientHelper.applyClientSettings(builder, factory));
     }
 
     // ── proxy: applied when host and positive port are set ──────────────────
@@ -126,7 +129,7 @@ class SolrClientHelperTest {
         factory.setProxyHost("proxy.example.com");
         factory.setProxyPort(8080);
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder).withProxyConfiguration("proxy.example.com", 8080, false, false);
     }
@@ -135,7 +138,7 @@ class SolrClientHelperTest {
     void proxyNotApplied_whenHostBlank() throws TikaConfigException {
         factory.setProxyPort(8080);
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder, never()).withProxyConfiguration(any(), anyInt(), anyBoolean(), anyBoolean());
     }
@@ -145,7 +148,7 @@ class SolrClientHelperTest {
         factory.setProxyHost("proxy.example.com");
         // proxyPort defaults to 0 — do not set it
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder, never()).withProxyConfiguration(any(), anyInt(), anyBoolean(), anyBoolean());
     }
@@ -155,7 +158,7 @@ class SolrClientHelperTest {
         factory.setProxyHost("proxy.example.com");
         factory.setProxyPort(-1);
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder, never()).withProxyConfiguration(any(), anyInt(), anyBoolean(), anyBoolean());
     }
@@ -169,9 +172,42 @@ class SolrClientHelperTest {
         factory.setProxyHost("proxy.example.com");
         factory.setProxyPort(3128);
 
-        SolrClientHelper.applyAuthAndProxy(builder, factory);
+        SolrClientHelper.applyClientSettings(builder, factory);
 
         verify(builder).withBasicAuthCredentials("alice", "secret");
         verify(builder).withProxyConfiguration("proxy.example.com", 3128, false, false);
+    }
+
+    // ── ssl: trust-all is opt-in (off by default, on when verifySsl=false) ───
+
+    @Test
+    void sslConfigApplied_whenVerifySslFalse() throws TikaConfigException {
+        factory.setVerifySsl(false);
+
+        SolrClientHelper.applyClientSettings(builder, factory);
+
+        verify(builder).withSSLConfig(any());
+    }
+
+    @Test
+    void noSslConfig_whenVerifySslTrue() throws TikaConfigException {
+        factory.setVerifySsl(true);
+
+        SolrClientHelper.applyClientSettings(builder, factory);
+
+        verify(builder, never()).withSSLConfig(any());
+    }
+
+    // ── direct-URL client owns and closes its delegate http client (leak fix) ─
+
+    @Test
+    void lbClientClosesUnderlyingHttpClient() throws Exception {
+        HttpJettySolrClient httpClient = mock(HttpJettySolrClient.class);
+
+        SolrClient lbClient =
+                SolrClientHelper.buildLbClient(httpClient, List.of("http://localhost:8983/solr"));
+        lbClient.close();
+
+        verify(httpClient).close();
     }
 }

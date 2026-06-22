@@ -25,9 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
-import org.apache.solr.client.solrj.impl.LBSolrClient;
 import org.apache.solr.client.solrj.jetty.HttpJettySolrClient;
-import org.apache.solr.client.solrj.jetty.LBJettySolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -107,32 +105,29 @@ public class SolrEmitter extends AbstractEmitter {
         if (config.proxyPort() != null && config.proxyPort() > 0) {
             httpClientFactory.setProxyPort(config.proxyPort());
         }
+        httpClientFactory.setVerifySsl(config.verifySslOrDefault());
 
         if (config.solrUrls() == null || config.solrUrls().isEmpty()) {
             // Use ZooKeeper-based CloudSolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
+            SolrClientHelper.applyClientSettings(jettyClientBuilder, httpClientFactory);
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
                     .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
 
             return new CloudSolrClient.Builder(config.solrZkHosts(), Optional.ofNullable(config.solrZkChroot()))
-                    .withInternalClientBuilder(jettyClientBuilder)
+                    .withHttpClientBuilder(jettyClientBuilder)
                     .build();
         } else {
             // Use direct URL-based LBJettySolrClient
             HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
-            SolrClientHelper.applyAuthAndProxy(jettyClientBuilder, httpClientFactory);
+            SolrClientHelper.applyClientSettings(jettyClientBuilder, httpClientFactory);
             jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
                     .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
-            HttpJettySolrClient jettyClient = jettyClientBuilder.build();
-            LBSolrClient.Endpoint[] endpoints = config.solrUrls().stream()
-                    .map(LBSolrClient.Endpoint::new)
-                    .toArray(LBSolrClient.Endpoint[]::new);
-            return new LBJettySolrClient.Builder(jettyClient, endpoints).build();
+            return SolrClientHelper.buildLbClient(jettyClientBuilder, config.solrUrls());
         }
     }
 
