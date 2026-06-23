@@ -59,6 +59,7 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
     private String authScheme;
     private String proxyHost;
     private int proxyPort = 0;
+    private boolean verifySsl = true;
 
     public String getSolrCollection() {
         return solrCollection;
@@ -132,6 +133,10 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
         return proxyPort;
     }
 
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof SolrPipesIteratorConfig that)) {
@@ -144,6 +149,7 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
                 connectionTimeoutMillis == that.connectionTimeoutMillis &&
                 socketTimeoutMillis == that.socketTimeoutMillis &&
                 proxyPort == that.proxyPort &&
+                verifySsl == that.verifySsl &&
                 Objects.equals(solrCollection, that.solrCollection) &&
                 Objects.equals(solrUrls, that.solrUrls) &&
                 Objects.equals(solrZkHosts, that.solrZkHosts) &&
@@ -181,6 +187,7 @@ public class SolrPipesIteratorConfig extends PipesIteratorConfig {
         result = 31 * result + Objects.hashCode(authScheme);
         result = 31 * result + Objects.hashCode(proxyHost);
         result = 31 * result + proxyPort;
+        result = 31 * result + Boolean.hashCode(verifySsl);
         return result;
     }
 }

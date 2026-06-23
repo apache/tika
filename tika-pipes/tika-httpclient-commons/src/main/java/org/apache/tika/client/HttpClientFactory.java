@@ -238,6 +238,10 @@ public class HttpClientFactory {
         this.disableContentCompression = disableContentCompression;
     }
 
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
     public void setVerifySsl(boolean verifySsl) {
         this.verifySsl = verifySsl;
     }
