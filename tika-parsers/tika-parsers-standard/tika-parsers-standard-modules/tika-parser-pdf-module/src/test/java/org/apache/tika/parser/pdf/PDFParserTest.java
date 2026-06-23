@@ -141,8 +141,14 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testGarbageBeforeHeader() throws Exception {
+        Metadata metadata = getXML("testPDF_garbageBeforeHeader.pdf").metadata;
+        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+    }
+    
+    @Test
     public void testPdfParsingMetadataOnly() throws Exception {
-
+    
         Metadata metadata = getXML("testPDF.pdf").metadata;
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
