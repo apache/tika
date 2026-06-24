@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.69.0</google.cloud.version>
-    <aws2.version>2.46.15</aws2.version>
+    <aws2.version>2.46.17</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -351,7 +351,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
-    <grpc.version>1.82.0</grpc.version>
+    <grpc.version>1.82.1</grpc.version>
     <guava.version>33.6.0-jre</guava.version>
     <h2.version>2.4.240</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -370,7 +370,7 @@
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
-    <jakarta.servlet.version>6.0.0</jakarta.servlet.version>
+    <jakarta.servlet.version>6.1.0</jakarta.servlet.version>
     <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
     <jakarta.xml.bind.version>4.0.5</jakarta.xml.bind.version>
     <jakarta.xml.soap.version>3.0.2</jakarta.xml.soap.version>
