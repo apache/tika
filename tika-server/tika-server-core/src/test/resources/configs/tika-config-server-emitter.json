@@ -8,7 +8,7 @@
   },
   "server": {
     "port": 9999,
-    "enableUnsecure": true,
+    "enableUnsecureFeatures": true,
     "endpoints": [
       "emit",
       "async",

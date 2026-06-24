@@ -8,6 +8,7 @@
   },
   "server": {
     "port": 9999,
+    "enableUnsecureFeatures": true,
     "endpoints": [
       "rmeta",
       "status",

@@ -156,6 +156,11 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 * `/translate/all/\{translator}/\{src}/\{dest}` — translation
 * `/pipes`, `/async` — Pipes-based bulk processing
 
+NOTE: `/pipes`, `/async`, and `/status` expose unsecure features and are only available
+when `enableUnsecureFeatures` is `true` (see <<_security_configuration,Security
+Configuration>>). Selecting any of them without that flag causes the server to refuse
+to start.
+
 == Error Responses
 
 When parsing fails due to a process-level problem — the forked child process timed out,
@@ -207,7 +212,7 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 
 |`enableUnsecureFeatures`
 |`false`
-|Enable the `/config` family of endpoints (see <<_security_configuration,Security Configuration>>).
+|Required opt-in for unsecure features: the `/config` family of endpoints and the `/pipes`, `/async`, and `/status` endpoints. The server refuses to start if any of those endpoints are selected without this flag (see <<_security_configuration,Security Configuration>>).
 
 |`cors`
 |`""` (off)
@@ -278,6 +283,20 @@ Server through network controls (firewalls, private subnets), a reverse proxy
 xref:using-tika/server/tls.adoc[2-way TLS authentication]. Exposing config endpoints
 to untrusted networks can help attackers identify vulnerabilities and craft
 targeted attacks.
+
+=== Pipes, Async, and Status Endpoints
+
+The `/pipes`, `/async`, and `/status` endpoints also require `enableUnsecureFeatures`.
+`/pipes` and `/async` drive process-isolated batch parsing through your configured
+fetchers and emitters — whoever can reach them gains the read access of your fetchers
+and the write access of your emitters (see
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]); `/status`
+exposes server information.
+
+In earlier releases these endpoints were enabled simply by listing them under
+`server.endpoints`. You must now *also* set `enableUnsecureFeatures` to `true`;
+selecting any of them without it causes the server to refuse to start. This is
+deliberate — it makes enabling these powerful endpoints an explicit, considered choice.
 
 === Security Best Practices
 

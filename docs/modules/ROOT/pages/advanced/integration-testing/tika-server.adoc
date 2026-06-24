@@ -214,6 +214,23 @@ curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http:/
 
 *Expected:* All return HTTP 403 with message: "Config endpoints are disabled. Set enableUnsecureFeatures=true in server config."
 
+=== Test 18b: `/pipes`, `/async`, `/status` Require enableUnsecureFeatures
+
+[source,bash]
+----
+cat > tika-config-pipes-no-unsecure.json << 'EOF'
+{
+  "server": {"port": 9998, "endpoints": ["tika", "pipes"]},
+  "pipes": {"numClients": 2},
+  "plugin-roots": "/tmp/tika-server-test/plugins"
+}
+EOF
+
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-pipes-no-unsecure.json
+----
+
+*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `enableUnsecureFeatures` to be `true`. The same applies to `async` and `status`.
+
 == Part 2: Tests with enableUnsecureFeatures
 
 Stop the default server and create a config file:
