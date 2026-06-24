@@ -41,7 +41,8 @@ public record SolrEmitterConfig(
         String password,
         String authScheme,
         String proxyHost,
-        Integer proxyPort
+        Integer proxyPort,
+        @JsonProperty(defaultValue = "true") Boolean verifySsl
 ) {
 
     public enum AttachmentStrategy {
@@ -108,5 +109,10 @@ public record SolrEmitterConfig(
 
     public String getEmbeddedFileFieldNameOrDefault() {
         return embeddedFileFieldName != null ? embeddedFileFieldName : "embedded";
+    }
+
+    /** SSL verification is on unless explicitly disabled (unset == secure). */
+    public boolean verifySslOrDefault() {
+        return verifySsl == null || verifySsl;
     }
 }

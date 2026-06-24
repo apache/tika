@@ -701,6 +701,108 @@ public class ToMarkdownContentHandlerTest {
     }
 
     @Test
+    public void testLinkTextEscaped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://good.example");
+        chars(handler, "x](https://evil.example)");
+        endElement(handler, "a");
+        endElement(handler, "p");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // the ] in the link text must be escaped so it cannot close the link early
+        assertTrue(result.contains("x\\]"), result);
+        assertFalse(result.contains("[x](https://evil.example)"), result);
+    }
+
+    @Test
+    public void testLinkHrefNoBreakout() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://evil.example) text");
+        chars(handler, "click");
+        endElement(handler, "a");
+        endElement(handler, "p");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // a destination with spaces/parens must be wrapped so it cannot terminate (..) early
+        assertTrue(result.contains("](<https://evil.example"), result);
+        assertFalse(result.contains("](https://evil.example)"), result);
+    }
+
+    @Test
+    public void testImageAltAndSrcEscaped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "p");
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "alt", "alt", "CDATA", "a]b");
+        atts.addAttribute("", "src", "src", "CDATA", "https://evil.example) x");
+        startElement(handler, "img", atts);
+        endElement(handler, "img");
+        endElement(handler, "p");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        assertTrue(result.contains("a\\]b"), result);
+        assertTrue(result.contains("](<https://evil.example"), result);
+        assertFalse(result.contains("](https://evil.example)"), result);
+    }
+
+    @Test
+    public void testTableCellPipeEscaped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "table");
+        startElement(handler, "tr");
+        startElement(handler, "td");
+        chars(handler, "a|b");
+        endElement(handler, "td");
+        startElement(handler, "td");
+        chars(handler, "c");
+        endElement(handler, "td");
+        endElement(handler, "tr");
+        endElement(handler, "table");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // a pipe inside a cell must be escaped so it does not inject an extra column
+        assertTrue(result.contains("| a\\|b | c |"), result);
+    }
+
+    @Test
+    public void testTableCellNewlineFolded() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+
+        startElement(handler, "table");
+        startElement(handler, "tr");
+        startElement(handler, "td");
+        chars(handler, "a\nb");
+        endElement(handler, "td");
+        endElement(handler, "tr");
+        endElement(handler, "table");
+
+        handler.endDocument();
+
+        String result = handler.toString();
+        // a newline inside a cell must not terminate the table row
+        assertTrue(result.contains("| a b |"), result);
+    }
+
+    @Test
     public void testHandlerTypeParsingMarkdown() {
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN,
                 BasicContentHandlerFactory.parseHandlerType("markdown",

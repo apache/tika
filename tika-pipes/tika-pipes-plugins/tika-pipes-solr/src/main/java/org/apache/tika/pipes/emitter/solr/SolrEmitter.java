@@ -25,8 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
-import org.apache.solr.client.solrj.impl.Http2SolrClient;
-import org.apache.solr.client.solrj.impl.LBHttpSolrClient;
+import org.apache.solr.client.solrj.jetty.HttpJettySolrClient;
 import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.apache.solr.common.SolrInputDocument;
@@ -39,6 +38,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractEmitter;
 import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.pipes.plugin.solr.SolrClientHelper;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
@@ -105,29 +105,29 @@ public class SolrEmitter extends AbstractEmitter {
         if (config.proxyPort() != null && config.proxyPort() > 0) {
             httpClientFactory.setProxyPort(config.proxyPort());
         }
+        httpClientFactory.setVerifySsl(config.verifySslOrDefault());
 
         if (config.solrUrls() == null || config.solrUrls().isEmpty()) {
             // Use ZooKeeper-based CloudSolrClient
-            Http2SolrClient.Builder http2SolrClientBuilder = new Http2SolrClient.Builder();
-            if (!StringUtils.isBlank(httpClientFactory.getUserName())) {
-                http2SolrClientBuilder.withBasicAuthCredentials(httpClientFactory.getUserName(), httpClientFactory.getPassword());
-            }
-            http2SolrClientBuilder
+            HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
+            SolrClientHelper.applyClientSettings(jettyClientBuilder, httpClientFactory);
+            jettyClientBuilder
                     .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
-                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
+                    .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
+                    .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
 
-            Http2SolrClient http2SolrClient = http2SolrClientBuilder.build();
             return new CloudSolrClient.Builder(config.solrZkHosts(), Optional.ofNullable(config.solrZkChroot()))
-                    .withHttpClient(http2SolrClient)
+                    .withHttpClientBuilder(jettyClientBuilder)
                     .build();
         } else {
-            // Use direct URL-based LBHttpSolrClient
-            return new LBHttpSolrClient.Builder()
+            // Use direct URL-based LBJettySolrClient
+            HttpJettySolrClient.Builder jettyClientBuilder = new HttpJettySolrClient.Builder();
+            SolrClientHelper.applyClientSettings(jettyClientBuilder, httpClientFactory);
+            jettyClientBuilder
+                    .withRequestTimeout(httpClientFactory.getRequestTimeoutMillis(), TimeUnit.MILLISECONDS)
                     .withConnectionTimeout(config.getConnectionTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
-                    .withSocketTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS)
-                    .withHttpClient(httpClientFactory.build())
-                    .withBaseEndpoints(config.solrUrls().toArray(new String[]{}))
-                    .build();
+                    .withIdleTimeout(config.getSocketTimeoutMillisOrDefault(), TimeUnit.MILLISECONDS);
+            return SolrClientHelper.buildLbClient(jettyClientBuilder, config.solrUrls());
         }
     }
 
