@@ -1,0 +1,20 @@
+{
+  "fetchers": {
+    "file-system-fetcher": {
+      "file-system-fetcher": {
+        "allowAbsolutePaths": true
+      }
+    }
+  },
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "tika",
+      "pipes"
+    ]
+  },
+  "pipes": {
+    "numClients": 2
+  },
+  "plugin-roots": "target/plugins"
+}
