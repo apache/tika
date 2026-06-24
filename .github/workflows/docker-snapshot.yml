@@ -70,7 +70,7 @@ jobs:
           cp "tika-server/docker-build/minimal/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build tika-server minimal image for smoke test
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-server-minimal-docker
           platforms: linux/amd64
@@ -102,7 +102,7 @@ jobs:
           exit 1
 
       - name: Build and push tika-server minimal snapshot
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-server-minimal-docker
           platforms: linux/amd64,linux/arm64,linux/s390x
@@ -122,7 +122,7 @@ jobs:
           cp "tika-server/docker-build/full/Dockerfile.snapshot" "${OUT_DIR}/Dockerfile"
 
       - name: Build tika-server full image for smoke test
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-server-full-docker
           platforms: linux/amd64
@@ -154,7 +154,7 @@ jobs:
           exit 1
 
       - name: Build and push tika-server full snapshot
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-server-full-docker
           platforms: linux/amd64,linux/arm64,linux/s390x
@@ -203,7 +203,7 @@ jobs:
           cp "tika-grpc/docker-build/Dockerfile" "${OUT_DIR}/Dockerfile"
 
       - name: Build tika-grpc image for smoke test
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-grpc-docker
           platforms: linux/amd64
@@ -237,7 +237,7 @@ jobs:
           exit 1
 
       - name: Build and push tika-grpc snapshot
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: target/tika-grpc-docker
           platforms: linux/amd64,linux/arm64
