@@ -1043,6 +1043,81 @@ public class ToMarkdownContentHandlerTest {
         });
     }
 
+    @Test
+    public void testMisnestedBlockInsideInlineAndCrossedClose() throws Exception {
+        // Classic broken nesting a misbehaving parser can emit: a block opened
+        // inside an inline, with crossed end tags (<p><div></p></div>). The AST
+        // builder must not throw (commonmark rejects a block under an inline) and
+        // must still render the text.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        String result = assertDoesNotThrow(() -> {
+            handler.startDocument();
+            startElement(handler, "p");
+            startElement(handler, "div");
+            chars(handler, "misnested text");
+            endElement(handler, "p");
+            endElement(handler, "div");
+            handler.endDocument();
+            return handler.toString();
+        });
+        assertContains("misnested text", result);
+    }
+
+    @Test
+    public void testInlineSpanningBlockBoundaries() throws Exception {
+        // <b>bold<p>para</b>more</p>: inline opened, a block opened inside it, the
+        // inline closed across the block boundary, then more text. Must not throw
+        // and must preserve all the text.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        String result = assertDoesNotThrow(() -> {
+            handler.startDocument();
+            startElement(handler, "b");
+            chars(handler, "bold");
+            startElement(handler, "p");
+            chars(handler, "para");
+            endElement(handler, "b");
+            chars(handler, "more");
+            endElement(handler, "p");
+            handler.endDocument();
+            return handler.toString();
+        });
+        assertContains("bold", result);
+        assertContains("para", result);
+        assertContains("more", result);
+    }
+
+    @Test
+    public void testContentPreservedWhenParserThrowsBeforeEndDocument() throws Exception {
+        // A parser that writes content and then throws never calls endDocument().
+        // Because this handler builds an AST and renders at endDocument, partial
+        // content would be lost if toString() relied solely on a completed render.
+        // It must instead render what has been received so far -- matching the
+        // streaming writer this replaced. (Regression guard for the rmeta NPE case.)
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "some content");
+        endElement(handler, "p");
+        // deliberately NO endDocument() -- simulates a parser exception mid-document
+        assertContains("some content", handler.toString());
+    }
+
+    @Test
+    public void testPartialContentWithStillOpenElementsNoEndDocument() throws Exception {
+        // Same failure mode, but the exception lands while elements are still open
+        // (no end tags, no endDocument). Content received so far must still surface.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "h1");
+        chars(handler, "Heading");
+        startElement(handler, "p");
+        chars(handler, "body text");
+        // no end tags, no endDocument()
+        String result = handler.toString();
+        assertContains("Heading", result);
+        assertContains("body text", result);
+    }
+
     /**
      * Test deeply nested elements of the same type -- should not throw.
      */

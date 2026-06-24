@@ -1011,6 +1011,21 @@
         <version>${bouncycastle.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.commonmark</groupId>
+        <artifactId>commonmark</artifactId>
+        <version>${commonmark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.commonmark</groupId>
+        <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        <version>${commonmark.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.commonmark</groupId>
+        <artifactId>commonmark-ext-gfm-tables</artifactId>
+        <version>${commonmark.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.freemarker</groupId>
         <artifactId>freemarker</artifactId>
         <version>${freemarker.version}</version>
