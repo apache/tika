@@ -85,12 +85,19 @@ public class BundleIT {
         // Install all bundles first, then start.
         // tika-core requires osgi.serviceloader capabilities that are
         // provided by tika-bundle-standard, so both must be installed
-        // before either can resolve.
+        // before either can resolve. tika-core also imports the org.commonmark
+        // packages (Markdown serialization), so those bundles must be present too.
         Bundle commonsIo = install("commons-io.jar");
+        Bundle commonmark = install("commonmark.jar");
+        Bundle commonmarkTables = install("commonmark-ext-gfm-tables.jar");
+        Bundle commonmarkStrikethrough = install("commonmark-ext-gfm-strikethrough.jar");
         Bundle tikaCore = install("tika-core.jar");
         Bundle tikaBundle = install("tika-bundle-standard.jar");
 
         commonsIo.start();
+        commonmark.start();
+        commonmarkTables.start();
+        commonmarkStrikethrough.start();
         tikaCore.start();
         tikaBundle.start();
     }

@@ -30,6 +30,9 @@
         <include>org.apache.tika:tika-core</include>
         <include>org.apache.tika:tika-bundle-standard</include>
         <include>commons-io:commons-io</include>
+        <include>org.commonmark:commonmark</include>
+        <include>org.commonmark:commonmark-ext-gfm-tables</include>
+        <include>org.commonmark:commonmark-ext-gfm-strikethrough</include>
       </includes>
     </dependencySet>
     <dependencySet>

@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.util.Random;
 
 import org.junit.jupiter.api.RepeatedTest;
@@ -60,6 +61,53 @@ public class ToMarkdownContentHandlerTest {
     private static void chars(ContentHandler handler, String text) throws Exception {
         char[] ch = text.toCharArray();
         handler.characters(ch, 0, ch.length);
+    }
+
+    /** A replayable sequence of SAX events, for the behaviour-lock tests below. */
+    private interface Events {
+        void emit(ContentHandler h) throws Exception;
+    }
+
+    /**
+     * Render the given events and assert the handler does not throw, returning the
+     * Markdown. The Markdown is now produced by building a commonmark AST, which is
+     * stricter than the string writer it replaced, so these tests both document the
+     * handler's tolerance of malformed/illegal input and fail loudly if a future
+     * commonmark upgrade starts throwing on input we currently render.
+     */
+    private static String renderNoThrow(String label, Events events) {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        return assertDoesNotThrow(() -> {
+            handler.startDocument();
+            events.emit(handler);
+            handler.endDocument();
+            return handler.toString();
+        }, label);
+    }
+
+    /**
+     * Emits a compact event script: a bare tag opens an element ({@code "ul"}), a
+     * {@code "/"}-prefixed tag closes one ({@code "/ul"}), and a {@code "#"}-prefixed
+     * token is character data ({@code "#text"}). {@code "a"} opens an anchor and
+     * {@code "img"} an image, each with placeholder attributes.
+     */
+    private static void script(ContentHandler h, String... ops) throws Exception {
+        for (String op : ops) {
+            if (op.startsWith("/")) {
+                endElement(h, op.substring(1));
+            } else if (op.startsWith("#")) {
+                chars(h, op.substring(1));
+            } else if (op.equals("a")) {
+                startElement(h, "a", "href", "http://e");
+            } else if (op.equals("img")) {
+                AttributesImpl atts = new AttributesImpl();
+                atts.addAttribute("", "src", "src", "CDATA", "i.png");
+                atts.addAttribute("", "alt", "alt", "CDATA", "alt");
+                startElement(h, "img", atts);
+            } else {
+                startElement(h, op);
+            }
+        }
     }
 
     @Test
@@ -314,8 +362,8 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         assertTrue(result.contains("- Fruit"));
-        assertTrue(result.contains("    - Apple"));
-        assertTrue(result.contains("    - Banana"));
+        assertTrue(result.contains("  - Apple"));
+        assertTrue(result.contains("  - Banana"));
         assertTrue(result.contains("- Vegetable"));
     }
 
@@ -351,9 +399,9 @@ public class ToMarkdownContentHandlerTest {
         handler.endDocument();
 
         String result = handler.toString();
-        assertTrue(result.contains("| Name | Age |"));
-        assertTrue(result.contains("| --- | --- |"));
-        assertTrue(result.contains("| Alice | 30 |"));
+        assertTrue(result.contains("|Name|Age|"));
+        assertTrue(result.contains("|---|---|"));
+        assertTrue(result.contains("|Alice|30|"));
     }
 
     @Test
@@ -445,7 +493,8 @@ public class ToMarkdownContentHandlerTest {
 
         handler.endDocument();
 
-        assertTrue(handler.toString().contains("Line one\nLine two"));
+        // GFM hard line break: two trailing spaces before the newline
+        assertTrue(handler.toString().contains("Line one  \nLine two"));
     }
 
     @Test
@@ -544,7 +593,9 @@ public class ToMarkdownContentHandlerTest {
         assertTrue(result.contains("\\_"));
         assertTrue(result.contains("\\["));
         assertTrue(result.contains("\\]"));
-        assertTrue(result.contains("\\#"));
+        // '#' only needs escaping at line start, so it is left bare mid-line
+        assertTrue(result.contains("#"));
+        assertFalse(result.contains("\\#"));
         assertTrue(result.contains("\\|"));
         assertTrue(result.contains("\\\\"));
         assertTrue(result.contains("\\`"));
@@ -776,7 +827,7 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // a pipe inside a cell must be escaped so it does not inject an extra column
-        assertTrue(result.contains("| a\\|b | c |"), result);
+        assertTrue(result.contains("|a\\|b|c|"), result);
     }
 
     @Test
@@ -796,7 +847,7 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // a newline inside a cell must not terminate the table row
-        assertTrue(result.contains("| a b |"), result);
+        assertTrue(result.contains("|a b|"), result);
     }
 
     @Test
@@ -853,9 +904,9 @@ public class ToMarkdownContentHandlerTest {
         handler.endDocument();
 
         String result = handler.toString();
-        assertTrue(result.contains("| A | B |"));
-        assertTrue(result.contains("| --- | --- |"));
-        assertTrue(result.contains("| C | D |"));
+        assertTrue(result.contains("|A|B|"));
+        assertTrue(result.contains("|---|---|"));
+        assertTrue(result.contains("|C|D|"));
     }
 
     @Test
@@ -901,12 +952,12 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // Outer table should be rendered
-        assertTrue(result.contains("| Outer1 | Outer2 |"));
-        assertTrue(result.contains("| --- | --- |"));
+        assertTrue(result.contains("|Outer1|Outer2|"));
+        assertTrue(result.contains("|---|---|"));
         // Inner cell text gets folded into the outer cell ("B" + "Inner" = "BInner")
-        assertTrue(result.contains("| A | BInner |"));
+        assertTrue(result.contains("|A|BInner|"));
         // Inner table structure should not appear as a separate table
-        assertFalse(result.contains("| Inner |"));
+        assertFalse(result.contains("|Inner|"));
     }
 
     private static final String[] ALL_ELEMENTS = {
@@ -929,7 +980,7 @@ public class ToMarkdownContentHandlerTest {
      * runtime exceptions (e.g., EmptyStackException, NullPointerException,
      * IndexOutOfBoundsException).
      */
-    @RepeatedTest(20)
+    @RepeatedTest(100)
     public void testRandomUnbalancedTags() throws Exception {
         Random rng = new Random();
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
@@ -945,11 +996,11 @@ public class ToMarkdownContentHandlerTest {
                     case 0:
                         // start element (possibly with attributes)
                         if (elem.equals("a")) {
-                            startElement(handler, elem, "href", "http://example.com");
+                            startElement(handler, elem, "href", randomText(rng));
                         } else if (elem.equals("img")) {
                             AttributesImpl atts = new AttributesImpl();
-                            atts.addAttribute("", "src", "src", "CDATA", "img.png");
-                            atts.addAttribute("", "alt", "alt", "CDATA", "alt text");
+                            atts.addAttribute("", "src", "src", "CDATA", randomText(rng));
+                            atts.addAttribute("", "alt", "alt", "CDATA", randomText(rng));
                             startElement(handler, elem, atts);
                         } else {
                             startElement(handler, elem);
@@ -960,8 +1011,10 @@ public class ToMarkdownContentHandlerTest {
                         endElement(handler, elem);
                         break;
                     case 2:
-                        // characters
-                        chars(handler, "text_" + i);
+                        // characters -- random content incl. control chars, null bytes,
+                        // unpaired surrogates and non-characters (NOT relying on an
+                        // upstream SafeContentHandler to have cleaned them)
+                        chars(handler, randomText(rng));
                         break;
                     case 3:
                         // ignorable whitespace
@@ -1040,6 +1093,81 @@ public class ToMarkdownContentHandlerTest {
         });
     }
 
+    @Test
+    public void testMisnestedBlockInsideInlineAndCrossedClose() throws Exception {
+        // Classic broken nesting a misbehaving parser can emit: a block opened
+        // inside an inline, with crossed end tags (<p><div></p></div>). The AST
+        // builder must not throw (commonmark rejects a block under an inline) and
+        // must still render the text.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        String result = assertDoesNotThrow(() -> {
+            handler.startDocument();
+            startElement(handler, "p");
+            startElement(handler, "div");
+            chars(handler, "misnested text");
+            endElement(handler, "p");
+            endElement(handler, "div");
+            handler.endDocument();
+            return handler.toString();
+        });
+        assertContains("misnested text", result);
+    }
+
+    @Test
+    public void testInlineSpanningBlockBoundaries() throws Exception {
+        // <b>bold<p>para</b>more</p>: inline opened, a block opened inside it, the
+        // inline closed across the block boundary, then more text. Must not throw
+        // and must preserve all the text.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        String result = assertDoesNotThrow(() -> {
+            handler.startDocument();
+            startElement(handler, "b");
+            chars(handler, "bold");
+            startElement(handler, "p");
+            chars(handler, "para");
+            endElement(handler, "b");
+            chars(handler, "more");
+            endElement(handler, "p");
+            handler.endDocument();
+            return handler.toString();
+        });
+        assertContains("bold", result);
+        assertContains("para", result);
+        assertContains("more", result);
+    }
+
+    @Test
+    public void testContentPreservedWhenParserThrowsBeforeEndDocument() throws Exception {
+        // A parser that writes content and then throws never calls endDocument().
+        // Because this handler builds an AST and renders at endDocument, partial
+        // content would be lost if toString() relied solely on a completed render.
+        // It must instead render what has been received so far -- matching the
+        // streaming writer this replaced. (Regression guard for the rmeta NPE case.)
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        chars(handler, "some content");
+        endElement(handler, "p");
+        // deliberately NO endDocument() -- simulates a parser exception mid-document
+        assertContains("some content", handler.toString());
+    }
+
+    @Test
+    public void testPartialContentWithStillOpenElementsNoEndDocument() throws Exception {
+        // Same failure mode, but the exception lands while elements are still open
+        // (no end tags, no endDocument). Content received so far must still surface.
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "h1");
+        chars(handler, "Heading");
+        startElement(handler, "p");
+        chars(handler, "body text");
+        // no end tags, no endDocument()
+        String result = handler.toString();
+        assertContains("Heading", result);
+        assertContains("body text", result);
+    }
+
     /**
      * Test deeply nested elements of the same type -- should not throw.
      */
@@ -1107,5 +1235,228 @@ public class ToMarkdownContentHandlerTest {
 
             handler.endDocument();
         });
+    }
+
+    // --- untrusted content cannot break out of inline/table structure ---
+
+    @Test
+    public void testLinkTextCannotBreakOut() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://good.example");
+        chars(handler, "x](https://evil.example)");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // the ] in the link text is escaped, so it cannot close the link early
+        assertTrue(result.contains("x\\]"), result);
+        assertFalse(result.contains("x](https://evil.example)"), result);
+        assertTrue(result.contains("](https://good.example)"), result);
+    }
+
+    @Test
+    public void testLinkDestinationWithSpaceAndParenWrapped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://evil.example) text");
+        chars(handler, "click");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // a destination with spaces/parens is wrapped in <> so it cannot terminate early
+        assertTrue(result.contains("](<https://evil.example) text>)"), result);
+    }
+
+    @Test
+    public void testTableCellPipeAndNewlineContained() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "table");
+        startElement(handler, "tr");
+        startElement(handler, "th");
+        chars(handler, "h1");
+        endElement(handler, "th");
+        startElement(handler, "th");
+        chars(handler, "h2");
+        endElement(handler, "th");
+        endElement(handler, "tr");
+        startElement(handler, "tr");
+        startElement(handler, "td");
+        chars(handler, "a|b\nc");
+        endElement(handler, "td");
+        startElement(handler, "td");
+        chars(handler, "d");
+        endElement(handler, "td");
+        endElement(handler, "tr");
+        endElement(handler, "table");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // pipe escaped, newline folded: cell stays one cell, row stays two columns
+        assertTrue(result.contains("|a\\|b c|d|"), result);
+    }
+
+    @Test
+    public void testImageAltAndSrcCannotBreakOut() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "alt", "alt", "CDATA", "a]b");
+        atts.addAttribute("", "src", "src", "CDATA", "https://evil.example) x");
+        startElement(handler, "img", atts);
+        endElement(handler, "img");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        assertTrue(result.contains("a\\]b"), result);
+        assertFalse(result.contains("](https://evil.example) x)"), result);
+    }
+
+    @Test
+    public void testBoldInsideLinkIsNested() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://example.com");
+        startElement(handler, "b");
+        chars(handler, "bold link");
+        endElement(handler, "b");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // inline markup nests correctly inside the link text
+        assertTrue(result.contains("[**bold link**](https://example.com)"), result);
+    }
+
+    @Test
+    public void testInlineContentInStructuralContainersDoesNotThrow() {
+        // A parser may emit inline content directly inside a list/table container
+        // (no list item / cell). commonmark tolerates the resulting tree today.
+        renderNoThrow("bold in ul", h -> script(h, "ul", "b", "#x", "/b", "/ul"));
+        renderNoThrow("italic in ol", h -> script(h, "ol", "i", "#x", "/i", "/ol"));
+        renderNoThrow("bold in tr without cell",
+                h -> script(h, "table", "tr", "b", "#x", "/b", "/tr", "/table"));
+        renderNoThrow("inline directly in table",
+                h -> script(h, "table", "b", "#x", "/b", "/table"));
+        renderNoThrow("img in tr without cell",
+                h -> script(h, "table", "tr", "img", "/img", "/tr", "/table"));
+        renderNoThrow("br in ul", h -> script(h, "ul", "br", "/br", "/ul"));
+        renderNoThrow("link in ul", h -> script(h, "ul", "a", "#x", "/a", "/ul"));
+        renderNoThrow("heading inside link", h -> script(h, "a", "h1", "#x", "/h1", "/a"));
+        renderNoThrow("table inside paragraph",
+                h -> script(h, "p", "table", "tr", "td", "#x", "/td", "/tr", "/table", "/p"));
+        renderNoThrow("list inside table",
+                h -> script(h, "table", "ul", "li", "#x", "/li", "/ul", "/table"));
+    }
+
+    @Test
+    public void testTableAndListEdgeCasesDoNotThrow() {
+        renderNoThrow("empty table", h -> script(h, "table", "/table"));
+        renderNoThrow("table with only th", h -> script(h, "table", "th", "#x", "/th", "/table"));
+        renderNoThrow("table with empty cells",
+                h -> script(h, "table", "tr", "td", "/td", "/tr", "/table"));
+        renderNoThrow("td outside table", h -> script(h, "td", "#x", "/td"));
+        renderNoThrow("tr outside table", h -> script(h, "tr", "td", "#x", "/td", "/tr"));
+        renderNoThrow("li without a list", h -> script(h, "li", "#x", "/li"));
+        renderNoThrow("stray text between list items",
+                h -> script(h, "ol", "li", "#a", "/li", "#stray", "li", "#b", "/li", "/ol"));
+    }
+
+    @Test
+    public void testDeeplyNestedElementsDoNotThrow() {
+        // Pathologically deep nesting: the renderer walks the tree recursively.
+        renderNoThrow("blockquote x1000", h -> {
+            for (int i = 0; i < 1000; i++) {
+                startElement(h, "blockquote");
+            }
+            chars(h, "deep");
+            for (int i = 0; i < 1000; i++) {
+                endElement(h, "blockquote");
+            }
+        });
+        renderNoThrow("div x2000", h -> {
+            for (int i = 0; i < 2000; i++) {
+                startElement(h, "div");
+            }
+            chars(h, "deep");
+            for (int i = 0; i < 2000; i++) {
+                endElement(h, "div");
+            }
+        });
+    }
+
+    @RepeatedTest(200)
+    public void fuzzRandomCharacterContent() {
+        // The handler must not throw on arbitrary character content on its own --
+        // control chars, null bytes, unpaired surrogates, non-characters. It does NOT
+        // rely on SafeContentHandler having sanitized the stream: that runs in the parse
+        // pipeline, but this handler is public API and may be used directly.
+        Random rng = new Random();
+        String text = randomText(rng);
+
+        assertDoesNotThrow(() -> {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, text);
+            endElement(handler, "p");
+            startElement(handler, "table");
+            startElement(handler, "tr");
+            startElement(handler, "td");
+            chars(handler, text);
+            endElement(handler, "td");
+            endElement(handler, "tr");
+            endElement(handler, "table");
+            AttributesImpl atts = new AttributesImpl();
+            atts.addAttribute("", "src", "src", "CDATA", text);
+            atts.addAttribute("", "alt", "alt", "CDATA", text);
+            startElement(handler, "p");
+            startElement(handler, "a", "href", text);
+            chars(handler, text);
+            endElement(handler, "a");
+            startElement(handler, "img", atts);
+            endElement(handler, "img");
+            endElement(handler, "p");
+            handler.endDocument();
+            return handler.toString();
+        }, () -> "StringWriter path threw for input: " + describe(text));
+
+        assertDoesNotThrow(() -> {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler(bos, "UTF-8");
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, text);
+            endElement(handler, "p");
+            handler.endDocument();
+        }, () -> "OutputStream(UTF-8) path threw for input: " + describe(text));
+    }
+
+    /** Random string spanning the full BMP: control chars, surrogates, non-characters. */
+    private static String randomText(Random rng) {
+        char[] buf = new char[rng.nextInt(32)];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = (char) rng.nextInt(0x10000);
+        }
+        return new String(buf);
+    }
+
+    /** Hex-escapes a string so a fuzz failure reports the exact offending input. */
+    private static String describe(String s) {
+        StringBuilder sb = new StringBuilder(s.length() * 6);
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(String.format(Locale.ROOT,"\\u%04x", (int) s.charAt(i)));
+        }
+        return sb.toString();
     }
 }
