@@ -37,6 +37,8 @@ public class PipesConfig {
 
     public static final long DEFAULT_SOCKET_TIMEOUT_MS = 60000;
 
+    public static final long DEFAULT_STARTUP_TIMEOUT_MS = 60000;
+
     public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
 
     public static final boolean DEFAULT_USE_SHARED_SERVER = false;
@@ -55,6 +57,7 @@ public class PipesConfig {
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
+    private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
     private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
 
     private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
@@ -159,6 +162,21 @@ public class PipesConfig {
      */
     public void setSocketTimeoutMs(long socketTimeoutMs) {
         this.socketTimeoutMs = socketTimeoutMs;
+    }
+
+    public long getStartupTimeoutMs() {
+        return startupTimeoutMs;
+    }
+
+    /**
+     * Timeout in milliseconds for the forked server to start up and send its READY handshake.
+     * Distinct from {@link #getSocketTimeoutMs()}: cold-starting the forked JVM (loading config,
+     * parsers and plugins) can take far longer than a normal per-read timeout, so the handshake
+     * gets its own generous budget. Once the server is ready, reads switch to {@code socketTimeoutMs}.
+     * @param startupTimeoutMs
+     */
+    public void setStartupTimeoutMs(long startupTimeoutMs) {
+        this.startupTimeoutMs = startupTimeoutMs;
     }
 
     public long getHeartbeatIntervalMs() {

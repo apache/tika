@@ -304,8 +304,10 @@ public class PipesClient implements Closeable {
         int port = serverManager.getPort();
         LOG.debug("pipesClientId={}: connecting to server", pipesClientId);
 
-        // Connect to server
-        Socket socket = serverManager.connect((int) pipesConfig.getSocketTimeoutMs());
+        // Connect to server. Use the generous startup timeout as the read SO_TIMEOUT so the
+        // server's post-connect initialization and READY handshake aren't bounded by the
+        // (possibly tight) per-request socketTimeoutMs.
+        Socket socket = serverManager.connect((int) pipesConfig.getStartupTimeoutMs());
 
         synchronized (connectionLock) {
             connectionTuple = new ConnectionTuple(socket,
@@ -314,6 +316,8 @@ public class PipesClient implements Closeable {
         }
 
         waitForStartup();
+        // Server is ready; subsequent reads use the normal per-request socket timeout.
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
     }
 
     private void writeTask(FetchEmitTuple t) throws IOException {
