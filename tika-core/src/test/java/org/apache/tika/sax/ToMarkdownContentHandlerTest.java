@@ -779,7 +779,7 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // a pipe inside a cell must be escaped so it does not inject an extra column
-        assertTrue(result.contains("| a\\|b | c |"), result);
+        assertTrue(result.contains("|a\\|b|c|"), result);
     }
 
     @Test
@@ -799,7 +799,7 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // a newline inside a cell must not terminate the table row
-        assertTrue(result.contains("| a b |"), result);
+        assertTrue(result.contains("|a b|"), result);
     }
 
     @Test
