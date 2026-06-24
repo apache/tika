@@ -314,8 +314,8 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         assertTrue(result.contains("- Fruit"));
-        assertTrue(result.contains("    - Apple"));
-        assertTrue(result.contains("    - Banana"));
+        assertTrue(result.contains("  - Apple"));
+        assertTrue(result.contains("  - Banana"));
         assertTrue(result.contains("- Vegetable"));
     }
 
@@ -351,9 +351,9 @@ public class ToMarkdownContentHandlerTest {
         handler.endDocument();
 
         String result = handler.toString();
-        assertTrue(result.contains("| Name | Age |"));
-        assertTrue(result.contains("| --- | --- |"));
-        assertTrue(result.contains("| Alice | 30 |"));
+        assertTrue(result.contains("|Name|Age|"));
+        assertTrue(result.contains("|---|---|"));
+        assertTrue(result.contains("|Alice|30|"));
     }
 
     @Test
@@ -445,7 +445,8 @@ public class ToMarkdownContentHandlerTest {
 
         handler.endDocument();
 
-        assertTrue(handler.toString().contains("Line one\nLine two"));
+        // GFM hard line break: two trailing spaces before the newline
+        assertTrue(handler.toString().contains("Line one  \nLine two"));
     }
 
     @Test
@@ -544,7 +545,9 @@ public class ToMarkdownContentHandlerTest {
         assertTrue(result.contains("\\_"));
         assertTrue(result.contains("\\["));
         assertTrue(result.contains("\\]"));
-        assertTrue(result.contains("\\#"));
+        // '#' only needs escaping at line start, so it is left bare mid-line
+        assertTrue(result.contains("#"));
+        assertFalse(result.contains("\\#"));
         assertTrue(result.contains("\\|"));
         assertTrue(result.contains("\\\\"));
         assertTrue(result.contains("\\`"));
@@ -751,9 +754,9 @@ public class ToMarkdownContentHandlerTest {
         handler.endDocument();
 
         String result = handler.toString();
-        assertTrue(result.contains("| A | B |"));
-        assertTrue(result.contains("| --- | --- |"));
-        assertTrue(result.contains("| C | D |"));
+        assertTrue(result.contains("|A|B|"));
+        assertTrue(result.contains("|---|---|"));
+        assertTrue(result.contains("|C|D|"));
     }
 
     @Test
@@ -799,12 +802,12 @@ public class ToMarkdownContentHandlerTest {
 
         String result = handler.toString();
         // Outer table should be rendered
-        assertTrue(result.contains("| Outer1 | Outer2 |"));
-        assertTrue(result.contains("| --- | --- |"));
+        assertTrue(result.contains("|Outer1|Outer2|"));
+        assertTrue(result.contains("|---|---|"));
         // Inner cell text gets folded into the outer cell ("B" + "Inner" = "BInner")
-        assertTrue(result.contains("| A | BInner |"));
+        assertTrue(result.contains("|A|BInner|"));
         // Inner table structure should not appear as a separate table
-        assertFalse(result.contains("| Inner |"));
+        assertFalse(result.contains("|Inner|"));
     }
 
     private static final String[] ALL_ELEMENTS = {
@@ -1005,5 +1008,106 @@ public class ToMarkdownContentHandlerTest {
 
             handler.endDocument();
         });
+    }
+
+    // --- untrusted content cannot break out of inline/table structure ---
+
+    @Test
+    public void testLinkTextCannotBreakOut() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://good.example");
+        chars(handler, "x](https://evil.example)");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // the ] in the link text is escaped, so it cannot close the link early
+        assertTrue(result.contains("x\\]"), result);
+        assertFalse(result.contains("x](https://evil.example)"), result);
+        assertTrue(result.contains("](https://good.example)"), result);
+    }
+
+    @Test
+    public void testLinkDestinationWithSpaceAndParenWrapped() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://evil.example) text");
+        chars(handler, "click");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // a destination with spaces/parens is wrapped in <> so it cannot terminate early
+        assertTrue(result.contains("](<https://evil.example) text>)"), result);
+    }
+
+    @Test
+    public void testTableCellPipeAndNewlineContained() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "table");
+        startElement(handler, "tr");
+        startElement(handler, "th");
+        chars(handler, "h1");
+        endElement(handler, "th");
+        startElement(handler, "th");
+        chars(handler, "h2");
+        endElement(handler, "th");
+        endElement(handler, "tr");
+        startElement(handler, "tr");
+        startElement(handler, "td");
+        chars(handler, "a|b\nc");
+        endElement(handler, "td");
+        startElement(handler, "td");
+        chars(handler, "d");
+        endElement(handler, "td");
+        endElement(handler, "tr");
+        endElement(handler, "table");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // pipe escaped, newline folded: cell stays one cell, row stays two columns
+        assertTrue(result.contains("|a\\|b c|d|"), result);
+    }
+
+    @Test
+    public void testImageAltAndSrcCannotBreakOut() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "alt", "alt", "CDATA", "a]b");
+        atts.addAttribute("", "src", "src", "CDATA", "https://evil.example) x");
+        startElement(handler, "img", atts);
+        endElement(handler, "img");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        assertTrue(result.contains("a\\]b"), result);
+        assertFalse(result.contains("](https://evil.example) x)"), result);
+    }
+
+    @Test
+    public void testBoldInsideLinkIsNested() throws Exception {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        handler.startDocument();
+        startElement(handler, "p");
+        startElement(handler, "a", "href", "https://example.com");
+        startElement(handler, "b");
+        chars(handler, "bold link");
+        endElement(handler, "b");
+        endElement(handler, "a");
+        endElement(handler, "p");
+        handler.endDocument();
+
+        String result = handler.toString();
+        // inline markup nests correctly inside the link text
+        assertTrue(result.contains("[**bold link**](https://example.com)"), result);
     }
 }
