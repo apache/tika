@@ -342,8 +342,6 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.12.0</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <!-- Upgraded to 4.1.7 (from 4.0.11) as part of the Jetty 12 migration (CVE-2026-2332).
-         CXF 4.1.x ships cxf-rt-transports-http-jetty built against Jetty 12. -->
     <cxf.version>4.1.7</cxf.version>
     <ddplist.version>1.29</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
@@ -383,14 +381,9 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jempbox.version>1.8.17</jempbox.version>
-    <!-- Upgraded from 11.0.26 to 12.0.35 to fix CVE-2026-2332 (HTTP/1.1 request smuggling,
-         CVSS 9.1 Critical). Jetty 11.x is EOL and 11.0.28 was never released; the fix
-         is only available in the Jetty 12 line (>=12.0.33). Jetty 12.0.x requires Java 17,
-         the same minimum as this project. Migration guide:
-         https://jetty.org/docs/jetty/12/programming-guide/migration/11-to-12.html
-    -->
-    <jetty.version>12.0.35</jetty.version>
-    <jetty.http2.version>12.0.35</jetty.http2.version>
+    <!-- pinned to the 12.0.x line CXF and SolrJ build against; 12.0.36 matches CXF's jetty-ee10-servlet -->
+    <jetty.version>12.0.36</jetty.version>
+    <jetty.http2.version>12.0.36</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -438,13 +431,7 @@
     <slf4j.version>2.0.18</slf4j.version>
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
-    <!-- Upgraded to 10.0.0 (from 9.10.1): SolrJ 9.x bundles Jetty 11 HTTP client APIs
-         internally (Http2SolrClient / solr-solrj-jetty), which conflict with Jetty 12.
-         SolrJ 10 renames Http2SolrClient -> HttpJettySolrClient (in solr-solrj-jetty)
-         and LBHttpSolrClient -> LBJettySolrClient; the solr-solrj-jetty artifact must
-         be added alongside solr-solrj wherever those classes are used.
-         NOTE: proxy and basic auth are wired via HttpJettySolrClient.Builder;
-         only basic auth is supported (non-basic schemes are rejected at startup). -->
+    <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.8</spring.version>
     <sqlite.version>3.53.2.0</sqlite.version>
@@ -572,7 +559,6 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <!-- Jetty 12 renamed all http2 artifacts with a jetty- prefix -->
       <dependency>
         <groupId>org.eclipse.jetty.http2</groupId>
         <artifactId>jetty-http2-client-transport</artifactId>
@@ -1364,7 +1350,7 @@
         <version>3.2.0</version>
         <configuration>
           <excludeCoordinates>
-            <!-- [CVE-2025-1948] check if still present in ${jetty.http2.version}; CVE-2026-2332 is fixed. -->
+            <!-- [CVE-2025-1948] excluded; re-check whether still present in ${jetty.http2.version} -->
             <coordinate>
               <groupId>org.eclipse.jetty.http2</groupId>
               <artifactId>jetty-http2-common</artifactId>
