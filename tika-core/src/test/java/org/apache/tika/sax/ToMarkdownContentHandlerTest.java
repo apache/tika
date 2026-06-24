@@ -62,6 +62,28 @@ public class ToMarkdownContentHandlerTest {
         handler.characters(ch, 0, ch.length);
     }
 
+    /** A replayable sequence of SAX events, for the behaviour-lock tests below. */
+    private interface Events {
+        void emit(ContentHandler h) throws Exception;
+    }
+
+    /**
+     * Render the given events and assert the handler does not throw, returning the
+     * Markdown. The Markdown is now produced by building a commonmark AST, which is
+     * stricter than the string writer it replaced, so these tests both document the
+     * handler's tolerance of malformed/illegal input and fail loudly if a future
+     * commonmark upgrade starts throwing on input we currently render.
+     */
+    private static String renderNoThrow(String label, Events events) {
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+        return assertDoesNotThrow(() -> {
+            handler.startDocument();
+            events.emit(handler);
+            handler.endDocument();
+            return handler.toString();
+        }, label);
+    }
+
     @Test
     public void testHeadings() throws Exception {
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
@@ -932,7 +954,7 @@ public class ToMarkdownContentHandlerTest {
      * runtime exceptions (e.g., EmptyStackException, NullPointerException,
      * IndexOutOfBoundsException).
      */
-    @RepeatedTest(20)
+    @RepeatedTest(100)
     public void testRandomUnbalancedTags() throws Exception {
         Random rng = new Random();
         ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
@@ -948,11 +970,11 @@ public class ToMarkdownContentHandlerTest {
                     case 0:
                         // start element (possibly with attributes)
                         if (elem.equals("a")) {
-                            startElement(handler, elem, "href", "http://example.com");
+                            startElement(handler, elem, "href", randomText(rng));
                         } else if (elem.equals("img")) {
                             AttributesImpl atts = new AttributesImpl();
-                            atts.addAttribute("", "src", "src", "CDATA", "img.png");
-                            atts.addAttribute("", "alt", "alt", "CDATA", "alt text");
+                            atts.addAttribute("", "src", "src", "CDATA", randomText(rng));
+                            atts.addAttribute("", "alt", "alt", "CDATA", randomText(rng));
                             startElement(handler, elem, atts);
                         } else {
                             startElement(handler, elem);
@@ -963,8 +985,10 @@ public class ToMarkdownContentHandlerTest {
                         endElement(handler, elem);
                         break;
                     case 2:
-                        // characters
-                        chars(handler, "text_" + i);
+                        // characters -- random content incl. control chars, null bytes,
+                        // unpaired surrogates and non-characters (NOT relying on an
+                        // upstream SafeContentHandler to have cleaned them)
+                        chars(handler, randomText(rng));
                         break;
                     case 3:
                         // ignorable whitespace
@@ -1286,5 +1310,167 @@ public class ToMarkdownContentHandlerTest {
         String result = handler.toString();
         // inline markup nests correctly inside the link text
         assertTrue(result.contains("[**bold link**](https://example.com)"), result);
+    }
+
+    @Test
+    public void testInlineContentInStructuralContainersDoesNotThrow() {
+        // A parser may emit inline content directly inside a list/table container
+        // (no list item / cell). commonmark tolerates the resulting tree today.
+        renderNoThrow("bold in ul", h -> {
+            startElement(h, "ul"); startElement(h, "b"); chars(h, "x");
+            endElement(h, "b"); endElement(h, "ul");
+        });
+        renderNoThrow("italic in ol", h -> {
+            startElement(h, "ol"); startElement(h, "i"); chars(h, "x");
+            endElement(h, "i"); endElement(h, "ol");
+        });
+        renderNoThrow("bold in tr without cell", h -> {
+            startElement(h, "table"); startElement(h, "tr"); startElement(h, "b"); chars(h, "x");
+            endElement(h, "b"); endElement(h, "tr"); endElement(h, "table");
+        });
+        renderNoThrow("inline directly in table", h -> {
+            startElement(h, "table"); startElement(h, "b"); chars(h, "x");
+            endElement(h, "b"); endElement(h, "table");
+        });
+        renderNoThrow("img in tr without cell", h -> {
+            startElement(h, "table"); startElement(h, "tr"); startElement(h, "img");
+            endElement(h, "img"); endElement(h, "tr"); endElement(h, "table");
+        });
+        renderNoThrow("br in ul", h -> {
+            startElement(h, "ul"); startElement(h, "br"); endElement(h, "br"); endElement(h, "ul");
+        });
+        renderNoThrow("link in ul", h -> {
+            startElement(h, "ul"); startElement(h, "a", "href", "http://e"); chars(h, "x");
+            endElement(h, "a"); endElement(h, "ul");
+        });
+        renderNoThrow("heading inside link", h -> {
+            startElement(h, "a", "href", "http://e"); startElement(h, "h1"); chars(h, "x");
+            endElement(h, "h1"); endElement(h, "a");
+        });
+        renderNoThrow("table inside paragraph", h -> {
+            startElement(h, "p"); startElement(h, "table"); startElement(h, "tr"); startElement(h, "td");
+            chars(h, "x"); endElement(h, "td"); endElement(h, "tr"); endElement(h, "table"); endElement(h, "p");
+        });
+        renderNoThrow("list inside table", h -> {
+            startElement(h, "table"); startElement(h, "ul"); startElement(h, "li"); chars(h, "x");
+            endElement(h, "li"); endElement(h, "ul"); endElement(h, "table");
+        });
+    }
+
+    @Test
+    public void testTableAndListEdgeCasesDoNotThrow() {
+        renderNoThrow("empty table", h -> {
+            startElement(h, "table"); endElement(h, "table");
+        });
+        renderNoThrow("table with only th", h -> {
+            startElement(h, "table"); startElement(h, "th"); chars(h, "x");
+            endElement(h, "th"); endElement(h, "table");
+        });
+        renderNoThrow("table with empty cells", h -> {
+            startElement(h, "table"); startElement(h, "tr"); startElement(h, "td");
+            endElement(h, "td"); endElement(h, "tr"); endElement(h, "table");
+        });
+        renderNoThrow("td outside table", h -> {
+            startElement(h, "td"); chars(h, "x"); endElement(h, "td");
+        });
+        renderNoThrow("tr outside table", h -> {
+            startElement(h, "tr"); startElement(h, "td"); chars(h, "x");
+            endElement(h, "td"); endElement(h, "tr");
+        });
+        renderNoThrow("li without a list", h -> {
+            startElement(h, "li"); chars(h, "x"); endElement(h, "li");
+        });
+        renderNoThrow("stray text between list items", h -> {
+            startElement(h, "ol"); startElement(h, "li"); chars(h, "a"); endElement(h, "li");
+            chars(h, "stray"); startElement(h, "li"); chars(h, "b"); endElement(h, "li"); endElement(h, "ol");
+        });
+    }
+
+    @Test
+    public void testDeeplyNestedElementsDoNotThrow() {
+        // Pathologically deep nesting: the renderer walks the tree recursively.
+        renderNoThrow("blockquote x1000", h -> {
+            for (int i = 0; i < 1000; i++) {
+                startElement(h, "blockquote");
+            }
+            chars(h, "deep");
+            for (int i = 0; i < 1000; i++) {
+                endElement(h, "blockquote");
+            }
+        });
+        renderNoThrow("div x2000", h -> {
+            for (int i = 0; i < 2000; i++) {
+                startElement(h, "div");
+            }
+            chars(h, "deep");
+            for (int i = 0; i < 2000; i++) {
+                endElement(h, "div");
+            }
+        });
+    }
+
+    @RepeatedTest(200)
+    public void fuzzRandomCharacterContent() {
+        // The handler must not throw on arbitrary character content on its own --
+        // control chars, null bytes, unpaired surrogates, non-characters. It does NOT
+        // rely on SafeContentHandler having sanitized the stream: that runs in the parse
+        // pipeline, but this handler is public API and may be used directly.
+        Random rng = new Random();
+        String text = randomText(rng);
+
+        assertDoesNotThrow(() -> {
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler();
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, text);
+            endElement(handler, "p");
+            startElement(handler, "table");
+            startElement(handler, "tr");
+            startElement(handler, "td");
+            chars(handler, text);
+            endElement(handler, "td");
+            endElement(handler, "tr");
+            endElement(handler, "table");
+            AttributesImpl atts = new AttributesImpl();
+            atts.addAttribute("", "src", "src", "CDATA", text);
+            atts.addAttribute("", "alt", "alt", "CDATA", text);
+            startElement(handler, "p");
+            startElement(handler, "a", "href", text);
+            chars(handler, text);
+            endElement(handler, "a");
+            startElement(handler, "img", atts);
+            endElement(handler, "img");
+            endElement(handler, "p");
+            handler.endDocument();
+            return handler.toString();
+        }, () -> "StringWriter path threw for input: " + describe(text));
+
+        assertDoesNotThrow(() -> {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler(bos, "UTF-8");
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, text);
+            endElement(handler, "p");
+            handler.endDocument();
+        }, () -> "OutputStream(UTF-8) path threw for input: " + describe(text));
+    }
+
+    /** Random string spanning the full BMP: control chars, surrogates, non-characters. */
+    private static String randomText(Random rng) {
+        char[] buf = new char[rng.nextInt(32)];
+        for (int i = 0; i < buf.length; i++) {
+            buf[i] = (char) rng.nextInt(0x10000);
+        }
+        return new String(buf);
+    }
+
+    /** Hex-escapes a string so a fuzz failure reports the exact offending input. */
+    private static String describe(String s) {
+        StringBuilder sb = new StringBuilder(s.length() * 6);
+        for (int i = 0; i < s.length(); i++) {
+            sb.append(String.format("\\u%04x", (int) s.charAt(i)));
+        }
+        return sb.toString();
     }
 }
