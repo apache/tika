@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Locale;
 import java.util.Random;
 
 import org.junit.jupiter.api.RepeatedTest;
@@ -82,6 +83,31 @@ public class ToMarkdownContentHandlerTest {
             handler.endDocument();
             return handler.toString();
         }, label);
+    }
+
+    /**
+     * Emits a compact event script: a bare tag opens an element ({@code "ul"}), a
+     * {@code "/"}-prefixed tag closes one ({@code "/ul"}), and a {@code "#"}-prefixed
+     * token is character data ({@code "#text"}). {@code "a"} opens an anchor and
+     * {@code "img"} an image, each with placeholder attributes.
+     */
+    private static void script(ContentHandler h, String... ops) throws Exception {
+        for (String op : ops) {
+            if (op.startsWith("/")) {
+                endElement(h, op.substring(1));
+            } else if (op.startsWith("#")) {
+                chars(h, op.substring(1));
+            } else if (op.equals("a")) {
+                startElement(h, "a", "href", "http://e");
+            } else if (op.equals("img")) {
+                AttributesImpl atts = new AttributesImpl();
+                atts.addAttribute("", "src", "src", "CDATA", "i.png");
+                atts.addAttribute("", "alt", "alt", "CDATA", "alt");
+                startElement(h, "img", atts);
+            } else {
+                startElement(h, op);
+            }
+        }
     }
 
     @Test
@@ -1316,74 +1342,34 @@ public class ToMarkdownContentHandlerTest {
     public void testInlineContentInStructuralContainersDoesNotThrow() {
         // A parser may emit inline content directly inside a list/table container
         // (no list item / cell). commonmark tolerates the resulting tree today.
-        renderNoThrow("bold in ul", h -> {
-            startElement(h, "ul"); startElement(h, "b"); chars(h, "x");
-            endElement(h, "b"); endElement(h, "ul");
-        });
-        renderNoThrow("italic in ol", h -> {
-            startElement(h, "ol"); startElement(h, "i"); chars(h, "x");
-            endElement(h, "i"); endElement(h, "ol");
-        });
-        renderNoThrow("bold in tr without cell", h -> {
-            startElement(h, "table"); startElement(h, "tr"); startElement(h, "b"); chars(h, "x");
-            endElement(h, "b"); endElement(h, "tr"); endElement(h, "table");
-        });
-        renderNoThrow("inline directly in table", h -> {
-            startElement(h, "table"); startElement(h, "b"); chars(h, "x");
-            endElement(h, "b"); endElement(h, "table");
-        });
-        renderNoThrow("img in tr without cell", h -> {
-            startElement(h, "table"); startElement(h, "tr"); startElement(h, "img");
-            endElement(h, "img"); endElement(h, "tr"); endElement(h, "table");
-        });
-        renderNoThrow("br in ul", h -> {
-            startElement(h, "ul"); startElement(h, "br"); endElement(h, "br"); endElement(h, "ul");
-        });
-        renderNoThrow("link in ul", h -> {
-            startElement(h, "ul"); startElement(h, "a", "href", "http://e"); chars(h, "x");
-            endElement(h, "a"); endElement(h, "ul");
-        });
-        renderNoThrow("heading inside link", h -> {
-            startElement(h, "a", "href", "http://e"); startElement(h, "h1"); chars(h, "x");
-            endElement(h, "h1"); endElement(h, "a");
-        });
-        renderNoThrow("table inside paragraph", h -> {
-            startElement(h, "p"); startElement(h, "table"); startElement(h, "tr"); startElement(h, "td");
-            chars(h, "x"); endElement(h, "td"); endElement(h, "tr"); endElement(h, "table"); endElement(h, "p");
-        });
-        renderNoThrow("list inside table", h -> {
-            startElement(h, "table"); startElement(h, "ul"); startElement(h, "li"); chars(h, "x");
-            endElement(h, "li"); endElement(h, "ul"); endElement(h, "table");
-        });
+        renderNoThrow("bold in ul", h -> script(h, "ul", "b", "#x", "/b", "/ul"));
+        renderNoThrow("italic in ol", h -> script(h, "ol", "i", "#x", "/i", "/ol"));
+        renderNoThrow("bold in tr without cell",
+                h -> script(h, "table", "tr", "b", "#x", "/b", "/tr", "/table"));
+        renderNoThrow("inline directly in table",
+                h -> script(h, "table", "b", "#x", "/b", "/table"));
+        renderNoThrow("img in tr without cell",
+                h -> script(h, "table", "tr", "img", "/img", "/tr", "/table"));
+        renderNoThrow("br in ul", h -> script(h, "ul", "br", "/br", "/ul"));
+        renderNoThrow("link in ul", h -> script(h, "ul", "a", "#x", "/a", "/ul"));
+        renderNoThrow("heading inside link", h -> script(h, "a", "h1", "#x", "/h1", "/a"));
+        renderNoThrow("table inside paragraph",
+                h -> script(h, "p", "table", "tr", "td", "#x", "/td", "/tr", "/table", "/p"));
+        renderNoThrow("list inside table",
+                h -> script(h, "table", "ul", "li", "#x", "/li", "/ul", "/table"));
     }
 
     @Test
     public void testTableAndListEdgeCasesDoNotThrow() {
-        renderNoThrow("empty table", h -> {
-            startElement(h, "table"); endElement(h, "table");
-        });
-        renderNoThrow("table with only th", h -> {
-            startElement(h, "table"); startElement(h, "th"); chars(h, "x");
-            endElement(h, "th"); endElement(h, "table");
-        });
-        renderNoThrow("table with empty cells", h -> {
-            startElement(h, "table"); startElement(h, "tr"); startElement(h, "td");
-            endElement(h, "td"); endElement(h, "tr"); endElement(h, "table");
-        });
-        renderNoThrow("td outside table", h -> {
-            startElement(h, "td"); chars(h, "x"); endElement(h, "td");
-        });
-        renderNoThrow("tr outside table", h -> {
-            startElement(h, "tr"); startElement(h, "td"); chars(h, "x");
-            endElement(h, "td"); endElement(h, "tr");
-        });
-        renderNoThrow("li without a list", h -> {
-            startElement(h, "li"); chars(h, "x"); endElement(h, "li");
-        });
-        renderNoThrow("stray text between list items", h -> {
-            startElement(h, "ol"); startElement(h, "li"); chars(h, "a"); endElement(h, "li");
-            chars(h, "stray"); startElement(h, "li"); chars(h, "b"); endElement(h, "li"); endElement(h, "ol");
-        });
+        renderNoThrow("empty table", h -> script(h, "table", "/table"));
+        renderNoThrow("table with only th", h -> script(h, "table", "th", "#x", "/th", "/table"));
+        renderNoThrow("table with empty cells",
+                h -> script(h, "table", "tr", "td", "/td", "/tr", "/table"));
+        renderNoThrow("td outside table", h -> script(h, "td", "#x", "/td"));
+        renderNoThrow("tr outside table", h -> script(h, "tr", "td", "#x", "/td", "/tr"));
+        renderNoThrow("li without a list", h -> script(h, "li", "#x", "/li"));
+        renderNoThrow("stray text between list items",
+                h -> script(h, "ol", "li", "#a", "/li", "#stray", "li", "#b", "/li", "/ol"));
     }
 
     @Test
@@ -1469,7 +1455,7 @@ public class ToMarkdownContentHandlerTest {
     private static String describe(String s) {
         StringBuilder sb = new StringBuilder(s.length() * 6);
         for (int i = 0; i < s.length(); i++) {
-            sb.append(String.format("\\u%04x", (int) s.charAt(i)));
+            sb.append(String.format(Locale.ROOT,"\\u%04x", (int) s.charAt(i)));
         }
         return sb.toString();
     }
