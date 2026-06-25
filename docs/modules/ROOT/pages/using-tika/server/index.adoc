@@ -298,6 +298,16 @@ In earlier releases these endpoints were enabled simply by listing them under
 selecting any of them without it causes the server to refuse to start. This is
 deliberate — it makes enabling these powerful endpoints an explicit, considered choice.
 
+[source,json]
+----
+{
+  "server": {
+    "enableUnsecureFeatures": true,
+    "endpoints": ["tika", "rmeta", "pipes", "async", "status"]
+  }
+}
+----
+
 === Security Best Practices
 
 1. **Keep config endpoints disabled** in production (default behavior).
