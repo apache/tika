@@ -173,8 +173,8 @@ public class TikaResource {
     public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(configJson);
-        // Use root directly - the JSON should contain parser configs at the top level
-        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, mapper);
+        // Request-supplied config: restrict so it cannot bind wire-blocked components.
+        ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, true);
         ParseContextUtils.resolveAll(configuredContext, Thread.currentThread().getContextClassLoader());
         // Copy resolved context entries
         for (Map.Entry<String, Object> entry : configuredContext.getContextMap().entrySet()) {

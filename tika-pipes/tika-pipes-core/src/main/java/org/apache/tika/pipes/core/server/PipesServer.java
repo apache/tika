@@ -367,12 +367,12 @@ public class PipesServer implements AutoCloseable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
-                        // Validate before merging with global config
-                        ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
                         // Create merged ParseContext: defaults from tika-config + request overrides
                         ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                         // Resolve friendly-named configs in ParseContext to actual objects
                         ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                        // Validate the effective (merged + resolved) context
+                        ServerProtocolIO.validateParseContext(mergedContext);
                         TikaProgressTracker tracker = new TikaProgressTracker();
                         mergedContext.set(TikaProgressTracker.class, tracker);
 

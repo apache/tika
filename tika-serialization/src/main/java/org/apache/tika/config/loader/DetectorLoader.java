@@ -37,12 +37,6 @@ public class DetectorLoader extends AbstractSpiComponentLoader<Detector> {
     }
 
     @Override
-    protected Detector loadComponent(String name, JsonNode configNode,
-                                       LoaderContext context) throws TikaConfigException {
-        return context.instantiate(name, configNode);
-    }
-
-    @Override
     protected Detector createDefaultComposite(Set<Class<? extends Detector>> exclusions,
                                                LoaderContext context) {
         return new DefaultDetector(

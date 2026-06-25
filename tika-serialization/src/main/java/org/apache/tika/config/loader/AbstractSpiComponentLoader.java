@@ -143,8 +143,8 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
     // ==================== Abstract methods for subclasses ====================
 
     /**
-     * Load a single component from config.
-     * Subclasses can apply decorations (e.g., mime filtering for parsers).
+     * Load a single component from config. The default instantiates the named component from its
+     * config; subclasses override to apply decorations (e.g., mime filtering for parsers).
      *
      * @param name the component name (friendly name or FQCN)
      * @param configNode the JSON configuration for this component
@@ -152,8 +152,10 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
      * @return the loaded component
      * @throws TikaConfigException if loading fails
      */
-    protected abstract T loadComponent(String name, JsonNode configNode,
-                                        LoaderContext context) throws TikaConfigException;
+    protected T loadComponent(String name, JsonNode configNode,
+                              LoaderContext context) throws TikaConfigException {
+        return context.instantiate(name, configNode);
+    }
 
     /**
      * Create the SPI-backed default composite with exclusions.

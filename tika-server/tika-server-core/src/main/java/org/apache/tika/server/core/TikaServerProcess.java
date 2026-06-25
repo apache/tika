@@ -63,6 +63,7 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaExtras;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
@@ -391,6 +392,16 @@ public class TikaServerProcess {
                     resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
                 }
             }
+        }
+
+        // /pipes and /async fork processes and read/write via fetchers/emitters: never expose them
+        // unless the operator opted into unsecure features, even when explicitly listed. (The
+        // zero-endpoints branch only enables them when unsecure is on, so this won't false-fire.)
+        if ((addPipesResource || addAsyncResource) && !tikaServerConfig.isEnableUnsecureFeatures()) {
+            throw new TikaConfigException("The pipes/async endpoints require " +
+                    "<enableUnsecureFeatures>true</enableUnsecureFeatures> in the server config: " +
+                    "they fork processes and read/write via configured fetchers and emitters, so " +
+                    "they are disabled by default even when explicitly listed as endpoints.");
         }
 
         if (addAsyncResource) {

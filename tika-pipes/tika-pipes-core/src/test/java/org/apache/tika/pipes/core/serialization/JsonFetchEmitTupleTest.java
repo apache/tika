@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -33,6 +34,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.serialization.ParseContextUtils;
 
 public class JsonFetchEmitTupleTest {
 
@@ -59,7 +61,16 @@ public class JsonFetchEmitTupleTest {
         JsonFetchEmitTuple.toJson(t, writer);
         Reader reader = new StringReader(writer.toString());
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
-        assertEquals(t, deserialized);
+        // Config deserializes lazily now; resolve before comparing the effective context.
+        ParseContextUtils.resolveAll(deserialized.getParseContext(),
+                Thread.currentThread().getContextClassLoader());
+        assertEquals(t.getId(), deserialized.getId());
+        assertEquals(t.getFetchKey(), deserialized.getFetchKey());
+        assertEquals(t.getEmitKey(), deserialized.getEmitKey());
+        assertEquals(m, deserialized.getMetadata());
+        assertEquals(ParseMode.CONCATENATE, deserialized.getParseContext().get(ParseMode.class));
+        assertInstanceOf(BasicContentHandlerFactory.class,
+                deserialized.getParseContext().get(ContentHandlerFactory.class));
     }
 
     @Test
@@ -128,6 +139,9 @@ public class JsonFetchEmitTupleTest {
 
         Reader reader = new StringReader(json);
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(reader);
+        // Config deserializes lazily now; resolve before reading the bound values.
+        ParseContextUtils.resolveAll(deserialized.getParseContext(),
+                Thread.currentThread().getContextClassLoader());
 
         // Verify ParseMode is preserved
         assertEquals(ParseMode.UNPACK, deserialized.getParseContext().get(ParseMode.class));

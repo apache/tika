@@ -51,6 +51,7 @@ import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.ParseContextUtils;
 
 @Path("/async")
 public class AsyncResource {
@@ -113,6 +114,8 @@ public class AsyncResource {
                         .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
+            // Configs are lazy; resolve before reading UnpackConfig for the bytes-emitter check.
+            ParseContextUtils.resolveAll(parseContext, getClass().getClassLoader());
             UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
             if (unpackConfig != null && !StringUtils.isAllBlank(unpackConfig.getEmitter())) {
                 String bytesEmitter = unpackConfig.getEmitter();

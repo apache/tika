@@ -163,9 +163,9 @@ public class ConnectionHandler implements Runnable, Closeable {
                         }
                         ParseContext mergedContext = null;
                         try {
-                            ServerProtocolIO.validateFetchEmitTuple(fetchEmitTuple);
                             mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            ServerProtocolIO.validateParseContext(mergedContext);
                             TikaProgressTracker tracker = new TikaProgressTracker();
                             mergedContext.set(TikaProgressTracker.class, tracker);
 

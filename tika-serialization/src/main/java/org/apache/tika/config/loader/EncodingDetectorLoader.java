@@ -19,13 +19,10 @@ package org.apache.tika.config.loader;
 import java.util.List;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
-import org.apache.tika.exception.TikaConfigException;
 
 /**
  * Loader for encoding detectors with support for SPI fallback via
@@ -35,12 +32,6 @@ public class EncodingDetectorLoader extends AbstractSpiComponentLoader<EncodingD
 
     public EncodingDetectorLoader() {
         super("encoding-detectors", "default-encoding-detector", EncodingDetector.class);
-    }
-
-    @Override
-    protected EncodingDetector loadComponent(String name, JsonNode configNode,
-                                              LoaderContext context) throws TikaConfigException {
-        return context.instantiate(name, configNode);
     }
 
     @Override

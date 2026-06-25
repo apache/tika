@@ -126,8 +126,10 @@ public class ParseContextUtils {
             // Try to find this friendly name in any registered component registry
             var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
             if (optionalInfo.isEmpty()) {
-                // Not a registered component - that's okay, might be used for something else
-                LOG.debug("'{}' not found in any component registry, skipping", friendlyName);
+                // Not a registered component -- ignored (not applied). WARN so a typo'd config key
+                // is visible rather than silently dropped.
+                LOG.warn("Ignoring unrecognized parse-context entry '{}' (not a registered "
+                        + "component); check for a typo", friendlyName);
                 continue;
             }
 
