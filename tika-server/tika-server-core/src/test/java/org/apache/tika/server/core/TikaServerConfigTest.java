@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -32,6 +33,7 @@ import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerConfigTest extends TikaTest {
@@ -74,6 +76,44 @@ public class TikaServerConfigTest extends TikaTest {
                 .toAbsolutePath()
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
+    }
+
+    @Test
+    public void testUnsecureEndpointRequiresEnableUnsecureFeatures() throws Exception {
+        // Selecting /pipes (or /async, /status) without enableUnsecureFeatures must fail
+        // at config load, forcing an explicit opt-in.
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-pipes-no-unsecure.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("enableUnsecureFeatures", ex.getMessage());
+        assertContains("pipes", ex.getMessage());
+    }
+
+    @Test
+    public void testUnsecureEndpointAllowedWithEnableUnsecureFeatures() throws Exception {
+        // tika-config-server-basic.json selects the 'status' endpoint together with
+        // enableUnsecureFeatures=true, so it must load without error.
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-basic.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaServerConfig config = TikaServerConfig.load(commandLine);
+        assertTrue(config.isEnableUnsecureFeatures());
     }
 
     @Test
