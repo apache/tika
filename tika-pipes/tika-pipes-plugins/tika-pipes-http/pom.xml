@@ -156,8 +156,33 @@
             <goals>
               <goal>single</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- The plugin zip is built into target/ (the release artifact, like every other plugin).
+           Copy it into target/plugins/ so the self-test can load it via PF4J
+           (plugin-roots=target/plugins). Bound after make-assembly (process-test-resources). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-plugin-zip-for-self-test</id>
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
             <configuration>
               <outputDirectory>${project.build.directory}/plugins</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}</directory>
+                  <includes>
+                    <include>${project.artifactId}-${project.version}.zip</include>
+                  </includes>
+                  <filtering>false</filtering>
+                </resource>
+              </resources>
             </configuration>
           </execution>
         </executions>
@@ -185,10 +210,6 @@
             deployed to Maven Central. Sibling modules declare this plugin zip
             as a test-scope Maven dep, so we install-file it locally to satisfy
             reactor resolution without making it part of the project artifacts.
-
-            tika-pipes-http writes its zip to target/plugins/ (not target/) so
-            that its own self-tests can load the plugin via PF4J in deployment
-            mode; reflect that path here.
           -->
           <execution>
             <id>install-plugin-zip-locally</id>
@@ -197,7 +218,7 @@
               <goal>install-file</goal>
             </goals>
             <configuration>
-              <file>${project.build.directory}/plugins/${project.artifactId}-${project.version}.zip</file>
+              <file>${project.build.directory}/${project.artifactId}-${project.version}.zip</file>
               <groupId>${project.groupId}</groupId>
               <artifactId>${project.artifactId}</artifactId>
               <version>${project.version}</version>
