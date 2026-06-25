@@ -38,6 +38,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.ZipEntry;
 
+import org.apache.commons.compress.MemoryLimitException;
 import org.apache.commons.compress.PasswordRequiredException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -65,6 +66,7 @@ import org.apache.tika.config.Field;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -235,6 +237,7 @@ public class PackageParser extends AbstractEncodingDetectorParser {
     }
 
     private boolean detectCharsetsInEntryNames = true;
+    private int memoryLimitInKb = 100000;
 
     public PackageParser() {
         super();
@@ -312,7 +315,9 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
                 SevenZFile sevenz;
                 try {
-                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile());
+                    // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides by 1024.
+                    SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tstream.getFile())
+                            .setMaxMemoryLimitKiB(memoryLimitInKb);
                     if (password == null) {
                         sevenz = builder.get();
                     } else {
@@ -320,6 +325,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                     }
                 } catch (PasswordRequiredException e) {
                     throw new EncryptedDocumentException(e);
+                } catch (MemoryLimitException e) {
+                    throw new TikaMemoryLimitException(e.getMessage());
                 }
 
                 // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
@@ -359,6 +366,8 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                         true);
                 parseEntries(ais, metadata, extractor, xhtml, true, entryCnt);
             }
+        } catch (MemoryLimitException e) {
+            throw new TikaMemoryLimitException(e.getMessage());
         } finally {
             ais.close();
             tmp.close();
@@ -661,5 +670,21 @@ public class PackageParser extends AbstractEncodingDetectorParser {
 
     public boolean isDetectCharsetsInEntryNames() {
         return detectCharsetsInEntryNames;
+    }
+
+    /**
+     * Maximum memory in kibibytes to allow for LZMA/LZMA2 dictionary allocation when parsing
+     * 7z archives. A tiny crafted 7z can declare a multi-GiB dictionary in a single header byte;
+     * this caps it so commons-compress throws a MemoryLimitException instead of OOMing the parser.
+     *
+     * @param memoryLimitInKb
+     */
+    @Field
+    public void setMemoryLimitInKb(int memoryLimitInKb) {
+        this.memoryLimitInKb = memoryLimitInKb;
+    }
+
+    public int getMemoryLimitInKb() {
+        return memoryLimitInKb;
     }
 }

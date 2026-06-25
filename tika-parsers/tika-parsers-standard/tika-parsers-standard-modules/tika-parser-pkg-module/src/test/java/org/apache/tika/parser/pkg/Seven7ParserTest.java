@@ -19,6 +19,7 @@ package org.apache.tika.parser.pkg;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -26,7 +27,9 @@ import java.io.InputStream;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
 /**
@@ -70,6 +73,21 @@ public class Seven7ParserTest extends AbstractPkgTest {
         for (String mod : tracker.modifiedAts) {
             assertNotNull(mod);
             assertTrue(mod.startsWith("20"), "Modified at " + mod);
+        }
+    }
+
+    /**
+     * A 7z whose declared LZMA2 dictionary exceeds the configured limit must fail with a
+     * {@link TikaMemoryLimitException} rather than eagerly allocating the dictionary (which a
+     * tiny crafted 7z can drive to multiple GiB, OOMing the parser).
+     */
+    @Test
+    public void testMemoryLimit() throws Exception {
+        PackageParser parser = new PackageParser();
+        parser.setMemoryLimitInKb(1); // 1 KiB, smaller than any real LZMA2 dictionary
+        try (InputStream stream = getResourceAsStream("/test-documents/test-documents.7z")) {
+            assertThrows(TikaMemoryLimitException.class, () -> parser.parse(stream,
+                    new BodyContentHandler(), new Metadata(), new ParseContext()));
         }
     }
 }
