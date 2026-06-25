@@ -1500,6 +1500,10 @@
         <version>3.3.1</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
+          <!-- 'install' (not the default 'verify') so the install-only pf4j plugin zips
+               (attach=false, installed via install:install-file; see tika-pipes plugins)
+               are available in the local repo for sibling modules that depend on them. -->
+          <preparationGoals>clean install</preparationGoals>
         </configuration>
         <dependencies>
           <dependency>
