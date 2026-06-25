@@ -18,6 +18,22 @@ Release 4.0.0-beta-1 - unreleased
      The extra jars are also forwarded onto forked pipes/server worker processes,
      so they are available where parsing actually happens (TIKA-4755).
 
+  OTHER CHANGES
+
+   * Release artifacts are now channel-specific. Maven Central gets slim
+     per-module jars (plus pom, sources and javadoc); the Apache dist area
+     gets runnable zip distributions (tika-app, tika-server-standard,
+     tika-eval-app) and drop-in pf4j plugin zips; Docker Hub gets ready-to-run
+     images. Fat/shaded artifacts no longer go to Maven Central, and release
+     staging is validated so a missing artifact fails the build (TIKA-4733).
+
+   * Improved charset (encoding) detection and junk/garbage-text detection,
+     including more efficient common-token lookups via bloom filters
+     (TIKA-4731, TIKA-4745, TIKA-4754).
+
+   * Dependency upgrades, including Jetty 11 -> 12.0.36,
+     CXF 4.0 -> 4.1.7, plus routine library updates (TIKA-4327).
+
 
 Release 4.0.0-alpha-1 - 5/4/2026
 
