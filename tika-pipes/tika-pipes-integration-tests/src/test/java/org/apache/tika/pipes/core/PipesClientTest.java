@@ -396,13 +396,13 @@ public class PipesClientTest {
             PipesResult pipesResult = pipesClient.process(tuple);
             long elapsed = System.currentTimeMillis() - startTime;
 
-            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMs)
-            // fails with FAILED_TO_INITIALIZE when using mchange-commons-java 0.5.0
+            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMs).
+            // Startup/handshake is bounded by startupTimeoutMs (not socketTimeoutMs), so a slow
+            // fork cold-start no longer misfires here as FAILED_TO_INITIALIZE.
             assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, pipesResult.status(),
                     "Should timeout when socket times out");
 
-            // Socket timeout is 3 seconds; allow generous headroom for slow CI runners
-            // where the server may need multiple startup attempts before connecting.
+            // Socket timeout is 3 seconds; allow generous headroom for slow CI runners.
             assertTrue(elapsed < 60000,
                     "Socket timeout should occur within 60s (elapsed: " + elapsed + "ms)");
 

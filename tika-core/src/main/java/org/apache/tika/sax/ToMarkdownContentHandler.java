@@ -23,69 +23,105 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.strikethrough.Strikethrough;
+import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
+import org.commonmark.ext.gfm.tables.TableBlock;
+import org.commonmark.ext.gfm.tables.TableBody;
+import org.commonmark.ext.gfm.tables.TableCell;
+import org.commonmark.ext.gfm.tables.TableHead;
+import org.commonmark.ext.gfm.tables.TableRow;
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.node.BlockQuote;
+import org.commonmark.node.BulletList;
+import org.commonmark.node.Code;
+import org.commonmark.node.Document;
+import org.commonmark.node.Emphasis;
+import org.commonmark.node.FencedCodeBlock;
+import org.commonmark.node.HardLineBreak;
+import org.commonmark.node.Heading;
+import org.commonmark.node.Image;
+import org.commonmark.node.Link;
+import org.commonmark.node.ListBlock;
+import org.commonmark.node.ListItem;
+import org.commonmark.node.Node;
+import org.commonmark.node.OrderedList;
+import org.commonmark.node.Paragraph;
+import org.commonmark.node.StrongEmphasis;
+import org.commonmark.node.Text;
+import org.commonmark.node.ThematicBreak;
+import org.commonmark.renderer.markdown.MarkdownRenderer;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * SAX event handler that writes content as Markdown.
- * Supports headings, paragraphs, bold, italic, links, images, lists (ordered
- * and unordered, including nested), tables (GFM pipe tables), code blocks,
- * inline code, blockquotes, horizontal rules, and definition lists.
+ * Supports headings, paragraphs, bold, italic, strikethrough, links, images,
+ * lists (ordered and unordered, including nested), tables (GFM pipe tables),
+ * code blocks, inline code, blockquotes, horizontal rules, and definition
+ * lists.
+ * <p>
+ * The handler builds a <a href="https://github.com/commonmark/commonmark-java">
+ * commonmark-java</a> document model from the SAX event stream and renders it
+ * with commonmark's {@code MarkdownRenderer}. Document text is added to the
+ * model as raw literals, so escaping of Markdown metacharacters — including
+ * characters that would otherwise break out of a link, image, or table cell —
+ * is performed in one place by the renderer rather than at each emit site.
+ * <p>
+ * The handler tolerates malformed input (unbalanced or misnested tags): block
+ * elements are always attached at a structurally valid point so a well-formed
+ * document model is rendered regardless of the event stream.
  * <p>
  * Content within &lt;script&gt; and &lt;style&gt; tags is ignored.
- * </p>
  *
  * @since Apache Tika 3.2
  */
 public class ToMarkdownContentHandler extends DefaultHandler {
 
-    private static final String STYLE = "STYLE";
-    private static final String SCRIPT = "SCRIPT";
+    private static final List<Extension> EXTENSIONS = Arrays.asList(
+            TablesExtension.create(), StrikethroughExtension.create());
 
     private final Writer writer;
+    private final MarkdownRenderer renderer =
+            MarkdownRenderer.builder().extensions(EXTENSIONS).build();
 
-    private final Deque<String> elementStack = new ArrayDeque<>();
-    private final Deque<ListState> listStack = new ArrayDeque<>();
+    private final Document document = new Document();
+    private final Deque<Node> stack = new ArrayDeque<>();
 
-    // Link buffering
-    private StringBuilder linkText;
-    private String linkHref;
+    // An implicit Paragraph opened to hold inline content that appeared in a
+    // block container (e.g. text directly under <body>/<li>/<blockquote>).
+    private Paragraph implicitParagraph;
 
-    // Table buffering (only the outermost table is rendered; nested tables are ignored)
-    private int tableDepth = 0;
-    private List<List<String>> tableRows;
-    private List<String> currentRow;
-    private StringBuilder currentCell;
+    // Buffer for inline <code> literal (commonmark Code holds a literal, not children).
+    private Code inlineCode;
+    private StringBuilder inlineCodeText;
 
-    // Blockquote
-    private int blockquoteDepth = 0;
+    // Buffer for <pre> fenced code block literal.
+    private FencedCodeBlock codeBlock;
+    private StringBuilder codeBlockText;
 
-    // Code
-    private boolean inPreBlock = false;
-    private boolean inInlineCode = false;
+    // Table state (outermost table only).
+    private int tableDepth;
+    private TableBlock tableBlock;
+    private TableBody tableBody;
+    private int rowIndex;
+    private boolean inHeaderRow;
 
-    // Script/style suppression
-    private int scriptDepth = 0;
-    private int styleDepth = 0;
+    // <script>/<style> content is dropped.
+    private int suppressDepth;
 
-    // Spacing
-    private boolean needsBlockSeparator = false;
-    private boolean atLineStart = true;
-
-    // Track if we've written any content at all
-    private boolean hasContent = false;
-
-    // Track if meaningful (non-whitespace) content was written since last block separator
-    private boolean hasContentSinceLastSeparator = false;
+    // True once endDocument has rendered the full document to the writer.
+    private boolean finished;
 
     public ToMarkdownContentHandler(Writer writer) {
         this.writer = writer;
+        this.stack.push(document);
     }
 
     public ToMarkdownContentHandler(OutputStream stream, String encoding)
@@ -102,137 +138,132 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             throws SAXException {
         String name = localName(localName, qName);
 
-        // Track script/style depth
-        if (name.equals("script")) {
-            scriptDepth++;
-            elementStack.push(name);
+        if (name.equals("script") || name.equals("style")) {
+            suppressDepth++;
             return;
         }
-        if (name.equals("style")) {
-            styleDepth++;
-            elementStack.push(name);
+        if (suppressDepth > 0) {
             return;
         }
-
-        if (scriptDepth > 0 || styleDepth > 0) {
-            elementStack.push(name);
-            return;
-        }
-
-        elementStack.push(name);
 
         switch (name) {
+            // --- block-level ---
             case "h1":
             case "h2":
             case "h3":
             case "h4":
             case "h5":
             case "h6":
-                emitBlockSeparator();
-                int level = name.charAt(1) - '0';
-                write(repeatChar('#', level) + " ");
+                Heading heading = new Heading();
+                heading.setLevel(name.charAt(1) - '0');
+                openBlock(heading);
                 break;
             case "p":
-                emitBlockSeparator();
+                openBlock(new Paragraph());
                 break;
+            case "blockquote":
+                openBlock(new BlockQuote());
+                break;
+            case "ul":
+                openBlock(newBulletList());
+                break;
+            case "ol":
+                OrderedList ol = new OrderedList();
+                ol.setMarkerStartNumber(1);
+                ol.setMarkerDelimiter(".");
+                ol.setTight(true);
+                openBlock(ol);
+                break;
+            case "li":
+                openListItem();
+                break;
+            case "pre":
+                popToBlockHost();
+                codeBlock = new FencedCodeBlock();
+                codeBlock.setFenceCharacter("`");
+                codeBlock.setOpeningFenceLength(3);
+                codeBlock.setLiteral("");
+                stack.peek().appendChild(codeBlock);
+                codeBlockText = new StringBuilder();
+                break;
+            case "hr":
+                ThematicBreak hr = new ThematicBreak();
+                hr.setLiteral("---");
+                addBlockLeaf(hr);
+                break;
+            case "div":
+                // Block boundary: close any open paragraph so adjacent divs separate.
+                popToBlockHost();
+                break;
+            case "table":
+                startTable();
+                break;
+            case "tr":
+                startRow();
+                break;
+            case "th":
+                startCell(true);
+                break;
+            case "td":
+                startCell(false);
+                break;
+            case "dt":
+                Paragraph term = new Paragraph();
+                openBlock(term);
+                StrongEmphasis bold = new StrongEmphasis();
+                term.appendChild(bold);
+                stack.push(bold);
+                break;
+            case "dd":
+                Paragraph def = new Paragraph();
+                openBlock(def);
+                def.appendChild(new Text(": "));
+                break;
+
+            // --- inline-level ---
             case "b":
             case "strong":
-                write("**");
+                openInline(new StrongEmphasis());
                 break;
             case "i":
             case "em":
-                write("*");
+                openInline(new Emphasis());
+                break;
+            case "s":
+            case "strike":
+            case "del":
+                openInline(new Strikethrough("~~"));
                 break;
             case "a":
-                linkHref = atts.getValue("href");
-                linkText = new StringBuilder();
-                break;
-            case "img":
-                String alt = atts.getValue("alt");
-                String src = atts.getValue("src");
-                write("![" + escapeMarkdown(alt != null ? alt : "") + "](" +
-                        formatLinkDestination(src) + ")");
-                break;
-            case "ul":
-            case "ol":
-                if (!listStack.isEmpty()) {
-                    // nested list — no extra block separator
-                } else {
-                    emitBlockSeparator();
-                }
-                listStack.push(new ListState(name.equals("ol"), listStack.size()));
-                break;
-            case "li":
-                if (!listStack.isEmpty()) {
-                    ListState state = listStack.peek();
-                    String indent = repeatChar(' ', state.depth * 4);
-                    if (state.ordered) {
-                        state.counter++;
-                        write(indent + state.counter + ". ");
-                    } else {
-                        write(indent + "- ");
-                    }
-                }
-                break;
-            case "blockquote":
-                emitBlockSeparator();
-                blockquoteDepth++;
-                break;
-            case "pre":
-                emitBlockSeparator();
-                inPreBlock = true;
-                write("```\n");
+                String href = atts.getValue("href");
+                openInline(new Link(href != null ? href : "", null));
                 break;
             case "code":
-                if (!inPreBlock) {
-                    inInlineCode = true;
-                    write("`");
+                if (codeBlockText == null) {
+                    ensureInlineContainer();
+                    inlineCode = new Code("");
+                    stack.peek().appendChild(inlineCode);
+                    inlineCodeText = new StringBuilder();
                 }
                 break;
             case "br":
-                write("\n");
-                atLineStart = true;
+                ensureInlineContainer();
+                stack.peek().appendChild(new HardLineBreak());
                 break;
-            case "hr":
-                emitBlockSeparator();
-                write("---");
-                needsBlockSeparator = true;
-                hasContent = true;
-                break;
-            case "table":
-                tableDepth++;
-                if (tableDepth == 1) {
-                    emitBlockSeparator();
-                    tableRows = new ArrayList<>();
+            case "img":
+                ensureInlineContainer();
+                Image img = new Image(value(atts, "src"), null);
+                String alt = atts.getValue("alt");
+                if (alt != null && !alt.isEmpty()) {
+                    img.appendChild(new Text(alt));
                 }
+                stack.peek().appendChild(img);
                 break;
-            case "tr":
-                if (tableDepth == 1 && tableRows != null) {
-                    currentRow = new ArrayList<>();
-                }
-                break;
-            case "th":
-                if (tableDepth == 1 && currentRow != null) {
-                    currentCell = new StringBuilder();
-                }
-                break;
-            case "td":
-                if (tableDepth == 1 && currentRow != null) {
-                    currentCell = new StringBuilder();
-                }
-                break;
-            case "dt":
-                emitBlockSeparator();
-                write("**");
-                break;
-            case "dd":
-                write("\n: ");
-                break;
-            case "div":
-                emitBlockSeparator();
-                break;
+
             default:
-                // Ignore structural elements like html, head, body, title, meta
+                // html, head, body, title, meta, div, span, dl, thead, tbody...
+                // structurally transparent; their inline children flow to the
+                // nearest real container.
                 break;
         }
     }
@@ -241,21 +272,11 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     public void endElement(String uri, String localName, String qName) throws SAXException {
         String name = localName(localName, qName);
 
-        if (!elementStack.isEmpty()) {
-            elementStack.pop();
-        }
-
-        // Track script/style depth
-        if (name.equals("script")) {
-            scriptDepth--;
+        if (name.equals("script") || name.equals("style")) {
+            suppressDepth = Math.max(0, suppressDepth - 1);
             return;
         }
-        if (name.equals("style")) {
-            styleDepth--;
-            return;
-        }
-
-        if (scriptDepth > 0 || styleDepth > 0) {
+        if (suppressDepth > 0) {
             return;
         }
 
@@ -266,97 +287,60 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             case "h4":
             case "h5":
             case "h6":
-                needsBlockSeparator = true;
-                hasContent = true;
-                break;
             case "p":
-                needsBlockSeparator = true;
-                hasContent = true;
-                break;
-            case "b":
-            case "strong":
-                write("**");
-                break;
-            case "i":
-            case "em":
-                write("*");
-                break;
-            case "a":
-                if (linkText != null) {
-                    write("[" + escapeMarkdown(linkText.toString()) + "](" +
-                            formatLinkDestination(linkHref) + ")");
-                    linkText = null;
-                    linkHref = null;
-                }
-                break;
+            case "blockquote":
             case "ul":
             case "ol":
-                if (!listStack.isEmpty()) {
-                    listStack.pop();
-                }
-                if (listStack.isEmpty()) {
-                    needsBlockSeparator = true;
-                    hasContent = true;
-                }
-                break;
             case "li":
-                write("\n");
-                atLineStart = true;
+            case "b":
+            case "strong":
+            case "i":
+            case "em":
+            case "s":
+            case "strike":
+            case "del":
+            case "a":
+                closeImplicitParagraph();
+                pop();
                 break;
-            case "blockquote":
-                blockquoteDepth--;
-                needsBlockSeparator = true;
-                hasContent = true;
+            case "dt":
+                pop(); // StrongEmphasis
+                pop(); // Paragraph
+                break;
+            case "dd":
+                pop();
                 break;
             case "pre":
-                if (!endsWithNewline()) {
-                    write("\n");
+                if (codeBlock != null) {
+                    codeBlock.setLiteral(withTrailingNewline(codeBlockText.toString()));
+                    codeBlock = null;
+                    codeBlockText = null;
                 }
-                write("```");
-                inPreBlock = false;
-                needsBlockSeparator = true;
-                hasContent = true;
                 break;
             case "code":
-                if (!inPreBlock) {
-                    inInlineCode = false;
-                    write("`");
+                if (inlineCode != null) {
+                    inlineCode.setLiteral(inlineCodeText.toString());
+                    inlineCode = null;
+                    inlineCodeText = null;
                 }
+                break;
+            case "div":
+                closeImplicitParagraph();
                 break;
             case "table":
-                if (tableDepth == 1) {
-                    emitTable();
-                    tableRows = null;
-                    currentRow = null;
-                    currentCell = null;
-                    needsBlockSeparator = true;
-                    hasContent = true;
-                }
-                tableDepth = Math.max(0, tableDepth - 1);
+                endTable();
                 break;
             case "tr":
-                if (tableDepth == 1 && tableRows != null && currentRow != null) {
-                    tableRows.add(currentRow);
-                    currentRow = null;
+                if (tableDepth == 1) {
+                    pop();
+                    rowIndex++;
                 }
                 break;
             case "th":
             case "td":
-                if (tableDepth == 1 && currentRow != null && currentCell != null) {
-                    currentRow.add(escapeTableCell(currentCell.toString()));
-                    currentCell = null;
+                if (tableDepth == 1) {
+                    pop();
                 }
-                break;
-            case "dt":
-                write("**");
-                break;
-            case "dd":
-                needsBlockSeparator = true;
-                hasContent = true;
-                break;
-            case "div":
-                needsBlockSeparator = true;
-                hasContent = true;
                 break;
             default:
                 break;
@@ -365,58 +349,34 @@ public class ToMarkdownContentHandler extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        if (scriptDepth > 0 || styleDepth > 0) {
+        if (suppressDepth > 0) {
             return;
         }
-
-        // Buffer into link text
-        if (linkText != null) {
-            linkText.append(ch, start, length);
+        if (codeBlockText != null) {
+            codeBlockText.append(ch, start, length);
             return;
         }
-
-        // Buffer into table cell
-        if (currentCell != null) {
-            currentCell.append(ch, start, length);
+        if (inlineCodeText != null) {
+            inlineCodeText.append(ch, start, length);
             return;
         }
 
         String text = new String(ch, start, length);
-
-        // In pre blocks, write raw (no escaping)
-        if (inPreBlock) {
-            write(text);
-            return;
-        }
-
-        // In inline code, write raw (no escaping)
-        if (inInlineCode) {
-            write(text);
-            return;
-        }
-
-        // Skip whitespace-only text at line start; preserve inline spaces
         if (text.trim().isEmpty()) {
-            if (!atLineStart) {
-                write(" ");
+            // Inter-element whitespace: drop between blocks, collapse within inline runs.
+            if (!isBlockContainer(stack.peek())) {
+                stack.peek().appendChild(new Text(" "));
             }
             return;
         }
 
-        // Escape markdown special characters in normal text
-        text = escapeMarkdown(text);
-
-        // Add blockquote prefix if needed at line start
-        if (blockquoteDepth > 0 && atLineStart && !text.isEmpty()) {
-            write(repeatChar('>', blockquoteDepth) + " ");
-            atLineStart = false;
+        if (isStructuralOnly(stack.peek())) {
+            // Stray text inside a list/table wrapper — not a valid inline position; drop.
+            return;
         }
-
-        if (!text.isEmpty()) {
-            write(text);
-            hasContent = true;
-            hasContentSinceLastSeparator = true;
-        }
+        ensureInlineContainer();
+        // Newlines inside prose would otherwise survive as literal line breaks.
+        stack.peek().appendChild(new Text(collapseLineBreaks(text)));
     }
 
     @Override
@@ -427,132 +387,193 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     @Override
     public void endDocument() throws SAXException {
         try {
+            renderer.render(document, writer);
             writer.flush();
+            finished = true;
         } catch (IOException e) {
-            throw new SAXException("Error flushing character output", e);
+            throw new SAXException("Error writing markdown", e);
         }
     }
 
     @Override
     public String toString() {
-        return writer.toString();
+        if (finished) {
+            return writer.toString();
+        }
+        // Parsing did not complete (e.g. the parser threw mid-document). Render the
+        // content accumulated so far so partial content is not lost on failure — the
+        // streaming writer this replaced exposed partial content the same way.
+        return renderer.render(document);
     }
 
-    private void write(String s) throws SAXException {
-        try {
-            writer.write(s);
-            if (!s.isEmpty()) {
-                atLineStart = s.charAt(s.length() - 1) == '\n';
-                if (!s.trim().isEmpty()) {
-                    hasContentSinceLastSeparator = true;
-                }
+    // --- tree construction helpers ---
+
+    /**
+     * Append a block-level node at a structurally valid point and descend into
+     * it. commonmark requires a block's parent to be a block, so any inline (or
+     * other non-hosting) nodes left open are closed first.
+     */
+    private void openBlock(Node block) {
+        popToBlockHost();
+        stack.peek().appendChild(block);
+        stack.push(block);
+    }
+
+    /** Append a block-level leaf (hr, code block, table) without descending. */
+    private void addBlockLeaf(Node block) {
+        popToBlockHost();
+        stack.peek().appendChild(block);
+    }
+
+    /**
+     * A list item is only valid inside a list. If the current point isn't a
+     * list (a stray {@code <li>} or misnested markup), recover by opening an
+     * implicit bullet list so the model stays renderable.
+     */
+    private void openListItem() {
+        if (!(stack.peek() instanceof ListBlock)) {
+            popToBlockHost();
+            BulletList implicit = newBulletList();
+            stack.peek().appendChild(implicit);
+            stack.push(implicit);
+        }
+        ListItem li = new ListItem();
+        stack.peek().appendChild(li);
+        stack.push(li);
+    }
+
+    private void openInline(Node node) {
+        ensureInlineContainer();
+        stack.peek().appendChild(node);
+        stack.push(node);
+    }
+
+    private void pop() {
+        if (stack.size() > 1) {
+            Node popped = stack.pop();
+            if (popped == implicitParagraph) {
+                implicitParagraph = null;
             }
-        } catch (IOException e) {
-            throw new SAXException("Error writing: " + s, e);
         }
     }
 
-    private void emitBlockSeparator() throws SAXException {
-        if (needsBlockSeparator && hasContent && hasContentSinceLastSeparator) {
-            write("\n\n");
-            needsBlockSeparator = false;
-            atLineStart = true;
-            hasContentSinceLastSeparator = false;
-        } else {
-            needsBlockSeparator = false;
+    /** Pop open nodes until the top can host block children (Document/blockquote/list item). */
+    private void popToBlockHost() {
+        while (stack.size() > 1 && !canHostBlocks(stack.peek())) {
+            Node popped = stack.pop();
+            if (popped == implicitParagraph) {
+                implicitParagraph = null;
+            }
         }
     }
 
-    private void emitTable() throws SAXException {
-        if (tableRows == null || tableRows.isEmpty()) {
+    /**
+     * If the current insertion point is a block container that cannot hold
+     * inline content directly, open an implicit {@link Paragraph} to hold it.
+     */
+    private void ensureInlineContainer() {
+        Node top = stack.peek();
+        if (canHostBlocks(top)) {
+            Paragraph p = new Paragraph();
+            top.appendChild(p);
+            stack.push(p);
+            implicitParagraph = p;
+        }
+    }
+
+    private void closeImplicitParagraph() {
+        if (implicitParagraph != null && stack.peek() == implicitParagraph) {
+            stack.pop();
+            implicitParagraph = null;
+        }
+    }
+
+    private void startTable() {
+        tableDepth++;
+        if (tableDepth == 1) {
+            popToBlockHost();
+            tableBlock = new TableBlock();
+            tableBody = null;
+            rowIndex = 0;
+            stack.peek().appendChild(tableBlock);
+        }
+    }
+
+    private void endTable() {
+        if (tableDepth == 1) {
+            tableBlock = null;
+            tableBody = null;
+        }
+        tableDepth = Math.max(0, tableDepth - 1);
+    }
+
+    private void startRow() {
+        if (tableDepth != 1) {
             return;
         }
-
-        // Determine column count
-        int cols = 0;
-        for (List<String> row : tableRows) {
-            cols = Math.max(cols, row.size());
-        }
-
-        // Emit rows
-        for (int r = 0; r < tableRows.size(); r++) {
-            List<String> row = tableRows.get(r);
-            StringBuilder sb = new StringBuilder("|");
-            for (int c = 0; c < cols; c++) {
-                String cell = c < row.size() ? row.get(c) : "";
-                sb.append(" ").append(cell).append(" |");
+        TableRow row = new TableRow();
+        if (rowIndex == 0) {
+            TableHead head = new TableHead();
+            tableBlock.appendChild(head);
+            head.appendChild(row);
+            inHeaderRow = true;
+        } else {
+            if (tableBody == null) {
+                tableBody = new TableBody();
+                tableBlock.appendChild(tableBody);
             }
-            write(sb.toString());
-            write("\n");
-
-            // Insert separator after first row
-            if (r == 0) {
-                StringBuilder sep = new StringBuilder("|");
-                for (int c = 0; c < cols; c++) {
-                    sep.append(" --- |");
-                }
-                write(sep.toString());
-                write("\n");
-            }
+            tableBody.appendChild(row);
+            inHeaderRow = false;
         }
+        stack.push(row);
     }
 
-    private boolean endsWithNewline() {
-        String s = writer.toString();
-        return !s.isEmpty() && s.charAt(s.length() - 1) == '\n';
+    private void startCell(boolean header) {
+        if (tableDepth != 1 || !(stack.peek() instanceof TableRow)) {
+            return;
+        }
+        TableCell cell = new TableCell();
+        cell.setHeader(header || inHeaderRow);
+        stack.peek().appendChild(cell);
+        stack.push(cell);
     }
 
-    private static String escapeMarkdown(String text) {
-        StringBuilder sb = new StringBuilder(text.length());
-        for (int i = 0; i < text.length(); i++) {
-            char c = text.charAt(i);
-            switch (c) {
-                case '\\':
-                case '`':
-                case '*':
-                case '_':
-                case '[':
-                case ']':
-                case '#':
-                case '|':
-                    sb.append('\\').append(c);
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
-        }
-        return sb.toString();
+    private static BulletList newBulletList() {
+        BulletList list = new BulletList();
+        list.setMarker("-");
+        list.setTight(true);
+        return list;
     }
 
-    private static String escapeTableCell(String text) {
-        // a newline ends a GFM table row and a pipe ends a cell; fold the former and
-        // escape the latter (with the other markers) so cell content can't break out
-        // of its column or row.
-        return escapeMarkdown(text.replaceAll("[\\r\\n]+", " ").trim());
+    private static boolean canHostBlocks(Node n) {
+        return n instanceof Document || n instanceof BlockQuote || n instanceof ListItem;
     }
 
-    private static String formatLinkDestination(String url) {
-        if (url == null || url.isEmpty()) {
-            return "";
-        }
-        // angle brackets and line breaks can't appear in any markdown destination
-        String cleaned = url.replaceAll("[\\u0000-\\u001f<>]", "");
-        // a space or paren would otherwise close the bare (url) form early, so wrap
-        // those in <>, where spaces and parens are allowed
-        if (cleaned.indexOf(' ') >= 0 || cleaned.indexOf('(') >= 0
-                || cleaned.indexOf(')') >= 0) {
-            return "<" + cleaned + ">";
-        }
-        return cleaned;
+    private static boolean isBlockContainer(Node n) {
+        return n instanceof Document || n instanceof BlockQuote || n instanceof ListItem
+                || n instanceof ListBlock || n instanceof TableBlock || n instanceof TableHead
+                || n instanceof TableBody || n instanceof TableRow;
     }
 
-    private static String repeatChar(char c, int count) {
-        StringBuilder sb = new StringBuilder(count);
-        for (int i = 0; i < count; i++) {
-            sb.append(c);
+    private static boolean isStructuralOnly(Node n) {
+        return n instanceof ListBlock || n instanceof TableBlock || n instanceof TableHead
+                || n instanceof TableBody || n instanceof TableRow;
+    }
+
+    private static String collapseLineBreaks(String s) {
+        return s.replace('\r', ' ').replace('\n', ' ');
+    }
+
+    private static String withTrailingNewline(String s) {
+        if (s.isEmpty() || s.charAt(s.length() - 1) == '\n') {
+            return s;
         }
-        return sb.toString();
+        return s + "\n";
+    }
+
+    private static String value(Attributes atts, String name) {
+        String v = atts.getValue(name);
+        return v != null ? v : "";
     }
 
     private static String localName(String localName, String qName) {
@@ -560,23 +581,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
             return localName.toLowerCase(Locale.ROOT);
         }
         if (qName != null) {
-            // Strip namespace prefix
             int colon = qName.indexOf(':');
             String name = colon >= 0 ? qName.substring(colon + 1) : qName;
             return name.toLowerCase(Locale.ROOT);
         }
         return "";
-    }
-
-    private static class ListState {
-        final boolean ordered;
-        final int depth;
-        int counter;
-
-        ListState(boolean ordered, int depth) {
-            this.ordered = ordered;
-            this.depth = depth;
-            this.counter = 0;
-        }
     }
 }

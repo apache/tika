@@ -8,23 +8,13 @@
   },
   "server": {
     "port": 9999,
-    "enableUnsecureFeatures": true,
     "endpoints": [
-      "rmeta",
-      "status",
-      "tika"
+      "tika",
+      "pipes"
     ]
-  },
-  "parse-context": {
-    "timeout-limits": {
-      "progressTimeoutMillis": 5000
-    }
   },
   "pipes": {
-    "numClients": 2,
-    "forkedJvmArgs": [
-      "-Xmx256m"
-    ]
+    "numClients": 2
   },
   "plugin-roots": "target/plugins"
 }

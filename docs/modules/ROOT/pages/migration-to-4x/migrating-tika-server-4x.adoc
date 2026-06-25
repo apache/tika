@@ -132,6 +132,22 @@ The following `TikaServerConfig` options have been removed:
 
 * **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
 
+=== `/pipes`, `/async`, and `/status` Require `enableUnsecureFeatures`
+
+Previously these endpoints were enabled simply by listing them under `server.endpoints`. They now *also* require `enableUnsecureFeatures` to be `true`; selecting any of `pipes`, `async`, or `status` without it causes the server to refuse to start with a clear error. `/pipes` and `/async` drive process-isolated batch parsing through your fetchers and emitters, and `/status` exposes server information, so this makes enabling them an explicit, deliberate opt-in.
+
+**Migration:** if your config selects `pipes`, `async`, or `status`, add `"enableUnsecureFeatures": true` to the `server` section:
+
+[source,json]
+----
+{
+  "server": {
+    "enableUnsecureFeatures": true,
+    "endpoints": ["tika", "rmeta", "pipes", "async", "status"]
+  }
+}
+----
+
 == Configuration Changes
 
 === Required: Pipes Configuration

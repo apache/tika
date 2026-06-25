@@ -58,6 +58,13 @@ public class TikaServerConfig {
                     "Additionally, /config endpoints allow per-request parser configuration\n" +
                     "which could enable dangerous operations.\n" +
                     "Please make sure you know what you are doing.";
+    /**
+     * Endpoints that expose unsecure features (process-isolated pipes parsing, async
+     * batch processing, and server status). Selecting any of these now requires
+     * {@code enableUnsecureFeatures=true} as an explicit, deliberate opt-in.
+     */
+    private static final Set<String> ENDPOINTS_REQUIRING_UNSECURE_FEATURES =
+            new HashSet<>(Arrays.asList("pipes", "async", "status"));
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
             new String[]{"maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
                     "tmpFilePrefix"});
@@ -167,6 +174,24 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private void validateConsistency(Set<String> settings) throws TikaConfigException {
         if (host == null) {
             throw new TikaConfigException("Must specify 'host'");
+        }
+        if (!enableUnsecureFeatures) {
+            List<String> requireUnsecure = new ArrayList<>();
+            for (String endpoint : endpoints) {
+                if (ENDPOINTS_REQUIRING_UNSECURE_FEATURES.contains(endpoint)
+                        && !requireUnsecure.contains(endpoint)) {
+                    requireUnsecure.add(endpoint);
+                }
+            }
+            if (!requireUnsecure.isEmpty()) {
+                throw new TikaConfigException(
+                        "The following selected endpoint(s) require unsecure features to be " +
+                        "enabled: " + requireUnsecure + ". Set 'enableUnsecureFeatures' to true " +
+                        "in the 'server' section of your tika-config and confirm you understand " +
+                        "the security implications (see the tika-server documentation). These " +
+                        "endpoints were previously enabled simply by selecting them; the explicit " +
+                        "opt-in is now required.");
+            }
         }
     }
 
