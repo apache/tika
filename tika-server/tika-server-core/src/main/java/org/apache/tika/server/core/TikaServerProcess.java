@@ -205,7 +205,9 @@ public class TikaServerProcess {
         FetcherManager fetcherManager = null;
         InputStreamFactory inputStreamFactory = null;
         if (tikaServerConfig.isEnableUnsecureFeatures()) {
-            fetcherManager = FetcherManager.load(tikaServerConfig.getConfigPath());
+            //tolerate configs that enable unsecure features (e.g. for the status endpoint)
+            //without declaring any fetchers
+            fetcherManager = FetcherManager.loadOrEmpty(tikaServerConfig.getConfigPath());
             inputStreamFactory = new FetcherStreamFactory(fetcherManager);
         } else {
             inputStreamFactory = new DefaultInputStreamFactory();

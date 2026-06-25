@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -35,6 +36,7 @@ import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TikaConfigTest;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerConfigTest {
@@ -106,6 +108,49 @@ public class TikaServerConfigTest {
         assertEquals(6, ports.length);
         assertEquals(9994, ports[0]);
         assertEquals(9999, ports[5]);
+    }
+
+    @Test
+    public void testUnsecureEndpointRequiresEnableUnsecureFeatures() throws Exception {
+        // Selecting pipes (or async, status) without enableUnsecureFeatures must fail
+        // at config load (validateConsistency runs in load(CommandLine)), forcing an
+        // explicit opt-in.
+        CommandLineParser parser = new DefaultParser();
+        Path path = Paths.get(TikaConfigTest.class
+                .getResource("/configs/tika-config-server-pipes-no-unsecure.xml")
+                .toURI());
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertTrue(ex.getMessage().contains("enableUnsecureFeatures"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("pipes"), ex.getMessage());
+    }
+
+    @Test
+    public void testUnsecureEndpointAllowedWithEnableUnsecureFeatures() throws Exception {
+        // tika-config-server-basic.xml selects the 'status' endpoint together with
+        // enableUnsecureFeatures=true, so it must load without error.
+        CommandLineParser parser = new DefaultParser();
+        Path path = Paths.get(TikaConfigTest.class
+                .getResource("/configs/tika-config-server-basic.xml")
+                .toURI());
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaServerConfig config = TikaServerConfig.load(commandLine);
+        assertTrue(config.isEnableUnsecureFeatures());
     }
 
     @Test

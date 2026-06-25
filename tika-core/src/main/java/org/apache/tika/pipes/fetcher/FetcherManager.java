@@ -43,6 +43,22 @@ public class FetcherManager extends ConfigBase {
                     "fetcher", Fetcher.class, is);
         }
     }
+
+    /**
+     * As {@link #load(Path)}, but returns an empty manager (no fetchers) when the config
+     * contains no {@code <fetchers/>} element, instead of throwing. This allows a server to
+     * enable unsecure features (e.g. for the status endpoint) without being forced to
+     * configure a fetcher. If the {@code <fetchers/>} element is present but a fetcher is
+     * misconfigured, this still throws.
+     */
+    public static FetcherManager loadOrEmpty(Path p) throws IOException, TikaConfigException {
+        try (InputStream is =
+                     Files.newInputStream(p)) {
+            FetcherManager fetcherManager = FetcherManager.buildCompositeOrNull("fetchers",
+                    FetcherManager.class, "fetcher", Fetcher.class, is);
+            return fetcherManager == null ? new FetcherManager(List.of()) : fetcherManager;
+        }
+    }
     private final Map<String, Fetcher> fetcherMap = new ConcurrentHashMap<>();
 
     public FetcherManager(List<Fetcher> fetchers) throws TikaConfigException {

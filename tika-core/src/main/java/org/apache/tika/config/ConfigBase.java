@@ -124,6 +124,24 @@ public abstract class ConfigBase {
     protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
                                              String itemName, Class<T> itemClass, InputStream is)
             throws TikaConfigException, IOException {
+        P composite = buildCompositeOrNull(compositeElementName, compositeClass, itemName,
+                itemClass, is);
+        if (composite == null) {
+            throw new TikaConfigException("could not find " + compositeElementName);
+        }
+        return composite;
+    }
+
+    /**
+     * As {@link #buildComposite(String, Class, String, Class, InputStream)}, but returns
+     * {@code null} instead of throwing when the composite element (e.g. {@code <fetchers/>})
+     * is absent from the config. If the element is present but a child item is misconfigured,
+     * this still throws so genuine configuration errors are not silently swallowed.
+     */
+    protected static <P, T> P buildCompositeOrNull(String compositeElementName,
+                                                   Class<P> compositeClass, String itemName,
+                                                   Class<T> itemClass, InputStream is)
+            throws TikaConfigException, IOException {
         Element properties = null;
         try {
             properties = XMLReaderUtils.buildDOM(is).getDocumentElement();
@@ -132,13 +150,31 @@ public abstract class ConfigBase {
         } catch (TikaException e) {
             throw new TikaConfigException("problem loading xml to dom", e);
         }
-        return buildComposite(compositeElementName, compositeClass, itemName, itemClass,
+        return buildCompositeOrNull(compositeElementName, compositeClass, itemName, itemClass,
                 properties);
     }
 
     protected static <P, T> P buildComposite(String compositeElementName, Class<P> compositeClass,
                                              String itemName, Class<T> itemClass,
                                              Element properties)
+            throws TikaConfigException, IOException {
+        P composite = buildCompositeOrNull(compositeElementName, compositeClass, itemName,
+                itemClass, properties);
+        if (composite == null) {
+            throw new TikaConfigException("could not find " + compositeElementName);
+        }
+        return composite;
+    }
+
+    /**
+     * As {@link #buildComposite(String, Class, String, Class, Element)}, but returns
+     * {@code null} instead of throwing when the composite element (e.g. {@code <fetchers/>})
+     * is absent from the config. If the element is present but a child item is misconfigured,
+     * this still throws so genuine configuration errors are not silently swallowed.
+     */
+    protected static <P, T> P buildCompositeOrNull(String compositeElementName,
+                                                   Class<P> compositeClass, String itemName,
+                                                   Class<T> itemClass, Element properties)
             throws TikaConfigException, IOException {
 
         if (!("properties".equals(properties.getNodeName()) ||
@@ -167,7 +203,7 @@ public abstract class ConfigBase {
                 }
             }
         }
-        throw new TikaConfigException("could not find " + compositeElementName);
+        return null;
     }
 
     private static <T> List<T> loadComposite(Node composite, String itemName,

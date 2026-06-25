@@ -17,17 +17,10 @@
 -->
 <properties>
   <server>
-    <taskTimeoutMillis>120000</taskTimeoutMillis>
-    <minimumTimeoutMillis>10</minimumTimeoutMillis>
     <port>9999</port>
-    <maxFiles>1000</maxFiles>
-    <forkedJvmArgs>
-      <arg>-Xmx512m</arg>
-    </forkedJvmArgs>
-    <enableUnsecureFeatures>true</enableUnsecureFeatures>
     <endpoints>
-      <endpoint>rmeta</endpoint>
-      <endpoint>status</endpoint>
+      <endpoint>tika</endpoint>
+      <endpoint>pipes</endpoint>
     </endpoints>
   </server>
 </properties>
