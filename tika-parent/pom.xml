@@ -393,7 +393,7 @@
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.6.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
-    <kafka.version>4.3.0</kafka.version>
+    <kafka.version>4.3.1</kafka.version>
     <kotlin-stdlib.version>2.4.0</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.26.0</log4j2.version>
@@ -413,7 +413,7 @@
     <netty.version>4.2.15.Final</netty.version>
     <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.9</opennlp.version>
+    <opennlp.version>2.5.10</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
