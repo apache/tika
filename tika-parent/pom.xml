@@ -1234,11 +1234,11 @@
         <artifactId>jakarta.inject-api</artifactId>
         <version>2.0.1.MR</version>
       </dependency>
-      <!-- TODO try removing after updating aws2, last tested with 2.46.10, trouble with transcribe -->
+      <!-- TODO try removing after updating aws2, last tested with 2.46.17, trouble with transcribe -->
       <dependency>
         <groupId>org.apache.httpcomponents.core5</groupId>
         <artifactId>httpcore5</artifactId>
-        <version>5.4.2</version>
+        <version>5.4.3</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
