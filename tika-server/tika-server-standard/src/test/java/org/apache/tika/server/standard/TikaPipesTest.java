@@ -66,6 +66,7 @@ import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.PipesResource;
@@ -282,7 +283,14 @@ public class TikaPipesTest extends CXFTestBase {
         JsonFetchEmitTuple.toJson(t, writer);
         FetchEmitTuple deserialized = JsonFetchEmitTuple.fromJson(new StringReader(writer.toString()));
 
-        assertEquals(t, deserialized);
+        // Config deserializes lazily now; resolve before comparing the effective context.
+        ParseContextUtils.resolveAll(deserialized.getParseContext(),
+                Thread.currentThread().getContextClassLoader());
+        assertEquals(t.getId(), deserialized.getId());
+        assertEquals(t.getFetchKey(), deserialized.getFetchKey());
+        assertEquals(t.getEmitKey(), deserialized.getEmitKey());
+        assertEquals(ParseMode.UNPACK, deserialized.getParseContext().get(ParseMode.class));
+        assertEquals(config, deserialized.getParseContext().get(UnpackConfig.class));
         String getUrl = endPoint + PIPES_PATH;
         Response response = WebClient
                 .create(getUrl)

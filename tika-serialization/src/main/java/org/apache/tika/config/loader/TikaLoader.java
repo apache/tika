@@ -148,12 +148,7 @@ public class TikaLoader {
 
     // Special cached instances that aren't standard components
     private Parser autoDetectParser;
-    private Detector detectors;
-    private EncodingDetector encodingDetectors;
-    private MetadataFilter metadataFilter;
     private ContentHandlerFactory contentHandlerFactory;
-    private Renderer renderers;
-    private Translator translator;
     private ConfigLoader configLoader;
     private GlobalSettings globalSettings;
 
@@ -409,7 +404,7 @@ public class TikaLoader {
         }
         try {
             ParseContext context =
-                    ParseContextDeserializer.readParseContext(parseContextNode, objectMapper);
+                    ParseContextDeserializer.readParseContext(parseContextNode);
             ParseContextUtils.resolveAll(context, classLoader);
             return context;
         } catch (IOException e) {
@@ -651,26 +646,6 @@ public class TikaLoader {
             componentCache.put(componentClass, component);
         }
         return component;
-    }
-
-    /**
-     * Gets a component by its JSON field name.
-     * Components are loaded lazily and cached.
-     *
-     * @param jsonField the JSON field name (e.g., "parsers", "detectors")
-     * @return the loaded component
-     * @throws TikaConfigException if loading fails
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T get(String jsonField) throws TikaConfigException {
-        // Get component config from registry by field name
-        ComponentConfig<?> componentConfig = ComponentNameResolver.getComponentConfig(jsonField);
-        if (componentConfig == null) {
-            throw new IllegalArgumentException("No component registered for field: " + jsonField);
-        }
-
-        // Delegate to get by class (which handles caching)
-        return (T) get(componentConfig.getComponentClass());
     }
 
     /**

@@ -226,23 +226,9 @@ Benefits:
 }
 ----
 
-=== Typed Section
-
-For components that need immediate deserialization (not lazy loading):
-
-[source,json]
-----
-{
-  "parse-context": {
-    "typed": {
-      "handler-config": {
-        "type": "XML",
-        "writeLimit": 100000
-      }
-    }
-  }
-}
-----
+All entries use this flat, friendly-named form and are resolved lazily: a config
+is parsed into its component only when first needed (see `resolveAll`). There is
+no separate "immediate" or "typed" form.
 
 == Security Model
 

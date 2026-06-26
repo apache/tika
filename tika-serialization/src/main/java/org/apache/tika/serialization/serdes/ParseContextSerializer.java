@@ -32,25 +32,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
 
 /**
- * Serializes ParseContext to JSON.
- * <p>
- * Typed objects from the context map are serialized under a "typed" key.
- * JSON configs are serialized at the top level.
- * <p>
- * Example output:
- * <pre>
- * {
- *   "typed": {
- *     "handler-config": {"type": "XML", "parseMode": "RMETA"}
- *   },
- *   "metadata-filters": ["mock-upper-case-filter"]
- * }
- * </pre>
+ * Serializes ParseContext to JSON. Every entry is written flat, by friendly name -- both the live
+ * objects in the context map (serialized to their config) and the raw JSON configs -- and read back
+ * as lazy configs constructed by {@code resolveAll}. Example:
+ * {@code {"basic-content-handler-factory":{"type":"XML"},"metadata-filters":[...]}}
  */
 public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
     public static final String PARSE_CONTEXT = "parse-context";
-    public static final String TYPED = "typed";
 
     private static ObjectMapper plainMapper() {
         return TikaObjectMapperFactory.getPlainMapper();
@@ -61,16 +50,12 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                          SerializerProvider serializers) throws IOException {
         gen.writeStartObject();
 
-        // Track which friendly names have been serialized under "typed"
-        // so we can skip them when serializing jsonConfigs (avoid duplicates)
+        // Friendly names written from the context map, so we skip them when writing jsonConfigs.
         Set<String> serializedNames = new HashSet<>();
 
-        // First, serialize typed objects from the context map under "typed" key
+        // Context-map objects are written flat, by friendly name; read back as lazy jsonConfigs.
         Map<String, Object> contextMap = parseContext.getContextMap();
-        boolean hasTypedObjects = false;
-
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
-            String keyClassName = entry.getKey();
             Object value = entry.getValue();
 
             // Skip null values
@@ -87,11 +72,6 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                         "@TikaComponent annotation or .idx file to be serializable.");
             }
 
-            if (!hasTypedObjects) {
-                gen.writeFieldName(TYPED);
-                gen.writeStartObject();
-                hasTypedObjects = true;
-            }
             gen.writeFieldName(keyName);
             // Use writeTree instead of writeRawValue for binary format support (e.g., Smile)
             // and stricter validation (fails early if value can't be serialized)
@@ -101,16 +81,10 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
             serializedNames.add(keyName);
         }
 
-        if (hasTypedObjects) {
-            gen.writeEndObject();
-        }
-
-        // Then, serialize JSON configs at the top level
-        // Skip entries that were already serialized under "typed" (they've been resolved)
+        // Then, serialize JSON configs at the top level (skip any already written above)
         Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
             if (serializedNames.contains(entry.getKey())) {
-                // Already serialized under "typed", skip to avoid duplicate
                 continue;
             }
             gen.writeFieldName(entry.getKey());

@@ -74,10 +74,43 @@ public final class ComponentNameResolver {
         CONTEXT_KEY_INTERFACES.add(UnpackSelector.class);
     }
 
+    /**
+     * Subset of {@link #CONTEXT_KEY_INTERFACES} a request-supplied (wire) ParseContext may
+     * instantiate and bind. Default-deny: a type is listed only if every registered implementation
+     * is confined to transforming this request's metadata or shaping its output -- no exec, IO,
+     * network, or control over which other components run. Enforced only on untrusted wire input;
+     * trusted load-time config via TikaLoader is unrestricted.
+     */
+    private static final Set<Class<?>> WIRE_INSTANTIABLE_CONTEXT_KEYS = new HashSet<>();
+
+    /**
+     * Complement of {@link #WIRE_INSTANTIABLE_CONTEXT_KEYS}: context keys a wire ParseContext may
+     * NOT instantiate (exec/IO/network or parse-graph control). Explicit so the exhaustiveness test
+     * can assert every context-key interface is classified as exactly one of allowed/blocked.
+     */
+    private static final Set<Class<?>> WIRE_BLOCKED_CONTEXT_KEYS = new HashSet<>();
+
+    static {
+        // Allowed: bounded to this request's metadata/output; no exec or IO.
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(MetadataFilter.class);
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(ContentHandlerFactory.class);
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(ContentHandlerDecoratorFactory.class);
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(DigesterFactory.class);
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(MetadataWriteLimiterFactory.class);
+        WIRE_INSTANTIABLE_CONTEXT_KEYS.add(UnpackSelector.class);
+
+        // Blocked: exec / IO / network / parse-graph control.
+        WIRE_BLOCKED_CONTEXT_KEYS.add(Parser.class);
+        WIRE_BLOCKED_CONTEXT_KEYS.add(Detector.class);
+        WIRE_BLOCKED_CONTEXT_KEYS.add(EncodingDetector.class);
+        WIRE_BLOCKED_CONTEXT_KEYS.add(Renderer.class);
+        WIRE_BLOCKED_CONTEXT_KEYS.add(Translator.class);
+        WIRE_BLOCKED_CONTEXT_KEYS.add(EmbeddedDocumentExtractorFactory.class);
+    }
+
     private static final Map<String, ComponentRegistry> REGISTRIES = new ConcurrentHashMap<>();
 
-    // Component configuration storage (keyed by JSON field name and by component class)
-    private static final Map<String, ComponentConfig<?>> FIELD_TO_CONFIG = new ConcurrentHashMap<>();
+    // Component configuration storage (keyed by component class)
     private static final Map<Class<?>, ComponentConfig<?>> CLASS_TO_CONFIG = new ConcurrentHashMap<>();
 
     private ComponentNameResolver() {
@@ -238,18 +271,7 @@ public final class ComponentNameResolver {
      * @param config the component configuration
      */
     public static <T> void registerComponentConfig(ComponentConfig<T> config) {
-        FIELD_TO_CONFIG.put(config.getJsonField(), config);
         CLASS_TO_CONFIG.put(config.getComponentClass(), config);
-    }
-
-    /**
-     * Gets component configuration by JSON field name.
-     *
-     * @param jsonField the JSON field name (e.g., "parsers")
-     * @return the component config, or null if not registered
-     */
-    public static ComponentConfig<?> getComponentConfig(String jsonField) {
-        return FIELD_TO_CONFIG.get(jsonField);
     }
 
     /**
@@ -263,27 +285,6 @@ public final class ComponentNameResolver {
         return (ComponentConfig<T>) CLASS_TO_CONFIG.get(componentClass);
     }
 
-    /**
-     * Checks if a component config is registered for the given JSON field.
-     */
-    public static boolean hasComponentConfig(String jsonField) {
-        return FIELD_TO_CONFIG.containsKey(jsonField);
-    }
-
-    /**
-     * Checks if a component config is registered for the given class.
-     */
-    public static boolean hasComponentConfig(Class<?> componentClass) {
-        return CLASS_TO_CONFIG.containsKey(componentClass);
-    }
-
-    /**
-     * Gets all registered component JSON field names.
-     */
-    public static Set<String> getComponentFields() {
-        return Collections.unmodifiableSet(FIELD_TO_CONFIG.keySet());
-    }
-
     // ==================== Context Key Resolution Methods ====================
 
     /**
@@ -293,6 +294,31 @@ public final class ComponentNameResolver {
      */
     public static Set<Class<?>> getContextKeyInterfaces() {
         return Collections.unmodifiableSet(CONTEXT_KEY_INTERFACES);
+    }
+
+    /** Wire-instantiable context-key interfaces; see {@link #WIRE_INSTANTIABLE_CONTEXT_KEYS}. */
+    public static Set<Class<?>> getWireInstantiableContextKeys() {
+        return Collections.unmodifiableSet(WIRE_INSTANTIABLE_CONTEXT_KEYS);
+    }
+
+    /** True if a wire ParseContext may bind this context-key type (default-deny). */
+    public static boolean isWireInstantiable(Class<?> contextKey) {
+        return WIRE_INSTANTIABLE_CONTEXT_KEYS.contains(contextKey);
+    }
+
+    /**
+     * True if a wire ParseContext must NOT instantiate this context-key type. Fail-closed: any
+     * context-key interface not on the wire allowlist is blocked, so a newly-added one is refused
+     * until consciously allow-listed. Non-component keys (plain config DTOs) are never blocked.
+     */
+    public static boolean isWireBlocked(Class<?> contextKey) {
+        return CONTEXT_KEY_INTERFACES.contains(contextKey)
+                && !WIRE_INSTANTIABLE_CONTEXT_KEYS.contains(contextKey);
+    }
+
+    /** Explicitly wire-blocked context-key interfaces; complement of the wire allowlist. */
+    public static Set<Class<?>> getWireBlockedContextKeys() {
+        return Collections.unmodifiableSet(WIRE_BLOCKED_CONTEXT_KEYS);
     }
 
     /**

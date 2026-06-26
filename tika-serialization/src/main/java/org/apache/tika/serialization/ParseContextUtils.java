@@ -126,8 +126,10 @@ public class ParseContextUtils {
             // Try to find this friendly name in any registered component registry
             var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
             if (optionalInfo.isEmpty()) {
-                // Not a registered component - that's okay, might be used for something else
-                LOG.debug("'{}' not found in any component registry, skipping", friendlyName);
+                // Not a registered component -- ignored (not applied). WARN so a typo'd config key
+                // is visible rather than silently dropped.
+                LOG.warn("Ignoring unrecognized parse-context entry '{}' (not a registered "
+                        + "component); check for a typo", friendlyName);
                 continue;
             }
 
@@ -207,8 +209,10 @@ public class ParseContextUtils {
                             configName + "': " + item);
                 }
 
-                Object component = ComponentInstantiator.instantiate(
-                        typeName, configNode, MAPPER, classLoader);
+                // Check assignability before constructing, so an element of the wrong type is
+                // rejected up front rather than instantiated and later discarded.
+                Object component = ComponentInstantiator.instantiateComponent(
+                        typeName, configNode, MAPPER, classLoader, configInfo.componentInterface());
                 components.add(component);
                 LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
             }

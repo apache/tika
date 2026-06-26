@@ -1,11 +1,4 @@
 {
-  "fetchers": {
-    "file-system-fetcher": {
-      "file-system-fetcher": {
-        "allowAbsolutePaths": true
-      }
-    }
-  },
   "server": {
     "port": 9999,
     "enableUnsecureFeatures": true,

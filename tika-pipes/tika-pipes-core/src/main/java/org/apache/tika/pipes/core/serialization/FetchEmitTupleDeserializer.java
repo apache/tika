@@ -36,7 +36,6 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -50,7 +49,6 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
-        ObjectMapper mapper = (ObjectMapper) jsonParser.getCodec();
 
         String id = readVal(ID, root, null, true);
         String fetcherId = readVal(FETCHER, root, null, true);
@@ -61,7 +59,10 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
-        ParseContext parseContext = parseContextNode == null ? new ParseContext() : ParseContextDeserializer.readParseContext(parseContextNode, mapper);
+        // A FetchEmitTuple is always untrusted wire input (request body, pipes iterator): restrict
+        // its parseContext so it cannot introduce wire-blocked components (parsers, detectors, ...).
+        ParseContext parseContext = parseContextNode == null ? new ParseContext()
+                : ParseContextDeserializer.readParseContext(parseContextNode, true);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
