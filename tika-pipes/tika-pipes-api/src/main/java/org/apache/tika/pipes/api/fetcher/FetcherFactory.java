@@ -20,4 +20,9 @@ import org.apache.tika.plugins.TikaExtensionFactory;
 
 public interface FetcherFactory extends TikaExtensionFactory<Fetcher> {
 
+    /**
+     * @return the config POJO class for this fetcher; used to generate the JSON schema that
+     *         describes the {@code fetcher_config_json} a client must supply when saving a fetcher.
+     */
+    Class<?> getConfigClass();
 }

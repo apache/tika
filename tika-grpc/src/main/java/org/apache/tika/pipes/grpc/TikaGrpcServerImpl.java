@@ -66,6 +66,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
@@ -358,13 +359,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     private boolean isRegisteredFetcherType(String fetcherType) {
-        for (var factory : pluginManager.getExtensions(
-                org.apache.tika.pipes.api.fetcher.FetcherFactory.class)) {
+        return findFetcherFactory(fetcherType) != null;
+    }
+
+    private FetcherFactory findFetcherFactory(String fetcherType) {
+        for (FetcherFactory factory : pluginManager.getExtensions(FetcherFactory.class)) {
             if (factory.getName().equals(fetcherType)) {
-                return true;
+                return factory;
             }
         }
-        return false;
+        return null;
     }
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
@@ -441,30 +445,23 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest request, StreamObserver<GetFetcherConfigJsonSchemaReply> responseObserver) {
         GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
-        String className = request.getFetcherClass();
-        // Resolve without running static initializers, and only for real Fetcher implementations --
-        // never load an arbitrary classpath class on a client's say-so.
-        Class<?> fetcherClass;
-        try {
-            fetcherClass = Class.forName(className, false, getClass().getClassLoader());
-        } catch (ClassNotFoundException | LinkageError e) {
+        String fetcherType = request.getFetcherType();
+        // Only resolve config classes from registered fetcher factories -- never load an arbitrary
+        // classpath class on a client's say-so.
+        FetcherFactory factory = findFetcherFactory(fetcherType);
+        if (factory == null) {
             responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
-                    .withDescription("Unknown fetcher class: " + className)
-                    .asRuntimeException());
-            return;
-        }
-        if (!Fetcher.class.isAssignableFrom(fetcherClass)) {
-            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
-                    .withDescription("Not a fetcher class: " + className)
+                    .withDescription("Unknown fetcher type: '" + fetcherType
+                            + "'. Use the short factory name (e.g. 'file-system-fetcher').")
                     .asRuntimeException());
             return;
         }
         try {
-            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcherClass);
+            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(factory.getConfigClass());
             builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
         } catch (JsonProcessingException e) {
             responseObserver.onError(io.grpc.Status.INTERNAL
-                    .withDescription("Could not create json schema for " + className)
+                    .withDescription("Could not create json schema for fetcher type " + fetcherType)
                     .withCause(e)
                     .asRuntimeException());
             return;

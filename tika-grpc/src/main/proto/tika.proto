@@ -156,8 +156,9 @@ message ListFetchersReply {
 }
 
 message GetFetcherConfigJsonSchemaRequest {
-  // The full java class name of the fetcher config for which to fetch json schema.
-  string fetcher_class = 1;
+  // The registered fetcher type -- the short factory name, e.g. "file-system-fetcher" --
+  // for which to fetch the config json schema. Same names used as fetcher keys in tika-config.
+  string fetcher_type = 1;
 }
 
 message GetFetcherConfigJsonSchemaReply {

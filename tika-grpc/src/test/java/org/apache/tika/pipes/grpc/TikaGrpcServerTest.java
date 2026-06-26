@@ -293,26 +293,26 @@ public class TikaGrpcServerTest {
     }
 
     @Test
-    public void testFetcherConfigJsonSchemaRejectsNonFetcherClass(Resources resources)
+    public void testFetcherConfigJsonSchemaRejectsUnknownType(Resources resources)
             throws Exception {
         TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
-        // The schema RPC must never load an arbitrary class on a client's say-so: a non-Fetcher
-        // class is rejected outright, and no static initializer is ever run for it.
+        // The schema RPC only resolves config classes from registered fetcher factories: an
+        // unknown type is rejected outright, and no arbitrary class is ever loaded.
         StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
                 blockingStub.getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest
                         .newBuilder()
-                        .setFetcherClass("java.lang.Runtime")
+                        .setFetcherType("no-such-fetcher")
                         .build()));
         assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
 
-        // A real fetcher class still yields a schema.
+        // A registered fetcher type still yields a schema.
         GetFetcherConfigJsonSchemaReply ok = blockingStub.getFetcherConfigJsonSchema(
                 GetFetcherConfigJsonSchemaRequest
                         .newBuilder()
-                        .setFetcherClass(FileSystemFetcher.class.getName())
+                        .setFetcherType("file-system-fetcher")
                         .build());
         Assertions.assertFalse(ok.getFetcherConfigJsonSchema().isEmpty(),
-                "a real fetcher class should still produce a schema");
+                "a registered fetcher type should still produce a schema");
     }
 
     private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)

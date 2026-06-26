@@ -54,4 +54,9 @@ public class FileSystemFetcherFactory implements FetcherFactory {
     public Fetcher buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return new FileSystemFetcher(extensionConfig);
     }
+
+    @Override
+    public Class<?> getConfigClass() {
+        return FileSystemFetcherConfig.class;
+    }
 }
