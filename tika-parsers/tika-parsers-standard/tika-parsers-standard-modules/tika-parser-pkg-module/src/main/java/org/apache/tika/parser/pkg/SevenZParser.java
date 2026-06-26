@@ -23,15 +23,19 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.compress.MemoryLimitException;
 import org.apache.commons.compress.PasswordRequiredException;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -60,6 +64,37 @@ public class SevenZParser extends AbstractArchiveParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(SEVENZ);
 
+    /**
+     * Configuration class for JSON deserialization.
+     */
+    public static class Config {
+        // Cap the LZMA/LZMA2 dictionary allocation. A tiny 7z can declare a huge dictionary
+        // (a single header byte), forcing an eager multi-GiB allocation and OOMing the parser.
+        // Mirrors CompressorParser's default.
+        private int memoryLimitInKb = 100000;
+
+        public int getMemoryLimitInKb() {
+            return memoryLimitInKb;
+        }
+
+        public void setMemoryLimitInKb(int memoryLimitInKb) {
+            this.memoryLimitInKb = memoryLimitInKb;
+        }
+    }
+
+    private Config defaultConfig = new Config();
+
+    public SevenZParser() {
+    }
+
+    public SevenZParser(Config config) {
+        this.defaultConfig = config;
+    }
+
+    public SevenZParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -78,7 +113,10 @@ public class SevenZParser extends AbstractArchiveParser {
 
         SevenZFile sevenZFile;
         try {
-            SevenZFile.Builder builder = new SevenZFile.Builder().setFile(tis.getFile());
+            // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
+            SevenZFile.Builder builder = new SevenZFile.Builder()
+                    .setFile(tis.getFile())
+                    .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
             if (password == null) {
                 sevenZFile = builder.get();
             } else {
@@ -86,6 +124,10 @@ public class SevenZParser extends AbstractArchiveParser {
             }
         } catch (PasswordRequiredException e) {
             throw new EncryptedDocumentException(e);
+        } catch (MemoryLimitException e) {
+            // The limit can be exceeded at open time (assertValidity) as well as lazily on the
+            // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
+            throw new TikaMemoryLimitException(e.getMessage());
         }
 
         metadata.set(Metadata.CONTENT_TYPE, SEVENZ.toString());
@@ -106,6 +148,8 @@ public class SevenZParser extends AbstractArchiveParser {
             }
         } catch (PasswordRequiredException e) {
             throw new EncryptedDocumentException(e);
+        } catch (MemoryLimitException e) {
+            throw new TikaMemoryLimitException(e.getMessage());
         } finally {
             sevenZFile.close();
             xhtml.endDocument();
