@@ -209,8 +209,10 @@ public class ParseContextUtils {
                             configName + "': " + item);
                 }
 
-                Object component = ComponentInstantiator.instantiate(
-                        typeName, configNode, MAPPER, classLoader);
+                // Check assignability before constructing, so an element of the wrong type is
+                // rejected up front rather than instantiated and later discarded.
+                Object component = ComponentInstantiator.instantiateComponent(
+                        typeName, configNode, MAPPER, classLoader, configInfo.componentInterface());
                 components.add(component);
                 LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
             }

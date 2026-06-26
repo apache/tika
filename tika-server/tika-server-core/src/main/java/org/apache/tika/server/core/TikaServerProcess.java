@@ -337,7 +337,8 @@ public class TikaServerProcess {
 
     }
 
-    private static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig, ServerStatus serverStatus) throws TikaException, IOException, SAXException {
+    // package-private so the pipes/async start-guard can be exercised directly in tests
+    static List<ResourceProvider> loadCoreProviders(TikaServerConfig tikaServerConfig, ServerStatus serverStatus) throws TikaException, IOException, SAXException {
         List<ResourceProvider> resourceProviders = new ArrayList<>();
         boolean addAsyncResource = false;
         boolean addPipesResource = false;

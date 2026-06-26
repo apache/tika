@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringReader;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.smile.SmileFactory;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
@@ -38,9 +40,9 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
  */
 public class WireRestrictedFetchEmitTupleTest {
 
-    private static final String EXPLOIT_PARSE_CONTEXT =
+    private static final String WIRE_BLOCKED_PARSE_CONTEXT =
             "\"parse-context\":{\"typed\":{\"external-parser\":{\"config\":{" +
-            "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo pwned\"]," +
+            "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo x\"]," +
             "\"supportedTypes\":[\"text/plain\"]}}}}";
 
     private static String tuple(String parseContextField) {
@@ -52,7 +54,7 @@ public class WireRestrictedFetchEmitTupleTest {
     @Test
     public void pipesEndpointRejectsParserInjection() {
         Exception e = assertThrows(Exception.class,
-                () -> JsonFetchEmitTuple.fromJson(new StringReader(tuple(EXPLOIT_PARSE_CONTEXT))));
+                () -> JsonFetchEmitTuple.fromJson(new StringReader(tuple(WIRE_BLOCKED_PARSE_CONTEXT))));
         assertTrue(root(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + root(e));
     }
@@ -60,7 +62,7 @@ public class WireRestrictedFetchEmitTupleTest {
     @Test
     public void asyncEndpointRejectsParserInjection() {
         Exception e = assertThrows(Exception.class,
-                () -> JsonFetchEmitTupleList.fromJson(new StringReader("[" + tuple(EXPLOIT_PARSE_CONTEXT) + "]")));
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader("[" + tuple(WIRE_BLOCKED_PARSE_CONTEXT) + "]")));
         assertTrue(root(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + root(e));
     }
@@ -84,6 +86,17 @@ public class WireRestrictedFetchEmitTupleTest {
         byte[] bytes = JsonPipesIpc.toBytes(t);
         FetchEmitTuple back = JsonPipesIpc.fromBytes(bytes, FetchEmitTuple.class);
         assertEquals(t, back);
+    }
+
+    @Test
+    public void forkIpcRejectsParserInjection() throws Exception {
+        // The fork-IPC path uses Smile but shares the same restricted FetchEmitTupleDeserializer.
+        byte[] smile = new ObjectMapper(new SmileFactory())
+                .writeValueAsBytes(new ObjectMapper().readTree(tuple(WIRE_BLOCKED_PARSE_CONTEXT)));
+        Exception e = assertThrows(Exception.class,
+                () -> JsonPipesIpc.fromBytes(smile, FetchEmitTuple.class));
+        assertTrue(root(e).contains("may not be supplied via a request parseContext"),
+                "expected wire-blocked rejection at fork IPC, got: " + root(e));
     }
 
     private static String root(Throwable t) {

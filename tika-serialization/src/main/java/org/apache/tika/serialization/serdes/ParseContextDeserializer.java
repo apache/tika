@@ -168,8 +168,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
      * {@code {"pdf-parser":{...}}}) is an inert per-request config that resolveAll skips, so it is
      * allowed and its opaque config subtree is not scanned; every other key is checked and its
      * subtree scanned, refusing any blocked object key at any depth. Bare-string references are not
-     * scanned -- they name a defaults instance with no config. Running before resolution also
-     * covers ExternalParser, which execs from getSupportedTypes().
+     * scanned -- they name a defaults instance with no config. Running before resolution matters
+     * because merely constructing a blocked component can have side effects.
      */
     private static void assertNoBlockedComponents(JsonNode contextNode) throws IOException {
         if (contextNode == null || !contextNode.isObject()) {

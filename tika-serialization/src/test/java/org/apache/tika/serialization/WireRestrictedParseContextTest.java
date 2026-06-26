@@ -65,10 +65,9 @@ public class WireRestrictedParseContextTest {
 
     @Test
     public void restrictedRejectsTypedParserInjection() {
-        // The historical RCE payload (external-parser under a "typed" wrapper); the nested scan
-        // refuses it regardless of the wrapper key.
+        // A blocked component nested under a wrapper key must be refused regardless of the wrapper.
         String json = "{\"typed\":{\"external-parser\":{\"config\":{" +
-                "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo pwned\"]," +
+                "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo x\"]," +
                 "\"supportedTypes\":[\"text/plain\"]}}}}";
         Exception e = assertThrows(Exception.class,
                 () -> restrictedMapper().readValue(json, ParseContext.class));
@@ -90,7 +89,7 @@ public class WireRestrictedParseContextTest {
     public void restrictedRejectsNestedParserObject() {
         // A blocked parser nested inside an allowed component's config (compact object form).
         String json = "{\"basic-content-handler-factory\":{\"nested\":{\"external-parser\":{" +
-                "\"config\":{\"commandLine\":[\"/bin/sh\",\"-c\",\"echo pwned\"]}}}}}";
+                "\"config\":{\"commandLine\":[\"/bin/sh\",\"-c\",\"echo x\"]}}}}}";
         Exception e = assertThrows(Exception.class,
                 () -> restrictedMapper().readValue(json, ParseContext.class));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
@@ -114,6 +113,19 @@ public class WireRestrictedParseContextTest {
                 () -> restrictedMapper().readValue(json, ParseContext.class));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                 "expected array-nested wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
+    public void arrayElementOfWrongTypeRejectedBeforeConstruction() {
+        // A bare-string element whose type doesn't match the array's component interface must be
+        // refused at resolution, before it is constructed.
+        String json = "{\"metadata-filters\":[\"external-parser\"]}";
+        Exception e = assertThrows(Exception.class, () -> {
+            ParseContext ctx = restrictedMapper().readValue(json, ParseContext.class);
+            ParseContextUtils.resolveAll(ctx, ParseContextUtils.class.getClassLoader());
+        });
+        assertTrue(rootMessage(e).contains("not assignable to"),
+                "expected assignability rejection at resolution, got: " + rootMessage(e));
     }
 
     @Test

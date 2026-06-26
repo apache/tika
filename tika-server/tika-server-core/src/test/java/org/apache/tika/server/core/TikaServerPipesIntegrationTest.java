@@ -267,21 +267,21 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         awaitServerStartup();
-        // A request whose parseContext binds a process-spawning ExternalParser must be refused at
+        // A request whose parseContext binds a wire-blocked component must be refused at
         // deserialization, before any fork/parse -- so the request fails and nothing is emitted.
-        String malicious = "{\"id\":\"hello_world.xml\"," +
+        String requestJson = "{\"id\":\"hello_world.xml\"," +
                 "\"fetcher\":\"" + CXFTestBase.FETCHER_ID + "\"," +
                 "\"fetchKey\":\"hello_world.xml\"," +
                 "\"emitter\":\"" + CXFTestBase.EMITTER_JSON_ID + "\"," +
                 "\"emitKey\":\"\"," +
                 "\"onParseException\":\"emit\"," +
                 "\"parse-context\":{\"typed\":{\"external-parser\":{\"config\":{" +
-                "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo pwned\"]," +
+                "\"commandLine\":[\"/bin/sh\",\"-c\",\"echo x\"]," +
                 "\"supportedTypes\":[\"text/plain\"]}}}}}";
         Response response = WebClient
                 .create(endPoint + "/pipes")
                 .accept("application/json")
-                .post(malicious);
+                .post(requestJson);
         assertTrue(response.getStatus() != 200,
                 "parser injection must be rejected, got HTTP " + response.getStatus());
         assertFalse(Files.isRegularFile(TEMP_OUTPUT_DIR.resolve("hello_world.xml.json")),
