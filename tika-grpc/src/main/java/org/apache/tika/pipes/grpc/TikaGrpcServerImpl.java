@@ -147,7 +147,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         this.configStore = createConfigStore();
 
         fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig,
-                tikaGrpcConfig.isAllowComponentModifications(), this.configStore);
+                tikaGrpcConfig.isAllowComponentManagement(), this.configStore);
     }
 
     private ConfigStore createConfigStore() throws TikaConfigException {
@@ -189,7 +189,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     /**
-     * If the operator has not opted in to runtime component modifications, closes
+     * If the operator has not opted in to runtime component management, closes
      * the call with {@code PERMISSION_DENIED} and returns {@code true}. Guards the
      * Save/Delete fetcher and pipes-iterator RPCs. The caller must {@code return}
      * immediately when this returns {@code true}.
@@ -199,13 +199,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      * reported to the client as {@code UNKNOWN}; only {@code onError} transmits
      * the intended status.
      */
-    private boolean denyComponentModifications(StreamObserver<?> responseObserver) {
-        if (tikaGrpcConfig.isAllowComponentModifications()) {
+    private boolean denyComponentManagement(StreamObserver<?> responseObserver) {
+        if (tikaGrpcConfig.isAllowComponentManagement()) {
             return false;
         }
         responseObserver.onError(io.grpc.Status.PERMISSION_DENIED
-                .withDescription("Runtime component modifications are disabled. Set "
-                        + "'allowComponentModifications' to true in the 'grpc' section of your "
+                .withDescription("Runtime component management is disabled. Set "
+                        + "'allowComponentManagement' to true in the 'grpc' section of your "
                         + "tika-config to allow SaveFetcher/DeleteFetcher/SavePipesIterator/"
                         + "DeletePipesIterator. Understand the security implications first.")
                 .asRuntimeException());
@@ -332,16 +332,23 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void saveFetcher(SaveFetcherRequest request,
                               StreamObserver<SaveFetcherReply> responseObserver) {
-        if (denyComponentModifications(responseObserver)) {
+        if (denyComponentManagement(responseObserver)) {
+            return;
+        }
+        String fetcherType = request.getFetcherType();
+        if (!isRegisteredFetcherType(fetcherType)) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Unknown fetcher type: '" + fetcherType
+                            + "'. Use the short factory name (e.g. 'file-system-fetcher').")
+                    .asRuntimeException());
             return;
         }
         SaveFetcherReply reply =
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         try {
-            String factoryName = findFactoryNameForClass(request.getFetcherClass());
-            ExtensionConfig config = new ExtensionConfig(request.getFetcherId(), factoryName, request.getFetcherConfigJson());
-            
-            // Save to fetcher manager (updates ConfigStore which is shared with PipesServer)
+            // The fetcher type is the factory short name, used directly as the ConfigStore key
+            // (shared with PipesServer) -- no class resolution or construction needed.
+            ExtensionConfig config = new ExtensionConfig(request.getFetcherId(), fetcherType, request.getFetcherConfigJson());
             fetcherManager.saveFetcher(config);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -350,27 +357,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private String findFactoryNameForClass(String className) throws TikaConfigException {
-        var factories = pluginManager.getExtensions(org.apache.tika.pipes.api.fetcher.FetcherFactory.class);
-        LOG.debug("Looking for factory that produces class: {}", className);
-        LOG.debug("Found {} factories", factories.size());
-        for (var factory : factories) {
-            LOG.debug("Checking factory: {} (name={})", factory.getClass().getName(), factory.getName());
-            try {
-                // Use a permissive config that should allow most factories to create an instance
-                // FileSystemFetcher requires basePath or allowAbsolutePaths
-                String tempJson = "{\"allowAbsolutePaths\": true}";
-                ExtensionConfig tempConfig = new ExtensionConfig("temp", factory.getName(), tempJson);
-                Fetcher fetcher = factory.buildExtension(tempConfig);
-                LOG.debug("Factory {} produced: {}", factory.getName(), fetcher.getClass().getName());
-                if (fetcher.getClass().getName().equals(className)) {
-                    return factory.getName();
-                }
-            } catch (Exception e) {
-                LOG.debug("Could not build fetcher for factory: {} - {}", factory.getName(), e.getMessage());
+    private boolean isRegisteredFetcherType(String fetcherType) {
+        for (var factory : pluginManager.getExtensions(
+                org.apache.tika.pipes.api.fetcher.FetcherFactory.class)) {
+            if (factory.getName().equals(fetcherType)) {
+                return true;
             }
         }
-        throw new TikaConfigException("Could not find factory for class: " + className);
+        return false;
     }
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
@@ -388,12 +382,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             ExtensionConfig config = fetcher.getExtensionConfig();
 
             getFetcherReply.setFetcherId(config.id());
-            // Return the class name instead of the factory name for backward compatibility
-            getFetcherReply.setFetcherClass(fetcher.getClass().getName());
+            getFetcherReply.setFetcherType(config.name());
 
-            Map<String, Object> paramMap = OBJECT_MAPPER.readValue(config.json(), new TypeReference<>() {
-            });
-            paramMap.forEach((k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
+            // The config may carry secrets (passwords, access keys, tokens). Only return it once the
+            // operator has opted in to runtime component management; identity is always safe.
+            if (tikaGrpcConfig.isAllowComponentManagement()) {
+                Map<String, Object> paramMap = OBJECT_MAPPER.readValue(config.json(), new TypeReference<>() {
+                });
+                paramMap.forEach((k, v) -> getFetcherReply.putParams(Objects.toString(k), Objects.toString(v)));
+            }
 
             responseObserver.onNext(getFetcherReply.build());
             responseObserver.onCompleted();
@@ -406,16 +403,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void listFetchers(ListFetchersRequest request,
                              StreamObserver<ListFetchersReply> responseObserver) {
         ListFetchersReply.Builder listFetchersReplyBuilder = ListFetchersReply.newBuilder();
+        // The config may carry secrets; only include it once component management is enabled.
+        boolean includeConfig = tikaGrpcConfig.isAllowComponentManagement();
         for (String fetcherId : fetcherManager.getSupported()) {
             try {
                 Fetcher fetcher = fetcherManager.getFetcher(fetcherId);
                 ExtensionConfig config = fetcher.getExtensionConfig();
 
-                GetFetcherReply.Builder replyBuilder = GetFetcherReply.newBuilder().setFetcherId(config.id()).setFetcherClass(fetcher.getClass().getName());
+                GetFetcherReply.Builder replyBuilder = GetFetcherReply.newBuilder().setFetcherId(config.id()).setFetcherType(config.name());
 
-                Map<String, Object> paramMap = OBJECT_MAPPER.readValue(config.json(), new TypeReference<>() {
-                });
-                paramMap.forEach((k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
+                if (includeConfig) {
+                    Map<String, Object> paramMap = OBJECT_MAPPER.readValue(config.json(), new TypeReference<>() {
+                    });
+                    paramMap.forEach((k, v) -> replyBuilder.putParams(Objects.toString(k), Objects.toString(v)));
+                }
 
                 listFetchersReplyBuilder.addGetFetcherReplies(replyBuilder.build());
             } catch (Exception e) {
@@ -429,7 +430,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deleteFetcher(DeleteFetcherRequest request,
                               StreamObserver<DeleteFetcherReply> responseObserver) {
-        if (denyComponentModifications(responseObserver)) {
+        if (denyComponentManagement(responseObserver)) {
             return;
         }
         boolean successfulDelete = deleteFetcher(request.getFetcherId());
@@ -440,11 +441,33 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest request, StreamObserver<GetFetcherConfigJsonSchemaReply> responseObserver) {
         GetFetcherConfigJsonSchemaReply.Builder builder = GetFetcherConfigJsonSchemaReply.newBuilder();
+        String className = request.getFetcherClass();
+        // Resolve without running static initializers, and only for real Fetcher implementations --
+        // never load an arbitrary classpath class on a client's say-so.
+        Class<?> fetcherClass;
         try {
-            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(Class.forName(request.getFetcherClass()));
+            fetcherClass = Class.forName(className, false, getClass().getClassLoader());
+        } catch (ClassNotFoundException | LinkageError e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Unknown fetcher class: " + className)
+                    .asRuntimeException());
+            return;
+        }
+        if (!Fetcher.class.isAssignableFrom(fetcherClass)) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("Not a fetcher class: " + className)
+                    .asRuntimeException());
+            return;
+        }
+        try {
+            JsonSchema jsonSchema = JSON_SCHEMA_GENERATOR.generateSchema(fetcherClass);
             builder.setFetcherConfigJsonSchema(OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(jsonSchema));
-        } catch (ClassNotFoundException | JsonProcessingException e) {
-            throw new RuntimeException("Could not create json schema for " + request.getFetcherClass(), e);
+        } catch (JsonProcessingException e) {
+            responseObserver.onError(io.grpc.Status.INTERNAL
+                    .withDescription("Could not create json schema for " + className)
+                    .withCause(e)
+                    .asRuntimeException());
+            return;
         }
         responseObserver.onNext(builder.build());
         responseObserver.onCompleted();
@@ -467,17 +490,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void savePipesIterator(SavePipesIteratorRequest request,
                                   StreamObserver<SavePipesIteratorReply> responseObserver) {
-        if (denyComponentModifications(responseObserver)) {
+        if (denyComponentManagement(responseObserver)) {
             return;
         }
         try {
             String iteratorId = request.getIteratorId();
-            String iteratorClass = request.getIteratorClass();
+            String iteratorType = request.getIteratorType();
             String iteratorConfigJson = request.getIteratorConfigJson();
 
-            LOG.info("Saving pipes iterator: id={}, class={}", iteratorId, iteratorClass);
+            LOG.info("Saving pipes iterator: id={}, type={}", iteratorId, iteratorType);
 
-            ExtensionConfig config = new ExtensionConfig(iteratorId, iteratorClass, iteratorConfigJson);
+            ExtensionConfig config = new ExtensionConfig(iteratorId, iteratorType, iteratorConfigJson);
 
             // Save directly to ConfigStore (shared with PipesServer)
             configStore.put(PIPES_ITERATOR_PREFIX + iteratorId, config);
@@ -516,12 +539,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 return;
             }
 
-            GetPipesIteratorReply reply = GetPipesIteratorReply.newBuilder()
+            GetPipesIteratorReply.Builder reply = GetPipesIteratorReply.newBuilder()
                     .setIteratorId(config.id())
-                    .setIteratorClass(config.name())
-                    .setIteratorConfigJson(config.json())
-                    .build();
-            responseObserver.onNext(reply);
+                    .setIteratorType(config.name());
+            // The iterator config may carry secrets; only include it once component management is
+            // enabled (identity is always safe to return).
+            if (tikaGrpcConfig.isAllowComponentManagement()) {
+                reply.setIteratorConfigJson(config.json());
+            }
+            responseObserver.onNext(reply.build());
             responseObserver.onCompleted();
 
             LOG.info("Successfully retrieved pipes iterator: {}", iteratorId);
@@ -538,7 +564,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deletePipesIterator(DeletePipesIteratorRequest request,
                                     StreamObserver<DeletePipesIteratorReply> responseObserver) {
-        if (denyComponentModifications(responseObserver)) {
+        if (denyComponentManagement(responseObserver)) {
             return;
         }
         try {
