@@ -105,6 +105,11 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-antrun-plugin</artifactId>
             <version>${maven.antrun.version}</version>
+            <!-- This dist-staging step is aggregator-only: it copies release artifacts and
+                 CHANGES.txt relative to the reactor root's ${basedir}. tika-docs has <parent>tika</parent>,
+                 so without inherited=false it also runs here with ${basedir}=docs/, where CHANGES.txt
+                 and the artifacts don't exist, and the staging <fail> guards trip. Run only on root. -->
+            <inherited>false</inherited>
             <executions>
               <execution>
                 <goals>
