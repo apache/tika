@@ -67,13 +67,16 @@ the server's defaults for that request. Because this can reconfigure any pipelin
 component (fetcher, parser, timeouts, ...), it is off by default. When `false`, a
 request carrying either field is rejected with `PERMISSION_DENIED`.
 
-|`allowComponentModifications`
-|When `true`, callers may add, modify, or delete fetchers and pipes iterators at
-runtime (`SaveFetcher`, `DeleteFetcher`, `SavePipesIterator`,
-`DeletePipesIterator`). Because this changes what the server can reach for all
-subsequent requests (for example, adding a fetcher that escapes a configured base
-path), it is off by default. When `false`, those RPCs are rejected with
-`PERMISSION_DENIED`.
+|`allowComponentManagement`
+|When `true`, callers may manage fetchers and pipes iterators at runtime: add,
+modify, or delete them (`SaveFetcher`, `DeleteFetcher`, `SavePipesIterator`,
+`DeletePipesIterator`), and read their stored configuration back (`GetFetcher`,
+`ListFetchers`, `GetPipesIterator`). It is off by default for two reasons:
+mutations change what the server can reach for all subsequent requests (for
+example, adding a fetcher that escapes a configured base path), and the stored
+configs returned by the read RPCs may contain secrets (passwords, access keys,
+tokens). When `false`, the mutating RPCs are rejected with `PERMISSION_DENIED`,
+and the read RPCs return only component identity (id and class), never the config.
 |===
 
 Enable these only for trusted callers over a secured channel:
@@ -83,7 +86,7 @@ Enable these only for trusted callers over a secured channel:
 {
   "grpc": {
     "allowPerRequestConfig": true,
-    "allowComponentModifications": true
+    "allowComponentManagement": true
   }
 }
 ----
@@ -149,8 +152,9 @@ automatically. Two distinct controls are involved, and both matter:
 Mesh mTLS authenticates *who opened the connection*; it does not authorize *what
 that caller may do*, so an authenticated-but-untrusted pod can still invoke
 whatever RPC surface is enabled — at minimum `FetchAndParse` against your
-configured fetchers, and the runtime-mutation RPCs too if you have set
-`allowComponentModifications`. Restricting reachability with a `NetworkPolicy` is
+configured fetchers, and the runtime component-management RPCs too (including the
+config reads that can expose stored secrets) if you have set
+`allowComponentManagement`. Restricting reachability with a `NetworkPolicy` is
 therefore required, not optional — running in Kubernetes without one leaves
 tika-grpc reachable by every pod in the cluster.
 

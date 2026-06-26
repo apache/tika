@@ -23,6 +23,7 @@ import org.pf4j.Extension;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.pipes.fetcher.googledrive.config.GoogleDriveFetcherConfig;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -53,5 +54,10 @@ public class GoogleDriveFetcherFactory implements FetcherFactory {
     public Fetcher buildExtension(ExtensionConfig extensionConfig)
             throws IOException, TikaConfigException {
         return GoogleDriveFetcher.build(extensionConfig);
+    }
+
+    @Override
+    public Class<?> getConfigClass() {
+        return GoogleDriveFetcherConfig.class;
     }
 }

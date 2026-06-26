@@ -23,6 +23,7 @@ import org.pf4j.Extension;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.pipes.fetchers.microsoftgraph.config.MicrosoftGraphFetcherConfig;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -58,5 +59,10 @@ public class MicrosoftGraphFetcherFactory implements FetcherFactory {
     @Override
     public Fetcher buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
         return MicrosoftGraphFetcher.build(extensionConfig);
+    }
+
+    @Override
+    public Class<?> getConfigClass() {
+        return MicrosoftGraphFetcherConfig.class;
     }
 }

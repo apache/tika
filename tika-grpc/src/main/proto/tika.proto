@@ -77,9 +77,9 @@ service Tika   {
 message SaveFetcherRequest {
   // A unique identifier for each fetcher. If this already exists, operation will overwrite existing.
   string fetcher_id = 1;
-  // The full java class name of the fetcher class. List of
-  // fetcher classes is found here: https://cwiki.apache.org/confluence/display/TIKA/tika-pipes
-  string fetcher_class = 2;
+  // The registered fetcher type -- the short factory name, e.g. "file-system-fetcher",
+  // "http-fetcher", "s3-fetcher". These are the same names used as fetcher keys in tika-config.
+  string fetcher_type = 2;
   // JSON string of the fetcher config object. To see the json schema from which to build this json,
   // use the GetFetcherConfigJsonSchema rpc method.
   string fetcher_config_json = 3;
@@ -137,8 +137,8 @@ message GetFetcherRequest {
 message GetFetcherReply {
   // Echoes the ID of the fetcher being returned.
   string fetcher_id = 1;
-  // The full Java class name of the Fetcher.
-  string fetcher_class = 2;
+  // The registered fetcher type (the short factory name, e.g. "file-system-fetcher").
+  string fetcher_type = 2;
   // The configuration parameters.
   map<string, string> params = 3;
 }
@@ -156,8 +156,9 @@ message ListFetchersReply {
 }
 
 message GetFetcherConfigJsonSchemaRequest {
-  // The full java class name of the fetcher config for which to fetch json schema.
-  string fetcher_class = 1;
+  // The registered fetcher type -- the short factory name, e.g. "file-system-fetcher" --
+  // for which to fetch the config json schema. Same names used as fetcher keys in tika-config.
+  string fetcher_type = 1;
 }
 
 message GetFetcherConfigJsonSchemaReply {
@@ -170,8 +171,9 @@ message GetFetcherConfigJsonSchemaReply {
 message SavePipesIteratorRequest {
   // A unique identifier for each pipes iterator. If this already exists, operation will overwrite existing.
   string iterator_id = 1;
-  // The full java class name of the pipes iterator class.
-  string iterator_class = 2;
+  // The registered pipes-iterator type -- the short factory name, e.g.
+  // "file-system-pipes-iterator". These are the same names used as keys in tika-config.
+  string iterator_type = 2;
   // JSON string of the pipes iterator config object.
   string iterator_config_json = 3;
 }
@@ -189,8 +191,8 @@ message GetPipesIteratorRequest {
 message GetPipesIteratorReply {
   // The pipes iterator ID
   string iterator_id = 1;
-  // The full java class name of the pipes iterator
-  string iterator_class = 2;
+  // The registered pipes-iterator type (the short factory name, e.g. "file-system-pipes-iterator").
+  string iterator_type = 2;
   // JSON string of the pipes iterator config object
   string iterator_config_json = 3;
 }

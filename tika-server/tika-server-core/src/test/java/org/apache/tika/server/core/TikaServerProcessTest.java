@@ -28,17 +28,17 @@ import org.apache.tika.exception.TikaConfigException;
 
 public class TikaServerProcessTest {
 
-    private static TikaServerConfig config(boolean unsecure, String... endpoints) {
+    private static TikaServerConfig config(boolean allowPipes, String... endpoints) {
         TikaServerConfig c = new TikaServerConfig();
         c.setEndpoints(new ArrayList<>(List.of(endpoints)));
-        c.setEnableUnsecureFeatures(unsecure);
+        c.setAllowPipes(allowPipes);
         return c;
     }
 
     @Test
-    public void pipesAndAsyncRequireUnsecureFeatures() {
+    public void pipesAndAsyncRequireAllowPipes() {
         // The pipes/async endpoints fork processes and read/write via fetchers/emitters; the
-        // start-guard must refuse them unless enableUnsecureFeatures is set, even when listed.
+        // start-guard must refuse them unless allowPipes is set, even when listed.
         assertThrows(TikaConfigException.class,
                 () -> TikaServerProcess.loadCoreProviders(config(false, "pipes"), null));
         assertThrows(TikaConfigException.class,
@@ -46,7 +46,7 @@ public class TikaServerProcessTest {
     }
 
     @Test
-    public void ordinaryEndpointIsAllowedWithoutUnsecureFeatures() {
+    public void ordinaryEndpointIsAllowedWithoutAllowPipes() {
         // The guard must not false-fire on a non-forking endpoint.
         assertDoesNotThrow(
                 () -> TikaServerProcess.loadCoreProviders(config(false, "meta"), null));

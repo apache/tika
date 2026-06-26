@@ -32,15 +32,15 @@ import org.apache.tika.config.loader.TikaJsonConfig;
  * <ul>
  *   <li>{@link #isAllowPerRequestConfig()} lets a client reconfigure any
  *   pipeline component for a single request.</li>
- *   <li>{@link #isAllowComponentModifications()} lets a client change which
- *   fetchers and iterators the server has at all.</li>
+ *   <li>{@link #isAllowComponentManagement()} lets a client change which
+ *   fetchers and iterators the server has, and read their stored configs.</li>
  * </ul>
  */
 public class TikaGrpcConfig {
 
     private boolean allowPerRequestConfig = false;
 
-    private boolean allowComponentModifications = false;
+    private boolean allowComponentManagement = false;
 
     /**
      * Loads {@link TikaGrpcConfig} from the {@code "grpc"} section of the JSON
@@ -81,22 +81,26 @@ public class TikaGrpcConfig {
     }
 
     /**
-     * Whether clients may add, modify, or delete fetchers and pipes iterators at
-     * runtime (the SaveFetcher, DeleteFetcher, SavePipesIterator and
-     * DeletePipesIterator RPCs).
+     * Whether clients may manage fetchers and pipes iterators at runtime: add,
+     * modify, or delete them (the SaveFetcher, DeleteFetcher, SavePipesIterator
+     * and DeletePipesIterator RPCs), and read their stored configuration back
+     * (the GetFetcher, ListFetchers and GetPipesIterator RPCs).
      * <p>
-     * This is dangerous because it changes what the server can reach for all
-     * subsequent requests and clients (for example, adding a fetcher that
-     * escapes a configured base path or points at an internal host). Defaults
-     * to {@code false}; when {@code false}, those RPCs are rejected.
+     * This is dangerous on two counts. Writes change what the server can reach
+     * for all subsequent requests and clients (for example, adding a fetcher
+     * that escapes a configured base path or points at an internal host). Reads
+     * return stored component configs verbatim, which may include secrets
+     * (passwords, access keys, tokens). Defaults to {@code false}; when
+     * {@code false}, the mutating RPCs are rejected and the read RPCs return
+     * only component identity (id and class), never the config.
      *
-     * @return true if runtime component modifications are permitted
+     * @return true if runtime component management is permitted
      */
-    public boolean isAllowComponentModifications() {
-        return allowComponentModifications;
+    public boolean isAllowComponentManagement() {
+        return allowComponentManagement;
     }
 
-    public void setAllowComponentModifications(boolean allowComponentModifications) {
-        this.allowComponentModifications = allowComponentModifications;
+    public void setAllowComponentManagement(boolean allowComponentManagement) {
+        this.allowComponentManagement = allowComponentManagement;
     }
 }

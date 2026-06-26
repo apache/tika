@@ -297,7 +297,7 @@ class HandlerTypeTest {
 
             SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest.newBuilder()
                     .setFetcherId(fetcherId)
-                    .setFetcherClass("org.apache.tika.pipes.fetcher.fs.FileSystemFetcher")
+                    .setFetcherType("file-system-fetcher")
                     .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
                     .build());
             log.info("Fetcher created: {}", saveReply.getFetcherId());

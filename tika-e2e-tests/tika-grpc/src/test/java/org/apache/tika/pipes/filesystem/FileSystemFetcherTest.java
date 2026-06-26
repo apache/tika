@@ -64,7 +64,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
         SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
                 .setFetcherId(fetcherId)
-                .setFetcherClass("org.apache.tika.pipes.fetcher.fs.FileSystemFetcher")
+                .setFetcherType("file-system-fetcher")
                 .setFetcherConfigJson(configJson)
                 .build());
         

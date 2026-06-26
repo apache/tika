@@ -65,8 +65,12 @@ import org.apache.tika.DeleteFetcherReply;
 import org.apache.tika.DeleteFetcherRequest;
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
+import org.apache.tika.GetFetcherConfigJsonSchemaReply;
+import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
 import org.apache.tika.GetFetcherReply;
 import org.apache.tika.GetFetcherRequest;
+import org.apache.tika.ListFetchersReply;
+import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
@@ -116,7 +120,7 @@ public class TikaGrpcServerTest {
         // for the tests that add/modify fetchers at runtime.
         ObjectNode root = (ObjectNode) OBJECT_MAPPER.readTree(tikaConfig.toFile());
         ObjectNode grpc = OBJECT_MAPPER.createObjectNode();
-        grpc.put("allowComponentModifications", true);
+        grpc.put("allowComponentManagement", true);
         grpc.put("allowPerRequestConfig", true);
         root.set("grpc", grpc);
         FileUtils.write(tikaConfigUnlocked.toFile(),
@@ -162,7 +166,7 @@ public class TikaGrpcServerTest {
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
-                    .setFetcherClass(FileSystemFetcher.class.getName())
+                    .setFetcherType("file-system-fetcher")
                     .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
                             .builder()
                             .put("basePath", targetFolder)
@@ -177,7 +181,7 @@ public class TikaGrpcServerTest {
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
-                    .setFetcherClass(FileSystemFetcher.class.getName())
+                    .setFetcherType("file-system-fetcher")
                     .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
                             .builder()
                             .put("basePath", targetFolder)
@@ -202,7 +206,7 @@ public class TikaGrpcServerTest {
                     .setFetcherId(fetcherId)
                     .build());
             assertEquals(fetcherId, getFetcherReply.getFetcherId());
-            assertEquals(FileSystemFetcher.class.getName(), getFetcherReply.getFetcherClass());
+            assertEquals("file-system-fetcher", getFetcherReply.getFetcherType());
         }
 
         // delete fetchers
@@ -223,7 +227,7 @@ public class TikaGrpcServerTest {
     }
 
     @Test
-    public void testComponentModificationsDeniedByDefault(Resources resources) throws Exception {
+    public void testComponentManagementDeniedByDefault(Resources resources) throws Exception {
         TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
 
         String targetFolder = new File("target").getAbsolutePath();
@@ -231,7 +235,7 @@ public class TikaGrpcServerTest {
                 blockingStub.saveFetcher(SaveFetcherRequest
                         .newBuilder()
                         .setFetcherId(createFetcherId(0))
-                        .setFetcherClass(FileSystemFetcher.class.getName())
+                        .setFetcherType("file-system-fetcher")
                         .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
                                 .builder()
                                 .put("basePath", targetFolder)
@@ -260,6 +264,55 @@ public class TikaGrpcServerTest {
                         .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"HTML\"}}")
                         .build()));
         assertEquals(Status.Code.PERMISSION_DENIED, ex.getStatus().getCode());
+    }
+
+    @Test
+    public void testComponentManagementHidesConfigByDefault(Resources resources) throws Exception {
+        // With component management off (the default), the read RPCs must return component identity
+        // only -- never the stored config, which can carry secrets (passwords, access keys, ...).
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+
+        GetFetcherReply reply = blockingStub.getFetcher(GetFetcherRequest
+                .newBuilder()
+                .setFetcherId(createFetcherId(1))
+                .build());
+        assertEquals(createFetcherId(1), reply.getFetcherId());
+        Assertions.assertFalse(reply.getFetcherType().isEmpty(),
+                "identity (type) should still be returned");
+        Assertions.assertTrue(reply.getParamsMap().isEmpty(),
+                "config params must NOT be returned when component management is off");
+
+        ListFetchersReply listReply =
+                blockingStub.listFetchers(ListFetchersRequest.newBuilder().build());
+        Assertions.assertFalse(listReply.getGetFetcherRepliesList().isEmpty(),
+                "fetchers should still be listed by identity");
+        for (GetFetcherReply f : listReply.getGetFetcherRepliesList()) {
+            Assertions.assertTrue(f.getParamsMap().isEmpty(),
+                    "listFetchers must not leak config for " + f.getFetcherId());
+        }
+    }
+
+    @Test
+    public void testFetcherConfigJsonSchemaRejectsUnknownType(Resources resources)
+            throws Exception {
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+        // The schema RPC only resolves config classes from registered fetcher factories: an
+        // unknown type is rejected outright, and no arbitrary class is ever loaded.
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                blockingStub.getFetcherConfigJsonSchema(GetFetcherConfigJsonSchemaRequest
+                        .newBuilder()
+                        .setFetcherType("no-such-fetcher")
+                        .build()));
+        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+
+        // A registered fetcher type still yields a schema.
+        GetFetcherConfigJsonSchemaReply ok = blockingStub.getFetcherConfigJsonSchema(
+                GetFetcherConfigJsonSchemaRequest
+                        .newBuilder()
+                        .setFetcherType("file-system-fetcher")
+                        .build());
+        Assertions.assertFalse(ok.getFetcherConfigJsonSchema().isEmpty(),
+                "a registered fetcher type should still produce a schema");
     }
 
     private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
@@ -307,7 +360,7 @@ public class TikaGrpcServerTest {
         SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
                 .setFetcherId(fetcherId)
-                .setFetcherClass(FileSystemFetcher.class.getName())
+                .setFetcherType("file-system-fetcher")
                 .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
                         .builder()
                         .put("basePath", targetFolder)

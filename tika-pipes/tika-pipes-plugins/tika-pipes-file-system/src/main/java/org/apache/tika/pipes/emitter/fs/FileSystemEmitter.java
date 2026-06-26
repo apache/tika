@@ -75,6 +75,14 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (fileSystemEmitterConfig.onExists() == null) {
             throw new TikaConfigException("Must configure 'onExists' as 'skip', 'exception' or 'replace'");
         }
+        if (StringUtils.isBlank(fileSystemEmitterConfig.basePath())
+                && !fileSystemEmitterConfig.allowAbsolutePaths()) {
+            throw new TikaConfigException(
+                    "'basePath' must be set, or 'allowAbsolutePaths' must be true. "
+                            + "Without basePath, clients can write to any file this process "
+                            + "has access to. Set 'allowAbsolutePaths: true' to explicitly "
+                            + "allow this behavior and accept the security risks.");
+        }
     }
 
     @Override
@@ -199,9 +207,10 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 // Load runtime config (excludes basePath for security)
                 FileSystemEmitterRuntimeConfig runtimeConfig = FileSystemEmitterRuntimeConfig.load(configJson.json());
 
-                // Merge runtime config into default config while preserving basePath
+                // Merge runtime config into default config while preserving basePath and the
+                // init-time allowAbsolutePaths -- neither may be changed at runtime.
                 config = new FileSystemEmitterConfig(fileSystemEmitterConfig.basePath(), runtimeConfig.getFileExtension(), runtimeConfig.getOnExists(),
-                        runtimeConfig.isPrettyPrint());
+                        runtimeConfig.isPrettyPrint(), fileSystemEmitterConfig.allowAbsolutePaths());
                 checkConfig(config);
             }
         }
