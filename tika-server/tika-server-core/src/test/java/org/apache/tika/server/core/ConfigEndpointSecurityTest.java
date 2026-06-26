@@ -38,7 +38,7 @@ import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 
 /**
  * Tests for ConfigEndpointSecurityFilter.
- * Verifies that /config endpoints are gated behind enableUnsecureFeatures.
+ * Verifies that /config endpoints are gated behind allowPerRequestConfig.
  */
 public class ConfigEndpointSecurityTest extends CXFTestBase {
 
@@ -56,7 +56,7 @@ public class ConfigEndpointSecurityTest extends CXFTestBase {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper(false));
         providers.add(new JSONMessageBodyWriter());
-        // Add security filter with enableUnsecureFeatures=false
+        // Add security filter with allowPerRequestConfig=false
         providers.add(new ConfigEndpointSecurityFilter(false));
         sf.setProviders(providers);
     }

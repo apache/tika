@@ -11,6 +11,12 @@ This server will manage a pool of Tika Pipes clients.
     * Delete
 * Fetch + Parse a given Fetch Item
 
+> **Security note:** runtime fetcher/iterator mutations (Create/Update/Delete) and
+> per-request parse configuration are **disabled by default**. Enable them
+> explicitly via `allowComponentModifications` / `allowPerRequestConfig` in the
+> `grpc` section of your tika-config. See the
+> [Tika gRPC security configuration docs](../docs/modules/ROOT/pages/using-tika/grpc/index.adoc).
+
 ## Distribution and Maven Artifact
 
 **tika-grpc is designed to be run via Docker — it is not a standalone runnable artifact published to Maven Central.**

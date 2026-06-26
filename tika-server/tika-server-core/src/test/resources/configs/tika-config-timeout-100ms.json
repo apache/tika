@@ -1,6 +1,7 @@
 {
   "server": {
-    "enableUnsecureFeatures": true,
+    "allowPipes": true,
+    "allowPerRequestConfig": true,
     "enableLogFile": true
   },
   "parse-context": {

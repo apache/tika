@@ -99,7 +99,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     private Path unpackTempDir;
 
     @Override
-    protected boolean isEnableUnsecureFeatures() {
+    protected boolean isAllowPerRequestConfig() {
         return true; // exercises per-request config injection
     }
 

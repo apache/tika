@@ -117,6 +117,7 @@ public class TikaJsonConfig {
             "auto-detect-parser",
             "parse-context",
             "server",
+            "grpc",
 
             // Pipes/plugin keys
             "fetchers",

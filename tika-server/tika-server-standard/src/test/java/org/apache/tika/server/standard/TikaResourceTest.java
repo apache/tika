@@ -68,7 +68,7 @@ public class TikaResourceTest extends CXFTestBase {
     private static final int UNPROCESSEABLE = 422;
 
     @Override
-    protected boolean isEnableUnsecureFeatures() {
+    protected boolean isAllowPerRequestConfig() {
         return true; // exercises per-request config injection
     }
 

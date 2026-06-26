@@ -27,7 +27,8 @@
     "port": 9999,
     "taskTimeoutMillis": "TIMEOUT_MILLIS",
     "taskPulseMillis": 100,
-    "enableUnsecureFeatures": true,
+    "allowPipes": true,
+    "allowPerRequestConfig": true,
     "endpoints": [
       "rmeta",
       "status",

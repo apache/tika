@@ -64,7 +64,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
 
     @Override
-    protected boolean isEnableUnsecureFeatures() {
+    protected boolean isAllowPerRequestConfig() {
         return true; // exercises per-request config injection
     }
 

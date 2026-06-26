@@ -74,7 +74,7 @@ used wherever a section is missing.
     "unpack-config": { /* embedded-byte extraction */ }
     /* other SelfConfiguring components by component name */
   },
-  "server": { /* tika-server options: enableUnsecureFeatures, cors, ... */ },
+  "server": { /* tika-server options: allowPipes, allowPerRequestConfig, cors, ... */ },
   "pipes": { /* Pipes process management: numClients, parseMode, ... */ },
   "fetchers": { /* named fetcher instances */ },
   "emitters": { /* named emitter instances */ },

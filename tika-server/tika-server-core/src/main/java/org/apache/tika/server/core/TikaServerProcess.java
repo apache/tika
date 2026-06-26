@@ -193,7 +193,7 @@ public class TikaServerProcess {
         }
 
         TikaResource.init(tikaLoader, serverStatus, pipesParsingHelper,
-                tikaServerConfig.isEnableUnsecureFeatures());
+                tikaServerConfig.isAllowPerRequestConfig());
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
@@ -309,7 +309,7 @@ public class TikaServerProcess {
         writers.add(new JSONObjWriter());
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
-        writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isEnableUnsecureFeatures()));
+        writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
 
         TikaLoggingFilter logFilter = null;
         if (!StringUtils.isBlank(tikaServerConfig.getLogLevel())) {
@@ -356,11 +356,13 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new TikaDetectors()));
             resourceProviders.add(new SingletonResourceProvider(new TikaParsers()));
             resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
-            if (tikaServerConfig.isEnableUnsecureFeatures()) {
+            if (tikaServerConfig.isAllowPipes()) {
                 addAsyncResource = true;
                 addPipesResource = true;
-                resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
             }
+            // status is a plain opt-in endpoint: it is only served when explicitly
+            // listed under "endpoints" (handled in the else branch below), not in
+            // this default set.
         } else {
             for (String endPoint : tikaServerConfig.getEndpoints()) {
                 if ("meta".equals(endPoint)) {

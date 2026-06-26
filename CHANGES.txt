@@ -18,6 +18,16 @@ Release 4.0.0-beta-1 - unreleased
      The extra jars are also forwarded onto forked pipes/server worker processes,
      so they are available where parsing actually happens (TIKA-4755).
 
+   * More granular, default-deny capability flags for tika-server and tika-grpc.
+     tika-server's enableUnsecureFeatures is split into allowPipes (gates the
+     /pipes and /async endpoints) and allowPerRequestConfig (gates the /config
+     endpoints and the multipart config part); the /status endpoint is no longer
+     gated and is enabled simply by listing it under endpoints. tika-grpc gains
+     the same allowPerRequestConfig flag plus allowComponentModifications (gates
+     runtime Save/Delete of fetchers and pipes iterators). All flags default to
+     false, so an out-of-the-box tika-grpc server no longer accepts per-request
+     configuration or runtime store mutations (TIKA-4764).
+
   OTHER CHANGES
 
    * Release artifacts are now channel-specific. Maven Central gets slim

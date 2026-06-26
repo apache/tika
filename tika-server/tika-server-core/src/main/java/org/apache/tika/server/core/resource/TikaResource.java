@@ -90,7 +90,7 @@ public class TikaResource {
     private static MetadataWriteLimiterFactory DEFAULT_METADATA_WRITE_LIMITER_FACTORY = null;
     // Whether per-request config injection (multipart "config" parts) is permitted.
     // Enforced in setupMultipartConfig so every config-consuming endpoint honors it.
-    private static boolean ENABLE_UNSECURE_FEATURES = false;
+    private static boolean ALLOW_PER_REQUEST_CONFIG = false;
 
     /**
      * Initialize TikaResource with pipes-based parsing for process isolation.
@@ -98,14 +98,14 @@ public class TikaResource {
      * @param tikaLoader the Tika loader
      * @param serverStatus server status tracker
      * @param pipesParsingHelper helper for pipes-based parsing, may be null if /tika endpoint is not enabled
-     * @param enableUnsecureFeatures whether per-request config injection is permitted
+     * @param allowPerRequestConfig whether per-request config injection is permitted
      */
     public static void init(TikaLoader tikaLoader, ServerStatus serverStatus,
-                            PipesParsingHelper pipesParsingHelper, boolean enableUnsecureFeatures) {
+                            PipesParsingHelper pipesParsingHelper, boolean allowPerRequestConfig) {
         TIKA_LOADER = tikaLoader;
         SERVER_STATUS = serverStatus;
         PIPES_PARSING_HELPER = pipesParsingHelper;
-        ENABLE_UNSECURE_FEATURES = enableUnsecureFeatures;
+        ALLOW_PER_REQUEST_CONFIG = allowPerRequestConfig;
         // MetadataWriteLimiterFactory is now loaded dynamically via loadParseContext()
     }
 
@@ -274,10 +274,10 @@ public class TikaResource {
 
         // Enforce the per-request config gate where the config part is actually
         // consumed, so every endpoint that accepts a config part honors
-        // enableUnsecureFeatures uniformly.
-        if (configAtt != null && !ENABLE_UNSECURE_FEATURES) {
+        // allowPerRequestConfig uniformly.
+        if (configAtt != null && !ALLOW_PER_REQUEST_CONFIG) {
             throw new WebApplicationException(Response.status(Response.Status.FORBIDDEN)
-                    .entity("Per-request configuration is disabled. Set enableUnsecureFeatures=true in server config.")
+                    .entity("Per-request configuration is disabled. Set allowPerRequestConfig=true in server config.")
                     .type(MediaType.TEXT_PLAIN)
                     .build());
         }
@@ -626,7 +626,7 @@ public class TikaResource {
      * <p>
      * Returns XHTML by default. Use /tika/config/text, /tika/config/html, or /tika/config/xml for other formats.
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST
@@ -649,7 +649,7 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST
@@ -671,7 +671,7 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST
@@ -693,7 +693,7 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST
@@ -715,7 +715,7 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST
@@ -739,7 +739,7 @@ public class TikaResource {
      * <p>
      * Default handler is text. Use config to specify different handler type.
      * <p>
-     * This endpoint is gated behind enableUnsecureFeatures=true because per-request
+     * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
      */
     @POST

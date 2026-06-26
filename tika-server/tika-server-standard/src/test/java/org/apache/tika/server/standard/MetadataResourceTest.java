@@ -59,7 +59,7 @@ public class MetadataResourceTest extends CXFTestBase {
     private static final String META_PATH = "/meta";
 
     @Override
-    protected boolean isEnableUnsecureFeatures() {
+    protected boolean isAllowPerRequestConfig() {
         return true; // exercises per-request config injection
     }
 
