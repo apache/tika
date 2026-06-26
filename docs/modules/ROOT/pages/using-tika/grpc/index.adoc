@@ -29,6 +29,85 @@ register a fetcher (`SaveFetcher`) and then submit `FetchAndParseRequest`
 messages, each of which returns a `FetchAndParseReply` with extracted
 metadata and content.
 
+== Security
+
+[WARNING]
+====
+Treat tika-grpc as a privileged, trusted-network-only service — it is *more
+exposed by default than tika-server*. Its full RPC surface is enabled with no
+switch to turn it off, including runtime configuration-mutation calls (for
+example `SaveFetcher`) that can read files and load code on the server host and
+operate on shared, process-global state. tika-server keeps that same class of
+capability *off by default*, behind `enableUnsecureFeatures`; tika-grpc has no
+equivalent flag. Anyone who can reach the gRPC port effectively gains that level
+of access, so run it only behind strict network controls — and prefer mutual TLS
+(below).
+====
+
+=== Transport Security (TLS)
+
+By default the gRPC server runs *without TLS*: connections are plaintext and
+unauthenticated. This includes the `apache/tika-grpc` Docker image, whose
+entrypoint does not pass `--secure`. Only run in this mode on a trusted network.
+
+Transport security is configured entirely through command-line flags (there is no
+JSON config for gRPC TLS), with three modes:
+
+*Insecure (default).* No `--secure` flag. Plaintext, no authentication.
+
+*Server (1-way) TLS.* Enable `-s`/`--secure` and supply the server certificate
+and key. The server authenticates to clients; clients are not authenticated.
+
+[source,bash]
+----
+java -jar tika-grpc-<version>.jar --secure \
+  --cert-chain server.pem --private-key server.key
+----
+
+Add `--private-key-password` if the private key is encrypted.
+
+*Mutual (2-way) TLS.* Additionally supply the trust collection (the CA used to
+verify client certificates) and require client authentication:
+
+[source,bash]
+----
+java -jar tika-grpc-<version>.jar --secure \
+  --cert-chain server.pem --private-key server.key \
+  --trust-cert-collection ca.pem --client-auth-required
+----
+
+Mutual TLS is opt-in: `--client-auth-required` is off by default, so it has no
+effect unless `--trust-cert-collection` is also given (a missing or non-existent
+trust-collection path is silently ignored). The default port is `50052`
+(`-p`/`--port`).
+
+When running the Docker image, append these flags to the container command — they
+are forwarded to the server — and mount the certificate files into the container.
+
+=== Kubernetes and Service Meshes
+
+Running tika-grpc in Kubernetes does not make it safe on its own. By default, pod
+networking is flat: any pod can reach any other pod's port, traffic is
+unencrypted, and there is no authentication or authorization between pods.
+Kubernetes gives you the tools to lock this down, but none of them are applied
+automatically. Two distinct controls are involved, and both matter:
+
+* *Transport security.* A service mesh (for example Istio or Linkerd) with sidecar
+  mTLS encrypts and authenticates pod-to-pod traffic. If the mesh provides this,
+  you can run tika-grpc without `--secure` and let the mesh handle transport
+  security in place of the TLS flags above.
+* *Reachability.* A `NetworkPolicy` that admits only your trusted client(s) to the
+  tika-grpc Service. This is the control that actually mitigates the exposure
+  described above: because tika-grpc has no per-caller authorization, the set of
+  pods that can reach the port is effectively the set of pods that can use its full
+  RPC surface.
+
+Mesh mTLS authenticates *who opened the connection*; it does not authorize *what
+that caller may do*, so an authenticated-but-untrusted pod can still invoke the
+configuration-mutation RPCs. Restricting reachability with a `NetworkPolicy` is
+therefore required, not optional — running in Kubernetes without one leaves
+tika-grpc reachable by every pod in the cluster.
+
 == Per-Request `ParseContext`
 
 `FetchAndParseRequest.parse_context_json` lets the caller override the
