@@ -298,8 +298,8 @@
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
     <maven.jar.version>3.5.0</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
-    <maven.failsafe.version>3.5.5</maven.failsafe.version>
-    <maven.surefire.version>3.5.5</maven.surefire.version>
+    <maven.failsafe.version>3.5.6</maven.failsafe.version>
+    <maven.surefire.version>3.5.6</maven.surefire.version>
     <maven.shade.version>3.6.2</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
     <maven.site.version>3.22.0</maven.site.version>
@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.68.0</google.cloud.version>
+    <google.cloud.version>2.69.0</google.cloud.version>
     <azure.version>1.3.7</azure.version>
     <aws.version>1.12.797</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -330,7 +330,7 @@
     <commons.exec.version>1.6.0</commons.exec.version>
     <commons.io.version>2.22.0</commons.io.version>
     <commons.lang3.version>3.20.0</commons.lang3.version>
-    <commons.logging.version>1.3.6</commons.logging.version>
+    <commons.logging.version>1.4.0</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.11.1</commons.net.version>
     <commons.fileupload.version>1.6.0</commons.fileupload.version>
@@ -351,7 +351,7 @@
     <imageio.version>1.4.0</imageio.version>
     <!-- jackrabbit 2.21.23 requires java 11 -->
     <jackrabbit.version>2.21.22</jackrabbit.version>
-    <jackson.version>2.21.3</jackson.version>
+    <jackson.version>2.22.0</jackson.version>
     <jackcess.version>4.0.10</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
@@ -368,10 +368,10 @@
     <jetty.version>9.4.58.v20250814</jetty.version>
     <!-- 2.0.* needs java 17 -->
     <jhighlight.version>1.1.1</jhighlight.version>
-    <jna.version>5.18.1</jna.version>
+    <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <junit4.version>4.13.2</junit4.version>
-    <junit5.version>5.14.3</junit5.version>
+    <junit5.version>5.14.4</junit5.version>
     <junrar.version>7.6.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.26.0</log4j2.version>
@@ -383,8 +383,8 @@
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.14.Final</netty.version>
-    <oak.jackrabbit.version>2.0.0</oak.jackrabbit.version>
+    <netty.version>4.2.15.Final</netty.version>
+    <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
     <opennlp.version>1.9.4</opennlp.version>
@@ -399,8 +399,8 @@
     <poi.version>5.5.1</poi.version>
     <!-- 2.5.0 needs jakarta.xml.bind 4.0.2 in tika-parser-scientific-module -->
     <quartz.version>2.4.1</quartz.version>
-    <reactor.core.version>3.8.5</reactor.core.version>
-    <reactor.netty.version>1.3.5</reactor.netty.version>
+    <reactor.core.version>3.8.6</reactor.core.version>
+    <reactor.netty.version>1.3.6</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <scm.version>2.2.1</scm.version>
     <!-- sis 1.3 xml bind 4 -->
@@ -410,7 +410,7 @@
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
     <spring.version>5.3.39</spring.version>
-    <sqlite.version>3.53.1.0</sqlite.version>
+    <sqlite.version>3.53.2.0</sqlite.version>
     <tagsoup.version>1.2.1</tagsoup.version>
     <testcontainers.version>1.21.4</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent-->
@@ -424,7 +424,7 @@
     <vorbis.version>0.8</vorbis.version>
     <xerces.version>2.12.2</xerces.version>
     <xmpcore.version>6.1.11</xmpcore.version>
-    <zstd.version>1.5.7-9</zstd.version>
+    <zstd.version>1.5.7-11</zstd.version>
     <!-- 4.0.0 doesn't compile with jdk8 -->
     <kafka.version>3.9.2</kafka.version>
     <snappy.java.version>1.1.10.8</snappy.java.version>
@@ -521,7 +521,7 @@
       <dependency>
         <groupId>com.fasterxml.woodstox</groupId>
         <artifactId>woodstox-core</artifactId>
-        <version>7.2.0</version>
+        <version>7.2.1</version>
       </dependency>
       <dependency>
         <groupId>com.beust</groupId>
