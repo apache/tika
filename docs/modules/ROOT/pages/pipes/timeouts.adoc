@@ -68,7 +68,7 @@ This can be combined with other parse-context settings:
 
 == Per-Request Overrides
 
-When using Tika Server with `enableUnsecureFeatures: true`, timeouts can be overridden per-request
+When using Tika Server with `allowPerRequestConfig: true`, timeouts can be overridden per-request
 by including `TimeoutLimits` in the `ParseContext` of a `FetchEmitTuple`:
 
 [source,java]

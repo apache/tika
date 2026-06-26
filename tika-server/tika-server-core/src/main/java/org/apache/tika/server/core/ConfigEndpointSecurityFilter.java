@@ -23,24 +23,24 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 
 /**
- * JAX-RS filter that gates /config endpoints behind the enableUnsecureFeatures flag.
- * When enableUnsecureFeatures is false, requests to paths containing "/config" will
+ * JAX-RS filter that gates /config endpoints behind the allowPerRequestConfig flag.
+ * When allowPerRequestConfig is false, requests to paths containing "/config" will
  * receive a 403 Forbidden response.
  */
 @Provider
 public class ConfigEndpointSecurityFilter implements ContainerRequestFilter {
 
-    private final boolean enableUnsecureFeatures;
+    private final boolean allowPerRequestConfig;
 
-    public ConfigEndpointSecurityFilter(boolean enableUnsecureFeatures) {
-        this.enableUnsecureFeatures = enableUnsecureFeatures;
+    public ConfigEndpointSecurityFilter(boolean allowPerRequestConfig) {
+        this.allowPerRequestConfig = allowPerRequestConfig;
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
-        if (!enableUnsecureFeatures && requestContext.getUriInfo().getPath().contains("/config")) {
+        if (!allowPerRequestConfig && requestContext.getUriInfo().getPath().contains("/config")) {
             requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
-                    .entity("Config endpoints are disabled. Set enableUnsecureFeatures=true in server config.")
+                    .entity("Config endpoints are disabled. Set allowPerRequestConfig=true in server config.")
                     .type(MediaType.TEXT_PLAIN)
                     .build());
         }

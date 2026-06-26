@@ -42,7 +42,7 @@ import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 
 /**
- * Verifies that /unpack and /unpack/all honor enableUnsecureFeatures: when per-request
+ * Verifies that /unpack and /unpack/all honor allowPerRequestConfig: when per-request
  * config injection is disabled (the default), a multipart "config" part is rejected
  * with 403. Counterpart to {@link UnpackerResourceWithConfigTest}, which covers the
  * enabled path.
@@ -52,7 +52,7 @@ public class UnpackerResourceConfigDisabledTest extends CXFTestBase {
     private static final String BASE_PATH = "/unpack";
     private static final String ALL_PATH = BASE_PATH + "/all";
 
-    // isEnableUnsecureFeatures() is intentionally NOT overridden; it defaults to false
+    // isAllowPerRequestConfig() is intentionally NOT overridden; it defaults to false
     // so a config part must be rejected.
 
     @Override

@@ -216,7 +216,7 @@ public abstract class CXFTestBase {
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
                     inputTempDirectory, getUnpackEmitterBasePath(), false);
 
-            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper, isEnableUnsecureFeatures());
+            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper, isAllowPerRequestConfig());
         } finally {
             // Only delete tika config, keep pipes config for child processes
             Files.deleteIfExists(tmp);
@@ -372,7 +372,7 @@ public abstract class CXFTestBase {
      * the production default. Tests that POST a multipart "config" part must override
      * this to return true, otherwise the config part is rejected with 403.
      */
-    protected boolean isEnableUnsecureFeatures() {
+    protected boolean isAllowPerRequestConfig() {
         return false;
     }
 

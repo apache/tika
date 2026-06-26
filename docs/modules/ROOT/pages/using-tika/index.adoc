@@ -36,6 +36,13 @@ and microservice architectures.
 
 xref:using-tika/grpc/index.adoc[gRPC]::
 Use Tika via gRPC protocol. Best for high-performance, cross-language communication.
++
+NOTE: tika-grpc is more exposed by default than tika-server — by default it has no
+transport security or per-caller authorization, and its core fetch-and-parse surface
+is always on. (Its most dangerous capabilities — runtime fetcher/iterator changes and
+per-request parse configuration — are off by default.) Run it only on a trusted,
+access-controlled network. See the
+xref:using-tika/grpc/index.adoc#_security[Security] section.
 
 == Which Should I Use?
 

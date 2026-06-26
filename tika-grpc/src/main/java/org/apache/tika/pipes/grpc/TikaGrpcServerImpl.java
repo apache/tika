@@ -85,6 +85,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
 
     PipesConfig pipesConfig;
+    TikaGrpcConfig tikaGrpcConfig;
     PipesClient pipesClient;
     FetcherManager fetcherManager;
     ConfigStore configStore;
@@ -112,6 +113,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (pipesConfig == null) {
             pipesConfig = new PipesConfig();
         }
+
+        // Security-sensitive grpc features (per-request config, runtime component
+        // modifications) are off unless explicitly enabled in the "grpc" section.
+        tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
         pipesClient = new PipesClient(pipesConfig, configPath);
         
@@ -141,7 +146,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         this.configStore = createConfigStore();
 
-        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true, this.configStore);
+        fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig,
+                tikaGrpcConfig.isAllowComponentModifications(), this.configStore);
     }
 
     private ConfigStore createConfigStore() throws TikaConfigException {
@@ -182,9 +188,60 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
+    /**
+     * If the operator has not opted in to runtime component modifications, closes
+     * the call with {@code PERMISSION_DENIED} and returns {@code true}. Guards the
+     * Save/Delete fetcher and pipes-iterator RPCs. The caller must {@code return}
+     * immediately when this returns {@code true}.
+     * <p>
+     * We close the observer here rather than throwing, because a
+     * {@link io.grpc.StatusRuntimeException} thrown out of a service method is
+     * reported to the client as {@code UNKNOWN}; only {@code onError} transmits
+     * the intended status.
+     */
+    private boolean denyComponentModifications(StreamObserver<?> responseObserver) {
+        if (tikaGrpcConfig.isAllowComponentModifications()) {
+            return false;
+        }
+        responseObserver.onError(io.grpc.Status.PERMISSION_DENIED
+                .withDescription("Runtime component modifications are disabled. Set "
+                        + "'allowComponentModifications' to true in the 'grpc' section of your "
+                        + "tika-config to allow SaveFetcher/DeleteFetcher/SavePipesIterator/"
+                        + "DeletePipesIterator. Understand the security implications first.")
+                .asRuntimeException());
+        return true;
+    }
+
+    /**
+     * If the request carries per-request configuration
+     * ({@code additional_fetch_config_json} or {@code parse_context_json}) but the
+     * operator has not opted in, closes the call with {@code PERMISSION_DENIED} and
+     * returns {@code true}. A request with no per-request config is always allowed.
+     * The caller must {@code return} immediately when this returns {@code true}.
+     */
+    private boolean denyPerRequestConfig(FetchAndParseRequest request,
+                                         StreamObserver<?> responseObserver) {
+        boolean hasPerRequestConfig =
+                StringUtils.isNotBlank(request.getAdditionalFetchConfigJson())
+                        || StringUtils.isNotBlank(request.getParseContextJson());
+        if (!hasPerRequestConfig || tikaGrpcConfig.isAllowPerRequestConfig()) {
+            return false;
+        }
+        responseObserver.onError(io.grpc.Status.PERMISSION_DENIED
+                .withDescription("Per-request configuration is disabled. Set "
+                        + "'allowPerRequestConfig' to true in the 'grpc' section of your "
+                        + "tika-config to allow additional_fetch_config_json / "
+                        + "parse_context_json. Understand the security implications first.")
+                .asRuntimeException());
+        return true;
+    }
+
     @Override
     public void fetchAndParseServerSideStreaming(FetchAndParseRequest request,
                                                  StreamObserver<FetchAndParseReply> responseObserver) {
+        if (denyPerRequestConfig(request, responseObserver)) {
+            return;
+        }
         fetchAndParseImpl(request, responseObserver);
     }
 
@@ -194,6 +251,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseRequest fetchAndParseRequest) {
+                if (denyPerRequestConfig(fetchAndParseRequest, responseObserver)) {
+                    return;
+                }
                 fetchAndParseImpl(fetchAndParseRequest, responseObserver);
             }
 
@@ -212,6 +272,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void fetchAndParse(FetchAndParseRequest request,
                               StreamObserver<FetchAndParseReply> responseObserver) {
+        if (denyPerRequestConfig(request, responseObserver)) {
+            return;
+        }
         fetchAndParseImpl(request, responseObserver);
         responseObserver.onCompleted();
     }
@@ -269,6 +332,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void saveFetcher(SaveFetcherRequest request,
                               StreamObserver<SaveFetcherReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         SaveFetcherReply reply =
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         try {
@@ -363,6 +429,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deleteFetcher(DeleteFetcherRequest request,
                               StreamObserver<DeleteFetcherReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         boolean successfulDelete = deleteFetcher(request.getFetcherId());
         responseObserver.onNext(DeleteFetcherReply.newBuilder().setSuccess(successfulDelete).build());
         responseObserver.onCompleted();
@@ -398,6 +467,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void savePipesIterator(SavePipesIteratorRequest request,
                                   StreamObserver<SavePipesIteratorReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         try {
             String iteratorId = request.getIteratorId();
             String iteratorClass = request.getIteratorClass();
@@ -466,6 +538,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deletePipesIterator(DeletePipesIteratorRequest request,
                                     StreamObserver<DeletePipesIteratorReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         try {
             String iteratorId = request.getIteratorId();
             LOG.info("Deleting pipes iterator: {}", iteratorId);

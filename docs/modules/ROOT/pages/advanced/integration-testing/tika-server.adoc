@@ -212,13 +212,13 @@ curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http:/
 curl -s -w "\nHTTP Status: %{http_code}\n" -X POST -F "file=@testPDF.pdf" http://localhost:9998/unpack/config
 ----
 
-*Expected:* All return HTTP 403 with message: "Config endpoints are disabled. Set enableUnsecureFeatures=true in server config."
+*Expected:* All return HTTP 403 with message: "Config endpoints are disabled. Set allowPerRequestConfig=true in server config."
 
-=== Test 18b: `/pipes`, `/async`, `/status` Require enableUnsecureFeatures
+=== Test 18b: `/pipes` and `/async` Require allowPipes
 
 [source,bash]
 ----
-cat > tika-config-pipes-no-unsecure.json << 'EOF'
+cat > tika-config-pipes-no-flags.json << 'EOF'
 {
   "server": {"port": 9998, "endpoints": ["tika", "pipes"]},
   "pipes": {"numClients": 2},
@@ -226,12 +226,12 @@ cat > tika-config-pipes-no-unsecure.json << 'EOF'
 }
 EOF
 
-java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-pipes-no-unsecure.json
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-pipes-no-flags.json
 ----
 
-*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `enableUnsecureFeatures` to be `true`. The same applies to `async` and `status`.
+*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `allowPipes` to be `true`. The same applies to `async`. (`/status` is no longer gated — it can be enabled simply by listing `status` under `endpoints`.)
 
-== Part 2: Tests with enableUnsecureFeatures
+== Part 2: Tests with allowPipes / allowPerRequestConfig
 
 Stop the default server and create a config file:
 
@@ -239,12 +239,13 @@ Stop the default server and create a config file:
 ----
 pkill -f "tika-server-standard-4.0.0-SNAPSHOT.jar"
 
-cat > tika-config-unsecure.json << 'EOF'
+cat > tika-config-capabilities.json << 'EOF'
 {
   "server": {
     "port": 9998,
     "host": "localhost",
-    "enableUnsecureFeatures": true
+    "allowPipes": true,
+    "allowPerRequestConfig": true
   },
   "parsers": [
     {"default-parser": {}}
@@ -253,7 +254,7 @@ cat > tika-config-unsecure.json << 'EOF'
 }
 EOF
 
-java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-unsecure.json &
+java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-capabilities.json &
 sleep 10
 curl -s http://localhost:9998/version
 ----
@@ -382,7 +383,7 @@ rm -rf /tmp/tika-server-test
 
 The following endpoints were tested and verified working:
 
-=== Default Mode (enableUnsecureFeatures=false)
+=== Default Mode (allowPipes=false, allowPerRequestConfig=false)
 
 [cols="1,1,1", options="header"]
 |===
@@ -412,7 +413,7 @@ The following endpoints were tested and verified working:
 |`/unpack/config` |POST |BLOCKED (403) - Expected
 |===
 
-=== With enableUnsecureFeatures=true
+=== With allowPerRequestConfig=true
 
 [cols="1,1,1", options="header"]
 |===

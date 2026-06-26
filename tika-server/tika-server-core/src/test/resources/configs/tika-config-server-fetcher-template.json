@@ -8,7 +8,8 @@
   },
   "server": {
     "port": "PORT",
-    "enableUnsecureFeatures": true,
+    "allowPipes": true,
+    "allowPerRequestConfig": true,
     "endpoints": [
       "tika"
     ]

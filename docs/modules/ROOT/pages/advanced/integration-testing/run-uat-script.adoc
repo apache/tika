@@ -51,9 +51,9 @@ Coverage includes:
 * `/unpack/all` (embedded extraction; verifies the response is a valid zip)
 * `/language/stream`
 * `/meta/form`, `/rmeta/form` (multipart variants)
-* `enableUnsecureFeatures=false` gating: `/meta/config`, `/rmeta/config`,
-  `/tika/config` all return 403; and selecting the `/pipes`, `/async`, or `/status`
-  endpoints without `enableUnsecureFeatures` makes the server refuse to start
+* `allowPerRequestConfig=false` gating: `/meta/config`, `/rmeta/config`,
+  `/tika/config` all return 403; and `allowPipes=false` gating: selecting the
+  `/pipes` or `/async` endpoints without `allowPipes` makes the server refuse to start
 * `X-Tika-OCRskipOcr` header, `Content-Disposition` filename
 * 404 / 405 error handling
 

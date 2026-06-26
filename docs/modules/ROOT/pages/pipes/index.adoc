@@ -29,7 +29,7 @@ While Tika Pipes has a programmatic Java API, it is best used through:
 
 * xref:using-tika/cli/index.adoc[tika-app] — batch processing from the command line
 * xref:using-tika/server/index.adoc[tika-server] — REST API with pipes-based robustness built in
-* xref:using-tika/grpc/index.adoc[tika-grpc] — gRPC API with pipes-based robustness built in
+* xref:using-tika/grpc/index.adoc[tika-grpc] — gRPC API with pipes-based robustness built in. More exposed by default than tika-server; run only on a trusted network (see xref:using-tika/grpc/index.adoc#_security[Security]).
 
 See xref:advanced/robustness.adoc[Robustness] for details on how Tika Pipes protects
 against problematic files.

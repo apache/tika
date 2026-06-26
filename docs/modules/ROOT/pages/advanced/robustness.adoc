@@ -97,7 +97,7 @@ tika-server restarts gracefully.
 
 tika-pipes::
 Available through programmatic use, tika-app `-a` option, or tika-server's `/async`
-and `/pipes` endpoints (the server endpoints require `enableUnsecureFeatures=true`).
+and `/pipes` endpoints (the server endpoints require `allowPipes=true`).
 
 == Security Testing and Prevention
 

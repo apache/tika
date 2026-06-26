@@ -8,7 +8,8 @@
   },
   "server": {
     "port": 9999,
-    "enableUnsecureFeatures": true,
+    "allowPipes": true,
+    "allowPerRequestConfig": true,
     "endpoints": [
       "emit",
       "async",

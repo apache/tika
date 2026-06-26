@@ -48,23 +48,16 @@ public class TikaServerConfig {
     //used in fork mode -- restart after processing this many files
     private static final long DEFAULT_MAX_FILES = 100000;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
-    private static final String UNSECURE_WARNING =
-            "WARNING: You have chosen to run tika-server with unsecure features enabled.\n" +
-                    "Whoever has access to your service now has the same read permissions\n" +
-                    "as you've given your fetchers and the same write permissions as your emitters.\n" +
-                    "Users could request and receive a sensitive file from your\n" +
-                    "drive or a webpage from your intranet and/or send malicious content to\n" +
-                    "your emitter endpoints. See CVE-2015-3271.\n" +
-                    "Additionally, /config endpoints allow per-request parser configuration\n" +
-                    "which could enable dangerous operations.\n" +
-                    "Please make sure you know what you are doing.";
     /**
-     * Endpoints that expose unsecure features (process-isolated pipes parsing, async
-     * batch processing, and server status). Selecting any of these now requires
-     * {@code enableUnsecureFeatures=true} as an explicit, deliberate opt-in.
+     * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
+     * parsing and async batch processing). Selecting any of these requires
+     * {@code allowPipes=true} as an explicit, deliberate opt-in.
+     * <p>
+     * {@code status} is intentionally not in this set: it exposes only aggregate
+     * counters and is enabled simply by listing it under {@code endpoints}.
      */
-    private static final Set<String> ENDPOINTS_REQUIRING_UNSECURE_FEATURES =
-            new HashSet<>(Arrays.asList("pipes", "async", "status"));
+    private static final Set<String> ENDPOINTS_REQUIRING_PIPES =
+            new HashSet<>(Arrays.asList("pipes", "async"));
     private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
             new String[]{"maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
                     "tmpFilePrefix"});
@@ -83,7 +76,8 @@ private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
 private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
 
  */
-    private boolean enableUnsecureFeatures = false;
+    private boolean allowPipes = false;
+    private boolean allowPerRequestConfig = false;
     private String cors = "";
     private boolean returnStackTrace = false;
     private String idBase = UUID
@@ -163,34 +157,52 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return idBase;
     }
 
-    public boolean isEnableUnsecureFeatures() {
-        return enableUnsecureFeatures;
+    /**
+     * Whether the pipes/fetch endpoints ({@code pipes}, {@code async}) may be
+     * enabled. Off by default; selecting one of those endpoints without this set
+     * causes the server to refuse to start.
+     */
+    public boolean isAllowPipes() {
+        return allowPipes;
     }
 
-    public void setEnableUnsecureFeatures(boolean enableUnsecureFeatures) {
-        this.enableUnsecureFeatures = enableUnsecureFeatures;
+    public void setAllowPipes(boolean allowPipes) {
+        this.allowPipes = allowPipes;
+    }
+
+    /**
+     * Whether callers may supply per-request parser configuration (the
+     * {@code /config} endpoints and the multipart {@code config} part). Off by
+     * default; when off, such requests are rejected with 403.
+     */
+    public boolean isAllowPerRequestConfig() {
+        return allowPerRequestConfig;
+    }
+
+    public void setAllowPerRequestConfig(boolean allowPerRequestConfig) {
+        this.allowPerRequestConfig = allowPerRequestConfig;
     }
 
     private void validateConsistency(Set<String> settings) throws TikaConfigException {
         if (host == null) {
             throw new TikaConfigException("Must specify 'host'");
         }
-        if (!enableUnsecureFeatures) {
-            List<String> requireUnsecure = new ArrayList<>();
+        if (!allowPipes) {
+            List<String> requirePipes = new ArrayList<>();
             for (String endpoint : endpoints) {
-                if (ENDPOINTS_REQUIRING_UNSECURE_FEATURES.contains(endpoint)
-                        && !requireUnsecure.contains(endpoint)) {
-                    requireUnsecure.add(endpoint);
+                if (ENDPOINTS_REQUIRING_PIPES.contains(endpoint)
+                        && !requirePipes.contains(endpoint)) {
+                    requirePipes.add(endpoint);
                 }
             }
-            if (!requireUnsecure.isEmpty()) {
+            if (!requirePipes.isEmpty()) {
                 throw new TikaConfigException(
-                        "The following selected endpoint(s) require unsecure features to be " +
-                        "enabled: " + requireUnsecure + ". Set 'enableUnsecureFeatures' to true " +
+                        "The following selected endpoint(s) require the pipes machinery to be " +
+                        "enabled: " + requirePipes + ". Set 'allowPipes' to true " +
                         "in the 'server' section of your tika-config and confirm you understand " +
                         "the security implications (see the tika-server documentation). These " +
-                        "endpoints were previously enabled simply by selecting them; the explicit " +
-                        "opt-in is now required.");
+                        "endpoints expose process-isolated fetching and parsing, which can read " +
+                        "files and reach network resources.");
             }
         }
     }

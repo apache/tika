@@ -1,0 +1,13 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "tika",
+      "status"
+    ]
+  },
+  "pipes": {
+    "numClients": 2
+  },
+  "plugin-roots": "target/plugins"
+}

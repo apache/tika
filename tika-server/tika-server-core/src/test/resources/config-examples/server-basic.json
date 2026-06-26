@@ -3,7 +3,8 @@
     "port": 9998,
     "host": "localhost",
     "taskTimeoutMillis": 300000,
-    "enableUnsecureFeatures": false
+    "allowPipes": false,
+    "allowPerRequestConfig": false
   },
   "parsers": [
     {
