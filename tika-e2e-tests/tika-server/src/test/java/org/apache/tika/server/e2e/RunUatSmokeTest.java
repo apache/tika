@@ -37,7 +37,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Tag;
@@ -144,7 +143,7 @@ public class RunUatSmokeTest {
 
     // ----- helpers -----
 
-    private Process startServer(Path serverJar, String... args) throws Exception {
+    private Process forkServer(Path serverJar, String... args) throws Exception {
         String[] cmd = new String[args.length + 3];
         cmd[0] = "java";
         cmd[1] = "-jar";
@@ -153,28 +152,53 @@ public class RunUatSmokeTest {
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(serverJar.getParent().toFile());
         pb.redirectErrorStream(true);
-        Process p = pb.start();
+        return pb.start();
+    }
+
+    private Process startServer(Path serverJar, String... args) throws Exception {
+        Process p = forkServer(serverJar, args);
         drainAsync(p);
         return p;
     }
 
-    /** Forks the server and waits for it to exit on its own (used for fail-fast config tests). */
+    /**
+     * Forks the server and waits for it to exit on its own (used for the fail-fast config tests).
+     * A single reader thread captures the merged stdout/stderr; do NOT also {@code drainAsync} the
+     * same process, or the two readers race for the stream and the captured output is incomplete
+     * (which made the start-time assertions flaky across platforms).
+     */
     private StartupResult runUntilExit(Path serverJar, String... args) throws Exception {
-        Process p = startServer(serverJar, args);
-        AtomicReference<String> out = new AtomicReference<>("");
-        Thread t = new Thread(() -> out.set(readAll(p)));
-        t.setDaemon(true);
-        t.start();
+        Process p = forkServer(serverJar, args);
+        StringBuilder sb = new StringBuilder();
+        Thread reader = new Thread(() -> {
+            try (BufferedReader r = new BufferedReader(
+                    new InputStreamReader(p.getInputStream(), UTF_8))) {
+                String line;
+                while ((line = r.readLine()) != null) {
+                    synchronized (sb) {
+                        sb.append(line).append('\n');
+                    }
+                }
+            } catch (Exception e) {
+                log.debug("stream closed", e);
+            }
+        });
+        reader.setDaemon(true);
+        reader.start();
         boolean exited = p.waitFor(STARTUP_FAILURE_TIMEOUT_S, TimeUnit.SECONDS);
         if (!exited) {
             // The config was supposed to be rejected at startup; if the server is still up, that's a failure.
             p.destroyForcibly();
             p.waitFor(15, TimeUnit.SECONDS);
-            t.join(5_000);
-            return new StartupResult(0, "server did NOT exit (started despite invalid config):\n" + out.get());
+            reader.join(5_000);
+            synchronized (sb) {
+                return new StartupResult(0, "server did NOT exit (started despite invalid config):\n" + sb);
+            }
         }
-        t.join(5_000);
-        return new StartupResult(p.exitValue(), out.get());
+        reader.join(5_000);
+        synchronized (sb) {
+            return new StartupResult(p.exitValue(), sb.toString());
+        }
     }
 
     private static String readAll(Process p) {
