@@ -190,6 +190,55 @@
                       </fileset>
                     </checksum>
                     <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA-512" property="checksum" />
+                    <!--
+                      TIKA-4733 follow-up: GPG-sign each staged dist artifact.
+                      The bin zips and parser -shaded.jars are <attach>false</attach>,
+                      so maven-gpg-plugin (which signs only ATTACHED artifacts) does not
+                      produce their .asc; it signs the Maven-Central jars/poms and the
+                      source-release zip only. In 3.x the server bin zip was an attached
+                      "-bin" artifact, so it was signed (and pushed to Central) for free;
+                      4.x detached it from Central (TIKA-4733), which also detached it from
+                      signing. Without this step the Apache dist artifacts ship unsigned.
+                      Uses the gpg-agent the build already primed when signing the attached
+                      artifacts; failonerror aborts the release if a signature can't be made.
+                      tika-<v>-src.zip is excluded; it already has its .asc from the build.
+                      (If you sign with a non-default key, set -Dgpg.keyname and add a
+                      matching "-u" arg here, mirroring maven-gpg-plugin.)
+                    -->
+                    <apply executable="gpg" failonerror="true" parallel="false">
+                      <arg value="--batch" />
+                      <arg value="--yes" />
+                      <arg value="--armor" />
+                      <arg value="--detach-sign" />
+                      <fileset dir="${basedir}/target/${project.version}">
+                        <include name="*.zip" />
+                        <include name="*.tgz" />
+                        <include name="*.jar" />
+                        <exclude name="*-src.zip" />
+                        <exclude name="*.asc" />
+                        <exclude name="*.sha512" />
+                      </fileset>
+                    </apply>
+                    <!--
+                      Guard: every staged dist artifact must now carry a detached .asc.
+                      Catches the exact failure this step exists to prevent (a silently
+                      unsigned artifact), in the same fail-loud spirit as the guards above.
+                    -->
+                    <resourcecount property="dist.artifact.count">
+                      <fileset dir="${basedir}/target/${project.version}">
+                        <include name="*.zip" />
+                        <include name="*.tgz" />
+                        <include name="*.jar" />
+                        <exclude name="*.asc" />
+                        <exclude name="*.sha512" />
+                      </fileset>
+                    </resourcecount>
+                    <resourcecount property="dist.asc.count">
+                      <fileset dir="${basedir}/target/${project.version}" includes="*.asc" />
+                    </resourcecount>
+                    <fail message="Release staging has ${dist.artifact.count} dist artifact(s) but ${dist.asc.count} .asc signature(s); a dist artifact was left unsigned.">
+                      <condition><not><equals arg1="${dist.artifact.count}" arg2="${dist.asc.count}" /></not></condition>
+                    </fail>
 <!-- this spacing is less than ideal, but if you indent here, the vote.txt file will have the leading spaces -->
                     <echo file="${basedir}/target/vote.txt">
 From: ${username}@apache.org

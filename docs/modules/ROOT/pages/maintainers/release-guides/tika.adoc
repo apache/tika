@@ -176,8 +176,31 @@ Ensure you have valid Maven credentials in `~/.m2/settings.xml`:
 === Step 10: Upload Distribution Artifacts
 
 The release-plugin's antrun task assembles a dist directory at
-`target/checkout/target/X.Y.Z/` containing the source zip, app jar, server
-tarballs, and parser-package jars (each with `.asc` and `.sha512`).
+`target/checkout/target/X.Y.Z/` containing the source zip, the runnable
+distribution zips (app, server, eval-app), the pipes-plugin zips, and the
+parser-package `-shaded.jar` files. The task writes a `.sha512` and a `.asc`
+for each and fails the build if any expected artifact is missing or unsigned.
+The slim Maven jars (e.g. `tika-app-X.Y.Z.jar`) are *not* here — they go to
+Maven Central, not Apache dist. See
+xref:maintainers/release-guides/release-artifacts.adoc[Release Artifacts: What
+Goes Where] for the authoritative list and the rationale.
+
+NOTE: The bin zips and `-shaded.jar` files are `<attach>false</attach>`, so the
+build's `maven-gpg-plugin` (which signs only attached artifacts) does not sign
+them; the antrun's own gpg step does. If you are cutting a release whose tag
+predates that step (anything before 4.0.0-beta-1's fix), sign the staged dir by
+hand before committing:
++
+[source,bash]
+----
+cd target/checkout/target/X.Y.Z
+for f in *.zip *.jar *.tgz; do
+  [ -e "$f" ] || continue
+  [ -e "$f.asc" ] && continue   # src.zip is already signed by the build
+  gpg --armor --detach-sign "$f"
+done
+for a in *.asc; do gpg --verify "$a" "${a%.asc}" || echo "BAD SIG: $a"; done
+----
 
 WARNING: At the end of `release:perform` you will see an echo telling you
 to `scp -r ... people.apache.org:public_html/tika/`.  *Ignore that.*  It
@@ -198,12 +221,15 @@ svn commit -m "Stage Apache Tika X.Y.Z RC<n>"
 Verify the directory contains all expected artifacts (each with `.asc` and
 `.sha512`):
 
-* `tika-X.Y.Z-src.zip`
-* `tika-app-X.Y.Z.jar`
-* `tika-server-standard-X.Y.Z.jar` (and `tika-server-standard-X.Y.Z.zip`)
-* `tika-parser-scientific-package-X.Y.Z.jar`
-* `tika-parser-sqlite3-package-X.Y.Z.jar`
-* `tika-parser-nlp-package-X.Y.Z.jar`
+* `tika-X.Y.Z-src.zip` (the source release)
+* `tika-app-X.Y.Z.zip`
+* `tika-server-standard-X.Y.Z.zip`
+* `tika-eval-app-X.Y.Z.zip`
+* `tika-parser-scientific-package-X.Y.Z-shaded.jar`
+* `tika-parser-sqlite3-package-X.Y.Z-shaded.jar`
+* `tika-parser-nlp-package-X.Y.Z-shaded.jar`
+* one `tika-pipes-<plugin>-X.Y.Z.zip` per pipes plugin (solr, http, s3, gcs, az-blob,
+  kafka, csv, jdbc, json, es, opensearch, google-drive, microsoft-graph, … — 15 in 4.x)
 
 Also:
 
@@ -343,15 +369,18 @@ When in doubt, drop the staging repo and run `release:perform` cleanly
 from scratch.  It costs ~1 hour but yields a guaranteed single-build set
 of artifacts.
 
-=== gRPC distribution zip is huge (~600+ MB)
+=== gRPC Docker build context is huge (~600+ MB)
 
-The `tika-grpc-X.Y.Z.zip` artifact bundles every pipes plugin with its full
-transitive closure (microsoft-graph, gcs, az-blob, s3, kafka, etc.) plus
-multi-platform native libs (rocksdbjni, netty natives).  Several hundred MB
-of that is duplication of dependencies already in the root `lib/`
-directory.  This is a known issue tracked for cleanup before beta — see
-the to-fix-before-4.0.0-beta punch list.  The release can ship as-is; the
-zip is correct, just bloated.
+`tika-grpc` is distributed only as the `apache/tika-grpc` Docker image and the
+slim Maven Central jar — it has *no* Apache-dist archive by design (see
+xref:maintainers/release-guides/release-artifacts.adoc[Release Artifacts: What
+Goes Where]). The `-Pdocker` build still produces a `tika-grpc-X.Y.Z.zip`, but
+only as the *image build context*, not a published artifact. That zip bundles
+every pipes plugin with its full transitive closure (microsoft-graph, gcs,
+az-blob, s3, kafka, etc.) plus multi-platform native libs (rocksdbjni, netty
+natives), so it runs ~600+ MB, much of it duplicating dependencies already under
+`lib/`. The bloat lands in the Docker image, not in a release artifact; reducing
+it is tracked for a future release and does not block a release.
 
 == Post-Release
 
