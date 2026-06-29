@@ -387,12 +387,39 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     @Override
     public void endDocument() throws SAXException {
         try {
-            renderer.render(document, writer);
-            writer.flush();
-            finished = true;
+            renderToWriter();
         } catch (IOException e) {
             throw new SAXException("Error writing markdown", e);
         }
+    }
+
+    /**
+     * Renders the document model accumulated so far to the underlying writer and
+     * flushes it, if it has not already been written.
+     * <p>
+     * This handler buffers the whole document and only writes it to the writer in
+     * {@link #endDocument()}, which a parser does not call when it aborts
+     * mid-document (a parse exception, or a write-limit abort with
+     * {@code throwOnWriteLimitReached=true}). Unlike the streaming text/HTML/XML
+     * handlers, that would leave an {@code OutputStream}/{@code Writer} consumer
+     * with an empty result. A parse driver that owns the writer can call this in a
+     * {@code finally} so partial Markdown is still emitted on failure. Idempotent:
+     * a no-op once the content has been written (including after a successful
+     * {@code endDocument()}).
+     *
+     * @throws IOException if writing to or flushing the underlying writer fails
+     */
+    public void writePartialContentIfUnfinished() throws IOException {
+        renderToWriter();
+    }
+
+    private void renderToWriter() throws IOException {
+        if (finished) {
+            return;
+        }
+        renderer.render(document, writer);
+        writer.flush();
+        finished = true;
     }
 
     @Override

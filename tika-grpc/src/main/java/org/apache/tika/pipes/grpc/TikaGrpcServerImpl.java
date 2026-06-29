@@ -67,6 +67,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
+import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
 import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
@@ -370,6 +371,18 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
         return null;
     }
+
+    private boolean isRegisteredIteratorType(String iteratorType) {
+        if (iteratorType == null) {
+            return false;
+        }
+        for (PipesIteratorFactory factory : pluginManager.getExtensions(PipesIteratorFactory.class)) {
+            if (factory.getName().equals(iteratorType)) {
+                return true;
+            }
+        }
+        return false;
+    }
     static Status notFoundStatus(String fetcherId) {
         return Status.newBuilder()
                 .setCode(io.grpc.Status.Code.NOT_FOUND.value())
@@ -494,6 +507,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             String iteratorId = request.getIteratorId();
             String iteratorType = request.getIteratorType();
             String iteratorConfigJson = request.getIteratorConfigJson();
+
+            // Validate the iterator type up front, mirroring saveFetcher: reject unknown types
+            // rather than persisting an unvalidated entry into the shared ConfigStore that would
+            // only fail later (or in a co-deployed PipesServer that consumes iterator entries).
+            if (!isRegisteredIteratorType(iteratorType)) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                        .withDescription("Unknown pipes iterator type: '" + iteratorType
+                                + "'. Use the short factory name (e.g. 'file-system-pipes-iterator').")
+                        .asRuntimeException());
+                return;
+            }
 
             LOG.info("Saving pipes iterator: id={}, type={}", iteratorId, iteratorType);
 

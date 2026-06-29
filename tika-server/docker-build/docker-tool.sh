@@ -106,6 +106,7 @@ test_docker_image_uat() {
   container_name=$1
   image=$image_name:$1
   uat_script=$2
+  require_ocr=${3:-}   # non-empty => OCR must work (the -full image ships tesseract)
 
   docker run -d --name "$container_name" -p 127.0.0.1:9998:9998 "$image" \
     || die "couldn't start $image"
@@ -118,7 +119,7 @@ test_docker_image_uat() {
     sleep 1
   done
 
-  if "$uat_script" http://localhost:9998; then
+  if TIKA_UAT_REQUIRE_OCR="$require_ocr" "$uat_script" http://localhost:9998; then
     echo "$(tput setaf 2)Image: $image - UAT passed$(tput sgr0)"
     stop_test_container "$container_name"
   else
@@ -160,7 +161,7 @@ case "$subcommand" in
       die "UAT script not found or not executable: $uat_script"
     fi
     test_docker_image_uat ${tika_docker_version} "$uat_script"
-    test_docker_image_uat "${tika_docker_version}-full" "$uat_script"
+    test_docker_image_uat "${tika_docker_version}-full" "$uat_script" 1
     ;;
 
   publish)

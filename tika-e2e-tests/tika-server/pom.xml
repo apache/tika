@@ -113,7 +113,9 @@
                                             <artifactId>tika-server-standard</artifactId>
                                             <version>${revision}</version>
                                             <type>zip</type>
-                                            <overWrite>false</overWrite>
+                                            <!-- overWrite=true so the e2e tests always exercise the freshly
+                                                 built dist; a stale unpacked dir would silently test old code. -->
+                                            <overWrite>true</overWrite>
                                             <outputDirectory>${tika.server.home}</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
