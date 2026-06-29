@@ -22,7 +22,9 @@
 # Usage:
 #   ./publish-docs.sh /path/to/tika-site/publish
 #
-# Prerequisite: run 'mvn package -pl docs' first to populate target/site/.
+# Prerequisite: build target/site/ first, from the repo root:
+#   ./mvnw package -Papache-release -pl :tika-docs -DskipTests
+# (The 'docs' module is only in the reactor under the apache-release profile.)
 
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -57,7 +59,7 @@ DOCS_DIR="${PUBLISH_DIR}/docs"
 
 if [[ ! -d target/site ]]; then
     echo "target/site/ not found." >&2
-    echo "Build the docs first: cd .. && ./mvnw package -pl docs" >&2
+    echo "Build the docs first: cd .. && ./mvnw package -Papache-release -pl :tika-docs -DskipTests" >&2
     exit 1
 fi
 
@@ -70,7 +72,7 @@ sed_atomic() {
     local script="$1" input="$2" output="$3"
     if [[ ! -f "${input}" ]]; then
         echo "${input} not found." >&2
-        echo "Re-run the docs build: cd .. && ./mvnw package -pl docs" >&2
+        echo "Re-run the docs build: cd .. && ./mvnw package -Papache-release -pl :tika-docs -DskipTests" >&2
         exit 1
     fi
     sed "${script}" "${input}" > "${output}.tmp"
