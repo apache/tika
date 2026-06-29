@@ -73,6 +73,8 @@ import org.apache.tika.ListFetchersReply;
 import org.apache.tika.ListFetchersRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
+import org.apache.tika.SavePipesIteratorReply;
+import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.pipes.api.PipesResult;
@@ -313,6 +315,47 @@ public class TikaGrpcServerTest {
                         .build());
         Assertions.assertFalse(ok.getFetcherConfigJsonSchema().isEmpty(),
                 "a registered fetcher type should still produce a schema");
+    }
+
+    @Test
+    public void testSavePipesIteratorDeniedByDefault(Resources resources) throws Exception {
+        // savePipesIterator is component management: it must be denied when the grpc
+        // feature is off (the secure default), just like saveFetcher.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                blockingStub.savePipesIterator(SavePipesIteratorRequest
+                        .newBuilder()
+                        .setIteratorId("it0")
+                        .setIteratorType("file-system-pipes-iterator")
+                        .setIteratorConfigJson("{}")
+                        .build()));
+        assertEquals(Status.Code.PERMISSION_DENIED, ex.getStatus().getCode());
+    }
+
+    @Test
+    public void testSavePipesIteratorValidatesType(Resources resources) throws Exception {
+        // Even with component management enabled, an unknown iterator type must be rejected
+        // up front (mirroring saveFetcher) rather than poisoning the shared ConfigStore with
+        // an unvalidated entry that only fails later.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
+
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                blockingStub.savePipesIterator(SavePipesIteratorRequest
+                        .newBuilder()
+                        .setIteratorId("bogus")
+                        .setIteratorType("no-such-iterator")
+                        .setIteratorConfigJson("{}")
+                        .build()));
+        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+
+        // A registered iterator type still saves successfully.
+        SavePipesIteratorReply reply = blockingStub.savePipesIterator(SavePipesIteratorRequest
+                .newBuilder()
+                .setIteratorId("fs-it")
+                .setIteratorType("file-system-pipes-iterator")
+                .setIteratorConfigJson("{\"basePath\":\"" + new File("target").getAbsolutePath().replace("\\", "\\\\") + "\"}")
+                .build());
+        assertNotNull(reply.getMessage());
     }
 
     private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
