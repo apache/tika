@@ -234,6 +234,30 @@ public class TikaCLI {
     private String forkPluginsDir = null;
     private final OutputType MARKDOWN = new OutputType() {
         @Override
+        public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
+            // The markdown handler buffers the whole document and only writes on endDocument.
+            // Drive the parse here so we can flush partial content if it aborts mid-document,
+            // matching the streaming text/HTML/XML handlers (otherwise -o leaves an empty file).
+            ToMarkdownContentHandler markdown =
+                    new ToMarkdownContentHandler(getOutputWriter(output, encoding));
+            try {
+                parser.parse(tis, new BodyContentHandler(markdown), metadata, context);
+            } catch (Throwable t) {
+                // Best-effort: flush whatever was parsed before the abort, but never let a
+                // secondary flush failure mask the real parse error.
+                try {
+                    markdown.writePartialContentIfUnfinished();
+                } catch (IOException suppressed) {
+                    t.addSuppressed(suppressed);
+                }
+                throw t;
+            }
+            // Success: endDocument normally wrote the content; this is a no-op unless the
+            // parser produced no document at all (then it emits the empty/partial result).
+            markdown.writePartialContentIfUnfinished();
+        }
+
+        @Override
         protected ContentHandler getContentHandler(OutputStream output, Metadata metadata) throws Exception {
             return new BodyContentHandler(new ToMarkdownContentHandler(getOutputWriter(output, encoding)));
         }

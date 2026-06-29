@@ -264,6 +264,9 @@ least three +1 Tika PMC votes are cast.
             <!-- Antora UI supplemental files -->
             <inputExclude>docs/supplemental-ui/**</inputExclude>
 
+            <!-- UAT test fixtures (binary/markup test documents carry no license header) -->
+            <inputExclude>release-tools/uat/test-files/**</inputExclude>
+
             <!-- subprojects already checked, added for RAT 0.17, see also RAT-97 -->
             <inputExclude>tika-*/**</inputExclude>
           </inputExcludes>

@@ -26,6 +26,39 @@ how Tika processes content. Understanding this model is essential for deploying 
 
 * https://tika.apache.org/security-model.html[Apache Tika Security Model]
 
+=== Tika Server and gRPC Trust Model
+
+IMPORTANT: The primary rule is *trusted callers only*. `allowPipes`, `allowPerRequestConfig`,
+and the gRPC `allowComponentManagement` flag are *defense in depth* — they reduce what a caller
+can reach, but they are **not** controls that make it safe to expose `tika-server` or `tika-grpc`
+to untrusted callers.
+
+Neither `tika-server` nor `tika-grpc` is a security boundary. They perform no authentication or
+authorization of callers, and parsing untrusted documents is inherently risky. Only ever expose
+them to *trusted callers* on a trusted network — never directly to untrusted users or the public
+internet. Put your own authentication, authorization, and network controls (and, for tika-grpc,
+mutual TLS) in front of them.
+
+The capability flags below are *defense in depth, not security boundaries*. They limit what a
+caller can reach, but they do **not** make it safe to expose the service to untrusted callers —
+that requirement stands regardless of how the flags are set. All default to off.
+
+*tika-server* (see xref:using-tika/server/index.adoc[Using Tika Server]):
+
+* `allowPipes` gates the `/pipes` and `/async` endpoints (process-isolated fetching and parsing
+  through your fetchers/emitters). Selecting either without it causes the server to refuse to start.
+* `allowPerRequestConfig` gates per-request parser configuration — the `/config` endpoints and the
+  multipart `config` part; when off, such requests are rejected with HTTP 403.
+
+*tika-grpc* is *more exposed by default* than tika-server: it ships with no transport security and
+no per-caller authorization, and its `FetchAndParse` surface is always on. `allowPerRequestConfig`
+and `allowComponentManagement` — the latter lets clients add, modify, and delete fetchers/iterators
+and read back stored configs, which can contain secrets — are off by default. Run it only behind
+network controls and, ideally, mutual TLS. See xref:using-tika/grpc/index.adoc[Tika gRPC].
+
+For the upgrade from the former `enableUnsecureFeatures` flag, see
+xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating tika-server to 4.x].
+
 == Known Vulnerabilities
 
 For information about known security vulnerabilities (CVEs) in Apache Tika and their
