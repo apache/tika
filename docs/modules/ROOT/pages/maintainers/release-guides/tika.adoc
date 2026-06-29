@@ -288,10 +288,31 @@ git tag X.Y.Z X.Y.Z-rcN     # point GA tag at the same commit as the winning RC
 git push origin X.Y.Z
 ----
 +
-For a prerelease (`X.Y.Z-alpha-N`, `X.Y.Z-beta-N`, etc.) where you don't
-want `:latest` to move and don't want the workflow to auto-fire, skip this
-substep. Trigger the Docker release manually via `workflow_dispatch` instead;
-see the Docker guide.
+For a prerelease (`X.Y.Z-alpha-N`, `X.Y.Z-beta-N`, etc.) the auto-trigger does
+*not* fire (the hyphenated tag is filtered out by `tags-ignore`) and `:latest`
+is intentionally not moved. You still create and push the version tag — the
+Docker workflow needs a git tag to build from:
++
+[source,bash]
+----
+git tag X.Y.Z-beta-N X.Y.Z-beta-N-rcN   # point at the winning RC commit
+git push origin X.Y.Z-beta-N
+----
++
+then publish the images manually with `workflow_dispatch`. Do this *after* the
+dist artifacts are live on `downloads.apache.org` (the release Dockerfile
+downloads and GPG-verifies them, so promote dist in the substep above and let it
+propagate — `workflow_dispatch` skips the auto-wait that the tag-push path has):
++
+[source,bash]
+----
+gh workflow run docker-release.yml -f tag=X.Y.Z-beta-N -f build_number=1
+----
++
+This publishes `apache/tika:X.Y.Z-beta-N` (+ the immutable `…-1` build pin and
+the `-full`/`tika-grpc` variants); it does not touch `:latest`. See
+xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images] for
+the full Docker flow, the tag scheme, and Docker-only rebuilds.
 
 [[troubleshooting]]
 == Troubleshooting `release:perform`
