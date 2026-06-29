@@ -1,4 +1,4 @@
-Release 4.0.0-beta-1 - unreleased
+Release 4.0.0-beta-1 - 6/29/2026
 
   BREAKING CHANGES
 
