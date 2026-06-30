@@ -1,0 +1,346 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "CreativeCommonsMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive Creative Commons and Rights metadata as extracted by Tika from various document types.
+// Based on Tika's CreativeCommons interface, XMPRights interface, and various rights management standards.
+// This is a 1:1 mapping to all fields that Tika can extract related to licensing and rights management.
+// Creative Commons and rights metadata can be found in:
+// - XMP metadata in images and PDFs
+// - HTML meta tags and RDFa markup
+// - Document properties in Office files
+// - EXIF data in images
+// - Embedded license information
+// Critical for rights management, licensing compliance, and legal usage determination.
+message CreativeCommonsMetadata {
+  // === CreativeCommons Interface Properties (from CreativeCommons.java) ===
+
+  // URL to the license document
+  // e.g., "https://creativecommons.org/licenses/by/4.0/"
+  // CreativeCommons.LICENSE_URL
+  optional string license_url = 1;
+
+  // Location where the license is specified
+  // e.g., "XMP metadata", "HTML meta tag", "document properties"
+  // CreativeCommons.LICENSE_LOCATION
+  optional string license_location = 2;
+
+  // Type of work being licensed
+  // e.g., "photograph", "text", "video", "software"
+  // CreativeCommons.WORK_TYPE
+  optional string work_type = 3;
+
+  // === XMP Rights Management Properties (from XMPRights.java) ===
+
+  // Web URL for a rights management certificate
+  // XMPRights.CERTIFICATE
+  optional string rights_certificate = 4;
+
+  // Whether this is a rights-managed resource
+  // true = rights-managed, false = public domain, null = unknown
+  // XMPRights.MARKED
+  optional bool rights_marked = 5;
+
+  // Legal owners of the resource
+  // XMPRights.OWNER
+  repeated string rights_owners = 6;
+
+  // Usage terms and conditions
+  // XMPRights.USAGE_TERMS
+  optional string usage_terms = 7;
+
+  // Web URL for ownership and usage rights statement
+  // XMPRights.WEB_STATEMENT
+  optional string web_statement = 8;
+
+  // === Creative Commons License Details ===
+
+  // Creative Commons license type
+  // e.g., "CC BY", "CC BY-SA", "CC BY-NC", "CC BY-NC-SA", "CC BY-ND", "CC BY-NC-ND", "CC0"
+  optional string cc_license_type = 9;
+
+  // Creative Commons license version
+  // e.g., "1.0", "2.0", "3.0", "4.0"
+  optional string cc_license_version = 10;
+
+  // Creative Commons jurisdiction
+  // e.g., "US", "UK", "DE", "unported"
+  optional string cc_jurisdiction = 11;
+
+  // Creative Commons license conditions
+  repeated CcLicenseCondition cc_conditions = 12;
+
+  // Creative Commons license permissions
+  repeated CcLicensePermission cc_permissions = 13;
+
+  // Creative Commons license restrictions
+  repeated CcLicenseRestriction cc_restrictions = 14;
+
+  // === Rights and Copyright Information ===
+
+  // Copyright holder(s)
+  repeated string copyright_holders = 15;
+
+  // Copyright year or date range
+  optional string copyright_year = 16;
+
+  // Copyright notice text
+  optional string copyright_notice = 17;
+
+  // Copyright status
+  // e.g., "copyrighted", "public domain", "unknown"
+  optional string copyright_status = 18;
+
+  // Rights statement or description
+  optional string rights_statement = 19;
+
+  // Rights holder contact information
+  optional string rights_holder_contact = 20;
+
+  // === Attribution Information ===
+
+  // Required attribution text
+  optional string attribution_text = 21;
+
+  // Attribution URL (where to link attribution)
+  optional string attribution_url = 22;
+
+  // Attribution name (how to credit the creator)
+  optional string attribution_name = 23;
+
+  // Source work URL (for derivative works)
+  optional string source_work_url = 24;
+
+  // Source work title
+  optional string source_work_title = 25;
+
+  // Source work creator
+  optional string source_work_creator = 26;
+
+  // === License Metadata ===
+
+  // License name or title
+  optional string license_name = 27;
+
+  // License text (full license content)
+  optional string license_text = 28;
+
+  // License summary or description
+  optional string license_summary = 29;
+
+  // License family (e.g., "Creative Commons", "GPL", "MIT", "Apache")
+  optional string license_family = 30;
+
+  // License compatibility information
+  repeated string compatible_licenses = 31;
+
+  // License effective date
+  optional google.protobuf.Timestamp license_effective_date = 32;
+
+  // License expiration date (if applicable)
+  optional google.protobuf.Timestamp license_expiration_date = 33;
+
+  // === Usage and Distribution Rights ===
+
+  // Commercial use permission
+  optional bool commercial_use_allowed = 34;
+
+  // Derivative works permission
+  optional bool derivative_works_allowed = 35;
+
+  // Distribution permission
+  optional bool distribution_allowed = 36;
+
+  // Modification permission
+  optional bool modification_allowed = 37;
+
+  // Private use permission
+  optional bool private_use_allowed = 38;
+
+  // Patent use permission
+  optional bool patent_use_allowed = 39;
+
+  // Trademark use permission
+  optional bool trademark_use_allowed = 40;
+
+  // === Obligations and Requirements ===
+
+  // Attribution requirement
+  optional bool attribution_required = 41;
+
+  // Share-alike requirement
+  optional bool share_alike_required = 42;
+
+  // Source disclosure requirement
+  optional bool source_disclosure_required = 43;
+
+  // License notice requirement
+  optional bool license_notice_required = 44;
+
+  // State changes requirement
+  optional bool state_changes_required = 45;
+
+  // === Technical Rights Management ===
+
+  // Digital Rights Management (DRM) information
+  optional DrmInformation drm_info = 46;
+
+  // Rights management system used
+  optional string rights_management_system = 47;
+
+  // Rights expression language
+  // e.g., "ODRL", "XrML", "MPEG-21 REL"
+  optional string rights_expression_language = 48;
+
+  // Rights metadata standard
+  // e.g., "Dublin Core", "METS Rights", "PREMIS Rights"
+  optional string rights_metadata_standard = 49;
+
+  // === Geographic and Temporal Restrictions ===
+
+  // Geographic restrictions on usage
+  repeated string geographic_restrictions = 50;
+
+  // Temporal restrictions on usage
+  repeated TemporalRestriction temporal_restrictions = 51;
+
+  // Usage context restrictions
+  // e.g., "educational use only", "non-commercial research"
+  repeated string usage_context_restrictions = 52;
+
+  // === Compliance and Validation ===
+
+  // License validation status
+  optional string license_validation_status = 53;
+
+  // License compliance warnings
+  repeated string compliance_warnings = 54;
+
+  // Rights clearance status
+  optional string rights_clearance_status = 55;
+
+  // Rights audit trail
+  repeated RightsAuditEntry audit_trail = 56;
+
+  // === Discovery and Identification ===
+
+  // Rights metadata source
+  // e.g., "XMP", "EXIF", "HTML meta", "document properties"
+  repeated string metadata_sources = 57;
+
+  // Rights identifier (unique ID for this rights statement)
+  optional string rights_identifier = 58;
+
+  // Rights metadata creation date
+  optional google.protobuf.Timestamp rights_metadata_date = 59;
+
+  // Rights metadata creator
+  optional string rights_metadata_creator = 60;
+
+  // === Flexible Metadata Structure ===
+
+  // All unmapped rights-specific metadata as flexible key-value pairs
+  // This captures any rights metadata not covered by the strongly-typed fields above
+  google.protobuf.Struct additional_rights_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Represents a Creative Commons license condition
+message CcLicenseCondition {
+  // Condition type (e.g., "by", "sa", "nc", "nd")
+  string condition_type = 1;
+
+  // Condition description
+  optional string description = 2;
+
+  // Condition URL for more information
+  optional string info_url = 3;
+}
+
+// Represents a Creative Commons license permission
+message CcLicensePermission {
+  // Permission type (e.g., "reproduce", "distribute", "display", "perform")
+  string permission_type = 1;
+
+  // Permission description
+  optional string description = 2;
+
+  // Conditions under which this permission applies
+  repeated string conditions = 3;
+}
+
+// Represents a Creative Commons license restriction
+message CcLicenseRestriction {
+  // Restriction type (e.g., "no_commercial", "no_derivatives", "share_alike")
+  string restriction_type = 1;
+
+  // Restriction description
+  optional string description = 2;
+
+  // Consequences of violating this restriction
+  optional string violation_consequences = 3;
+}
+
+// Represents Digital Rights Management information
+message DrmInformation {
+  // Whether DRM is present
+  bool drm_present = 1;
+
+  // DRM system used
+  optional string drm_system = 2;
+
+  // DRM protection level
+  optional string protection_level = 3;
+
+  // DRM restrictions
+  repeated string restrictions = 4;
+
+  // DRM expiration date
+  optional google.protobuf.Timestamp expiration_date = 5;
+}
+
+// Represents temporal restrictions on usage
+message TemporalRestriction {
+  // Restriction type (e.g., "embargo", "limited_time", "seasonal")
+  string restriction_type = 1;
+
+  // Start date of restriction
+  optional google.protobuf.Timestamp start_date = 2;
+
+  // End date of restriction
+  optional google.protobuf.Timestamp end_date = 3;
+
+  // Description of the temporal restriction
+  optional string description = 4;
+}
+
+// Represents an entry in the rights audit trail
+message RightsAuditEntry {
+  // Audit event timestamp
+  google.protobuf.Timestamp timestamp = 1;
+
+  // Event type (e.g., "rights_assigned", "license_changed", "usage_granted")
+  string event_type = 2;
+
+  // Actor who performed the action
+  optional string actor = 3;
+
+  // Description of the rights event
+  optional string description = 4;
+
+  // Previous rights state (if applicable)
+  optional string previous_state = 5;
+
+  // New rights state
+  optional string new_state = 6;
+}

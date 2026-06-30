@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/climate_forecast_metadata.proto";
+import "org/apache/tika/grpc/v1/creative_commons_metadata.proto";
+import "org/apache/tika/grpc/v1/database_metadata.proto";
+import "org/apache/tika/grpc/v1/dublin_core.proto";
+import "org/apache/tika/grpc/v1/email_metadata.proto";
+import "org/apache/tika/grpc/v1/epub_metadata.proto";
+import "org/apache/tika/grpc/v1/generic_metadata.proto";
+import "org/apache/tika/grpc/v1/html_metadata.proto";
+import "org/apache/tika/grpc/v1/image_metadata.proto";
+import "org/apache/tika/grpc/v1/media_metadata.proto";
+import "org/apache/tika/grpc/v1/office_metadata.proto";
+import "org/apache/tika/grpc/v1/pdf_metadata.proto";
+import "org/apache/tika/grpc/v1/rtf_metadata.proto";
+import "org/apache/tika/grpc/v1/font_metadata.proto";
+import "org/apache/tika/grpc/v1/warc_metadata.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ParseResponseProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Flexible ParseResponse that mirrors how Tika actually stores metadata.
+// Only populated fields are included, making it much more efficient.
+message ParseResponse {
+  // Document identifier
+  string doc_id = 1;
+  string parse_id = 2;
+
+  // Core content (always present if extraction succeeded)
+  ParseContent content = 3;
+
+  // Dublin Core metadata - standardized fields present in most documents
+  DublinCoreMetadata dublin_core = 4;
+
+  // Document-type specific metadata (only one will be populated based on doc type)
+  oneof document_metadata {
+    OfficeMetadata office = 5;
+    PdfMetadata pdf = 7;
+    ImageMetadata image = 8;
+    EmailMetadata email = 9;
+    MediaMetadata media = 10;
+    HtmlMetadata html = 11;
+    RtfMetadata rtf = 17;
+    DatabaseMetadata database = 18;
+    FontMetadata font = 19;
+    EpubMetadata epub = 20;
+    WarcMetadata warc = 21;
+    ClimateForcastMetadata climate_forecast = 22;
+    GenericMetadata generic = 24;
+  }
+
+  // Creative Commons / XMP rights metadata (outside oneof so it can coexist with format-specific metadata)
+  optional CreativeCommonsMetadata creative_commons = 25;
+
+  // Additional metadata as typed entries (for less common fields)
+  repeated MetadataEntry metadata = 12;
+
+  // Parse status and statistics
+  ParseStatus status = 13;
+
+  // Raw key-value pairs for anything not captured in typed metadata
+  map<string, string> raw_properties = 14;
+
+  // Embedded documents if found
+  repeated EmbeddedDocument embedded_docs = 15;
+
+  google.protobuf.Timestamp parsed_at = 16;
+}
+
+// Core content - the actual text extracted
+message ParseContent {
+  string body = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional string keywords = 4;
+  int64 content_length = 5;
+}
+
+// Generic metadata entry for properties not covered by the strongly-typed fields.
+// Most metadata should be in the specific typed fields above.
+message MetadataEntry {
+  string key = 1;
+  oneof value {
+    string text = 2;
+    int64 integer = 3;
+    double number = 4;
+    bool boolean = 5;
+    google.protobuf.Timestamp date = 6;
+    StringList text_list = 7;
+  }
+}
+
+// String list helper
+message StringList {
+  repeated string values = 1;
+}
+
+// Parse status
+message ParseStatus {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_PARTIAL = 2;
+    STATUS_FAILED = 3;
+    STATUS_TIMEOUT = 4;
+  }
+
+  Status status = 1;
+  int64 parse_time_ms = 2;
+  string parser_used = 3;
+  repeated string parsers_used = 4;
+  repeated string warnings = 5;
+  repeated string errors = 6;
+}
+
+// Embedded document
+message EmbeddedDocument {
+  string id = 1;
+  string path = 2;
+  string filename = 3;
+  string content_type = 4;
+  int32 embed_depth = 5;
+
+  // The embedded doc can have its own parsed content
+  optional ParseResponse parsed_content = 6;
+}

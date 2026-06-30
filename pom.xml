@@ -50,6 +50,8 @@
     <module>tika-langdetect</module>
     <module>tika-pipes</module>
 
+    <module>tika-grpc-api</module>
+    <module>tika-grpc-mapper</module>
     <module>tika-grpc</module>
     <module>tika-app</module>
     <module>tika-server</module>

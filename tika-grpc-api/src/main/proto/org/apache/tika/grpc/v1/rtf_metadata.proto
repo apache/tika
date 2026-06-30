@@ -1,0 +1,145 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "RtfMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive RTF (Rich Text Format) metadata as extracted by Tika.
+// Based on Tika's RTFMetadata interface, TextExtractor, and RTFEmbObjHandler implementations.
+// This is a 1:1 mapping to all fields that Tika can extract from RTF documents.
+// RTF documents can contain rich formatting, embedded objects, and document properties
+// similar to Microsoft Office documents but in a text-based format.
+message RtfMetadata {
+  // Dublin/Core fields are normalized at ParseResponse.dublin_core.
+  // Reserve these names and field numbers to prevent reuse here.
+  reserved 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11;
+  reserved "title", "creator", "description", "subject", "language", "format", "identifier", "comments", "created", "modified", "creator_tool";
+
+  // === Office-style Properties (from Office/OfficeOpenXML interfaces) ===
+  // Office.KEYWORDS (from \keywords)
+  optional string keywords = 12;
+  // OfficeOpenXMLCore.CATEGORY (from \category)
+  optional string category = 13;
+  // OfficeOpenXMLExtended.COMPANY (from \company)
+  optional string company = 14;
+  // OfficeOpenXMLExtended.MANAGER (from \manager)
+  optional string manager = 15;
+  // OfficeOpenXMLExtended.TEMPLATE (from \template)
+  optional string template = 16;
+
+  // === Document Statistics (from Office interface) ===
+  // Office.PAGE_COUNT (from \nofpages)
+  optional int32 page_count = 17;
+  // Office.WORD_COUNT (from \nofwords)
+  optional int32 word_count = 18;
+  // Office.CHARACTER_COUNT (from \nofchars)
+  optional int32 character_count = 19;
+
+  // === RTF-Specific Properties (from RTFMetadata interface) ===
+  // RTFMetadata.CONTAINS_ENCAPSULATED_HTML
+  optional bool contains_encapsulated_html = 20;
+  // RTFMetadata.THUMBNAIL (for embedded objects)
+  optional bool thumbnail = 21;
+  // RTFMetadata.EMB_APP_VERSION
+  optional string emb_app_version = 22;
+  // RTFMetadata.EMB_CLASS
+  optional string emb_class = 23;
+  // RTFMetadata.EMB_TOPIC
+  optional string emb_topic = 24;
+  // RTFMetadata.EMB_ITEM
+  optional string emb_item = 25;
+
+  // === Content and Resource Properties ===
+  // Metadata.CONTENT_TYPE ("application/rtf")
+  optional string content_type = 26;
+  // Metadata.CONTENT_ENCODING
+  optional string content_encoding = 27;
+  // Metadata.CONTENT_LENGTH
+  optional string content_length = 28;
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 29;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 30;
+  // TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID
+  optional string embedded_relationship_id = 31;
+
+  // === Font and Formatting Properties ===
+  // Default font number (from \deff)
+  optional int32 default_font = 32;
+  // Font table information
+  optional string font_table = 33;
+  // Color table information
+  optional string color_table = 34;
+  // Style sheet information
+  optional string style_sheet = 35;
+
+  // === RTF Version and Compatibility ===
+  // RTF version (from \rtf1)
+  optional string rtf_version = 36;
+  // Generator application (from \generator)
+  optional string generator = 37;
+  // View kind (from \viewkind)
+  optional string view_kind = 38;
+  // View scale (from \viewscale)
+  optional int32 view_scale = 39;
+
+  // === Document Layout Properties ===
+  // Paper width (from \paperw)
+  optional int32 paper_width = 40;
+  // Paper height (from \paperh)
+  optional int32 paper_height = 41;
+  // Left margin (from \margl)
+  optional int32 margin_left = 42;
+  // Right margin (from \margr)
+  optional int32 margin_right = 43;
+  // Top margin (from \margt)
+  optional int32 margin_top = 44;
+  // Bottom margin (from \margb)
+  optional int32 margin_bottom = 45;
+
+  // === Embedded Objects and Pictures ===
+  // Names of embedded resources
+  repeated string embedded_resource_names = 46;
+  // Picture descriptions (from \wzDescription)
+  repeated string picture_descriptions = 47;
+  // Count of embedded objects
+  optional int32 embedded_object_count = 48;
+  // Count of embedded pictures
+  optional int32 picture_count = 49;
+
+  // === RTF Control Properties ===
+  // Parser setting for list markup
+  optional bool ignore_list_markup = 50;
+  // Memory limit for embedded objects
+  optional int32 memory_limit_kb = 51;
+  // RTF picture metadata prefix
+  optional string rtf_pict_meta_prefix = 52;
+
+  // === Revision and Tracking Properties ===
+  // Revision time (from \revtim)
+  optional google.protobuf.Timestamp revision_time = 53;
+  // Print time (from \printim)
+  optional google.protobuf.Timestamp print_time = 54;
+  // Document version (from \version)
+  optional int32 version = 55;
+  // Number of revisions
+  optional int32 revision_count = 56;
+
+  // === Security and Protection ===
+  // Document password protection
+  optional bool password_protected = 57;
+  // Type of document protection
+  optional string protection_type = 58;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}

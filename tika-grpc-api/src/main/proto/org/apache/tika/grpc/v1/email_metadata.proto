@@ -1,0 +1,264 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "EmailMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive email metadata as extracted by Tika from email files.
+// Based on Tika's Message interface, MAPI interface, TikaCoreProperties, and actual parser implementations.
+// This is a 1:1 mapping to all fields that Tika can extract from email files.
+message EmailMetadata {
+  // === TikaCoreProperties (Core Tika metadata) ===
+  // TikaCoreProperties.TITLE (email subject)
+  optional string title = 1;
+  // TikaCoreProperties.CREATOR (from address)
+  optional string creator = 2;
+  // TikaCoreProperties.DESCRIPTION
+  optional string description = 3;
+  // TikaCoreProperties.SUBJECT (conversation topic)
+  optional string subject = 4;
+  // TikaCoreProperties.LANGUAGE
+  optional string language = 5;
+  // TikaCoreProperties.PUBLISHER
+  optional string publisher = 6;
+  // TikaCoreProperties.RIGHTS
+  optional string rights = 7;
+  // TikaCoreProperties.FORMAT
+  optional string format = 8;
+  // TikaCoreProperties.IDENTIFIER
+  optional string identifier = 9;
+  // TikaCoreProperties.CONTRIBUTOR
+  optional string contributor = 10;
+  // TikaCoreProperties.COVERAGE
+  optional string coverage = 11;
+  // TikaCoreProperties.RELATION
+  optional string relation = 12;
+  // TikaCoreProperties.SOURCE
+  optional string source = 13;
+  // TikaCoreProperties.TYPE
+  optional string type = 14;
+  // TikaCoreProperties.CREATED (message date)
+  optional google.protobuf.Timestamp created = 15;
+  // TikaCoreProperties.MODIFIED (last modified)
+  optional google.protobuf.Timestamp modified = 16;
+  // TikaCoreProperties.CREATOR_TOOL
+  optional string creator_tool = 17;
+  // TikaCoreProperties.COMMENTS
+  optional string comments = 18;
+  // TikaCoreProperties.RATING
+  optional int32 rating = 19;
+
+  // === Message Properties (Message interface) ===
+  // Metadata.MESSAGE_FROM
+  optional string message_from = 20;
+  // Metadata.MESSAGE_TO
+  optional string message_to = 21;
+  // Metadata.MESSAGE_CC
+  optional string message_cc = 22;
+  // Metadata.MESSAGE_BCC
+  optional string message_bcc = 23;
+  // Message.MESSAGE_FROM_NAME
+  repeated string message_from_name = 24;
+  // Message.MESSAGE_FROM_EMAIL
+  repeated string message_from_email = 25;
+  // Message.MESSAGE_TO_NAME
+  repeated string message_to_name = 26;
+  // Message.MESSAGE_TO_DISPLAY_NAME
+  repeated string message_to_display_name = 27;
+  // Message.MESSAGE_TO_EMAIL
+  repeated string message_to_email = 28;
+  // Message.MESSAGE_CC_NAME
+  repeated string message_cc_name = 29;
+  // Message.MESSAGE_CC_DISPLAY_NAME
+  repeated string message_cc_display_name = 30;
+  // Message.MESSAGE_CC_EMAIL
+  repeated string message_cc_email = 31;
+  // Message.MESSAGE_BCC_NAME
+  repeated string message_bcc_name = 32;
+  // Message.MESSAGE_BCC_DISPLAY_NAME
+  repeated string message_bcc_display_name = 33;
+  // Message.MESSAGE_BCC_EMAIL
+  repeated string message_bcc_email = 34;
+  // Message.MULTIPART_SUBTYPE
+  optional string multipart_subtype = 35;
+  // Message.MULTIPART_BOUNDARY
+  optional string multipart_boundary = 36;
+
+  // === MAPI Properties (Microsoft Outlook/Exchange specific) ===
+  // MAPI.MESSAGE_CLASS (normalized)
+  optional string message_class = 37;
+  // MAPI.MESSAGE_CLASS_RAW (raw value)
+  optional string message_class_raw = 38;
+  // MAPI.SENT_BY_SERVER_TYPE
+  optional string sent_by_server_type = 39;
+  // MAPI.FROM_REPRESENTING_NAME
+  optional string from_representing_name = 40;
+  // MAPI.FROM_REPRESENTING_EMAIL
+  optional string from_representing_email = 41;
+  // MAPI.SUBMISSION_ACCEPTED_AT_TIME
+  optional google.protobuf.Timestamp submission_accepted_at_time = 42;
+  // MAPI.SUBMISSION_ID
+  optional string submission_id = 43;
+  // MAPI.INTERNET_MESSAGE_ID
+  optional string internet_message_id = 44;
+  // MAPI.INTERNET_REFERENCES
+  repeated string internet_references = 45;
+  // MAPI.CONVERSATION_TOPIC
+  optional string conversation_topic = 46;
+  // MAPI.CONVERSATION_INDEX (hex encoded)
+  optional string conversation_index = 47;
+  // MAPI.IN_REPLY_TO_ID
+  optional string in_reply_to_id = 48;
+  // MAPI.RECIPIENTS_STRING
+  optional string recipients_string = 49;
+  // MAPI.IMPORTANCE
+  optional int32 importance = 50;
+  // MAPI.PRIORTY (note: typo in Tika)
+  optional int32 priority = 51;
+  // MAPI.IS_FLAGGED
+  optional bool is_flagged = 52;
+  // MAPI.BODY_TYPES_PROCESSED
+  repeated string body_types_processed = 53;
+
+  // === MAPI Attachment Properties ===
+  // MAPI.ATTACH_LONG_PATH_NAME
+  optional string attach_long_path_name = 54;
+  // MAPI.ATTACH_LONG_FILE_NAME
+  optional string attach_long_file_name = 55;
+  // MAPI.ATTACH_FILE_NAME
+  optional string attach_file_name = 56;
+  // MAPI.ATTACH_CONTENT_ID
+  optional string attach_content_id = 57;
+  // MAPI.ATTACH_CONTENT_LOCATION
+  optional string attach_content_location = 58;
+  // MAPI.ATTACH_DISPLAY_NAME
+  optional string attach_display_name = 59;
+  // MAPI.ATTACH_EXTENSION
+  optional string attach_extension = 60;
+  // MAPI.ATTACH_MIME
+  optional string attach_mime = 61;
+  // MAPI.ATTACH_LANGUAGE
+  optional string attach_language = 62;
+
+  // === RTF Properties (Rich Text Format specific) ===
+  // RTFMetadata.CONTAINS_ENCAPSULATED_HTML
+  optional bool contains_encapsulated_html = 63;
+
+  // === Raw Header Properties ===
+  // Note: Raw headers are stored with MESSAGE_RAW_HEADER_PREFIX + header name
+  // These are dynamic and parser-specific, so we include common ones
+  // Message-Raw-Header:Date
+  optional string raw_header_date = 64;
+  // Message-Raw-Header:Message-ID
+  optional string raw_header_message_id = 65;
+  // Message-Raw-Header:References
+  optional string raw_header_references = 66;
+  // Message-Raw-Header:In-Reply-To
+  optional string raw_header_in_reply_to = 67;
+  // Message-Raw-Header:Return-Path
+  optional string raw_header_return_path = 68;
+  // Message-Raw-Header:Received
+  optional string raw_header_received = 69;
+  // Message-Raw-Header:X-Mailer
+  optional string raw_header_x_mailer = 70;
+  // Message-Raw-Header:User-Agent
+  optional string raw_header_user_agent = 71;
+  // Message-Raw-Header:X-Originating-IP
+  optional string raw_header_x_originating_ip = 72;
+  // Message-Raw-Header:Content-Type
+  optional string raw_header_content_type = 73;
+  // Message-Raw-Header:Content-Encoding
+  optional string raw_header_content_encoding = 74;
+  // Message-Raw-Header:MIME-Version
+  optional string raw_header_mime_version = 75;
+
+  // === Content and Body Properties ===
+  // Metadata.CONTENT_TYPE
+  optional string content_type = 76;
+  // Content encoding
+  optional string content_encoding = 77;
+  // Character set
+  optional string charset = 78;
+  // Whether email has attachments
+  optional bool has_attachments = 79;
+  // Number of attachments
+  optional int32 attachment_count = 80;
+
+  // === Security and Encryption Properties ===
+  // TikaCoreProperties.HAS_SIGNATURE
+  optional bool has_signature = 81;
+  // TikaCoreProperties.IS_ENCRYPTED
+  optional bool is_encrypted = 82;
+  // TikaCoreProperties.SIGNATURE_NAME
+  repeated string signature_name = 83;
+  // TikaCoreProperties.SIGNATURE_DATE
+  repeated google.protobuf.Timestamp signature_date = 84;
+  // TikaCoreProperties.SIGNATURE_LOCATION
+  repeated string signature_location = 85;
+  // TikaCoreProperties.SIGNATURE_REASON
+  repeated string signature_reason = 86;
+  // TikaCoreProperties.SIGNATURE_FILTER
+  repeated string signature_filter = 87;
+  // TikaCoreProperties.SIGNATURE_CONTACT_INFO
+  repeated string signature_contact_info = 88;
+
+  // === Threading and Conversation Properties ===
+  // Thread topic (normalized)
+  optional string thread_topic = 89;
+  // Thread index for conversation tracking
+  optional string thread_index = 90;
+  // Depth in conversation thread
+  optional int32 thread_depth = 91;
+
+  // === Delivery and Routing Properties ===
+  // Delivery receipt flag
+  optional string delivery_receipt_requested = 92;
+  // Read receipt flag
+  optional string read_receipt_requested = 93;
+  // Auto-forwarded flag
+  optional string auto_forwarded = 94;
+  // Message sensitivity level
+  optional string sensitivity = 95;
+  // X.400 content type
+  optional string x400_content_type = 96;
+  // Transport headers
+  optional string transport_message_headers = 97;
+
+  // === Size and Technical Properties ===
+  // Message size in bytes
+  optional int64 message_size = 98;
+  // Number of lines in message
+  optional int32 line_count = 99;
+  // TikaCoreProperties.ENCODING_DETECTOR
+  optional string encoding_detector = 100;
+  // TikaCoreProperties.DETECTED_ENCODING
+  optional string detected_encoding = 101;
+
+  // === Parsing Metadata ===
+  // TikaCoreProperties.TIKA_PARSED_BY
+  repeated string parsed_by = 102;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE
+  optional string detected_language = 103;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE
+  optional double detected_language_confidence = 104;
+
+  // === Embedded Resource Properties ===
+  // TikaCoreProperties.EMBEDDED_RESOURCE_TYPE
+  optional string embedded_resource_type = 105;
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 106;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 107;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}

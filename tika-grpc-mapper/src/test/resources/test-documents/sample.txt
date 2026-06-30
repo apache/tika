@@ -1,0 +1,1 @@
+Sample plain text document for generic metadata mapping tests.

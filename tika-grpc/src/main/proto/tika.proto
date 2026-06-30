@@ -14,6 +14,8 @@
 syntax = "proto3";
 package tika;
 
+import "org/apache/tika/grpc/v1/parse_response.proto";
+
 option java_multiple_files = true;
 option java_package = "org.apache.tika";
 option java_outer_classname = "TikaProto";
@@ -111,12 +113,14 @@ message FetchAndParseRequest {
 message FetchAndParseReply {
   // Echoes the fetch_key that was sent in the request.
   string fetch_key = 1;
-  // Metadata fields from the parse output.
-  map<string, string> fields = 2;
+  reserved 2;
+  reserved "fields";
   // The status from the message. See javadoc for org.apache.tika.pipes.PipesResult.STATUS for the list of status.
   string status = 3;
   // If there was an error, this will contain the error message.
   string error_message = 4;
+  // Strongly-typed parse output from Tika.
+  org.apache.tika.grpc.v1.ParseResponse parse_response = 5;
 }
 
 message DeleteFetcherRequest {

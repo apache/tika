@@ -1,0 +1,251 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "DatabaseMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive Database metadata as extracted by Tika from database files.
+// Based on Tika's Database interface and actual database parser implementations
+// (JackcessParser, SAS7BDATParser, SQLite3Parser, AbstractDBParser).
+// This is a 1:1 mapping to all fields that Tika can extract from database files.
+// Supports various database formats: Microsoft Access (.mdb/.accdb), SAS (.sas7bdat),
+// SQLite (.sqlite/.db), and other JDBC-accessible databases.
+message DatabaseMetadata {
+  // === Core Database Properties (from Database interface) ===
+  // Database.TABLE_NAME (all table names)
+  repeated string table_names = 1;
+  // Database.ROW_COUNT (total across all tables)
+  optional int32 total_row_count = 2;
+  // Database.COLUMN_COUNT (total across all tables)
+  optional int32 total_column_count = 3;
+  // Database.COLUMN_NAME (all column names)
+  repeated string column_names = 4;
+
+  // === Core Document Properties (from TikaCoreProperties) ===
+  // TikaCoreProperties.TITLE (database name)
+  optional string title = 5;
+  // TikaCoreProperties.CREATOR
+  optional string creator = 6;
+  // TikaCoreProperties.DESCRIPTION
+  optional string description = 7;
+  // TikaCoreProperties.SUBJECT
+  optional string subject = 8;
+  // TikaCoreProperties.LANGUAGE
+  optional string language = 9;
+  // TikaCoreProperties.FORMAT
+  optional string format = 10;
+  // TikaCoreProperties.IDENTIFIER
+  optional string identifier = 11;
+  // TikaCoreProperties.COMMENTS
+  optional string comments = 12;
+  // TikaCoreProperties.CREATED
+  optional google.protobuf.Timestamp created = 13;
+  // TikaCoreProperties.MODIFIED
+  optional google.protobuf.Timestamp modified = 14;
+  // TikaCoreProperties.CREATOR_TOOL
+  optional string creator_tool = 15;
+
+  // === Database Security and Access ===
+  // JackcessParser.MDB_PW (database password)
+  optional string password = 16;
+  // Whether database requires password
+  optional bool password_protected = 17;
+  // Database access permissions
+  optional string access_level = 18;
+  // Type of database encryption
+  optional string encryption_type = 19;
+
+  // === Database Technical Properties ===
+  // Database format version
+  optional string database_version = 20;
+  // Type of database (Access, SQLite, SAS, etc.)
+  optional string database_type = 21;
+  // OfficeOpenXMLExtended.APPLICATION (server type)
+  optional string server_type = 22;
+  // OfficeOpenXMLExtended.APP_VERSION (app version)
+  optional string application_version = 23;
+  // HttpHeaders.CONTENT_ENCODING (character encoding)
+  optional string content_encoding = 24;
+
+  // === Architecture and System Properties ===
+  // MachineMetadata.ARCHITECTURE_BITS (32/64 bit)
+  optional string architecture_bits = 25;
+  // MachineMetadata.ENDIAN (little/big endian)
+  optional string endianness = 26;
+  // Database compression method
+  optional string compression_method = 27;
+  // Database page size
+  optional string page_size = 28;
+  // PagedText.N_PAGES (number of pages)
+  optional int32 page_count = 29;
+
+  // === Table-Level Statistics ===
+  // Detailed information per table
+  repeated TableInfo tables = 30;
+  // Total number of tables
+  optional int32 table_count = 31;
+  // Number of database views
+  optional int32 view_count = 32;
+  // Number of database indexes
+  optional int32 index_count = 33;
+  // Number of stored queries
+  optional int32 query_count = 34;
+
+  // === SAS-Specific Properties (from SAS7BDATParser) ===
+  // SAS software release version
+  optional string sas_release = 35;
+  // SAS server type
+  optional string sas_server_type = 36;
+  // SAS dataset name
+  optional string sas_dataset_name = 37;
+  // SAS dataset label
+  optional string sas_dataset_label = 38;
+  // SAS dataset creation date
+  optional google.protobuf.Timestamp sas_date_created = 39;
+  // SAS dataset modification date
+  optional google.protobuf.Timestamp sas_date_modified = 40;
+
+  // === Access-Specific Properties (from JackcessParser) ===
+  // MDB_PROPERTY_PREFIX properties
+  repeated DatabaseProperty mdb_properties = 41;
+  // MDB_USER_PROP_PREFIX properties
+  repeated DatabaseProperty user_defined_properties = 42;
+  // TITLE_PROP_KEY
+  optional string mdb_title = 43;
+  // AUTHOR_PROP_KEY
+  optional string mdb_author = 44;
+  // COMPANY_PROP_KEY
+  optional string mdb_company = 45;
+
+  // === Content and Resource Properties ===
+  // Metadata.CONTENT_TYPE
+  optional string content_type = 46;
+  // Metadata.CONTENT_LENGTH
+  optional string content_length = 47;
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 48;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 49;
+
+  // === Database Schema Information ===
+  // Detailed column information
+  repeated ColumnInfo columns = 50;
+  // Database index information
+  repeated IndexInfo indexes = 51;
+  // Table relationships/foreign keys
+  repeated RelationshipInfo relationships = 52;
+
+  // === Performance and Storage Metrics ===
+  // Total database file size
+  optional int64 database_size_bytes = 53;
+  // Size of actual data
+  optional int64 data_size_bytes = 54;
+  // Size of indexes
+  optional int64 index_size_bytes = 55;
+  // Compression ratio if applicable
+  optional double compression_ratio = 56;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Detailed information about a database table
+message TableInfo {
+  // Table name
+  optional string name = 1;
+  // Table label/description
+  optional string label = 2;
+  // Number of rows in table
+  optional int32 row_count = 3;
+  // Number of columns in table
+  optional int32 column_count = 4;
+  // Type of table (TABLE, VIEW, etc.)
+  optional string table_type = 5;
+  // Table creation date
+  optional google.protobuf.Timestamp created = 6;
+  // Table last modified date
+  optional google.protobuf.Timestamp modified = 7;
+  // Table size in bytes
+  optional int64 size_bytes = 8;
+  // Names of columns in this table
+  repeated string column_names = 9;
+}
+
+// Database property key-value pair (for Access MDB properties)
+message DatabaseProperty {
+  // Property name
+  optional string name = 1;
+  // Property value
+  optional string value = 2;
+  // Property data type
+  optional string type = 3;
+}
+
+// Detailed information about a database column
+message ColumnInfo {
+  // Column name
+  optional string name = 1;
+  // Column label/description
+  optional string label = 2;
+  // Table this column belongs to
+  optional string table_name = 3;
+  // Column data type
+  optional string data_type = 4;
+  // Maximum length for text columns
+  optional int32 max_length = 5;
+  // Whether column allows NULL values
+  optional bool nullable = 6;
+  // Whether column is primary key
+  optional bool primary_key = 7;
+  // Whether column auto-increments
+  optional bool auto_increment = 8;
+  // Default value for column
+  optional string default_value = 9;
+  // Display format for column
+  optional string format = 10;
+}
+
+// Database index information
+message IndexInfo {
+  // Index name
+  optional string name = 1;
+  // Table this index belongs to
+  optional string table_name = 2;
+  // Columns included in index
+  repeated string column_names = 3;
+  // Whether index enforces uniqueness
+  optional bool unique = 4;
+  // Whether this is the primary key index
+  optional bool primary = 5;
+  // Type of index (BTREE, HASH, etc.)
+  optional string index_type = 6;
+}
+
+// Database relationship/foreign key information
+message RelationshipInfo {
+  // Relationship name
+  optional string name = 1;
+  // Source table
+  optional string from_table = 2;
+  // Target table
+  optional string to_table = 3;
+  // Source columns
+  repeated string from_columns = 4;
+  // Target columns
+  repeated string to_columns = 5;
+  // Type of relationship (ONE_TO_ONE, ONE_TO_MANY, etc.)
+  optional string relationship_type = 6;
+  // Action on delete (CASCADE, RESTRICT, etc.)
+  optional string on_delete = 7;
+  // Action on update (CASCADE, RESTRICT, etc.)
+  optional string on_update = 8;
+}

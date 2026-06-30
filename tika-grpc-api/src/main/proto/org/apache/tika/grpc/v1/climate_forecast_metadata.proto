@@ -1,0 +1,413 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ClimateForcastMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive Climate Forecast (NetCDF) metadata as extracted by Tika from NetCDF scientific data files.
+// Based on Tika's ClimateForcast interface, NetCDFParser implementation, and CF (Climate Forecast) Convention standards.
+// This is a 1:1 mapping to all fields that Tika can extract from NetCDF climate and scientific data files.
+// NetCDF (Network Common Data Form) files are the standard for scientific data, especially:
+// - Climate and weather data
+// - Oceanographic data
+// - Atmospheric research
+// - Earth system modeling
+// - Environmental monitoring
+// Follows the CF (Climate Forecast) Convention for metadata standards.
+message ClimateForcastMetadata {
+  // === ClimateForcast Interface Properties (from ClimateForcast.java) ===
+
+  // Program identifier that created this data
+  // Maps to "prg_ID" in CF Convention
+  // ClimateForcast.PROGRAM_ID
+  optional string program_id = 1;
+
+  // Command line used to generate this data
+  // Maps to "cmd_ln" in CF Convention
+  // ClimateForcast.COMMAND_LINE
+  optional string command_line = 2;
+
+  // History of data processing and transformations
+  // Maps to "history" in CF Convention
+  // ClimateForcast.HISTORY
+  optional string history = 3;
+
+  // Table identifier for data organization
+  // Maps to "table_id" in CF Convention
+  // ClimateForcast.TABLE_ID
+  optional string table_id = 4;
+
+  // Institution that created or maintains this data
+  // Maps to "institution" in CF Convention
+  // ClimateForcast.INSTITUTION
+  optional string institution = 5;
+
+  // Source of the data (model, observations, etc.)
+  // Maps to "source" in CF Convention
+  // ClimateForcast.SOURCE
+  optional string source = 6;
+
+  // Contact information for data maintainer
+  // Maps to "contact" in CF Convention
+  // ClimateForcast.CONTACT
+  optional string contact = 7;
+
+  // Project identifier (e.g., "IPCC Fourth Assessment")
+  // Maps to "project_id" in CF Convention
+  // ClimateForcast.PROJECT_ID
+  optional string project_id = 8;
+
+  // CF Convention version used (e.g., "CF-1.0", "CF-1.8")
+  // Maps to "Conventions" in CF Convention
+  // ClimateForcast.CONVENTIONS
+  optional string conventions = 9;
+
+  // References to publications or documentation
+  // Maps to "references" in CF Convention
+  // ClimateForcast.REFERENCES
+  optional string references = 10;
+
+  // Acknowledgements for data sources or funding
+  // Maps to "acknowledgement" in CF Convention
+  // ClimateForcast.ACKNOWLEDGEMENT
+  optional string acknowledgement = 11;
+
+  // Realization number for ensemble runs
+  // Maps to "realization" in CF Convention
+  // ClimateForcast.REALIZATION
+  optional string realization = 12;
+
+  // Experiment identifier (e.g., "720 ppm stabilization experiment")
+  // Maps to "experiment_id" in CF Convention
+  // ClimateForcast.EXPERIMENT_ID
+  optional string experiment_id = 13;
+
+  // Additional comments about the data
+  // Maps to "comment" in CF Convention
+  // ClimateForcast.COMMENT
+  optional string comment = 14;
+
+  // English name of the model used
+  // Maps to "model_name_english" in CF Convention
+  // ClimateForcast.MODEL_NAME_ENGLISH
+  optional string model_name_english = 15;
+
+  // === NetCDF Technical Metadata ===
+
+  // NetCDF file type description (e.g., "NetCDF-3/CDM", "NetCDF-4")
+  // From NetCDF file header
+  optional string file_type_description = 16;
+
+  // NetCDF format version
+  optional string netcdf_version = 17;
+
+  // NetCDF library version used to create the file
+  optional string netcdf_library_version = 18;
+
+  // Dimensions defined in the NetCDF file
+  repeated NetcdfDimension dimensions = 19;
+
+  // Variables defined in the NetCDF file
+  repeated NetcdfVariable variables = 20;
+
+  // Global attributes not covered by specific fields
+  repeated NetcdfAttribute global_attributes = 21;
+
+  // === CF Convention Metadata ===
+
+  // CF standard names used in the file
+  repeated string cf_standard_names = 22;
+
+  // CF feature type (e.g., "timeSeries", "profile", "trajectory")
+  optional string cf_feature_type = 23;
+
+  // CF cell methods used for data aggregation
+  repeated string cf_cell_methods = 24;
+
+  // CF coordinate system information
+  repeated CfCoordinateSystem coordinate_systems = 25;
+
+  // === Temporal Metadata ===
+
+  // Time coverage start
+  optional google.protobuf.Timestamp time_coverage_start = 26;
+
+  // Time coverage end
+  optional google.protobuf.Timestamp time_coverage_end = 27;
+
+  // Time coverage duration in seconds
+  optional int64 time_coverage_duration_seconds = 28;
+
+  // Time resolution (e.g., "daily", "monthly", "hourly")
+  optional string time_resolution = 29;
+
+  // Calendar type used (e.g., "gregorian", "noleap", "360_day")
+  optional string calendar_type = 30;
+
+  // Time units (e.g., "days since 1850-01-01 00:00:00")
+  optional string time_units = 31;
+
+  // === Spatial Metadata ===
+
+  // Geographic coverage - northernmost latitude
+  optional double geospatial_lat_max = 32;
+
+  // Geographic coverage - southernmost latitude
+  optional double geospatial_lat_min = 33;
+
+  // Geographic coverage - easternmost longitude
+  optional double geospatial_lon_max = 34;
+
+  // Geographic coverage - westernmost longitude
+  optional double geospatial_lon_min = 35;
+
+  // Latitude resolution in degrees
+  optional double geospatial_lat_resolution = 36;
+
+  // Longitude resolution in degrees
+  optional double geospatial_lon_resolution = 37;
+
+  // Vertical coverage - maximum altitude/depth
+  optional double geospatial_vertical_max = 38;
+
+  // Vertical coverage - minimum altitude/depth
+  optional double geospatial_vertical_min = 39;
+
+  // Vertical coordinate system (e.g., "pressure", "height", "depth")
+  optional string geospatial_vertical_positive = 40;
+
+  // Coordinate reference system (CRS) or projection information
+  optional string coordinate_reference_system = 41;
+
+  // === Data Quality and Processing ===
+
+  // Data processing level (e.g., "Level 1", "Level 2", "Level 3")
+  optional string processing_level = 42;
+
+  // Quality control procedures applied
+  repeated string quality_control_procedures = 43;
+
+  // Data quality flags or indicators
+  repeated string quality_flags = 44;
+
+  // Uncertainty or error estimates
+  repeated NetcdfUncertainty uncertainties = 45;
+
+  // Missing value indicators
+  repeated string missing_value_indicators = 46;
+
+  // Fill values used in the data
+  repeated string fill_values = 47;
+
+  // === Scientific Metadata ===
+
+  // Physical phenomena or variables measured
+  repeated string measured_phenomena = 48;
+
+  // Instruments or sensors used for data collection
+  repeated string instruments = 49;
+
+  // Platforms used for data collection (e.g., satellite, buoy, station)
+  repeated string platforms = 50;
+
+  // Measurement methods or techniques
+  repeated string measurement_methods = 51;
+
+  // Data collection campaigns or programs
+  repeated string data_campaigns = 52;
+
+  // Scientific keywords or topics
+  repeated string scientific_keywords = 53;
+
+  // === Model-Specific Metadata (for climate models) ===
+
+  // Model resolution (e.g., "T85", "1 degree")
+  optional string model_resolution = 54;
+
+  // Model physics or parameterizations used
+  repeated string model_physics = 55;
+
+  // Initial conditions for model runs
+  optional string initial_conditions = 56;
+
+  // Boundary conditions for model runs
+  optional string boundary_conditions = 57;
+
+  // Forcing data used in model runs
+  repeated string forcing_data = 58;
+
+  // Model ensemble information
+  optional NetcdfEnsemble ensemble_info = 59;
+
+  // === Data Access and Distribution ===
+
+  // Data license or usage restrictions
+  optional string license = 60;
+
+  // Data access URLs or DOIs
+  repeated string access_urls = 61;
+
+  // Data citation information
+  optional string citation = 62;
+
+  // Data distribution format
+  optional string distribution_format = 63;
+
+  // Data update frequency
+  optional string update_frequency = 64;
+
+  // === File Statistics ===
+
+  // Total number of dimensions in the file
+  optional int32 total_dimensions = 65;
+
+  // Total number of variables in the file
+  optional int32 total_variables = 66;
+
+  // Total number of global attributes
+  optional int32 total_global_attributes = 67;
+
+  // Estimated file size in bytes
+  optional int64 estimated_file_size = 68;
+
+  // Data compression method used (if any)
+  optional string compression_method = 69;
+
+  // Compression ratio achieved
+  optional double compression_ratio = 70;
+
+  // === Flexible Metadata Structure ===
+
+  // All unmapped NetCDF/CF-specific metadata as flexible key-value pairs
+  // This captures any scientific metadata not covered by the strongly-typed fields above
+  google.protobuf.Struct additional_scientific_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Represents a NetCDF dimension
+message NetcdfDimension {
+  // Dimension name
+  string name = 1;
+
+  // Dimension length (number of elements)
+  int64 length = 2;
+
+  // Whether this is an unlimited dimension
+  optional bool is_unlimited = 3;
+
+  // Full name including group path
+  optional string full_name = 4;
+}
+
+// Represents a NetCDF variable
+message NetcdfVariable {
+  // Variable name
+  string name = 1;
+
+  // Data type (e.g., "float", "double", "int", "char")
+  string data_type = 2;
+
+  // Dimensions used by this variable
+  repeated string dimension_names = 3;
+
+  // Variable attributes
+  repeated NetcdfAttribute attributes = 4;
+
+  // Full name and dimensions (e.g., "float temp(time, lat, lon)")
+  optional string name_and_dimensions = 5;
+
+  // CF standard name (if applicable)
+  optional string cf_standard_name = 6;
+
+  // Long descriptive name
+  optional string long_name = 7;
+
+  // Units of measurement
+  optional string units = 8;
+
+  // Valid range for the variable
+  optional NetcdfRange valid_range = 9;
+}
+
+// Represents a NetCDF attribute
+message NetcdfAttribute {
+  // Attribute name
+  string name = 1;
+
+  // Attribute value (as string representation)
+  string value = 2;
+
+  // Data type of the attribute
+  optional string data_type = 3;
+
+  // Full name including variable or group path
+  optional string full_name = 4;
+}
+
+// Represents a CF coordinate system
+message CfCoordinateSystem {
+  // Coordinate system name
+  string name = 1;
+
+  // Coordinate variables (e.g., lat, lon, time, pressure)
+  repeated string coordinate_variables = 2;
+
+  // Coordinate system type (e.g., "geographic", "projected")
+  optional string coordinate_system_type = 3;
+
+  // Projection information (if applicable)
+  optional string projection = 4;
+}
+
+// Represents uncertainty or error information
+message NetcdfUncertainty {
+  // Variable name this uncertainty applies to
+  string variable_name = 1;
+
+  // Type of uncertainty (e.g., "standard_error", "confidence_interval")
+  string uncertainty_type = 2;
+
+  // Uncertainty value or description
+  string uncertainty_value = 3;
+
+  // Units of the uncertainty
+  optional string units = 4;
+}
+
+// Represents model ensemble information
+message NetcdfEnsemble {
+  // Ensemble name or identifier
+  string ensemble_name = 1;
+
+  // Number of ensemble members
+  optional int32 ensemble_size = 2;
+
+  // Ensemble member identifier
+  optional string member_id = 3;
+
+  // Ensemble generation method
+  optional string generation_method = 4;
+
+  // Perturbation method used
+  optional string perturbation_method = 5;
+}
+
+// Represents a valid range for a variable
+message NetcdfRange {
+  // Minimum valid value
+  optional double min_value = 1;
+
+  // Maximum valid value
+  optional double max_value = 2;
+
+  // Units for the range values
+  optional string units = 3;
+}

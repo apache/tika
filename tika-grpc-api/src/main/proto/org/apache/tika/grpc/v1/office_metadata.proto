@@ -1,0 +1,236 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "OfficeMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive Office metadata as extracted by Tika from Microsoft Office and OpenDocument files.
+// Based on Tika's Office interface, OfficeOpenXMLCore, OfficeOpenXMLExtended, TikaCoreProperties, and actual parser implementations.
+// This is a 1:1 mapping to all fields that Tika can extract from Office documents.
+message OfficeMetadata {
+  // Dublin/Core fields are normalized at ParseResponse.dublin_core.
+  // These field numbers and names are reserved to prevent reuse.
+  reserved 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19;
+  reserved "title", "creator", "description", "subject", "language", "publisher", "rights", "format", "identifier", "contributor", "coverage", "relation", "source", "type", "created", "modified", "creator_tool", "comments", "rating";
+
+  // === Office Properties (Office interface) ===
+  // Office.KEYWORDS / DublinCore.SUBJECT
+  repeated string keywords = 20;
+  // Office.INITIAL_AUTHOR
+  optional string initial_author = 21;
+  // Office.LAST_AUTHOR
+  optional string last_author = 22;
+  // Office.AUTHOR
+  repeated string author = 23;
+  // Office.CREATION_DATE
+  optional google.protobuf.Timestamp creation_date = 24;
+  // Raw string fallback
+  optional string creation_date_raw = 105;
+  // Office.SAVE_DATE
+  optional google.protobuf.Timestamp save_date = 25;
+  // Raw string fallback
+  optional string save_date_raw = 106;
+  // Office.PRINT_DATE
+  optional google.protobuf.Timestamp print_date = 26;
+  // Raw string fallback
+  optional string print_date_raw = 107;
+
+  // === Document Statistics ===
+  // Office.SLIDE_COUNT
+  optional int32 slide_count = 27;
+  // Office.PAGE_COUNT / PagedText.N_PAGES
+  optional int32 page_count = 28;
+  // Office.PARAGRAPH_COUNT
+  optional int32 paragraph_count = 29;
+  // Office.LINE_COUNT
+  optional int32 line_count = 30;
+  // Office.WORD_COUNT
+  optional int32 word_count = 31;
+  // Office.CHARACTER_COUNT
+  optional int32 character_count = 32;
+  // Office.CHARACTER_COUNT_WITH_SPACES
+  optional int32 character_count_with_spaces = 33;
+  // Office.TABLE_COUNT
+  optional int32 table_count = 34;
+  // Office.IMAGE_COUNT
+  optional int32 image_count = 35;
+  // Office.OBJECT_COUNT
+  optional int32 object_count = 36;
+
+  // === Microsoft Office Specific Properties ===
+  // Office.PROG_ID
+  optional string prog_id = 37;
+  // Office.OCX_NAME
+  optional string ocx_name = 38;
+  // Office.EMBEDDED_STORAGE_CLASS_ID
+  optional string embedded_storage_class_id = 39;
+
+  // === Excel Specific Properties ===
+  // Office.HAS_HIDDEN_SHEETS
+  optional bool has_hidden_sheets = 40;
+  // Office.HAS_HIDDEN_COLUMNS
+  optional bool has_hidden_columns = 41;
+  // Office.HAS_HIDDEN_ROWS
+  optional bool has_hidden_rows = 42;
+  // Office.HAS_VERY_HIDDEN_SHEETS
+  optional bool has_very_hidden_sheets = 43;
+  // Office.HIDDEN_SHEET_NAMES
+  repeated string hidden_sheet_names = 44;
+  // Office.VERY_HIDDEN_SHEET_NAMES
+  repeated string very_hidden_sheet_names = 45;
+  // Office.PROTECTED_WORKSHEET
+  optional bool protected_worksheet = 46;
+  // Office.WORKBOOK_CODENAME
+  optional string workbook_codename = 47;
+
+  // === Comments and Collaboration ===
+  // Office.HAS_COMMENTS
+  optional bool has_comments = 48;
+  // Office.COMMENT_PERSONS
+  repeated string comment_persons = 49;
+
+  // === PowerPoint Specific Properties ===
+  // Office.HAS_HIDDEN_SLIDES
+  optional bool has_hidden_slides = 50;
+  // Office.NUM_HIDDEN_SLIDES
+  optional int32 num_hidden_slides = 51;
+  // Office.HAS_ANIMATIONS
+  optional bool has_animations = 52;
+
+  // === Word Specific Properties ===
+  // Office.HAS_HIDDEN_TEXT
+  optional bool has_hidden_text = 53;
+  // Office.HAS_TRACK_CHANGES
+  optional bool has_track_changes = 54;
+
+  // === OfficeOpenXMLCore Properties ===
+  // OfficeOpenXMLCore.CATEGORY
+  optional string category = 55;
+  // OfficeOpenXMLCore.CONTENT_STATUS
+  optional string content_status = 56;
+  // OfficeOpenXMLCore.LAST_MODIFIED_BY
+  optional string last_modified_by = 57;
+  // OfficeOpenXMLCore.LAST_PRINTED
+  optional google.protobuf.Timestamp last_printed = 58;
+  // Raw string fallback
+  optional string last_printed_raw = 108;
+  // OfficeOpenXMLCore.REVISION
+  optional string revision = 59;
+  // OfficeOpenXMLCore.VERSION
+  optional string version = 60;
+
+  // === OfficeOpenXMLExtended Properties ===
+  // OfficeOpenXMLExtended.TEMPLATE
+  optional string template = 61;
+  // OfficeOpenXMLExtended.MANAGER
+  repeated string manager = 62;
+  // OfficeOpenXMLExtended.COMPANY
+  optional string company = 63;
+  // OfficeOpenXMLExtended.PRESENTATION_FORMAT
+  optional string presentation_format = 64;
+  // OfficeOpenXMLExtended.NOTES
+  optional int32 notes = 65;
+  // total_time from OfficeOpenXMLExtended.TOTAL_TIME can be ISO-8601 (e.g., PT02H03M24S).
+  // raw duration
+  optional string total_time_raw = 66;
+  // parsed to seconds if available
+  optional int32 total_time_seconds = 104;
+  // OfficeOpenXMLExtended.HIDDEN_SLIDES
+  optional int32 hidden_slides = 67;
+  // OfficeOpenXMLExtended.APPLICATION
+  optional string application = 68;
+  // OfficeOpenXMLExtended.APP_VERSION
+  optional string app_version = 69;
+  // OfficeOpenXMLExtended.DOC_SECURITY
+  optional int32 doc_security = 70;
+  // OfficeOpenXMLExtended.DOC_SECURITY_STRING
+  optional string doc_security_string = 71;
+  // OfficeOpenXMLExtended.COMMENTS
+  repeated string extended_comments = 72;
+
+  // === Content Type ===
+  // Metadata.CONTENT_TYPE
+  optional string content_type = 73;
+
+  // === Security and Signature Properties ===
+  // TikaCoreProperties.HAS_SIGNATURE
+  optional bool has_signature = 74;
+  // TikaCoreProperties.IS_ENCRYPTED
+  optional bool is_encrypted = 75;
+  // TikaCoreProperties.SIGNATURE_NAME
+  repeated string signature_name = 76;
+  // TikaCoreProperties.SIGNATURE_DATE
+  repeated google.protobuf.Timestamp signature_date = 77;
+  // Raw string fallback
+  repeated string signature_date_raw = 109;
+  // TikaCoreProperties.SIGNATURE_LOCATION
+  repeated string signature_location = 78;
+  // TikaCoreProperties.SIGNATURE_REASON
+  repeated string signature_reason = 79;
+  // TikaCoreProperties.SIGNATURE_FILTER
+  repeated string signature_filter = 80;
+  // TikaCoreProperties.SIGNATURE_CONTACT_INFO
+  repeated string signature_contact_info = 81;
+
+  // === Geographic Properties ===
+  // TikaCoreProperties.LATITUDE
+  optional double latitude = 82;
+  // TikaCoreProperties.LONGITUDE
+  optional double longitude = 83;
+  // TikaCoreProperties.ALTITUDE
+  optional double altitude = 84;
+
+  // === Parsing Metadata ===
+  // TikaCoreProperties.TIKA_PARSED_BY
+  repeated string parsed_by = 85;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE
+  optional string detected_language = 86;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE
+  optional double detected_language_confidence = 87;
+  // TikaCoreProperties.ENCODING_DETECTOR
+  optional string encoding_detector = 88;
+  // TikaCoreProperties.DETECTED_ENCODING
+  optional string detected_encoding = 89;
+
+  // === Embedded Resource Properties ===
+  // TikaCoreProperties.EMBEDDED_RESOURCE_TYPE
+  optional string embedded_resource_type = 90;
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 91;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 92;
+
+  // === Version Control Properties ===
+  // TikaCoreProperties.VERSION_COUNT
+  optional int32 version_count = 93;
+  // TikaCoreProperties.VERSION_NUMBER
+  optional int32 version_number = 94;
+
+  // === Custom Properties ===
+  // Note: Office.USER_DEFINED_METADATA_NAME_PREFIX fields are dynamic
+  // These would be stored in unknown_string_fields with "custom:" prefix
+
+  // === Embedded Part Metadata (for embedded objects) ===
+  // EmbeddedPartMetadata.progId
+  optional string embedded_prog_id = 95;
+  // EmbeddedPartMetadata.renderedName
+  optional string embedded_rendered_name = 96;
+  // EmbeddedPartMetadata.fullName
+  optional string embedded_full_name = 97;
+
+  // === Additional Technical Properties ===
+  // EMFParser.EMF_ICON_STRING
+  optional string emf_icon_string = 98;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}

@@ -1,0 +1,104 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "GenericMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Generic metadata for document types that don't have specialized parsers or interfaces.
+// This handles formats like WordPerfect, QuattroPro, PST, MachineMetadata, ExternalProcess, etc.
+// The design is intentionally flexible, using google.protobuf.Struct to capture any metadata
+// that Tika can extract, while providing some basic identifying fields for common patterns.
+message GenericMetadata {
+  // === Basic Document Identification ===
+
+  // Detected document format or type
+  // e.g., "WordPerfect Document", "Quattro Pro Spreadsheet", "PST Mail Archive"
+  optional string document_format = 1;
+
+  // Format version (if detectable)
+  // e.g., "5.1", "12.0", "2003"
+  optional string format_version = 2;
+
+  // MIME type as detected by Tika
+  optional string detected_mime_type = 3;
+
+  // File extension (if available)
+  optional string file_extension = 4;
+
+  // Application that created the document (if detectable)
+  optional string creating_application = 5;
+
+  // Application version
+  optional string application_version = 6;
+
+  // === Content Analysis ===
+
+  // Estimated content length in characters
+  optional int64 content_length = 7;
+
+  // Detected content language
+  optional string content_language = 8;
+
+  // Content encoding (if applicable)
+  optional string content_encoding = 9;
+
+  // Whether the document appears to be encrypted or password-protected
+  optional bool is_encrypted = 10;
+
+  // Whether the document contains embedded objects or attachments
+  optional bool has_embedded_content = 11;
+
+  // === Technical Metadata ===
+
+  // File size in bytes (if available)
+  optional int64 file_size = 12;
+
+  // Compression method used (if any)
+  optional string compression_method = 13;
+
+  // Checksum or hash of the content (if computed)
+  optional string content_checksum = 14;
+
+  // Checksum algorithm used
+  optional string checksum_algorithm = 15;
+
+  // === Parser-Specific Information ===
+
+  // Specific Tika parser that handled this document
+  optional string tika_parser_class = 16;
+
+  // Parser configuration or options used
+  repeated string parser_options = 17;
+
+  // Whether parsing was successful or partial
+  optional string parse_status = 18;
+
+  // Any parser-specific warnings or messages
+  repeated string parser_messages = 19;
+
+  // === Flexible Metadata Structure ===
+
+  // All metadata extracted by Tika as key-value pairs
+  // This is the primary extensibility mechanism - any metadata not covered
+  // by the strongly-typed fields above will be captured here
+  google.protobuf.Struct all_metadata = 20;
+
+  // Document properties (for formats that have property-based metadata)
+  google.protobuf.Struct document_properties = 21;
+
+  // Custom metadata fields (user-defined or application-specific)
+  google.protobuf.Struct custom_metadata = 22;
+
+  // Technical properties specific to the file format
+  google.protobuf.Struct technical_properties = 23;
+
+  // === Common Base Fields ===
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 100;
+}

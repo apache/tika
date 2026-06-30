@@ -1,0 +1,209 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "HtmlMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive HTML metadata as extracted by Tika from HTML and web documents.
+// Based on Tika's HTML interface, TikaCoreProperties, and actual HTML parser implementations.
+// This is a 1:1 mapping to all fields that Tika can extract from HTML documents.
+message HtmlMetadata {
+  // === TikaCoreProperties (Core Tika metadata) ===
+  // TikaCoreProperties.TITLE (from <title> tag)
+  optional string title = 1;
+  // TikaCoreProperties.CREATOR
+  optional string creator = 2;
+  // TikaCoreProperties.DESCRIPTION (from meta description)
+  optional string description = 3;
+  // TikaCoreProperties.SUBJECT
+  optional string subject = 4;
+  // TikaCoreProperties.LANGUAGE
+  optional string language = 5;
+  // TikaCoreProperties.PUBLISHER
+  optional string publisher = 6;
+  // TikaCoreProperties.RIGHTS
+  optional string rights = 7;
+  // TikaCoreProperties.FORMAT
+  optional string format = 8;
+  // TikaCoreProperties.IDENTIFIER
+  optional string identifier = 9;
+  // TikaCoreProperties.CONTRIBUTOR
+  optional string contributor = 10;
+  // TikaCoreProperties.COVERAGE
+  optional string coverage = 11;
+  // TikaCoreProperties.RELATION
+  optional string relation = 12;
+  // TikaCoreProperties.SOURCE
+  optional string source = 13;
+  // TikaCoreProperties.TYPE
+  optional string type = 14;
+  // TikaCoreProperties.CREATED
+  optional google.protobuf.Timestamp created = 15;
+  // TikaCoreProperties.MODIFIED
+  optional google.protobuf.Timestamp modified = 16;
+  // TikaCoreProperties.CREATOR_TOOL
+  optional string creator_tool = 17;
+  // TikaCoreProperties.COMMENTS
+  optional string comments = 18;
+  // TikaCoreProperties.RATING
+  optional int32 rating = 19;
+
+  // === HTML Specific Properties ===
+  // HTML.SCRIPT_SOURCE (from <script src="">)
+  optional string script_source = 20;
+
+  // === Content and Language Properties ===
+  // Metadata.CONTENT_TYPE
+  optional string content_type = 21;
+  // Metadata.CONTENT_ENCODING (charset)
+  optional string content_encoding = 22;
+  // Metadata.CONTENT_LANGUAGE (from <html lang="">)
+  optional string content_language = 23;
+  // Metadata.CONTENT_LOCATION (from <base href=""> or resource name)
+  optional string content_location = 24;
+  // TikaCoreProperties.CONTENT_TYPE_HINT (from <meta http-equiv="content-type">)
+  optional string content_type_hint = 25;
+
+  // === Geographic Properties (from ICBM meta tag) ===
+  // "ICBM" (raw ICBM coordinates)
+  optional string icbm = 26;
+  // Metadata.LATITUDE (parsed from ICBM)
+  optional string latitude = 27;
+  // Metadata.LONGITUDE (parsed from ICBM)
+  optional string longitude = 28;
+
+  // === Meta Tag Properties ===
+  // Standard HTML meta tags that are commonly extracted
+  // <meta name="description" content="...">
+  optional string meta_description = 29;
+  // <meta name="keywords" content="...">
+  optional string meta_keywords = 30;
+  // <meta name="author" content="...">
+  optional string meta_author = 31;
+  // <meta name="generator" content="...">
+  optional string meta_generator = 32;
+  // <meta name="robots" content="...">
+  optional string meta_robots = 33;
+  // <meta name="viewport" content="...">
+  optional string meta_viewport = 34;
+  // <meta charset="...">
+  optional string meta_charset = 35;
+  // <meta http-equiv="refresh" content="...">
+  optional string meta_refresh = 36;
+
+  // === Open Graph Properties ===
+  // <meta property="og:title" content="...">
+  optional string og_title = 37;
+  // <meta property="og:description" content="...">
+  optional string og_description = 38;
+  // <meta property="og:image" content="...">
+  optional string og_image = 39;
+  // <meta property="og:url" content="...">
+  optional string og_url = 40;
+  // <meta property="og:type" content="...">
+  optional string og_type = 41;
+  // <meta property="og:site_name" content="...">
+  optional string og_site_name = 42;
+
+  // === Twitter Card Properties ===
+  // <meta name="twitter:card" content="...">
+  optional string twitter_card = 43;
+  // <meta name="twitter:site" content="...">
+  optional string twitter_site = 44;
+  // <meta name="twitter:creator" content="...">
+  optional string twitter_creator = 45;
+  // <meta name="twitter:title" content="...">
+  optional string twitter_title = 46;
+  // <meta name="twitter:description" content="...">
+  optional string twitter_description = 47;
+  // <meta name="twitter:image" content="...">
+  optional string twitter_image = 48;
+
+  // === Dublin Core Properties (from meta tags) ===
+  // <meta name="DC.title" content="...">
+  optional string dc_title = 49;
+  // <meta name="DC.creator" content="...">
+  optional string dc_creator = 50;
+  // <meta name="DC.subject" content="...">
+  optional string dc_subject = 51;
+  // <meta name="DC.description" content="...">
+  optional string dc_description = 52;
+  // <meta name="DC.publisher" content="...">
+  optional string dc_publisher = 53;
+  // <meta name="DC.contributor" content="...">
+  optional string dc_contributor = 54;
+  // <meta name="DC.date" content="...">
+  optional string dc_date = 55;
+  // <meta name="DC.type" content="...">
+  optional string dc_type = 56;
+  // <meta name="DC.format" content="...">
+  optional string dc_format = 57;
+  // <meta name="DC.identifier" content="...">
+  optional string dc_identifier = 58;
+  // <meta name="DC.source" content="...">
+  optional string dc_source = 59;
+  // <meta name="DC.language" content="...">
+  optional string dc_language = 60;
+  // <meta name="DC.relation" content="...">
+  optional string dc_relation = 61;
+  // <meta name="DC.coverage" content="...">
+  optional string dc_coverage = 62;
+  // <meta name="DC.rights" content="...">
+  optional string dc_rights = 63;
+
+  // === Link Properties ===
+  // <link rel="canonical" href="...">
+  optional string canonical_url = 64;
+  // <link rel="alternate" href="...">
+  optional string alternate_url = 65;
+  // <link rel="stylesheet" href="...">
+  optional string stylesheet_url = 66;
+  // <link rel="icon" href="...">
+  optional string icon_url = 67;
+  // <link rel="alternate" type="application/rss+xml" href="...">
+  optional string rss_url = 68;
+  // <link rel="alternate" type="application/atom+xml" href="...">
+  optional string atom_url = 69;
+
+  // === Embedded Resource Properties ===
+  // Data URI schemes found in the document
+  repeated string data_uri_schemes = 70;
+  // TikaCoreProperties.EMBEDDED_RESOURCE_TYPE
+  optional string embedded_resource_type = 71;
+
+  // === Security and Signature Properties ===
+  // TikaCoreProperties.HAS_SIGNATURE
+  optional bool has_signature = 72;
+  // TikaCoreProperties.IS_ENCRYPTED
+  optional bool is_encrypted = 73;
+
+  // === Parsing Metadata ===
+  // TikaCoreProperties.TIKA_PARSED_BY
+  repeated string parsed_by = 74;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE
+  optional string detected_language = 75;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE
+  optional double detected_language_confidence = 76;
+  // TikaCoreProperties.ENCODING_DETECTOR
+  optional string encoding_detector = 77;
+  // TikaCoreProperties.DETECTED_ENCODING
+  optional string detected_encoding = 78;
+
+  // === Resource Properties ===
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 79;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 80;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}

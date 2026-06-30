@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "EpubMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive EPUB metadata as extracted by Tika from EPUB documents.
+// Based on Tika's Epub interface, EpubParser, OPFParser implementations, and actual EPUB structure.
+// This is a 1:1 mapping to all fields that Tika can extract from EPUB documents.
+// EPUB files are structured ZIP archives containing:
+// - META-INF/container.xml (points to OPF file)
+// - *.opf file (package document with metadata and manifest)
+// - XHTML content files (actual book content)
+// - CSS, images, fonts (embedded resources)
+// - Optional: metadata.xml (additional Dublin Core)
+message EpubMetadata {
+  // === EPUB Interface Properties (from Epub.java) ===
+
+  // EPUB rendition layout type - determines how content should be displayed
+  // Values: "pre-paginated" or "reflowable" (default)
+  // Set to "pre-paginated" if any itemref on spine has pre-paginated property
+  // Epub.RENDITION_LAYOUT
+  optional string rendition_layout = 1;
+
+  // EPUB specification version (e.g., "2.0", "3.0", "3.1")
+  // Extracted from package element version attribute in OPF file
+  // Epub.VERSION
+  optional string version = 2;
+
+  // === Content Structure (Critical for Chunking) ===
+
+  // Ordered list of content items as they appear in the spine
+  // This defines the reading order and is essential for proper chunking
+  repeated EpubContentItem spine_items = 3;
+
+  // Complete manifest of all resources in the EPUB
+  // Includes content files, stylesheets, images, fonts, etc.
+  repeated EpubManifestItem manifest_items = 4;
+
+  // Table of Contents structure (if available)
+  // Extracted from NCX or Navigation Document
+  repeated EpubTocItem table_of_contents = 5;
+
+  // === Technical Metadata ===
+
+  // Root OPF file path within the EPUB ZIP
+  // e.g., "OEBPS/content.opf" or "META-INF/content.opf"
+  optional string root_opf_path = 6;
+
+  // MIME type from mimetype file (should be "application/epub+zip")
+  // From mimetype file
+  optional string mimetype = 7;
+
+  // Whether the EPUB contains encrypted/DRM-protected content
+  optional bool has_drm = 8;
+
+  // List of encrypted resource paths (if any)
+  repeated string encrypted_resources = 9;
+
+  // Total number of content files (XHTML/HTML files in spine)
+  optional int32 content_file_count = 10;
+
+  // Total number of embedded resources (images, fonts, CSS, etc.)
+  optional int32 embedded_resource_count = 11;
+
+  // === Content Analysis (for Chunking Strategy) ===
+
+  // Estimated total word count across all content files
+  // Useful for chunking decisions
+  optional int64 estimated_word_count = 12;
+
+  // Estimated total character count across all content files
+  optional int64 estimated_character_count = 13;
+
+  // Primary content language detected from content files
+  // May differ from Dublin Core language if mixed-language content
+  optional string content_language = 14;
+
+  // === Embedded Resources Tracking ===
+
+  // Images embedded in the EPUB
+  repeated EpubEmbeddedResource images = 15;
+
+  // Fonts embedded in the EPUB
+  repeated EpubEmbeddedResource fonts = 16;
+
+  // Stylesheets (CSS) in the EPUB
+  repeated EpubEmbeddedResource stylesheets = 17;
+
+  // Other embedded resources (audio, video, scripts, etc.)
+  repeated EpubEmbeddedResource other_resources = 18;
+
+  // === Navigation and Structure ===
+
+  // Navigation document path (EPUB 3) or NCX file path (EPUB 2)
+  optional string navigation_document_path = 19;
+
+  // Cover image path (if specified in metadata)
+  optional string cover_image_path = 20;
+
+  // Unique identifier from the package (usually ISBN or similar)
+  optional string unique_identifier = 21;
+
+  // === Reading System Hints ===
+
+  // Suggested reading direction (ltr, rtl)
+  // Important for proper text processing and chunking
+  optional string reading_direction = 22;
+
+  // Whether content contains mathematical notation (MathML)
+  optional bool has_mathml = 23;
+
+  // Whether content contains SVG graphics
+  optional bool has_svg = 24;
+
+  // Whether content contains scripted content (JavaScript)
+  optional bool has_scripted_content = 25;
+
+  // === Accessibility Metadata ===
+
+  // Accessibility features present in the EPUB
+  repeated string accessibility_features = 26;
+
+  // Accessibility hazards (if any)
+  repeated string accessibility_hazards = 27;
+
+  // Accessibility summary or description
+  optional string accessibility_summary = 28;
+
+  // === Catch-all for unmapped EPUB-specific metadata ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Represents a content item in the EPUB spine (reading order)
+// Essential for proper chunking and content organization
+message EpubContentItem {
+  // Unique identifier for this content item (from manifest)
+  string id = 1;
+
+  // File path relative to OPF file location
+  string href = 2;
+
+  // MIME type of the content file
+  optional string media_type = 3;
+
+  // Position in the reading order (0-based)
+  int32 spine_index = 4;
+
+  // Whether this item is linear (part of main reading flow)
+  optional bool is_linear = 5;
+
+  // Properties associated with this spine item
+  repeated string properties = 6;
+
+  // Estimated word count for this content file
+  optional int64 word_count = 7;
+
+  // Estimated character count for this content file
+  optional int64 character_count = 8;
+
+  // Title or heading extracted from this content file
+  optional string title = 9;
+}
+
+// Represents an item in the EPUB manifest
+// Complete inventory of all resources in the EPUB
+message EpubManifestItem {
+  // Unique identifier for this manifest item
+  string id = 1;
+
+  // File path relative to OPF file location
+  string href = 2;
+
+  // MIME type of the resource
+  string media_type = 3;
+
+  // Properties associated with this manifest item
+  repeated string properties = 4;
+
+  // Fallback item ID (if this item cannot be processed)
+  optional string fallback = 5;
+
+  // Media overlay ID (for synchronized media)
+  optional string media_overlay = 6;
+
+  // File size in bytes (if available)
+  optional int64 file_size = 7;
+}
+
+// Represents a Table of Contents entry
+// Hierarchical structure for navigation and chunking boundaries
+message EpubTocItem {
+  // Display text for this TOC entry
+  string label = 1;
+
+  // Link target (content file and optional fragment)
+  optional string href = 2;
+
+  // Hierarchical level (0 = top level, 1 = first sublevel, etc.)
+  int32 level = 3;
+
+  // Position in the TOC order
+  int32 play_order = 4;
+
+  // Child TOC entries (for hierarchical structure)
+  repeated EpubTocItem children = 5;
+
+  // Content item ID this TOC entry points to
+  optional string content_src = 6;
+}
+
+// Represents an embedded resource in the EPUB
+// Important for understanding content dependencies and processing requirements
+message EpubEmbeddedResource {
+  // Resource identifier from manifest
+  string id = 1;
+
+  // File path relative to OPF file location
+  string href = 2;
+
+  // MIME type of the resource
+  string media_type = 3;
+
+  // File size in bytes (if available)
+  optional int64 file_size = 4;
+
+  // Whether this resource is referenced by content files
+  optional bool is_referenced = 5;
+
+  // Properties associated with this resource
+  repeated string properties = 6;
+
+  // For images: width in pixels
+  optional int32 width = 7;
+
+  // For images: height in pixels
+  optional int32 height = 8;
+
+  // For fonts: font family name
+  optional string font_family = 9;
+
+  // For stylesheets: whether it's a primary or alternate stylesheet
+  optional string stylesheet_type = 10;
+}

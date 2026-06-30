@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "DublinCoreProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Dublin Core metadata - the standardized metadata that most documents have.
+// These are the actual fields that Tika's DublinCore interface provides.
+message DublinCoreMetadata {
+  // dc:format - Media type or format of the resource
+  optional string format = 1;
+
+  // dc:identifier - Unique identifier (URI, DOI, ISBN, etc.)
+  optional string identifier = 2;
+
+  // dcterms:modified - Date when the resource was last modified
+  optional google.protobuf.Timestamp modified = 3;
+
+  // dc:contributor - Entities that contributed to the resource
+  repeated string contributors = 4;
+
+  // dc:coverage - Spatial or temporal coverage
+  optional string coverage = 5;
+
+  // dc:creator - Primary creators/authors of the resource
+  repeated string creators = 6;
+
+  // dcterms:created - Date of creation
+  optional google.protobuf.Timestamp created = 7;
+
+  // dc:date - Generic date associated with the resource
+  optional google.protobuf.Timestamp date = 8;
+
+  // dc:description - Abstract, summary, or description
+  optional string description = 9;
+
+  // dc:language - Language of the content (e.g., "en", "fr")
+  optional string language = 10;
+
+  // dc:publisher - Entity responsible for making the resource available
+  optional string publisher = 11;
+
+  // dc:relation - Related resources
+  optional string relation = 12;
+
+  // dc:rights - Copyright and rights information
+  optional string rights = 13;
+
+  // dc:source - Source from which this resource is derived
+  optional string source = 14;
+
+  // dc:subject - Keywords, key phrases, or classification codes
+  repeated string subjects = 15;
+
+  // dc:title - The formal title of the resource
+  optional string title = 16;
+
+  // dc:type - Nature or genre of the content
+  optional string type = 17;
+}

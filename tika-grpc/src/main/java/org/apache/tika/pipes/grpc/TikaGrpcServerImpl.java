@@ -19,6 +19,8 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -59,7 +61,9 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.grpc.mapper.ParseResponseMapper;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -291,6 +295,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         Metadata tikaMetadata = new Metadata();
+        long parseStart = System.nanoTime();
         try {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
@@ -312,16 +317,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
                 fetchReplyBuilder.setErrorMessage(pipesResult.message());
             }
+            long parseTimeMs = (System.nanoTime() - parseStart) / 1_000_000L;
+            List<Metadata> metadataList = new ArrayList<>();
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
-                    for (String name : metadata.names()) {
-                        String value = metadata.get(name);
-                        if (value != null) {
-                            fetchReplyBuilder.putFields(name, value);
-                        }
-                    }
-                }
+                metadataList.addAll(pipesResult.emitData().getMetadataList());
             }
+            Metadata primary = metadataList.isEmpty() ? tikaMetadata : metadataList.get(0);
+            String body = primary.get(TikaCoreProperties.TIKA_CONTENT);
+            fetchReplyBuilder.setParseResponse(ParseResponseMapper.map(
+                    primary,
+                    metadataList,
+                    body,
+                    request.getFetchKey(),
+                    pipesResult.status().name(),
+                    parseTimeMs));
             responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {
             throw new RuntimeException(e);

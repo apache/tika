@@ -1,0 +1,61 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.grpc.mapper;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+import org.apache.tika.grpc.v1.ParseResponse;
+import org.apache.tika.grpc.v1.ParseStatus;
+
+class ParseResponseEnvelopeTest extends ParseFixtureSupport {
+
+    @Test
+    void mapsParseStatusAndEnvelopeFields() throws Exception {
+        ParseResponse response = map(parseBody("testPDF.pdf"), "test-doc", 42L);
+
+        assertFalse(response.getParseId().isEmpty());
+        assertTrue(response.hasParsedAt());
+        assertTrue(response.hasStatus());
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, response.getStatus().getStatus());
+        assertEquals(42L, response.getStatus().getParseTimeMs());
+    }
+
+    @Test
+    void nullMetadataReturnsFailedStatus() {
+        ParseResponse response = ParseResponseMapper.map(null, null, null, "doc", "OK", 5L);
+
+        assertTrue(response.hasStatus());
+        assertEquals(ParseStatus.Status.STATUS_FAILED, response.getStatus().getStatus());
+        assertEquals(5L, response.getStatus().getParseTimeMs());
+        assertFalse(response.getStatus().getErrorsList().isEmpty());
+    }
+
+    @Test
+    void mapsContentBodyAndTitle() throws Exception {
+        ParseResponse response = map(parseBody("testPDF.pdf"), "pdf-doc");
+
+        assertTrue(response.hasContent());
+        assertTrue(response.getContent().getBody().contains("Apache Tika"));
+        assertTrue(response.getContent().hasTitle());
+        assertEquals("Apache Tika - Apache Tika", response.getContent().getTitle());
+    }
+
+}

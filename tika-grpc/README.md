@@ -1,8 +1,8 @@
-# Tika Pipes GRPC Server
+# Tika Pipes gRPC Server
 
-The following is the Tika Pipes GRPC Server.
-
-This server will manage a pool of Tika Pipes clients.
+The Tika Pipes gRPC server exposes fetcher and iterator management and document
+fetch-and-parse over gRPC. It runs a pool of Tika Pipes worker processes and routes
+requests through the configured fetchers.
 
 * Tika Pipes Fetcher CRUD operations
     * Create
@@ -18,6 +18,46 @@ This server will manage a pool of Tika Pipes clients.
 > tika-config; with management off, the Read RPCs return only component id and class, never
 > the config. See the
 > [Tika gRPC security configuration docs](../docs/modules/ROOT/pages/using-tika/grpc/index.adoc).
+
+## Typed parse output
+
+Parse results are returned as `org.apache.tika.grpc.v1.ParseResponse` on
+`FetchAndParseReply.parse_response`. The previous `FetchAndParseReply.fields`
+(`map<string,string>`) has been removed.
+
+The response is structured in three layers:
+
+1. **Envelope**: `parse_id`, `parsed_at`, `status`, `content` (body and title),
+   optional `embedded_docs`.
+2. **Dublin Core**: normalized `dublin_core` fields shared across formats.
+3. **Format metadata**: a typed `oneof` (`pdf`, `office`, `html`, `image`, …) chosen
+   from Tika `Content-Type`, plus optional `creative_commons` when XMP rights metadata
+   is present.
+
+Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
+
+| Module | Role |
+|--------|------|
+| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v1`), generated Java stubs, bundled `FileDescriptorSet` under `META-INF/` |
+| `tika-grpc-mapper` | Maps Tika `Metadata` to `ParseResponse`; optional `ParseResponseDecorator` hooks for extensions such as document outlines |
+| `tika-grpc` | gRPC service implementation (this module) |
+
+Client migration (summary):
+
+| Before | After |
+|--------|-------|
+| `FetchAndParseReply.fields["content"]` | `parse_response.content.body` |
+| Flat string keys for PDF/Office/etc. | `parse_response.pdf`, `parse_response.office`, … |
+| Ad hoc title/author strings | `parse_response.dublin_core` and format messages |
+
+See [tika-grpc-api/README.md](../tika-grpc-api/README.md) for field-level notes and
+descriptor layout. Mapper field coverage tests live under `tika-grpc-mapper/src/test/java`.
+
+Build the API and mapper with the rest of the reactor:
+
+```bash
+./mvnw -pl tika-grpc-api,tika-grpc-mapper,tika-grpc test
+```
 
 ## Distribution and Maven Artifact
 

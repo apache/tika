@@ -1,0 +1,257 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "PdfMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive PDF metadata as extracted by Tika from PDF files.
+// Based on Tika's PDF interface, AccessPermissions interface, TikaCoreProperties, and actual parser implementations.
+// This is a 1:1 mapping to all fields that Tika can extract from PDF files.
+message PdfMetadata {
+  // Dublin/Core fields are normalized at ParseResponse.dublin_core.
+  // These field numbers and names are reserved to prevent reuse.
+  reserved 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19;
+  reserved "title", "creator", "description", "subject", "language", "publisher", "rights", "format", "identifier", "contributor", "coverage", "relation", "source", "type", "created", "modified", "creator_tool", "comments", "rating";
+
+  // === PDF Document Information (DocInfo) ===
+  // PDF.DOC_INFO_CREATED
+  optional google.protobuf.Timestamp doc_info_created = 20;
+  // Raw string fallback
+  optional string doc_info_created_raw = 103;
+  // PDF.DOC_INFO_CREATOR
+  optional string doc_info_creator = 21;
+  // PDF.DOC_INFO_CREATOR_TOOL
+  optional string doc_info_creator_tool = 22;
+  // PDF.DOC_INFO_MODIFICATION_DATE
+  optional google.protobuf.Timestamp doc_info_modification_date = 23;
+  // Raw string fallback
+  optional string doc_info_modification_date_raw = 104;
+  // PDF.DOC_INFO_KEY_WORDS
+  optional string doc_info_keywords = 24;
+  // PDF.DOC_INFO_PRODUCER
+  optional string doc_info_producer = 25;
+  // PDF.DOC_INFO_SUBJECT
+  optional string doc_info_subject = 26;
+  // PDF.DOC_INFO_TITLE
+  optional string doc_info_title = 27;
+  // PDF.DOC_INFO_TRAPPED
+  optional string doc_info_trapped = 28;
+
+  // === PDF Version and Standards ===
+  // PDF.PDF_VERSION
+  optional string pdf_version = 29;
+  // PDF.PDFA_VERSION
+  optional string pdfa_version = 30;
+  // PDF.PDF_EXTENSION_VERSION
+  optional string pdf_extension_version = 31;
+  // PDF.PDFAID_CONFORMANCE
+  optional string pdfaid_conformance = 32;
+  // PDF.PDFAID_PART
+  optional int32 pdfaid_part = 33;
+  // PDF.PDFUAID_PART
+  optional int32 pdfuaid_part = 34;
+  // PDF.PDFVT_VERSION
+  optional string pdfvt_version = 35;
+  // PDF.PDFVT_MODIFIED
+  optional google.protobuf.Timestamp pdfvt_modified = 36;
+  // Raw string fallback
+  optional string pdfvt_modified_raw = 105;
+  // PDF.PDFXID_VERSION
+  optional string pdfxid_version = 37;
+  // PDF.PDFX_VERSION
+  optional string pdfx_version = 38;
+  // PDF.PDFX_CONFORMANCE
+  optional string pdfx_conformance = 39;
+
+  // === Security and Encryption ===
+  // PDF.IS_ENCRYPTED
+  optional bool is_encrypted = 40;
+  // TikaCoreProperties.HAS_SIGNATURE
+  optional bool has_signature = 41;
+
+  // === Access Permissions ===
+  // Strongly typed booleans aligned with Tika's AccessPermissions
+  // AccessPermissions.CAN_MODIFY
+  optional bool can_modify_document = 42;
+  // Raw string fallback
+  optional string can_modify_document_raw = 106;
+  // AccessPermissions.EXTRACT_CONTENT
+  optional bool can_extract_content = 43;
+  // Raw string fallback
+  optional string can_extract_content_raw = 107;
+  // AccessPermissions.EXTRACT_FOR_ACCESSIBILITY
+  optional bool can_extract_for_accessibility = 44;
+  // Raw string fallback
+  optional string can_extract_for_accessibility_raw = 108;
+  // AccessPermissions.ASSEMBLE_DOCUMENT
+  optional bool can_assemble_document = 45;
+  // Raw string fallback
+  optional string can_assemble_document_raw = 109;
+  // AccessPermissions.FILL_IN_FORM
+  optional bool can_fill_in_form = 46;
+  // Raw string fallback
+  optional string can_fill_in_form_raw = 110;
+  // AccessPermissions.CAN_MODIFY_ANNOTATIONS
+  optional bool can_modify_annotations = 47;
+  // Raw string fallback
+  optional string can_modify_annotations_raw = 111;
+  // AccessPermissions.CAN_PRINT
+  optional bool can_print = 48;
+  // Raw string fallback
+  optional string can_print_raw = 112;
+  // AccessPermissions.CAN_PRINT_FAITHFUL
+  optional bool can_print_faithful = 49;
+  // Raw string fallback
+  optional string can_print_faithful_raw = 113;
+
+  // === Document Structure and Features ===
+  // PagedText.N_PAGES
+  optional int32 n_pages = 50;
+  // PDF.HAS_XFA
+  optional bool has_xfa = 51;
+  // PDF.HAS_XMP
+  optional bool has_xmp = 52;
+  // PDF.XMP_LOCATION
+  optional string xmp_location = 53;
+  // PDF.HAS_ACROFORM_FIELDS
+  optional bool has_acroform_fields = 54;
+  // PDF.HAS_MARKED_CONTENT
+  optional bool has_marked_content = 55;
+  // PDF.HAS_COLLECTION
+  optional bool has_collection = 56;
+  // PDF.HAS_3D
+  optional bool has_3d = 57;
+  // PDF.NUM_3D_ANNOTATIONS
+  optional int32 num_3d_annotations = 58;
+
+  // === Actions and Annotations ===
+  // PDF.ACTION_TRIGGER
+  optional string action_trigger = 59;
+  // PDF.ACTION_TRIGGERS
+  repeated string action_triggers = 60;
+  // PDF.ACTION_TYPES
+  repeated string action_types = 61;
+  // PDF.ANNOTATION_TYPES
+  repeated string annotation_types = 62;
+  // PDF.ANNOTATION_SUBTYPES
+  repeated string annotation_subtypes = 63;
+
+  // === Text and Font Analysis ===
+  // PDF.CHARACTERS_PER_PAGE
+  repeated int32 characters_per_page = 64;
+  // PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE
+  repeated int32 unmapped_unicode_chars_per_page = 65;
+  // PDF.TOTAL_UNMAPPED_UNICODE_CHARS
+  optional int32 total_unmapped_unicode_chars = 66;
+  // PDF.OVERALL_PERCENTAGE_UNMAPPED_UNICODE_CHARS
+  optional double overall_percentage_unmapped_unicode_chars = 67;
+  // PDF.CONTAINS_DAMAGED_FONT
+  optional bool contains_damaged_font = 68;
+  // PDF.CONTAINS_NON_EMBEDDED_FONT
+  optional bool contains_non_embedded_font = 69;
+
+  // === Embedded Files and Attachments ===
+  // PDF.EMBEDDED_FILE_DESCRIPTION
+  optional string embedded_file_description = 70;
+  // PDF.EMBEDDED_FILE_ANNOTATION_TYPE
+  optional string embedded_file_annotation_type = 71;
+  // PDF.EMBEDDED_FILE_SUBTYPE
+  optional string embedded_file_subtype = 72;
+  // PDF.ASSOCIATED_FILE_RELATIONSHIP
+  optional string associated_file_relationship = 73;
+
+  // === Incremental Updates and Versioning ===
+  // PDF.EOF_OFFSETS
+  repeated double eof_offsets = 74;
+  // PDF.INCREMENTAL_UPDATE_NUMBER
+  optional int32 incremental_update_number = 75;
+  // PDF.PDF_INCREMENTAL_UPDATE_COUNT
+  optional int32 pdf_incremental_update_count = 76;
+
+  // === OCR and Processing ===
+  // PDF.OCR_PAGE_COUNT
+  optional int32 ocr_page_count = 77;
+
+  // === Producer and Creation Tools ===
+  // PDF.PRODUCER
+  optional string producer = 78;
+  // PDF.ILLUSTRATOR_TYPE
+  optional string illustrator_type = 79;
+  // XMPPDF.KEY_WORDS
+  optional string xmp_keywords = 102;
+
+  // === Custom DocInfo Fields ===
+  // Note: PDF.PDF_DOC_INFO_CUSTOM_PREFIX fields are dynamic
+  // These would be stored in unknown_string_fields with "pdf:docinfo:custom:" prefix
+
+  // === Non-Adobe Extensions ===
+  // "pdf:foundNonAdobeExtensionName"
+  optional string found_non_adobe_extension_name = 80;
+
+  // === XMP Parse Errors ===
+  // "X-TIKA:pdf:metadata-xmp-parse-failed"
+  repeated string xmp_parse_failed = 81;
+
+  // === Content Type ===
+  // Metadata.CONTENT_TYPE
+  optional string content_type = 82;
+
+  // === Security and Signature Properties ===
+  // TikaCoreProperties.SIGNATURE_NAME
+  repeated string signature_name = 83;
+  // TikaCoreProperties.SIGNATURE_DATE
+  repeated google.protobuf.Timestamp signature_date = 84;
+  // Raw string fallback
+  repeated string signature_date_raw = 114;
+  // TikaCoreProperties.SIGNATURE_LOCATION
+  repeated string signature_location = 85;
+  // TikaCoreProperties.SIGNATURE_REASON
+  repeated string signature_reason = 86;
+  // TikaCoreProperties.SIGNATURE_FILTER
+  repeated string signature_filter = 87;
+  // TikaCoreProperties.SIGNATURE_CONTACT_INFO
+  repeated string signature_contact_info = 88;
+
+  // === Geographic Properties ===
+  // Moved to a generic location (outside of PdfMetadata). Reserve numbers/names.
+  reserved 89, 90, 91;
+  reserved "latitude", "longitude", "altitude";
+
+  // === Parsing Metadata ===
+  // TikaCoreProperties.TIKA_PARSED_BY
+  repeated string parsed_by = 92;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE
+  optional string detected_language = 93;
+  // TikaCoreProperties.TIKA_DETECTED_LANGUAGE_CONFIDENCE
+  optional double detected_language_confidence = 94;
+  // TikaCoreProperties.ENCODING_DETECTOR
+  optional string encoding_detector = 95;
+  // TikaCoreProperties.DETECTED_ENCODING
+  optional string detected_encoding = 96;
+
+  // === Embedded Resource Properties ===
+  // TikaCoreProperties.EMBEDDED_RESOURCE_TYPE
+  optional string embedded_resource_type = 97;
+  // TikaCoreProperties.RESOURCE_NAME_KEY
+  optional string resource_name = 98;
+  // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
+  optional string original_resource_name = 99;
+
+  // === Version Control Properties ===
+  // TikaCoreProperties.VERSION_COUNT
+  optional int32 version_count = 100;
+  // TikaCoreProperties.VERSION_NUMBER
+  optional int32 version_number = 101;
+
+  // === Catch-all for unknown/unmapped fields ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}

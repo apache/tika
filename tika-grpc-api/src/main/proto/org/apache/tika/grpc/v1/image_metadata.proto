@@ -1,0 +1,511 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "ImageMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive image metadata as extracted by Tika from TIFF, EXIF, IPTC, XMP, and GPS.
+// Based on Tika's TIFF, IPTC, and XMPDM interfaces with complete field coverage.
+message ImageMetadata {
+  // Image width in pixels (tiff:ImageWidth).
+  optional int32 width = 1;
+  // Image height in pixels (tiff:ImageLength).
+  optional int32 height = 2;
+  // Bits per sample for each color channel (tiff:BitsPerSample).
+  repeated int32 bits_per_sample = 3;
+  // Number of samples per pixel (tiff:SamplesPerPixel).
+  optional int32 samples_per_pixel = 4;
+  // Image orientation code 1-8 indicating rotation (tiff:Orientation).
+  optional int32 orientation = 5;
+  // Raw orientation string for closed-choice values.
+  optional string orientation_raw = 64;
+  // Compression type used (tiff:Compression).
+  optional string compression = 6;
+  // Color space information for the image.
+  optional string color_space = 7;
+  // Calculated total bits per pixel from bits_per_sample.
+  optional int32 bits_per_pixel = 8;
+  // Horizontal resolution in DPI (tiff:XResolution).
+  optional double x_resolution = 9;
+  // Vertical resolution in DPI (tiff:YResolution).
+  optional double y_resolution = 10;
+  // Resolution unit (Inch or cm) (tiff:ResolutionUnit).
+  optional string resolution_unit = 11;
+  // Camera or device manufacturer (tiff:Make).
+  optional string make = 12;
+  // Camera or device model (tiff:Model).
+  optional string model = 13;
+  // Software used to create/process the image (tiff:Software).
+  optional string software = 14;
+  // Artist or photographer name (tiff:Artist / dc:creator).
+  optional string artist = 15;
+  // Copyright notice (tiff:Copyright / dc:rights).
+  optional string copyright = 16;
+  // Image description or caption (tiff:ImageDescription).
+  optional string image_description = 17;
+  // Timestamp when image was last modified (tiff:DateTime).
+  optional google.protobuf.Timestamp date_time = 18;
+  // Raw date_time string for fallback parsing.
+  optional string date_time_raw = 60;
+  // Timestamp when original image was taken (exif:DateTimeOriginal).
+  optional google.protobuf.Timestamp date_time_original = 19;
+  // Raw date_time_original string for fallback parsing.
+  optional string date_time_original_raw = 61;
+  // Timestamp when image was digitized (exif:DateTimeDigitized).
+  optional google.protobuf.Timestamp date_time_digitized = 20;
+  // Raw date_time_digitized string for fallback parsing.
+  optional string date_time_digitized_raw = 62;
+  // EXIF camera settings and technical information.
+  ExifMetadata exif = 21;
+  // GPS location and tracking information.
+  GpsMetadata gps = 22;
+  // IPTC editorial and rights metadata.
+  IptcMetadata iptc = 23;
+  // Actual pixel width (exif:PixelXDimension).
+  optional int32 pixel_x_dimension = 24;
+  // Actual pixel height (exif:PixelYDimension).
+  optional int32 pixel_y_dimension = 25;
+  // Image rating value (xmp:Rating).
+  optional int32 rating = 26;
+  // Raw rating string for fallback parsing.
+  optional string rating_raw = 63;
+  // Keywords for search and categorization (dc:subject / IPTC).
+  repeated string keywords = 27;
+  // Number of pages in multi-page image formats (exif:PageCount).
+  optional int32 page_count = 28;
+  // Catch-all for unknown or unmapped metadata fields.
+  google.protobuf.Struct additional_metadata = 200;
+  // Base Tika fields common to all document types.
+  BaseFields base_fields = 201;
+}
+
+// EXIF metadata from camera settings and technical information.
+message ExifMetadata {
+  // Exposure time in seconds (exif:ExposureTime).
+  optional double exposure_time = 1;
+  // Raw exposure time string (e.g., "1/125").
+  optional string exposure_time_raw = 50;
+  // F-number aperture value (exif:FNumber).
+  optional double f_number = 2;
+  // Raw f-number string for fallback parsing.
+  optional string f_number_raw = 51;
+  // Focal length in millimeters (exif:FocalLength).
+  optional double focal_length = 3;
+  // Raw focal length string for fallback parsing.
+  optional string focal_length_raw = 52;
+  // 35mm equivalent focal length (exif:FocalLengthIn35mmFilm).
+  optional double focal_length_35mm = 4;
+  // ISO speed ratings (exif:ISOSpeedRatings).
+  repeated int32 iso_speed_ratings = 5;
+  // Flash mode description (exif:Flash).
+  optional string flash = 6;
+  // Whether flash fired during capture (exif:Flash boolean).
+  optional bool flash_fired = 7;
+  // White balance mode (exif:WhiteBalance).
+  optional string white_balance = 8;
+  // Exposure mode used (exif:ExposureMode).
+  optional string exposure_mode = 9;
+  // Exposure program mode (exif:ExposureProgram).
+  optional string exposure_program = 10;
+  // Exposure bias/compensation value (exif:ExposureBiasValue).
+  optional double exposure_bias_value = 11;
+  // Metering mode used (exif:MeteringMode).
+  optional string metering_mode = 12;
+  // Light source type (exif:LightSource).
+  optional string light_source = 13;
+  // Scene type classification (exif:SceneType).
+  optional string scene_type = 14;
+  // Image sensor type (exif:SensingMethod).
+  optional string sensing_method = 15;
+  // Digital zoom ratio applied (exif:DigitalZoomRatio).
+  optional double digital_zoom_ratio = 16;
+  // Raw digital zoom ratio string for fallback parsing.
+  optional string digital_zoom_ratio_raw = 53;
+  // Lens manufacturer (exif:LensMake).
+  optional string lens_make = 17;
+  // Lens model name (exif:LensModel).
+  optional string lens_model = 18;
+  // Lens serial number (exif:LensSerialNumber).
+  optional string lens_serial_number = 19;
+  // Scene capture type (exif:SceneCaptureType).
+  optional string scene_capture_type = 20;
+  // Gain control applied (exif:GainControl).
+  optional string gain_control = 21;
+  // Contrast adjustment (exif:Contrast).
+  optional string contrast = 22;
+  // Saturation adjustment (exif:Saturation).
+  optional string saturation = 23;
+  // Sharpness adjustment (exif:Sharpness).
+  optional string sharpness = 24;
+  // Subject distance range category (exif:SubjectDistanceRange).
+  optional string subject_distance_range = 25;
+  // Distance to subject in meters (exif:SubjectDistance).
+  optional double subject_distance = 26;
+  // Raw subject distance string for fallback parsing.
+  optional string subject_distance_raw = 54;
+  // Maximum aperture value of lens (exif:MaxApertureValue).
+  optional double max_aperture_value = 27;
+  // Raw max aperture value string for fallback parsing.
+  optional string max_aperture_value_raw = 55;
+  // Brightness value at capture (exif:BrightnessValue).
+  optional double brightness_value = 28;
+  // Raw brightness value string for fallback parsing.
+  optional string brightness_value_raw = 56;
+  // Custom rendering applied (exif:CustomRendered).
+  optional string custom_rendered = 29;
+  // File source type (exif:FileSource).
+  optional string file_source = 30;
+  // Scene type for DNG format (exif:SceneType DNG).
+  optional string scene_type_dng = 31;
+  // Color filter array pattern (exif:CFAPattern).
+  optional string cfa_pattern = 32;
+  // EXIF color space (exif:ColorSpace).
+  optional string color_space_exif = 33;
+  // Component configuration (exif:ComponentsConfiguration).
+  optional string components_configuration = 34;
+  // Compressed bits per pixel (exif:CompressedBitsPerPixel).
+  optional double compressed_bits_per_pixel = 35;
+  // EXIF version identifier (exif:ExifVersion).
+  optional string exif_version = 36;
+  // FlashPix version (exif:FlashpixVersion).
+  optional string flashpix_version = 37;
+  // Interoperability index (exif:InteroperabilityIndex).
+  optional string interoperability_index = 38;
+  // Related sound file name (exif:RelatedSoundFile).
+  optional string related_sound_file = 39;
+  // Spectral sensitivity description (exif:SpectralSensitivity).
+  optional string spectral_sensitivity = 40;
+  // Opto-Electric Conversion Function (exif:OECF).
+  optional string oecf = 41;
+  // Spatial frequency response (exif:SpatialFrequencyResponse).
+  optional string spatial_frequency_response = 42;
+  // Noise reduction applied (exif:NoiseReduction).
+  optional string noise_reduction = 43;
+  // Anti-alias filter applied (exif:AntiAlias).
+  optional string anti_alias = 44;
+  // Unique image identifier (exif:ImageUniqueID).
+  optional string image_unique_id = 45;
+  // Camera owner name (exif:CameraOwnerName).
+  optional string camera_owner_name = 46;
+  // Camera body serial number (exif:BodySerialNumber).
+  optional string body_serial_number = 47;
+  // Lens specification details (exif:LensSpecification).
+  optional string lens_specification = 48;
+  // EXIF-specific lens serial number (exif:LensSerialNumber).
+  optional string lens_serial_number_exif = 49;
+}
+
+// GPS metadata from EXIF GPS information.
+message GpsMetadata {
+  // Latitude in decimal degrees (GPS:GPSLatitude).
+  optional double latitude = 1;
+  // Longitude in decimal degrees (GPS:GPSLongitude).
+  optional double longitude = 2;
+  // Altitude in meters (GPS:GPSAltitude).
+  optional double altitude = 3;
+  // Latitude reference indicator N or S (GPS:GPSLatitudeRef).
+  optional string latitude_ref = 4;
+  // Longitude reference indicator E or W (GPS:GPSLongitudeRef).
+  optional string longitude_ref = 5;
+  // Altitude reference above or below sea level (GPS:GPSAltitudeRef).
+  optional string altitude_ref = 6;
+  // GPS timestamp from date and time stamps.
+  optional google.protobuf.Timestamp timestamp = 7;
+  // Raw timestamp string for fallback parsing.
+  optional string timestamp_raw = 63;
+  // Speed of movement (GPS:GPSSpeed).
+  optional double speed = 8;
+  // Speed reference K/M/N for km/h, mph, knots (GPS:GPSSpeedRef).
+  optional string speed_ref = 9;
+  // Direction of movement (GPS:GPSTrack).
+  optional double track = 10;
+  // Track reference T/M for true/magnetic north (GPS:GPSTrackRef).
+  optional string track_ref = 11;
+  // Direction of image (GPS:GPSImgDirection).
+  optional double img_direction = 12;
+  // Image direction reference T/M (GPS:GPSImgDirectionRef).
+  optional string img_direction_ref = 13;
+  // Bearing to destination (GPS:GPSDestBearing).
+  optional double dest_bearing = 14;
+  // Destination bearing reference (GPS:GPSDestBearingRef).
+  optional string dest_bearing_ref = 15;
+  // Distance to destination (GPS:GPSDestDistance).
+  optional double dest_distance = 16;
+  // Distance reference unit (GPS:GPSDestDistanceRef).
+  optional string dest_distance_ref = 17;
+  // Geodetic survey data used (GPS:GPSMapDatum).
+  optional string map_datum = 18;
+  // GPS processing method (GPS:GPSProcessingMethod).
+  optional string processing_method = 19;
+  // Name of GPS area (GPS:GPSAreaInformation).
+  optional string area_information = 20;
+  // Destination latitude (GPS:GPSDestLatitude).
+  optional string dest_latitude = 21;
+  // Destination latitude reference (GPS:GPSDestLatitudeRef).
+  optional string dest_latitude_ref = 22;
+  // Destination longitude (GPS:GPSDestLongitude).
+  optional string dest_longitude = 23;
+  // Destination longitude reference (GPS:GPSDestLongitudeRef).
+  optional string dest_longitude_ref = 24;
+  // Dilution of precision value (GPS:GPSDOP).
+  optional double dop = 25;
+  // GPS measurement mode (GPS:GPSMeasureMode).
+  optional string measure_mode = 26;
+  // GPS version ID (GPS:GPSVersionID).
+  optional string version_id = 27;
+  // Satellites used for measurement (GPS:GPSSatellites).
+  optional string satellites = 28;
+  // GPS receiver status (GPS:GPSStatus).
+  optional string status = 29;
+  // Differential correction applied (GPS:GPSDifferential).
+  optional string differential = 30;
+}
+
+// IPTC (International Press Telecommunications Council) metadata.
+// Comprehensive coverage of IPTC Core and Extension fields.
+message IptcMetadata {
+  // Brief headline for the image (IPTC:Headline).
+  optional string headline = 1;
+  // Caption or abstract describing the image (IPTC:Caption-Abstract / dc:description).
+  optional string caption = 2;
+  // Keywords for search and categorization (IPTC:Keywords / dc:subject).
+  repeated string keywords = 3;
+  // Category classification (IPTC:Category, deprecated but still used).
+  optional string category = 4;
+  // Supplemental categories (IPTC:SupplementalCategories, deprecated).
+  repeated string supplemental_categories = 5;
+  // Intellectual genre description (IPTC:IntellectualGenre).
+  optional string intellectual_genre = 6;
+  // Scene codes as 6-digit identifiers (IPTC:Scene).
+  repeated string scene_code = 7;
+  // Subject codes as 8-digit identifiers (IPTC:SubjectCode).
+  repeated string subject_code = 8;
+  // Image title (IPTC:Title / dc:title).
+  optional string title = 9;
+  // Detailed image description (IPTC image description).
+  optional string image_description = 10;
+  // Photographer or creator name (IPTC:By-line / dc:creator).
+  optional string byline = 11;
+  // Job title of the creator (IPTC:By-lineTitle).
+  optional string byline_title = 12;
+  // Credit line or provider (IPTC:Credit).
+  optional string credit = 13;
+  // Original source of the image (IPTC:Source).
+  optional string source = 14;
+  // Copyright notice (IPTC:CopyrightNotice / dc:rights).
+  optional string copyright_notice = 15;
+  // Rights usage terms and restrictions.
+  optional string rights_usage_terms = 16;
+  // Caption writer or editor (IPTC:Writer/Editor).
+  optional string description_writer = 17;
+  // City where image was created (IPTC:City, legacy field).
+  optional string city = 18;
+  // Sublocation within city (IPTC:SubLocation, legacy field).
+  optional string sublocation = 19;
+  // Province or state (IPTC:Province-State, legacy field).
+  optional string province_state = 20;
+  // Country name (IPTC:Country-PrimaryLocationName, legacy field).
+  optional string country_name = 21;
+  // ISO country code (IPTC:Country-PrimaryLocationCode, legacy field).
+  optional string country_code = 22;
+  // Date the content was created (IPTC:DateCreated).
+  optional google.protobuf.Timestamp date_created = 23;
+  // Earliest date for publication (IPTC:ReleaseDate).
+  optional google.protobuf.Timestamp release_date = 24;
+  // Date after which content should not be used (IPTC:ExpirationDate).
+  optional google.protobuf.Timestamp expiration_date = 25;
+  // Special editing or usage instructions (IPTC:SpecialInstructions).
+  optional string special_instructions = 26;
+  // Advised action for this image (IPTC:ActionAdvised).
+  optional string action_advised = 27;
+  // Reference service identifier (IPTC:ReferenceService).
+  optional string reference_service = 28;
+  // Reference date for related content (IPTC:ReferenceDate).
+  optional string reference_date = 29;
+  // Reference number for related content (IPTC:ReferenceNumber).
+  optional string reference_number = 30;
+  // Job or transmission reference ID (IPTC:JobID).
+  optional string job_id = 31;
+  // Editorial urgency level (IPTC:Urgency, deprecated).
+  optional string urgency = 32;
+  // Program used to originate the image (IPTC:OriginatingProgram).
+  optional string originating_program = 33;
+  // Version of the originating program (IPTC:ProgramVersion).
+  optional string program_version = 34;
+  // Object cycle a/p/b for morning/evening/both (IPTC:ObjectCycle).
+  optional string object_cycle = 35;
+  // Contact information for the image provider.
+  ContactInfo contact_info = 36;
+  // Additional information about models in the image.
+  optional string additional_model_info = 37;
+  // Ages of models in the image.
+  repeated string model_age = 38;
+  // Names of persons shown in the image.
+  repeated string person_in_image = 39;
+  // Names of organizations shown in the image.
+  repeated string organisation_name = 40;
+  // Organization identifier codes.
+  repeated string organisation_code = 41;
+  // Name of the event shown in the image.
+  optional string event = 42;
+  // Controlled vocabulary terms for categorization.
+  repeated string controlled_vocabulary_term = 43;
+  // Globally unique identifier for the image (GUID).
+  optional string digital_image_guid = 44;
+  // Digital source type classification.
+  optional string digital_source_type = 45;
+  // Maximum available width in pixels.
+  optional int32 max_avail_width = 46;
+  // Maximum available height in pixels.
+  optional int32 max_avail_height = 47;
+  // Location where the image content was created.
+  LocationInfo location_created = 48;
+  // Locations shown in the image content.
+  repeated LocationInfo location_shown = 49;
+  // Information about artwork or objects in the image.
+  repeated ArtworkInfo artwork_or_object = 50;
+  // Registry entries for the image.
+  repeated RegistryInfo registry_entry = 51;
+  // PLUS licensing information.
+  PlusLicensingInfo plus_licensing = 52;
+  // Timestamp when IPTC metadata was last edited.
+  optional google.protobuf.Timestamp iptc_last_edited = 53;
+}
+
+// Contact information structure for IPTC.
+message ContactInfo {
+  // Multi-line street address.
+  repeated string address = 1;
+  // City name.
+  optional string city = 2;
+  // Country name.
+  optional string country = 3;
+  // Email addresses.
+  repeated string email = 4;
+  // Phone numbers.
+  repeated string phone = 5;
+  // Postal or ZIP code.
+  optional string postal_code = 6;
+  // State or province name.
+  optional string state_province = 7;
+  // Website URLs.
+  repeated string web_url = 8;
+}
+
+// Location information with precise semantics.
+message LocationInfo {
+  // World region at top level of hierarchy.
+  optional string world_region = 1;
+  // Full country name.
+  optional string country_name = 2;
+  // ISO country code.
+  optional string country_code = 3;
+  // Province or state name.
+  optional string province_state = 4;
+  // City name.
+  optional string city = 5;
+  // Specific sublocation within city.
+  optional string sublocation = 6;
+  // GPS latitude in decimal degrees.
+  optional double latitude = 7;
+  // GPS longitude in decimal degrees.
+  optional double longitude = 8;
+}
+
+// Artwork or object information.
+message ArtworkInfo {
+  // Title of the artwork or object.
+  optional string title = 1;
+  // Artist or creator name.
+  optional string creator = 2;
+  // Date when artwork was created.
+  optional google.protobuf.Timestamp date_created = 3;
+  // Copyright notice for the artwork.
+  optional string copyright_notice = 4;
+  // Holding organization or institution.
+  optional string source = 5;
+  // Inventory or accession number.
+  optional string source_inventory_number = 6;
+}
+
+// Registry information.
+message RegistryInfo {
+  // Registry item identifier.
+  optional string item_id = 1;
+  // Registry organization identifier.
+  optional string organisation_id = 2;
+}
+
+// PLUS licensing information.
+message PlusLicensingInfo {
+  // PLUS version number.
+  optional string version = 1;
+  // Copyright owner identifiers.
+  repeated string copyright_owner = 2;
+  // Copyright owner IDs.
+  repeated string copyright_owner_id = 3;
+  // Copyright owner names.
+  repeated string copyright_owner_name = 4;
+  // Image creator identifiers.
+  repeated string image_creator = 5;
+  // Image creator IDs.
+  repeated string image_creator_id = 6;
+  // Image creator names.
+  repeated string image_creator_name = 7;
+  // Image supplier identifier.
+  optional string image_supplier = 8;
+  // Image supplier ID.
+  optional string image_supplier_id = 9;
+  // Image supplier name.
+  optional string image_supplier_name = 10;
+  // Supplier's image identifier.
+  optional string image_supplier_image_id = 11;
+  // Licensor contact information.
+  repeated LicensorInfo licensor = 12;
+  // Model release status.
+  optional string model_release_status = 13;
+  // Model release identifiers.
+  repeated string model_release_id = 14;
+  // Property release status.
+  optional string property_release_status = 15;
+  // Property release identifiers.
+  repeated string property_release_id = 16;
+  // Minor model age disclosure.
+  optional string minor_model_age_disclosure = 17;
+}
+
+// Licensor contact information.
+message LicensorInfo {
+  // Licensor identifier.
+  optional string licensor = 1;
+  // Licensor ID number.
+  optional string licensor_id = 2;
+  // Licensor full name.
+  optional string licensor_name = 3;
+  // Licensor city.
+  optional string city = 4;
+  // Licensor country.
+  optional string country = 5;
+  // Licensor email address.
+  optional string email = 6;
+  // Extended address details.
+  optional string extended_address = 7;
+  // Postal or ZIP code.
+  optional string postal_code = 8;
+  // Region or state.
+  optional string region = 9;
+  // Street address.
+  optional string street_address = 10;
+  // Primary telephone number.
+  optional string telephone_1 = 11;
+  // Secondary telephone number.
+  optional string telephone_2 = 12;
+  // Website URL.
+  optional string url = 13;
+}

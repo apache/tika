@@ -1,0 +1,348 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "WarcMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Comprehensive WARC (Web ARChive) metadata as extracted by Tika from WARC and ARC files.
+// Based on Tika's WARC interface, WARCParser implementation, and WARC/ARC specifications.
+// This is a 1:1 mapping to all fields that Tika can extract from web archive files.
+// WARC files are the standard format for web archiving, containing:
+// - Web pages and their resources
+// - HTTP request/response pairs
+// - Metadata about the crawl process
+// - Relationships between archived resources
+// Critical for digital preservation and web content analysis.
+message WarcMetadata {
+  // === WARC Interface Properties (from WARC.java) ===
+
+  // WARC warnings encountered during parsing
+  // Multiple warnings can be present
+  // WARC.WARC_WARNING
+  repeated string warc_warnings = 1;
+
+  // Content type of the WARC record itself
+  // e.g., "application/http; msgtype=response"
+  // WARC.WARC_RECORD_CONTENT_TYPE
+  optional string warc_record_content_type = 2;
+
+  // Content type of the payload within the WARC record
+  // e.g., "text/html", "image/jpeg"
+  // WARC.WARC_PAYLOAD_CONTENT_TYPE
+  optional string warc_payload_content_type = 3;
+
+  // Unique identifier for this WARC record
+  // Format: <urn:uuid:...> or similar URI
+  // WARC.WARC_RECORD_ID
+  optional string warc_record_id = 4;
+
+  // === Core WARC Headers (Standard WARC Fields) ===
+
+  // Type of WARC record (response, request, metadata, resource, etc.)
+  // WARC-Type header
+  optional string warc_type = 5;
+
+  // Target URI that was archived
+  // The original URL of the web resource
+  // WARC-Target-URI
+  optional string warc_target_uri = 6;
+
+  // Date and time when the resource was captured
+  // WARC-Date
+  optional google.protobuf.Timestamp warc_date = 7;
+
+  // Length of the record payload in bytes
+  // Content-Length
+  optional int64 warc_content_length = 8;
+
+  // WARC filename where this record is stored
+  // WARC-Filename
+  optional string warc_filename = 9;
+
+  // WARC record ID that this record refers to
+  // Used for linking related records
+  // WARC-Refers-To
+  optional string warc_refers_to = 10;
+
+  // WARC record ID that this record is concurrent with
+  // WARC-Concurrent-To
+  optional string warc_concurrent_to = 11;
+
+  // WARC record ID of the warcinfo record for this crawl
+  // WARC-Warcinfo-ID
+  optional string warc_warcinfo_id = 12;
+
+  // IP address of the server that provided this resource
+  // WARC-IP-Address
+  optional string warc_ip_address = 13;
+
+  // Block digest (hash) of the payload
+  // WARC-Block-Digest
+  optional string warc_block_digest = 14;
+
+  // Payload digest (hash) of the actual content
+  // WARC-Payload-Digest
+  optional string warc_payload_digest = 15;
+
+  // Truncation reason if record was truncated
+  // WARC-Truncated
+  optional string warc_truncated = 16;
+
+  // Identified payload type (may differ from Content-Type)
+  // WARC-Identified-Payload-Type
+  optional string warc_identified_payload_type = 17;
+
+  // === HTTP Response Metadata (for HTTP response records) ===
+
+  // HTTP status code (200, 404, 500, etc.)
+  // HTTP status
+  optional int32 http_status_code = 18;
+
+  // HTTP status reason phrase ("OK", "Not Found", etc.)
+  // HTTP reason phrase
+  optional string http_status_reason = 19;
+
+  // HTTP response headers
+  repeated WarcHttpHeader http_headers = 20;
+
+  // === Crawl and Archive Metadata ===
+
+  // Software/crawler that created this WARC file
+  // Software info
+  optional string warc_created_by = 21;
+
+  // Version of the WARC format specification used
+  // WARC format version
+  optional string warc_format_version = 22;
+
+  // Crawl or collection identifier
+  // Collection name
+  optional string warc_collection = 23;
+
+  // Crawl job or session identifier
+  // Crawl identifier
+  optional string warc_crawl_id = 24;
+
+  // Robot policy information (robots.txt compliance)
+  // Robot policy
+  optional string warc_robot_policy = 25;
+
+  // Fetch timestamp (may differ from WARC-Date)
+  optional google.protobuf.Timestamp fetch_timestamp = 26;
+
+  // === Content Analysis ===
+
+  // Detected language of the content
+  optional string content_language = 27;
+
+  // Character encoding of the content
+  optional string content_encoding = 28;
+
+  // Estimated word count of textual content
+  optional int64 estimated_word_count = 29;
+
+  // Estimated character count of textual content
+  optional int64 estimated_character_count = 30;
+
+  // Whether the content appears to be truncated
+  optional bool is_truncated = 31;
+
+  // Compression method used (if any)
+  optional string compression_method = 32;
+
+  // === Web-Specific Metadata ===
+
+  // HTTP method used for the request (GET, POST, etc.)
+  optional string http_method = 33;
+
+  // HTTP version (1.0, 1.1, 2.0)
+  optional string http_version = 34;
+
+  // Redirect chain information
+  repeated WarcRedirect redirect_chain = 35;
+
+  // Cookies associated with this request/response
+  repeated WarcCookie cookies = 36;
+
+  // Referrer URL (if available)
+  optional string referrer_url = 37;
+
+  // User agent string used for the request
+  optional string user_agent = 38;
+
+  // === Archive Processing Metadata ===
+
+  // Position of this record within the WARC file
+  optional int64 record_position = 39;
+
+  // Size of the complete WARC record (headers + payload)
+  optional int64 record_size = 40;
+
+  // Number of records in the WARC file
+  optional int32 total_records_in_file = 41;
+
+  // Index of this record within the file (0-based)
+  optional int32 record_index = 42;
+
+  // Whether this record has associated metadata records
+  optional bool has_metadata_records = 43;
+
+  // Whether this record has associated request records
+  optional bool has_request_records = 44;
+
+  // === Quality and Validation ===
+
+  // Validation errors found in the WARC record
+  repeated string validation_errors = 45;
+
+  // Validation warnings found in the WARC record
+  repeated string validation_warnings = 46;
+
+  // Completeness score (0.0 to 1.0) indicating how complete the capture is
+  optional double completeness_score = 47;
+
+  // Whether the content matches expected checksums
+  optional bool checksum_verified = 48;
+
+  // === Preservation Metadata ===
+
+  // Institution or organization that created the archive
+  optional string archive_institution = 49;
+
+  // Archive collection or series name
+  optional string archive_collection_name = 50;
+
+  // Access restrictions or rights information
+  optional string access_rights = 51;
+
+  // Preservation actions taken on this record
+  repeated string preservation_actions = 52;
+
+  // Migration history if the record has been migrated
+  repeated WarcMigration migration_history = 53;
+
+  // === Technical Metadata ===
+
+  // MIME type as detected by content analysis
+  optional string detected_mime_type = 54;
+
+  // File format version (if applicable)
+  optional string format_version = 55;
+
+  // Technical properties specific to the content type
+  repeated WarcTechnicalProperty technical_properties = 56;
+
+  // Embedded resources found within this record
+  repeated WarcEmbeddedResource embedded_resources = 57;
+
+  // === Catch-all for unmapped WARC-specific metadata ===
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Represents an HTTP header from the archived HTTP response
+message WarcHttpHeader {
+  // Header name (e.g., "Content-Type", "Set-Cookie")
+  string name = 1;
+
+  // Header value
+  string value = 2;
+
+  // Whether this header was modified during archiving
+  optional bool modified_during_archiving = 3;
+}
+
+// Represents a redirect in the HTTP redirect chain
+message WarcRedirect {
+  // Source URL (where the redirect originated)
+  string from_url = 1;
+
+  // Target URL (where the redirect points to)
+  string to_url = 2;
+
+  // HTTP status code for this redirect (301, 302, etc.)
+  int32 status_code = 3;
+
+  // Timestamp of this redirect
+  optional google.protobuf.Timestamp redirect_timestamp = 4;
+}
+
+// Represents a cookie associated with the archived request/response
+message WarcCookie {
+  // Cookie name
+  string name = 1;
+
+  // Cookie value
+  string value = 2;
+
+  // Cookie domain
+  optional string domain = 3;
+
+  // Cookie path
+  optional string path = 4;
+
+  // Cookie expiration time
+  optional google.protobuf.Timestamp expires = 5;
+
+  // Whether the cookie is secure
+  optional bool secure = 6;
+
+  // Whether the cookie is HTTP-only
+  optional bool http_only = 7;
+}
+
+// Represents a migration event in the archive's history
+message WarcMigration {
+  // Date of the migration
+  google.protobuf.Timestamp migration_date = 1;
+
+  // Source format before migration
+  string from_format = 2;
+
+  // Target format after migration
+  string to_format = 3;
+
+  // Migration tool or process used
+  optional string migration_tool = 4;
+
+  // Migration notes or comments
+  optional string migration_notes = 5;
+}
+
+// Represents a technical property of the archived content
+message WarcTechnicalProperty {
+  // Property name
+  string name = 1;
+
+  // Property value
+  string value = 2;
+
+  // Property category or namespace
+  optional string category = 3;
+}
+
+// Represents an embedded resource found within the archived content
+message WarcEmbeddedResource {
+  // URL or identifier of the embedded resource
+  string url = 1;
+
+  // MIME type of the embedded resource
+  optional string mime_type = 2;
+
+  // Size of the embedded resource in bytes
+  optional int64 size = 3;
+
+  // Whether the embedded resource was also archived
+  optional bool archived = 4;
+
+  // WARC record ID of the archived embedded resource (if available)
+  optional string warc_record_id = 5;
+}

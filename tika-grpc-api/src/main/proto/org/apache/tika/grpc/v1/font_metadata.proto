@@ -1,0 +1,255 @@
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "org/apache/tika/grpc/v1/base_fields.proto";
+import "google/protobuf/struct.proto";
+
+option java_multiple_files = true;
+option java_outer_classname = "FontMetadataProto";
+option java_package = "org.apache.tika.grpc.v1";
+
+// Font metadata extracted from font files (TTF, AFM, etc.)
+// Based on Tika's Font.java interface, AdobeFontMetricParser, and TrueTypeParser
+message FontMetadata {
+  // === CORE FONT IDENTIFICATION ===
+
+  // Basic font name - from Font.FONT_NAME interface
+  optional string font_name = 1;
+
+  // Full font name - from NameRecord.NAME_FULL_FONT_NAME
+  string font_full_name = 2;
+
+  // Font family name - from NameRecord.NAME_FONT_FAMILY_NAME
+  string font_family_name = 3;
+
+  // Font subfamily name (e.g., "Bold", "Italic") - from NameRecord.NAME_FONT_SUB_FAMILY_NAME
+  string font_sub_family_name = 4;
+
+  // PostScript name - from NameRecord.NAME_POSTSCRIPT_NAME
+  string postscript_name = 5;
+
+  // === FONT TECHNICAL PROPERTIES ===
+
+  // Font version information
+  string font_version = 6;
+
+  // Document/AFM version - from FontMetrics.getAFMVersion()
+  string doc_version = 7;
+
+  // Font weight (e.g., "Medium", "Bold") - from FontMetrics.getWeight()
+  string font_weight = 8;
+
+  // Average character width - from FontMetrics.getAverageCharacterWidth()
+  float average_character_width = 9;
+
+  // Font underline thickness - from FontMetrics.getUnderlineThickness()
+  float font_underline_thickness = 10;
+
+  // === LEGAL AND COPYRIGHT INFORMATION ===
+
+  // Copyright notice - from NameRecord.NAME_COPYRIGHT
+  string copyright = 11;
+
+  // Trademark information - from NameRecord.NAME_TRADEMARK
+  string trademark = 12;
+
+  // Font notice - from FontMetrics.getNotice()
+  string font_notice = 13;
+
+  // === FONT TECHNICAL DETAILS ===
+
+  // Font format type (TTF, AFM, etc.)
+  string font_format = 14;
+
+  // Font encoding information
+  string font_encoding = 15;
+
+  // Character set supported by font
+  string character_set = 16;
+
+  // Font style flags (bold, italic, etc.)
+  repeated string style_flags = 17;
+
+  // === FONT METRICS AND DIMENSIONS ===
+
+  // Font bounding box coordinates
+  FontBoundingBox bounding_box = 18;
+
+  // Font baseline information
+  FontBaseline baseline_info = 19;
+
+  // Font spacing information
+  FontSpacing spacing_info = 20;
+
+  // === FONT RENDERING PROPERTIES ===
+
+  // Font hinting information
+  string hinting_info = 21;
+
+  // Anti-aliasing properties
+  string antialiasing_info = 22;
+
+  // Font smoothing settings
+  string smoothing_settings = 23;
+
+  // === FONT LANGUAGE AND LOCALE ===
+
+  // Supported languages
+  repeated string supported_languages = 24;
+
+  // Font locale information
+  string font_locale = 25;
+
+  // Writing direction (LTR, RTL, etc.)
+  string writing_direction = 26;
+
+  // === FONT DESIGNER AND CREATION INFO ===
+
+  // Font designer/creator
+  string font_designer = 27;
+
+  // Font foundry/manufacturer
+  string font_foundry = 28;
+
+  // Font creation date - from TikaCoreProperties.CREATED
+  string creation_date = 29;
+
+  // Font modification date - from TikaCoreProperties.MODIFIED
+  string modification_date = 30;
+
+  // === FONT LICENSING AND USAGE ===
+
+  // Font license information
+  string license_info = 31;
+
+  // Usage restrictions
+  string usage_restrictions = 32;
+
+  // Embedding permissions
+  string embedding_permissions = 33;
+
+  // === FONT TECHNICAL SPECIFICATIONS ===
+
+  // Number of glyphs in font
+  int32 glyph_count = 34;
+
+  // Font units per em
+  int32 units_per_em = 35;
+
+  // Font ascender value
+  int32 ascender = 36;
+
+  // Font descender value
+  int32 descender = 37;
+
+  // Font line gap
+  int32 line_gap = 38;
+
+  // === FONT QUALITY AND OPTIMIZATION ===
+
+  // Font optimization level
+  string optimization_level = 39;
+
+  // Compression information
+  string compression_info = 40;
+
+  // Font quality metrics
+  FontQualityMetrics quality_metrics = 41;
+
+  // === FONT COMPATIBILITY ===
+
+  // Compatible operating systems
+  repeated string compatible_os = 42;
+
+  // Compatible applications
+  repeated string compatible_applications = 43;
+
+  // Font format version
+  string format_version = 44;
+
+  // === FONT FEATURES AND CAPABILITIES ===
+
+  // OpenType features supported
+  repeated string opentype_features = 45;
+
+  // Font capabilities
+  repeated string font_capabilities = 46;
+
+  // Special character support
+  repeated string special_characters = 47;
+
+  // === FONT METADATA AND COMMENTS ===
+
+  // Font description
+  string font_description = 48;
+
+  // Font comments - from AFM file comments
+  repeated string comments = 49;
+
+  // Font keywords/tags
+  repeated string keywords = 50;
+
+  // === FONT FILE INFORMATION ===
+
+  // Original filename
+  optional string original_filename = 51;
+
+  // Font file size
+  int64 file_size = 52;
+
+  // Font file checksum
+  string file_checksum = 53;
+
+  // Font MIME type
+  string mime_type = 54;
+
+  // === FONT RENDERING CONTEXT ===
+
+  // Default point size
+  float default_point_size = 55;
+
+  // Recommended line spacing
+  float recommended_line_spacing = 56;
+
+  // Font display name
+  string display_name = 57;
+
+  // Font menu name
+  string menu_name = 58;
+
+  // === EXTENSIBILITY ===
+
+  // Catch-all for unknown or future font metadata fields
+  google.protobuf.Struct additional_metadata = 200;
+
+  // Base Tika fields common to all document types
+  BaseFields base_fields = 201;
+}
+
+// Supporting message types for complex font properties
+
+message FontBoundingBox {
+  float min_x = 1;
+  float min_y = 2;
+  float max_x = 3;
+  float max_y = 4;
+}
+
+message FontBaseline {
+  float baseline_position = 1;
+  float cap_height = 2;
+  float x_height = 3;
+}
+
+message FontSpacing {
+  float letter_spacing = 1;
+  float word_spacing = 2;
+  float line_spacing = 3;
+}
+
+message FontQualityMetrics {
+  float readability_score = 1;
+  float rendering_quality = 2;
+  float optimization_score = 3;
+}
