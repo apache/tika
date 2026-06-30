@@ -202,6 +202,15 @@ class EmitHandler {
             return true;
         }
 
+        // CONTENT_ONLY mode must always emit from the server side so the
+        // StreamEmitter.emit(key, InputStream) path in emitContentOnly() is
+        // used.  If the result is returned as a DYNAMIC passback, the parent's
+        // AsyncEmitter calls emitter.emit(List<EmitData>) which serialises the
+        // metadata list as JSON — defeating the whole point of content-only output.
+        if (parseMode == ParseMode.CONTENT_ONLY) {
+            return strategy != EmitStrategy.PASSBACK_ALL;
+        }
+
         if (strategy == EmitStrategy.EMIT_ALL) {
             return true;
         } else if (strategy == EmitStrategy.PASSBACK_ALL) {
