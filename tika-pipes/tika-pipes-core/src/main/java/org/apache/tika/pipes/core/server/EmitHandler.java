@@ -83,7 +83,15 @@ class EmitHandler {
             }
             EmitDataImpl emitDataTuple = new EmitDataImpl(t.getEmitKey().getEmitKey(), parseData.getMetadataList(), stack);
             ParseMode parseMode = parseContext.get(ParseMode.class);
-            if (shouldEmit(parseMode, parseData, emitDataTuple, parseContext)) {
+            String emitterId = emitKey.getEmitterId();
+            // For CONTENT_ONLY mode: force direct emission only when a real emitter is configured,
+            // so the content is emitted as a raw byte stream via emitContentOnly() instead of
+            // being returned as passback JSON to the parent AsyncEmitter.
+            boolean forceEmit = parseMode == ParseMode.CONTENT_ONLY
+                    && emitterId != null
+                    && emitterManager.getSupported().contains(emitterId);
+            boolean willEmit = forceEmit || shouldEmit(parseMode, parseData, emitDataTuple, parseContext);
+            if (willEmit) {
                 return emit(t.getId(), emitKey, parseMode == ParseMode.UNPACK,
                         parseData, stack, parseContext);
             } else {
@@ -200,15 +208,6 @@ class EmitHandler {
                 return false;
             }
             return true;
-        }
-
-        // CONTENT_ONLY mode must always emit from the server side so the
-        // StreamEmitter.emit(key, InputStream) path in emitContentOnly() is
-        // used.  If the result is returned as a DYNAMIC passback, the parent's
-        // AsyncEmitter calls emitter.emit(List<EmitData>) which serialises the
-        // metadata list as JSON — defeating the whole point of content-only output.
-        if (parseMode == ParseMode.CONTENT_ONLY) {
-            return strategy != EmitStrategy.PASSBACK_ALL;
         }
 
         if (strategy == EmitStrategy.EMIT_ALL) {
