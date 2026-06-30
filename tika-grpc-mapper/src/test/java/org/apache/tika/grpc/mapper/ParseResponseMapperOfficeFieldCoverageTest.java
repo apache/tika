@@ -62,8 +62,8 @@ class ParseResponseMapperOfficeFieldCoverageTest extends ParseFixtureSupport {
                     for (Map.Entry<FieldDescriptor, Object> entry : office.getAllFields().entrySet()) {
                         fieldCounts.merge(entry.getKey().getName(), 1, Integer::sum);
                     }
-                    if (office.hasAdditionalMetadata() && office.getAdditionalMetadata().getFieldsCount() > 0) {
-                        fieldCounts.merge("_additional_metadata_non_empty", 1, Integer::sum);
+                    if (response.getMetadataCount() > 0) {
+                        fieldCounts.merge("_metadata_mirror_entries", response.getMetadataCount(), Integer::sum);
                     }
                 }
             } catch (Exception e) {

@@ -17,19 +17,21 @@
 package org.apache.tika.grpc.mapper.builders;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
-import com.google.protobuf.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.grpc.v1.BaseFields;
+import org.apache.tika.grpc.v1.MetadataEntry;
+import org.apache.tika.grpc.v1.StringList;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 
@@ -38,7 +40,7 @@ import org.apache.tika.metadata.Property;
  * 
  * Provides common functionality for all metadata builders including:
  * - Type conversion utilities
- * - Struct building for unmapped metadata
+ * - The full typed metadata mirror ({@link #buildMetadataEntries})
  * - Base fields population
  * - Safe field extraction with logging
  */
@@ -423,56 +425,6 @@ public class MetadataUtils {
     }
     
     /**
-     * Builds a Struct containing all unmapped metadata fields.
-     * 
-     * @param metadata Tika metadata object
-     * @param mappedFields Set of fields that were already mapped to strongly-typed fields
-     * @return Struct containing unmapped metadata as key-value pairs
-     */
-    public static Struct buildAdditionalMetadata(Metadata metadata, Set<String> mappedFields) {
-        Struct.Builder structBuilder = Struct.newBuilder();
-        
-        String[] allFields = metadata.names();
-        int unmappedCount = 0;
-        
-        for (String field : allFields) {
-            if (!mappedFields.contains(field)) {
-                String[] values = metadata.getValues(field);
-                if (values != null && values.length > 0) {
-                    if (values.length == 1) {
-                        // Single value
-                        String value = values[0];
-                        if (value != null && !value.trim().isEmpty()) {
-                            structBuilder.putFields(field, Value.newBuilder().setStringValue(value.trim()).build());
-                            unmappedCount++;
-                        }
-                    } else {
-                        // Multiple values - create a list
-                        Value.Builder listBuilder = Value.newBuilder();
-                        com.google.protobuf.ListValue.Builder listValueBuilder = com.google.protobuf.ListValue.newBuilder();
-                        
-                        for (String value : values) {
-                            if (value != null && !value.trim().isEmpty()) {
-                                listValueBuilder.addValues(Value.newBuilder().setStringValue(value.trim()).build());
-                            }
-                        }
-                        
-                        if (listValueBuilder.getValuesCount() > 0) {
-                            listBuilder.setListValue(listValueBuilder.build());
-                            structBuilder.putFields(field, listBuilder.build());
-                            unmappedCount++;
-                        }
-                    }
-                }
-            }
-        }
-        
-        LOG.debug("Built additional metadata struct with { } unmapped fields out of { } total fields", unmappedCount, allFields.length);
-        
-        return structBuilder.build();
-    }
-    
-    /**
      * Builds BaseFields with common parsing metadata.
      * 
      * @param parserClass Tika parser class name
@@ -483,32 +435,6 @@ public class MetadataUtils {
     public static BaseFields buildBaseFields(String parserClass, String tikaVersion, Metadata metadata) {
         BaseFields.Builder builder = BaseFields.newBuilder();
         
-        // Build raw metadata struct (all fields)
-        Struct.Builder rawMetadataBuilder = Struct.newBuilder();
-        String[] allFields = metadata.names();
-        
-        for (String field : allFields) {
-            String[] values = metadata.getValues(field);
-            if (values != null && values.length > 0) {
-                if (values.length == 1) {
-                    String value = values[0];
-                    if (value != null) {
-                        rawMetadataBuilder.putFields(field, Value.newBuilder().setStringValue(value).build());
-                    }
-                } else {
-                    // Multiple values
-                    com.google.protobuf.ListValue.Builder listBuilder = com.google.protobuf.ListValue.newBuilder();
-                    for (String value : values) {
-                        if (value != null) {
-                            listBuilder.addValues(Value.newBuilder().setStringValue(value).build());
-                        }
-                    }
-                    rawMetadataBuilder.putFields(field, Value.newBuilder().setListValue(listBuilder.build()).build());
-                }
-            }
-        }
-        
-        builder.setRawMetadata(rawMetadataBuilder.build());
         
         // Set parser information
         if (parserClass != null && !parserClass.isEmpty()) {
@@ -532,7 +458,7 @@ public class MetadataUtils {
             }
         }
         
-        LOG.debug("Built base fields with { } raw metadata fields, parser: { }, version: { }", allFields.length, parserClass, tikaVersion);
+        LOG.debug("Built base fields, parser: {}, version: {}", parserClass, tikaVersion);
         
         return builder.build();
     }
@@ -592,5 +518,197 @@ public class MetadataUtils {
             LOG.debug("Failed to decode raw-bytes from metadata", e);
             return null;
         }
+    }
+
+    /**
+     * Builds typed metadata entries for every Tika key. Registered {@link Property} definitions
+     * drive coercion into {@code integer}, {@code number}, {@code boolean}, or {@code date};
+     * unregistered keys attempt the same parsing before falling back to {@code text}.
+     * Multivalue keys always use {@code text_list}.
+     *
+     * @param metadata Tika metadata object
+     * @return one {@link MetadataEntry} per non-empty Tika key
+     */
+    public static List<MetadataEntry> buildMetadataEntries(Metadata metadata) {
+        List<MetadataEntry> entries = new ArrayList<>();
+        if (metadata == null) {
+            return entries;
+        }
+        for (String field : metadata.names()) {
+            String[] values = metadata.getValues(field);
+            if (values == null || values.length == 0) {
+                continue;
+            }
+            MetadataEntry.Builder entryBuilder = MetadataEntry.newBuilder().setKey(field);
+            Property property = Property.get(field);
+            if (values.length == 1) {
+                coerceSingleMetadataValue(entryBuilder, metadata, field, values[0], property);
+            } else {
+                StringList.Builder listBuilder = StringList.newBuilder();
+                for (String value : values) {
+                    if (value != null && !value.trim().isEmpty()) {
+                        listBuilder.addValues(value.trim());
+                    }
+                }
+                if (listBuilder.getValuesCount() > 0) {
+                    entryBuilder.setTextList(listBuilder.build());
+                }
+            }
+            if (hasMetadataEntryValue(entryBuilder)) {
+                entries.add(entryBuilder.build());
+            }
+        }
+        return entries;
+    }
+
+    private static boolean hasMetadataEntryValue(MetadataEntry.Builder entryBuilder) {
+        return entryBuilder.hasText()
+                || entryBuilder.hasTextList()
+                || entryBuilder.hasInteger()
+                || entryBuilder.hasNumber()
+                || entryBuilder.hasBoolean()
+                || entryBuilder.hasDate();
+    }
+
+    private static void coerceSingleMetadataValue(
+            MetadataEntry.Builder entryBuilder,
+            Metadata metadata,
+            String field,
+            String rawValue,
+            Property property) {
+        if (rawValue == null || rawValue.trim().isEmpty()) {
+            return;
+        }
+        String trimmed = rawValue.trim();
+        if (property != null && applyRegisteredPropertyValue(entryBuilder, metadata, property, trimmed)) {
+            return;
+        }
+        if (applyHeuristicTypedValue(entryBuilder, trimmed)) {
+            return;
+        }
+        entryBuilder.setText(trimmed);
+    }
+
+    private static boolean applyRegisteredPropertyValue(
+            MetadataEntry.Builder entryBuilder,
+            Metadata metadata,
+            Property property,
+            String trimmed) {
+        Property primary = property.getPrimaryProperty();
+        return switch (primary.getValueType()) {
+            case INTEGER -> applyIntegerValue(entryBuilder, metadata, primary, trimmed);
+            case REAL, RATIONAL -> applyNumberValue(entryBuilder, trimmed);
+            case BOOLEAN -> {
+                entryBuilder.setBoolean(parseBooleanLoose(trimmed));
+                yield true;
+            }
+            case DATE -> applyDateValue(entryBuilder, metadata, primary, trimmed);
+            default -> false;
+        };
+    }
+
+    private static boolean applyIntegerValue(
+            MetadataEntry.Builder entryBuilder,
+            Metadata metadata,
+            Property property,
+            String trimmed) {
+        Integer intValue = metadata.getInt(property);
+        if (intValue != null) {
+            entryBuilder.setInteger(intValue.longValue());
+            return true;
+        }
+        try {
+            entryBuilder.setInteger(Long.parseLong(trimmed));
+            return true;
+        } catch (NumberFormatException e) {
+            LOG.trace(String.format(Locale.ROOT, "Integer coercion failed for %s: %s", property.getName(), trimmed));
+            return false;
+        }
+    }
+
+    private static boolean applyNumberValue(MetadataEntry.Builder entryBuilder, String trimmed) {
+        try {
+            entryBuilder.setNumber(Double.parseDouble(trimmed));
+            return true;
+        } catch (NumberFormatException e) {
+            LOG.trace(String.format(Locale.ROOT, "Number coercion failed for value: %s", trimmed));
+            return false;
+        }
+    }
+
+    private static boolean applyDateValue(
+            MetadataEntry.Builder entryBuilder,
+            Metadata metadata,
+            Property property,
+            String trimmed) {
+        Date dateValue = metadata.getDate(property);
+        if (dateValue == null) {
+            dateValue = parseDateString(trimmed);
+        }
+        if (dateValue != null) {
+            entryBuilder.setDate(toTimestamp(dateValue));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Best-effort typing for keys that are not registered Tika properties.
+     */
+    private static boolean applyHeuristicTypedValue(MetadataEntry.Builder entryBuilder, String trimmed) {
+        String lowered = trimmed.toLowerCase(Locale.ROOT);
+        if ("true".equals(lowered) || "false".equals(lowered) || "yes".equals(lowered)
+                || "no".equals(lowered)) {
+            entryBuilder.setBoolean(parseBooleanLoose(trimmed));
+            return true;
+        }
+        if (trimmed.matches("-?\\d+")) {
+            try {
+                entryBuilder.setInteger(Long.parseLong(trimmed));
+                return true;
+            } catch (NumberFormatException ignored) {
+                return false;
+            }
+        }
+        if (trimmed.matches("-?\\d+(\\.\\d+)?([Ee][+-]?\\d+)?")) {
+            return applyNumberValue(entryBuilder, trimmed);
+        }
+        Date dateValue = parseDateString(trimmed);
+        if (dateValue != null) {
+            entryBuilder.setDate(toTimestamp(dateValue));
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean parseBooleanLoose(String value) {
+        String lowered = value.trim().toLowerCase(Locale.ROOT);
+        return "true".equals(lowered) || "yes".equals(lowered) || "1".equals(lowered);
+    }
+
+    private static Date parseDateString(String value) {
+        String trimmed = value.trim();
+        try {
+            return Date.from(Instant.parse(trimmed));
+        } catch (Exception ignored) {
+            // not ISO-8601
+        }
+        try {
+            long millis = Long.parseLong(trimmed);
+            if (trimmed.length() >= 12 || millis > 1_000_000_000_000L) {
+                return new Date(millis);
+            }
+        } catch (NumberFormatException ignored) {
+            // not epoch millis
+        }
+        return null;
+    }
+
+    private static Timestamp toTimestamp(Date date) {
+        Instant instant = date.toInstant();
+        return Timestamp.newBuilder()
+                .setSeconds(instant.getEpochSecond())
+                .setNanos(instant.getNano())
+                .build();
     }
 }

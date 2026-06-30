@@ -3,7 +3,6 @@ syntax = "proto3";
 package org.apache.tika.grpc.v1;
 
 import "org/apache/tika/grpc/v1/base_fields.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -245,11 +244,10 @@ message CreativeCommonsMetadata {
   // Rights metadata creator
   optional string rights_metadata_creator = 60;
 
-  // === Flexible Metadata Structure ===
-
-  // All unmapped rights-specific metadata as flexible key-value pairs
-  // This captures any rights metadata not covered by the strongly-typed fields above
-  google.protobuf.Struct additional_rights_metadata = 200;
+  // additional_rights_metadata (Struct catch-all) removed — unmapped rights
+  // metadata lives on ParseResponse.metadata. Number reserved to prevent reuse.
+  reserved 200;
+  reserved "additional_rights_metadata";
 
   // Base Tika fields common to all document types
   BaseFields base_fields = 201;

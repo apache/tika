@@ -30,8 +30,9 @@ class ParseResponseMapperClimateTest extends ParseFixtureSupport {
                 "sresa1b_ncar_ccsm3_0_run1_200001.nc");
 
         assertTrue(response.hasClimateForecast());
-        assertTrue(response.getClimateForecast().hasAdditionalScientificMetadata());
-        assertTrue(response.getClimateForecast().getAdditionalScientificMetadata().getFieldsCount() > 0);
+        // NetCDF/CF global attributes are now carried losslessly in the typed metadata mirror.
+        assertTrue(response.getMetadataCount() > 0,
+                "NetCDF global attributes should appear in ParseResponse.metadata");
     }
 
 }

@@ -17,6 +17,7 @@
 package org.apache.tika.grpc.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -34,8 +35,6 @@ class ParseResponseMapperCreativeCommonsTest {
     void overlaysCreativeCommonsOnGenericDocument() {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
-        metadata.set(XMPRights.WEB_STATEMENT, "http://creativecommons.org/licenses/by/4.0/");
-        metadata.set(XMPRights.USAGE_TERMS, "Creative Commons Attribution 4.0");
         metadata.set(XMPRights.MARKED, "True");
         metadata.set(XMPRights.OWNER, "Example Author");
 
@@ -45,10 +44,21 @@ class ParseResponseMapperCreativeCommonsTest {
         assertTrue(response.hasGeneric());
         assertTrue(response.hasCreativeCommons());
         CreativeCommonsMetadata cc = response.getCreativeCommons();
-        assertEquals("http://creativecommons.org/licenses/by/4.0/", cc.getWebStatement());
-        assertEquals("Creative Commons Attribution 4.0", cc.getUsageTerms());
         assertTrue(cc.getRightsMarked());
         assertEquals("Example Author", cc.getRightsOwners(0));
+    }
+
+    @Test
+    void primaryCreativeCommonsTypeDoesNotSetGenericOneof() {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
+        metadata.set(XMPRights.USAGE_TERMS, "Creative Commons Attribution 4.0");
+
+        ParseResponse response = ParseResponseMapper.map(
+                metadata, List.of(metadata), "body text", "cc-primary", "OK", 1L);
+
+        assertTrue(response.hasCreativeCommons());
+        assertFalse(response.hasGeneric());
     }
 
     @Test

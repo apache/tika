@@ -36,39 +36,73 @@ message ParseResponse {
   // Dublin Core metadata - standardized fields present in most documents
   DublinCoreMetadata dublin_core = 4;
 
-  // Document-type specific metadata (only one will be populated based on doc type)
-  oneof document_metadata {
-    OfficeMetadata office = 5;
-    PdfMetadata pdf = 7;
-    ImageMetadata image = 8;
-    EmailMetadata email = 9;
-    MediaMetadata media = 10;
-    HtmlMetadata html = 11;
-    RtfMetadata rtf = 17;
-    DatabaseMetadata database = 18;
-    FontMetadata font = 19;
-    EpubMetadata epub = 20;
-    WarcMetadata warc = 21;
-    ClimateForcastMetadata climate_forecast = 22;
-    GenericMetadata generic = 24;
-  }
+  // Tika-detected MIME type for the primary document (Metadata.CONTENT_TYPE).
+  // Canonical location; do not rely on per-format content_type duplicates.
+  optional string content_type = 6;
 
-  // Creative Commons / XMP rights metadata (outside oneof so it can coexist with format-specific metadata)
+  // Coarse document category used to route document_metadata (mirrors DocumentTypeDetector).
+  optional DocumentFormatCategory primary_format = 27;
+
+  // Document-type-specific metadata. These are NOT mutually exclusive: a single
+  // document can populate more than one (e.g. a PDF carrying embedded image/EXIF
+  // metadata, or an Office file with XMP). This mirrors Tika's data model, whose
+  // metadata routinely spans namespaces. `primary_format` names the detected
+  // primary type; today the mapper populates that one, but the contract permits
+  // any combination. Field numbers are preserved from the former `oneof` so the
+  // change is wire-compatible.
+  optional OfficeMetadata office = 5;
+  optional PdfMetadata pdf = 7;
+  optional ImageMetadata image = 8;
+  optional EmailMetadata email = 9;
+  optional MediaMetadata media = 10;
+  optional HtmlMetadata html = 11;
+  optional RtfMetadata rtf = 17;
+  optional DatabaseMetadata database = 18;
+  optional FontMetadata font = 19;
+  optional EpubMetadata epub = 20;
+  optional WarcMetadata warc = 21;
+  optional ClimateForcastMetadata climate_forecast = 22;
+  optional GenericMetadata generic = 24;
+
+  // Creative Commons / XMP rights metadata — coexists with the format-specific
+  // metadata above when XMP rights are present.
   optional CreativeCommonsMetadata creative_commons = 25;
 
-  // Additional metadata as typed entries (for less common fields)
+  // Complete Tika metadata mirror: one entry per key (multivalue via text_list).
+  // Authoritative lossless channel alongside typed document_metadata fields.
   repeated MetadataEntry metadata = 12;
 
   // Parse status and statistics
   ParseStatus status = 13;
 
-  // Raw key-value pairs for anything not captured in typed metadata
-  map<string, string> raw_properties = 14;
+  reserved 14;
+  reserved "raw_properties";
 
   // Embedded documents if found
   repeated EmbeddedDocument embedded_docs = 15;
 
   google.protobuf.Timestamp parsed_at = 16;
+}
+
+// Coarse format category for routing and clients. Values mirror
+// org.apache.tika.grpc.mapper.builders.DocumentTypeDetector.DocumentType.
+// New categories receive new numbers; do not renumber existing values.
+enum DocumentFormatCategory {
+  DOCUMENT_FORMAT_CATEGORY_UNSPECIFIED = 0;
+  DOCUMENT_FORMAT_CATEGORY_PDF = 1;
+  DOCUMENT_FORMAT_CATEGORY_OFFICE = 2;
+  DOCUMENT_FORMAT_CATEGORY_IMAGE = 3;
+  DOCUMENT_FORMAT_CATEGORY_EMAIL = 4;
+  DOCUMENT_FORMAT_CATEGORY_MEDIA = 5;
+  DOCUMENT_FORMAT_CATEGORY_HTML = 6;
+  DOCUMENT_FORMAT_CATEGORY_RTF = 7;
+  DOCUMENT_FORMAT_CATEGORY_DATABASE = 8;
+  DOCUMENT_FORMAT_CATEGORY_FONT = 9;
+  DOCUMENT_FORMAT_CATEGORY_EPUB = 10;
+  DOCUMENT_FORMAT_CATEGORY_WARC = 11;
+  DOCUMENT_FORMAT_CATEGORY_CLIMATE_FORECAST = 12;
+  DOCUMENT_FORMAT_CATEGORY_CREATIVE_COMMONS = 13;
+  DOCUMENT_FORMAT_CATEGORY_GENERIC = 14;
 }
 
 // Core content - the actual text extracted
@@ -81,7 +115,8 @@ message ParseContent {
 }
 
 // Generic metadata entry for properties not covered by the strongly-typed fields.
-// Most metadata should be in the specific typed fields above.
+// Values are coerced using Tika Property definitions when available (integer, number,
+// boolean, date); otherwise sensible parsing is attempted before falling back to text.
 message MetadataEntry {
   string key = 1;
   oneof value {

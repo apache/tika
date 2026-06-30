@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.grpc.v1.ParseResponse;
-import org.apache.tika.grpc.v1.RtfMetadata;
 
 class ParseResponseMapperRtfTest extends ParseFixtureSupport {
 
@@ -31,8 +30,8 @@ class ParseResponseMapperRtfTest extends ParseFixtureSupport {
         ParseResponse response = map(parseBody("testRTF.rtf"), "testRTF.rtf");
 
         assertTrue(response.hasRtf());
-        RtfMetadata rtf = response.getRtf();
-        assertEquals("application/rtf", rtf.getContentType());
+        assertEquals("application/rtf", response.getContentType());
+        assertTrue(response.getRtf().getContentType().isEmpty());
         assertTrue(response.getContent().getBody().contains("indexation Word"));
     }
 

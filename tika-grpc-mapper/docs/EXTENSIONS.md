@@ -37,5 +37,5 @@ expose them or when decorating in-process parse paths.
 ## Proto evolution
 
 When outline messages are added to `tika-grpc-api`, decorators will populate new fields
-on `ParseResponse` or nested format messages. Until then, overflow can use
-`MetadataEntry` or format `additional_metadata` Struct fields.
+on `ParseResponse` or nested format messages. Until then, overflow is carried by the
+`ParseResponse.metadata` mirror (`MetadataEntry`).

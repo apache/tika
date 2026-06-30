@@ -49,6 +49,7 @@ import org.apache.tika.grpc.v1.ParseResponse;
 import org.apache.tika.grpc.v1.ParseStatus;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
@@ -197,9 +198,10 @@ public class ParseResponseMapper {
         // Detect document type
         DocumentTypeDetector.DocumentType docType = DocumentTypeDetector.detect(tikaMetadata);
         LOG.debug(String.format(Locale.ROOT, "Detected document type: %s", docType));
-        
+
         // Build ParseResponse
         ParseResponse.Builder responseBuilder = ParseResponse.newBuilder();
+        responseBuilder.setPrimaryFormat(DocumentTypeDetector.toFormatCategory(docType));
         
         // Set document ID
         if (docId != null && !docId.isEmpty()) {
@@ -226,12 +228,12 @@ public class ParseResponseMapper {
         if (description != null && !description.isEmpty()) {
             contentBuilder.setDescription(description);
         }
-        String keywords = tikaMetadata.get("Keywords");
+        String keywords = buildKeywords(tikaMetadata);
         if (keywords != null && !keywords.isEmpty()) {
             contentBuilder.setKeywords(keywords);
         }
-        
-        String contentLength = tikaMetadata.get("Content-Length");
+
+        String contentLength = tikaMetadata.get(Metadata.CONTENT_LENGTH);
         if (contentLength != null && !contentLength.isEmpty()) {
             try {
                 long length = Long.parseLong(contentLength);
@@ -254,6 +256,9 @@ public class ParseResponseMapper {
 
         // Exclude Tika internal fields common to all document types
         collectTikaInternalKeys(tikaMetadata, dublinCoreKeys);
+
+        // Envelope fields (canonical MIME, etc.) — excluded from format-specific typed fields
+        collectEnvelopeFields(tikaMetadata, responseBuilder, dublinCoreKeys);
 
         // Get Tika version
         String tikaVersion = MetadataUtils.getTikaVersion();
@@ -313,7 +318,6 @@ public class ParseResponseMapper {
             case CREATIVE_COMMONS:
                 responseBuilder.setCreativeCommons(CreativeCommonsMetadataBuilder.build(
                         tikaMetadata, parserClass, tikaVersion, dublinCoreKeys));
-                responseBuilder.setGeneric(buildGenericMetadata(tikaMetadata, parserClass, tikaVersion));
                 break;
 
             case GENERIC:
@@ -324,12 +328,14 @@ public class ParseResponseMapper {
         
         // Overlay: attach Creative Commons metadata when present, regardless of primary type
         try {
-            if (DocumentTypeDetector.detect(tikaMetadata) != DocumentTypeDetector.DocumentType.CREATIVE_COMMONS) {
+            if (docType != DocumentTypeDetector.DocumentType.CREATIVE_COMMONS) {
                 if (hasXmpRights(tikaMetadata)) {
                     responseBuilder.setCreativeCommons(CreativeCommonsMetadataBuilder.build(tikaMetadata, parserClass, tikaVersion, dublinCoreKeys));
                 }
             }
         } catch (Exception ignored) { }
+
+        responseBuilder.addAllMetadata(MetadataUtils.buildMetadataEntries(tikaMetadata));
 
         ParseResponse response = responseBuilder.build();
         LOG.debug("Built comprehensive metadata response for document { } with { } total metadata fields", docId, tikaMetadata.names().length);
@@ -429,6 +435,19 @@ public class ParseResponseMapper {
     }
 
     /**
+     * Collects envelope-level fields that apply to every document type and marks their
+     * Tika keys consumed so format builders do not duplicate them.
+     */
+    private static void collectEnvelopeFields(
+            Metadata tikaMetadata, ParseResponse.Builder responseBuilder, Set<String> consumedKeys) {
+        String contentType = tikaMetadata.get(Metadata.CONTENT_TYPE);
+        if (contentType != null && !contentType.trim().isEmpty()) {
+            responseBuilder.setContentType(contentType.trim());
+            consumedKeys.add(Metadata.CONTENT_TYPE);
+        }
+    }
+
+    /**
      * Collects Tika internal processing metadata keys that are common to ALL document types.
      * These are not document metadata — they describe Tika's parsing behavior.
      * They're already captured in BaseFields.raw_metadata, so excluding them from
@@ -445,7 +464,7 @@ public class ParseResponseMapper {
                 keys.add(name);
             }
             // resourceName — the original filename passed to Tika
-            else if (name.equals("resourceName")) {
+            else if (name.equals(TikaCoreProperties.RESOURCE_NAME_KEY.getName())) {
                 keys.add(name);
             }
             // zip:detectorZipFileOpened — Tika ZIP detector internal
@@ -495,17 +514,11 @@ public class ParseResponseMapper {
      */
     private static GenericMetadata buildGenericMetadata(
             Metadata tikaMetadata, String parserClass, String tikaVersion) {
-        
-        GenericMetadata.Builder builder = 
+
+        GenericMetadata.Builder builder =
                 GenericMetadata.newBuilder();
-        
-        // Basic identification
-        String mimeType = tikaMetadata.get("Content-Type");
-        if (mimeType != null && !mimeType.trim().isEmpty()) {
-            builder.setDetectedMimeType(mimeType.trim());
-        }
-        
-        String resourceName = tikaMetadata.get("resourceName");
+
+        String resourceName = tikaMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (resourceName != null && !resourceName.trim().isEmpty()) {
             // Extract file extension
             int lastDot = resourceName.lastIndexOf('.');
@@ -518,15 +531,34 @@ public class ParseResponseMapper {
             builder.setTikaParserClass(parserClass.trim());
         }
         
-        // Put all metadata in the flexible struct
-        com.google.protobuf.Struct allMetadata = MetadataUtils.buildAdditionalMetadata(tikaMetadata, new java.util.HashSet<>());
-        builder.setAllMetadata(allMetadata);
-        
         // Build base fields
         BaseFields baseFields = 
                 MetadataUtils.buildBaseFields(parserClass, tikaVersion, tikaMetadata);
         builder.setBaseFields(baseFields);
         
         return builder.build();
+    }
+
+    /**
+     * Builds a semicolon-separated keywords string from Tika subject/keyword fields.
+     */
+    private static String buildKeywords(Metadata metadata) {
+        String[] values = metadata.getValues(Office.KEYWORDS);
+        if (values == null || values.length == 0) {
+            values = metadata.getValues(DublinCore.SUBJECT);
+        }
+        if (values == null || values.length == 0) {
+            return null;
+        }
+        StringBuilder joined = new StringBuilder();
+        for (String value : values) {
+            if (value != null && !value.trim().isEmpty()) {
+                if (joined.length() > 0) {
+                    joined.append("; ");
+                }
+                joined.append(value.trim());
+            }
+        }
+        return joined.length() > 0 ? joined.toString() : null;
     }
 }

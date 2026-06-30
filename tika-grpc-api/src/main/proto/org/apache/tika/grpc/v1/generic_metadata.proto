@@ -3,7 +3,6 @@ syntax = "proto3";
 package org.apache.tika.grpc.v1;
 
 import "org/apache/tika/grpc/v1/base_fields.proto";
-import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 option java_outer_classname = "GenericMetadataProto";
@@ -11,8 +10,8 @@ option java_package = "org.apache.tika.grpc.v1";
 
 // Generic metadata for document types that don't have specialized parsers or interfaces.
 // This handles formats like WordPerfect, QuattroPro, PST, MachineMetadata, ExternalProcess, etc.
-// The design is intentionally flexible, using google.protobuf.Struct to capture any metadata
-// that Tika can extract, while providing some basic identifying fields for common patterns.
+// It provides basic identifying fields for common patterns; the full, lossless,
+// typed metadata for any document lives on ParseResponse.metadata.
 message GenericMetadata {
   // === Basic Document Identification ===
 
@@ -24,7 +23,8 @@ message GenericMetadata {
   // e.g., "5.1", "12.0", "2003"
   optional string format_version = 2;
 
-  // MIME type as detected by Tika
+  // MIME type as detected by Tika. Prefer ParseResponse.content_type on the envelope;
+  // this field is retained for backward compatibility when reading nested generic metadata.
   optional string detected_mime_type = 3;
 
   // File extension (if available)
@@ -81,21 +81,11 @@ message GenericMetadata {
   // Any parser-specific warnings or messages
   repeated string parser_messages = 19;
 
-  // === Flexible Metadata Structure ===
-
-  // All metadata extracted by Tika as key-value pairs
-  // This is the primary extensibility mechanism - any metadata not covered
-  // by the strongly-typed fields above will be captured here
-  google.protobuf.Struct all_metadata = 20;
-
-  // Document properties (for formats that have property-based metadata)
-  google.protobuf.Struct document_properties = 21;
-
-  // Custom metadata fields (user-defined or application-specific)
-  google.protobuf.Struct custom_metadata = 22;
-
-  // Technical properties specific to the file format
-  google.protobuf.Struct technical_properties = 23;
+  // Flexible Struct catch-alls (all_metadata, document_properties, custom_metadata,
+  // technical_properties) removed — the full lossless typed metadata lives on
+  // ParseResponse.metadata. Numbers reserved to prevent reuse.
+  reserved 20, 21, 22, 23;
+  reserved "all_metadata", "document_properties", "custom_metadata", "technical_properties";
 
   // === Common Base Fields ===
 

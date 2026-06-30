@@ -31,7 +31,8 @@ class ParseResponseMapperImageGoldenTest extends ParseFixtureSupport {
 
         assertTrue(response.hasImage());
         ImageMetadata image = response.getImage();
-        assertTrue(image.hasExif() || image.hasWidth() || image.getAdditionalMetadata().getFieldsCount() > 0);
+        // Unmapped EXIF keys now land in the typed metadata mirror rather than a Struct catch-all.
+        assertTrue(image.hasExif() || image.hasWidth() || response.getMetadataCount() > 0);
     }
 
 }

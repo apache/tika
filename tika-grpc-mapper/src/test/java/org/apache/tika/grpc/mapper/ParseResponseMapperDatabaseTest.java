@@ -23,7 +23,6 @@ import java.util.List;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.grpc.v1.DatabaseMetadata;
 import org.apache.tika.grpc.v1.ParseResponse;
 
 class ParseResponseMapperDatabaseTest extends ParseFixtureSupport {
@@ -33,9 +32,9 @@ class ParseResponseMapperDatabaseTest extends ParseFixtureSupport {
         ParseResponse response = map(parseBody("testDBF.dbf"), "testDBF.dbf");
 
         assertTrue(response.hasDatabase());
-        DatabaseMetadata database = response.getDatabase();
-        assertTrue(database.hasContentType());
-        assertTrue(database.getContentType().startsWith("application/x-dbf"));
+        assertTrue(response.hasContentType());
+        assertTrue(response.getContentType().startsWith("application/x-dbf"));
+        assertTrue(response.getDatabase().getContentType().isEmpty());
     }
 
     @Test
@@ -44,8 +43,9 @@ class ParseResponseMapperDatabaseTest extends ParseFixtureSupport {
         Assumptions.assumeFalse(accessFiles.isEmpty(), "No Access fixtures on classpath");
         ParseResponse response = map(parseBody(accessFiles.get(0)), accessFiles.get(0));
         Assumptions.assumeTrue(response.hasDatabase(), "Access DB did not map (JDBC may be unavailable)");
-        assertTrue(response.getDatabase().getContentType().toLowerCase(java.util.Locale.ROOT).contains("access")
-                || response.getDatabase().getContentType().toLowerCase(java.util.Locale.ROOT).contains("mdb"));
+        assertTrue(response.hasContentType());
+        String mime = response.getContentType().toLowerCase(java.util.Locale.ROOT);
+        assertTrue(mime.contains("access") || mime.contains("mdb"));
     }
 
 }

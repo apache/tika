@@ -25,14 +25,19 @@ Parse results are returned as `org.apache.tika.grpc.v1.ParseResponse` on
 `FetchAndParseReply.parse_response`. The previous `FetchAndParseReply.fields`
 (`map<string,string>`) has been removed.
 
-The response is structured in three layers:
+The response is structured in four layers:
 
-1. **Envelope**: `parse_id`, `parsed_at`, `status`, `content` (body and title),
-   optional `embedded_docs`.
+1. **Envelope**: `parse_id`, `parsed_at`, `status`, `content_type` (Tika MIME),
+   `content` (body and title), optional `embedded_docs`. Each embedded document carries
+   its own recursive `parsed_content` (`ParseResponse`), so a parent and its children are
+   typed independently — e.g. a PDF (`primary_format = PDF`) whose embedded image is typed
+   `IMAGE` on its own `parsed_content`, rather than forcing one bucket onto the parent.
 2. **Dublin Core**: normalized `dublin_core` fields shared across formats.
-3. **Format metadata**: a typed `oneof` (`pdf`, `office`, `html`, `image`, …) chosen
-   from Tika `Content-Type`, plus optional `creative_commons` when XMP rights metadata
-   is present.
+3. **Format metadata**: independent `optional` submessages (`pdf`, `office`, `html`,
+   `image`, …) that can coexist; `primary_format` names the type detected from Tika
+   `Content-Type`. Plus optional `creative_commons` when XMP rights metadata is present.
+4. **Full metadata mirror**: `metadata` — the single lossless catch-all (typed entries
+   with multivalue `text_list`). Format messages carry no `Struct` "additional metadata".
 
 Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
 
@@ -47,6 +52,8 @@ Client migration (summary):
 | Before | After |
 |--------|-------|
 | `FetchAndParseReply.fields["content"]` | `parse_response.content.body` |
+| `FetchAndParseReply.fields["Some-Key"]` | `parse_response.metadata` (find by key; `text_list` for multivalue) |
+| `FetchAndParseReply.fields["Content-Type"]` | `parse_response.content_type` |
 | Flat string keys for PDF/Office/etc. | `parse_response.pdf`, `parse_response.office`, … |
 | Ad hoc title/author strings | `parse_response.dublin_core` and format messages |
 

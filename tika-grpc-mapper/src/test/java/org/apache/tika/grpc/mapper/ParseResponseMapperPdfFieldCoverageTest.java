@@ -53,7 +53,7 @@ class ParseResponseMapperPdfFieldCoverageTest extends ParseFixtureSupport {
         AtomicInteger docsParsed = new AtomicInteger();
         AtomicInteger pdfTypedCount = new AtomicInteger();
         AtomicInteger genericTypedCount = new AtomicInteger();
-        AtomicInteger additionalStructNonEmpty = new AtomicInteger();
+        AtomicInteger metadataMirrorTotal = new AtomicInteger();
 
         for (String fileName : pdfFiles) {
             try {
@@ -65,9 +65,7 @@ class ParseResponseMapperPdfFieldCoverageTest extends ParseFixtureSupport {
                     for (Map.Entry<FieldDescriptor, Object> entry : pdf.getAllFields().entrySet()) {
                         fieldPresenceCounts.merge(entry.getKey().getName(), 1, Integer::sum);
                     }
-                    if (pdf.hasAdditionalMetadata() && pdf.getAdditionalMetadata().getFieldsCount() > 0) {
-                        additionalStructNonEmpty.incrementAndGet();
-                    }
+                    metadataMirrorTotal.addAndGet(response.getMetadataCount());
                 } else if (response.hasGeneric()) {
                     genericTypedCount.incrementAndGet();
                 }
@@ -88,8 +86,8 @@ class ParseResponseMapperPdfFieldCoverageTest extends ParseFixtureSupport {
         }
         assertTrue(hits >= 2, "At least some common PDF fields should appear across fixtures");
 
-        LOG.info("PDF typed count: {}, generic typed count: {}, additional struct non-empty: {}",
-                pdfTypedCount.get(), genericTypedCount.get(), additionalStructNonEmpty.get());
+        LOG.info("PDF typed count: {}, generic typed count: {}, total metadata-mirror entries: {}",
+                pdfTypedCount.get(), genericTypedCount.get(), metadataMirrorTotal.get());
         fieldPresenceCounts.entrySet().stream()
                 .sorted((a, b) -> Integer.compare(b.getValue(), a.getValue()))
                 .limit(20)

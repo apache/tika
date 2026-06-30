@@ -21,7 +21,9 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.grpc.v1.DocumentFormatCategory;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Detects document type from Tika metadata to determine which metadata builder to use.
@@ -92,8 +94,8 @@ public class DocumentTypeDetector {
      * @return DocumentType enum value
      */
     public static DocumentType detect(Metadata metadata) {
-        String mimeType = metadata.get("Content-Type");
-        String resourceName = metadata.get("resourceName");
+        String mimeType = metadata.get(Metadata.CONTENT_TYPE);
+        String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         
         LOG.debug(String.format(Locale.ROOT, "Detecting document type from MIME type: %s, resource name: %s", mimeType, resourceName));
         
@@ -287,6 +289,28 @@ public class DocumentTypeDetector {
         // Default to generic
         LOG.debug("Using Generic document type (fallback)");
         return DocumentType.GENERIC;
+    }
+
+    /**
+     * Maps the detector result to the wire {@link DocumentFormatCategory} enum.
+     */
+    public static DocumentFormatCategory toFormatCategory(DocumentType documentType) {
+        return switch (documentType) {
+            case PDF -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_PDF;
+            case OFFICE -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_OFFICE;
+            case IMAGE -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_IMAGE;
+            case EMAIL -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_EMAIL;
+            case MEDIA -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_MEDIA;
+            case HTML -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_HTML;
+            case RTF -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_RTF;
+            case DATABASE -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_DATABASE;
+            case FONT -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_FONT;
+            case EPUB -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_EPUB;
+            case WARC -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_WARC;
+            case CLIMATE_FORECAST -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_CLIMATE_FORECAST;
+            case CREATIVE_COMMONS -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_CREATIVE_COMMONS;
+            case GENERIC -> DocumentFormatCategory.DOCUMENT_FORMAT_CATEGORY_GENERIC;
+        };
     }
     
     /**

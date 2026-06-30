@@ -96,7 +96,7 @@ Notes:
 | `PagedText.N_PAGES` | `n_pages` | int32 | Total number of pages |
 | `"X-TIKA:pdf:metadata-xmp-parse-failed"` | `xmp_parse_failed` | repeated string | XMP parse failure messages |
 | `PDF.ILLUSTRATOR_TYPE` | `illustrator_type` | string | Illustrator type if present |
-| `"pdf:foundNonAdobeExtensionName"` | — | — | Kept in `additional_metadata` (literal key) |
+| `"pdf:foundNonAdobeExtensionName"` | — | — | Kept in `ParseResponse.metadata` mirror (literal key) |
 
 ---
 
@@ -356,7 +356,7 @@ Notes:
 2. **Use the exact Tika Property names** from the "Tika Property" column
 3. **Map to the exact protobuf field names** from the "Protobuf Field" column
 4. **Use the correct data types** as specified in the "Type" column
-5. **Any unmapped fields** go into the `additional_metadata` struct
+5. **Any unmapped fields** are still present in the `ParseResponse.metadata` mirror (every key, typed)
 
 ### Example Implementation:
 ```java

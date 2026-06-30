@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.EpubMetadata;
 import org.apache.tika.metadata.Epub;
@@ -59,7 +57,6 @@ public final class EpubMetadataBuilder {
         MetadataUtils.mapStringField(metadata, Epub.VERSION, builder::setVersion, mapped);
 
         // Technical
-        MetadataUtils.mapStringField(metadata, "Content-Type", builder::setMimetype, mapped);
 
         // Additional helpful fields from core props
         MetadataUtils.mapStringField(metadata, TikaCoreProperties.LANGUAGE, builder::setContentLanguage, mapped);
@@ -72,10 +69,6 @@ public final class EpubMetadataBuilder {
             // Prevent huge base64 field from being embedded into additional/base fields
             try { metadata.remove("pipe:raw-bytes-b64"); } catch (Exception ignored) { }
         }
-
-        // Additional metadata for anything unmapped
-        Struct additional = MetadataUtils.buildAdditionalMetadata(metadata, mapped);
-        builder.setAdditionalMetadata(additional);
 
         // Base fields
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, metadata);

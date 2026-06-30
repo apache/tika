@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.CreativeCommonsMetadata;
 import org.apache.tika.metadata.Metadata;
@@ -56,10 +54,6 @@ public final class CreativeCommonsMetadataBuilder {
         MetadataUtils.mapRepeatedStringField(metadata, XMPRights.OWNER, builder::addAllRightsOwners, mapped);
         MetadataUtils.mapStringField(metadata, XMPRights.USAGE_TERMS, builder::setUsageTerms, mapped);
         MetadataUtils.mapStringField(metadata, XMPRights.WEB_STATEMENT, builder::setWebStatement, mapped);
-
-        // Additional (any cc:* or license* fields) left in additional_metadata
-        Struct additional = MetadataUtils.buildAdditionalMetadata(metadata, mapped);
-        builder.setAdditionalRightsMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, metadata);
         builder.setBaseFields(base);

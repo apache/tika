@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.FontMetadata;
 import org.apache.tika.metadata.Font;
@@ -68,7 +66,6 @@ public class FontMetadataBuilder {
 
         // Known fields Tika often sets for fonts (best effort via raw keys)
         MetadataUtils.mapStringField(md, TikaCoreProperties.RESOURCE_NAME_KEY, b::setOriginalFilename, mapped);
-        MetadataUtils.mapStringField(md, "Content-Type", b::setMimeType, mapped);
 
         // Fallbacks for common cases when we bypass full Tika parsing
         if (!b.hasOriginalFilename()) {
@@ -95,10 +92,6 @@ public class FontMetadataBuilder {
                 }
             }
         }
-
-        // Additional metadata dump
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         // Base fields
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);

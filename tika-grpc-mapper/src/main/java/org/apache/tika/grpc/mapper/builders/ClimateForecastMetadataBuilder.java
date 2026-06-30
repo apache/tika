@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.ClimateForcastMetadata;
 import org.apache.tika.metadata.Metadata;
@@ -51,10 +49,6 @@ public final class ClimateForecastMetadataBuilder {
         Set<String> mapped = new HashSet<>(excludedKeys);
 
         // TODO: Map well-known CF/global attributes incrementally using MetadataUtils when catalogued
-
-        // Additional scientific metadata (preserve fidelity)
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        builder.setAdditionalScientificMetadata(additional);
 
         // Base fields
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);

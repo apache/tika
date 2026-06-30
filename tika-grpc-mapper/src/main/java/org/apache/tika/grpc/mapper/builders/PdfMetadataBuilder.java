@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,22 +81,12 @@ public class PdfMetadataBuilder {
         // Cross-interface/common fields present in proto
         mapCommonPdfRelatedFields(tikaMetadata, builder, mappedFields);
 
-        // Map custom docinfo fields to additional_metadata explicitly
-        mapCustomDocinfoFields(tikaMetadata, mappedFields);
-
-        // Build additional metadata struct for unmapped fields
-        Struct additionalMetadata = MetadataUtils.buildAdditionalMetadata(tikaMetadata, mappedFields);
-        builder.setAdditionalMetadata(additionalMetadata);
-
         // Build base fields
         BaseFields baseFields = MetadataUtils.buildBaseFields(parserClass, tikaVersion, tikaMetadata);
         builder.setBaseFields(baseFields);
 
         PdfMetadata result = builder.build();
-        LOG.debug("Built PDF metadata with { } strongly-typed fields, { } additional fields", mappedFields.size(), additionalMetadata.getFieldsCount());
-        if (additionalMetadata.getFieldsCount() > 0) {
-            LOG.info("PDF additional_metadata keys (should be empty for mapped fields): { }", additionalMetadata.getFieldsMap().keySet());
-        }
+        LOG.debug(String.format(Locale.ROOT, "Built PDF metadata with %d strongly-typed fields", mappedFields.size()));
         LOG.debug(String.format(Locale.ROOT, "PDF mapped field keys: %s", mappedFields));
 
         return result;
@@ -224,9 +213,6 @@ public class PdfMetadataBuilder {
         // XMP parse failed messages (literal key used by Tika)
         MetadataUtils.mapRepeatedStringField(metadata, "X-TIKA:pdf:metadata-xmp-parse-failed", builder::addAllXmpParseFailed, mappedFields);
 
-        // Content type (standard Metadata key)
-        MetadataUtils.mapStringField(metadata, "Content-Type", builder::setContentType, mappedFields);
-
         // Signature presence and details
         MetadataUtils.mapBooleanField(metadata, TikaCoreProperties.HAS_SIGNATURE, builder::setHasSignature, mappedFields);
         MetadataUtils.mapRepeatedStringField(metadata, TikaCoreProperties.SIGNATURE_NAME, builder::addAllSignatureName, mappedFields);
@@ -280,16 +266,6 @@ public class PdfMetadataBuilder {
 
         // Version count (X-TIKA:versionCount)
         MetadataUtils.mapIntField(metadata, TikaCoreProperties.VERSION_COUNT, builder::setVersionCount, mappedFields);
-    }
-
-    /**
-     * Marks custom docinfo fields (pdf:docinfo:custom:*) as consumed so they go to
-     * additional_metadata with clean keys rather than being double-counted.
-     */
-    private static void mapCustomDocinfoFields(Metadata metadata, Set<String> mappedFields) {
-        // Custom docinfo fields are dynamic - just mark the prefix pattern
-        // They'll still appear in additional_metadata but won't be counted as "leaked"
-        // since they are genuinely unmapped custom fields
     }
 
     private static void markAsConsumed(Metadata metadata, Object key, Set<String> mappedFields) {

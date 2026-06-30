@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.ExifMetadata;
 import org.apache.tika.grpc.v1.GpsMetadata;
@@ -66,9 +64,6 @@ public class ImageMetadataBuilder {
         mapGps(md, b, mapped);
         mapIptc(md, b, mapped);
         mapAdditional(md, b, mapped);
-
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);
         b.setBaseFields(base);

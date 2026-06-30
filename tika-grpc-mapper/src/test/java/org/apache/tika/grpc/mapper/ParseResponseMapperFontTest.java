@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.grpc.v1.FontMetadata;
 import org.apache.tika.grpc.v1.ParseResponse;
 
 class ParseResponseMapperFontTest extends ParseFixtureSupport {
@@ -31,8 +30,8 @@ class ParseResponseMapperFontTest extends ParseFixtureSupport {
         ParseResponse response = map(parseBody("testTrueType3.ttf"), "testTrueType3.ttf");
 
         assertTrue(response.hasFont());
-        FontMetadata font = response.getFont();
-        assertEquals("application/x-font-ttf", font.getMimeType());
+        assertEquals("application/x-font-ttf", response.getContentType());
+        assertTrue(response.getFont().getMimeType().isEmpty());
         assertEquals("Open Sans Bold", response.getDublinCore().getTitle());
     }
 
@@ -41,8 +40,8 @@ class ParseResponseMapperFontTest extends ParseFixtureSupport {
         ParseResponse response = map(parseBody("testAFM.afm"), "testAFM.afm");
 
         assertTrue(response.hasFont());
-        FontMetadata font = response.getFont();
-        assertEquals("application/x-font-adobe-metric", font.getMimeType());
+        assertEquals("application/x-font-adobe-metric", response.getContentType());
+        assertTrue(response.getFont().getMimeType().isEmpty());
         assertEquals("TestFullName", response.getDublinCore().getTitle());
     }
 

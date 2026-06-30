@@ -3,7 +3,6 @@ syntax = "proto3";
 package org.apache.tika.grpc.v1;
 
 import "org/apache/tika/grpc/v1/base_fields.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
@@ -201,8 +200,10 @@ message HtmlMetadata {
   // TikaCoreProperties.ORIGINAL_RESOURCE_NAME
   optional string original_resource_name = 80;
 
-  // === Catch-all for unknown/unmapped fields ===
-  google.protobuf.Struct additional_metadata = 200;
+  // additional_metadata (Struct catch-all) removed — the full lossless typed
+  // metadata lives on ParseResponse.metadata. Number reserved to prevent reuse.
+  reserved 200;
+  reserved "additional_metadata";
 
   // Base Tika fields common to all document types
   BaseFields base_fields = 201;

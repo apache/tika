@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.DatabaseMetadata;
 import org.apache.tika.metadata.Database;
@@ -61,14 +59,9 @@ public final class DatabaseMetadataBuilder {
         mapDbCore(md, builder, mapped);
 
         // Content/resource hints
-        MetadataUtils.mapStringField(md, "Content-Type", builder::setContentType, mapped);
         MetadataUtils.mapStringField(md, "Content-Length", builder::setContentLength, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.RESOURCE_NAME_KEY, builder::setResourceName, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.ORIGINAL_RESOURCE_NAME, builder::setOriginalResourceName, mapped);
-
-        // Additional metadata
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        builder.setAdditionalMetadata(additional);
 
         // Base fields
         BaseFields baseFields = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);

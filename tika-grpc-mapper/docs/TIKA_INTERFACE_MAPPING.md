@@ -106,7 +106,7 @@ PagedText.N_PAGES → n_pages (int32)
 
 // Literal keys from PDF parsers
 "X-TIKA:pdf:metadata-xmp-parse-failed" → xmp_parse_failed (repeated string)
-"pdf:foundNonAdobeExtensionName" → kept in additional_metadata
+"pdf:foundNonAdobeExtensionName" → kept in the `ParseResponse.metadata` mirror
 ```
 
 ### 2. Office Documents  
@@ -227,7 +227,9 @@ For each document type, ensure our protobuf has fields that correspond to the **
 Build metadata extractors that map **only** the properties that actually exist in the Tika interfaces.
 
 ### Phase 3: Handle Unmapped Fields
-Use `google.protobuf.Struct` to capture any metadata that doesn't have strongly-typed fields.
+Every Tika key — mapped or not — is mirrored into `ParseResponse.metadata` as a typed,
+multivalue-preserving `MetadataEntry`. This single lossless channel replaces the former
+per-format `google.protobuf.Struct` catch-alls.
 
 ---
 
@@ -237,7 +239,7 @@ Use `google.protobuf.Struct` to capture any metadata that doesn't have strongly-
 2. **Check property types** - some are `Property.internalText()`, others are `Property.internalInteger()`, etc.
 3. **Handle multiple interfaces** - some document types (like Office) have multiple related interfaces
 4. **Use proper Property constants** - don't use string literals, use the actual Property constants
-5. **Fallback to struct** - anything not mapped goes to the flexible struct
+5. **Lossless mirror** - every key (mapped or not) also appears in `ParseResponse.metadata`
 
 ---
 
@@ -246,6 +248,6 @@ Use `google.protobuf.Struct` to capture any metadata that doesn't have strongly-
 1. **Verify our protobuf fields** match the actual Tika interface properties. If we intentionally rename for clarity, document it in SOURCE_DESTINATION_MAPPING.md.
 2. **Create simple, accurate builders** that map only what exists
 3. **Test with real documents** to ensure we capture everything Tika extracts
-4. **Follow the principle**: "Whatever Tika extracts, we save - strongly-typed if we recognize it, struct if we don't"
+4. **Follow the principle**: "Whatever Tika extracts, we save - strongly-typed if we recognize it, and always in the `metadata` mirror regardless"
 
 This mapping ensures we build **accurate** metadata extractors based on what Tika actually provides, not what we assume it should provide.

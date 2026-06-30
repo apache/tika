@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.RtfMetadata;
 import org.apache.tika.metadata.Metadata;
@@ -63,10 +61,6 @@ public class RtfMetadataBuilder {
         mapContentAndResourceFields(tikaMetadata, builder, mapped);
         mapCountsAndStats(tikaMetadata, builder, mapped);
         mapSecurityAndRevision(tikaMetadata, builder, mapped);
-
-        // Additional metadata for anything unmapped
-        Struct additional = MetadataUtils.buildAdditionalMetadata(tikaMetadata, mapped);
-        builder.setAdditionalMetadata(additional);
 
         // Base fields
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, tikaMetadata);
@@ -129,7 +123,6 @@ public class RtfMetadataBuilder {
     }
 
     private static void mapContentAndResourceFields(Metadata md, RtfMetadata.Builder b, Set<String> mapped) {
-        MetadataUtils.mapStringField(md, "Content-Type", b::setContentType, mapped);
         MetadataUtils.mapStringField(md, "Content-Encoding", b::setContentEncoding, mapped);
         MetadataUtils.mapStringField(md, "Content-Length", b::setContentLength, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.RESOURCE_NAME_KEY, b::setResourceName, mapped);

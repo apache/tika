@@ -19,7 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +66,6 @@ public class OfficeMetadataBuilder {
         mapOfficeOpenXMLCore(tikaMetadata, builder, mapped);
         mapOfficeOpenXMLExtended(tikaMetadata, builder, mapped);
         mapCommonFields(tikaMetadata, builder, mapped);
-
-        Struct additional = MetadataUtils.buildAdditionalMetadata(tikaMetadata, mapped);
-        builder.setAdditionalMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, tikaMetadata);
         builder.setBaseFields(base);
@@ -166,9 +162,6 @@ public class OfficeMetadataBuilder {
     }
 
     private static void mapCommonFields(Metadata md, OfficeMetadata.Builder b, Set<String> mapped) {
-        // Content type and security/signatures
-        MetadataUtils.mapStringField(md, "Content-Type", b::setContentType, mapped);
-
         // PagedText.N_PAGES (xmpTPg:NPages) — XMP page count, fallback if Office.PAGE_COUNT not present
         if (!mapped.contains(PagedText.N_PAGES.getName())) {
             MetadataUtils.mapIntField(md, PagedText.N_PAGES, b::setPageCount, mapped);

@@ -3,7 +3,6 @@ syntax = "proto3";
 package org.apache.tika.grpc.v1;
 
 import "org/apache/tika/grpc/v1/base_fields.proto";
-import "google/protobuf/struct.proto";
 
 option java_multiple_files = true;
 option java_outer_classname = "FontMetadataProto";
@@ -218,10 +217,10 @@ message FontMetadata {
   // Font menu name
   string menu_name = 58;
 
-  // === EXTENSIBILITY ===
-
-  // Catch-all for unknown or future font metadata fields
-  google.protobuf.Struct additional_metadata = 200;
+  // additional_metadata (Struct catch-all) removed — the full lossless typed
+  // metadata lives on ParseResponse.metadata. Number reserved to prevent reuse.
+  reserved 200;
+  reserved "additional_metadata";
 
   // Base Tika fields common to all document types
   BaseFields base_fields = 201;

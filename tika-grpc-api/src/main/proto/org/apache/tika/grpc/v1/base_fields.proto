@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package org.apache.tika.grpc.v1;
 
-import "google/protobuf/struct.proto";
-
 option java_multiple_files = true;
 option java_outer_classname = "BaseFieldsProto";
 option java_package = "org.apache.tika.grpc.v1";
@@ -11,9 +9,10 @@ option java_package = "org.apache.tika.grpc.v1";
 // Base metadata structure for Tika parsing results.
 // Contains common fields and extensibility mechanisms used across all document types.
 message BaseFields {
-  // Raw metadata map containing all key-value pairs extracted by Tika
-  // This provides complete extensibility for any metadata not covered by strongly-typed fields
-  google.protobuf.Struct raw_metadata = 1;
+  // raw_metadata (Struct dump of every key) removed — the full lossless typed
+  // metadata lives on ParseResponse.metadata. Number reserved to prevent reuse.
+  reserved 1;
+  reserved "raw_metadata";
 
   // Tika parser class name that processed this document
   optional string parser_class = 2;

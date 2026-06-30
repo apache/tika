@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.MediaMetadata;
 import org.apache.tika.metadata.Metadata;
@@ -62,9 +60,6 @@ public class MediaMetadataBuilder {
         mapParserSpecific(md, b, mapped);
         mapTech(md, b, mapped);
         mapGeoAndParse(md, b, mapped);
-
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);
         b.setBaseFields(base);
@@ -147,7 +142,6 @@ public class MediaMetadataBuilder {
     }
 
     private static void mapParserSpecific(Metadata md, MediaMetadata.Builder b, Set<String> mapped) {
-        MetadataUtils.mapStringField(md, "Content-Type", b::setContentType, mapped);
         // Common parser outputs for MP3/MP4
         MetadataUtils.mapStringField(md, "samplerate", b::setSamplerate, mapped);
         MetadataUtils.mapStringField(md, "channels", b::setChannels, mapped);

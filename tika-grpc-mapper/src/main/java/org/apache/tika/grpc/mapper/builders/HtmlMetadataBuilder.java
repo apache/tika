@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.HtmlMetadata;
 import org.apache.tika.metadata.Metadata;
@@ -79,7 +77,6 @@ public class HtmlMetadataBuilder {
         MetadataUtils.mapStringField(md, TikaCoreProperties.COMMENTS, b::setComments, mapped);
 
         // Content/encoding
-        MetadataUtils.mapStringField(md, "Content-Type", b::setContentType, mapped);
         MetadataUtils.mapStringField(md, Metadata.CONTENT_ENCODING, b::setContentEncoding, mapped);
         MetadataUtils.mapStringField(md, Metadata.CONTENT_LANGUAGE, b::setContentLanguage, mapped);
         MetadataUtils.mapStringField(md, Metadata.CONTENT_LOCATION, b::setContentLocation, mapped);
@@ -116,10 +113,6 @@ public class HtmlMetadataBuilder {
         // Resource
         MetadataUtils.mapStringField(md, TikaCoreProperties.RESOURCE_NAME_KEY, b::setResourceName, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.ORIGINAL_RESOURCE_NAME, b::setOriginalResourceName, mapped);
-
-        // Additional
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         // Base
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);

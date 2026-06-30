@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
 import com.google.protobuf.Timestamp;
 
 import org.apache.tika.grpc.v1.BaseFields;
@@ -65,9 +64,6 @@ public class WarcMetadataBuilder {
         mapHttp(md, b, mapped);
         mapContentAnalysis(md, b, mapped);
         mapArchiveProcessing(md, b, mapped);
-
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);
         b.setBaseFields(base);

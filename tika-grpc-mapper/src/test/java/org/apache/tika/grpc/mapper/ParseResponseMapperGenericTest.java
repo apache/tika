@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.grpc.v1.GenericMetadata;
 import org.apache.tika.grpc.v1.ParseResponse;
 
 class ParseResponseMapperGenericTest extends ParseFixtureSupport {
@@ -33,9 +32,9 @@ class ParseResponseMapperGenericTest extends ParseFixtureSupport {
         assertTrue(response.hasGeneric());
         assertFalse(response.hasPdf());
         assertFalse(response.hasHtml());
-        GenericMetadata generic = response.getGeneric();
-        assertTrue(generic.hasDetectedMimeType());
-        assertTrue(generic.getDetectedMimeType().contains("text/plain"));
+        assertTrue(response.hasContentType());
+        assertTrue(response.getContentType().contains("text/plain"));
+        assertFalse(response.getGeneric().hasDetectedMimeType());
         assertTrue(response.getContent().getBody().contains("plain text document"));
     }
 

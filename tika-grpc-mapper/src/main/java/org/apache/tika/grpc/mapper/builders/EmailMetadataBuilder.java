@@ -19,8 +19,6 @@ package org.apache.tika.grpc.mapper.builders;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.protobuf.Struct;
-
 import org.apache.tika.grpc.v1.BaseFields;
 import org.apache.tika.grpc.v1.EmailMetadata;
 import org.apache.tika.metadata.MAPI;
@@ -61,9 +59,6 @@ public class EmailMetadataBuilder {
         mapMessage(md, b, mapped);
         mapMAPI(md, b, mapped);
         mapContentAndSecurity(md, b, mapped);
-
-        Struct additional = MetadataUtils.buildAdditionalMetadata(md, mapped);
-        b.setAdditionalMetadata(additional);
 
         BaseFields base = MetadataUtils.buildBaseFields(parserClass, tikaVersion, md);
         b.setBaseFields(base);
@@ -143,7 +138,6 @@ public class EmailMetadataBuilder {
     }
 
     private static void mapContentAndSecurity(Metadata md, EmailMetadata.Builder b, Set<String> mapped) {
-        MetadataUtils.mapStringField(md, "Content-Type", b::setContentType, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.ENCODING_DETECTOR, b::setEncodingDetector, mapped);
         MetadataUtils.mapStringField(md, TikaCoreProperties.DETECTED_ENCODING, b::setDetectedEncoding, mapped);
         MetadataUtils.mapBooleanField(md, TikaCoreProperties.HAS_SIGNATURE, b::setHasSignature, mapped);
