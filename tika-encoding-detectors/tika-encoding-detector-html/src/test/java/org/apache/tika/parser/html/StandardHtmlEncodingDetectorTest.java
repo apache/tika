@@ -298,6 +298,59 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     @Test
+    public void withCharsetInContentEncoding() throws IOException {
+        // Test the path where CONTENT_TYPE is absent but CONTENT_ENCODING has a charset
+        // This exercises charsetFromContentEncoding() and kills the surviving mutants
+        // on lines 70-71 (EQUAL_ELSE + removed call to charsetFromContentEncoding)
+        Metadata meta = new Metadata();
+        meta.set(Metadata.CONTENT_ENCODING, "UTF-8");
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        TikaInputStream tis = TikaInputStream.get("".getBytes(StandardCharsets.UTF_8));
+        List<EncodingResult> results = detector.detect(tis, meta, new ParseContext());
+        assertEquals(1, results.size());
+        assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset());
+        assertEquals(1.0f, results.get(0).getConfidence());
+        assertEquals("UTF-8", results.get(0).getLabel());
+    }
+
+    @Test
+    public void encodingResultFields() throws IOException {
+        // Verify all fields of EncodingResult to kill InlineConstant (1.0 -> 2.0)
+        // and NonVoidMethodCall (removed Charset::name) mutants on lines 81-82
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        TikaInputStream tis = TikaInputStream.get(
+                "<meta charset='UTF-8'>".getBytes(StandardCharsets.UTF_8));
+        List<EncodingResult> results = detector.detect(tis, metadata, new ParseContext());
+        assertEquals(1, results.size());
+        EncodingResult result = results.get(0);
+        assertEquals(StandardCharsets.UTF_8, result.getCharset());
+        assertEquals(1.0f, result.getConfidence());
+        assertEquals("UTF-8", result.getLabel());
+        assertEquals(EncodingResult.ResultType.DECLARATIVE, result.getResultType());
+    }
+
+    @Test
+    public void defaultMarkLimit() throws IOException {
+        // Verify default markLimit is 65536 to kill InlineConstant mutant on line 58
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        assertEquals(65536, detector.getMarkLimit());
+    }
+
+    @Test
+    public void customMarkLimit() throws IOException {
+        // Call setMarkLimit() to cover line 94 (NO_COVERAGE) and verify it works
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        detector.setMarkLimit(100);
+        assertEquals(100, detector.getMarkLimit());
+
+        // With a small limit, the meta tag beyond 100 bytes won't be found
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 80; i++) sb.append("x");
+        sb.append("<meta charset='WINDOWS-1252'>");
+        assertCharset(sb.toString(), null, detector);
+    }
+
+    @Test
     public void throwResistance() throws IOException {
         // The preprocessing should return right after having found the charset
         // So if an error is thrown in the stream AFTER the declaration,
