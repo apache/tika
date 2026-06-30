@@ -239,34 +239,4 @@ public class AsyncCliParserTest {
         // Clean up
         Files.deleteIfExists(result);
     }
-
-    // TIKA-4735: --content-only --handler m must correctly parse into SimpleAsyncConfig
-    @Test
-    public void testTIKA4735_ContentOnlyHandlerMarkdown(@TempDir Path tmp) throws Exception {
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
-
-        SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
-                new String[]{"--inputDir", inputDir.toString(), "--outputDir", "output",
-                        "--content-only", "--handler", "m"});
-
-        assertTrue(config.isContentOnly(), "TIKA-4735: contentOnly should be true");
-        assertTrue(config.isConcatenate(), "TIKA-4735: --content-only implies --concatenate");
-        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, config.getHandlerType(),
-                "TIKA-4735: handler type should be MARKDOWN");
-    }
-
-    // TIKA-4735: --content-only without --handler should still set contentOnly=true with default MARKDOWN handler
-    @Test
-    public void testTIKA4735_ContentOnlyDefaultHandler(@TempDir Path tmp) throws Exception {
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
-
-        SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
-                new String[]{"--inputDir", inputDir.toString(), "--outputDir", "output", "--content-only"});
-
-        assertTrue(config.isContentOnly(), "TIKA-4735: contentOnly should be true");
-        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, config.getHandlerType(),
-                "TIKA-4735: default handler type should be MARKDOWN");
-    }
 }

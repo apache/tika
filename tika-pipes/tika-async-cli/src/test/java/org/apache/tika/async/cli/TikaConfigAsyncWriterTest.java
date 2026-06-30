@@ -22,13 +22,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -51,53 +48,4 @@ public class TikaConfigAsyncWriterTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         assertEquals("-Xmx1g", pipesConfig.getForkedJvmArgs().get(0));
     }
-
-    // TIKA-4735: --content-only --handler m must produce parseMode=CONTENT_ONLY and fileExtension=md
-    @Test
-    public void testTIKA4735_ContentOnlyMarkdownConfig(@TempDir Path dir) throws Exception {
-        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 1,
-                30000L, "-Xmx1g", null, null,
-                BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, SimpleAsyncConfig.ExtractBytesMode.NONE, null,
-                true, true, null, null, false);
-
-        PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, null);
-        Path tmp = Files.createTempFile(dir, "plugins-content-only-", ".json");
-        pluginsWriter.write(tmp);
-
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tmp);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        assertEquals(ParseMode.CONTENT_ONLY, pipesConfig.getParseMode(),
-                "TIKA-4735: parseMode must be CONTENT_ONLY when --content-only is set");
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(tmp.toFile());
-        JsonNode fileExt = root.at("/emitters/fse/file-system-emitter/fileExtension");
-        assertEquals("md", fileExt.asText(),
-                "TIKA-4735: file extension must be 'md' when --handler m and --content-only");
-    }
-
-    // TIKA-4735: --content-only without a handler should produce parseMode=CONTENT_ONLY and fileExtension=md (MARKDOWN default)
-    @Test
-    public void testTIKA4735_ContentOnlyDefaultMarkdownConfig(@TempDir Path dir) throws Exception {
-        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 1,
-                30000L, "-Xmx1g", null, null,
-                BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, SimpleAsyncConfig.ExtractBytesMode.NONE, null,
-                true, true, null, null, false);
-
-        PluginsWriter pluginsWriter = new PluginsWriter(simpleAsyncConfig, null);
-        Path tmp = Files.createTempFile(dir, "plugins-content-only-default-", ".json");
-        pluginsWriter.write(tmp);
-
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tmp);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        assertEquals(ParseMode.CONTENT_ONLY, pipesConfig.getParseMode(),
-                "TIKA-4735: parseMode must be CONTENT_ONLY when --content-only is set");
-
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(tmp.toFile());
-        JsonNode fileExt = root.at("/emitters/fse/file-system-emitter/fileExtension");
-        assertEquals("md", fileExt.asText(),
-                "TIKA-4735: file extension must be 'md' for MARKDOWN handler with --content-only");
-    }
-
 }

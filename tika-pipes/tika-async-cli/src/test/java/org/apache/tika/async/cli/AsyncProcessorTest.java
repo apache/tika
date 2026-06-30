@@ -202,6 +202,45 @@ public class AsyncProcessorTest extends TikaTest {
     }
 
     @Test
+    public void testContentOnlyDynamicEmitStrategy() throws Exception {
+        // TIKA-4735: With emitStrategy=DYNAMIC and a file smaller than the threshold,
+        // EmitHandler would previously let the file passback to AsyncEmitter, which called
+        // emitter.emit(List<EmitData>) and serialised it as JSON rather than raw content.
+        // The fix forces direct server-side emission (via emitContentOnly) when an emitter
+        // is configured and parseMode=CONTENT_ONLY, regardless of emit strategy.
+        Path contentOnlyConfig = configDir.resolve("tika-config-content-only-dynamic.json");
+        Map<String, Object> replacements = new HashMap<>();
+        replacements.put("FETCHER_BASE_PATH", inputDir);
+        replacements.put("JSON_EMITTER_BASE_PATH", jsonOutputDir);
+        replacements.put("BYTES_EMITTER_BASE_PATH", bytesOutputDir);
+        replacements.put("PLUGIN_ROOTS", Paths.get("target/plugins"));
+        JsonConfigHelper.writeConfigFromResource("/configs/config-content-only-dynamic.json",
+                AsyncProcessorTest.class, replacements, contentOnlyConfig);
+
+        AsyncProcessor processor = AsyncProcessor.load(contentOnlyConfig);
+
+        FetchEmitTuple t = new FetchEmitTuple("co-dyn-1", new FetchKey("fsf", "mock.xml"),
+                new EmitKey("fse-json", "emit-co-dyn"), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        processor.offer(t, 1000);
+        for (int i = 0; i < 10; i++) {
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+        }
+        while (processor.checkActive()) {
+            Thread.sleep(100);
+        }
+        processor.close();
+
+        String emitted = Files.readString(jsonOutputDir.resolve("emit-co-dyn"));
+        assertContains("content", emitted);
+        assertFalse(emitted.contains(TikaCoreProperties.TIKA_CONTENT.getName()),
+                "TIKA-4735: DYNAMIC strategy must not produce JSON wrapper in CONTENT_ONLY mode: " + emitted);
+        String trimmed = emitted.trim();
+        assertFalse(trimmed.startsWith("[") || trimmed.startsWith("{"),
+                "TIKA-4735: DYNAMIC strategy must produce raw content, not JSON, in CONTENT_ONLY mode: " + emitted);
+    }
+
+    @Test
     public void testStopsOnApplicationError() throws Exception {
         AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
 
