@@ -179,7 +179,7 @@ class PipesBiDirectionalStreamingIntegrationTest {
     void testHttpFetchScenario() throws Exception {
         AtomicInteger numParsed = new AtomicInteger();
         AtomicInteger numErrors = new AtomicInteger();
-        Map<String, Map<String, String>> result = Collections.synchronizedMap(new HashMap<>());
+        Map<String, String> result = Collections.synchronizedMap(new HashMap<>());
         List<String> errorMessages = Collections.synchronizedList(new ArrayList<>());
         StreamObserver<FetchAndParseReply> responseObserver = new StreamObserver<>() {
             @Override
@@ -198,7 +198,10 @@ class PipesBiDirectionalStreamingIntegrationTest {
                     LOGGER.error(errorMsg);
                 } else {
                     numParsed.incrementAndGet();
-                    result.put(fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
+                    if (fetchAndParseReply.hasDocument()) {
+                        result.put(fetchAndParseReply.getFetchKey(),
+                                fetchAndParseReply.getDocument().getMarkdown());
+                    }
                 }
             }
 

@@ -420,7 +420,8 @@ public class TikaGrpcServerTest {
         StreamObserver<FetchAndParseReply> replyStreamObserver = new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
-                LOG.debug("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
+                LOG.debug("Fetched {} with document present={}",
+                        fetchAndParseReply.getFetchKey(), fetchAndParseReply.hasDocument());
                 if (PipesResult.RESULT_STATUS.FETCH_EXCEPTION.name().equals(fetchAndParseReply.getStatus())) {
                     errors.add(fetchAndParseReply);
                 } else {
