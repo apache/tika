@@ -124,4 +124,22 @@ public class TestChmLzxcControlData {
                 chmLzxcControlData.getSignature().length);
     }
 
+    @Test
+    public void testUInt32HighBitNotSignExtended() throws Exception {
+        // size = 0x00008000 little-endian; the 0x80 byte has bit 7 set, so an
+        // unmasked shift sign-extends it and yields -32768 instead of 32768
+        byte[] data = new byte[ChmConstants.CHM_LZXC_MIN_LEN];
+        data[1] = (byte) 0x80;
+        byte[] sig = ChmConstants.LZXC.getBytes(UTF_8);
+        System.arraycopy(sig, 0, data, 4, sig.length);
+        data[8] = 0x01;  // version
+        data[12] = 0x02; // resetInterval
+        data[16] = 0x02; // windowSize
+        data[20] = 0x02; // windowsPerReset
+
+        ChmLzxcControlData control = new ChmLzxcControlData();
+        control.parse(data, control);
+        assertEquals(0x8000L, control.getSize());
+    }
+
 }
