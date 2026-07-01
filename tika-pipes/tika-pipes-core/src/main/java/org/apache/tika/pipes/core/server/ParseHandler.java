@@ -87,6 +87,9 @@ class ParseHandler {
         List<Metadata> metadataList;
         //this adds the EmbeddedDocumentByteStore to the parsecontext
         ParseMode parseMode = getParseMode(parseContext);
+        // Ensure the resolved mode is visible to EmitHandler, which checks parseContext directly
+        // and does not have access to the defaultParseMode fallback.
+        parseContext.set(ParseMode.class, parseMode);
         ContentHandlerFactory contentHandlerFactory = getContentHandlerFactory(parseContext);
         if (parseMode == ParseMode.NO_PARSE) {
             metadataList = detectOnly(fetchEmitTuple, stream, metadata, parseContext);
