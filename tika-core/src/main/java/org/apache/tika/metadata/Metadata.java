@@ -34,6 +34,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -47,6 +50,7 @@ public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         TikaMimeKeys, Serializable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
@@ -304,7 +308,53 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
+        if (blockReservedKeyWrite(name)) {
+            return;
+        }
+        addUnchecked(name, value);
+    }
+
+    /** Trusted add, bypassing the reserved-key guard; used by the Property overloads. TIKA-4769. */
+    private void addUnchecked(final String name, final String value) {
         writeLimiter.add(name, value, metadata);
+    }
+
+    /**
+     * TIKA-4769: drop a String write to a reserved {@code X-TIKA:} key so untrusted file content
+     * can't overwrite control-plane metadata. Reserved keys are writable only via their Property.
+     */
+    private static boolean blockReservedKeyWrite(String name) {
+        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property "
+                    + "(TIKA-4769).", name);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Trusted write for reconstruction paths (clone/merge/deserialize): a reserved {@code X-TIKA:}
+     * key goes through its Property so the guard doesn't drop it; others by name. TIKA-4769.
+     *
+     * @param append add rather than set
+     */
+    public void reconstruct(String name, String value, boolean append) {
+        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+            Property property = Property.get(name);
+            if (property != null) {
+                if (append) {
+                    add(property, value);
+                } else {
+                    set(property, value);
+                }
+                return;
+            }
+        }
+        if (append) {
+            add(name, value);
+        } else {
+            set(name, value);
+        }
     }
 
     /**
@@ -320,7 +370,7 @@ public class Metadata
             set(name, newValues);
         } else {
             for (String val : newValues) {
-                add(name, val);
+                addUnchecked(name, val);
             }
         }
     }
@@ -351,7 +401,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    add(property.getName(), value);
+                    addUnchecked(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -384,6 +434,14 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
+        if (blockReservedKeyWrite(name)) {
+            return;
+        }
+        setUnchecked(name, value);
+    }
+
+    /** Trusted set, bypassing the reserved-key guard. TIKA-4769. */
+    private void setUnchecked(String name, String value) {
         writeLimiter.set(name, value, metadata);
     }
 
@@ -393,7 +451,7 @@ public class Metadata
         if (values != null) {
             metadata.remove(name);
             for (String v : values) {
-                add(name, v);
+                addUnchecked(name, v);
             }
         } else {
             metadata.remove(name);
@@ -419,7 +477,7 @@ public class Metadata
                 }
             }
         } else {
-            set(property.getName(), value);
+            setUnchecked(property.getName(), value);
         }
     }
 
