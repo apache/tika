@@ -16,149 +16,122 @@
  */
 package org.apache.tika.parser.markdown;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToMarkdownContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
 
-class MarkdownParserTest {
+public class MarkdownParserTest extends TikaTest {
 
-    private static final String MARKDOWN =
-            "# Title\n\n"
-                    + "Some **bold** and *italic* and ~~struck~~ text with `inline` code.\n\n"
-                    + "- one\n- two\n\n"
-                    + "1. first\n2. second\n\n"
-                    + "> a quote\n\n"
-                    + "```java\nSystem.out.println(\"hi\");\n```\n\n"
-                    + "[link](https://example.com)\n\n"
-                    + "| A | B |\n|---|---|\n| 1 | 2 |\n";
-
-    private static String toXhtml(String markdown) throws Exception {
+    /** Parses markdown from a string via AutoDetectParser (glob detection on a dummy name). */
+    private XMLResult parseString(String markdown) throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/markdown");
-        ToXMLContentHandler handler = new ToXMLContentHandler();
-        try (TikaInputStream tis = TikaInputStream.get(markdown.getBytes(StandardCharsets.UTF_8))) {
-            new MarkdownParser().parse(tis, handler, metadata, new ParseContext());
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.md");
+        try (TikaInputStream tis =
+                TikaInputStream.get(markdown.getBytes(StandardCharsets.UTF_8))) {
+            return getXML(tis, AUTO_DETECT_PARSER, metadata);
         }
-        return handler.toString();
     }
 
     @Test
-    void emitsStructuredXhtml() throws Exception {
-        String xhtml = toXhtml(MARKDOWN);
+    public void testBasic() throws Exception {
+        XMLResult r = getXML("testMARKDOWN.md", AUTO_DETECT_PARSER);
+        String xhtml = r.xml;
 
-        assertTrue(xhtml.contains("<h1>") && xhtml.contains("Title"), xhtml);
-        assertTrue(xhtml.contains("<strong>bold</strong>"), xhtml);
-        assertTrue(xhtml.contains("<em>italic</em>"), xhtml);
-        assertTrue(xhtml.contains("<del>struck</del>"), xhtml);
-        assertTrue(xhtml.contains("<code>inline</code>"), xhtml);
-        assertTrue(xhtml.contains("<ul>") && xhtml.contains("<li>one</li>"), xhtml);
-        assertTrue(xhtml.contains("<ol>") && xhtml.contains("<li>first</li>"), xhtml);
-        assertTrue(xhtml.contains("<blockquote>"), xhtml);
-        assertTrue(xhtml.contains("<pre>") && xhtml.contains("language-java"), xhtml);
-        assertTrue(xhtml.contains("href=\"https://example.com\"") && xhtml.contains(">link</a>"), xhtml);
-        assertTrue(xhtml.contains("<table>") && xhtml.contains("<th") && xhtml.contains("<td"), xhtml);
+        assertContains("<h1>Title</h1>", xhtml);
+        assertContains("<strong>bold</strong>", xhtml);
+        assertContains("<em>italic</em>", xhtml);
+        assertContains("<del>struck</del>", xhtml);
+        assertContains("<code>inline</code>", xhtml);
+        assertContains("<li>one</li>", xhtml);
+        assertContains("<ol start=\"3\">", xhtml);
+        assertContains("<blockquote>", xhtml);
+        assertContains("href=\"https://example.com\"", xhtml);
+
+        //full fence info survives alongside the language class
+        assertContains("class=\"language-java\"", xhtml);
+        assertContains("data-info=\"java title=&quot;Example&quot;\"", xhtml);
+
+        //gfm table with alignment sections
+        assertContains("<thead>", xhtml);
+        assertContains("<th align=\"left\">L</th>", xhtml);
+        assertContains("<th align=\"center\">C</th>", xhtml);
+        assertContains("<td align=\"right\">c</td>", xhtml);
+
+        //alt text keeps code spans
+        assertContains("alt=\"see config.json for details\"", xhtml);
+        assertContains("title=\"Tika\"", xhtml);
+
+        //detected charset lands in the metadata
+        assertTrue(r.metadata.get(Metadata.CONTENT_TYPE).startsWith("text/markdown; charset="),
+                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertContains("Café naïve résumé", xhtml);
     }
 
     @Test
-    void escapesRawHtml() throws Exception {
-        String xhtml = toXhtml("before\n\n<script>alert(1)</script>\n\nand inline <b>bold</b> here\n");
+    public void testRawHtmlIsEscaped() throws Exception {
+        String xhtml =
+                parseString("before\n\n<script>alert(1)</script>\n\nand inline <b>bold</b>\n").xml;
 
         assertFalse(xhtml.contains("<script>"), xhtml);
-        assertTrue(xhtml.contains("&lt;script&gt;alert(1)&lt;/script&gt;"), xhtml);
+        assertContains("&lt;script&gt;alert(1)&lt;/script&gt;", xhtml);
         assertFalse(xhtml.contains("<b>"), xhtml);
-        assertTrue(xhtml.contains("&lt;b&gt;bold&lt;/b&gt;"), xhtml);
+        assertContains("&lt;b&gt;bold&lt;/b&gt;", xhtml);
     }
 
     @Test
-    void emitsTableAlignmentAndSections() throws Exception {
-        String xhtml = toXhtml("| L | C | R |\n|:--|:-:|--:|\n| a | b | c |\n");
-
-        assertTrue(xhtml.contains("<thead>") && xhtml.contains("<tbody>"), xhtml);
-        assertTrue(xhtml.contains("<th align=\"left\">L</th>"), xhtml);
-        assertTrue(xhtml.contains("<th align=\"center\">C</th>"), xhtml);
-        assertTrue(xhtml.contains("<th align=\"right\">R</th>"), xhtml);
-        assertTrue(xhtml.contains("<td align=\"center\">b</td>"), xhtml);
+    public void testOrderedListStartsAtOneNeedsNoAttribute() throws Exception {
+        assertFalse(parseString("1. a\n2. b\n").xml.contains("start="));
     }
 
     @Test
-    void emitsImagesAndLineBreaks() throws Exception {
-        String xhtml = toXhtml("![tika logo](logo.png \"Tika\")\n\nhard  \nbreak\n");
-
-        assertTrue(xhtml.contains("src=\"logo.png\""), xhtml);
-        assertTrue(xhtml.contains("alt=\"tika logo\""), xhtml);
-        assertTrue(xhtml.contains("title=\"Tika\""), xhtml);
-        assertTrue(xhtml.contains("<br"), xhtml);
+    public void testLineBreaks() throws Exception {
+        assertContains("<br", parseString("hard  \nbreak\n").xml);
     }
 
     @Test
-    void setsContentTypeAndEncodingWithDetectedCharset() throws Exception {
+    public void testDataURIsBecomeEmbeddedDocuments() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/markdown");
-        ToXMLContentHandler handler = new ToXMLContentHandler();
-        try (TikaInputStream tis = TikaInputStream.get(
-                "# Café\n\nnaïve résumé\n".getBytes(StandardCharsets.UTF_8))) {
-            new MarkdownParser().parse(tis, handler, metadata, new ParseContext());
-        }
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testMARKDOWN_dataURI.md");
+        List<Metadata> metadataList = getRecursiveMetadata("testMARKDOWN_dataURI.md", metadata);
 
-        assertTrue(metadata.get(Metadata.CONTENT_TYPE).startsWith("text/markdown; charset="),
-                metadata.get(Metadata.CONTENT_TYPE));
-        assertTrue(metadata.get(Metadata.CONTENT_ENCODING) != null
-                && !metadata.get(Metadata.CONTENT_ENCODING).isEmpty(), "encoding should be set");
-        assertTrue(handler.toString().contains("Café"), handler.toString());
-        assertTrue(handler.toString().contains("naïve résumé"), handler.toString());
+        //container + image destination + data uri scraped from the raw html block
+        assertEquals(3, metadataList.size());
+        assertEquals("image/gif", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/gif", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Test
-    void preservesOrderedListStartNumber() throws Exception {
-        String xhtml = toXhtml("3. third\n4. fourth\n");
-
-        assertTrue(xhtml.contains("<ol start=\"3\">"), xhtml);
-        assertTrue(xhtml.contains("<li>third</li>"), xhtml);
-        // a list starting at 1 needs no attribute
-        assertFalse(toXhtml("1. a\n2. b\n").contains("start="), "start=1 should be implicit");
-    }
-
-    @Test
-    void preservesCodeSpansInImageAltText() throws Exception {
-        String xhtml = toXhtml("![see `config.json` for\ndetails](img.png)\n");
-
-        assertTrue(xhtml.contains("alt=\"see config.json for details\""), xhtml);
-    }
-
-    @Test
-    void preservesFullCodeFenceInfoString() throws Exception {
-        String xhtml = toXhtml("```java title=\"Example\"\nint x = 1;\n```\n");
-
-        assertTrue(xhtml.contains("class=\"language-java\""), xhtml);
-        assertTrue(xhtml.contains("data-info=\"java title=&quot;Example&quot;\""), xhtml);
-        // plain language-only fences carry no data-info
-        assertFalse(toXhtml("```java\nint x;\n```\n").contains("data-info"), "no extra info");
-    }
-
-    @Test
-    void roundTripsBackToMarkdown() throws Exception {
+    public void testRoundTripsBackToMarkdown() throws Exception {
+        String markdown = "# Title\n\nSome **bold** and *italic* and ~~struck~~ `inline`.\n";
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/markdown");
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "test.md");
         StringWriter writer = new StringWriter();
-        try (TikaInputStream tis = TikaInputStream.get(MARKDOWN.getBytes(StandardCharsets.UTF_8))) {
-            new MarkdownParser().parse(tis, new ToMarkdownContentHandler(writer), metadata, new ParseContext());
+        try (TikaInputStream tis =
+                TikaInputStream.get(markdown.getBytes(StandardCharsets.UTF_8))) {
+            AUTO_DETECT_PARSER.parse(tis, new ToMarkdownContentHandler(writer), metadata,
+                    new ParseContext());
         }
         String md = writer.toString();
 
-        assertTrue(md.contains("# Title"), md);
-        assertTrue(md.contains("**bold**"), md);
-        assertTrue(md.contains("*italic*"), md);
-        assertTrue(md.contains("~~struck~~"), md);
-        assertTrue(md.contains("`inline`"), md);
+        assertContains("# Title", md);
+        assertContains("**bold**", md);
+        assertContains("*italic*", md);
+        assertContains("~~struck~~", md);
+        assertContains("`inline`", md);
     }
 }

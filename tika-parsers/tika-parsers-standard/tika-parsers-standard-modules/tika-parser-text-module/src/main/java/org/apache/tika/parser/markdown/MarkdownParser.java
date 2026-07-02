@@ -64,36 +64,26 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.DataURIScheme;
+import org.apache.tika.utils.DataURISchemeParseException;
+import org.apache.tika.utils.DataURISchemeUtil;
 
 /**
- * Parser for Markdown documents ({@code text/markdown}).
- * <p>
- * Uses <a href="https://github.com/commonmark/commonmark-java">commonmark-java</a>
- * (already a Tika dependency, and the same library behind
- * {@link org.apache.tika.sax.ToMarkdownContentHandler}) to parse the document into an
- * AST, then emits structured XHTML. Headings become {@code h1..h6}, lists become
- * {@code ul}/{@code ol}/{@code li}, fenced code becomes {@code pre}/{@code code},
- * GFM tables become {@code table}, emphasis/strong/strikethrough become
- * {@code em}/{@code strong}/{@code del}, links and images become {@code a} and
- * {@code img}. Because the emitted vocabulary matches what {@code ToMarkdownContentHandler}
- * consumes, a document round-trips markdown to XHTML and back.
- * <p>
- * Fidelity: all <em>content</em> carried by the commonmark AST is preserved -- text and
- * code literals (raw HTML as escaped text), link/image destinations and titles, image alt
- * text (including code spans), heading levels, table cell alignment and header cells,
- * ordered-list start numbers ({@code <ol start=...>}), the full code-fence info string
- * ({@code data-info} when it carries more than the language token), and hard/soft line
- * breaks. Only markdown <em>syntax presentation</em> is normalized (bullet/fence/emphasis
- * delimiter characters, ATX vs setext headings), matching commonmark's reference
- * {@code HtmlRenderer}. Unused link reference definitions produce no output, also matching
- * the reference renderer.
+ * Parser for Markdown ({@code text/markdown}). Uses commonmark-java (with the GFM
+ * tables and strikethrough extensions) to emit structured XHTML. Raw HTML in the
+ * source is emitted as escaped text; data: URIs in image/link destinations and in
+ * raw HTML are extracted as embedded documents.
  */
 @TikaComponent
 public class MarkdownParser extends AbstractEncodingDetectorParser {
@@ -107,7 +97,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
     private static final List<Extension> EXTENSIONS =
             List.of(TablesExtension.create(), StrikethroughExtension.create());
 
-    // commonmark Parser is immutable and thread-safe, so a single instance is reused.
+    //immutable and thread-safe
     private static final Parser COMMONMARK = Parser.builder().extensions(EXTENSIONS).build();
 
     public MarkdownParser() {
@@ -138,9 +128,9 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
-            document.accept(new XhtmlMarkdownVisitor(xhtml));
-        } catch (WrappedSaxException e) {
-            throw e.getCause();
+            document.accept(new XhtmlMarkdownVisitor(xhtml, metadata, context));
+        } catch (RuntimeSAXException e) {
+            throw (SAXException) e.getCause();
         }
         xhtml.endDocument();
     }
@@ -151,9 +141,14 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
     private static final class XhtmlMarkdownVisitor extends AbstractVisitor {
 
         private final XHTMLContentHandler xhtml;
+        private final Metadata metadata;
+        private final ParseContext context;
+        private final DataURISchemeUtil dataURISchemeUtil = new DataURISchemeUtil();
 
-        XhtmlMarkdownVisitor(XHTMLContentHandler xhtml) {
+        XhtmlMarkdownVisitor(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) {
             this.xhtml = xhtml;
+            this.metadata = metadata;
+            this.context = context;
         }
 
         @Override
@@ -166,7 +161,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
 
         @Override
         public void visit(Paragraph paragraph) {
-            // Tight list items render their paragraph content inline (no <p>), matching markdown.
+            //tight list items render their paragraph content inline, as in markdown
             if (isTightListItemParagraph(paragraph)) {
                 visitChildren(paragraph);
                 return;
@@ -227,10 +222,11 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
 
         @Override
         public void visit(HtmlBlock htmlBlock) {
-            // Raw HTML block: keep the text, escaped, so nothing is lost or injected.
+            //raw html: keep the text escaped so nothing is injected
             start("p");
             characters(htmlBlock.getLiteral());
             end("p");
+            extractDataURIs(htmlBlock.getLiteral());
         }
 
         @Override
@@ -269,6 +265,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             start("a", atts);
             visitChildren(link);
             end("a");
+            maybeEmbedDataURI(link.getDestination());
         }
 
         @Override
@@ -284,6 +281,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             }
             start("img", atts);
             end("img");
+            maybeEmbedDataURI(image.getDestination());
         }
 
         @Override
@@ -300,11 +298,12 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
         @Override
         public void visit(HtmlInline htmlInline) {
             characters(htmlInline.getLiteral());
+            extractDataURIs(htmlInline.getLiteral());
         }
 
         @Override
         public void visit(LinkReferenceDefinition linkReferenceDefinition) {
-            // Reference definitions produce no rendered output.
+            //no rendered output
         }
 
         @Override
@@ -358,8 +357,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             if (language != null) {
                 addAttribute(atts, "class", "language-" + language);
             }
-            // The fence info string can carry more than the language token
-            // (e.g. ```java title="Example"); keep the full string so nothing is lost.
+            //keep any fence info beyond the language token
             if (info != null && !info.trim().isEmpty() && !info.trim().equals(language)) {
                 addAttribute(atts, "data-info", info.trim());
             }
@@ -370,11 +368,51 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             end("pre");
         }
 
+        private void maybeEmbedDataURI(String destination) {
+            if (destination == null || !destination.startsWith("data:")) {
+                return;
+            }
+            try {
+                embed(dataURISchemeUtil.parse(destination));
+            } catch (DataURISchemeParseException e) {
+                //swallow
+            }
+        }
+
+        private void extractDataURIs(String literal) {
+            if (literal == null) {
+                return;
+            }
+            for (DataURIScheme dataURIScheme : dataURISchemeUtil.extract(literal)) {
+                embed(dataURIScheme);
+            }
+        }
+
+        private void embed(DataURIScheme dataURIScheme) {
+            Metadata m = Metadata.newInstance(context);
+            m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+            if (dataURIScheme.getMediaType() != null) {
+                m.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
+            }
+            EmbeddedDocumentExtractor extractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            if (extractor.shouldParseEmbedded(m)) {
+                try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
+                    extractor.parseEmbedded(tis, xhtml, m, context, true);
+                } catch (IOException e) {
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                } catch (SAXException e) {
+                    throw new RuntimeSAXException(e);
+                }
+            }
+        }
+
         private void start(String name) {
             try {
                 xhtml.startElement(name);
             } catch (SAXException e) {
-                throw new WrappedSaxException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -382,7 +420,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             try {
                 xhtml.startElement(name, atts);
             } catch (SAXException e) {
-                throw new WrappedSaxException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -390,7 +428,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             try {
                 xhtml.endElement(name);
             } catch (SAXException e) {
-                throw new WrappedSaxException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -398,7 +436,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             try {
                 xhtml.characters(text);
             } catch (SAXException e) {
-                throw new WrappedSaxException(e);
+                throw new RuntimeSAXException(e);
             }
         }
 
@@ -460,24 +498,6 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
 
         private static void addAttribute(AttributesImpl atts, String name, String value) {
             atts.addAttribute("", name, name, "CDATA", value == null ? "" : value);
-        }
-    }
-
-    /**
-     * Carries a {@link SAXException} out through the commonmark visitor, whose methods
-     * cannot declare checked exceptions.
-     */
-    private static final class WrappedSaxException extends RuntimeException {
-
-        private static final long serialVersionUID = 1L;
-
-        WrappedSaxException(SAXException cause) {
-            super(cause);
-        }
-
-        @Override
-        public synchronized SAXException getCause() {
-            return (SAXException) super.getCause();
         }
     }
 }
