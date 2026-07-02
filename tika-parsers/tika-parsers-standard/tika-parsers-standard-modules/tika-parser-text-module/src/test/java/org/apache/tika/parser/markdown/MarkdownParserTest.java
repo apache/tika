@@ -116,6 +116,14 @@ public class MarkdownParserTest extends TikaTest {
     }
 
     @Test
+    public void testDeeplyNestedBlocksAreFlattenedNotFailed() throws Exception {
+        //maxOpenBlockParsers caps block nesting below SecureContentHandler's 100-level limit,
+        //so a pathologically deep block document extracts (deeper nesting flattened to text)
+        //rather than being rejected as a suspected zip bomb or overflowing the stack.
+        assertContains("deep", parseString("> ".repeat(5000) + "deep\n").xml);
+    }
+
+    @Test
     public void testRoundTripsBackToMarkdown() throws Exception {
         String markdown = "# Title\n\nSome **bold** and *italic* and ~~struck~~ `inline`.\n";
         Metadata metadata = new Metadata();
