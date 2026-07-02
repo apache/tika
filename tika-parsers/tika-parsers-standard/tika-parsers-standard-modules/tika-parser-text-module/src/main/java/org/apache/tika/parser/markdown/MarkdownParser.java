@@ -74,10 +74,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.datauri.DataURIScheme;
+import org.apache.tika.parser.datauri.DataURISchemeParseException;
+import org.apache.tika.parser.datauri.DataURISchemeUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.DataURIScheme;
-import org.apache.tika.utils.DataURISchemeParseException;
-import org.apache.tika.utils.DataURISchemeUtil;
 
 /**
  * Parser for Markdown ({@code text/markdown}). Uses commonmark-java (with the GFM

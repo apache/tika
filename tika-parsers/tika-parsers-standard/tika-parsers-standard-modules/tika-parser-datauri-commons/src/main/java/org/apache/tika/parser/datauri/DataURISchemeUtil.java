@@ -14,17 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.utils;
+package org.apache.tika.parser.datauri;
 
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.codec.binary.Base64;
 
 import org.apache.tika.mime.MediaType;
 
@@ -40,8 +41,7 @@ public class DataURISchemeUtil {
             Pattern.compile("(?s)data:([^,]*?)(base64)?,([^\"\']*)[\"\']");
     private final Matcher parseMatcher = PARSE_PATTERN.matcher("");
     private final Matcher extractMatcher = EXTRACT_PATTERN.matcher("");
-    //the MIME decoder ignores whitespace and other non-alphabet characters
-    private final Base64.Decoder base64 = Base64.getMimeDecoder();
+    Base64 base64 = new Base64();
 
     public DataURIScheme parse(String string) throws DataURISchemeParseException {
         parseMatcher.reset(string);
@@ -51,20 +51,15 @@ public class DataURISchemeUtil {
         throw new DataURISchemeParseException("Couldn't find expected pattern");
     }
 
-    private DataURIScheme build(String mediaTypeString, String isBase64, String dataString)
-            throws DataURISchemeParseException {
-        byte[] data;
+    private DataURIScheme build(String mediaTypeString, String isBase64, String dataString) {
+        byte[] data = null;
         //strip out back slashes as you might have in css
         dataString = (dataString != null) ? dataString.replaceAll("\\\\", " ") : dataString;
 
         if (dataString == null || dataString.isEmpty()) {
             data = new byte[0];
         } else if (isBase64 != null) {
-            try {
-                data = base64.decode(dataString);
-            } catch (IllegalArgumentException e) {
-                throw new DataURISchemeParseException(e.getMessage());
-            }
+            data = base64.decode(dataString);
         } else {
             //TODO: handle encodings
             MediaType mediaType = MediaType.parse(mediaTypeString);
@@ -94,16 +89,12 @@ public class DataURISchemeUtil {
         extractMatcher.reset(string);
         List<DataURIScheme> list = null;
         while (extractMatcher.find()) {
-            try {
-                DataURIScheme dataURIScheme = build(extractMatcher.group(1),
-                        extractMatcher.group(2), extractMatcher.group(3));
-                if (list == null) {
-                    list = new ArrayList<>();
-                }
-                list.add(dataURIScheme);
-            } catch (DataURISchemeParseException e) {
-                //skip malformed values when scraping free text
+            DataURIScheme dataURIScheme = build(extractMatcher.group(1), extractMatcher.group(2),
+                    extractMatcher.group(3));
+            if (list == null) {
+                list = new ArrayList<>();
             }
+            list.add(dataURIScheme);
         }
         return (list == null) ? Collections.emptyList() : list;
     }
