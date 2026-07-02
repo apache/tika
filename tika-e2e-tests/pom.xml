@@ -103,14 +103,6 @@
                 <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
-
-            <!-- Lombok -->
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-                <optional>true</optional>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -123,15 +115,6 @@
                     <version>3.15.0</version>
                     <configuration>
                         <release>17</release>
-                        <!-- maven-compiler-plugin 3.15 no longer auto-discovers classpath
-                             annotation processors; declare Lombok explicitly so @Slf4j runs. -->
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>
