@@ -251,6 +251,62 @@ for instantiation.
 }
 ----
 
+=== Untrusted (Wire) Input: Restricted Mode
+
+Configuration files loaded at startup via `TikaLoader` are treated as trusted.
+Per-request configuration arriving over the wire — tika-server request bodies
+and pipes `FetchEmitTuple`s — is deserialized in *restricted mode*
+(`ParseContextDeserializer.readParseContext(node, true)`), which adds a second,
+fail-closed gate on top of the registry:
+
+* Only context-key types confined to shaping this request's metadata or output
+  may be instantiated from the wire: `MetadataFilter`, `ContentHandlerFactory`,
+  `ContentHandlerDecoratorFactory`, `DigesterFactory`,
+  `MetadataWriteLimiterFactory`, `UnpackSelector`
+* Types with exec/IO/network capability or control over which components run
+  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`,
+  `Translator`, `EmbeddedDocumentExtractorFactory`
+* The check is fail-closed: a newly added context-key interface is blocked until
+  it is consciously allow-listed
+* The whole tree is scanned *before* any component is constructed
+
+The allowlist/blocklist lives in `ComponentNameResolver`
+(`WIRE_INSTANTIABLE_CONTEXT_KEYS` / `WIRE_BLOCKED_CONTEXT_KEYS`); an
+exhaustiveness test asserts every context-key interface is classified as
+exactly one of the two. Plain config DTOs (non-component keys) are never
+blocked.
+
+== Framework Directives
+
+Some JSON keys are consumed by the loading framework itself rather than by the
+component whose config object they appear in. When such a directive shares a
+JSON object with a component's own properties, it carries a leading underscore
+to avoid namespace collisions with legitimate component config keys:
+
+[source,json]
+----
+{
+  "parsers": [
+    {
+      "pdf-parser": {
+        "_mime-include": ["application/pdf"],
+        "_mime-exclude": ["application/pdf+fdf"],
+        "extractInlineImages": true
+      }
+    }
+  ]
+}
+----
+
+`_mime-include`/`_mime-exclude` are stripped before the component sees its
+config and are applied by the framework as a MIME-filtering decorator around
+the parser. New framework directives must follow the underscore convention.
+
+Marker entries that have no component-config namespace of their own are the
+exception: `"exclude"` on `default-parser`/`default-detector`/
+`default-encoding-detector` needs no prefix because those markers carry only
+framework keys.
+
 == Creating a Custom Component
 
 Complete example of a custom metadata filter:

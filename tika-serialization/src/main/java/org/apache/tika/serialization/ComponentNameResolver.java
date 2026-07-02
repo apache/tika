@@ -128,13 +128,14 @@ public final class ComponentNameResolver {
     }
 
     /**
-     * Resolves a friendly name or FQCN to a Class.
-     * Searches all registered component registries, falling back to Class.forName.
+     * Resolves a friendly name (or registered FQCN) to a Class by searching the
+     * registered component registries only. There is deliberately no
+     * Class.forName fallback: unregistered names are rejected for security.
      *
-     * @param name friendly name or fully qualified class name
-     * @param classLoader the class loader to use for FQCN fallback
+     * @param name friendly name or registered fully qualified class name
+     * @param classLoader unused for resolution; retained for API stability
      * @return the resolved class
-     * @throws ClassNotFoundException if not found in any registry and not a valid FQCN
+     * @throws ClassNotFoundException if the name is not in any registry
      */
     public static Class<?> resolveClass(String name, ClassLoader classLoader)
             throws ClassNotFoundException {
