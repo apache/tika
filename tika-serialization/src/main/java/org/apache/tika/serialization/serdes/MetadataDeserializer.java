@@ -50,14 +50,14 @@ public class MetadataDeserializer extends JsonDeserializer<Metadata> {
         }
 
         if (token.isScalarValue()) {
-            metadata.set(field, jsonParser.getText());
+            metadata.reconstruct(field, jsonParser.getText(), false);
         } else if (jsonParser.isExpectedStartArrayToken()) {
             token = jsonParser.nextToken();
             while (token != null) {
                 if (token == JsonToken.END_ARRAY) {
                     return true;
                 } else if (token.isScalarValue()) {
-                    metadata.add(field, jsonParser.getText());
+                    metadata.reconstruct(field, jsonParser.getText(), true);
                 } else {
                     break;
                 }
