@@ -75,10 +75,18 @@ indented). Use the `--list-*-names` variants when you want a machine-readable ma
 
 === Custom Class Support
 
-The design permits users to add custom classes through Jackson's polymorphic handling:
+Custom classes are supported through the `@TikaComponent` annotation rather than
+Jackson polymorphic typing:
 
-* `org.apache.tika` patterns are allowed by default
-* Users can define additional inclusion patterns for security
+* Annotate the class with `@TikaComponent`; the annotation processor generates a
+  `META-INF/tika/*.idx` registry entry at compile time
+* Any class whose `.idx` entry is on the classpath can be referenced by its
+  friendly name in JSON configuration
+* Class names or packages that are not registered cannot be instantiated from
+  JSON — there is no package-pattern allowlist and no `Class.forName` fallback
+
+See xref:developers/serialization.adoc[Serialization and Configuration] for the
+full mechanism.
 
 === Configuration Consistency
 
@@ -137,7 +145,13 @@ dependencies on components like `PDFParser`.
 == Security Considerations
 
 * Configuration files at initialization are treated as trusted sources
-* Runtime serialization/deserialization uses an allowlist of permitted packages
-* Custom components can register patterns in `META-INF/tika-serialization-allowlist.txt`
+* Only classes registered via `@TikaComponent` (compile-time-generated
+  `META-INF/tika/*.idx` files) can be instantiated from JSON; unregistered class
+  names are rejected and there is no Jackson default typing
+* Untrusted per-request configuration (tika-server requests, pipes
+  `FetchEmitTuple`s) is deserialized in restricted mode: a fail-closed allowlist
+  permits only metadata/output-shaping context keys (e.g. `MetadataFilter`,
+  `ContentHandlerFactory`, `DigesterFactory`) and blocks `Parser`, `Detector`,
+  `Renderer`, and similar before anything is constructed
 
 See link:design-notes-4x.html[Design Notes for 4.x] for additional architectural context.
