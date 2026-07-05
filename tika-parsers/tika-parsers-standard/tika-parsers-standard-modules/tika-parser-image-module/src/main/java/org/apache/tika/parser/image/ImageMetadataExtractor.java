@@ -25,10 +25,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.adobe.internal.xmp.XMPException;
+import com.adobe.internal.xmp.XMPMetaFactory;
 import com.drew.imaging.heif.HeifMetadataReader;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
@@ -52,6 +55,7 @@ import com.drew.metadata.icc.IccDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
+import com.drew.metadata.xmp.XmpDirectory;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.jempbox.xmp.XMPMetadata;
@@ -95,7 +99,7 @@ public class ImageMetadataExtractor {
     public ImageMetadataExtractor(Metadata metadata) {
         this(metadata, new CopyUnknownFieldsHandler(), new TiffPageNumberHandler(),
                 new JpegCommentHandler(), new ExifHandler(), new DimensionsHandler(),
-                new GeotagHandler(), new IptcHandler());
+                new GeotagHandler(), new IptcHandler(), new XmpHandler());
     }
 
     /**
@@ -301,6 +305,56 @@ public class ImageMetadataExtractor {
                             metadata.set(UNKNOWN_IMG_NS + name, value);
                         }
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Copies the XMP properties parsed by Metadata Extractor into the metadata,
+     * keyed by their {@code prefix:name} path. The other handlers copy a
+     * directory's tags, but XMP keeps its properties in a separate map
+     * ({@link XmpDirectory#getXmpProperties()}), so without this they are lost.
+     * A property is skipped when its key is already set or matches a known Tika
+     * field, so normalized values from other handlers are not overwritten.
+     */
+    static class XmpHandler implements DirectoryHandler {
+
+        static {
+            // XMPCore's namespace registry is process-global and keeps the first
+            // prefix it sees for a URI. Pin canonical prefixes so keys stay stable
+            // (files use both Camera and GCamera for the Google photo namespace).
+            // https://developer.android.com/media/platform/motion-photo-format
+            try {
+                XMPMetaFactory.getSchemaRegistry()
+                        .registerNamespace("http://ns.google.com/photos/1.0/camera/", "Camera");
+                XMPMetaFactory.getSchemaRegistry()
+                        .registerNamespace("http://ns.google.com/photos/1.0/container/", "Container");
+                XMPMetaFactory.getSchemaRegistry()
+                        .registerNamespace("http://ns.google.com/photos/1.0/container/item/", "Item");
+            } catch (XMPException e) {
+                // Constant, valid URIs, so this cannot throw. A broken registration
+                // would make the keys non-deterministic (parse-order dependent), which
+                // MotionPhotoXmpTest catches in CI; rethrowing from a static initializer
+                // would break all image parsing, so it is swallowed.
+            }
+        }
+
+        public boolean supports(Class<? extends Directory> directoryType) {
+            return XmpDirectory.class.isAssignableFrom(directoryType);
+        }
+
+        public void handle(Directory directory, Metadata metadata) throws MetadataException {
+            Map<String, String> properties = ((XmpDirectory) directory).getXmpProperties();
+            if (properties == null) {
+                return;
+            }
+            for (Map.Entry<String, String> property : properties.entrySet()) {
+                String name = property.getKey();
+                String value = property.getValue();
+                if (value != null && metadata.get(name) == null
+                        && !MetadataFields.isMetadataField(name)) {
+                    metadata.set(name, value);
                 }
             }
         }
