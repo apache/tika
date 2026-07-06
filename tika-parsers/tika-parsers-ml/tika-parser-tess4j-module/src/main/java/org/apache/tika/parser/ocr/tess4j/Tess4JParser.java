@@ -38,11 +38,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaProgressTracker;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;

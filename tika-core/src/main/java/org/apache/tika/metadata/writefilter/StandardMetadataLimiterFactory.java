@@ -19,7 +19,7 @@ package org.apache.tika.metadata.writefilter;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * Standard factory for creating {@link StandardMetadataLimiter} instances.

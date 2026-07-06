@@ -25,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 
-import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
 
 /**
  * Tokenizer for tika-eval text analysis. Provides two modes:
@@ -53,7 +53,7 @@ import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
  * </ol>
  * <p>
  * This class is intentionally separate from
- * {@link org.apache.tika.langdetect.charsoup.WordTokenizer} to avoid
+ * {@link org.apache.tika.langdetect.charsoup.core.WordTokenizer} to avoid
  * parameterization in the language-detection hot path.
  */
 public class TikaEvalTokenizer {

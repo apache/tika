@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.config;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +26,8 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 public class JsonConfigHelperTest {
 

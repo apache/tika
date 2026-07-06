@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.emitter.Emitter;
@@ -45,6 +44,7 @@ import org.apache.tika.pipes.api.emitter.EmitterNotFoundException;
 import org.apache.tika.pipes.core.PluginsTestHelper;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 public class EmitterManagerTest {
 

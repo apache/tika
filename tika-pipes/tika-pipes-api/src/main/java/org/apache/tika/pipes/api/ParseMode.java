@@ -18,7 +18,7 @@ package org.apache.tika.pipes.api;
 
 import java.util.Locale;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * Controls how embedded documents are handled during parsing.

@@ -42,7 +42,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.JsonConfigHelper;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;

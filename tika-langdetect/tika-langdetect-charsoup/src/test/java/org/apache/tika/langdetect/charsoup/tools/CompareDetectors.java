@@ -41,8 +41,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
 import org.apache.tika.langdetect.charsoup.ConfusableGroups;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;

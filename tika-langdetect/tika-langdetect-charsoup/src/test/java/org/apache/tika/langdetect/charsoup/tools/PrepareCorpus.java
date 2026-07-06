@@ -37,7 +37,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Pattern;
 
-import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
 
 /**
  * Converts a raw MADLAD corpus directory into the three data splits used by

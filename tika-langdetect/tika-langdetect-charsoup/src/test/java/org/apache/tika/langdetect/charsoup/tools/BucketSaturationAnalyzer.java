@@ -29,7 +29,7 @@ import java.util.Random;
 import java.util.TreeMap;
 import java.util.function.IntFunction;
 
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 
 /**
  * Analyzes bucket saturation for different bucket sizes and extractors.

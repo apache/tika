@@ -21,7 +21,7 @@ import java.util.HashMap;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
