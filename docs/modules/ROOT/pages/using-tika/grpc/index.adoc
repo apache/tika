@@ -33,19 +33,22 @@ metadata and content.
 
 [WARNING]
 ====
-Treat tika-grpc as a privileged, trusted-network-only service — it is *more
-exposed by default than tika-server*. By default it has no transport security and
-no per-caller authorization, and its core `FetchAndParse` surface is always on:
-anyone who can reach the gRPC port can fetch and parse whatever the server's
-configured fetchers can reach.
+The primary rule is *trusted callers only*. Treat tika-grpc as a privileged,
+trusted-network-only service — it is *even more exposed by default than
+tika-server*. By default it has no transport security and no per-caller
+authorization, and its core `FetchAndParse` surface is always on: anyone who can
+reach the gRPC port can fetch and parse whatever the server's configured fetchers
+can reach.
 
 Its most dangerous capabilities — runtime mutation of the fetcher/iterator store
 (for example `SaveFetcher`, which can read files and load code on the server
 host) and per-request parse configuration — are *off by default*, behind the
 flags in <<_capability_flags>>, mirroring tika-server's default-deny capability
-flags (`allowPipes`, `allowPerRequestConfig`). Those flags are defense in depth,
-not a substitute for network controls and mutual TLS. Run tika-grpc only behind
-strict network controls.
+flags (`allowPipes`, `allowPerRequestConfig`). Those flags are *defense in depth,
+not security boundaries* — they reduce what a caller can reach but are not a
+substitute for network controls and mutual TLS, and they do not make it safe to
+expose tika-grpc to untrusted callers. Run tika-grpc only behind strict network
+controls.
 ====
 
 === Capability Flags

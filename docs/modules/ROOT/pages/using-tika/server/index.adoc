@@ -33,6 +33,20 @@ request-handling JVM; treat those as best-effort under load. See
 xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating Tika Server to 4.x]
 for the full breaking-change list when upgrading from 3.x.
 
+== Security
+
+IMPORTANT: The primary rule is *trusted callers only*. `tika-server` is not a security boundary:
+it performs no authentication or authorization, and parsing untrusted documents is inherently
+risky. Only expose it to trusted callers on a trusted network — never directly to untrusted users
+or the public internet — and put your own authentication, authorization, and network controls in
+front of it.
+
+`allowPipes` and `allowPerRequestConfig` (both off by default) are *defense in depth, not security
+boundaries*: they reduce what a caller can reach, but they do **not** make it safe to expose the
+server to untrusted callers. tika-grpc is even more exposed by default. See
+xref:security.adoc[Security] for the shared trust model and
+xref:using-tika/grpc/index.adoc[Tika gRPC] for the gRPC specifics.
+
 == Basic Usage
 
 [source,bash]

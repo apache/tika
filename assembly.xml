@@ -31,5 +31,13 @@
         <exclude>**/*.releaseBackup</exclude>
       </excludes>
     </fileSet>
+    <!-- Re-add .mvn (dropped by **/.*/** above); required to build the source release (TIKA-4768). -->
+    <fileSet>
+      <directory>${project.basedir}/.mvn</directory>
+      <outputDirectory>.mvn</outputDirectory>
+      <excludes>
+        <exclude>.develocity/**</exclude>
+      </excludes>
+    </fileSet>
   </fileSets>
 </assembly>

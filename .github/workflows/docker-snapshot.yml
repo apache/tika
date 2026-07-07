@@ -25,7 +25,37 @@ on:
       - '*.md'
 
 jobs:
+  # Gate: publish snapshot images ONLY for -SNAPSHOT versions. The
+  # maven-release-plugin 'prepare release' commit briefly sets project.version
+  # to the bare release version (e.g. 4.0.0-beta-1) and pushes it to main; without
+  # this gate that push would publish release-named images to Docker Hub before the
+  # vote. Release/GA images are published post-vote by docker-release.yml.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+      - id: check
+        name: Publish only for -SNAPSHOT versions
+        run: |
+          V=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Resolved project.version=$V"
+          if [[ "$V" == *-SNAPSHOT ]]; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Version '$V' is not a -SNAPSHOT (likely a maven-release-plugin 'prepare release' commit); skipping snapshot image publish so release-named images are not pushed to Docker Hub before the vote."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: gate
+    if: needs.gate.outputs.publish == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
 

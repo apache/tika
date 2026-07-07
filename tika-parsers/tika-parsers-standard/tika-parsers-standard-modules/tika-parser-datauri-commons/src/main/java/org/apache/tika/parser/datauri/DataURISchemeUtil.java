@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.html;
+package org.apache.tika.parser.datauri;
 
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -96,7 +96,6 @@ public class DataURISchemeUtil {
             }
             list.add(dataURIScheme);
         }
-        return (list == null) ? Collections.EMPTY_LIST : list;
+        return (list == null) ? Collections.emptyList() : list;
     }
-
 }

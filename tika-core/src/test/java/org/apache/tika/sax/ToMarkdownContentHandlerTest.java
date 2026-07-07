@@ -21,6 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Random;
 
@@ -1458,5 +1461,63 @@ public class ToMarkdownContentHandlerTest {
             sb.append(String.format(Locale.ROOT,"\\u%04x", (int) s.charAt(i)));
         }
         return sb.toString();
+    }
+
+    // --- partial-content-on-abort (the OutputStream/Writer path used by tika-app -o) ---
+
+    @Test
+    public void testPartialContentWrittenToWriterOnAbort() throws Exception {
+        StringWriter writer = new StringWriter();
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler(writer);
+        handler.startDocument();
+        startElement(handler, "h1");
+        chars(handler, "Title");
+        endElement(handler, "h1");
+        startElement(handler, "p");
+        chars(handler, "Some body text.");
+        endElement(handler, "p");
+        // Parser aborts here -- endDocument() is never called.
+        assertTrue(writer.toString().isEmpty(),
+                "nothing should be written before endDocument / partial flush");
+
+        handler.writePartialContentIfUnfinished();
+
+        String out = writer.toString();
+        assertTrue(out.contains("# Title"), "partial heading must be flushed: " + out);
+        assertTrue(out.contains("Some body text."), "partial body must be flushed: " + out);
+    }
+
+    @Test
+    public void testPartialContentWrittenToOutputStreamOnAbort() throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ToMarkdownContentHandler handler =
+                new ToMarkdownContentHandler(baos, StandardCharsets.UTF_8.name());
+        handler.startDocument();
+        startElement(handler, "h1");
+        chars(handler, "Heading");
+        endElement(handler, "h1");
+        // Parser aborts before endDocument.
+        assertEquals(0, baos.size(), "OutputStream is empty until flush");
+
+        handler.writePartialContentIfUnfinished();
+
+        String out = new String(baos.toByteArray(), StandardCharsets.UTF_8);
+        assertTrue(out.contains("# Heading"), "partial content must reach the OutputStream: " + out);
+    }
+
+    @Test
+    public void testWritePartialIsIdempotentAfterEndDocument() throws Exception {
+        StringWriter writer = new StringWriter();
+        ToMarkdownContentHandler handler = new ToMarkdownContentHandler(writer);
+        handler.startDocument();
+        startElement(handler, "h1");
+        chars(handler, "Done");
+        endElement(handler, "h1");
+        handler.endDocument();
+
+        String afterEnd = writer.toString();
+        // A finally-block flush after a successful parse must not double-render.
+        handler.writePartialContentIfUnfinished();
+        assertEquals(afterEnd, writer.toString(), "writePartial after endDocument must be a no-op");
     }
 }

@@ -48,5 +48,4 @@ public class TikaConfigAsyncWriterTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         assertEquals("-Xmx1g", pipesConfig.getForkedJvmArgs().get(0));
     }
-
 }

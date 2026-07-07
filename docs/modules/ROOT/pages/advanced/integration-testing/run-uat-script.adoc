@@ -51,15 +51,24 @@ Coverage includes:
 * `/unpack/all` (embedded extraction; verifies the response is a valid zip)
 * `/language/stream`
 * `/meta/form`, `/rmeta/form` (multipart variants)
-* `allowPerRequestConfig=false` gating: `/meta/config`, `/rmeta/config`,
-  `/tika/config` all return 403; and `allowPipes=false` gating: selecting the
-  `/pipes` or `/async` endpoints without `allowPipes` makes the server refuse to start
-* `X-Tika-OCRskipOcr` header, `Content-Disposition` filename
+* `allowPerRequestConfig=false` gating, both enforcement points: the path-based
+  filter (`/meta/config`, `/rmeta/config`, `/tika/config`, `/unpack/all/config` all
+  return 403) and the content-based gate (a multipart `config` part on `/unpack`
+  returns 403). Note there is no `/unpack/config` path -- the config-variant is
+  `/unpack/all/config`.
+* `/status` is not registered by default (returns 404 unless explicitly listed
+  under `endpoints`)
+* `X-Tika-OCRskipOcr` header
 * 404 / 405 error handling
+* OCR (`PUT /tika/text` of an image whose text only exists as pixels): skipped when the
+  server has no tesseract (the minimal image / a plain `java -jar` server), and a hard
+  failure when `TIKA_UAT_REQUIRE_OCR=1` is set. `docker-tool.sh test-uat` sets that env
+  var for the `-full` image, so OCR is asserted there and skipped for the minimal image.
 
-Two checks (T18d, T27) are currently disabled with inline comments pointing
-at tika-core behavior anomalies that need fixing — re-enable them when those
-land.
+The `allowPipes=false` "refuse to start" gating and the stale-`enableUnsecureFeatures`
+upgrade behavior are *start-time* properties, so they are not in this script (which runs
+against an already-running server) -- they are covered by the
+`org.apache.tika.server.e2e.RunUatSmokeTest` e2e test instead.
 
 == Running it
 
