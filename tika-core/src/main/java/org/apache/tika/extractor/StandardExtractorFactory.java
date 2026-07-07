@@ -16,7 +16,7 @@
  */
 package org.apache.tika.extractor;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 

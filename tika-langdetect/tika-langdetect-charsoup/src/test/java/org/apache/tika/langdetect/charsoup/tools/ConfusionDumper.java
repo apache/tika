@@ -30,8 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 
 /**
  * Dumps a confusion matrix for a specified set of languages.

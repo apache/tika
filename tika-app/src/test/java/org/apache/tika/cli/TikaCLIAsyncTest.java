@@ -39,7 +39,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfigHelper;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 public class TikaCLIAsyncTest {
 

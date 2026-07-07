@@ -32,7 +32,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingProbeCache;

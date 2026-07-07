@@ -24,8 +24,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 
 /**
  * Prints top-N logits and softmax scores for Flores test sentences

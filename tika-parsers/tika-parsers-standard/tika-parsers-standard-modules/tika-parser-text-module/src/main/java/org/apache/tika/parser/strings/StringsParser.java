@@ -34,10 +34,10 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.config.TikaProgressTracker;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.FileCommandDetector;

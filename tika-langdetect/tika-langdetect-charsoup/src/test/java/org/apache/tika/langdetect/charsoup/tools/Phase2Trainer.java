@@ -43,9 +43,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.DoubleAdder;
 
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
-import org.apache.tika.langdetect.charsoup.SaltedNgramFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.SaltedNgramFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.ScriptAwareFeatureExtractor;
 
 /**
  * Phase 2 multinomial logistic regression trainer.

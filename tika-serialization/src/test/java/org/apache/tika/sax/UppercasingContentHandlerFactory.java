@@ -18,7 +18,7 @@ package org.apache.tika.sax;
 
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * A ContentHandlerFactory that creates UppercasingContentHandler instances.

@@ -356,8 +356,8 @@ public class CommonTokenGenerator {
 
     private static Set<String> loadModelLabels(Path modelFile) throws IOException {
         try (java.io.InputStream is = Files.newInputStream(modelFile)) {
-            org.apache.tika.langdetect.charsoup.CharSoupModel model =
-                    org.apache.tika.langdetect.charsoup.CharSoupModel.load(is);
+            org.apache.tika.langdetect.charsoup.core.CharSoupModel model =
+                    org.apache.tika.langdetect.charsoup.core.CharSoupModel.load(is);
             Set<String> labels = new HashSet<>(model.getNumClasses());
             Collections.addAll(labels, model.getLabels());
             return Collections.unmodifiableSet(labels);

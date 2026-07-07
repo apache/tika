@@ -24,9 +24,9 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 
 /**
  * Prints sentences from non-Korean languages that the CharSoup model

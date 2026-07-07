@@ -39,6 +39,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.detect.OverrideEncodingDetector;
+import org.apache.tika.detect.html.HtmlEncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -49,7 +50,6 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
 import org.apache.tika.parser.txt.TXTParser;
 

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 
 /**

@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 package org.apache.tika.config;
-
 import java.io.Serializable;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
 /**
