@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
 
 public class AudioParserTest {
 
@@ -33,7 +34,7 @@ public class AudioParserTest {
                 new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/vnd.wave", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("44100.0", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
@@ -49,7 +50,7 @@ public class AudioParserTest {
                 new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/x-aiff", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("44100.0", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
@@ -65,7 +66,7 @@ public class AudioParserTest {
                 new Tika().parseToString(AudioParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/basic", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("44100.0", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));

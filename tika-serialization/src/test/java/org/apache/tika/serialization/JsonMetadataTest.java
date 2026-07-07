@@ -134,7 +134,7 @@ public class JsonMetadataTest {
 
     @Test
     public void testInternalKeysRoundTrip() throws Exception {
-        //TIKA-4769: reserved keys must survive serialize->deserialize (reconstructed via Property).
+        //reserved keys must survive serialize->deserialize (reconstructed via Property).
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.TIKA_CONTENT, "the content");
         m.add(TikaCoreProperties.TIKA_PARSED_BY, "org.apache.tika.parser.DefaultParser");

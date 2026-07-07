@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-/** TIKA-4769: reserved {@code X-TIKA:} keys can't be overwritten by String writes, only via Property. */
+/** Reserved {@code X-TIKA:} keys can't be overwritten by String writes, only via Property. */
 public class MetadataInternalKeyGuardTest {
 
     @Test
@@ -81,5 +81,45 @@ public class MetadataInternalKeyGuardTest {
         Metadata metadata = new Metadata();
         // no NPE on a null name
         metadata.set((String) null, "x");
+    }
+
+    @Test
+    public void testReconstructPreservesRegisteredReservedKey() {
+        Metadata metadata = new Metadata();
+        metadata.reconstruct(TikaCoreProperties.TIKA_CONTENT.getName(), "the content", false);
+        assertEquals("the content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+        metadata.reconstruct(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p1", true);
+        metadata.reconstruct(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p2", true);
+        assertArrayEquals(new String[] {"p1", "p2"},
+                metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY));
+    }
+
+    @Test
+    public void testReconstructPreservesUnregisteredReservedKey() {
+        Metadata metadata = new Metadata();
+        String unregistered = TikaCoreProperties.TIKA_META_PREFIX + "noSuchRegisteredProperty";
+        assertNull(Property.get(unregistered), "precondition: key must be unregistered");
+
+        metadata.set(unregistered, "dropped");
+        assertNull(metadata.get(unregistered));
+
+        metadata.reconstruct(unregistered, "kept", false);
+        assertEquals("kept", metadata.get(unregistered));
+
+        metadata.reconstruct(unregistered, "kept2", true);
+        assertArrayEquals(new String[] {"kept", "kept2"}, metadata.getValues(unregistered));
+    }
+
+    @Test
+    public void testTrustedModeAllowsReservedStringWrites() {
+        Metadata metadata = new Metadata();
+        metadata.setTrusted(true);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
+        assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+        metadata.setTrusted(false);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "blocked");
+        assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

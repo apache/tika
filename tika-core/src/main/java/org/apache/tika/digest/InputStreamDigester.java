@@ -20,9 +20,12 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
@@ -32,8 +35,10 @@ import org.apache.tika.utils.StringUtils;
  */
 public class InputStreamDigester implements Digester {
 
+    private static final Map<String, Property> METADATA_KEY_PROPERTIES = new ConcurrentHashMap<>();
+
     private final String algorithm;
-    private final String metadataKey;
+    private final Property metadataProperty;
     private final Encoder encoder;
 
     /**
@@ -45,7 +50,8 @@ public class InputStreamDigester implements Digester {
      */
     public InputStreamDigester(String algorithm, String metadataKey, Encoder encoder) {
         this.algorithm = algorithm;
-        this.metadataKey = metadataKey;
+        this.metadataProperty =
+                METADATA_KEY_PROPERTIES.computeIfAbsent(metadataKey, Property::internalText);
         this.encoder = encoder;
     }
 
@@ -107,7 +113,7 @@ public class InputStreamDigester implements Digester {
         }
 
         setContentLength(total, metadata);
-        metadata.set(metadataKey, encoder.encode(messageDigest.digest()));
+        metadata.set(metadataProperty, encoder.encode(messageDigest.digest()));
 
         tis.rewind();
     }

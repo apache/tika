@@ -66,7 +66,7 @@ public class JinaEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some document text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some document text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -85,7 +85,7 @@ public class JinaEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "What is Tika?");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "What is Tika?");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -119,7 +119,7 @@ public class JinaEmbeddingFilterTest {
                 + "# Background\n\nSecond section text.";
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), content);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);

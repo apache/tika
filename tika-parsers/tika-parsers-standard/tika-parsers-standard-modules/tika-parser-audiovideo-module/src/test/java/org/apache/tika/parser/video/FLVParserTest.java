@@ -35,11 +35,11 @@ public class FLVParserTest {
 
         assertEquals("", content);
         assertEquals("video/x-flv", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("true", metadata.get("hasVideo"));
-        assertEquals("false", metadata.get("stereo"));
-        assertEquals("true", metadata.get("hasAudio"));
-        assertEquals("120.0", metadata.get("height"));
-        assertEquals("16.0", metadata.get("audiosamplesize"));
+        assertEquals("true", metadata.get("flv:hasVideo"));
+        assertEquals("false", metadata.get("flv:stereo"));
+        assertEquals("true", metadata.get("flv:hasAudio"));
+        assertEquals("120.0", metadata.get("flv:height"));
+        assertEquals("16.0", metadata.get("flv:audiosamplesize"));
     }
 
 }

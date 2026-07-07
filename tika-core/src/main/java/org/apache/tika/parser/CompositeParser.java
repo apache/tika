@@ -345,7 +345,7 @@ public class CompositeParser implements Parser {
         for (Metadata m : record.getMetadataList()) {
             for (String n : m.names()) {
                 for (String v : m.getValues(n)) {
-                    metadata.add(n, v);
+                    metadata.reconstruct(n, v, true);
                 }
             }
         }

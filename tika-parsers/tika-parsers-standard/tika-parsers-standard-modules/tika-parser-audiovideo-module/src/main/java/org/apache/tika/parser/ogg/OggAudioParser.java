@@ -78,7 +78,7 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.GENRE, comments.getGenre());
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
-        metadata.add("vendor", comments.getVendor());
+        metadata.add("vorbis:vendor", comments.getVendor());
 
         for (String comment : comments.getComments("comment")) {
             metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
@@ -94,7 +94,7 @@ public abstract class OggAudioParser extends AbstractParser {
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(key, value);
+                    metadata.add("vorbis:" + key, value);
                 }
             }
         }

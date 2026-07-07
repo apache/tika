@@ -55,6 +55,7 @@ import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFVT;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFX;
 import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaPDFXId;
 import org.apache.tika.parser.xmp.JempboxExtractor;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -95,8 +96,8 @@ public class PDMetadataExtractor {
         try {
             schema = (XMPSchemaIllustrator) xmp.getSchemaByClass(XMPSchemaIllustrator.class);
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         if (schema == null) {
@@ -145,8 +146,8 @@ public class PDMetadataExtractor {
         try {
             schema = (XMPSchemaPDFVT) xmp.getSchemaByClass(XMPSchemaPDFVT.class);
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         if (schema == null) {
@@ -178,8 +179,8 @@ public class PDMetadataExtractor {
                 }
             }
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
         try {
             XMPSchemaPDFX XMPSchemaPDFX = (XMPSchemaPDFX) xmp.getSchemaByClass(XMPSchemaPDFX.class);
@@ -194,8 +195,8 @@ public class PDMetadataExtractor {
                 }
             }
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
     }
@@ -207,8 +208,8 @@ public class PDMetadataExtractor {
         try {
             schema = (XMPSchemaPDFUA) xmp.getSchemaByClass(XMPSchemaPDFUA.class);
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         if (schema == null) {
@@ -232,8 +233,8 @@ public class PDMetadataExtractor {
         try {
             schema = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
         } catch (IOException e) {
-            metadata.set(TikaCoreProperties.TIKA_META_PREFIX + "pdf:metadata-xmp-parse-failed",
-                    "" + e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
         }
 
         if (schema == null) {

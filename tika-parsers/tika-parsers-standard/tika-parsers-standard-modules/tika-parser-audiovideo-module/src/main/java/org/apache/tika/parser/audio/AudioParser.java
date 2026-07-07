@@ -92,7 +92,6 @@ public class AudioParser implements Parser {
             }
             float rate = audioFormat.getSampleRate();
             if (rate != AudioSystem.NOT_SPECIFIED) {
-                metadata.set("samplerate", String.valueOf(rate));
                 metadata.set(XMPDM.AUDIO_SAMPLE_RATE, Integer.toString((int) rate));
             }
             int bits = audioFormat.getSampleSizeInBits();

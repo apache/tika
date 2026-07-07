@@ -100,6 +100,7 @@ public class Metadata
 
 
     private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
+    private transient boolean trusted;
     /**
      * Constructs a new, empty metadata.
      */
@@ -314,27 +315,34 @@ public class Metadata
         addUnchecked(name, value);
     }
 
-    /** Trusted add, bypassing the reserved-key guard; used by the Property overloads. TIKA-4769. */
+    /** Trusted add, bypassing the reserved-key guard. */
     private void addUnchecked(final String name, final String value) {
         writeLimiter.add(name, value, metadata);
     }
 
     /**
-     * TIKA-4769: drop a String write to a reserved {@code X-TIKA:} key so untrusted file content
-     * can't overwrite control-plane metadata. Reserved keys are writable only via their Property.
+     * Mark this Metadata as a trusted transformation target (e.g. a metadata filter), letting
+     * String writes reach reserved {@code X-TIKA:} keys. Reset when the transformation is done.
      */
-    private static boolean blockReservedKeyWrite(String name) {
-        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
-            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property "
-                    + "(TIKA-4769).", name);
+    public void setTrusted(boolean trusted) {
+        this.trusted = trusted;
+    }
+
+    public boolean isTrusted() {
+        return trusted;
+    }
+
+    /** Drop String writes to reserved {@code X-TIKA:} keys unless trusted; use their Property. */
+    private boolean blockReservedKeyWrite(String name) {
+        if (!trusted && name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
             return true;
         }
         return false;
     }
 
     /**
-     * Trusted write for reconstruction paths (clone/merge/deserialize): a reserved {@code X-TIKA:}
-     * key goes through its Property so the guard doesn't drop it; others by name. TIKA-4769.
+     * Trusted write for clone/merge/deserialize; reserved keys go via their Property.
      *
      * @param append add rather than set
      */
@@ -347,8 +355,12 @@ public class Metadata
                 } else {
                     set(property, value);
                 }
-                return;
+            } else if (append) {
+                addUnchecked(name, value);
+            } else {
+                setUnchecked(name, value);
             }
+            return;
         }
         if (append) {
             add(name, value);
@@ -440,7 +452,7 @@ public class Metadata
         setUnchecked(name, value);
     }
 
-    /** Trusted set, bypassing the reserved-key guard. TIKA-4769. */
+    /** Trusted set, bypassing the reserved-key guard. */
     private void setUnchecked(String name, String value) {
         writeLimiter.set(name, value, metadata);
     }
