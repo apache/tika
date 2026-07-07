@@ -183,6 +183,60 @@ cd /path/to/tika-site
 svn commit -m "Update 4.0.0 docs"
 ----
 
+== Publishing the API docs (Javadoc)
+
+The per-version API docs at `https://tika.apache.org/<version>/api/` are a single
+aggregated Javadoc across all modules, generated from the release source tree and
+copied into the tika-site checkout next to the Antora docs.
+
+[NOTE]
+====
+Tika modules declare an `Automatic-Module-Name` but ship no `module-info.java`, so
+`maven-javadoc-plugin`'s aggregate goal defaults to a modular invocation that emits
+nothing (see https://issues.apache.org/jira/browse/TIKA-4318[TIKA-4318]).
+`tika-parent` works around this with an explicit `<sourcepath>` listing every
+module's `src/main/java` (except `tika-grpc`). That list is hand-maintained, so run
+the check in step 2 before generating -- a newly added module would otherwise drop
+out of the docs silently.
+====
+
+. Build and install first. `javadoc:aggregate` compiles nothing; it needs every
+  module jar (and grpc's generated sources) in the local repo. `-Pfast` skips tests
+  for speed:
++
+[source,bash]
+----
+mvn clean install -Pfast
+----
+
+. Verify the aggregate `<sourcepath>` still covers every module:
++
+[source,bash]
+----
+python3 .github/scripts/check_javadoc_sourcepath.py
+# on failure it names the missing module(s); regenerate the list with --fix:
+python3 .github/scripts/check_javadoc_sourcepath.py --fix
+----
+
+. Generate the aggregate Javadoc (output in `target/reports/apidocs/`; `tika-grpc`
+  is intentionally excluded):
++
+[source,bash]
+----
+mvn javadoc:aggregate
+----
+
+. Copy it into the tika-site checkout as this version's `api/` directory and commit:
++
+[source,bash]
+----
+mkdir -p /path/to/tika-site/publish/<version>
+cp -r target/reports/apidocs /path/to/tika-site/publish/<version>/api
+cd /path/to/tika-site
+svn add publish/<version>
+svn commit -m "Add <version> API docs"
+----
+
 == Site Structure
 
 The Antora configuration files:
