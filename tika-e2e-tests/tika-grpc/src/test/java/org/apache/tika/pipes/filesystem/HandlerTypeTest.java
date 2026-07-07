@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -38,6 +37,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
@@ -58,11 +59,11 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
  * Example: {"basic-content-handler-factory": {"type": "HTML"}}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Slf4j
 @Tag("E2ETest")
 @DisabledOnOs(value = OS.WINDOWS, disabledReason = "exec:exec classpath exceeds Windows CreateProcess command-line length limit")
 class HandlerTypeTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HandlerTypeTest.class);
     private static final File TEST_FOLDER = ExternalTestBase.TEST_FOLDER;
     private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
 
@@ -75,7 +76,7 @@ class HandlerTypeTest {
             killProcessOnPort(3344);
             killProcessOnPort(10800);
         } catch (Exception e) {
-            log.debug("No orphaned processes to clean up: {}", e.getMessage());
+            LOG.debug("No orphaned processes to clean up: {}", e.getMessage());
         }
 
         ExternalTestBase.copyTestFixtures();
@@ -85,7 +86,7 @@ class HandlerTypeTest {
     @AfterAll
     void teardown() {
         if (localGrpcProcess != null) {
-            log.info("Stopping local gRPC server and child processes");
+            LOG.info("Stopping local gRPC server and child processes");
             localGrpcProcess.destroy();
             try {
                 if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
@@ -97,14 +98,14 @@ class HandlerTypeTest {
                 killProcessOnPort(3344);
                 killProcessOnPort(10800);
             } catch (Exception e) {
-                log.debug("Error during teardown: {}", e.getMessage());
+                LOG.debug("Error during teardown: {}", e.getMessage());
             }
-            log.info("Local gRPC server stopped");
+            LOG.info("Local gRPC server stopped");
         }
     }
 
     private static void startLocalGrpcServer() throws Exception {
-        log.info("Starting local tika-grpc server with Ignite config for HandlerType test");
+        LOG.info("Starting local tika-grpc server with Ignite config for HandlerType test");
 
         Path currentDir = Path.of("").toAbsolutePath();
         Path tikaRootDir = currentDir;
@@ -123,8 +124,8 @@ class HandlerTypeTest {
             throw new IllegalStateException("Config file not found: " + configFile);
         }
 
-        log.info("tika-grpc dir: {}", tikaGrpcDir);
-        log.info("Config file: {}", configFile);
+        LOG.info("tika-grpc dir: {}", tikaGrpcDir);
+        LOG.info("Config file: {}", configFile);
 
         String javaHome = System.getProperty("java.home");
         boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
@@ -172,7 +173,7 @@ class HandlerTypeTest {
                     new InputStreamReader(localGrpcProcess.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.info("tika-grpc: {}", line);
+                    LOG.info("tika-grpc: {}", line);
                     if (line.contains("Ignite server started") ||
                         (line.contains("Table") && line.contains("created successfully")) ||
                         line.contains("Server started, listening on")) {
@@ -183,7 +184,7 @@ class HandlerTypeTest {
                     }
                 }
             } catch (IOException e) {
-                log.error("Error reading server output", e);
+                LOG.error("Error reading server output", e);
             }
         });
         logThread.setDaemon(true);
@@ -230,7 +231,7 @@ class HandlerTypeTest {
             throw new RuntimeException("tika-grpc server with Ignite failed to start within timeout", e);
         }
 
-        log.info("HandlerType test server ready on port {}", GRPC_PORT);
+        LOG.info("HandlerType test server ready on port {}", GRPC_PORT);
     }
 
     private ManagedChannel getManagedChannel() {
@@ -258,10 +259,10 @@ class HandlerTypeTest {
                     .flatMap(h -> h.info().commandLine())
                     .orElse("");
                 if (!cmdLine.contains("tika") && !cmdLine.contains("TikaGrpc") && !cmdLine.contains("ignite")) {
-                    log.debug("Skipping kill of PID {} on port {} — not a tika/ignite process", pid, port);
+                    LOG.debug("Skipping kill of PID {} on port {} — not a tika/ignite process", pid, port);
                     return;
                 }
-                log.info("Killing tika/ignite process {} on port {}", pid, port);
+                LOG.info("Killing tika/ignite process {} on port {}", pid, port);
                 new ProcessBuilder("kill", String.valueOf(pid)).start().waitFor(2, TimeUnit.SECONDS);
                 Thread.sleep(1000);
                 new ProcessBuilder("kill", "-9", String.valueOf(pid)).start().waitFor(2, TimeUnit.SECONDS);
@@ -280,7 +281,7 @@ class HandlerTypeTest {
                 }
             }
         } catch (Exception e) {
-            log.debug("Error checking parent process", e);
+            LOG.debug("Error checking parent process", e);
         }
         return false;
     }
@@ -300,7 +301,7 @@ class HandlerTypeTest {
                     .setFetcherType("file-system-fetcher")
                     .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
                     .build());
-            log.info("Fetcher created: {}", saveReply.getFetcherId());
+            LOG.info("Fetcher created: {}", saveReply.getFetcherId());
 
             // Parse sample.html requesting HTML output
             FetchAndParseReply htmlReply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
@@ -309,13 +310,13 @@ class HandlerTypeTest {
                     .setParseContextJson("{\"basic-content-handler-factory\": {\"type\": \"HTML\"}}")
                     .build());
 
-            log.info("HTML parse status: {}", htmlReply.getStatus());
+            LOG.info("HTML parse status: {}", htmlReply.getStatus());
             Assertions.assertEquals("PARSE_SUCCESS", htmlReply.getStatus(),
                     "Parse should succeed with HTML handler type");
 
             String htmlContent = htmlReply.getFieldsMap().get("X-TIKA:content");
             Assertions.assertNotNull(htmlContent, "Content should be present in HTML response");
-            log.info("HTML content (first 200 chars): {}", htmlContent.substring(0, Math.min(200, htmlContent.length())));
+            LOG.info("HTML content (first 200 chars): {}", htmlContent.substring(0, Math.min(200, htmlContent.length())));
             Assertions.assertTrue(
                     htmlContent.contains("<html") || htmlContent.contains("<body") || htmlContent.contains("<p"),
                     "HTML handler should produce HTML markup, got: " + htmlContent);
@@ -327,13 +328,13 @@ class HandlerTypeTest {
                     .setParseContextJson("{\"basic-content-handler-factory\": {\"type\": \"TEXT\"}}")
                     .build());
 
-            log.info("Text parse status: {}", textReply.getStatus());
+            LOG.info("Text parse status: {}", textReply.getStatus());
             Assertions.assertEquals("PARSE_SUCCESS", textReply.getStatus(),
                     "Parse should succeed with TEXT handler type");
 
             String textContent = textReply.getFieldsMap().get("X-TIKA:content");
             Assertions.assertNotNull(textContent, "Content should be present in text response");
-            log.info("Text content (first 200 chars): {}", textContent.substring(0, Math.min(200, textContent.length())));
+            LOG.info("Text content (first 200 chars): {}", textContent.substring(0, Math.min(200, textContent.length())));
             Assertions.assertFalse(
                     textContent.contains("<html") || textContent.contains("<body"),
                     "TEXT handler should not produce HTML tags, got: " + textContent);
