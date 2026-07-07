@@ -18,7 +18,7 @@ package org.apache.tika.parser.xml;
 
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.langdetect.charsoup;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

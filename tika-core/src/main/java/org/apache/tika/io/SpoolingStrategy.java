@@ -19,7 +19,7 @@ package org.apache.tika.io;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;

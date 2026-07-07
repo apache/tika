@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.69.0</google.cloud.version>
-    <aws2.version>2.46.17</aws2.version>
+    <aws2.version>2.47.0</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -366,7 +366,7 @@
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.3</jackrabbit.version>
     <jackson.version>2.22.0</jackson.version>
-    <jackcess.version>4.0.10</jackcess.version>
+    <jackcess.version>4.0.11</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
@@ -396,8 +396,7 @@
     <kafka.version>4.3.1</kafka.version>
     <kotlin-stdlib.version>2.4.0</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.26.0</log4j2.version>
-    <lombok.version>1.18.46</lombok.version>
+    <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
@@ -410,7 +409,7 @@
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.15.Final</netty.version>
+    <netty.version>4.2.16.Final</netty.version>
     <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.10</opennlp.version>
@@ -1583,7 +1582,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.7.0</version>
+        <version>3.8.0</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>

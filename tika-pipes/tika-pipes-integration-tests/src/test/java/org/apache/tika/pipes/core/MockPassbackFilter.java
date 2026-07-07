@@ -19,7 +19,7 @@ package org.apache.tika.pipes.core;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

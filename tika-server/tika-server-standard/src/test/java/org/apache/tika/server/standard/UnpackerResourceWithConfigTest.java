@@ -48,11 +48,11 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.UnpackerResource;

@@ -18,7 +18,7 @@ package org.apache.tika.metadata.filter;
 
 import java.util.Locale;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.metadata.Metadata;
 
 /**

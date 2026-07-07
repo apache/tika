@@ -18,11 +18,11 @@ package org.apache.tika.langdetect.charsoup.tools;
 
 import java.util.Arrays;
 
-import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
-import org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor;
-import org.apache.tika.langdetect.charsoup.ScriptCategory;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.ScriptAwareFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.ScriptCategory;
 
 /**
  * Fully-parameterized feature extractor used for ablation studies and
@@ -31,7 +31,7 @@ import org.apache.tika.langdetect.charsoup.ScriptCategory;
  * CharSoup model (flat-16k+tri+suf+pre, 2026-02).
  * <p>
  * Production inference uses the hardcoded
- * {@link org.apache.tika.langdetect.charsoup.ScriptAwareFeatureExtractor}
+ * {@link org.apache.tika.langdetect.charsoup.core.ScriptAwareFeatureExtractor}
  * instead. This class exists so that {@link AblationRunner} and
  * {@link Phase2Trainer} can reproduce the exact training conditions.
  */

@@ -37,12 +37,12 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.detect.icu4j.Icu4jEncodingDetector;
+import org.apache.tika.detect.universal.UniversalEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.CharsetConfusables;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.txt.Icu4jEncodingDetector;
-import org.apache.tika.parser.txt.UniversalEncodingDetector;
 
 /**
  * Compares {@code MojibusterEncodingDetector} against ICU4J and juniversalchardet.

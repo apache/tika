@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 package org.apache.tika.langdetect.charsoup;
-
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
 import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

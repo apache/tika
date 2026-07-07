@@ -48,7 +48,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -60,6 +59,7 @@ import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 @Testcontainers(disabledWithoutDocker = true)
 public class OpenSearchTest {

@@ -32,7 +32,7 @@ import opennlp.tools.util.normalizer.NumberCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.ShrinkCharSequenceNormalizer;
 import opennlp.tools.util.normalizer.TwitterCharSequenceNormalizer;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;

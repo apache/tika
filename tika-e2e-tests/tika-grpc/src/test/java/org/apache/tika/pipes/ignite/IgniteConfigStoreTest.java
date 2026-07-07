@@ -33,7 +33,6 @@ import java.util.stream.Stream;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,6 +41,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -57,11 +58,11 @@ import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
-@Slf4j
 @Tag("E2ETest")
 @DisabledOnOs(value = OS.WINDOWS, disabledReason = "Windows classpath length limit (CreateProcess error=206) exceeded by exec:exec with full Tika classpath")
 class IgniteConfigStoreTest {
-    
+
+    private static final Logger LOG = LoggerFactory.getLogger(IgniteConfigStoreTest.class);
     private static final int MAX_STARTUP_TIMEOUT = ExternalTestBase.MAX_STARTUP_TIMEOUT;
     private static final File TEST_FOLDER = ExternalTestBase.TEST_FOLDER;
     private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
@@ -78,7 +79,7 @@ class IgniteConfigStoreTest {
                 killProcessOnPort(3344);
                 killProcessOnPort(10800);
             } catch (Exception e) {
-                log.debug("No orphaned processes to clean up");
+                LOG.debug("No orphaned processes to clean up");
             }
         }
         
@@ -107,7 +108,7 @@ class IgniteConfigStoreTest {
     }
 
     private static void startLocalGrpcServer() throws Exception {
-        log.info("Starting local tika-grpc server using Maven");
+        LOG.info("Starting local tika-grpc server using Maven");
         
         Path currentDir = Path.of("").toAbsolutePath();
         Path tikaRootDir = currentDir;
@@ -136,9 +137,9 @@ class IgniteConfigStoreTest {
             throw new IllegalStateException("Config file not found: " + configFile);
         }
         
-        log.info("Tika root: {}", tikaRootDir);
-        log.info("Using tika-grpc from: {}", tikaGrpcDir);
-        log.info("Using config file: {}", configFile);
+        LOG.info("Tika root: {}", tikaRootDir);
+        LOG.info("Using tika-grpc from: {}", tikaGrpcDir);
+        LOG.info("Using config file: {}", configFile);
         
         // Use mvn exec:exec to run as external process (not exec:java which breaks ServiceLoader)
         String javaHome = System.getProperty("java.home");
@@ -188,7 +189,7 @@ class IgniteConfigStoreTest {
                     new java.io.InputStreamReader(localGrpcProcess.getInputStream(), java.nio.charset.StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.info("tika-grpc: {}", line);
+                    LOG.info("tika-grpc: {}", line);
                     
                     if (line.contains("Ignite server started") ||
                         line.contains("Table") && line.contains("created successfully") ||
@@ -200,7 +201,7 @@ class IgniteConfigStoreTest {
                     }
                 }
             } catch (IOException e) {
-                log.error("Error reading server output", e);
+                LOG.error("Error reading server output", e);
             }
         });
         logThread.setDaemon(true);
@@ -217,7 +218,7 @@ class IgniteConfigStoreTest {
                     }
                     
                     if (!igniteReady) {
-                        log.debug("Waiting for Ignite to start...");
+                        LOG.debug("Waiting for Ignite to start...");
                         return false;
                     }
                     
@@ -239,10 +240,10 @@ class IgniteConfigStoreTest {
                                 io.grpc.health.v1.HealthCheckResponse.ServingStatus.SERVING;
                             
                             if (serving) {
-                                log.info("gRPC server is healthy and serving!");
+                                LOG.info("gRPC server is healthy and serving!");
                                 return true;
                             } else {
-                                log.debug("gRPC server responding but not serving yet: {}", response.getStatus());
+                                LOG.debug("gRPC server responding but not serving yet: {}", response.getStatus());
                                 return false;
                             }
                         } finally {
@@ -252,18 +253,18 @@ class IgniteConfigStoreTest {
                     } catch (io.grpc.StatusRuntimeException e) {
                         if (e.getStatus().getCode() == io.grpc.Status.Code.UNIMPLEMENTED) {
                             // Health check not implemented, just verify channel works
-                            log.info("Health check not available, assuming server is ready");
+                            LOG.info("Health check not available, assuming server is ready");
                             return true;
                         }
-                        log.debug("gRPC server not ready yet: {}", e.getMessage());
+                        LOG.debug("gRPC server not ready yet: {}", e.getMessage());
                         return false;
                     } catch (Exception e) {
-                        log.debug("gRPC server not ready yet: {}", e.getMessage());
+                        LOG.debug("gRPC server not ready yet: {}", e.getMessage());
                         return false;
                     }
                 });
             
-            log.info("Both gRPC server and Ignite are ready!");
+            LOG.info("Both gRPC server and Ignite are ready!");
         } catch (org.awaitility.core.ConditionTimeoutException e) {
             if (localGrpcProcess.isAlive()) {
                 localGrpcProcess.destroyForcibly();
@@ -271,7 +272,7 @@ class IgniteConfigStoreTest {
             throw new RuntimeException("Local gRPC server or Ignite failed to start within timeout", e);
         }
         
-        log.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
+        LOG.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
     }
     
     
@@ -291,7 +292,7 @@ class IgniteConfigStoreTest {
                 .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
                 .withExposedService("tika-grpc", 50052,
                     Wait.forLogMessage(".*Server started.*\\n", 1))
-                .withLogConsumer("tika-grpc", new Slf4jLogConsumer(log));
+                .withLogConsumer("tika-grpc", new Slf4jLogConsumer(LOG));
         
         igniteComposeContainer.start();
     }
@@ -299,15 +300,15 @@ class IgniteConfigStoreTest {
     @AfterAll
     static void teardownIgnite() {
         if (USE_LOCAL_SERVER && localGrpcProcess != null) {
-            log.info("Stopping local gRPC server and all child processes");
+            LOG.info("Stopping local gRPC server and all child processes");
             
             try {
                 long mvnPid = localGrpcProcess.pid();
-                log.info("Maven process PID: {}", mvnPid);
+                LOG.info("Maven process PID: {}", mvnPid);
                 localGrpcProcess.destroy();
                 
                 if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
-                    log.warn("Process didn't stop gracefully, forcing shutdown");
+                    LOG.warn("Process didn't stop gracefully, forcing shutdown");
                     localGrpcProcess.destroyForcibly();
                     localGrpcProcess.waitFor(5, TimeUnit.SECONDS);
                 }
@@ -319,10 +320,10 @@ class IgniteConfigStoreTest {
                     killProcessOnPort(3344);
                     killProcessOnPort(10800);
                 } catch (Exception e) {
-                    log.debug("Error killing processes on ports (may already be stopped): {}", e.getMessage());
+                    LOG.debug("Error killing processes on ports (may already be stopped): {}", e.getMessage());
                 }
                 
-                log.info("Local gRPC server stopped");
+                LOG.info("Local gRPC server stopped");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 localGrpcProcess.destroyForcibly();
@@ -345,7 +346,7 @@ class IgniteConfigStoreTest {
                 long myPid = ProcessHandle.current().pid();
                 
                 if (pid == myPid || isParentProcess(pid)) {
-                    log.debug("Skipping kill of PID {} on port {} (test process or parent)", pid, port);
+                    LOG.debug("Skipping kill of PID {} on port {} (test process or parent)", pid, port);
                     return;
                 }
                 
@@ -355,11 +356,11 @@ class IgniteConfigStoreTest {
                         .flatMap(h -> h.info().commandLine())
                         .orElse("");
                 if (!cmdLine.contains("tika") && !cmdLine.contains("TikaGrpc") && !cmdLine.contains("ignite")) {
-                    log.debug("Skipping kill of PID {} on port {} — not a tika/ignite process: {}", pid, port, cmdLine);
+                    LOG.debug("Skipping kill of PID {} on port {} — not a tika/ignite process: {}", pid, port, cmdLine);
                     return;
                 }
                 
-                log.info("Found tika/ignite process {} on port {}, killing it", pid, port);
+                LOG.info("Found tika/ignite process {} on port {}, killing it", pid, port);
                 
                 ProcessBuilder killPb = new ProcessBuilder("kill", String.valueOf(pid));
                 Process killProcess = killPb.start();
@@ -385,7 +386,7 @@ class IgniteConfigStoreTest {
                 }
             }
         } catch (Exception e) {
-            log.debug("Error checking parent process", e);
+            LOG.debug("Error checking parent process", e);
         }
         return false;
     }
@@ -404,7 +405,7 @@ class IgniteConfigStoreTest {
             config.setBasePath(basePath);
             
             String configJson = ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config);
-            log.info("Creating fetcher with Ignite ConfigStore (basePath={}): {}", basePath, configJson);
+            LOG.info("Creating fetcher with Ignite ConfigStore (basePath={}): {}", basePath, configJson);
             
             SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
@@ -413,7 +414,7 @@ class IgniteConfigStoreTest {
                     .setFetcherConfigJson(configJson)
                     .build());
             
-            log.info("Fetcher saved to Ignite: {}", saveReply.getFetcherId());
+            LOG.info("Fetcher saved to Ignite: {}", saveReply.getFetcherId());
 
             List<FetchAndParseReply> successes = Collections.synchronizedList(new ArrayList<>());
             List<FetchAndParseReply> errors = Collections.synchronizedList(new ArrayList<>());
@@ -423,7 +424,7 @@ class IgniteConfigStoreTest {
                     requestStreamObserver = tikaStub.fetchAndParseBiDirectionalStreaming(new StreamObserver<>() {
                 @Override
                 public void onNext(FetchAndParseReply fetchAndParseReply) {
-                    log.debug("Reply from fetch-and-parse - key={}, status={}", 
+                    LOG.debug("Reply from fetch-and-parse - key={}, status={}", 
                         fetchAndParseReply.getFetchKey(), fetchAndParseReply.getStatus());
                     if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getStatus())) {
                         errors.add(fetchAndParseReply);
@@ -434,20 +435,20 @@ class IgniteConfigStoreTest {
 
                 @Override
                 public void onError(Throwable throwable) {
-                    log.error("Received an error", throwable);
+                    LOG.error("Received an error", throwable);
                     Assertions.fail(throwable);
                     countDownLatch.countDown();
                 }
 
                 @Override
                 public void onCompleted() {
-                    log.info("Finished streaming fetch and parse replies");
+                    LOG.info("Finished streaming fetch and parse replies");
                     countDownLatch.countDown();
                 }
             });
 
             int maxDocs = Integer.parseInt(System.getProperty("corpus.numDocs", "-1"));
-            log.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
+            LOG.info("Document limit: {}", maxDocs == -1 ? "unlimited" : maxDocs);
             
             try (Stream<Path> paths = Files.walk(TEST_FOLDER.toPath())) {
                 Stream<Path> fileStream = paths
@@ -473,13 +474,13 @@ class IgniteConfigStoreTest {
                     }
                 });
             }
-            log.info("Done submitting files to Ignite-backed fetcher {}", fetcherId);
+            LOG.info("Done submitting files to Ignite-backed fetcher {}", fetcherId);
 
             requestStreamObserver.onCompleted();
 
             try {
                 if (!countDownLatch.await(3, TimeUnit.MINUTES)) {
-                    log.error("Timed out waiting for parse to complete");
+                    LOG.error("Timed out waiting for parse to complete");
                     Assertions.fail("Timed out waiting for parsing to complete");
                 }
             } catch (InterruptedException e) {
@@ -491,7 +492,7 @@ class IgniteConfigStoreTest {
                 ExternalTestBase.assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
             } else {
                 int totalProcessed = successes.size() + errors.size();
-                log.info("Processed {} documents with Ignite ConfigStore (limit was {})", 
+                LOG.info("Processed {} documents with Ignite ConfigStore (limit was {})", 
                     totalProcessed, maxDocs);
                 Assertions.assertTrue(totalProcessed <= maxDocs, 
                     "Should not process more than " + maxDocs + " documents");
@@ -499,7 +500,7 @@ class IgniteConfigStoreTest {
                     "Should have processed at least one document");
             }
             
-            log.info("Ignite ConfigStore test completed successfully - {} successes, {} errors", 
+            LOG.info("Ignite ConfigStore test completed successfully - {} successes, {} errors", 
                 successes.size(), errors.size());
         } finally {
             channel.shutdown();

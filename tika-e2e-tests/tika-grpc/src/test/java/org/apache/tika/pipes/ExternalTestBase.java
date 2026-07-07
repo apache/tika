@@ -43,12 +43,13 @@ import java.util.zip.ZipInputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -60,9 +61,9 @@ import org.apache.tika.TikaGrpc;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
-@Slf4j
 @Tag("E2ETest")
 public abstract class ExternalTestBase {
+    private static final Logger LOG = LoggerFactory.getLogger(ExternalTestBase.class);
     public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     public static final int MAX_STARTUP_TIMEOUT = 120;
     public static final String GOV_DOCS_FOLDER = "/tika/govdocs1";
@@ -88,7 +89,7 @@ public abstract class ExternalTestBase {
     }
     
     private static void startLocalGrpcServer() throws Exception {
-        log.info("Starting local tika-grpc server using Maven exec");
+        LOG.info("Starting local tika-grpc server using Maven exec");
         
         Path tikaGrpcDir = findTikaGrpcDirectory();
         Path configFile = Path.of("src/test/resources/tika-config.json").toAbsolutePath();
@@ -97,8 +98,8 @@ public abstract class ExternalTestBase {
             throw new IllegalStateException("Config file not found: " + configFile);
         }
         
-        log.info("Using tika-grpc from: {}", tikaGrpcDir);
-        log.info("Using config file: {}", configFile);
+        LOG.info("Using tika-grpc from: {}", tikaGrpcDir);
+        LOG.info("Using config file: {}", configFile);
         
         String javaHome = System.getProperty("java.home");
         boolean isWindows = System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
@@ -131,10 +132,10 @@ public abstract class ExternalTestBase {
                     new InputStreamReader(localGrpcProcess.getInputStream(), StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    log.info("tika-grpc: {}", line);
+                    LOG.info("tika-grpc: {}", line);
                 }
             } catch (IOException e) {
-                log.error("Error reading server output", e);
+                LOG.error("Error reading server output", e);
             }
         });
         logThread.setDaemon(true);
@@ -142,7 +143,7 @@ public abstract class ExternalTestBase {
         
         waitForServerReady();
         
-        log.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
+        LOG.info("Local tika-grpc server started successfully on port {}", GRPC_PORT);
     }
     
     private static Path findTikaGrpcDirectory() {
@@ -173,10 +174,10 @@ public abstract class ExternalTestBase {
             try {
                 TikaGrpc.TikaBlockingStub stub = TikaGrpc.newBlockingStub(testChannel);
                 stub.listFetchers(ListFetchersRequest.newBuilder().build());
-                log.info("gRPC server is ready");
+                LOG.info("gRPC server is ready");
                 return;
             } catch (Exception e) {
-                log.trace("gRPC server not ready yet (attempt {}/{}): {}", i + 1, maxAttempts, e.getMessage());
+                LOG.trace("gRPC server not ready yet (attempt {}/{}): {}", i + 1, maxAttempts, e.getMessage());
             } finally {
                 testChannel.shutdown();
                 testChannel.awaitTermination(1, TimeUnit.SECONDS);
@@ -191,7 +192,7 @@ public abstract class ExternalTestBase {
     }
     
     private static void startDockerGrpcServer() {
-        log.info("Starting Docker Compose tika-grpc server");
+        LOG.info("Starting Docker Compose tika-grpc server");
         
         String composeFilePath = System.getProperty("tika.docker.compose.file");
         if (composeFilePath == null || composeFilePath.isBlank()) {
@@ -208,11 +209,11 @@ public abstract class ExternalTestBase {
                 .withStartupTimeout(Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
                 .withExposedService("tika-grpc", 50052, 
                     Wait.forLogMessage(".*Server started.*\\n", 1))
-                .withLogConsumer("tika-grpc", new Slf4jLogConsumer(log));
+                .withLogConsumer("tika-grpc", new Slf4jLogConsumer(LOG));
         
         composeContainer.start();
         
-        log.info("Docker Compose containers started successfully");
+        LOG.info("Docker Compose containers started successfully");
     }
 
     private static void loadGovdocs1() throws IOException, InterruptedException {
@@ -230,7 +231,7 @@ public abstract class ExternalTestBase {
                     if (attempt >= retries) {
                         throw e;
                     }
-                    log.warn("Download attempt {} failed, retrying in 10 seconds...", attempt, e);
+                    LOG.warn("Download attempt {} failed, retrying in 10 seconds...", attempt, e);
                     TimeUnit.SECONDS.sleep(10);
                 }
             }
@@ -253,13 +254,13 @@ public abstract class ExternalTestBase {
                 Files.copy(in, targetDir.resolve(fixture), StandardCopyOption.REPLACE_EXISTING);
             }
         }
-        log.info("Copied {} test fixtures to {}", fixtures.length, targetDir);
+        LOG.info("Copied {} test fixtures to {}", fixtures.length, targetDir);
     }
 
     @AfterAll
     void close() {
         if (USE_LOCAL_SERVER && localGrpcProcess != null) {
-            log.info("Stopping local gRPC server");
+            LOG.info("Stopping local gRPC server");
             localGrpcProcess.destroy();
             try {
                 if (!localGrpcProcess.waitFor(10, TimeUnit.SECONDS)) {
@@ -284,14 +285,14 @@ public abstract class ExternalTestBase {
             Path zipPath = targetDir.resolve(zipName);
 
             if (Files.exists(zipPath)) {
-                log.info("{} already exists, skipping download", zipName);
+                LOG.info("{} already exists, skipping download", zipName);
             } else {
-                log.info("Downloading {} from {}...", zipName, url);
+                LOG.info("Downloading {} from {}...", zipName, url);
                 try (InputStream in = new URL(url).openStream()) {
                     Files.copy(in, zipPath, StandardCopyOption.REPLACE_EXISTING);
                 }
             }
-            log.info("Unzipping {}...", zipName);
+            LOG.info("Unzipping {}...", zipName);
             try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipPath.toFile()))) {
                 ZipEntry entry;
                 while ((entry = zis.getNextEntry()) != null) {
@@ -309,7 +310,7 @@ public abstract class ExternalTestBase {
             }
         }
         
-        log.info("Finished downloading and extracting govdocs1 files");
+        LOG.info("Finished downloading and extracting govdocs1 files");
     }
 
     public static void assertAllFilesFetched(Path baseDir, List<FetchAndParseReply> successes, 
@@ -337,7 +338,7 @@ public abstract class ExternalTestBase {
         }
         
         Assertions.assertNotEquals(0, successes.size(), "Should have some successful fetches");
-        log.info("Processed {} files: {} successes, {} errors", allFetchKeys.size(), successes.size(), errors.size());
+        LOG.info("Processed {} files: {} successes, {} errors", allFetchKeys.size(), successes.size(), errors.size());
         Assertions.assertEquals(keysFromGovdocs1, allFetchKeys, () -> {
             Set<String> missing = new HashSet<>(keysFromGovdocs1);
             missing.removeAll(allFetchKeys);

@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.parser.txt;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,6 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.detect.icu4j.CharsetDetector;
+import org.apache.tika.detect.icu4j.CharsetMatch;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

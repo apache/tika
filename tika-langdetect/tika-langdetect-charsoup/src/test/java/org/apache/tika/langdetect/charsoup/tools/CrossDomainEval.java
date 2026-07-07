@@ -38,10 +38,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor;
 import org.apache.tika.langdetect.charsoup.CharSoupLanguageDetector;
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 import org.apache.tika.language.detect.LanguageDetector;
 
 /**

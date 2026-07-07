@@ -22,7 +22,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.textstats.CommonTokens;

@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.commons.io.input.BoundedInputStream;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.MetadataCharsetDetector;
@@ -41,7 +41,7 @@ import org.apache.tika.parser.ParseContext;
  * that as a separate, earlier step in the detector chain.
  *
  * <p>Opt-in: register explicitly in a {@code <encodingDetectors>} config to use
- * this detector in place of the lenient {@link org.apache.tika.parser.html.HtmlEncodingDetector}
+ * this detector in place of the lenient {@link org.apache.tika.detect.html.HtmlEncodingDetector}
  * default.
  */
 @TikaComponent(name = "standard-html-encoding-detector", spi = false)

@@ -42,14 +42,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
-import org.apache.tika.langdetect.charsoup.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
 
 /**
  * Two-pass training pipeline for the CharSoup language detector.
  *
  * <p><strong>WARNING — feature extraction must stay in sync with
- * {@link org.apache.tika.langdetect.charsoup.CharSoupFeatureExtractor}.</strong>
+ * {@link org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor}.</strong>
  * If you change training hyper-parameters (bucket count, n-gram order, etc.)
  * you must also update the corresponding inference constants and retrain from
  * scratch.

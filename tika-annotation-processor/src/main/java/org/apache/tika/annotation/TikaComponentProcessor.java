@@ -45,7 +45,6 @@ import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 
-import org.apache.tika.config.TikaComponent;
 
 /**
  * Annotation processor for {@link TikaComponent} that generates:
@@ -57,7 +56,7 @@ import org.apache.tika.config.TikaComponent;
  * <p>The processor maintains an inclusion list of known Tika service interfaces
  * to avoid generating SPI files for utility interfaces like Serializable, etc.
  */
-@SupportedAnnotationTypes("org.apache.tika.config.TikaComponent")
+@SupportedAnnotationTypes("org.apache.tika.annotation.TikaComponent")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class TikaComponentProcessor extends AbstractProcessor {
 

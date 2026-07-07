@@ -16,7 +16,7 @@
  */
 package org.apache.tika.digest;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 @TikaComponent
 public class MockDigesterFactory implements DigesterFactory {

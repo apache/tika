@@ -61,7 +61,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.RuntimeSAXException;
@@ -97,8 +97,13 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
     private static final List<Extension> EXTENSIONS =
             List.of(TablesExtension.create(), StrikethroughExtension.create());
 
-    //immutable and thread-safe
-    private static final Parser COMMONMARK = Parser.builder().extensions(EXTENSIONS).build();
+    //immutable and thread-safe.
+    //maxOpenBlockParsers caps block nesting: deeper blocks are parsed as flat paragraph text
+    //rather than nested structure, so a pathologically deep block document still extracts.
+    //Kept below SecureContentHandler's 100-level element-nesting cap so the flattened output
+    //stays under that limit and is emitted rather than rejected as a suspected zip bomb.
+    private static final Parser COMMONMARK =
+            Parser.builder().extensions(EXTENSIONS).maxOpenBlockParsers(64).build();
 
     public MarkdownParser() {
         super();
@@ -123,6 +128,9 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             metadata.set(Metadata.CONTENT_TYPE, new MediaType(MARKDOWN, charset).toString());
             metadata.set(Metadata.CONTENT_ENCODING, charset.name());
             document = COMMONMARK.parseReader(reader);
+        } catch (StackOverflowError e) {
+            //for reasons
+            throw new TikaException("Markdown is too deeply nested to parse", e);
         }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

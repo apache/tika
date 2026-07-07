@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.tika.config.GlobalSettings;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
 import org.apache.tika.detect.Detector;
@@ -58,6 +57,7 @@ import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.config.GlobalSettings;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**

@@ -18,7 +18,7 @@ package org.apache.tika.sax;
 
 import java.io.Serializable;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * Configuration for SAX output behavior.

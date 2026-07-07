@@ -30,7 +30,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.Set;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
 
 /**
  * Smoke test for Phase2Trainer. Streams training data from

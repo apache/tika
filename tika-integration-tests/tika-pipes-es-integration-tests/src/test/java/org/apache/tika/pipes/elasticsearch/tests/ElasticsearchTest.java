@@ -53,7 +53,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -65,6 +64,7 @@ import org.apache.tika.pipes.emitter.es.ESEmitterConfig;
 import org.apache.tika.pipes.emitter.es.HttpClientConfig;
 import org.apache.tika.pipes.emitter.es.JsonResponse;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 /**
  * Integration tests for the Elasticsearch emitter using a Dockerized

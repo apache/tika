@@ -33,7 +33,7 @@ import java.util.Map;
 import javax.xml.namespace.QName;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;

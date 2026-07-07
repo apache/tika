@@ -22,8 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.mime.MediaType;

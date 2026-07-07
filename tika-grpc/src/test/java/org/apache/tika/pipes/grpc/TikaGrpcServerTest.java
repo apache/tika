@@ -76,9 +76,9 @@ import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.SavePipesIteratorReply;
 import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 @ExtendWith(GrpcCleanupExtension.class)
 public class TikaGrpcServerTest {
