@@ -291,7 +291,13 @@ public class MP4ParserTest extends TikaTest {
         getText("testMP4_QuickTimeMetadata.mov", metadata);
         assertEquals("TEST-UUID-0001-LIVEPHOTO",
                 metadata.get("com.apple.quicktime.content.identifier"));
+
+        //the raw ISO 6709 location is preserved ...
         assertEquals("+12.3456-098.7654+010.500/",
                 metadata.get("com.apple.quicktime.location.ISO6709"));
+        //... and also mapped to the standard geo:* properties (incl. altitude)
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
     }
 }
