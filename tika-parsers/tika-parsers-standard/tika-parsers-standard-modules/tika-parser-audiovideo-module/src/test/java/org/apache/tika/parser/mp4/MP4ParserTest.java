@@ -300,4 +300,15 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
         assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
     }
+
+    @Test
+    public void testUdtaLocation() throws Exception {
+        //the udta "(c)xyz" ISO 6709 location is mapped to geo:lat/geo:long, and its
+        //optional altitude, which was previously dropped, to geo:alt. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_udtaLocation.mp4", metadata);
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+    }
 }

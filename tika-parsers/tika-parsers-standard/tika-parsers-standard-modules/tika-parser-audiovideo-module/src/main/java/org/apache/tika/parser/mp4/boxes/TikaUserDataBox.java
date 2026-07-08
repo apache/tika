@@ -44,7 +44,7 @@ public class TikaUserDataBox {
     private static final String HDLR = "hdlr";
     private static final String MDIR = "mdir";//apple metadata itunes reader
     private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)");
+            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)([+-]\\d+(?:\\.\\d+)?)?");
 
     @Nullable
     private String coordinateString;
@@ -270,6 +270,11 @@ public class TikaUserDataBox {
                 double longitude = Double.parseDouble(matcher.group(2));
                 directory.setDouble(8193, latitude);
                 directory.setDouble(8194, longitude);
+                //Mp4Directory has no altitude tag, so set geo:alt directly
+                if (matcher.group(3) != null) {
+                    metadata.set(TikaCoreProperties.ALTITUDE,
+                            Double.parseDouble(matcher.group(3)));
+                }
             }
         }
     }
