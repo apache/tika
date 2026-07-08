@@ -88,6 +88,13 @@ public class TikaGrpcServer {
             creds = channelCredBuilder.build();
         } else {
             creds = InsecureServerCredentials.create();
+            LOGGER.warn("tika-grpc is starting with NO transport security (plaintext) and binds to " +
+                    "all interfaces with no application-level authentication. Anyone who can reach " +
+                    "port {} can drive this server. Restrict it to a trusted network and/or enable " +
+                    "TLS with --secure (see --cert-chain/--private-key/--trust-cert-collection/" +
+                    "--client-auth-required). Dangerous capabilities (per-request config, runtime " +
+                    "fetcher modifications) are denied by default; enable them only in the <grpc> " +
+                    "section of the tika-config if you understand the implications.", port);
         }
         if (tikaConfigXml == null) {
             // Create a default tika config

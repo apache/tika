@@ -30,6 +30,12 @@
       <maxForEmitBatchBytes>-1</maxForEmitBatchBytes> <!-- disable emit -->
     </params>
   </pipes>
+  <grpc>
+    <!-- these tests exercise the runtime SaveFetcher/DeleteFetcher RPCs and per-request config,
+         which are denied by default; opt in here -->
+    <allowComponentModifications>true</allowComponentModifications>
+    <allowPerRequestConfig>true</allowPerRequestConfig>
+  </grpc>
   <fetchers>
   </fetchers>
 </properties>

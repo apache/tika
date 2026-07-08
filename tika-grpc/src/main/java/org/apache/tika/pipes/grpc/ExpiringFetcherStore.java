@@ -38,6 +38,9 @@ public class ExpiringFetcherStore implements AutoCloseable {
     private final Map<String, AbstractFetcher> fetchers = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, AbstractConfig> fetcherConfigs = Collections.synchronizedMap(new HashMap<>());
     private final Map<String, Instant> fetcherLastAccessed = Collections.synchronizedMap(new HashMap<>());
+    //fetchers declared in the tika-config <fetchers> section are loaded once at startup and must
+    //never be expired (with allowComponentModifications=false they cannot be re-registered).
+    private final Set<String> permanentFetchers = Collections.synchronizedSet(new HashSet<>());
 
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
@@ -45,6 +48,10 @@ public class ExpiringFetcherStore implements AutoCloseable {
         executorService.scheduleAtFixedRate(() -> {
             Set<String> expired = new HashSet<>();
             for (String fetcherName : fetchers.keySet()) {
+                if (permanentFetchers.contains(fetcherName)) {
+                    //config-declared fetchers never expire
+                    continue;
+                }
                 Instant lastAccessed = fetcherLastAccessed.get(fetcherName);
                 if (lastAccessed == null) {
                     LOG.error("Detected a fetcher with no last access time. FetcherName={}", fetcherName);
@@ -68,6 +75,7 @@ public class ExpiringFetcherStore implements AutoCloseable {
         boolean success = fetchers.remove(fetcherName) != null;
         fetcherConfigs.remove(fetcherName);
         fetcherLastAccessed.remove(fetcherName);
+        permanentFetchers.remove(fetcherName);
         return success;
     }
 
@@ -89,8 +97,20 @@ public class ExpiringFetcherStore implements AutoCloseable {
     }
 
     public <T extends AbstractFetcher, C extends AbstractConfig> void createFetcher(T fetcher, C config) {
+        createFetcher(fetcher, config, false);
+    }
+
+    /**
+     * @param permanent if true, this fetcher is never expired by the stale-fetcher job. Used for
+     *                  fetchers declared in the tika-config {@code <fetchers>} section, which are
+     *                  loaded once at startup.
+     */
+    public <T extends AbstractFetcher, C extends AbstractConfig> void createFetcher(T fetcher, C config, boolean permanent) {
         fetchers.put(fetcher.getName(), fetcher);
         fetcherConfigs.put(fetcher.getName(), config);
+        if (permanent) {
+            permanentFetchers.add(fetcher.getName());
+        }
         getFetcherAndLogAccess(fetcher.getName());
     }
 

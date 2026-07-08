@@ -23,6 +23,8 @@ import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +53,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.DeleteFetcherReply;
@@ -101,6 +105,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     String tikaConfigPath;
 
+    //deny-by-default grpc capabilities, read from the <grpc> section of the tika-config
+    private final TikaGrpcConfig tikaGrpcConfig;
+
     TikaGrpcServerImpl(String tikaConfigPath)
             throws TikaConfigException, IOException, ParserConfigurationException,
             TransformerException, SAXException {
@@ -120,6 +127,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         expiringFetcherStore = new ExpiringFetcherStore(pipesConfig.getStaleFetcherTimeoutSeconds(),
                 pipesConfig.getStaleFetcherDelaySeconds());
         this.tikaConfigPath = tikaConfigPath;
+        this.tikaGrpcConfig = TikaGrpcConfig.load(Paths.get(tikaConfigPath));
+        //load any fetchers declared in the <fetchers> section into the store before we rewrite the
+        //config below; otherwise updateTikaConfig() would wipe them. These are the trusted,
+        //operator-declared fetchers and are loaded regardless of allowComponentModifications.
+        loadFetchersFromConfig();
         try {
             updateTikaConfig();
         } catch (TikaException e) {
@@ -183,9 +195,110 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
     }
 
+    /**
+     * Loads fetchers declared in the {@code <fetchers>} section of the tika-config into the store
+     * at startup. These are trusted, operator-declared fetchers (the secure way to provide
+     * fetchers when {@code allowComponentModifications} is false) and are marked permanent so the
+     * stale-fetcher job never expires them. The reverse of {@link #populateFetcherConfigs}.
+     */
+    private void loadFetchersFromConfig()
+            throws ParserConfigurationException, IOException, SAXException, TikaConfigException {
+        Document tikaConfigDoc =
+                DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(tikaConfigPath);
+        NodeList fetchersElements = tikaConfigDoc.getElementsByTagName("fetchers");
+        if (fetchersElements.getLength() == 0) {
+            return;
+        }
+        Element fetchersElement = (Element) fetchersElements.item(0);
+        NodeList fetcherNodes = fetchersElement.getElementsByTagName("fetcher");
+        for (int i = 0; i < fetcherNodes.getLength(); i++) {
+            Element fetcherEl = (Element) fetcherNodes.item(i);
+            String fetcherClass = fetcherEl.getAttribute("class");
+            if (StringUtils.isBlank(fetcherClass)) {
+                throw new TikaConfigException("<fetcher> in <fetchers> must have a 'class' attribute");
+            }
+            String name = null;
+            Map<String, Object> params = new LinkedHashMap<>();
+            NodeList children = fetcherEl.getChildNodes();
+            for (int j = 0; j < children.getLength(); j++) {
+                Node child = children.item(j);
+                if (child.getNodeType() != Node.ELEMENT_NODE) {
+                    continue;
+                }
+                String localName = child.getNodeName();
+                if ("name".equals(localName)) {
+                    name = child.getTextContent();
+                } else {
+                    params.put(localName, readParamValue((Element) child));
+                }
+            }
+            if (StringUtils.isBlank(name)) {
+                throw new TikaConfigException("<fetcher> in <fetchers> must have a <name>");
+            }
+            saveFetcher(name, fetcherClass, params, createTikaParamMap(params), true);
+            LOG.info("Loaded fetcher '{}' ({}) from config", name, fetcherClass);
+        }
+    }
+
+    /**
+     * Reads a single config element written by {@link #populateFetcherConfigs}: an element with
+     * child elements is read back as a {@link List} of their text contents; otherwise the element's
+     * text content is returned.
+     */
+    private static Object readParamValue(Element element) {
+        List<String> list = new ArrayList<>();
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                list.add(child.getTextContent());
+            }
+        }
+        return list.isEmpty() ? element.getTextContent() : list;
+    }
+
+    /**
+     * @return true (and sends {@code PERMISSION_DENIED} to the client) if this request carries
+     * per-request configuration that is not allowed. Note: we use {@code onError} rather than
+     * throwing so the client receives {@code PERMISSION_DENIED} rather than {@code UNKNOWN}.
+     */
+    private boolean denyPerRequestConfig(FetchAndParseRequest request,
+                                         StreamObserver<?> responseObserver) {
+        if (StringUtils.isBlank(request.getAdditionalFetchConfigJson())
+                || tikaGrpcConfig.isAllowPerRequestConfig()) {
+            return false;
+        }
+        responseObserver.onError(io.grpc.Status.PERMISSION_DENIED
+                .withDescription("Per-request configuration (additional_fetch_config_json) is " +
+                        "disabled. Set 'allowPerRequestConfig' to true in the <grpc> section of " +
+                        "the tika-config to enable it.")
+                .asRuntimeException());
+        return true;
+    }
+
+    /**
+     * @return true (and sends {@code PERMISSION_DENIED} to the client) if runtime component
+     * modifications (SaveFetcher/DeleteFetcher) are not allowed.
+     */
+    private boolean denyComponentModifications(StreamObserver<?> responseObserver) {
+        if (tikaGrpcConfig.isAllowComponentModifications()) {
+            return false;
+        }
+        responseObserver.onError(io.grpc.Status.PERMISSION_DENIED
+                .withDescription("Runtime component modifications (SaveFetcher/DeleteFetcher) are " +
+                        "disabled. Set 'allowComponentModifications' to true in the <grpc> section " +
+                        "of the tika-config to enable them. Fetchers may instead be declared in the " +
+                        "<fetchers> section of the tika-config.")
+                .asRuntimeException());
+        return true;
+    }
+
     @Override
     public void fetchAndParseServerSideStreaming(FetchAndParseRequest request,
                                                  StreamObserver<FetchAndParseReply> responseObserver) {
+        if (denyPerRequestConfig(request, responseObserver)) {
+            return;
+        }
         fetchAndParseImpl(request, responseObserver);
     }
 
@@ -195,6 +308,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseRequest fetchAndParseRequest) {
+                if (denyPerRequestConfig(fetchAndParseRequest, responseObserver)) {
+                    return;
+                }
                 fetchAndParseImpl(fetchAndParseRequest, responseObserver);
             }
 
@@ -213,6 +329,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void fetchAndParse(FetchAndParseRequest request,
                               StreamObserver<FetchAndParseReply> responseObserver) {
+        if (denyPerRequestConfig(request, responseObserver)) {
+            return;
+        }
         fetchAndParseImpl(request, responseObserver);
         responseObserver.onCompleted();
     }
@@ -271,12 +390,15 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void saveFetcher(SaveFetcherRequest request,
                               StreamObserver<SaveFetcherReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         SaveFetcherReply reply =
                 SaveFetcherReply.newBuilder().setFetcherId(request.getFetcherId()).build();
         try {
             Map<String, Object> fetcherConfigMap = OBJECT_MAPPER.readValue(request.getFetcherConfigJson(), new TypeReference<>() {});
             Map<String, Param> tikaParamsMap = createTikaParamMap(fetcherConfigMap);
-            saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap);
+            saveFetcher(request.getFetcherId(), request.getFetcherClass(), fetcherConfigMap, tikaParamsMap, false);
             updateTikaConfig();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -285,7 +407,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         responseObserver.onCompleted();
     }
 
-    private void saveFetcher(String name, String fetcherClassName, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap) {
+    private void saveFetcher(String name, String fetcherClassName, Map<String, Object> paramsMap, Map<String, Param> tikaParamsMap, boolean permanent) {
         try {
             if (paramsMap == null) {
                 paramsMap = new LinkedHashMap<>();
@@ -310,7 +432,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             } else {
                 LOG.info("Creating new fetcher {}", name);
             }
-            expiringFetcherStore.createFetcher(abstractFetcher, configObject);
+            expiringFetcherStore.createFetcher(abstractFetcher, configObject, permanent);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -394,6 +516,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     @Override
     public void deleteFetcher(DeleteFetcherRequest request,
                               StreamObserver<DeleteFetcherReply> responseObserver) {
+        if (denyComponentModifications(responseObserver)) {
+            return;
+        }
         boolean successfulDelete = deleteFetcher(request.getFetcherId());
         if (successfulDelete) {
             try {

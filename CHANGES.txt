@@ -1,5 +1,13 @@
 Release 3.3.2 - (unreleased)
 
+  * A request-supplied ParseContext (tika-server /pipes and /async) may no longer
+    instantiate a Parser, Detector or EncodingDetector, closing a command-injection/SSRF
+    surface (TIKA-4763).
+
+  * tika-grpc denies per-request config and runtime fetcher modifications by default; opt
+    in via allowPerRequestConfig/allowComponentModifications in the new <grpc> config
+    section. Fetchers declared in <fetchers> are now loaded at startup (TIKA-4764).
+
   * tika-server now requires enableUnsecureFeatures=true when the /pipes, /async, or
     /status endpoints are selected; the server refuses to start otherwise. Previously
     listing the endpoint was treated as sufficient consent (TIKA-4760).

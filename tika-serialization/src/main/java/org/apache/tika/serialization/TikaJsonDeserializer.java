@@ -29,12 +29,47 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.parser.Parser;
+
 /**
  * See the notes @link{TikaJsonSerializer}.
  * <p>
  * This currently requires a setString() option on objects that have enum parameters.
  */
 public class TikaJsonDeserializer {
+
+    /**
+     * Pluggable components that must never be instantiated from a serialized
+     * {@link org.apache.tika.parser.ParseContext}. Submitting a whole new {@link Parser},
+     * {@link Detector} or {@link EncodingDetector} via request-time configuration is a remote
+     * code-execution / SSRF surface (e.g. {@code ExternalParser.setCommandLine},
+     * {@code ExternalParser.setCommand}, {@code TesseractOCRParser.setTesseractPath}). Configuring
+     * an already-loaded component is fine; instantiating a new one from a request is not.
+     */
+    private static final Class<?>[] BLOCKED_COMPONENT_TYPES =
+            {Parser.class, Detector.class, EncodingDetector.class};
+
+    /**
+     * Security guard enforced at the single (recursive) instantiation chokepoint
+     * ({@link #deserialize(Class, JsonNode)}), so it also blocks a component smuggled into a setter
+     * that takes one (e.g. {@code ExternalParser.setOutputParser(Parser)}).
+     *
+     * @param clazz the class about to be instantiated from JSON
+     * @throws SecurityException if {@code clazz} is a {@link Parser}, {@link Detector} or
+     *                           {@link EncodingDetector}
+     */
+    public static void assertNotComponent(Class<?> clazz) {
+        for (Class<?> blocked : BLOCKED_COMPONENT_TYPES) {
+            if (blocked.isAssignableFrom(clazz)) {
+                throw new SecurityException("Refusing to instantiate a " + blocked.getSimpleName() +
+                        " (" + clazz.getName() + ") from a serialized ParseContext. " +
+                        blocked.getSimpleName() + "s may not be submitted via request-time " +
+                        "configuration.");
+            }
+        }
+    }
 
     public static Optional deserializeObject(JsonNode root) {
         if (!root.isObject()) {
@@ -55,6 +90,7 @@ public class TikaJsonDeserializer {
     }
 
     public static <T> T deserialize(Class<? extends T> clazz, JsonNode root) throws ReflectiveOperationException {
+        assertNotComponent(clazz);
         T obj = clazz
                 .getDeclaredConstructor()
                 .newInstance();
