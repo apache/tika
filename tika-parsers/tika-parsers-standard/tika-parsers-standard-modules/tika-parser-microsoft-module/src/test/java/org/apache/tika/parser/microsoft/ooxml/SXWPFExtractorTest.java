@@ -827,16 +827,16 @@ public class SXWPFExtractorTest extends TikaTest {
         assertContains("<b>Bold</b>", xml);
         assertContains("<i>italic</i>", xml);
         assertContains("<u>underline</u>", xml);
-        assertContains("<strike>strikethrough</strike>", xml);
+        assertContains("<s>strikethrough</s>", xml);
     }
 
     @Test
     public void testTextDecorationNested() throws Exception {
         String xml = getXML("testWORD_various.docx", parseContext).xml;
 
-        assertContains("<i>ita<strike>li</strike>c</i>", xml);
-        assertContains("<i>ita<strike>l<u>i</u></strike>c</i>", xml);
-        assertContains("<i><u>unde</u><strike><u>r</u></strike><u>line</u></i>", xml);
+        assertContains("<i>ita<s>li</s>c</i>", xml);
+        assertContains("<i>ita<s>l<u>i</u></s>c</i>", xml);
+        assertContains("<i><u>unde</u><s><u>r</u></s><u>line</u></i>", xml);
 
         //confirm that spaces aren't added for <strike/> and <u/>
         String txt = getText("testWORD_various.docx", new Metadata(), parseContext);

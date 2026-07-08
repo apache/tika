@@ -30,6 +30,9 @@ public class RunProperties {
 
     UnderlinePatterns underline = UnderlinePatterns.NONE;
 
+    // PPTX hlinkClick hyperlink URL — set from <a:hlinkClick> inside <a:rPr>
+    String hlinkClickUrl = null;
+
     public boolean isItalics() {
         return italics;
     }
@@ -67,5 +70,13 @@ public class RunProperties {
             //TODO -- fill out rest
             underline = UnderlinePatterns.SINGLE;
         }
+    }
+
+    public String getHlinkClickUrl() {
+        return hlinkClickUrl;
+    }
+
+    public void setHlinkClickUrl(String url) {
+        this.hlinkClickUrl = url;
     }
 }

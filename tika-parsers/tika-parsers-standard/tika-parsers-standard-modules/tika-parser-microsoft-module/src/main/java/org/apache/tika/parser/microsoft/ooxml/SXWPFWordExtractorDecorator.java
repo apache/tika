@@ -105,6 +105,15 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         this.opcPackage = extractor.getPackage();
     }
 
+    /**
+     * The SAX docx path reads metadata directly from the OPC package (no POI/XMLBeans),
+     * matching the 4.x behavior. The DOM path keeps the concrete {@link MetadataExtractor}.
+     */
+    @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new SAXBasedMetadataExtractor(opcPackage, getParseContext());
+    }
+
 
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
@@ -307,9 +316,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
-                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
+                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config, metadata),
                             linkedRelationships, config.isIncludeShapeBasedContent(),
-                            config.isConcatenatePhoneticRuns(), metadata)), context);
+                            config.isConcatenatePhoneticRuns(),
+                            config.isPreferAlternateContentChoice())), context);
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));

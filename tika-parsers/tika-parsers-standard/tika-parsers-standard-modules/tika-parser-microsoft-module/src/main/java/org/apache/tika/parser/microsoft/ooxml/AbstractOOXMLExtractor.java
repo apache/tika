@@ -105,15 +105,27 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private final ParseContext context;
     protected OfficeParserConfig config;
     protected POIXMLTextExtractor extractor;
+    //derived from the extractor's OPCPackage; used by the SAX-based extractors and
+    //SAXBasedMetadataExtractor, which read directly from the package rather than via POI.
+    protected OPCPackage opcPackage;
 
     public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
         this.context = context;
         this.extractor = extractor;
+        this.opcPackage = (extractor == null) ? null : extractor.getPackage();
         embeddedExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         // This has already been set by OOXMLParser's call to configure()
         // We can rely on this being non-null.
         this.config = context.get(OfficeParserConfig.class);
+    }
+
+    /**
+     * @return the {@link ParseContext} this extractor was constructed with. Used by SAX-based
+     * subclasses (e.g. to build a {@link SAXBasedMetadataExtractor}).
+     */
+    protected ParseContext getParseContext() {
+        return context;
     }
 
     /**

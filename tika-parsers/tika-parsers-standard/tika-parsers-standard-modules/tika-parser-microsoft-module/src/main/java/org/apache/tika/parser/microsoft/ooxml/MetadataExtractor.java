@@ -87,6 +87,15 @@ public class MetadataExtractor {
         this.extractor = extractor;
     }
 
+    /**
+     * For subclasses (e.g. {@link SAXBasedMetadataExtractor}) that read metadata directly from
+     * the OPC package rather than through a {@link POIXMLTextExtractor}. Such subclasses must
+     * override {@link #extract(Metadata)}; the extractor-based path here is never invoked for them.
+     */
+    protected MetadataExtractor() {
+        this.extractor = null;
+    }
+
     public void extract(Metadata metadata) throws TikaException {
         if (extractor.getDocument() != null ||
                 ((extractor instanceof XSSFEventBasedExcelExtractor ||

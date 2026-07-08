@@ -113,6 +113,15 @@ public abstract class AbstractOfficeParser implements Parser {
     }
 
     @Field
+    public void setPreferAlternateContentChoice(boolean preferAlternateContentChoice) {
+        defaultOfficeParserConfig.setPreferAlternateContentChoice(preferAlternateContentChoice);
+    }
+
+    public boolean isPreferAlternateContentChoice() {
+        return defaultOfficeParserConfig.isPreferAlternateContentChoice();
+    }
+
+    @Field
     public void setConcatenatePhoneticRuns(boolean concatenatePhoneticRuns) {
         defaultOfficeParserConfig.setConcatenatePhoneticRuns(concatenatePhoneticRuns);
     }
