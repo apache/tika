@@ -105,7 +105,7 @@ public class HDFParser implements Parser {
         }
 
         // get file type
-        met.set("File-Type-Description", ncFile.getFileTypeDescription());
+        met.set("hdf:File-Type-Description", ncFile.getFileTypeDescription());
         // unravel its string attrs
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {

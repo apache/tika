@@ -25,7 +25,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -40,7 +39,7 @@ class NumbersContentHandler extends DefaultHandler {
     private boolean parseText = false;
 
     private boolean inMetadata = false;
-    private Property metadataKey;
+    private String metadataLocalName;
     private String metadataPropertyQName;
 
     private boolean inTable = false;
@@ -69,7 +68,7 @@ class NumbersContentHandler extends DefaultHandler {
             numberOfSheets++;
             xhtml.startElement("div");
             String sheetName = attributes.getValue("ls:workspace-name");
-            metadata.add("sheetNames", sheetName);
+            metadata.add("numbers:sheetNames", sheetName);
         }
 
         if ("sf:text".equals(qName)) {
@@ -86,13 +85,13 @@ class NumbersContentHandler extends DefaultHandler {
             return;
         }
 
-        if (inMetadata && metadataKey == null) {
-            metadataKey = resolveMetadataKey(localName);
+        if (inMetadata && metadataLocalName == null) {
+            metadataLocalName = localName;
             metadataPropertyQName = qName;
         }
 
-        if (inMetadata && metadataKey != null && "sf:string".equals(qName)) {
-            metadata.add(metadataKey, attributes.getValue("sfa:string"));
+        if (inMetadata && metadataLocalName != null && "sf:string".equals(qName)) {
+            addMetadata(metadata, metadataLocalName, attributes.getValue("sfa:string"));
         }
 
         if (!inSheet) {
@@ -198,7 +197,7 @@ class NumbersContentHandler extends DefaultHandler {
 
         if (inMetadata && qName.equals(metadataPropertyQName)) {
             metadataPropertyQName = null;
-            metadataKey = null;
+            metadataLocalName = null;
         }
 
         if (!inSheet) {
@@ -219,16 +218,15 @@ class NumbersContentHandler extends DefaultHandler {
         }
     }
 
-    private Property resolveMetadataKey(String localName) {
+    private static void addMetadata(Metadata metadata, String localName, String value) {
         if ("authors".equals(localName)) {
-            return TikaCoreProperties.CREATOR;
+            metadata.add(TikaCoreProperties.CREATOR, value);
+        } else if ("title".equals(localName)) {
+            metadata.add(TikaCoreProperties.TITLE, value);
+        } else if ("comment".equals(localName)) {
+            metadata.add(TikaCoreProperties.COMMENTS, value);
+        } else {
+            metadata.add("numbers:" + localName, value);
         }
-        if ("title".equals(localName)) {
-            return TikaCoreProperties.TITLE;
-        }
-        if ("comment".equals(localName)) {
-            return TikaCoreProperties.COMMENTS;
-        }
-        return Property.internalText(localName);
     }
 }

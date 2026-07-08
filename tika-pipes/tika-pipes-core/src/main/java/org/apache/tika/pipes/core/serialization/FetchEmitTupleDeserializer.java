@@ -96,10 +96,10 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
             String k = e.getKey();
             if (vals.isArray()) {
                 for (JsonNode arrVal : vals) {
-                    metadata.add(k, arrVal.textValue());
+                    metadata.reconstruct(k, arrVal.textValue(), true);
                 }
             } else {
-                metadata.set(k, vals.asText());
+                metadata.reconstruct(k, vals.asText(), false);
             }
         }
         return metadata;

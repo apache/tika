@@ -64,6 +64,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -234,7 +235,7 @@ public class GeographicInformationParser implements Parser {
         for (Identification i : identifications) {
             DefaultDataIdentification defaultDataIdentification = (DefaultDataIdentification) i;
             if (i.getCitation() != null && i.getCitation().getTitle() != null) {
-                metadata.add("IdentificationInfoCitationTitle ",
+                metadata.set(TikaCoreProperties.TITLE,
                         i.getCitation().getTitle().toString());
             }
 
@@ -271,7 +272,7 @@ public class GeographicInformationParser implements Parser {
                 }
             }
             if (i.getAbstract() != null) {
-                metadata.add("IdentificationInfoAbstract ", i.getAbstract().toString());
+                metadata.set(TikaCoreProperties.DESCRIPTION, i.getAbstract().toString());
             }
             for (Progress p : i.getStatus()) {
                 metadata.add("IdentificationInfoStatus ", p.name());
@@ -286,7 +287,7 @@ public class GeographicInformationParser implements Parser {
             Map<Locale, Charset> localeCharsetMap =
                     defaultDataIdentification.getLocalesAndCharsets();
             for (Locale l : localeCharsetMap.keySet()) {
-                metadata.add("IdentificationInfoLanguage-->", l.getDisplayLanguage(Locale.ENGLISH));
+                metadata.set(TikaCoreProperties.LANGUAGE, l.getDisplayLanguage(Locale.ENGLISH));
             }
             CodeListSet<TopicCategory> categoryList =
                     (CodeListSet<TopicCategory>) defaultDataIdentification.getTopicCategories();

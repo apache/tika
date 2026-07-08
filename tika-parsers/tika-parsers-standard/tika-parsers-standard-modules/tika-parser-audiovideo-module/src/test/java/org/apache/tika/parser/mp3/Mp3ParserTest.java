@@ -65,7 +65,7 @@ public class Mp3ParserTest extends TikaTest {
         assertContains("Rock", content);
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
     }
@@ -96,7 +96,7 @@ public class Mp3ParserTest extends TikaTest {
 
         // Check un-typed audio properties
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
 
         // Check XMPDM-typed audio properties
@@ -151,7 +151,7 @@ public class Mp3ParserTest extends TikaTest {
         assertContains("Rock", content);
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
     }
@@ -178,7 +178,7 @@ public class Mp3ParserTest extends TikaTest {
         assertContains(", disc 1", content);
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
 
@@ -214,7 +214,7 @@ public class Mp3ParserTest extends TikaTest {
                 metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
     }
@@ -239,7 +239,7 @@ public class Mp3ParserTest extends TikaTest {
                 metadata.get(XMPDM.LOG_COMMENT));
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
     }
@@ -269,7 +269,7 @@ public class Mp3ParserTest extends TikaTest {
         assertContains("Rock", content);
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("2", metadata.get("channels"));
         checkDuration(metadata, 1);
     }
@@ -321,7 +321,7 @@ public class Mp3ParserTest extends TikaTest {
         assertContains("Plus loin vers l'ouest", content);
 
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("2", metadata.get("channels"));
     }
 
@@ -349,7 +349,7 @@ public class Mp3ParserTest extends TikaTest {
 
         // File lacks any audio frames, so we can't know these
         assertEquals(null, metadata.get("version"));
-        assertEquals(null, metadata.get("samplerate"));
+        assertEquals(null, metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals(null, metadata.get("channels"));
     }
 

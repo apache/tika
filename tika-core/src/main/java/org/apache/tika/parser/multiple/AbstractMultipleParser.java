@@ -125,7 +125,7 @@ public abstract class AbstractMultipleParser implements Parser {
             if (newVals == null || newVals.length == 0) {
                 // Metadata only in previous run, keep old values
                 for (String val : oldVals) {
-                    newMetadata.add(n, val);
+                    newMetadata.reconstruct(n, val, true);
                 }
             } else if (Arrays.deepEquals(oldVals, newVals)) {
                 // Metadata is the same, nothing to do
@@ -136,7 +136,7 @@ public abstract class AbstractMultipleParser implements Parser {
                         // Use the earlier value(s) in place of this/these one/s
                         newMetadata.remove(n);
                         for (String val : oldVals) {
-                            newMetadata.add(n, val);
+                            newMetadata.reconstruct(n, val, true);
                         }
                         continue;
                     case LAST_WINS:
@@ -147,11 +147,11 @@ public abstract class AbstractMultipleParser implements Parser {
                         List<String> vals = new ArrayList<>(Arrays.asList(oldVals));
                         newMetadata.remove(n);
                         for (String oldVal : oldVals) {
-                            newMetadata.add(n, oldVal);
+                            newMetadata.reconstruct(n, oldVal, true);
                         }
                         for (String newVal : newVals) {
                             if (!vals.contains(newVal)) {
-                                newMetadata.add(n, newVal);
+                                newMetadata.reconstruct(n, newVal, true);
                                 vals.add(newVal);
                             }
                         }
@@ -318,7 +318,7 @@ public abstract class AbstractMultipleParser implements Parser {
         for (String n : metadata.names()) {
             originalMetadata.remove(n);
             for (String val : metadata.getValues(n)) {
-                originalMetadata.add(n, val);
+                originalMetadata.reconstruct(n, val, true);
             }
         }
     }

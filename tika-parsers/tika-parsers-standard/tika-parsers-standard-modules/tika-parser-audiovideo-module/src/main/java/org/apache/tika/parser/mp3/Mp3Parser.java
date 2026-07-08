@@ -158,7 +158,6 @@ public class Mp3Parser implements Parser {
         }
 
         if (audioAndTags.audio != null) {
-            metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
 

@@ -46,7 +46,7 @@ public class CompositeMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         for (MetadataFilter filter : filters) {
             filter.filter(metadataList, parseContext);
         }

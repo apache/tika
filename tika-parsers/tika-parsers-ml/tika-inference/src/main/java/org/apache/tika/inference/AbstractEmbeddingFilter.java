@@ -86,7 +86,7 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
             throws IOException, TikaException;
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         InferenceConfig requestConfig = parseContext.get(InferenceConfig.class);
         if (requestConfig != null && requestConfig.isSkipEmbedding()) {
             return;

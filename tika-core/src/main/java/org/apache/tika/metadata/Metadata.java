@@ -34,6 +34,9 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -47,6 +50,7 @@ public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         TikaMimeKeys, Serializable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
@@ -96,6 +100,7 @@ public class Metadata
 
 
     private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
+    private transient boolean trusted;
     /**
      * Constructs a new, empty metadata.
      */
@@ -304,7 +309,64 @@ public class Metadata
      * @param value the metadata value.
      */
     public void add(final String name, final String value) {
+        if (blockReservedKeyWrite(name)) {
+            return;
+        }
+        addUnchecked(name, value);
+    }
+
+    /** Trusted add, bypassing the reserved-key guard. */
+    private void addUnchecked(final String name, final String value) {
         writeLimiter.add(name, value, metadata);
+    }
+
+    /**
+     * Mark this Metadata as a trusted transformation target (e.g. a metadata filter), letting
+     * String writes reach reserved {@code X-TIKA:} keys. Reset when the transformation is done.
+     */
+    public void setTrusted(boolean trusted) {
+        this.trusted = trusted;
+    }
+
+    public boolean isTrusted() {
+        return trusted;
+    }
+
+    /** Drop String writes to reserved {@code X-TIKA:} keys unless trusted; use their Property. */
+    private boolean blockReservedKeyWrite(String name) {
+        if (!trusted && name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Trusted write for clone/merge/deserialize; reserved keys go via their Property.
+     *
+     * @param append add rather than set
+     */
+    public void reconstruct(String name, String value, boolean append) {
+        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+            Property property = Property.get(name);
+            if (property != null) {
+                if (append) {
+                    add(property, value);
+                } else {
+                    set(property, value);
+                }
+            } else if (append) {
+                addUnchecked(name, value);
+            } else {
+                setUnchecked(name, value);
+            }
+            return;
+        }
+        if (append) {
+            add(name, value);
+        } else {
+            set(name, value);
+        }
     }
 
     /**
@@ -320,7 +382,7 @@ public class Metadata
             set(name, newValues);
         } else {
             for (String val : newValues) {
-                add(name, val);
+                addUnchecked(name, val);
             }
         }
     }
@@ -351,7 +413,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    add(property.getName(), value);
+                    addUnchecked(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -384,6 +446,14 @@ public class Metadata
      * @param value the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
+        if (blockReservedKeyWrite(name)) {
+            return;
+        }
+        setUnchecked(name, value);
+    }
+
+    /** Trusted set, bypassing the reserved-key guard. */
+    private void setUnchecked(String name, String value) {
         writeLimiter.set(name, value, metadata);
     }
 
@@ -393,7 +463,7 @@ public class Metadata
         if (values != null) {
             metadata.remove(name);
             for (String v : values) {
-                add(name, v);
+                addUnchecked(name, v);
             }
         } else {
             metadata.remove(name);
@@ -419,7 +489,7 @@ public class Metadata
                 }
             }
         } else {
-            set(property.getName(), value);
+            setUnchecked(property.getName(), value);
         }
     }
 

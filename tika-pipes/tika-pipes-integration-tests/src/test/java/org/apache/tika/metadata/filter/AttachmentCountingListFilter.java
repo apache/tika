@@ -29,7 +29,7 @@ public class AttachmentCountingListFilter extends MetadataFilter {
     private Integer count = 0;
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         if (metadataList == null || metadataList.isEmpty()) {
             return;
         }

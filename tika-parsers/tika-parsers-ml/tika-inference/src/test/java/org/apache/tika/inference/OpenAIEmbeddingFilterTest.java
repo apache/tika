@@ -72,7 +72,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(2, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), content);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
 
         List<Metadata> metadataList = new ArrayList<>();
         metadataList.add(metadata);
@@ -107,7 +107,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -131,7 +131,7 @@ public class OpenAIEmbeddingFilterTest {
     @Test
     void testBlankContent() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "   ");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "   ");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -145,7 +145,7 @@ public class OpenAIEmbeddingFilterTest {
         server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
 
@@ -183,7 +183,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Single chunk of text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Single chunk of text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -205,7 +205,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
 
         // Pre-populate with an image chunk
         Chunk imgChunk = new Chunk(null,

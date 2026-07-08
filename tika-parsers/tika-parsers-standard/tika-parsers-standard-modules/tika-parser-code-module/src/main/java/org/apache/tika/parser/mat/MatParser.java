@@ -36,6 +36,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -79,7 +80,7 @@ public class MatParser implements Parser {
         if (parts[2].contains("Created")) {
             int lastIndex1 = parts[2].lastIndexOf("Created on:");
             String dateCreated = parts[2].substring(lastIndex1 + "Created on:".length()).trim();
-            metadata.set("createdOn", dateCreated);
+            metadata.set(TikaCoreProperties.CREATED, dateCreated);
         }
 
         if (parts[1].contains("Platform")) {

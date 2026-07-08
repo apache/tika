@@ -35,6 +35,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -115,7 +116,7 @@ public class IDMLParser implements Parser {
 
         metadata.set("SpreadPageCount", Integer.toString(pageCount));
         metadata.set("MasterSpreadPageCount", Integer.toString(masterSpreadCount));
-        metadata.set("TotalPageCount", Integer.toString(pageCount + masterSpreadCount));
+        metadata.set(Office.PAGE_COUNT, Integer.toString(pageCount + masterSpreadCount));
 
         xhtml.endDocument();
 

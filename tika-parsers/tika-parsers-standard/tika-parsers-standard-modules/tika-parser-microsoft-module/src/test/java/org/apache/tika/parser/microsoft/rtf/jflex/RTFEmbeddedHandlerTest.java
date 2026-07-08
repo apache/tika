@@ -59,7 +59,7 @@ public class RTFEmbeddedHandlerTest {
                 Metadata copy = new Metadata();
                 for (String name : metadata.names()) {
                     for (String val : metadata.getValues(name)) {
-                        copy.add(name, val);
+                        copy.reconstruct(name, val, true);
                     }
                 }
                 extracted.add(copy);

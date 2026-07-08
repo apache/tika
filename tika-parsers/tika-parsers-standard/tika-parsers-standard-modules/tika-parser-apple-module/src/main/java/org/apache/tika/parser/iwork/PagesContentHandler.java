@@ -293,7 +293,7 @@ class PagesContentHandler extends DefaultHandler {
      * @return a resolved key that is common in other document types
      */
     private Object resolveMetaDataKey(String metaDataLocalName) {
-        Object metaDataKey = metaDataLocalName;
+        Object metaDataKey = "pages:" + metaDataLocalName;
         if ("sf:authors".equals(metaDataQName)) {
             metaDataKey = TikaCoreProperties.CREATOR;
         } else if ("sf:title".equals(metaDataQName)) {

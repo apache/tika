@@ -103,7 +103,7 @@ public class TrueTypeParser implements Parser {
                     metadata.set(AdobeFontMetricParser.MET_PS_NAME, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_COPYRIGHT) {
-                    metadata.set("Copyright", nr.getString());
+                    metadata.set(TikaCoreProperties.RIGHTS, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_TRADEMARK) {
                     metadata.set("Trademark", nr.getString());

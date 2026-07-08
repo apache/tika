@@ -195,8 +195,8 @@ public class FLVParser implements Parser {
         }
 
         metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
-        metadata.set("hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
-        metadata.set("hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
+        metadata.set("flv:hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
+        metadata.set("flv:hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -245,7 +245,7 @@ public class FLVParser implements Parser {
                             if (entry.getValue() == null) {
                                 continue;
                             }
-                            metadata.set(entry.getKey(), entry.getValue().toString());
+                            metadata.set("flv:" + entry.getKey(), entry.getValue().toString());
                         }
                     }
                 }

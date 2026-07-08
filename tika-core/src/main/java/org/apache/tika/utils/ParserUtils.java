@@ -43,11 +43,10 @@ public class ParserUtils {
 
         for (String n : m.names()) {
             if (!m.isMultiValued(n)) {
-                clone.set(n, m.get(n));
+                clone.reconstruct(n, m.get(n), false);
             } else {
-                String[] vals = m.getValues(n);
-                for (String val : vals) {
-                    clone.add(n, val);
+                for (String val : m.getValues(n)) {
+                    clone.reconstruct(n, val, true);
                 }
             }
         }
