@@ -281,4 +281,17 @@ public class MP4ParserTest extends TikaTest {
         }
         return vals;
     } */
+
+    @Test
+    public void testQuickTimeMetadataKeys() throws Exception {
+        //QuickTime item-list metadata (moov/meta/keys+ilst, the com.apple.quicktime.*
+        //keys such as the content identifier and ISO 6709 location) was previously
+        //dropped by the MP4 handler. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_QuickTimeMetadata.mov", metadata);
+        assertEquals("TEST-UUID-0001-LIVEPHOTO",
+                metadata.get("com.apple.quicktime.content.identifier"));
+        assertEquals("+12.3456-098.7654+010.500/",
+                metadata.get("com.apple.quicktime.location.ISO6709"));
+    }
 }
