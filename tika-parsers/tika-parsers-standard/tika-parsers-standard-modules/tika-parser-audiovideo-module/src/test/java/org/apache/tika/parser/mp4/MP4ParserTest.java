@@ -307,6 +307,11 @@ public class MP4ParserTest extends TikaTest {
                 metadata.get("com.apple.quicktime.camera.focal_length.35mm_equivalent"));
         assertEquals("1.5",
                 metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
+
+        //the Live Photo still moment: presentation start of the timed metadata
+        //track declaring still-image-time (mebx, empty edit of 740/600s). TIKA-4777
+        assertEquals("1233333",
+                metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
     }
 
     @Test
