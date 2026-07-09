@@ -684,10 +684,10 @@ public class ImageMetadataExtractor {
         }
 
         public void handle(Directory directory, Metadata metadata) throws MetadataException {
+            DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
+                    new DecimalFormatSymbols(Locale.ENGLISH));
             GeoLocation geoLocation = ((GpsDirectory) directory).getGeoLocation();
             if (geoLocation != null) {
-                DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
-                        new DecimalFormatSymbols(Locale.ENGLISH));
                 metadata.set(TikaCoreProperties.LATITUDE,
                         geoDecimalFormat.format(geoLocation.getLatitude()));
                 metadata.set(TikaCoreProperties.LONGITUDE,
@@ -696,6 +696,17 @@ public class ImageMetadataExtractor {
             Date gpsDate = ((GpsDirectory)directory).getGpsDate();
             if (gpsDate != null) {
                 metadata.set(Geographic.TIMESTAMP, gpsDate);
+            }
+            Rational altitude = ((GpsDirectory) directory).getRational(GpsDirectory.TAG_ALTITUDE);
+            if (altitude != null) {
+                double metres = altitude.doubleValue();
+                //GPSAltitudeRef 1 means below sea level
+                Integer altitudeRef =
+                        ((GpsDirectory) directory).getInteger(GpsDirectory.TAG_ALTITUDE_REF);
+                if (altitudeRef != null && altitudeRef == 1) {
+                    metres = -metres;
+                }
+                metadata.set(TikaCoreProperties.ALTITUDE, geoDecimalFormat.format(metres));
             }
         }
     }
