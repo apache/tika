@@ -74,6 +74,13 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
         metadata.add("vorbis:vendor", comments.getVendor());
 
+        //xmpDM:copyright is single-valued, so map the first comment; like
+        //vendor, the raw comments also stay available under the vorbis: name
+        List<String> copyrights = comments.getComments("copyright");
+        if (!copyrights.isEmpty()) {
+            metadata.set(XMPDM.COPYRIGHT, copyrights.get(0));
+        }
+
         for (String comment : comments.getComments("comment")) {
             metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
         }

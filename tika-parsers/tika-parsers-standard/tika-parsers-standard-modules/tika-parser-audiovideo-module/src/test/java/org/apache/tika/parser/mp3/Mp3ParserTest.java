@@ -104,6 +104,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals(null, metadata.get(XMPDM.COMPOSER));
+        assertEquals("Test Copyright", metadata.get(XMPDM.COPYRIGHT));
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
         assertEquals("XXX - ID3v1 Comment\nTest Comment",
@@ -187,6 +188,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals(null, metadata.get(XMPDM.COMPOSER));
+        assertEquals("Test Copyright", metadata.get(XMPDM.COPYRIGHT));
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
         assertEquals("1", metadata.get(XMPDM.COMPILATION));

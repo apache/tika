@@ -38,6 +38,7 @@ public class ID3v22Handler implements ID3Tags {
     private String album;
     private String year;
     private String composer;
+    private String copyright;
     private String genre;
     private String trackNumber;
     private String albumArtist;
@@ -66,6 +67,9 @@ public class ID3v22Handler implements ID3Tags {
                     break;
                 case "TCM":
                     composer = getTagString(tag.data, 0, tag.data.length);
+                    break;
+                case "TCR":
+                    copyright = getTagString(tag.data, 0, tag.data.length);
                     break;
                 case "COM":
                     comments.add(getComment(tag.data, 0, tag.data.length));
@@ -131,6 +135,10 @@ public class ID3v22Handler implements ID3Tags {
 
     public String getComposer() {
         return composer;
+    }
+
+    public String getCopyright() {
+        return copyright;
     }
 
     public List<ID3Comment> getComments() {
