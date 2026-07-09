@@ -46,12 +46,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
 
-    private static final DecimalFormat DURATION_FORMAT =
-            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-    static {
-        DURATION_FORMAT.applyPattern("0.0#");
-    }
-
     protected static void extractChannelInfo(Metadata metadata, OggAudioInfoHeader info) {
         extractChannelInfo(metadata, info.getNumChannels());
     }
@@ -133,8 +127,13 @@ public abstract class OggAudioParser extends AbstractParser {
             double duration) throws SAXException {
         // Record the duration, if available
         if (duration > 0) {
-            // Save as metadata to the nearest .01 seconds
-            metadata.add(XMPDM.DURATION, DURATION_FORMAT.format(duration));
+            // Save as metadata to the nearest .01 seconds.
+            // DecimalFormat is not thread-safe and these parsers are shared across
+            // threads, so create a new one per call (see MP4Parser).
+            DecimalFormat durationFormat =
+                    (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+            durationFormat.applyPattern("0.0#");
+            metadata.add(XMPDM.DURATION, durationFormat.format(duration));
 
             // Output as Hours / Minutes / Seconds / Parts
             String durationStr = formatDuration(duration);
