@@ -17,8 +17,11 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,8 +40,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class TikaMp4BoxHandler extends Mp4BoxHandler {
 
-    //metadata item value type for UTF-8 text (QTFF "well-known" type 1)
+    //QTFF "well-known" metadata item value types
     private static final int QT_TEXT_TYPE = 1;
+    private static final int QT_INT_BE_TYPE = 21;
+    private static final int QT_UINT_BE_TYPE = 22;
+    private static final int QT_FLOAT32_TYPE = 23;
+    private static final int QT_FLOAT64_TYPE = 24;
 
     //QuickTime stores location as an ISO 6709 string (e.g. +32.4720-084.9952+073.827/)
     private static final String QT_LOCATION_ISO6709 = "com.apple.quicktime.location.ISO6709";
@@ -133,7 +140,8 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     /**
      * Parses the QuickTime metadata 'ilst' box, whose entries are keyed by the
      * 1-based index into the preceding 'keys' box. Each entry holds a 'data' box
-     * with the value. Only UTF-8 text values are emitted, under their key name.
+     * with the value. UTF-8 text and the numeric "well-known" value types are emitted
+     * under their key name; other types (e.g. images, binary plists) are skipped.
      */
     private void processQuickTimeItemList(@Nullable byte[] payload) {
         if (payload == null) {
@@ -156,14 +164,14 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
                 if (isData && dataSize >= 16 && data + dataSize <= entryEnd) {
                     int valueType = (int) readUInt32(payload, data + 8);
                     int valueLength = (int) dataSize - 16;
-                    if (valueType == QT_TEXT_TYPE
-                            && index >= 1 && index <= quickTimeMetadataKeys.size()) {
+                    if (index >= 1 && index <= quickTimeMetadataKeys.size()) {
                         String key = quickTimeMetadataKeys.get(index - 1);
-                        String value =
-                                new String(payload, data + 16, valueLength, StandardCharsets.UTF_8);
-                        tikaMetadata.add(key, value);
-                        if (key.equals(QT_LOCATION_ISO6709)) {
-                            addLocation(value);
+                        String value = decodeValue(payload, data + 16, valueLength, valueType);
+                        if (value != null) {
+                            tikaMetadata.add(key, value);
+                            if (key.equals(QT_LOCATION_ISO6709)) {
+                                addLocation(value);
+                            }
                         }
                     }
                 }
@@ -185,6 +193,34 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
             if (matcher.group(3) != null) {
                 tikaMetadata.set(TikaCoreProperties.ALTITUDE, Double.parseDouble(matcher.group(3)));
             }
+        }
+    }
+
+    /**
+     * Decodes a metadata item value of one of the QTFF "well-known" types to a string,
+     * or returns null for types that are not handled (e.g. images or binary plists).
+     * Integers may be 1 to 8 bytes wide (e.g. the live-photo.auto flag is a single byte).
+     */
+    @Nullable
+    private static String decodeValue(byte[] b, int off, int len, int valueType) {
+        switch (valueType) {
+            case QT_TEXT_TYPE:
+                return new String(b, off, len, StandardCharsets.UTF_8);
+            case QT_INT_BE_TYPE:
+            case QT_UINT_BE_TYPE:
+                if (len < 1 || len > 8) {
+                    return null;
+                }
+                byte[] intBytes = Arrays.copyOfRange(b, off, off + len);
+                return valueType == QT_INT_BE_TYPE
+                        ? new BigInteger(intBytes).toString()
+                        : new BigInteger(1, intBytes).toString();
+            case QT_FLOAT32_TYPE:
+                return len == 4 ? String.valueOf(ByteBuffer.wrap(b, off, len).getFloat()) : null;
+            case QT_FLOAT64_TYPE:
+                return len == 8 ? String.valueOf(ByteBuffer.wrap(b, off, len).getDouble()) : null;
+            default:
+                return null;
         }
     }
 

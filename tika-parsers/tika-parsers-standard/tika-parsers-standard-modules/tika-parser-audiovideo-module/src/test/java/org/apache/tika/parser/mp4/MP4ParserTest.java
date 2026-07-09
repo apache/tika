@@ -299,6 +299,14 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
         assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
         assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+
+        //numeric well-known value types (uint8, float32, int32, float64)
+        assertEquals("1", metadata.get("com.apple.quicktime.live-photo.auto"));
+        assertEquals("0.75", metadata.get("com.apple.quicktime.live-photo.vitality-score"));
+        assertEquals("-13",
+                metadata.get("com.apple.quicktime.camera.focal_length.35mm_equivalent"));
+        assertEquals("1.5",
+                metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
     }
 
     @Test
