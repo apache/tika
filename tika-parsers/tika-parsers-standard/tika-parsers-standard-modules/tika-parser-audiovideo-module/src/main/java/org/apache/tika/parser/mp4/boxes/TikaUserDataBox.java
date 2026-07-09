@@ -18,8 +18,6 @@ package org.apache.tika.parser.mp4.boxes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
@@ -43,8 +41,6 @@ public class TikaUserDataBox {
     private static final String MDTA = "mdta";
     private static final String HDLR = "hdlr";
     private static final String MDIR = "mdir";//apple metadata itunes reader
-    private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)([+-]\\d+(?:\\.\\d+)?)?");
 
     @Nullable
     private String coordinateString;
@@ -264,16 +260,13 @@ public class TikaUserDataBox {
 
     public void addMetadata(Mp4Directory directory) {
         if (this.coordinateString != null) {
-            Matcher matcher = COORDINATE_PATTERN.matcher(this.coordinateString);
-            if (matcher.find()) {
-                double latitude = Double.parseDouble(matcher.group(1));
-                double longitude = Double.parseDouble(matcher.group(2));
-                directory.setDouble(8193, latitude);
-                directory.setDouble(8194, longitude);
+            ISO6709.Location location = ISO6709.parse(this.coordinateString);
+            if (location != null) {
+                directory.setDouble(8193, location.latitude);
+                directory.setDouble(8194, location.longitude);
                 //Mp4Directory has no altitude tag, so set geo:alt directly
-                if (matcher.group(3) != null) {
-                    metadata.set(TikaCoreProperties.ALTITUDE,
-                            Double.parseDouble(matcher.group(3)));
+                if (location.altitude != null) {
+                    metadata.set(TikaCoreProperties.ALTITUDE, location.altitude);
                 }
             }
         }

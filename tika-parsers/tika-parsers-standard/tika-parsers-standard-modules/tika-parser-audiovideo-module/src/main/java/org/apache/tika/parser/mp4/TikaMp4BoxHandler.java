@@ -23,8 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.drew.imaging.mp4.Mp4Handler;
 import com.drew.lang.annotations.NotNull;
@@ -35,6 +33,7 @@ import com.drew.metadata.mp4.Mp4Context;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.mp4.boxes.ISO6709;
 import org.apache.tika.parser.mp4.boxes.TikaUserDataBox;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -49,8 +48,6 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
 
     //QuickTime stores location as an ISO 6709 string (e.g. +32.4720-084.9952+073.827/)
     private static final String QT_LOCATION_ISO6709 = "com.apple.quicktime.location.ISO6709";
-    private static final Pattern ISO6709_PATTERN =
-            Pattern.compile("([+-]\\d+(?:\\.\\d+)?)([+-]\\d+(?:\\.\\d+)?)([+-]\\d+(?:\\.\\d+)?)?");
 
     org.apache.tika.metadata.Metadata tikaMetadata;
     final XHTMLContentHandler xhtml;
@@ -186,12 +183,12 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
      * the raw value, so QuickTime location matches the {@code geo:*} output of the udta path.
      */
     private void addLocation(String iso6709) {
-        Matcher matcher = ISO6709_PATTERN.matcher(iso6709);
-        if (matcher.find()) {
-            tikaMetadata.set(TikaCoreProperties.LATITUDE, Double.parseDouble(matcher.group(1)));
-            tikaMetadata.set(TikaCoreProperties.LONGITUDE, Double.parseDouble(matcher.group(2)));
-            if (matcher.group(3) != null) {
-                tikaMetadata.set(TikaCoreProperties.ALTITUDE, Double.parseDouble(matcher.group(3)));
+        ISO6709.Location location = ISO6709.parse(iso6709);
+        if (location != null) {
+            tikaMetadata.set(TikaCoreProperties.LATITUDE, location.latitude);
+            tikaMetadata.set(TikaCoreProperties.LONGITUDE, location.longitude);
+            if (location.altitude != null) {
+                tikaMetadata.set(TikaCoreProperties.ALTITUDE, location.altitude);
             }
         }
     }
