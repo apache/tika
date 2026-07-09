@@ -281,4 +281,42 @@ public class MP4ParserTest extends TikaTest {
         }
         return vals;
     } */
+
+    @Test
+    public void testQuickTimeMetadataKeys() throws Exception {
+        //QuickTime item-list metadata (moov/meta/keys+ilst, the com.apple.quicktime.*
+        //keys such as the content identifier and ISO 6709 location) was previously
+        //dropped by the MP4 handler. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_QuickTimeMetadata.mov", metadata);
+        assertEquals("TEST-UUID-0001-LIVEPHOTO",
+                metadata.get("com.apple.quicktime.content.identifier"));
+
+        //the raw ISO 6709 location is preserved ...
+        assertEquals("+12.3456-098.7654+010.500/",
+                metadata.get("com.apple.quicktime.location.ISO6709"));
+        //... and also mapped to the standard geo:* properties (incl. altitude)
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+
+        //numeric well-known value types (uint8, float32, int32, float64)
+        assertEquals("1", metadata.get("com.apple.quicktime.live-photo.auto"));
+        assertEquals("0.75", metadata.get("com.apple.quicktime.live-photo.vitality-score"));
+        assertEquals("-13",
+                metadata.get("com.apple.quicktime.camera.focal_length.35mm_equivalent"));
+        assertEquals("1.5",
+                metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
+    }
+
+    @Test
+    public void testUdtaLocation() throws Exception {
+        //the udta "(c)xyz" ISO 6709 location is mapped to geo:lat/geo:long, and its
+        //optional altitude, which was previously dropped, to geo:alt. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_udtaLocation.mp4", metadata);
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+    }
 }
