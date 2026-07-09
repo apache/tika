@@ -16,49 +16,26 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ParagraphProperties {
+import java.util.List;
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
+import org.junit.jupiter.api.Test;
 
-    public ParagraphProperties() {
-    }
+import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
-    }
+public class VSDXParserTest extends TikaTest {
 
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
+    @Test
+    public void testBasicTextExtraction() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testVISIO.vsdx");
+        String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+        assertEquals("application/vnd.ms-visio.drawing",
+                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertContains("test", content);
+        assertContains("This is a test.", content);
+        assertContains("Nothing fancy.", content);
     }
 }

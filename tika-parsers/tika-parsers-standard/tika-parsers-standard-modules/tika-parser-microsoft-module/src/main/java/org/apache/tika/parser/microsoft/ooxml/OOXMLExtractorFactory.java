@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.ooxml.POIXMLDocument;
@@ -182,6 +183,10 @@ public class OOXMLExtractorFactory {
                         XSLFEventBasedPowerPointExtractor.class.getCanonicalName());
             } else if (poiExtractor instanceof XPSTextExtractor) {
                 extractor = new XPSExtractorDecorator(context, poiExtractor);
+            } else if (isVisioType(type)) {
+                //SAX-based .vsdx extractor; the XDGF-based poiExtractor is used only for its
+                //OPCPackage (VSDXExtractorDecorator reads the package directly)
+                extractor = new VSDXExtractorDecorator(context, poiExtractor);
             } else if (document == null) {
                 throw new TikaException(
                         "Expecting UserModel based POI OOXML extractor with a document, but none" +
@@ -295,5 +300,17 @@ public class OOXMLExtractorFactory {
         return null;
     }
 
+    private static final Set<String> VISIO_SUBTYPES = Set.of(
+            "vnd.ms-visio.drawing",
+            "vnd.ms-visio.drawing.macroenabled.12",
+            "vnd.ms-visio.stencil",
+            "vnd.ms-visio.stencil.macroenabled.12",
+            "vnd.ms-visio.template",
+            "vnd.ms-visio.template.macroenabled.12"
+    );
+
+    private static boolean isVisioType(MediaType type) {
+        return type != null && VISIO_SUBTYPES.contains(type.getSubtype());
+    }
 
 }

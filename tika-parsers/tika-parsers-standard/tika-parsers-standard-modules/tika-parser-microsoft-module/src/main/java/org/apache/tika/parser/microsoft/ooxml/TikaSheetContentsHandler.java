@@ -16,49 +16,21 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+/**
+ * Sheet contents handler that uses {@link XSSFCommentsShim.CommentData}
+ * instead of POI's XMLBeans-dependent {@code XSSFComment}.
+ */
+interface TikaSheetContentsHandler {
 
-public class ParagraphProperties {
+    void startRow(int rowNum);
 
-    private String styleId;
-    private int ilvl = -1;
-    private int numId = -1;
+    void endRow(int rowNum);
 
-    public ParagraphProperties() {
+    void cell(String cellRef, String formattedValue, XSSFCommentsShim.CommentData comment);
+
+    default void headerFooter(String text, boolean isHeader, String tagName) {
     }
 
-    public ParagraphProperties(ParagraphProperties other) {
-        this.styleId = other.styleId;
-        this.ilvl = other.ilvl;
-        this.numId = other.numId;
-    }
-
-    public String getStyleID() {
-        return styleId;
-    }
-
-    public void setStyleID(String styleId) {
-        this.styleId = styleId;
-    }
-
-    public void reset() {
-        styleId = null;
-        ilvl = -1;
-        numId = -1;
-    }
-
-    public int getIlvl() {
-        return ilvl;
-    }
-
-    public void setIlvl(int ilvl) {
-        this.ilvl = ilvl;
-    }
-
-    public int getNumId() {
-        return numId;
-    }
-
-    public void setNumId(int numId) {
-        this.numId = numId;
+    default void endSheet() {
     }
 }

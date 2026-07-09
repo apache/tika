@@ -27,9 +27,10 @@ import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.xmlbeans.XmlException;
 
-import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
+import org.apache.tika.parser.microsoft.ooxml.EditType;
 import org.apache.tika.parser.microsoft.ooxml.ParagraphProperties;
 import org.apache.tika.parser.microsoft.ooxml.RunProperties;
+import org.apache.tika.parser.microsoft.ooxml.XWPFBodyContentsHandler;
 
 public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
@@ -92,7 +93,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
     }
 
     private static class XSLFToTextContentHandler
-            implements OOXMLWordAndPowerPointTextHandler.XWPFBodyContentsHandler {
+            implements XWPFBodyContentsHandler {
         private final StringBuilder buffer;
 
         public XSLFToTextContentHandler(StringBuilder buffer) {
@@ -166,7 +167,7 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
         @Override
         public void startEditedSection(String editor, Date date,
-                                       OOXMLWordAndPowerPointTextHandler.EditType editType) {
+                                       EditType editType) {
 
         }
 
@@ -197,7 +198,12 @@ public class XSLFEventBasedPowerPointExtractor implements POIXMLTextExtractor {
 
 
         @Override
-        public void embeddedOLERef(String refId) {
+        public void embeddedOLERef(String refId, String progId, String emfImageRId) {
+            //no-op
+        }
+
+        @Override
+        public void commentReference(String id) {
             //no-op
         }
 

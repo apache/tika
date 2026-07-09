@@ -16,11 +16,14 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipException;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -40,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -103,6 +107,15 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         this.metadata = metadata;
         this.context = context;
         this.opcPackage = extractor.getPackage();
+    }
+
+    /**
+     * The SAX docx path reads metadata directly from the OPC package (no POI/XMLBeans),
+     * matching the 4.x behavior. The DOM path keeps the concrete {@link MetadataExtractor}.
+     */
+    @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new SAXBasedMetadataExtractor(opcPackage, getParseContext());
     }
 
 
@@ -247,6 +260,10 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
         }
 
+        //pre-collect footnotes, endnotes, and comments so they can be inlined at their
+        //reference points in the main document (matching the DOM parser's behavior)
+        OOXMLInlineBodyPartMap inlinePartMap = collectInlineParts(documentPart);
+
         if (config.isIncludeHeadersAndFooters()) {
             //headers
             try {
@@ -256,7 +273,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     for (int i = 0; i < headersPRC.size(); i++) {
                         PackagePart header =
                                 documentPart.getRelatedPart(headersPRC.getRelationship(i));
-                        handlePart(header, styles, listManager, xhtml);
+                        handlePart(header, styles, listManager, xhtml,
+                                OOXMLInlineBodyPartMap.EMPTY);
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -265,18 +283,18 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        //main document
+        //main document -- footnotes/endnotes/comments are inlined via inlinePartMap
+        OOXMLTikaBodyPartHandler mainHandler = null;
         try {
-            handlePart(documentPart, styles, listManager, xhtml);
+            mainHandler = handlePart(documentPart, styles, listManager, xhtml, inlinePartMap);
         } catch (ZipException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
         }
-        //for now, just dump other components at end
+        //dump remaining components at end; footnotes/endnotes/comments are now inlined
+        //above, so they are no longer dumped here
         for (String rel : new String[]{AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
-                XSSFRelation.CHART.getRelation(), XWPFRelation.FOOTNOTE.getRelation(),
-                XWPFRelation.COMMENT.getRelation(), XWPFRelation.FOOTER.getRelation(),
-                XWPFRelation.ENDNOTE.getRelation(),}) {
+                XSSFRelation.CHART.getRelation(), XWPFRelation.FOOTER.getRelation(),}) {
             //skip footers if we shouldn't extract them
             if (!config.isIncludeHeadersAndFooters() &&
                     rel.equals(XWPFRelation.FOOTER.getRelation())) {
@@ -288,7 +306,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     for (int i = 0; i < prc.size(); i++) {
                         PackagePart packagePart =
                                 documentPart.getRelatedPart(prc.getRelationship(i));
-                        handlePart(packagePart, styles, listManager, xhtml);
+                        handlePart(packagePart, styles, listManager, xhtml,
+                                OOXMLInlineBodyPartMap.EMPTY);
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
@@ -296,25 +315,136 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                         ExceptionUtils.getStackTrace(e));
             }
         }
+
+        //dump any comments that were NOT inlined via commentReference
+        if (mainHandler != null) {
+            handleUnreferencedComments(xhtml, inlinePartMap, mainHandler.getEmittedCommentIds());
+        }
     }
 
-    private void handlePart(PackagePart packagePart, XWPFStylesShim styles,
-                            XWPFListManager listManager, XHTMLContentHandler xhtml)
+    private OOXMLTikaBodyPartHandler handlePart(PackagePart packagePart, XWPFStylesShim styles,
+                            XWPFListManager listManager, XHTMLContentHandler xhtml,
+                            OOXMLInlineBodyPartMap inlinePartMap)
             throws IOException, SAXException {
 
         Map<String, String> linkedRelationships =
                 loadLinkedRelationships(packagePart, true, metadata);
+        OOXMLTikaBodyPartHandler bodyHandler =
+                new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config, metadata);
+        bodyHandler.setInlineBodyPartMap(inlinePartMap, context);
         try (InputStream stream = packagePart.getInputStream()) {
             XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(stream),
                     new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
-                            new OOXMLTikaBodyPartHandler(xhtml, styles, listManager, config),
+                            bodyHandler,
                             linkedRelationships, config.isIncludeShapeBasedContent(),
-                            config.isConcatenatePhoneticRuns(), metadata)), context);
+                            config.isConcatenatePhoneticRuns(),
+                            config.isPreferAlternateContentChoice())), context);
+        } catch (SAXException e) {
+            WriteLimitReachedException.throwIfWriteLimitReached(e);
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            //the partial parse may have left <p>/<td>/<tr>/<table> or formatting tags open;
+            //close them so subsequent parts and the outer </body></html> land balanced
+            bodyHandler.closeAnyPending();
         } catch (TikaException | IOException e) {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                     ExceptionUtils.getStackTrace(e));
+            bodyHandler.closeAnyPending();
         }
+        return bodyHandler;
+    }
 
+    /**
+     * Dumps comments that were not inlined at a {@code commentReference} in the main document
+     * (matching the DOM parser, which appends orphaned comments at the end).
+     */
+    private void handleUnreferencedComments(XHTMLContentHandler xhtml,
+            OOXMLInlineBodyPartMap inlinePartMap, Set<String> emittedCommentIds) {
+        if (!inlinePartMap.hasComments()) {
+            return;
+        }
+        Map<String, String> linkedRelationships = inlinePartMap.getLinkedRelationships();
+        for (Map.Entry<String, byte[]> entry : inlinePartMap.getCommentEntries()) {
+            if (emittedCommentIds.contains(entry.getKey())) {
+                continue;
+            }
+            try {
+                xhtml.startElement("div", "class", "comment");
+                XMLReaderUtils.parseSAX(new ByteArrayInputStream(entry.getValue()),
+                        new EmbeddedContentHandler(new OOXMLWordAndPowerPointTextHandler(
+                                new OOXMLTikaBodyPartHandler(xhtml), linkedRelationships)),
+                        context);
+                xhtml.endElement("div");
+            } catch (TikaException | IOException | SAXException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+            }
+        }
+    }
+
+    /**
+     * Pre-parses the footnote, endnote, and comment parts into raw XML fragments keyed by their
+     * {@code w:id}, so {@link OOXMLTikaBodyPartHandler} can inline each at its reference point.
+     */
+    private OOXMLInlineBodyPartMap collectInlineParts(PackagePart documentPart) {
+        Map<String, String> allRelationships = new java.util.HashMap<>();
+        Map<String, byte[]> footnoteMap = collectPartContent(documentPart,
+                XWPFRelation.FOOTNOTE.getRelation(), Set.of("footnote"), allRelationships);
+        String endnoteRel =
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes";
+        Map<String, byte[]> endnoteMap = collectPartContent(documentPart,
+                endnoteRel, Set.of("endnote"), allRelationships);
+        String commentsRel =
+                "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments";
+        Map<String, byte[]> commentMap = collectPartContent(documentPart,
+                commentsRel, Set.of("comment"), allRelationships, Collections.emptySet());
+        return new OOXMLInlineBodyPartMap(footnoteMap, endnoteMap, commentMap, allRelationships);
+    }
+
+    private Map<String, byte[]> collectPartContent(PackagePart documentPart,
+            String relationshipType, Set<String> wrapperElements,
+            Map<String, String> allRelationships) {
+        //footnotes/endnotes reserve ids 0 and -1 for separator/continuation-separator
+        return collectPartContent(documentPart, relationshipType, wrapperElements,
+                allRelationships, Set.of("0", "-1"));
+    }
+
+    private Map<String, byte[]> collectPartContent(PackagePart documentPart,
+            String relationshipType, Set<String> wrapperElements,
+            Map<String, String> allRelationships, Set<String> skipIds) {
+        try {
+            PackageRelationshipCollection prc =
+                    documentPart.getRelationshipsByType(relationshipType);
+            if (prc == null || prc.size() == 0) {
+                return Collections.emptyMap();
+            }
+            OOXMLPartContentCollector collector =
+                    new OOXMLPartContentCollector(wrapperElements, skipIds);
+            for (int i = 0; i < prc.size(); i++) {
+                PackagePart part = safeGetRelatedPart(documentPart, prc.getRelationship(i));
+                if (part == null) {
+                    continue;
+                }
+                //collect the part's linked relationships (for picture/hyperlink resolution)
+                allRelationships.putAll(loadLinkedRelationships(part, true, metadata));
+                try (InputStream stream = part.getInputStream()) {
+                    XMLReaderUtils.parseSAX(stream, collector, context);
+                }
+            }
+            return collector.getContentMap();
+        } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            return Collections.emptyMap();
+        }
+    }
+
+    private PackagePart safeGetRelatedPart(PackagePart parent, PackageRelationship rel) {
+        try {
+            return parent.getRelatedPart(rel);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 

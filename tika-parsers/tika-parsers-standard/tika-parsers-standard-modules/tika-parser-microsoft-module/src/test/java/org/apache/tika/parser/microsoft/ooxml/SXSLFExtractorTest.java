@@ -604,4 +604,9 @@ public class SXSLFExtractorTest extends TikaTest {
                 metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
+    @Test
+    public void testPPTXDiagramData() throws Exception {
+        assertContains("President", getXML("testPPT_diagramData.pptx", parseContext).xml);
+    }
+
 }
