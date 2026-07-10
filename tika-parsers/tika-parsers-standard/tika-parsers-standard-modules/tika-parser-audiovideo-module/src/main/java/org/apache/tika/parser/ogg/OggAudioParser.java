@@ -46,12 +46,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
 
-    private static final DecimalFormat DURATION_FORMAT =
-            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-    static {
-        DURATION_FORMAT.applyPattern("0.0#");
-    }
-
     protected static void extractChannelInfo(Metadata metadata, OggAudioInfoHeader info) {
         extractChannelInfo(metadata, info.getNumChannels());
     }
@@ -79,6 +73,13 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
         metadata.add("vorbis:vendor", comments.getVendor());
+
+        //xmpDM:copyright is single-valued, so map the first comment; like
+        //vendor, the raw comments also stay available under the vorbis: name
+        List<String> copyrights = comments.getComments("copyright");
+        if (!copyrights.isEmpty()) {
+            metadata.set(XMPDM.COPYRIGHT, copyrights.get(0));
+        }
 
         for (String comment : comments.getComments("comment")) {
             metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
@@ -133,8 +134,13 @@ public abstract class OggAudioParser extends AbstractParser {
             double duration) throws SAXException {
         // Record the duration, if available
         if (duration > 0) {
-            // Save as metadata to the nearest .01 seconds
-            metadata.add(XMPDM.DURATION, DURATION_FORMAT.format(duration));
+            // Save as metadata to the nearest .01 seconds.
+            // DecimalFormat is not thread-safe and these parsers are shared across
+            // threads, so create a new one per call (see MP4Parser).
+            DecimalFormat durationFormat =
+                    (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+            durationFormat.applyPattern("0.0#");
+            metadata.add(XMPDM.DURATION, durationFormat.format(duration));
 
             // Output as Hours / Minutes / Seconds / Parts
             String durationStr = formatDuration(duration);
