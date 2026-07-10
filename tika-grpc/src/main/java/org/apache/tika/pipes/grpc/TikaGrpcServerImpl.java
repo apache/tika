@@ -111,6 +111,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         Path configPath = tikaConfigFile.toPath();
+        // ParseBytes needs a fetcher the FORKED worker can resolve. Runtime store writes do
+        // not reach the worker with the default in-memory config store, so the server hands
+        // every component (its own managers and the forked worker alike) an augmented copy
+        // of the config with an internal file-system fetcher rooted at a server temp dir.
+        this.parseBytesDir = java.nio.file.Files.createTempDirectory("tika-grpc-parse-bytes");
+        configPath = augmentWithParseBytesFetcher(configPath, parseBytesDir);
         this.tikaConfigPath = configPath;
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
@@ -285,6 +291,93 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         fetchAndParseImpl(request, responseObserver);
         responseObserver.onCompleted();
     }
+
+    private static final String PARSE_BYTES_FETCHER_ID = "__tika_grpc_parse_bytes";
+    private final java.nio.file.Path parseBytesDir;
+
+    // Writes a sibling temp copy of the config with the internal parse-bytes fetcher added
+    // to the `fetchers` section, so it is loaded exactly like a user-defined fetcher.
+    private static Path augmentWithParseBytesFetcher(Path configPath, java.nio.file.Path dir)
+            throws IOException {
+        com.fasterxml.jackson.databind.node.ObjectNode root =
+                (com.fasterxml.jackson.databind.node.ObjectNode)
+                        OBJECT_MAPPER.readTree(configPath.toFile());
+        com.fasterxml.jackson.databind.node.ObjectNode fetchers =
+                root.has("fetchers") && root.get("fetchers").isObject()
+                        ? (com.fasterxml.jackson.databind.node.ObjectNode) root.get("fetchers")
+                        : root.putObject("fetchers");
+        fetchers.putObject(PARSE_BYTES_FETCHER_ID)
+                .putObject("file-system-fetcher")
+                .put("basePath", dir.toAbsolutePath().toString());
+        Path augmented = java.nio.file.Files.createTempFile("tika-grpc-config", ".json");
+        java.nio.file.Files.writeString(augmented,
+                OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(root));
+        return augmented;
+    }
+
+    @Override
+    public void parseBytes(org.apache.tika.ParseBytesRequest request,
+                           StreamObserver<FetchAndParseReply> responseObserver) {
+        if (request.getRequestId().isBlank()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("request_id is required").asRuntimeException());
+            return;
+        }
+        if (request.getContent().isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("content is required").asRuntimeException());
+            return;
+        }
+        FetchAndParseRequest internal = FetchAndParseRequest.newBuilder()
+                .setFetcherId(PARSE_BYTES_FETCHER_ID)
+                .setFetchKey(request.getRequestId())
+                .setParseContextJson(request.getParseContextJson())
+                .setRenderMarkdown(request.getRenderMarkdown())
+                .build();
+        if (denyPerRequestConfig(internal, responseObserver)) {
+            return;
+        }
+        java.nio.file.Path file = null;
+        try {
+            // The forked worker fetches by key relative to the internal fetcher's base path;
+            // the caller-visible id stays request_id while the on-disk name stays unique.
+            String tempName = java.util.UUID.randomUUID().toString();
+            file = parseBytesDir.resolve(tempName);
+            java.nio.file.Files.write(file, request.getContent().toByteArray());
+            FetchAndParseRequest keyed = internal.toBuilder().setFetchKey(tempName).build();
+            fetchAndParseImpl(keyed, new StreamObserver<>() {
+                @Override
+                public void onNext(FetchAndParseReply reply) {
+                    Document document = reply.getDocument().toBuilder()
+                            .setId(request.getRequestId()).build();
+                    responseObserver.onNext(reply.toBuilder()
+                            .setFetchKey(request.getRequestId())
+                            .setDocument(document).build());
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    responseObserver.onError(t);
+                }
+
+                @Override
+                public void onCompleted() {
+                }
+            });
+            responseObserver.onCompleted();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            if (file != null) {
+                try {
+                    java.nio.file.Files.deleteIfExists(file);
+                } catch (IOException ignore) {
+                    // best effort; the directory is a server temp dir
+                }
+            }
+        }
+    }
+
 
     private void fetchAndParseImpl(FetchAndParseRequest request,
                                    StreamObserver<FetchAndParseReply> responseObserver) {

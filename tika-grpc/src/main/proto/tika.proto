@@ -44,6 +44,10 @@ service Tika   {
     the FetchParseTuple data output from Tika Pipes. This is a synchronous call that immediately returns 1 result.
   */
   rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
+
+  // Parses bytes the caller already has: no fetcher registration, no server-side
+  // state. The parse still runs in the isolated forked worker.
+  rpc ParseBytes(ParseBytesRequest) returns (FetchAndParseReply) {}
   /*
     Using a Fetcher in the fetcher store, send a FetchAndParse request. This will fetch, parse, and return
     the FetchParseTuple data output from Tika Pipes. This will stream the data from the server in response.
@@ -112,6 +116,20 @@ message FetchAndParseRequest {
   // Document.blocks tree is always returned; the flat string is off by default so a reply
   // does not carry the content twice.
   bool render_markdown = 6;
+}
+
+message ParseBytesRequest {
+  // Caller-chosen identifier echoed back as the reply's fetch_key and used as the
+  // Document id. Required; must be unique per in-flight request.
+  string request_id = 1;
+  // The raw document bytes to parse.
+  bytes content = 2;
+  // Optional JSON object to configure the ParseContext for this request; same
+  // semantics as FetchAndParseRequest.parse_context_json.
+  string parse_context_json = 3;
+  // Also populate Document.markdown; same semantics as
+  // FetchAndParseRequest.render_markdown.
+  bool render_markdown = 4;
 }
 
 message FetchAndParseReply {

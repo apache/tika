@@ -229,6 +229,27 @@ public class TikaGrpcServerTest {
     }
 
     @Test
+    public void testParseBytesNeedsNoFetcherRegistration(Resources resources) throws Exception {
+        // Component management is denied by default, and parseBytes must still work: the
+        // caller sends bytes, no fetcher CRUD, no server-side state visible to the client.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+
+        FetchAndParseReply reply = blockingStub.parseBytes(org.apache.tika.ParseBytesRequest
+                .newBuilder()
+                .setRequestId("bytes-1")
+                .setContent(com.google.protobuf.ByteString.copyFromUtf8("Hello from raw bytes."))
+                .setRenderMarkdown(true)
+                .build());
+
+        assertEquals("bytes-1", reply.getFetchKey());
+        assertEquals("bytes-1", reply.getDocument().getId());
+        assertEquals("PARSE_SUCCESS", reply.getDocument().getStatus().getPipesStatus(),
+                "error_message=" + reply.getErrorMessage() + " errors=" + reply.getDocument().getStatus().getErrorsList());
+        Assertions.assertTrue(reply.getDocument().getMarkdown().contains("Hello from raw bytes"));
+        Assertions.assertFalse(reply.getDocument().getBlocksList().isEmpty());
+    }
+
+    @Test
     public void testComponentManagementDeniedByDefault(Resources resources) throws Exception {
         TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
 
