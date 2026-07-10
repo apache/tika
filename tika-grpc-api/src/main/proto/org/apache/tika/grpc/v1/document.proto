@@ -1,0 +1,235 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// The Document shape: a single, small, stable contract for a parsed Tika document,
+// instead of a proto message per source format.
+//
+// Content model: a structured document tree (blocks + inline runs, with tables /
+// task lists / strikethrough), anchored to the standard markdown block shape so it
+// does not churn. The tree is the canonical content: structured consumers read it
+// directly instead of re-parsing a string. A markdown rendering of the same tree is
+// available on request for tools that want a flat string, and it round-trips because
+// the shape is markdown's.
+//
+// Metadata: typed common fields (by concern, not by source format) plus a TAGGED tail.
+// Tags come from Tika's declared Property value type; unknown keys are strings, never
+// guessed.
+//
+// Format specifics arrive via per-parser DocumentTransformer code, not a proto-per-type,
+// so adding a parser never touches the wire.
+
+syntax = "proto3";
+
+package org.apache.tika.grpc.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika.grpc.v1";
+
+// =========================================================================
+// Top level
+// =========================================================================
+message Document {
+  // envelope
+  string id = 1;
+  string content_type = 2;             // Tika-detected MIME type
+  FormatCategory format_category = 3;  // coarse routing hint; not mutually exclusive with `extra`
+  google.protobuf.Timestamp parsed_at = 4;
+  ParseStatus status = 5;
+  SourceOrigin origin = 6;
+
+  // content. `blocks` is the canonical structured content and is always populated for
+  // a parse that produced content. `markdown` is a flat rendering of the same tree,
+  // populated only when the request asks for it (FetchAndParseRequest.render_markdown),
+  // so a reply does not carry the content twice.
+  string markdown = 10;
+  repeated Block blocks = 11;
+
+  // metadata
+  DocumentMetadata metadata = 20;      // typed common fields
+  repeated MetadataField extra = 21;   // tagged tail: everything a transformer didn't type
+
+  // embedded children, recursive (parent PDF + child image, each fully typed)
+  repeated Document embedded = 30;
+}
+
+// Coarse format category for routing. Cross-cutting concerns (e.g. Creative Commons
+// licensing) are NOT categories here -- they surface via `extra`/DocumentMetadata
+// regardless of the primary category, since they can coexist with any format.
+enum FormatCategory {
+  FORMAT_CATEGORY_UNSPECIFIED = 0;
+  FORMAT_CATEGORY_PDF = 1;
+  FORMAT_CATEGORY_OFFICE = 2;
+  FORMAT_CATEGORY_IMAGE = 3;
+  FORMAT_CATEGORY_HTML = 4;
+  FORMAT_CATEGORY_RTF = 5;
+  FORMAT_CATEGORY_EPUB = 6;
+  FORMAT_CATEGORY_WARC = 7;
+  FORMAT_CATEGORY_GENERIC = 8;
+}
+
+message SourceOrigin {
+  string filename = 1;
+  string uri = 2;
+  int64 byte_size = 3;
+  string parser = 4;
+  // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
+  // recorded (the X-TIKA:digest:SHA256 metadata value). Empty when the pipeline has no
+  // digester configured. Downstream consumers use it to tie derived artifacts
+  // (annotations, index entries) back to the exact bytes that were parsed.
+  string sha256 = 5;
+}
+
+// =========================================================================
+// Blocks (markdown block structure)
+// =========================================================================
+message Block {
+  oneof block {
+    Heading heading = 1;                // ATX/setext, level 1..6
+    Paragraph paragraph = 2;
+    BlockQuote block_quote = 3;
+    BulletList bullet_list = 4;
+    OrderedList ordered_list = 5;
+    CodeBlock code_block = 6;           // fenced or indented
+    HtmlBlock html_block = 7;
+    ThematicBreak thematic_break = 8;
+    Table table = 9;                    // GFM
+  }
+}
+
+message Heading { int32 level = 1; repeated Inline content = 2; }
+message Paragraph { repeated Inline content = 1; }
+message BlockQuote { repeated Block blocks = 1; }
+message ThematicBreak {}
+message HtmlBlock { string literal = 1; }
+
+message BulletList { string marker = 1; bool tight = 2; repeated ListItem items = 3; }      // marker: - + *
+message OrderedList { int32 start = 1; string delimiter = 2; bool tight = 3; repeated ListItem items = 4; } // delimiter: . )
+message ListItem {
+  TaskStatus task = 1;                  // GFM task list checkbox
+  repeated Block blocks = 2;
+}
+enum TaskStatus { TASK_NONE = 0; TASK_UNCHECKED = 1; TASK_CHECKED = 2; }
+
+message CodeBlock { bool fenced = 1; string info = 2; string literal = 3; }  // info = fence language/info
+
+message Table { repeated TableCell header = 1; repeated TableRow rows = 2; }
+message TableRow { repeated TableCell cells = 1; }
+message TableCell { Alignment alignment = 1; repeated Inline content = 2; }
+enum Alignment { ALIGN_NONE = 0; ALIGN_LEFT = 1; ALIGN_CENTER = 2; ALIGN_RIGHT = 3; }
+
+// =========================================================================
+// Inline runs (structured markdown formatting)
+// =========================================================================
+message Inline {
+  oneof inline {
+    string text = 1;                    // plain run
+    Emphasis emphasis = 2;              // *italic*
+    Strong strong = 3;                  // **bold**
+    Strikethrough strikethrough = 4;    // ~~del~~ (GFM)
+    Code code = 5;                      // `code`
+    Link link = 6;
+    Image image = 7;
+    string html = 8;                    // raw inline html
+    LineBreak line_break = 9;
+  }
+}
+message Emphasis { repeated Inline content = 1; }
+message Strong { repeated Inline content = 1; }
+message Strikethrough { repeated Inline content = 1; }
+message Code { string literal = 1; }
+message Link { string destination = 1; string title = 2; repeated Inline content = 3; }
+message LineBreak { bool hard = 1; }
+
+message Image {
+  string destination = 1;
+  string title = 2;
+  string alt = 3;
+}
+
+// =========================================================================
+// Metadata: typed common fields (grouped by concern, not by source format).
+// The descriptive core follows the Dublin Core element set (title, creator,
+// description, subject, language, publisher, identifier, date, rights), which is
+// also the vocabulary Tika's own property model and XMP anchor to.
+// =========================================================================
+message DocumentMetadata {
+  string title = 1;
+  repeated string authors = 2;
+  string description = 3;
+  repeated string keywords = 4;
+  repeated string languages = 5;
+  repeated string publishers = 6;
+  // Unambiguous references to the resource as declared by the document itself
+  // (DOI, ISBN, ...), from dc:identifier.
+  repeated string identifiers = 7;
+
+  google.protobuf.Timestamp created = 10;
+  google.protobuf.Timestamp modified = 11;
+
+  int32 page_count = 20;
+  int64 word_count = 21;
+  int64 character_count = 22;
+
+  string rights = 30;         // free-text rights/license statement
+  string license_url = 31;    // e.g. a Creative Commons license URI
+
+  int32 width = 40;
+  int32 height = 41;
+  double duration_seconds = 42;
+
+  // Extend by concern (fonts, geo, security) as new common needs appear. This is
+  // where the "few hundred fields" would live if we chased them -- bounded,
+  // common, and cross-format. Anything narrower belongs in `extra`.
+}
+
+// =========================================================================
+// Tagged tail: typed where Tika declares the type, string otherwise (never guessed)
+// =========================================================================
+message MetadataField { string key = 1; MetadataValue value = 2; }
+message MetadataValue {
+  oneof value {
+    StringList strings = 1;             // default for untyped / multivalue text
+    int64 integer = 2;
+    double number = 3;
+    bool boolean = 4;
+    google.protobuf.Timestamp timestamp = 5;
+  }
+}
+message StringList { repeated string values = 1; }
+
+message ParseStatus {
+  enum Status { UNSPECIFIED = 0; SUCCESS = 1; PARTIAL = 2; FAILED = 3; }
+  Status status = 1;
+  // Wall-clock milliseconds for the whole fetch+parse round trip as observed by the
+  // server. Fetch and parse happen together inside the forked pipes worker, so a
+  // parse-only time is not separable here -- the name says what is actually measured.
+  int64 fetch_parse_time_ms = 2;
+  string parser_used = 3;
+  repeated string parsers_used = 4;
+  repeated string warnings = 5;
+  repeated string errors = 6;
+  // Version string of the Tika that produced this document (e.g. "Apache Tika 4.0.0"),
+  // so long-lived stores can tell which producer wrote an entry.
+  string tika_version = 7;
+  // The raw pipes result name this document's status was derived from (e.g.
+  // "PARSE_SUCCESS", "TIMEOUT"; see org.apache.tika.pipes.api.PipesResult.RESULT_STATUS).
+  // Diagnostic detail behind the typed `status`, not a stable enumeration: branch on
+  // `status`, log this.
+  string pipes_status = 8;
+}

@@ -81,8 +81,8 @@ class FileSystemFetcherTest extends ExternalTestBase {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
                 LOG.debug("Reply from fetch-and-parse - key={}, status={}", 
-                    fetchAndParseReply.getFetchKey(), fetchAndParseReply.getStatus());
-                if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getStatus())) {
+                    fetchAndParseReply.getFetchKey(), fetchAndParseReply.getDocument().getStatus().getPipesStatus());
+                if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getDocument().getStatus().getPipesStatus())) {
                     errors.add(fetchAndParseReply);
                 } else {
                     successes.add(fetchAndParseReply);

@@ -179,12 +179,12 @@ class PipesBiDirectionalStreamingIntegrationTest {
     void testHttpFetchScenario() throws Exception {
         AtomicInteger numParsed = new AtomicInteger();
         AtomicInteger numErrors = new AtomicInteger();
-        Map<String, Map<String, String>> result = Collections.synchronizedMap(new HashMap<>());
+        Map<String, String> result = Collections.synchronizedMap(new HashMap<>());
         List<String> errorMessages = Collections.synchronizedList(new ArrayList<>());
         StreamObserver<FetchAndParseReply> responseObserver = new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
-                String status = fetchAndParseReply.getStatus();
+                String status = fetchAndParseReply.getDocument().getStatus().getPipesStatus();
                 LOGGER.info("Parsed: {} with status: {}", fetchAndParseReply.getFetchKey(), status);
                 
                 // Check if this is an error status
@@ -198,7 +198,10 @@ class PipesBiDirectionalStreamingIntegrationTest {
                     LOGGER.error(errorMsg);
                 } else {
                     numParsed.incrementAndGet();
-                    result.put(fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
+                    if (fetchAndParseReply.hasDocument()) {
+                        result.put(fetchAndParseReply.getFetchKey(),
+                                fetchAndParseReply.getDocument().getMarkdown());
+                    }
                 }
             }
 
@@ -220,6 +223,7 @@ class PipesBiDirectionalStreamingIntegrationTest {
                     .newBuilder()
                     .setFetcherId(httpFetcherId)
                     .setFetchKey(httpServerUrl + "/" + file)
+                    .setRenderMarkdown(true)
                     .build());
         }
         request.onCompleted();

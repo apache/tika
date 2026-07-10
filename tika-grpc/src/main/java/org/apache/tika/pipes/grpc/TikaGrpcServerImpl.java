@@ -19,6 +19,8 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -59,7 +61,10 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.grpc.mapper.DocumentBuilder;
+import org.apache.tika.grpc.v1.Document;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -291,6 +296,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         Metadata tikaMetadata = new Metadata();
+        // Times the whole pipesClient.process() round trip: fetch and parse both happen
+        // inside the forked pipes worker, so this is fetch+parse latency, not parse-only.
+        long fetchParseStart = System.nanoTime();
         try {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
@@ -307,21 +315,28 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder()
-                                      .setFetchKey(request.getFetchKey())
-                            .setStatus(pipesResult.status().name());
+                                      .setFetchKey(request.getFetchKey());
             if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
                 fetchReplyBuilder.setErrorMessage(pipesResult.message());
             }
+            long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
+            List<Metadata> metadataList = new ArrayList<>();
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
-                    for (String name : metadata.names()) {
-                        String value = metadata.get(name);
-                        if (value != null) {
-                            fetchReplyBuilder.putFields(name, value);
-                        }
-                    }
-                }
+                metadataList.addAll(pipesResult.emitData().getMetadataList());
             }
+            // null (not an empty Metadata) when the pipes result carried no metadata, so
+            // DocumentBuilder can distinguish "nothing came back" from an empty parse.
+            Metadata primary = metadataList.isEmpty() ? null : metadataList.get(0);
+            String body = primary == null ? null : primary.get(TikaCoreProperties.TIKA_CONTENT);
+            Document document = DocumentBuilder.build(
+                    primary,
+                    metadataList,
+                    body,
+                    request.getFetchKey(),
+                    pipesResult.status().name(),
+                    fetchParseTimeMs,
+                    request.getRenderMarkdown());
+            fetchReplyBuilder.setDocument(document);
             responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {
             throw new RuntimeException(e);

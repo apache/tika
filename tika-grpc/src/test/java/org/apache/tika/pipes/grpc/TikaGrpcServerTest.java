@@ -420,8 +420,10 @@ public class TikaGrpcServerTest {
         StreamObserver<FetchAndParseReply> replyStreamObserver = new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
-                LOG.debug("Fetched {} with metadata {}", fetchAndParseReply.getFetchKey(), fetchAndParseReply.getFieldsMap());
-                if (PipesResult.RESULT_STATUS.FETCH_EXCEPTION.name().equals(fetchAndParseReply.getStatus())) {
+                LOG.debug("Fetched {} with document present={}",
+                        fetchAndParseReply.getFetchKey(), fetchAndParseReply.hasDocument());
+                if (PipesResult.RESULT_STATUS.FETCH_EXCEPTION.name().equals(
+                        fetchAndParseReply.getDocument().getStatus().getPipesStatus())) {
                     errors.add(fetchAndParseReply);
                 } else {
                     successes.add(fetchAndParseReply);
@@ -474,10 +476,12 @@ public class TikaGrpcServerTest {
             // Log what we got for debugging
             LOG.info("Successes: {}, Errors: {}", successes.size(), errors.size());
             for (FetchAndParseReply success : successes) {
-                LOG.info("Success: {} - status: {}", success.getFetchKey(), success.getStatus());
+                LOG.info("Success: {} - status: {}", success.getFetchKey(),
+                    success.getDocument().getStatus().getPipesStatus());
             }
             for (FetchAndParseReply error : errors) {
-                LOG.info("Error: {} - status: {}", error.getFetchKey(), error.getStatus());
+                LOG.info("Error: {} - status: {}", error.getFetchKey(),
+                    error.getDocument().getStatus().getPipesStatus());
             }
             
             assertEquals(NUM_TEST_DOCS, successes.size());

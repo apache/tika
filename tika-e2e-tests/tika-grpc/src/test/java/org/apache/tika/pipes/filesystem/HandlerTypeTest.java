@@ -45,18 +45,27 @@ import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.grpc.v1.Document;
+import org.apache.tika.grpc.v1.FormatCategory;
+import org.apache.tika.grpc.v1.MetadataField;
+import org.apache.tika.grpc.v1.MetadataValue;
+import org.apache.tika.grpc.v1.ParseStatus;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
 /**
- * Tests per-request ParseContext configuration via FetchAndParseRequest.parse_context_json.
+ * End-to-end tests against a live tika-grpc server (real gRPC wire serialization, real
+ * forked PipesServer, real fetcher plumbing).
+ *
+ * Covers per-request ParseContext configuration via
+ * FetchAndParseRequest.parse_context_json (e.g.
+ * {"basic-content-handler-factory": {"type": "HTML"}}), and the typed
+ * FetchAndParseReply.document contract: DocumentMetadata typed fields, the tagged
+ * `extra` tail (typed where Tika declares a type), the structured `blocks` tree,
+ * `format_category`, and `embedded` recursion for container formats.
  *
  * Uses the Ignite ConfigStore so that fetchers registered via saveFetcher are visible
  * to both the gRPC server JVM and the forked PipesServer JVM.
- *
- * Verifies that clients can override any parse context component on a per-request basis
- * by providing a JSON object with component names as keys.
- * Example: {"basic-content-handler-factory": {"type": "HTML"}}
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Tag("E2ETest")
@@ -286,35 +295,50 @@ class HandlerTypeTest {
         return false;
     }
 
+    private void registerFileSystemFetcher(TikaGrpc.TikaBlockingStub blockingStub, String fetcherId)
+            throws Exception {
+        FileSystemFetcherConfig config = new FileSystemFetcherConfig();
+        config.setBasePath(TEST_FOLDER.getAbsolutePath());
+
+        SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest.newBuilder()
+                .setFetcherId(fetcherId)
+                .setFetcherType("file-system-fetcher")
+                .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
+                .build());
+        LOG.info("Fetcher created: {}", saveReply.getFetcherId());
+    }
+
+    private static MetadataField findExtra(Document document, String key) {
+        return document.getExtraList().stream()
+                .filter(field -> field.getKey().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "expected document.extra to contain key '" + key + "', got: "
+                                + document.getExtraList().stream().map(MetadataField::getKey).toList()));
+    }
+
     @Test
     void testParseContextJson() throws Exception {
         String fetcherId = "handlerTypeFetcher";
         ManagedChannel channel = getManagedChannel();
         try {
             TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+            registerFileSystemFetcher(blockingStub, fetcherId);
 
-            FileSystemFetcherConfig config = new FileSystemFetcherConfig();
-            config.setBasePath(TEST_FOLDER.getAbsolutePath());
-
-            SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest.newBuilder()
-                    .setFetcherId(fetcherId)
-                    .setFetcherType("file-system-fetcher")
-                    .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
-                    .build());
-            LOG.info("Fetcher created: {}", saveReply.getFetcherId());
-
-            // Parse sample.html requesting HTML output
+            // Parse sample.html requesting HTML output. render_markdown carries the
+            // handler's flat output in Document.markdown so it can be asserted directly.
             FetchAndParseReply htmlReply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey("sample.html")
                     .setParseContextJson("{\"basic-content-handler-factory\": {\"type\": \"HTML\"}}")
+                    .setRenderMarkdown(true)
                     .build());
 
-            LOG.info("HTML parse status: {}", htmlReply.getStatus());
-            Assertions.assertEquals("PARSE_SUCCESS", htmlReply.getStatus(),
+            LOG.info("HTML parse status: {}", htmlReply.getDocument().getStatus().getPipesStatus());
+            Assertions.assertEquals("PARSE_SUCCESS", htmlReply.getDocument().getStatus().getPipesStatus(),
                     "Parse should succeed with HTML handler type");
 
-            String htmlContent = htmlReply.getFieldsMap().get("X-TIKA:content");
+            String htmlContent = htmlReply.getDocument().getMarkdown();
             Assertions.assertNotNull(htmlContent, "Content should be present in HTML response");
             LOG.info("HTML content (first 200 chars): {}", htmlContent.substring(0, Math.min(200, htmlContent.length())));
             Assertions.assertTrue(
@@ -326,13 +350,14 @@ class HandlerTypeTest {
                     .setFetcherId(fetcherId)
                     .setFetchKey("sample.html")
                     .setParseContextJson("{\"basic-content-handler-factory\": {\"type\": \"TEXT\"}}")
+                    .setRenderMarkdown(true)
                     .build());
 
-            LOG.info("Text parse status: {}", textReply.getStatus());
-            Assertions.assertEquals("PARSE_SUCCESS", textReply.getStatus(),
+            LOG.info("Text parse status: {}", textReply.getDocument().getStatus().getPipesStatus());
+            Assertions.assertEquals("PARSE_SUCCESS", textReply.getDocument().getStatus().getPipesStatus(),
                     "Parse should succeed with TEXT handler type");
 
-            String textContent = textReply.getFieldsMap().get("X-TIKA:content");
+            String textContent = textReply.getDocument().getMarkdown();
             Assertions.assertNotNull(textContent, "Content should be present in text response");
             LOG.info("Text content (first 200 chars): {}", textContent.substring(0, Math.min(200, textContent.length())));
             Assertions.assertFalse(
@@ -343,15 +368,160 @@ class HandlerTypeTest {
                     "HTML and TEXT outputs should differ for the same document");
 
         } finally {
-            channel.shutdown();
-            try {
-                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
-                    channel.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                channel.shutdownNow();
-                Thread.currentThread().interrupt();
+            shutdownChannel(channel);
+        }
+    }
+
+    /**
+     * Exercises the typed Document contract end-to-end for a PDF: typed
+     * DocumentMetadata fields, the tagged `extra` tail (a boolean-typed key and a
+     * string-typed key), the structured block tree, format_category, and ParseStatus --
+     * all through the live server and real gRPC wire serialization, not the in-process
+     * mapper tests.
+     */
+    @Test
+    void typedDocumentContractOverLiveServerPdf() throws Exception {
+        String fetcherId = "typedContractPdfFetcher";
+        ManagedChannel channel = getManagedChannel();
+        try {
+            TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+            registerFileSystemFetcher(blockingStub, fetcherId);
+
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey("testPDF.pdf")
+                    .setRenderMarkdown(true)
+                    .build());
+
+            Assertions.assertEquals("PARSE_SUCCESS", reply.getDocument().getStatus().getPipesStatus());
+            Assertions.assertTrue(reply.hasDocument(), "reply should carry a typed Document");
+            Document document = reply.getDocument();
+
+            // envelope
+            Assertions.assertEquals("application/pdf", document.getContentType());
+            Assertions.assertEquals(FormatCategory.FORMAT_CATEGORY_PDF, document.getFormatCategory());
+            Assertions.assertEquals(ParseStatus.Status.SUCCESS, document.getStatus().getStatus());
+
+            // typed DocumentMetadata fields
+            Assertions.assertEquals("Apache Tika - Apache Tika", document.getMetadata().getTitle());
+            Assertions.assertEquals(java.util.List.of("Bertrand Delacr\u00e9taz"),
+                    document.getMetadata().getAuthorsList());
+            Assertions.assertEquals(1, document.getMetadata().getPageCount());
+            Assertions.assertTrue(document.getMetadata().hasCreated(),
+                    "created date should map to a typed Timestamp");
+
+            // content: the canonical block tree, plus the flat rendering this request
+            // opted into with render_markdown
+            Assertions.assertFalse(document.getBlocksList().isEmpty(),
+                    "structured block tree should be populated");
+            Assertions.assertTrue(document.getMarkdown().contains("Tika"),
+                    "requested markdown rendering should contain extracted text");
+
+            // tagged tail: pdf:encrypted is declared boolean by Tika, so it must arrive
+            // typed as a boolean over the wire, not as a string
+            MetadataValue encrypted = findExtra(document, "pdf:encrypted").getValue();
+            Assertions.assertEquals(MetadataValue.ValueCase.BOOLEAN, encrypted.getValueCase(),
+                    "pdf:encrypted has a declared boolean type and must be tagged as one");
+            Assertions.assertFalse(encrypted.getBoolean(), "testPDF.pdf is not encrypted");
+
+            // tagged tail: a text-typed key stays a string, value intact
+            MetadataValue creatorTool = findExtra(document, "xmp:CreatorTool").getValue();
+            Assertions.assertEquals(MetadataValue.ValueCase.STRINGS, creatorTool.getValueCase());
+            Assertions.assertEquals(java.util.List.of("Firefox"),
+                    creatorTool.getStrings().getValuesList());
+        } finally {
+            shutdownChannel(channel);
+        }
+    }
+
+    /**
+     * Same contract for HTML through the live server: the typed title and a tagged tail
+     * key, proving the format-specific transformer ran server-side.
+     */
+    @Test
+    void typedDocumentContractOverLiveServerHtml() throws Exception {
+        String fetcherId = "typedContractHtmlFetcher";
+        ManagedChannel channel = getManagedChannel();
+        try {
+            TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+            registerFileSystemFetcher(blockingStub, fetcherId);
+
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey("sample.html")
+                    .build());
+
+            Assertions.assertEquals("PARSE_SUCCESS", reply.getDocument().getStatus().getPipesStatus());
+            Document document = reply.getDocument();
+
+            Assertions.assertEquals(FormatCategory.FORMAT_CATEGORY_HTML, document.getFormatCategory());
+            Assertions.assertEquals("Sample E2E Test Document", document.getMetadata().getTitle(),
+                    "html <title> should map to the typed title field");
+            // this request did not set render_markdown, so the reply carries the content
+            // once: the canonical block tree, with the flat rendering left empty
+            Assertions.assertFalse(document.getBlocksList().isEmpty());
+            Assertions.assertTrue(document.getMarkdown().isEmpty(),
+                    "markdown rendering is opt-in and was not requested");
+
+            // tagged tail still carries the HTML-specific keys (encoding, etc.)
+            MetadataValue encoding = findExtra(document, "Content-Encoding").getValue();
+            Assertions.assertEquals(MetadataValue.ValueCase.STRINGS, encoding.getValueCase());
+            Assertions.assertFalse(encoding.getStrings().getValuesList().isEmpty());
+        } finally {
+            shutdownChannel(channel);
+        }
+    }
+
+    /**
+     * Container formats must recurse: an Office document with embedded resources should
+     * come back with each embedded child as its own fully typed Document, through the
+     * live server.
+     */
+    @Test
+    void embeddedDocumentsRecurseOverLiveServer() throws Exception {
+        String fetcherId = "embeddedDocsFetcher";
+        ManagedChannel channel = getManagedChannel();
+        try {
+            TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+            registerFileSystemFetcher(blockingStub, fetcherId);
+
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey("test_recursive_embedded.docx")
+                    .build());
+
+            Assertions.assertEquals("PARSE_SUCCESS", reply.getDocument().getStatus().getPipesStatus());
+            Document document = reply.getDocument();
+
+            Assertions.assertEquals(FormatCategory.FORMAT_CATEGORY_OFFICE, document.getFormatCategory());
+            // the container's own typed metadata (docProps/core.xml carries dcterms dates)
+            Assertions.assertTrue(document.getMetadata().hasCreated());
+            Assertions.assertTrue(document.getMetadata().hasModified());
+
+            Assertions.assertTrue(document.getEmbeddedCount() > 0,
+                    "container format should recurse into embedded children");
+            for (Document child : document.getEmbeddedList()) {
+                Assertions.assertFalse(child.getContentType().isEmpty(),
+                        "every embedded child should carry a detected content type");
             }
+            Assertions.assertTrue(
+                    document.getEmbeddedList().stream()
+                            .anyMatch(child -> !child.getOrigin().getFilename().isEmpty()),
+                    "embedded children should carry their resource names in origin.filename");
+        } finally {
+            shutdownChannel(channel);
+        }
+    }
+
+    private static void shutdownChannel(ManagedChannel channel) {
+        channel.shutdown();
+        try {
+            if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                channel.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            channel.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }

@@ -14,6 +14,8 @@
 syntax = "proto3";
 package tika;
 
+import "org/apache/tika/grpc/v1/document.proto";
+
 option java_multiple_files = true;
 option java_package = "org.apache.tika";
 option java_outer_classname = "TikaProto";
@@ -68,8 +70,8 @@ service Tika   {
     Get a pipes iterator's data from the iterator store.   
   */
   rpc GetPipesIterator(GetPipesIteratorRequest) returns (GetPipesIteratorReply) {}
-  /* 
-    Delete a pipes iterator from the iterator store.   
+  /*
+    Delete a pipes iterator from the iterator store.
   */
   rpc DeletePipesIterator(DeletePipesIteratorRequest) returns (DeletePipesIteratorReply) {}
 }
@@ -106,17 +108,21 @@ message FetchAndParseRequest {
   // Example: {"basic-content-handler-factory": {"type": "HTML"}, "timeout-limits": {"progressTimeoutMillis": 30000}}
   // See the parse-context.idx component registry for available component names.
   string parse_context_json = 5;
+  // Also populate Document.markdown with a flat rendering of the content. The structured
+  // Document.blocks tree is always returned; the flat string is off by default so a reply
+  // does not carry the content twice.
+  bool render_markdown = 6;
 }
 
 message FetchAndParseReply {
   // Echoes the fetch_key that was sent in the request.
   string fetch_key = 1;
-  // Metadata fields from the parse output.
-  map<string, string> fields = 2;
-  // The status from the message. See javadoc for org.apache.tika.pipes.PipesResult.STATUS for the list of status.
-  string status = 3;
+  reserved 2, 3;
+  reserved "fields", "status";
   // If there was an error, this will contain the error message.
   string error_message = 4;
+  // Strongly-typed parse output from Tika.
+  org.apache.tika.grpc.v1.Document document = 5;
 }
 
 message DeleteFetcherRequest {
