@@ -93,6 +93,18 @@ public interface XMPMM {
     Property HISTORY_SOFTWARE_AGENT = Property.externalTextBag(PREFIX_ + "History:SoftwareAgent");
 
     /**
+     * The part of the resource changed by the action in the XMPMM's
+     * history section
+     */
+    Property HISTORY_CHANGED = Property.externalTextBag(PREFIX_ + "History:Changed");
+
+    /**
+     * Additional parameters describing the action in the XMPMM's
+     * history section
+     */
+    Property HISTORY_PARAMETERS = Property.externalTextBag(PREFIX_ + "History:Parameters");
+
+    /**
      * Document id for the document that this document
      * was derived from
      */
@@ -103,5 +115,19 @@ public interface XMPMM {
      * document was derived from
      */
     Property DERIVED_FROM_INSTANCEID = Property.externalText(PREFIX_ + "DerivedFrom:InstanceID");
+
+    /**
+     * Original document id for the document that this
+     * document was derived from
+     */
+    Property DERIVED_FROM_ORIGINAL_DOCUMENTID =
+            Property.externalText(PREFIX_ + "DerivedFrom:OriginalDocumentID");
+
+    /**
+     * Rendition class for the document that this document
+     * was derived from
+     */
+    Property DERIVED_FROM_RENDITION_CLASS =
+            Property.externalText(PREFIX_ + "DerivedFrom:RenditionClass");
 
 }

@@ -16,8 +16,10 @@
  */
 package org.apache.tika.parser.image;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +29,8 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -48,7 +52,23 @@ public class HeifParser extends AbstractImageParser {
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
                          ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-        new ImageMetadataExtractor(metadata).parseHeif(stream);
+        TemporaryResources tmp = new TemporaryResources();
+        try {
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+            File file = tis.getFile();   // spool so the file can be re-read below
+            // XMP first so it is canonical; metadata-extractor (EXIF/GPS) fills gaps.
+            // HEIF XMP is an application/rdf+xml item that is xpacket-wrapped in practice
+            // (iPhone/Adobe), so the shared packet scanner finds it; if it is not wrapped,
+            // fall back to locating the item via the meta/iinf/iloc boxes.
+            if (!ImageXmp.scanAndExtract(tis, metadata, parseContext)) {
+                HeifXmp.extract(file, metadata, parseContext);
+            }
+            try (InputStream heif = Files.newInputStream(file.toPath())) {
+                new ImageMetadataExtractor(metadata).parseHeif(heif);
+            }
+        } finally {
+            tmp.dispose();
+        }
     }
 
 

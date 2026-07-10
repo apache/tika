@@ -22,19 +22,19 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMetaFactory;
 import com.drew.imaging.heif.HeifMetadataReader;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
+import com.drew.imaging.jpeg.JpegSegmentMetadataReader;
 import com.drew.imaging.riff.RiffProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
 import com.drew.imaging.tiff.TiffProcessingException;
@@ -45,6 +45,7 @@ import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
+import com.drew.metadata.adobe.AdobeJpegReader;
 import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifReader;
@@ -52,14 +53,20 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.icc.IccDirectory;
+import com.drew.metadata.icc.IccReader;
 import com.drew.metadata.iptc.IptcDirectory;
+import com.drew.metadata.iptc.IptcReader;
+import com.drew.metadata.jfif.JfifReader;
+import com.drew.metadata.jfxx.JfxxReader;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
+import com.drew.metadata.jpeg.JpegCommentReader;
+import com.drew.metadata.jpeg.JpegDhtReader;
 import com.drew.metadata.jpeg.JpegDirectory;
-import com.drew.metadata.xmp.XmpDirectory;
+import com.drew.metadata.jpeg.JpegDnlReader;
+import com.drew.metadata.jpeg.JpegReader;
+import com.drew.metadata.photoshop.DuckyReader;
+import com.drew.metadata.photoshop.PhotoshopReader;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.apache.jempbox.xmp.XMPMetadata;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -69,9 +76,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.xmp.JempboxExtractor;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -83,7 +87,6 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class ImageMetadataExtractor {
 
     //TODO: add this to the signatures from the actual parse
-    private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######";
             // 6 dp seems to be reasonable
 
@@ -99,7 +102,7 @@ public class ImageMetadataExtractor {
     public ImageMetadataExtractor(Metadata metadata) {
         this(metadata, new CopyUnknownFieldsHandler(), new TiffPageNumberHandler(),
                 new JpegCommentHandler(), new ExifHandler(), new DimensionsHandler(),
-                new GeotagHandler(), new IptcHandler(), new XmpHandler());
+                new GeotagHandler(), new IptcHandler());
     }
 
     /**
@@ -121,9 +124,17 @@ public class ImageMetadataExtractor {
         return s;
     }
 
+    // metadata-extractor's ALL_READERS minus XmpReader: Tika parses XMP itself (XmpExtractor),
+    // so skipping the xmpcore XMP parse here avoids parsing the JPEG's XMP twice.
+    private static final List<JpegSegmentMetadataReader> JPEG_READERS_NO_XMP = Arrays.asList(
+            new JpegReader(), new JpegCommentReader(), new JfifReader(), new JfxxReader(),
+            new ExifReader(), new IccReader(), new PhotoshopReader(), new DuckyReader(),
+            new IptcReader(), new AdobeJpegReader(), new JpegDhtReader(), new JpegDnlReader());
+
     public void parseJpeg(File file) throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata jpegMetadata = JpegMetadataReader.readMetadata(file);
+            com.drew.metadata.Metadata jpegMetadata =
+                    JpegMetadataReader.readMetadata(file, JPEG_READERS_NO_XMP);
             handle(jpegMetadata);
         } catch (JpegProcessingException | MetadataException e) {
             throw new TikaException("Can't read JPEG metadata", e);
@@ -191,22 +202,6 @@ public class ImageMetadataExtractor {
         }
     }
 
-    public void parseRawXMP(byte[] xmpData) throws IOException, SAXException, TikaException {
-        XMPMetadata xmp = null;
-        try (InputStream decoded = UnsynchronizedByteArrayInputStream.builder().setByteArray(xmpData).get()) {
-            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
-            if (dom != null) {
-                xmp = new XMPMetadata(dom);
-            }
-        } catch (IOException | SAXException e) {
-            //
-        }
-        if (xmp != null) {
-            JempboxExtractor.extractDublinCore(xmp, metadata);
-            JempboxExtractor.extractXMPMM(xmp, metadata);
-        }
-
-    }
 
     /**
      * Copies extracted tags to tika metadata using registered handlers.
@@ -310,55 +305,6 @@ public class ImageMetadataExtractor {
         }
     }
 
-    /**
-     * Copies the XMP properties parsed by Metadata Extractor into the metadata,
-     * keyed by their {@code prefix:name} path. The other handlers copy a
-     * directory's tags, but XMP keeps its properties in a separate map
-     * ({@link XmpDirectory#getXmpProperties()}), so without this they are lost.
-     * A property is skipped when its key is already set or matches a known Tika
-     * field, so normalized values from other handlers are not overwritten.
-     */
-    static class XmpHandler implements DirectoryHandler {
-
-        static {
-            // XMPCore's namespace registry is process-global and keeps the first
-            // prefix it sees for a URI. Pin canonical prefixes so keys stay stable
-            // (files use both Camera and GCamera for the Google photo namespace).
-            // https://developer.android.com/media/platform/motion-photo-format
-            try {
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/camera/", "Camera");
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/container/", "Container");
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/container/item/", "Item");
-            } catch (XMPException e) {
-                // Constant, valid URIs, so this cannot throw. A broken registration
-                // would make the keys non-deterministic (parse-order dependent), which
-                // MotionPhotoXmpTest catches in CI; rethrowing from a static initializer
-                // would break all image parsing, so it is swallowed.
-            }
-        }
-
-        public boolean supports(Class<? extends Directory> directoryType) {
-            return XmpDirectory.class.isAssignableFrom(directoryType);
-        }
-
-        public void handle(Directory directory, Metadata metadata) throws MetadataException {
-            Map<String, String> properties = ((XmpDirectory) directory).getXmpProperties();
-            if (properties == null) {
-                return;
-            }
-            for (Map.Entry<String, String> property : properties.entrySet()) {
-                String name = property.getKey();
-                String value = property.getValue();
-                if (value != null && metadata.get(name) == null
-                        && !MetadataFields.isMetadataField(name)) {
-                    metadata.set(name, value);
-                }
-            }
-        }
-    }
 
     static class TiffPageNumberHandler implements DirectoryHandler {
         public boolean supports(Class<? extends Directory> directoryType) {
@@ -651,19 +597,26 @@ public class ImageMetadataExtractor {
                     metadata.add(TikaCoreProperties.SUBJECT, k);
                 }
             }
-            if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        directory.getString(IptcDirectory.TAG_HEADLINE));
-            } else if (directory.containsTag(IptcDirectory.TAG_OBJECT_NAME)) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        directory.getString(IptcDirectory.TAG_OBJECT_NAME));
+            // IPTC is a fallback: XMP runs first and is canonical, so only fill these when
+            // XMP did not already provide them (matches the long-standing XMP-wins behavior).
+            if (metadata.get(TikaCoreProperties.TITLE) == null) {
+                if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
+                    metadata.set(TikaCoreProperties.TITLE,
+                            directory.getString(IptcDirectory.TAG_HEADLINE));
+                } else if (directory.containsTag(IptcDirectory.TAG_OBJECT_NAME)) {
+                    metadata.set(TikaCoreProperties.TITLE,
+                            directory.getString(IptcDirectory.TAG_OBJECT_NAME));
+                }
             }
             if (directory.containsTag(IptcDirectory.TAG_BY_LINE)) {
-                metadata.set(TikaCoreProperties.CREATOR,
-                        directory.getString(IptcDirectory.TAG_BY_LINE));
+                if (metadata.get(TikaCoreProperties.CREATOR) == null) {
+                    metadata.set(TikaCoreProperties.CREATOR,
+                            directory.getString(IptcDirectory.TAG_BY_LINE));
+                }
                 metadata.set(IPTC.CREATOR, directory.getString(IptcDirectory.TAG_BY_LINE));
             }
-            if (directory.containsTag(IptcDirectory.TAG_CAPTION)) {
+            if (directory.containsTag(IptcDirectory.TAG_CAPTION)
+                    && metadata.get(TikaCoreProperties.DESCRIPTION) == null) {
                 metadata.set(TikaCoreProperties.DESCRIPTION,
                         // Looks like metadata extractor returns IPTC newlines
                         // as a single carriage return,

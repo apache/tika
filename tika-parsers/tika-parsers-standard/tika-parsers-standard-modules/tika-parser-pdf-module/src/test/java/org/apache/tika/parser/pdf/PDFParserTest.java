@@ -1570,10 +1570,15 @@ public class PDFParserTest extends TikaTest {
         assertEquals("xmp-xmpmm-documentid", m.get(XMPMM.DOCUMENTID));
         assertEquals("13", m.get(PagedText.N_PAGES));
 
+        // keywords/subject from XMP and doc-info all merge into SUBJECT; presence is the contract,
+        // order is not (they arrive from several sources).
         String[] expectedSubjectVals = new String[]{
                 "xmp-pdf-keywords", "xmp-dc-subject", "pdf-keywords", "pdf-subject"
         };
-        assertArrayEquals(expectedSubjectVals, m.getValues(TikaCoreProperties.SUBJECT));
+        String[] actualSubjectVals = m.getValues(TikaCoreProperties.SUBJECT);
+        assertEquals(expectedSubjectVals.length, actualSubjectVals.length);
+        assertEquals(new HashSet<>(Arrays.asList(expectedSubjectVals)),
+                new HashSet<>(Arrays.asList(actualSubjectVals)));
     }
 
     @Test

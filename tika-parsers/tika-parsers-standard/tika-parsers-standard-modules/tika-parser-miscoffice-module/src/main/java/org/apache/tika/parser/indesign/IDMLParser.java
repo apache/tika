@@ -39,7 +39,7 @@ import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.xmp.XMPMetadataExtractor;
+import org.apache.tika.parser.xmp.XmpExtractor;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -166,7 +166,7 @@ public class IDMLParser implements Parser {
             String type = IOUtils.toString(zip, UTF_8);
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
-            XMPMetadataExtractor.parse(zip, metadata);
+            new XmpExtractor().extract(zip, metadata, context);
         } else if (entry.getName().contains("MasterSpreads")) {
             Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
