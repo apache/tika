@@ -51,6 +51,7 @@ public class HeifParserTest extends TikaTest {
             assertEquals("image/heic", metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("23.177917", metadata.get(Metadata.LATITUDE));
             assertEquals("113.394317", metadata.get(Metadata.LONGITUDE));
+            assertEquals("42.810337", metadata.get(Geographic.ALTITUDE));
 
             assertEquals("2018-02-05T07:11:43Z", metadata.get(Geographic.TIMESTAMP));
         }
