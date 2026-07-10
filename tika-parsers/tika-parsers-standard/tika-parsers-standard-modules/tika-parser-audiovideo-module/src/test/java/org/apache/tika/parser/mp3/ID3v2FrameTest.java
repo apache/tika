@@ -44,10 +44,7 @@ public class ID3v2FrameTest {
     private static final byte[] BOM_LE = {(byte) 0xff, (byte) 0xfe};
     private static final byte[] BOM_BE = {(byte) 0xfe, (byte) 0xff};
 
-    /**
-     * Latin text, which encodes to a NUL byte per character in UTF-16 and so carries a
-     * byte-order signal, and CJK text, which does not.
-     */
+    // LATIN has a NUL per char in UTF-16 (a byte-order signal); CJK does not
     private static final String LATIN = "Test Copyright";
     private static final String CJK = "日本語";
 
@@ -88,21 +85,14 @@ public class ID3v2FrameTest {
         assertEquals(CJK, tagString(frame(UTF_16BE_FLAG, bytes(CJK, UTF_16BE))));
     }
 
-    /**
-     * Encoding $01 promises a BOM. Taggers that omit it used to be decoded as big-endian,
-     * turning little-endian text into CJK mojibake ('T' 0x54 0x00 becomes U+5400).
-     */
+    // $01 promises a BOM; omitting it used to decode LE as BE mojibake ('T' 0x54 0x00 -> U+5400)
     @Test
     public void testUTF16WithoutBOMRecoversByteOrder() {
         assertEquals(LATIN, tagString(frame(UTF_16_BOM_FLAG, bytes(LATIN, UTF_16LE))));
         assertEquals(LATIN, tagString(frame(UTF_16_BOM_FLAG, bytes(LATIN, UTF_16BE))));
     }
 
-    /**
-     * A BOM-less frame whose characters are all above U+00FF has no NUL bytes and so gives
-     * no byte-order signal at all. Nothing can rescue that, so the big-endian default of
-     * Java's UTF-16 charset must be preserved rather than guessed away.
-     */
+    // no NUL bytes (all chars above U+00FF) means no signal, so keep the big-endian default
     @Test
     public void testUTF16WithoutBOMKeepsBigEndianDefaultWhenNoSignal() {
         assertEquals(CJK, tagString(frame(UTF_16_BOM_FLAG, bytes(CJK, UTF_16BE))));
@@ -118,19 +108,14 @@ public class ID3v2FrameTest {
         assertEquals(LATIN, tagString(frame(ISO_8859_1_FLAG, bytes(LATIN, ISO_8859_1), singleNul)));
     }
 
-    /**
-     * TIKA-1024: a frame holding nothing but a BOM decodes to the empty string.
-     */
+    // TIKA-1024: a frame holding nothing but a BOM decodes to the empty string
     @Test
     public void testNakedBOM() {
         assertEquals("", tagString(frame(UTF_16_BOM_FLAG, BOM_LE)));
         assertEquals("", tagString(frame(UTF_16_BOM_FLAG, BOM_BE)));
     }
 
-    /**
-     * COMM frames decode a description and a text part separately, so both have to recover
-     * the byte order independently.
-     */
+    // COMM decodes description and text separately, so each recovers byte order on its own
     @Test
     public void testCommentWithoutBOMRecoversByteOrder() throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -165,11 +150,7 @@ public class ID3v2FrameTest {
         assertEquals(LATIN, comment.getText());
     }
 
-    /**
-     * A comment frame too short to hold an encoding flag and a 3 byte language, or one
-     * carrying an unknown encoding flag, decodes to null rather than reading off the end
-     * of the frame.
-     */
+    // too short for flag + 3 byte language, or an unknown flag, decodes to null (no overrun)
     @Test
     public void testMalformedCommentsReturnNull() {
         assertNull(ID3v2Frame.getComment(new byte[0], 0, 0));
@@ -180,10 +161,7 @@ public class ID3v2FrameTest {
         assertNull(ID3v2Frame.getComment(badFlag, 0, badFlag.length));
     }
 
-    /**
-     * A double byte comment whose frame ends on a lone NUL has no room for a terminator,
-     * and must not read past the end of the frame looking for one.
-     */
+    // a double byte comment ending on a lone NUL must not overrun looking for a terminator
     @Test
     public void testCommentTruncatedOnTerminatorDoesNotOverrun() {
         byte[] data = {UTF_16_BOM_FLAG, 'e', 'n', 'g', 0};

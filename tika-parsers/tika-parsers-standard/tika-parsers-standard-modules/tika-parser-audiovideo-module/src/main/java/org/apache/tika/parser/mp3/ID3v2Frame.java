@@ -244,13 +244,9 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Decodes text in the frame's declared encoding.
-     * <p>
-     * Encoding {@code $01} is defined as UTF-16 <em>with</em> a BOM, but some taggers omit it.
-     * Java's UTF-16 charset then falls back to big-endian, which silently turns little-endian
-     * text into CJK mojibake (the ASCII 'T' {@code 0x54 0x00} decodes to U+5400). When the BOM
-     * is missing, recover the byte order from the position of the NUL bytes instead, and keep
-     * the big-endian fallback when the bytes carry no signal either way.
+     * Decodes text in the frame's declared encoding. Encoding {@code $01} is UTF-16 with a BOM;
+     * when a tagger omits it Java assumes big-endian and turns little-endian text into mojibake
+     * ({@code 'T' 0x54 0x00} decodes to U+5400), so recover the byte order from the bytes.
      */
     private static String decodeText(byte[] data, int offset, int length, TextEncoding encoding)
             throws UnsupportedEncodingException {
@@ -261,9 +257,7 @@ public class ID3v2Frame implements MP3Frame {
         return new String(data, offset, length, charset);
     }
 
-    /**
-     * Does the text at the given offset start with a UTF-16 byte order mark?
-     */
+    /** Does the text at the offset start with a UTF-16 BOM? */
     private static boolean hasBOM(byte[] data, int offset, int length) {
         if (length < 2) {
             return false;
@@ -274,10 +268,10 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Guesses the byte order of BOM-less UTF-16 text by counting which half of each code
-     * unit is NUL. Characters below U+0100 - which dominate the tags this has to rescue -
-     * encode as {@code 0x00 lo} big-endian and {@code lo 0x00} little-endian. Text with no
-     * NUL bytes at all (eg CJK) gives no signal, so it stays on the big-endian default.
+     * Byte order of BOM-less UTF-16, from which column holds each code unit's NUL: chars below
+     * U+0100 dominate ID3 tags and encode as {@code 0x00 lo} (BE) or {@code lo 0x00} (LE). No
+     * NULs (eg CJK) means no signal, so keep the big-endian default. Deterministic single-field
+     * form of {@code Utf16ColumnFeatureExtractor} features 0/1.
      */
     private static String guessUTF16ByteOrder(byte[] data, int offset, int length) {
         int bigEndian = 0;
@@ -295,11 +289,11 @@ public class ID3v2Frame implements MP3Frame {
 
     /**
      * Builds up the ID3 comment, by parsing and extracting
-     * the comment string parts from the given data.
-     * Returns null if the frame is too short or malformed to hold a comment.
+     * the comment string parts from the given data, or null if the frame
+     * is too short or malformed to hold a comment.
      */
     protected static ID3Comment getComment(byte[] data, int offset, int length) {
-        // A comment is at minimum an encoding flag and a 3 byte language
+        // need at least an encoding flag + 3 byte language
         if (length < 4) {
             return null;
         }
@@ -328,7 +322,7 @@ public class ID3v2Frame implements MP3Frame {
         // Find where the description ends
         try {
             for (int i = descStart; i < end; i++) {
-                // A double byte terminator needs two bytes to be present
+                // a double byte terminator needs both bytes present
                 if (encoding.doubleByte && i + 1 < end && data[i] == 0 && data[i + 1] == 0) {
                     // Handle LE vs BE on low byte text
                     if (i + 2 < end && data[i + 2] == 0) {

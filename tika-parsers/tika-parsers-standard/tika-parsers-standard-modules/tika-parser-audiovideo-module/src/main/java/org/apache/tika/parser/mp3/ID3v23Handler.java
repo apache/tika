@@ -99,10 +99,7 @@ public class ID3v23Handler implements ID3Tags {
         return ID3v2Frame.getComment(data, offset, length);
     }
 
-    /**
-     * Malformed comment frames decode to null and are skipped rather than
-     * being added to the list, where they would trip up the consumers.
-     */
+    /** Skips null comments (malformed frames) that would trip up consumers. */
     private void addComment(ID3Comment comment) {
         if (comment != null) {
             comments.add(comment);
