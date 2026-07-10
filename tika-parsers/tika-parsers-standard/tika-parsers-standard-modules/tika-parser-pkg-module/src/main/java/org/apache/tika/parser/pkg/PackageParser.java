@@ -449,8 +449,15 @@ public class PackageParser extends AbstractEncodingDetectorParser {
                 entry.getSize(), xhtml);
 
         if (extractor.shouldParseEmbedded(entryMetadata)) {
-            try (InputStream entryStream = zipFile.getInputStream(entry)) {
-                extractor.parseEmbedded(entryStream, xhtml, entryMetadata, true);
+            // Detectors (e.g. POIFSContainerDetector.isOleHeader) mark/reset the stream, but
+            // ZipFile.getInputStream(entry) returns a non-markable InflaterInputStream. Wrap it
+            // in a mark/reset-supporting TikaInputStream first, mirroring the ArchiveInputStream
+            // path in parseEntry (TIKA-4785). entryStream is closed by the try-with-resources;
+            // like parseEntry we don't close the TikaInputStream (that would double-close it).
+            try (InputStream entryStream = zipFile.getInputStream(entry);
+                    TemporaryResources tmp = new TemporaryResources()) {
+                TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
+                extractor.parseEmbedded(tis, xhtml, entryMetadata, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
                 if (name != null && name.length() > 0) {
