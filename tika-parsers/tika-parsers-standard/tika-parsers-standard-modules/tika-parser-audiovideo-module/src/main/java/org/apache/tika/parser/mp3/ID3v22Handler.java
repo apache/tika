@@ -72,7 +72,7 @@ public class ID3v22Handler implements ID3Tags {
                     copyright = getTagString(tag.data, 0, tag.data.length);
                     break;
                 case "COM":
-                    comments.add(getComment(tag.data, 0, tag.data.length));
+                    addComment(getComment(tag.data, 0, tag.data.length));
                     break;
                 case "TRK":
                     trackNumber = getTagString(tag.data, 0, tag.data.length);
@@ -111,6 +111,16 @@ public class ID3v22Handler implements ID3Tags {
 
     private ID3Comment getComment(byte[] data, int offset, int length) {
         return ID3v2Frame.getComment(data, offset, length);
+    }
+
+    /**
+     * Malformed comment frames decode to null and are skipped rather than
+     * being added to the list, where they would trip up the consumers.
+     */
+    private void addComment(ID3Comment comment) {
+        if (comment != null) {
+            comments.add(comment);
+        }
     }
 
     public boolean getTagsPresent() {
