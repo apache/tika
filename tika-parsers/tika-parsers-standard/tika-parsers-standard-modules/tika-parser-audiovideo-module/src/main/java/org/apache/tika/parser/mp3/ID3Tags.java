@@ -184,6 +184,11 @@ public interface ID3Tags {
 
     String getComposer();
 
+    /**
+     * The copyright message, if any
+     */
+    String getCopyright();
+
     String getCompilation();
 
     /**

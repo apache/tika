@@ -185,6 +185,7 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.ARTIST, tag.getArtist());
             metadata.set(XMPDM.ALBUM_ARTIST, tag.getAlbumArtist());
             metadata.set(XMPDM.COMPOSER, tag.getComposer());
+            metadata.set(XMPDM.COPYRIGHT, tag.getCopyright());
             metadata.set(XMPDM.ALBUM, tag.getAlbum());
             metadata.set(XMPDM.COMPILATION, tag.getCompilation());
             metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
