@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.chm;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -220,17 +219,12 @@ public class ChmDirectoryListingSet {
             //setPlaceHolder(header_len);
             while (placeHolder > 0 && placeHolder < dir_chunk.length - PMGLheader.getFreeSpace()
                 /*&& dir_chunk[placeHolder - 1] != 115*/) {
-                //get entry name length
-                int strlen = 0;// = getEncint(data);
-                byte temp;
-                while ((temp = dir_chunk[placeHolder++]) >= 0x80) {
-                    strlen <<= 7;
-                    strlen += temp & 0x7f;
-                }
+                //get entry name length (variable-length ENCINT). The old inline
+                //decoder compared a signed byte to 0x80 (never true), so it read a
+                //single byte and capped the length at 127, corrupting longer names.
+                int strlen = getEncint(dir_chunk);
 
-                strlen = (strlen << 7) + temp & 0x7f;
-
-                if (strlen > dir_chunk.length) {
+                if (strlen < 0 || strlen > dir_chunk.length) {
                     throw new ChmParsingException("Bad data of a string length.");
                 }
 
@@ -324,22 +318,33 @@ public class ChmDirectoryListingSet {
      * @param data_chunk
      * @return
      */
-    private int getEncint(byte[] data_chunk) {
-        byte ob;
-        BigInteger bi = BigInteger.ZERO;
-        byte[] nb = new byte[1];
-
-        if (placeHolder < data_chunk.length) {
-            while ((ob = data_chunk[placeHolder]) < 0) {
-                nb[0] = (byte) ((ob & 0x7f));
-                bi = bi.shiftLeft(7).add(new BigInteger(nb));
-                setPlaceHolder(placeHolder + 1);
-            }
-            nb[0] = (byte) ((ob & 0x7f));
-            bi = bi.shiftLeft(7).add(new BigInteger(nb));
+    private int getEncint(byte[] dataChunk) {
+        int start = placeHolder;
+        //advance past the continuation bytes (high bit set) and the terminating byte
+        while (placeHolder < dataChunk.length && dataChunk[placeHolder] < 0) {
             setPlaceHolder(placeHolder + 1);
         }
-        return bi.intValue();
+        if (placeHolder < dataChunk.length) {
+            setPlaceHolder(placeHolder + 1);
+        }
+        return (int) decodeEncint(dataChunk, start);
+    }
+
+    /**
+     * Decodes a variable-length ENCINT beginning at {@code offset}: each byte
+     * contributes its low 7 bits (most-significant group first) and the high bit
+     * signals that another byte follows. Package-private for testing.
+     */
+    static long decodeEncint(byte[] data, int offset) {
+        long value = 0;
+        while (offset < data.length && data[offset] < 0) {
+            value = (value << 7) | (data[offset] & 0x7f);
+            offset++;
+        }
+        if (offset < data.length) {
+            value = (value << 7) | (data[offset] & 0x7f);
+        }
+        return value;
     }
 
     /**
