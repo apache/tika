@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mp4;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -308,10 +309,21 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("1.5",
                 metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
 
-        //the Live Photo still moment: presentation start of the timed metadata
-        //track declaring still-image-time (mebx, empty edit of 740/600s). TIKA-4777
+        //the Live Photo still moment: presentation time of the single sample of
+        //the timed metadata track declaring still-image-time (mebx, leading empty
+        //edit of 740/600s). TIKA-4777
         assertEquals("1233333",
                 metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
+        //a version-1 edit list works as well (600/600s)
+        assertEquals("1000000",
+                metadata.get("test.quicktime.v1delayed.track-start-us"));
+        //not emitted: an empty edit after the first normal entry does not delay
+        //the track (this track also directly follows the delayed one, so it
+        //catches edit list state leaking between tracks) ...
+        assertNull(metadata.get("test.quicktime.nonleading.track-start-us"));
+        //... and neither is a delayed track with more than one sample, whose
+        //start is not the time of any single sample
+        assertNull(metadata.get("test.quicktime.multisample.track-start-us"));
     }
 
     @Test

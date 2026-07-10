@@ -32,6 +32,7 @@ import com.drew.lang.annotations.Nullable;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.mp4.Mp4BoxHandler;
 import com.drew.metadata.mp4.Mp4Context;
+import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -52,10 +53,6 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     private static final Pattern ISO6709_PATTERN =
             Pattern.compile("([+-]\\d+(?:\\.\\d+)?)([+-]\\d+(?:\\.\\d+)?)([+-]\\d+(?:\\.\\d+)?)?");
 
-    //suffix under which the presentation start of a timed metadata track is
-    //emitted for each of the track's keys, in microseconds (e.g. the Live Photo
-    //still moment appears as com.apple.quicktime.still-image-time.track-start-us)
-    private static final String TRACK_START_SUFFIX = ".track-start-us";
 
     org.apache.tika.metadata.Metadata tikaMetadata;
     final XHTMLContentHandler xhtml;
@@ -64,10 +61,8 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     //by the following 'ilst' box (e.g. com.apple.quicktime.content.identifier)
     private final List<String> quickTimeMetadataKeys = new ArrayList<>();
 
-    //movie timescale from 'mvhd'; edit list durations are expressed in it
-    private long movieTimescale = 0;
-    //duration of the current track's leading empty edit ('elst' entry with
-    //media time -1), in movie timescale units; -1 if the track has none
+    //duration of the current track's leading empty edit(s) ('elst' entries
+    //with media time -1), in movie timescale units; -1 if the track has none
     private long emptyEditDuration = -1;
 
     public TikaMp4BoxHandler(Metadata metadata, org.apache.tika.metadata.Metadata tikaMetadata,
@@ -80,7 +75,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     @Override
     public boolean shouldAcceptBox(@NotNull String box) {
         if (box.equals("udta") || box.equals("keys") || box.equals("ilst")
-                || box.equals("elst") || box.equals("stsd")) {
+                || box.equals("elst")) {
             return true;
         }
         return super.shouldAcceptBox(box);
@@ -88,11 +83,9 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
 
     @Override
     public boolean shouldAcceptContainer(@NotNull String box) {
-        //edts/minf/stbl are needed to reach the edit list and sample description
-        //of QuickTime timed metadata tracks (handler type 'mdta', for which the
-        //base handler keeps this handler active). Media tracks switch to their
-        //own handlers at 'hdlr', so their boxes never reach this handler.
-        if (box.equals("edts") || box.equals("minf") || box.equals("stbl")) {
+        //edts is needed to reach a track's edit list, which the base handler
+        //skips; the edit list defines the presentation start of the track
+        if (box.equals("edts")) {
             return true;
         }
         return super.shouldAcceptContainer(box);
@@ -102,7 +95,11 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     public Mp4Handler<?> processBox(@NotNull String box, @Nullable byte[] payload,
                                     long size, Mp4Context context)
             throws IOException {
-        if (box.equals("udta")) {
+        if (payload == null && box.equals("trak")) {
+            //a new track starts (containers route through here with a null
+            //payload); forget the previous track's edit list
+            emptyEditDuration = -1;
+        } else if (box.equals("udta")) {
             return processUserData(box, payload, context);
         } else if (box.equals("keys")) {
             processQuickTimeKeys(payload);
@@ -110,27 +107,19 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
         } else if (box.equals("ilst")) {
             processQuickTimeItemList(payload);
             return this;
-        } else if (box.equals("mvhd")) {
-            processMovieTimescale(payload);
-            //fall through, the base handler extracts the other mvhd fields
-        } else if (box.equals("tkhd")) {
-            //a new track starts; forget the previous track's edit list
-            emptyEditDuration = -1;
-            //fall through to the base handler
         } else if (box.equals("elst")) {
             processEditList(payload);
-            return this;
-        } else if (box.equals("stsd")) {
-            processSampleDescription(payload);
             return this;
         } else if (box.equals("hdlr") && payload != null && payload.length >= 12
                 && payload[8] == 'm' && payload[9] == 'e'
                 && payload[10] == 't' && payload[11] == 'a') {
-            //timed metadata track (e.g. the Live Photo still-image-time track).
-            //The base handler would switch to Mp4MetaHandler, which extracts
-            //nothing, but would keep this handler from seeing the track's 'stsd'.
-            //Stay active instead.
-            return this;
+            //timed metadata track (e.g. the Live Photo still-image-time track):
+            //hand over to our handler, which extracts the mebx key declarations
+            //(the base Mp4MetaHandler accepts the track's boxes but extracts
+            //nothing from them)
+            Long movieTimescale = directory.getLongObject(Mp4Directory.TAG_TIME_SCALE);
+            return new TikaMp4MetaHandler(metadata, context, tikaMetadata,
+                    emptyEditDuration, movieTimescale == null ? 0 : movieTimescale);
         }
 
         return super.processBox(box, payload, size, context);
@@ -220,23 +209,14 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
         }
     }
 
-    private void processMovieTimescale(@Nullable byte[] payload) {
-        if (payload == null || payload.length < 16) {
-            return;
-        }
-        //1 byte version + 3 bytes flags, then creation/modification time,
-        //which are 4 bytes each in version 0 and 8 bytes each in version 1
-        int offset = payload[0] == 1 ? 20 : 12;
-        if (payload.length >= offset + 4) {
-            movieTimescale = readUInt32(payload, offset);
-        }
-    }
 
     /**
-     * Parses an 'elst' edit list and remembers the duration of a leading empty edit
-     * (media time -1, expressed in movie timescale units). Apple writes the Live Photo
-     * still moment as such an empty edit shifting the single one-tick sample of the
-     * still-image-time track.
+     * Parses an 'elst' edit list and remembers the total duration of the leading
+     * empty edits (media time -1, expressed in movie timescale units), which is
+     * what delays the track's presentation start. Empty edits after the first
+     * normal entry do not delay the track and are ignored. Apple writes the Live
+     * Photo still moment as such an empty edit shifting the single one-tick
+     * sample of the still-image-time track.
      */
     private void processEditList(@Nullable byte[] payload) {
         if (payload == null || payload.length < 8) {
@@ -246,6 +226,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
         long entryCount = readUInt32(payload, 4);
         int pos = 8;
         int entrySize = version == 1 ? 20 : 12;
+        long leadingEmptyEdits = 0;
         for (long i = 0; i < entryCount && pos + entrySize <= payload.length; i++) {
             long segmentDuration;
             long mediaTime;
@@ -256,100 +237,20 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
                 segmentDuration = readUInt32(payload, pos);
                 mediaTime = (int) readUInt32(payload, pos + 4);
             }
-            if (mediaTime == -1) {
-                emptyEditDuration = segmentDuration;
-                return;
-            }
-            pos += entrySize;
-        }
-    }
-
-    /**
-     * Parses an 'stsd' sample description looking for timed metadata entries
-     * ('mebx', ISO 14496-12 boxed metadata). For every key the entry declares,
-     * the presentation start of the track is emitted in microseconds under
-     * {@code <key name>.track-start-us}. Only tracks delayed by a leading empty
-     * edit are reported; an undelayed track (start 0) carries no information.
-     * The main use case are Apple Live Photo videos, which place the single
-     * sample of the {@code com.apple.quicktime.still-image-time} track at the
-     * moment the paired still image was captured. See TIKA-4777.
-     */
-    private void processSampleDescription(@Nullable byte[] payload) {
-        if (payload == null || payload.length < 8 || movieTimescale <= 0
-                || emptyEditDuration <= 0) {
-            return;
-        }
-        long trackStartUs = emptyEditDuration * 1_000_000L / movieTimescale;
-        long entryCount = readUInt32(payload, 4);
-        int pos = 8;
-        for (long i = 0; i < entryCount && pos + 16 <= payload.length; i++) {
-            long entrySize = readUInt32(payload, pos);
-            if (entrySize < 16 || pos + entrySize > payload.length) {
-                return;
-            }
-            if ("mebx".equals(boxType(payload, pos + 4))) {
-                //the entry body starts after the 8 byte box header and the
-                //8 byte sample entry header (6 bytes reserved, 2 bytes dref)
-                for (String key : parseMebxKeyNames(payload, pos + 16,
-                        (int) (pos + entrySize))) {
-                    tikaMetadata.set(key + TRACK_START_SUFFIX,
-                            Long.toString(trackStartUs));
-                }
-            }
-            pos += (int) entrySize;
-        }
-    }
-
-    /**
-     * Extracts the key names declared by a 'mebx' sample entry: a 'keys' box
-     * containing one child box per key (typed by the local key id), each of
-     * which holds a 'keyd' key declaration of namespace plus key name.
-     */
-    private static List<String> parseMebxKeyNames(byte[] b, int start, int end) {
-        List<String> keyNames = new ArrayList<>();
-        int pos = start;
-        while (pos + 8 <= end) {
-            long size = readUInt32(b, pos);
-            if (size < 8 || pos + size > end) {
+            if (mediaTime != -1) {
                 break;
             }
-            if ("keys".equals(boxType(b, pos + 4))) {
-                int keyPos = pos + 8;
-                int keysEnd = (int) (pos + size);
-                while (keyPos + 8 <= keysEnd) {
-                    long keySize = readUInt32(b, keyPos);
-                    if (keySize < 8 || keyPos + keySize > keysEnd) {
-                        break;
-                    }
-                    int declPos = keyPos + 8;
-                    int keyEnd = (int) (keyPos + keySize);
-                    while (declPos + 8 <= keyEnd) {
-                        long declSize = readUInt32(b, declPos);
-                        if (declSize < 8 || declPos + declSize > keyEnd) {
-                            break;
-                        }
-                        //'keyd' payload: 4 bytes namespace (e.g. mdta), then the name
-                        if ("keyd".equals(boxType(b, declPos + 4)) && declSize > 12) {
-                            keyNames.add(new String(b, declPos + 12,
-                                    (int) declSize - 12, StandardCharsets.UTF_8));
-                        }
-                        declPos += (int) declSize;
-                    }
-                    keyPos += (int) keySize;
-                }
-            }
-            pos += (int) size;
+            leadingEmptyEdits += segmentDuration;
+            pos += entrySize;
         }
-        return keyNames;
+        if (leadingEmptyEdits > 0) {
+            emptyEditDuration = leadingEmptyEdits;
+        }
     }
 
-    private static String boxType(byte[] b, int off) {
-        return new String(b, off, 4, StandardCharsets.ISO_8859_1);
-    }
 
-    private static long readInt64(byte[] b, int off) {
-        return (readUInt32(b, off) << 32) | readUInt32(b, off + 4);
-    }
+
+
 
     /**
      * Maps an ISO 6709 location string (latitude, longitude, optional altitude) to the
@@ -398,5 +299,9 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     private static long readUInt32(byte[] b, int off) {
         return ((b[off] & 0xFFL) << 24) | ((b[off + 1] & 0xFFL) << 16)
                 | ((b[off + 2] & 0xFFL) << 8) | (b[off + 3] & 0xFFL);
+    }
+
+    private static long readInt64(byte[] b, int off) {
+        return (readUInt32(b, off) << 32) | readUInt32(b, off + 4);
     }
 }
