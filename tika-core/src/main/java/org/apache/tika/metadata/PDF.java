@@ -39,6 +39,12 @@ public interface PDF {
     Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eofOffsets");
 
     /**
+     * Whether the document has been trapped, as recorded in the XMP {@code pdf:} schema.
+     * The docinfo counterpart is {@link #DOC_INFO_TRAPPED}.
+     */
+    Property TRAPPED = Property.internalText(PDF_PREFIX + "Trapped");
+
+    /**
      * Prefix to be used for properties that record what was stored
      * in the docinfo section (as opposed to XMP)
      */

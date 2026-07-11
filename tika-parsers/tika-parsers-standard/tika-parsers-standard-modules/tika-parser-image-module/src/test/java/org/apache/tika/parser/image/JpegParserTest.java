@@ -203,8 +203,10 @@ public class JpegParserTest extends TikaTest {
         assertEquals("2.8", metadata.get(Metadata.F_NUMBER));
         assertEquals("4.6", metadata.get(Metadata.FOCAL_LENGTH));
         assertEquals("114", metadata.get(Metadata.ISO_SPEED_RATINGS));
-        assertEquals(null, metadata.get(Metadata.EQUIPMENT_MAKE));
-        assertEquals(null, metadata.get(Metadata.EQUIPMENT_MODEL));
+        // Make/Model come from the XMP packet (tiff:Make/Model); this file's binary EXIF has none.
+        // Promoting the XMP tiff: schema surfaces them instead of leaving them in xmp-raw:.
+        assertEquals("Nokia", metadata.get(Metadata.EQUIPMENT_MAKE));
+        assertEquals("N78", metadata.get(Metadata.EQUIPMENT_MODEL));
         assertEquals(null, metadata.get(Metadata.SOFTWARE));
         assertEquals("1", metadata.get(Metadata.ORIENTATION)); // Not present
         assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));

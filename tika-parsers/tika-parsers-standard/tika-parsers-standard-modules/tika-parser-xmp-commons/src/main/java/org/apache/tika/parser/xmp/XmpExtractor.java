@@ -33,13 +33,17 @@ import org.apache.tika.metadata.Google;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDC;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.metadata.XMPPDF;
 import org.apache.tika.metadata.XMPRights;
+import org.apache.tika.metadata.XMPTIFF;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -123,6 +127,44 @@ public class XmpExtractor {
         put(rights, "Owner", XMPRights.OWNER);
         put(rights, "Certificate", XMPRights.CERTIFICATE);
 
+        // Promoted from raw passthrough (top xmp-raw keys over the wild-XMP corpus). Each of these
+        // namespaces is XMP-exclusive, so a single canonical key (no xmp-marker) is enough.
+        String ps = Photoshop.NAMESPACE_URI_PHOTOSHOP;
+        put(ps, "ColorMode", Photoshop.COLOR_MODE);
+        put(ps, "ICCProfile", Photoshop.ICC_PROFILE);
+        put(ps, "DateCreated", Photoshop.DATE_CREATED);
+        put("http://ns.adobe.com/xap/1.0/t/pg/", "NPages", PagedText.N_PAGES);
+        put(pdf, "Trapped", PDF.TRAPPED);
+
+        // Camera/EXIF/TIFF metadata -> the shared TIFF interface (which already declares these with
+        // exif:/tiff: keys). tiff:/exif: are double-keyed: the canonical TIFF key can also arrive
+        // from binary EXIF (which wins it, being extracted after XMP and overwriting), so an
+        // XMP-marked XMPTIFF key preserves the XMP provenance. aux: has no binary source, so its
+        // aux: key is already unambiguously XMP -> single-key. Rational fields (ExposureTime/FNumber/
+        // FocalLength/X-YResolution), ResolutionUnit, exif:Flash and exif:Pixel*Dimension are left
+        // raw pending value normalization.
+        String aux = "http://ns.adobe.com/exif/1.0/aux/";
+        put(aux, "SerialNumber", TIFF.SERIAL_NUMBER);
+        put(aux, "Lens", TIFF.LENS);
+        put(aux, "LensInfo", TIFF.LENS_INFO);
+        put(aux, "LensID", TIFF.LENS_ID);
+        String tiff = "http://ns.adobe.com/tiff/1.0/";
+        put(tiff, "Make", TIFF.EQUIPMENT_MAKE, XMPTIFF.EQUIPMENT_MAKE);
+        put(tiff, "Model", TIFF.EQUIPMENT_MODEL, XMPTIFF.EQUIPMENT_MODEL);
+        put(tiff, "Software", TIFF.SOFTWARE, XMPTIFF.SOFTWARE);
+        put(tiff, "ImageWidth", TIFF.IMAGE_WIDTH, XMPTIFF.IMAGE_WIDTH);
+        put(tiff, "ImageLength", TIFF.IMAGE_LENGTH, XMPTIFF.IMAGE_LENGTH);
+        put(tiff, "BitsPerSample", TIFF.BITS_PER_SAMPLE, XMPTIFF.BITS_PER_SAMPLE);
+        put(tiff, "SamplesPerPixel", TIFF.SAMPLES_PER_PIXEL, XMPTIFF.SAMPLES_PER_PIXEL);
+        put(tiff, "Orientation", TIFF.ORIENTATION, XMPTIFF.ORIENTATION);
+        String exif = "http://ns.adobe.com/exif/1.0/";
+        put(exif, "DateTimeOriginal", TIFF.ORIGINAL_DATE, XMPTIFF.ORIGINAL_DATE);
+        put(exif, "ISOSpeedRatings", TIFF.ISO_SPEED_RATINGS, XMPTIFF.ISO_SPEED_RATINGS);
+        // exif:Pixel*Dimension is the valid image size; binary EXIF already funnels it to the same
+        // IMAGE_WIDTH/LENGTH canonical, so this just matches that (integers -> no format question).
+        put(exif, "PixelXDimension", TIFF.IMAGE_WIDTH, XMPTIFF.PIXEL_X_DIMENSION);
+        put(exif, "PixelYDimension", TIFF.IMAGE_LENGTH, XMPTIFF.PIXEL_Y_DIMENSION);
+
         // PDF-only namespaces: single canonical home in PDF.*, no dc-style duplicate-key question.
         put("http://www.aiim.org/pdfa/ns/id/", "part", PDF.PDFAID_PART);
         put("http://www.aiim.org/pdfa/ns/id/", "conformance", PDF.PDFAID_CONFORMANCE);
@@ -160,6 +202,8 @@ public class XmpExtractor {
         // promoted, photoshop:DateCreated and exif:DateTimeOriginal belong here as fallbacks.
         FILL_IF_ABSENT.put(xmp + " CreateDate", TikaCoreProperties.CREATED);
         FILL_IF_ABSENT.put(xmp + " ModifyDate", TikaCoreProperties.MODIFIED);
+        FILL_IF_ABSENT.put(ps + " DateCreated", TikaCoreProperties.CREATED);      // fallback creation date
+        FILL_IF_ABSENT.put(exif + " DateTimeOriginal", TikaCoreProperties.CREATED);
 
         // tiff/exif:NativeDigest is Adobe's internal check that the XMP is still in sync with the
         // legacy EXIF/TIFF block (a tag-id list + MD5); meaningless to consumers -> drop.
