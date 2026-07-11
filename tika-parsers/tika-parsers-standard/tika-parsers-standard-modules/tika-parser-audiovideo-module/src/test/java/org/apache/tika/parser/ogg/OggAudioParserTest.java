@@ -18,11 +18,13 @@ package org.apache.tika.parser.ogg;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.gagravarr.vorbis.VorbisComments;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -55,6 +57,41 @@ public class OggAudioParserTest {
         assertEquals("Test Copyright", metadata.get(XMPDM.COPYRIGHT));
         assertArrayEquals(new String[]{"Test Copyright", "Second Copyright"},
                 metadata.getValues("vorbis:copyright"));
+    }
+
+    @Test
+    public void testTrackAndDiscTotals() throws Exception {
+        Metadata metadata = extractComments("tracknumber", "3/12",
+                "discnumber", "1", "disctotal", "2");
+
+        assertEquals("3", metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("12", metadata.get(Audio.TRACK_COUNT));
+        assertEquals("3/12", metadata.get(Audio.RAW_TRACK_NUMBER));
+        assertEquals("1", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("2", metadata.get(Audio.DISC_COUNT));
+    }
+
+    @Test
+    public void testDegenerateTrackValues() throws Exception {
+        Metadata metadata = extractComments("tracknumber", "3/of twelve",
+                "discnumber", "/2");
+
+        //non-numeric parts stay out of the typed properties but survive raw
+        assertEquals("3", metadata.get(XMPDM.TRACK_NUMBER));
+        assertNull(metadata.get(Audio.TRACK_COUNT));
+        assertEquals("3/of twelve", metadata.get(Audio.RAW_TRACK_NUMBER));
+        assertNull(metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("2", metadata.get(Audio.DISC_COUNT));
+        assertEquals("/2", metadata.get(Audio.RAW_DISC_NUMBER));
+    }
+
+    @Test
+    public void testExplicitTotalWinsOverCombinedForm() throws Exception {
+        Metadata metadata = extractComments("tracknumber", "3/12",
+                "totaltracks", "14");
+
+        assertEquals("3", metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("14", metadata.get(Audio.TRACK_COUNT));
     }
 
     /**

@@ -30,12 +30,14 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -216,11 +218,29 @@ public class Mp3Parser implements Parser {
             sb.append(tag.getAlbum());
             if (tag.getTrackNumber() != null) {
                 sb.append(", track ").append(tag.getTrackNumber());
-                metadata.set(XMPDM.TRACK_NUMBER, tag.getTrackNumber());
+                metadata.set(Audio.RAW_TRACK_NUMBER, tag.getTrackNumber());
+                NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(tag.getTrackNumber());
+                if (trackNumberAndTotal != null) {
+                    if (trackNumberAndTotal.number != null) {
+                        metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
+                    }
+                    if (trackNumberAndTotal.total != null) {
+                        metadata.set(Audio.TRACK_COUNT, trackNumberAndTotal.total);
+                    }
+                }
             }
             if (tag.getDisc() != null) {
                 sb.append(", disc ").append(tag.getDisc());
-                metadata.set(XMPDM.DISC_NUMBER, tag.getDisc());
+                metadata.set(Audio.RAW_DISC_NUMBER, tag.getDisc());
+                NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(tag.getDisc());
+                if (discNumberAndTotal != null) {
+                    if (discNumberAndTotal.number != null) {
+                        metadata.set(XMPDM.DISC_NUMBER, discNumberAndTotal.number);
+                    }
+                    if (discNumberAndTotal.total != null) {
+                        metadata.set(Audio.DISC_COUNT, discNumberAndTotal.total);
+                    }
+                }
             }
 
             xhtml.element("h1", tag.getTitle());
@@ -268,4 +288,5 @@ public class Mp3Parser implements Parser {
             return duration / 1000;
         }
     }
+
 }

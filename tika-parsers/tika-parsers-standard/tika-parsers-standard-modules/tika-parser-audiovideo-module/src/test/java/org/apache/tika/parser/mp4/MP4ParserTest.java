@@ -37,6 +37,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
@@ -101,8 +102,11 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Test Genre", metadata.get(XMPDM.GENRE));
         assertEquals("Test Comments", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        //the totals from the trkn/disk atoms were previously read and discarded
+        assertEquals("42", metadata.get(Audio.TRACK_COUNT));
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("12", metadata.get(Audio.DISC_COUNT));
         assertEquals("0", metadata.get(XMPDM.COMPILATION));
 
 

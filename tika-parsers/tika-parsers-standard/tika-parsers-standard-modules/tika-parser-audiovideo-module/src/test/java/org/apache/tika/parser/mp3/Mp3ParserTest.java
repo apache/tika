@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -110,7 +111,10 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("XXX - ID3v1 Comment\nTest Comment",
                 metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
-        assertEquals("1/1", metadata.get(XMPDM.DISC_NUMBER));
+        //TPOS "1/1" is normalized into number and total; the raw form survives
+        assertEquals("1", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("1", metadata.get(Audio.DISC_COUNT));
+        assertEquals("1/1", metadata.get(Audio.RAW_DISC_NUMBER));
         assertEquals("1", metadata.get(XMPDM.COMPILATION));
 
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
@@ -193,7 +197,10 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
         assertEquals("1", metadata.get(XMPDM.COMPILATION));
 
-        assertEquals(null, metadata.get(XMPDM.TRACK_NUMBER));
+        //TRCK "3/12" is normalized into number and total; the raw form survives
+        assertEquals("3", metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("12", metadata.get(Audio.TRACK_COUNT));
+        assertEquals("3/12", metadata.get(Audio.RAW_TRACK_NUMBER));
         assertEquals("1", metadata.get(XMPDM.DISC_NUMBER));
     }
 
