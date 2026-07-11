@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.70.0</google.cloud.version>
-    <aws2.version>2.47.3</aws2.version>
+    <aws2.version>2.47.5</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -352,7 +352,7 @@
     <freemarker.version>2.3.34</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
-    <grpc.version>1.82.1</grpc.version>
+    <grpc.version>1.82.2</grpc.version>
     <guava.version>33.6.0-jre</guava.version>
     <h2.version>2.4.240</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -419,7 +419,7 @@
     <osgi.util.version>1.2.0</osgi.util.version>
     <parso.version>2.0.14</parso.version>
     <pax.exam.version>4.14.0</pax.exam.version>
-    <pdfbox.version>3.0.7</pdfbox.version>
+    <pdfbox.version>3.0.8</pdfbox.version>
     <poi.version>5.5.1</poi.version>
     <protobuf.version>3.25.9</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
