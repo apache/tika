@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import java.io.CharConversionException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import javax.xml.namespace.QName;
@@ -43,7 +44,10 @@ public class XmlRootExtractor {
         // this loop should be very rare
         while (true) {
             try {
-                return extractRootElement(new UnsynchronizedByteArrayInputStream(data), true);
+                UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
+                return extractRootElement(is, true);
+            } catch (IOException e) {
+                // doesn't happen, the implementation of get() doesn't throw an IOException.
             } catch (MalformedCharException e) {
                 // see TIKA-3596, try to handle truncated/bad encoded XML files
                 int newLen = data.length / 2;
