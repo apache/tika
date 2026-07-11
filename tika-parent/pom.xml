@@ -309,7 +309,7 @@
     <rat.version>0.16.1</rat.version>
 
     <!-- dependency versions -->
-    <google.cloud.version>2.69.0</google.cloud.version>
+    <google.cloud.version>2.70.0</google.cloud.version>
     <azure.version>1.3.7</azure.version>
     <aws.version>1.12.797</aws.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
@@ -351,8 +351,8 @@
     <imageio.version>1.4.0</imageio.version>
     <!-- jackrabbit 2.21.23 requires java 11 -->
     <jackrabbit.version>2.21.22</jackrabbit.version>
-    <jackson.version>2.22.0</jackson.version>
-    <jackcess.version>4.0.10</jackcess.version>
+    <jackson.version>2.22.1</jackson.version>
+    <jackcess.version>4.0.11</jackcess.version>
     <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
     <javax.annotation.version>1.3.2</javax.annotation.version>
     <javax.jcr.version>2.0</javax.jcr.version>
@@ -374,7 +374,7 @@
     <junit5.version>5.14.4</junit5.version>
     <junrar.version>7.6.0</junrar.version>
     <libpst.version>0.9.3</libpst.version>
-    <log4j2.version>2.26.0</log4j2.version>
+    <log4j2.version>2.26.1</log4j2.version>
     <!-- lucene >= 9.x requires Java 11 -->
     <lucene.version>8.11.4</lucene.version>
     <metadata.extractor.version>2.20.0</metadata.extractor.version>
@@ -383,7 +383,7 @@
     <!-- mockito >= 5 requires jdk11 -->
     <mockito.version>4.11.0</mockito.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.15.Final</netty.version>
+    <netty.version>4.2.16.Final</netty.version>
     <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.0.0 doesn't compile with jdk8 -->
