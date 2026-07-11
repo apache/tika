@@ -63,7 +63,9 @@ final class ImageXmp {
                 }
                 return true;
             }
-        } catch (IOException | SAXException | TikaException e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);
         }
         return false;
@@ -73,7 +75,9 @@ final class ImageXmp {
     static void extractRaw(byte[] xmp, Metadata metadata, ParseContext context) {
         try {
             new XmpExtractor().extract(xmp, metadata, context);
-        } catch (IOException | SAXException | TikaException e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);
         }
     }
@@ -95,7 +99,9 @@ final class ImageXmp {
             for (byte[] packet : ExtendedXmp.assemble(app1)) {
                 new XmpExtractor().extract(packet, metadata, context);
             }
-        } catch (IOException | SAXException | TikaException e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);
         }
     }
@@ -107,7 +113,9 @@ final class ImageXmp {
             if (xmp != null) {
                 new XmpExtractor().extract(xmp, metadata, context);
             }
-        } catch (IOException | SAXException | TikaException e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);
         }
     }
@@ -128,13 +136,14 @@ final class ImageXmp {
             while (IOUtils.read(in, ch, 0, 8) == 8) {
                 long size = (ch[4] & 0xffL) | (ch[5] & 0xffL) << 8 |
                         (ch[6] & 0xffL) << 16 | (ch[7] & 0xffL) << 24;
-                if (size < 0 || size > MAX_CHUNK) {
-                    return null;
-                }
                 if (fourCC.equals(new String(ch, 0, 4, StandardCharsets.US_ASCII))) {
+                    if (size > MAX_CHUNK) {
+                        return null;   // target chunk too large to allocate
+                    }
                     byte[] data = new byte[(int) size];
                     return IOUtils.read(in, data, 0, data.length) == data.length ? data : null;
                 }
+                // a large foreign chunk before "XMP " must be skipped, not abort the scan
                 IOUtils.skipFully(in, size + (size & 1L));   // RIFF pads chunks to even length
             }
         }

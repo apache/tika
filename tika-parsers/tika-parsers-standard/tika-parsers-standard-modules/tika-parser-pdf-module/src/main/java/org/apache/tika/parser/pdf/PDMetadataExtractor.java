@@ -66,8 +66,10 @@ public class PDMetadataExtractor {
         try {
             // PDF octal-BOM decode is the one XMP value fixup that is container-specific.
             new XmpExtractor(PDMetadataExtractor::decode).extract(xmp, metadata, context);
-        } catch (IOException | SAXException | TikaException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
+            EmbeddedDocumentUtil.recordException(e, metadata);   // malformed XMP must not fail the PDF
         }
         derivePDFAVersion(metadata);
     }

@@ -66,7 +66,9 @@ final class HeifXmp {
         }
         try {
             new XmpExtractor().extract(xmp, metadata, context);
-        } catch (IOException | SAXException | TikaException e) {
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | SAXException | TikaException | RuntimeException e) {
             EmbeddedDocumentUtil.recordException(e, metadata);   // bad XMP must not fail the parse
         }
         return true;
@@ -75,6 +77,8 @@ final class HeifXmp {
     private static byte[] locateQuietly(File file) {
         try {
             return locate(file);
+        } catch (SecurityException e) {
+            throw e;
         } catch (IOException | RuntimeException e) {
             return null;   // malformed / unreadable box structure -> no XMP, let EXIF proceed
         }

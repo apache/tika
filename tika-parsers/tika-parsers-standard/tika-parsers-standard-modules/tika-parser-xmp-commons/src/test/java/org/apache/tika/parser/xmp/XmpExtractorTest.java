@@ -180,6 +180,116 @@ public class XmpExtractorTest {
         assertNull(md.get("xmp-raw:aux:Lens"));
     }
 
+    /** A bare rdf:li outside a Bag/Seq/Alt (malformed) must not NPE / crash the parse. */
+    @Test
+    public void testBareRdfLiIsNotFatal() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about='' xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+                + "<dc:subject><rdf:li>lonely</rdf:li></dc:subject>"   // rdf:li with no container
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);   // must not throw
+        assertEquals("lonely", md.get(TikaCoreProperties.SUBJECT));
+    }
+
+    /** A property nested in a struct must not overwrite the document-level one (falls to raw). */
+    @Test
+    public void testNestedPropertyDoesNotClobberDocumentLevel() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about=''"
+                + "   xmlns:xmpMM='http://ns.adobe.com/xap/1.0/mm/'"
+                + "   xmpMM:InstanceID='doc-level'>"
+                + "  <xmpMM:Pantry><rdf:Bag><rdf:li rdf:parseType='Resource'>"
+                + "    <xmpMM:InstanceID>pantry-ingredient</xmpMM:InstanceID>"
+                + "  </rdf:li></rdf:Bag></xmpMM:Pantry>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertEquals("doc-level", md.get(XMPMM.INSTANCEID));   // not clobbered by the nested one
+        assertNotNull(md.get("xmp-raw:xmpMM:Pantry[1]/xmpMM:InstanceID"));   // nested falls to raw
+    }
+
+    /** rdf:value carries the property's value even when qualifier siblings are present. */
+    @Test
+    public void testRdfValueWithQualifier() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about=''"
+                + "   xmlns:xmp='http://ns.adobe.com/xap/1.0/'"
+                + "   xmlns:xmpidq='http://ns.adobe.com/xmp/Identifier/qual/1.0/'>"
+                + "  <xmp:Identifier rdf:parseType='Resource'>"
+                + "    <rdf:value>the-id</rdf:value>"
+                + "    <xmpidq:Scheme>myscheme</xmpidq:Scheme>"
+                + "  </xmp:Identifier>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertEquals("the-id", md.get(XMP.IDENTIFIER));   // value kept despite the qualifier sibling
+    }
+
+    /** dc:title is a text bag: every language accumulates on the canonical key (TIKA-1295/4466). */
+    @Test
+    public void testMultiLangTitleAccumulates() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about='' xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+                + "<dc:title><rdf:Alt>"
+                + "<rdf:li xml:lang='fr'>Bonjour</rdf:li>"
+                + "<rdf:li xml:lang='x-default'>Hello</rdf:li>"
+                + "<rdf:li xml:lang='es'>Hola</rdf:li>"
+                + "</rdf:Alt></dc:title>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertArrayEquals(new String[]{"Bonjour", "Hello", "Hola"}, md.getValues(TikaCoreProperties.TITLE));
+        assertEquals("Bonjour", md.get("dc:title:fr"));
+        assertEquals("Hello", md.get("dc:title:x-default"));
+        assertEquals("Hola", md.get("dc:title:es"));
+    }
+
+    /** A single-valued Alt property (xmp:Title -> XMP.TITLE) takes x-default, not the last li. */
+    @Test
+    public void testSingleValuedLangAltIsXDefault() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about='' xmlns:xmp='http://ns.adobe.com/xap/1.0/'>"
+                + "<xmp:Title><rdf:Alt>"
+                + "<rdf:li xml:lang='fr'>Titre</rdf:li>"
+                + "<rdf:li xml:lang='x-default'>Title</rdf:li>"
+                + "</rdf:Alt></xmp:Title>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertEquals("Title", md.get(XMP.TITLE));   // x-default, not the last alternative (Titre)
+    }
+
+    /** xmpMM:History parallel bags stay index-aligned: a missing field is padded so ACTION[i]~WHEN[i]. */
+    @Test
+    public void testHistoryParallelArraysStayAligned() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+                + "   xmlns:xmpMM='http://ns.adobe.com/xap/1.0/mm/'"
+                + "   xmlns:stEvt='http://ns.adobe.com/xap/1.0/sType/ResourceEvent#'>"
+                + "<rdf:Description rdf:about=''>"
+                + "<xmpMM:History><rdf:Seq>"
+                + "<rdf:li rdf:parseType='Resource'><stEvt:action>created</stEvt:action>"
+                + "  <stEvt:when>2020-01-01T00:00:00Z</stEvt:when></rdf:li>"
+                + "<rdf:li rdf:parseType='Resource'><stEvt:action>saved</stEvt:action></rdf:li>"
+                + "<rdf:li rdf:parseType='Resource'><stEvt:action>printed</stEvt:action>"
+                + "  <stEvt:when>2021-02-02T00:00:00Z</stEvt:when></rdf:li>"
+                + "</rdf:Seq></xmpMM:History>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertArrayEquals(new String[]{"created", "saved", "printed"},
+                md.getValues(XMPMM.HISTORY_ACTION));
+        // the second event ("saved") has no when, so WHEN[1] is padded to keep the arrays aligned
+        assertArrayEquals(new String[]{"2020-01-01T00:00:00Z", "", "2021-02-02T00:00:00Z"},
+                md.getValues(XMPMM.HISTORY_WHEN));
+    }
+
     /** Adobe-internal digests and the base64 thumbnail blob are dropped, not exposed even as raw. */
     @Test
     public void testJunkKeysDropped() throws Exception {

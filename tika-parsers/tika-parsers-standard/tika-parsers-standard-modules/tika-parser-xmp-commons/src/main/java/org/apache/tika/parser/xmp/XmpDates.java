@@ -37,12 +37,18 @@ public final class XmpDates {
         if (s.isEmpty()) {
             return null;
         }
+        // NOTE: a partial ISO date (YYYY, YYYY-MM) currently inflates to a full timestamp, which
+        // fabricates precision -- but preserving it as-is breaks Metadata.getDate() on these
+        // DATE-typed properties (it cannot re-parse a year- or month-only string). Deferred to the
+        // value-representation ticket (same class of decision as the exif/tiff rationals).
         // PDFBox: PDF D: dates, producer formats, robust TZ.
         try {
             Calendar c = DateConverter.toCalendar(s);
             if (c != null) {
                 return DateUtils.formatDate(c);
             }
+        } catch (SecurityException e) {
+            throw e;
         } catch (Exception e) {
             // fall through
         }

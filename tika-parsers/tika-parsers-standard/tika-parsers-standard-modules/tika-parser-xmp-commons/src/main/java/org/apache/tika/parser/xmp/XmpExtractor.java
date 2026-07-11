@@ -18,11 +18,15 @@ package org.apache.tika.parser.xmp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.UnaryOperator;
 
 import org.xml.sax.SAXException;
@@ -70,6 +74,16 @@ public class XmpExtractor {
     // Unmapped XMP is exposed under this prefix so raw, untrusted keys can never shadow a known
     // Tika field or an X-TIKA: control key.
     static final String RAW_PREFIX = "xmp-raw:";
+
+    // xmpMM:History parallel bags, in a fixed order: each event contributes one value to every bag
+    // that occurs (padding "" for a field it lacks) so HISTORY_ACTION[i] stays aligned with
+    // HISTORY_WHEN[i] etc.
+    private static final Property[] HISTORY_PROPS = {
+            XMPMM.HISTORY_ACTION, XMPMM.HISTORY_WHEN, XMPMM.HISTORY_EVENT_INSTANCEID,
+            XMPMM.HISTORY_SOFTWARE_AGENT, XMPMM.HISTORY_CHANGED, XMPMM.HISTORY_PARAMETERS,
+    };
+    // hard cap on history events exposed, so a hostile packet can't inflate metadata without bound
+    private static final int MAX_HISTORY_EVENTS = 1024;
 
     private static void put(String uri, String localName, Property... props) {
         TABLE.put(uri + " " + localName, props);
@@ -244,8 +258,122 @@ public class XmpExtractor {
     }
 
     private void map(List<XmpProperty> props, Metadata metadata) {
+        // History and language-alternative (rdf:Alt) properties are handled as groups so the
+        // parallel History bags stay index-aligned and an Alt's canonical value is its x-default;
+        // everything else streams one leaf at a time.
+        emitHistory(props, metadata);
+        emitLangAlternatives(props, metadata);
         for (XmpProperty p : props) {
-            map(p, metadata);
+            if (!isMappedHistoryEvent(p) && !isLangAlternative(p)) {
+                map(p, metadata);
+            }
+        }
+    }
+
+    private boolean isMappedHistoryEvent(XmpProperty p) {
+        return RESOURCE_EVENT_NS.equals(p.namespaceURI) && p.path.contains("History[")
+                && HISTORY.containsKey(p.localName());
+    }
+
+    /** A mapped, top-level, language-tagged leaf is an rdf:Alt alternative (dc:title, ...). */
+    private boolean isLangAlternative(XmpProperty p) {
+        return p.lang != null && !p.lang.isEmpty() && p.path.indexOf('/') < 0
+                && TABLE.containsKey(p.namespaceURI + " " + p.localName());
+    }
+
+    private static int historyIndex(String path) {
+        int i = path.indexOf("History[");
+        if (i < 0) {
+            return -1;
+        }
+        int start = i + "History[".length();
+        int end = path.indexOf(']', start);
+        if (end < 0) {
+            return -1;
+        }
+        try {
+            return Integer.parseInt(path.substring(start, end));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /** Emit the xmpMM:History parallel bags per event, index-aligned, capped, dates normalized. */
+    private void emitHistory(List<XmpProperty> props, Metadata metadata) {
+        TreeMap<Integer, Map<Property, String>> events = new TreeMap<>();
+        for (XmpProperty p : props) {
+            if (!isMappedHistoryEvent(p)) {
+                continue;
+            }
+            int idx = historyIndex(p.path);
+            String value = valueDecoder.apply(p.value);
+            if (idx < 0 || value == null || value.isEmpty()) {
+                continue;
+            }
+            if ("when".equals(p.localName())) {   // a text bag that holds a date -> normalize it
+                String n = XmpDates.normalize(value);
+                if (n != null) {
+                    value = n;
+                }
+            }
+            events.computeIfAbsent(idx, k -> new HashMap<>()).put(HISTORY.get(p.localName()), value);
+        }
+        // only emit the bags that actually occur, but keep those index-aligned across events
+        Set<Property> present = new LinkedHashSet<>();
+        for (Map<Property, String> ev : events.values()) {
+            present.addAll(ev.keySet());
+        }
+        int count = 0;
+        for (Map<Property, String> ev : events.values()) {
+            if (++count > MAX_HISTORY_EVENTS) {
+                break;
+            }
+            for (Property hp : HISTORY_PROPS) {
+                if (present.contains(hp)) {
+                    metadata.add(hp, ev.getOrDefault(hp, ""));
+                }
+            }
+        }
+    }
+
+    /** rdf:Alt language sets: the canonical value is x-default (else first); every lang keeps a key. */
+    private void emitLangAlternatives(List<XmpProperty> props, Metadata metadata) {
+        Map<String, List<XmpProperty>> byKey = new LinkedHashMap<>();
+        for (XmpProperty p : props) {
+            if (isLangAlternative(p)) {
+                byKey.computeIfAbsent(p.namespaceURI + " " + p.localName(),
+                        k -> new ArrayList<>()).add(p);
+            }
+        }
+        for (Map.Entry<String, List<XmpProperty>> e : byKey.entrySet()) {
+            List<XmpProperty> alts = e.getValue();
+            XmpProperty primary = alts.get(0);
+            for (XmpProperty a : alts) {
+                if ("x-default".equals(a.lang)) {
+                    primary = a;
+                    break;
+                }
+            }
+            String primaryValue = valueDecoder.apply(primary.value);
+            for (Property prop : TABLE.get(e.getKey())) {
+                if (prop.isMultiValuePermitted()) {
+                    // a text bag keeps every language on the canonical key (TIKA-1295 / TIKA-4466)
+                    for (XmpProperty a : alts) {
+                        String v = valueDecoder.apply(a.value);
+                        if (v != null && !v.isEmpty()) {
+                            emit(metadata, prop, v);
+                        }
+                    }
+                } else if (primaryValue != null && !primaryValue.isEmpty()) {
+                    emit(metadata, prop, primaryValue);   // single-valued: x-default, not last-wins
+                }
+                for (XmpProperty a : alts) {   // every language variant keeps its own key
+                    String v = valueDecoder.apply(a.value);
+                    if (v != null && !v.isEmpty()) {
+                        metadata.add(prop.getName() + ":" + a.lang, valueFor(prop, v));
+                    }
+                }
+            }
         }
     }
 
@@ -263,20 +391,7 @@ public class XmpExtractor {
         if (value == null || value.isEmpty()) {
             return;
         }
-        if (RESOURCE_EVENT_NS.equals(uri) && p.path.contains("History[")) {
-            Property hp = HISTORY.get(ln);
-            if (hp != null) {
-                // History:When is a text bag but holds a date; normalize it like a date field.
-                if ("when".equals(ln)) {
-                    String n = XmpDates.normalize(value);
-                    if (n != null) {
-                        value = n;
-                    }
-                }
-                emit(metadata, hp, value);
-                return;
-            }   // unmapped History field (changed, parameters, ...) -> passthrough below
-        }
+        // xmpMM:History is handled as a group in emitHistory() (parallel bags stay aligned).
         if (RESOURCE_REF_NS.equals(uri) && p.path.contains("DerivedFrom")) {
             Property dp = DERIVED_FROM.get(ln);
             if (dp != null) {
@@ -293,17 +408,20 @@ public class XmpExtractor {
                 return;
             }
         }
+        // Map a flat (uri, localName) property only at the top level of rdf:Description; one nested
+        // in a struct (e.g. xmpMM:InstanceID inside xmpMM:Pantry/Ingredients) must not overwrite the
+        // document-level property. Struct segments are joined with '/', array indices are not, so a
+        // top-level property has no '/'. Nested matches fall through to raw passthrough instead.
+        boolean topLevel = p.path.indexOf('/') < 0;
         Property fill = FILL_IF_ABSENT.get(uri + " " + ln);
-        if (fill != null && metadata.get(fill) == null) {
+        if (topLevel && fill != null && metadata.get(fill) == null) {
             metadata.set(fill, valueFor(fill, value));   // canonical date, only if none yet
         }
+        // Language alternatives (leaves with an xml:lang) are handled in emitLangAlternatives().
         Property[] props = TABLE.get(uri + " " + ln);
-        if (props != null) {
+        if (topLevel && props != null) {
             for (Property prop : props) {
                 emit(metadata, prop, value);
-                if (p.lang != null && !p.lang.isEmpty()) {
-                    metadata.add(prop.getName() + ":" + p.lang, valueFor(prop, value));   // e.g. dc:title:es
-                }
             }
             return;
         }

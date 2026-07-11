@@ -43,8 +43,9 @@ final class ExtendedXmp {
     private static final int EXTENDED_XMP_INT_LENGTH = 4;
     // Tika: cap the declared length so a hostile chunk can't drive a huge allocation (not upstream).
     private static final int MAX_EXTENDED = 64 * 1024 * 1024;
+    // allow any run of attribute/element syntax (=, quotes, '>', whitespace, newlines) before the GUID
     private static final Pattern HAS_EXTENDED =
-            Pattern.compile("HasExtendedXMP[\"'>=\\s]{0,4}([A-Fa-f0-9]{32})");
+            Pattern.compile("HasExtendedXMP[\"'>=\\s]*([A-Fa-f0-9]{32})");
 
     private ExtendedXmp() {
     }
@@ -64,6 +65,7 @@ final class ExtendedXmp {
                 standard = new byte[segmentBytes.length - preambleLength];
                 System.arraycopy(segmentBytes, preambleLength, standard, 0, standard.length);
                 guid = findGuid(standard);
+                extendedBuffer = null;   // a new standard packet starts a fresh extended assembly
             } else if (guid != null && segmentBytes.length >= extensionPreambleLength
                     && XMP_EXTENSION_JPEG_PREAMBLE.equalsIgnoreCase(
                             new String(segmentBytes, 0, extensionPreambleLength, US_ASCII))) {

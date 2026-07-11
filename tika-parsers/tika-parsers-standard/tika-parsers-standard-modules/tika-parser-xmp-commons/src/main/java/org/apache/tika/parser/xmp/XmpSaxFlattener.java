@@ -61,6 +61,8 @@ public final class XmpSaxFlattener {
     }
 
     private static final class Handler extends DefaultHandler {
+        // Cap the leaf list so a hostile packet (millions of elements) can't inflate metadata.
+        static final int MAX_LEAVES = 50_000;
         final List<XmpProperty> out = new ArrayList<>();
         final ArrayDeque<String> segs = new ArrayDeque<>();
         final ArrayDeque<String> uris = new ArrayDeque<>();     // leaf/property namespace per frame
@@ -68,9 +70,16 @@ public final class XmpSaxFlattener {
         final ArrayDeque<StringBuilder> text = new ArrayDeque<>();
         final ArrayDeque<int[]> childCount = new ArrayDeque<>();
         final ArrayDeque<String[]> langs = new ArrayDeque<>();  // xml:lang per frame (holder so it can be set after push)
+        final ArrayDeque<boolean[]> hasValue = new ArrayDeque<>();   // frame carries an explicit rdf:value
 
         static boolean isContainer(String u, String l) {
             return RDF.equals(u) && (l.equals("Bag") || l.equals("Seq") || l.equals("Alt"));
+        }
+
+        void add(XmpProperty p) {
+            if (out.size() < MAX_LEAVES) {
+                out.add(p);
+            }
         }
 
         String path() {
@@ -99,6 +108,7 @@ public final class XmpSaxFlattener {
             text.push(new StringBuilder());
             childCount.push(new int[]{0});
             langs.push(new String[]{null});
+            hasValue.push(new boolean[]{false});
         }
 
         @Override
@@ -119,7 +129,15 @@ public final class XmpSaxFlattener {
                 return;
             }
             if (rdf && l.equals("li")) {
-                pushFrame("[" + (++liCount.peek()[0]) + "]", uris.isEmpty() ? "" : uris.peek());
+                // a bare rdf:li outside a Bag/Seq/Alt (malformed) has no counter -> treat as [1]
+                int idx = liCount.isEmpty() ? 1 : ++liCount.peek()[0];
+                pushFrame("[" + idx + "]", uris.isEmpty() ? "" : uris.peek());
+            } else if (rdf && l.equals("value")) {
+                // rdf:value holds the frame's value even when qualifier siblings are present
+                if (!hasValue.isEmpty()) {
+                    hasValue.peek()[0] = true;
+                }
+                return;
             } else if (!rdf) {
                 pushFrame(qn, u);
             } else {
@@ -148,21 +166,21 @@ public final class XmpSaxFlattener {
                             langs.peek()[0] = v;   // attach to this value's frame
                         }
                         if (!base.isEmpty()) {
-                            out.add(new XmpProperty(XMLNS, base + "/xml:lang", v));
+                            add(new XmpProperty(XMLNS, base + "/xml:lang", v));
                         }
                     }
                     continue;
                 }
                 if (RDF.equals(au)) {
                     if (al.equals("resource")) {
-                        out.add(new XmpProperty(uris.isEmpty() ? "" : uris.peek(), base, v));
+                        add(new XmpProperty(uris.isEmpty() ? "" : uris.peek(), base, v));
                     }
                     continue;
                 }
                 if (au == null || au.isEmpty()) {
                     continue;
                 }
-                out.add(new XmpProperty(au, base.isEmpty() ? aq : base + "/" + aq, v));
+                add(new XmpProperty(au, base.isEmpty() ? aq : base + "/" + aq, v));
             }
         }
 
@@ -193,14 +211,16 @@ public final class XmpSaxFlattener {
                 return;
             }
             String t = text.peek().toString().trim();
-            if (!t.isEmpty() && childCount.peek()[0] == 0) {
-                out.add(new XmpProperty(uris.peek(), path(), t, langs.peek()[0]));
+            // a frame is a leaf when it has no child elements, or when an rdf:value gave it a value
+            if (!t.isEmpty() && (childCount.peek()[0] == 0 || hasValue.peek()[0])) {
+                add(new XmpProperty(uris.peek(), path(), t, langs.peek()[0]));
             }
             segs.pop();
             uris.pop();
             text.pop();
             childCount.pop();
             langs.pop();
+            hasValue.pop();
         }
     }
 }
