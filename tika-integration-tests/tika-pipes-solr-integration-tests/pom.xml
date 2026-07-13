@@ -88,14 +88,6 @@
       <version>${solrj.version}</version>
       <scope>test</scope>
     </dependency>
-    <!-- troubles on CI tika-main-jdk26 -->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpmime</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-
   </dependencies>
 
   <build>

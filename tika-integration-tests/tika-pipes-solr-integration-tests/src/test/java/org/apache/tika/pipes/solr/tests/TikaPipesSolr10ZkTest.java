@@ -16,18 +16,28 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Testcontainers(disabledWithoutDocker = true)
-public class TikaPipesSolr8Test extends TikaPipesSolrTestBase {
+import org.apache.tika.utils.SystemUtils;
 
-    @Override
-    public String getSolrImageName() {
-        return "solr:8.11.4";
+@Disabled("until we can fix SessionExpiredException")
+@Testcontainers(disabledWithoutDocker = true)
+public class TikaPipesSolr10ZkTest extends TikaPipesSolr10Test {
+
+    @BeforeAll
+    public static void setUp() {
+        assumeTrue(
+                SystemUtils.IS_OS_UNIX && !SystemUtils.IS_OS_MAC_OSX,
+                "zk test only works on linux (and not mac os x)");
     }
 
     @Override
     public boolean useZk() {
-        return false;
+        return true;
     }
+
 }

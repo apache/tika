@@ -16,27 +16,18 @@
  */
 package org.apache.tika.pipes.solr.tests;
 
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-
-import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import org.apache.tika.utils.SystemUtils;
-
 @Testcontainers(disabledWithoutDocker = true)
-public class TikaPipesSolr8ZkTest extends TikaPipesSolr8Test {
+public class TikaPipesSolr10Test extends TikaPipesSolrTestBase {
 
-    @BeforeAll
-    public static void setUp() {
-        assumeTrue(
-                SystemUtils.IS_OS_UNIX && !SystemUtils.IS_OS_MAC_OSX,
-                "zk test only works on linux (and not mac os x)");
-
+    @Override
+    public String getSolrImageName() {
+        return "solr:10.0.0";
     }
 
     @Override
     public boolean useZk() {
-        return true;
+        return false;
     }
-
 }
