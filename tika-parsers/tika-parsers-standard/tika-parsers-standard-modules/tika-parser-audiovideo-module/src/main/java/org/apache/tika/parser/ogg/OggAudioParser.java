@@ -32,11 +32,13 @@ import org.gagravarr.vorbis.VorbisStyleComments;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -45,6 +47,27 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
+
+
+    /**
+     * Returns the first positive integer found under the given comment keys,
+     * or null if there is none.
+     */
+    private static Integer firstPositiveInteger(VorbisStyleComments comments, String... keys) {
+        for (String key : keys) {
+            for (String value : comments.getComments(key)) {
+                try {
+                    int parsed = Integer.parseInt(value.trim());
+                    if (parsed > 0) {
+                        return parsed;
+                    }
+                } catch (NumberFormatException e) {
+                    //skip unparseable values
+                }
+            }
+        }
+        return null;
+    }
 
     protected static void extractChannelInfo(Metadata metadata, OggAudioInfoHeader info) {
         extractChannelInfo(metadata, info.getNumChannels());
@@ -107,9 +130,39 @@ public abstract class OggAudioParser extends AbstractParser {
         // Album and Track number
         if (comments.getTrackNumber() != null) {
             xhtml.element("p", comments.getAlbum() + ", track " + comments.getTrackNumber());
-            metadata.set(XMPDM.TRACK_NUMBER, comments.getTrackNumber());
+            metadata.set(Audio.RAW_TRACK_NUMBER, comments.getTrackNumber());
+            NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(comments.getTrackNumber());
+            if (trackNumberAndTotal != null) {
+                if (trackNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
+                }
+                if (trackNumberAndTotal.total != null) {
+                    metadata.set(Audio.TRACK_COUNT, trackNumberAndTotal.total);
+                }
+            }
         } else {
             xhtml.element("p", comments.getAlbum());
+        }
+        for (String discValue : comments.getComments("discnumber")) {
+            metadata.set(Audio.RAW_DISC_NUMBER, discValue);
+            NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(discValue);
+            if (discNumberAndTotal != null) {
+                if (discNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.DISC_NUMBER, discNumberAndTotal.number);
+                }
+                if (discNumberAndTotal.total != null) {
+                    metadata.set(Audio.DISC_COUNT, discNumberAndTotal.total);
+                }
+            }
+        }
+        //explicit totals win over the combined "n/total" form
+        Integer trackTotal = firstPositiveInteger(comments, "tracktotal", "totaltracks");
+        if (trackTotal != null) {
+            metadata.set(Audio.TRACK_COUNT, trackTotal);
+        }
+        Integer discTotal = firstPositiveInteger(comments, "disctotal", "totaldiscs");
+        if (discTotal != null) {
+            metadata.set(Audio.DISC_COUNT, discTotal);
         }
 
         // A few other bits
@@ -161,4 +214,5 @@ public abstract class OggAudioParser extends AbstractParser {
             return String.format(Locale.ROOT, "%d:%02d", minutes, seconds);
         }
     }
+
 }

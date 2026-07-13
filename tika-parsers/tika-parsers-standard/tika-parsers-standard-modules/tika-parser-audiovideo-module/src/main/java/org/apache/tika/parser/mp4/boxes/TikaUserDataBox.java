@@ -27,6 +27,7 @@ import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
@@ -157,14 +158,29 @@ public class TikaUserDataBox {
                         long numA = reader.getUInt32();
                         long numB = reader.getUInt32();
                         metadata.set(XMPDM.TRACK_NUMBER, (int)numA);
+                        //2 bytes track total, 2 bytes reserved
+                        int trackCount = (int) (numB >>> 16);
+                        if (trackCount > 0) {
+                            metadata.set(Audio.TRACK_COUNT, trackCount);
+                        }
                     } else {
                         //log
                         reader.skip(toRead);
                     }
                 } else if ("disk".equals(fieldName)) {
-                    int a = reader.getInt32();
-                    short b = reader.getInt16();
-                    metadata.set(XMPDM.DISC_NUMBER, a);
+                    //2 bytes reserved, 2 bytes disc, 2 bytes total; some encoders
+                    //pad to 8 bytes like trkn, so consume exactly toRead either way
+                    if (toRead >= 6) {
+                        int a = reader.getInt32();
+                        short b = reader.getInt16();
+                        metadata.set(XMPDM.DISC_NUMBER, a);
+                        if (b > 0) {
+                            metadata.set(Audio.DISC_COUNT, b);
+                        }
+                        reader.skip(toRead - 6);
+                    } else {
+                        reader.skip(toRead);
+                    }
                 } else {
                     String val = reader.getString(toRead, StandardCharsets.UTF_8);
                     try {
