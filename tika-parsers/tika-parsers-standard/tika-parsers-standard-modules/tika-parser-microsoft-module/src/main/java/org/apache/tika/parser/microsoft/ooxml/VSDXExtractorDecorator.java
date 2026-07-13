@@ -93,7 +93,7 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
         PackageRelationshipCollection pageRels =
                 pagesPart.getRelationshipsByType(VISIO_PAGE_REL);
         for (PackageRelationship rel : pageRels) {
-            PackagePart pagePart = pagesPart.getRelatedPart(rel);
+            PackagePart pagePart = safeGetRelatedPart(pagesPart, rel);
             if (pagePart != null) {
                 pageParts.add(pagePart);
             }
@@ -116,7 +116,7 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
         if (rels.isEmpty()) {
             return null;
         }
-        return part.getRelatedPart(rels.getRelationship(0));
+        return safeGetRelatedPart(part, rels.getRelationship(0));
     }
 
     @Override

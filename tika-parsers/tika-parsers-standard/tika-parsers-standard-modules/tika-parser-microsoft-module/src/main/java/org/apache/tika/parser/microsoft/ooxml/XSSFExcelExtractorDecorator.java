@@ -687,7 +687,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart threadedCommentPart = sheetPart.getRelatedPart(rel);
+            PackagePart threadedCommentPart = safeGetRelatedPart(sheetPart, rel);
             if (threadedCommentPart == null) {
                 continue;
             }
@@ -714,7 +714,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart personsPart = workbookPart.getRelatedPart(rel);
+            PackagePart personsPart = safeGetRelatedPart(workbookPart, rel);
             if (personsPart == null) {
                 continue;
             }
@@ -1073,8 +1073,16 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                           XSSFCommentsShim.CommentData comment) {
             try {
                 // Handle any missing cells
-                int colNum =
-                        (cellRef == null) ? lastSeenCol + 1 : (new CellReference(cellRef)).getCol();
+                int colNum = lastSeenCol + 1;
+                if (cellRef != null) {
+                    try {
+                        colNum = new CellReference(cellRef).getCol();
+                    } catch (IllegalArgumentException e) {
+                        //malformed cell ref (also covers NumberFormatException on an
+                        //overflowing row); treat like a cell with no ref
+                        colNum = lastSeenCol + 1;
+                    }
+                }
                 for (int cn = lastSeenCol + 1; cn < colNum; cn++) {
                     xhtml.startElement("td");
                     cellOpen = true;

@@ -59,7 +59,14 @@ class XSSFSharedStringsShim {
         this.strings = handler.strings;
     }
 
+    /**
+     * @return the shared string at {@code idx}, or null if out of range -- a malformed
+     * workbook can reference a string the table doesn't have; that must not abort the parse.
+     */
     String getItemAt(int idx) {
+        if (idx < 0 || idx >= strings.size()) {
+            return null;
+        }
         return strings.get(idx);
     }
 

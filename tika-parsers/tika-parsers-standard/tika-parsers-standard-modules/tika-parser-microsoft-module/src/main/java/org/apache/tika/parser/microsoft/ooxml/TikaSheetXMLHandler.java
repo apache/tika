@@ -160,7 +160,12 @@ class TikaSheetXMLHandler extends DefaultHandler {
         } else if ("row".equals(localName)) {
             String rowNumStr = attributes.getValue("r");
             if (rowNumStr != null) {
-                rowNum = Integer.parseInt(rowNumStr.trim()) - 1;
+                try {
+                    rowNum = Integer.parseInt(rowNumStr.trim()) - 1;
+                } catch (NumberFormatException e) {
+                    //non-numeric r attribute; fall back to positional numbering
+                    rowNum = nextRowNum;
+                }
             } else {
                 rowNum = nextRowNum;
             }
@@ -190,7 +195,12 @@ class TikaSheetXMLHandler extends DefaultHandler {
                 if (stylesShim != null) {
                     int styleIndex;
                     if (cellStyleStr != null) {
-                        styleIndex = Integer.parseInt(cellStyleStr.trim());
+                        try {
+                            styleIndex = Integer.parseInt(cellStyleStr.trim());
+                        } catch (NumberFormatException e) {
+                            //non-numeric s attribute; skip style resolution
+                            styleIndex = -1;
+                        }
                     } else if (stylesShim.getNumCellStyles() > 0) {
                         styleIndex = 0;
                     } else {
@@ -267,8 +277,8 @@ class TikaSheetXMLHandler extends DefaultHandler {
         } else {
             switch (nextDataType) {
                 case BOOLEAN:
-                    char first = value.charAt(0);
-                    thisStr = first == '0' ? "FALSE" : "TRUE";
+                    //empty <v> is malformed; treat as FALSE rather than charAt(0) an empty string
+                    thisStr = value.length() > 0 && value.charAt(0) != '0' ? "TRUE" : "FALSE";
                     break;
                 case ERROR:
                     thisStr = "ERROR:" + value;
@@ -326,8 +336,14 @@ class TikaSheetXMLHandler extends DefaultHandler {
         }
 
         checkForEmptyCellComments(EmptyCellCommentsCheckType.CELL);
-        XSSFCommentsShim.CommentData comment = commentsShim != null ?
-                commentsShim.findCellComment(new CellAddress(cellRef)) : null;
+        XSSFCommentsShim.CommentData comment = null;
+        if (commentsShim != null && cellRef != null) {
+            try {
+                comment = commentsShim.findCellComment(new CellAddress(cellRef));
+            } catch (IllegalArgumentException e) {
+                //malformed cell ref; skip the comment lookup
+            }
+        }
         output.cell(cellRef, thisStr, comment);
     }
 

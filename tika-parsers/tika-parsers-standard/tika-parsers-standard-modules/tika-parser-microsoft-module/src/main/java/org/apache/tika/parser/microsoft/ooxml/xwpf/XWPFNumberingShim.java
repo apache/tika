@@ -43,6 +43,10 @@ public class XWPFNumberingShim {
 
     public static final XWPFNumberingShim EMPTY = new EmptyNumberingShim();
 
+    // OOXML defines 9 list levels (w:ilvl 0-8); ignore anything beyond that so a huge
+    // ilvl can't grow the dense level array in endElement("abstractNum") into an OOM.
+    private static final int MAX_NUMBERING_LEVELS = 9;
+
     // abstractNumId -> list of LevelTuples (indexed by ilvl)
     private final Map<Integer, LevelTuple[]> abstractNumLevels = new HashMap<>();
     // numId -> abstractNumId
@@ -217,7 +221,7 @@ public class XWPFNumberingShim {
             }
             switch (localName) {
                 case "lvl":
-                    if (inLvl && currentIlvl >= 0) {
+                    if (inLvl && currentIlvl >= 0 && currentIlvl < MAX_NUMBERING_LEVELS) {
                         LevelTuple tuple = buildLevelTuple(currentIlvl);
                         if (inLvlOverride && inNum) {
                             currentOverrides.put(currentIlvl, tuple);

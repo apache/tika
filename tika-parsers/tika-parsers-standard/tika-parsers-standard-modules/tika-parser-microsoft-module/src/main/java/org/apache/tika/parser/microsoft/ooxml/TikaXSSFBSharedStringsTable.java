@@ -48,6 +48,10 @@ class TikaXSSFBSharedStringsTable implements SharedStrings {
     private int uniqueCount;
     private final List<String> strings = new ArrayList<>();
 
+    // Empty table -- fallback when sharedStrings.bin is corrupt/unreadable.
+    TikaXSSFBSharedStringsTable() {
+    }
+
     TikaXSSFBSharedStringsTable(OPCPackage pkg) throws IOException {
         ArrayList<PackagePart> parts =
                 pkg.getPartsByContentType(SHARED_STRINGS_BINARY_CT);
@@ -65,6 +69,10 @@ class TikaXSSFBSharedStringsTable implements SharedStrings {
 
     @Override
     public RichTextString getItemAt(int idx) {
+        if (idx < 0 || idx >= strings.size()) {
+            //malformed workbook can reference a string the table doesn't have
+            return new PlainRichTextString("");
+        }
         return new PlainRichTextString(strings.get(idx));
     }
 

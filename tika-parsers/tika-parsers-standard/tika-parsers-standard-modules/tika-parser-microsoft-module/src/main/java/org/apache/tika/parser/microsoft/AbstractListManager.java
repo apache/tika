@@ -60,6 +60,12 @@ public abstract class AbstractListManager {
          */
         public String incrementLevel(int levelNumber, LevelTuple[] overrideLevelTuples) {
 
+            if (levelNumber < 0 || levelNumber >= levelTuples.length) {
+                // Out-of-range level: format() returns "" anyway; return early so a huge
+                // levelNumber can't grow `counts` into an OOM.
+                return "";
+            }
+
             for (int i = lastLevel + 1; i < levelNumber; i++) {
                 if (i >= counts.size()) {
                     int val = getStart(i, overrideLevelTuples);

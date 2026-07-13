@@ -35,11 +35,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 
 public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
@@ -76,14 +78,41 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             }
             styles = xssfReader.getXSSFBStylesTable();
             iter = (XSSFBReader.SheetIterator) xssfReader.getSheetsData();
-            strings = new TikaXSSFBSharedStringsTable(container);
         } catch (OpenXML4JException e) {
             throw new IOException(e);
         }
+        // Shared strings are optional -- a corrupt/truncated sharedStrings.bin degrades to an
+        // empty table (getItemAt then returns "") rather than aborting the workbook.
+        try {
+            strings = new TikaXSSFBSharedStringsTable(container);
+        } catch (IOException | RuntimeException e) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    ExceptionUtils.getStackTrace(e));
+            strings = new TikaXSSFBSharedStringsTable();
+        }
 
-        while (iter.hasNext()) {
-            InputStream stream = iter.next();
-            PackagePart sheetPart = iter.getSheetPart();
+        while (true) {
+            try {
+                if (!iter.hasNext()) {
+                    break;
+                }
+            } catch (RuntimeException e) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+                break;
+            }
+            InputStream stream;
+            PackagePart sheetPart;
+            try {
+                stream = iter.next();
+                sheetPart = iter.getSheetPart();
+            } catch (RuntimeException e) {
+                // POI throws POIXMLException when a referenced sheet part is missing; its
+                // iterator state may not advance, so break rather than risk an infinite loop.
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+                break;
+            }
             addDrawingHyperLinks(sheetPart);
             sheetParts.add(sheetPart);
 
@@ -103,10 +132,19 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
 
             // Pass null for POI's comments table to avoid xmlbeans dependency.
             // Comments are emitted separately after sheet processing.
-            XSSFBSheetHandler xssfbSheetHandler =
-                    new XSSFBSheetHandler(stream, styles, null, strings,
-                            sheetExtractor, formatter, false);
-            xssfbSheetHandler.parse();
+            try (InputStream sheetStream = stream) {
+                XSSFBSheetHandler xssfbSheetHandler =
+                        new XSSFBSheetHandler(sheetStream, styles, null, strings,
+                                sheetExtractor, formatter, false);
+                xssfbSheetHandler.parse();
+            } catch (RuntimeException | IOException e) {
+                // Truncated/malformed binary sheet -- keep prior sheets and close any open
+                // row/cell. A wrapped write-limit signal must still propagate.
+                WriteLimitReachedException.throwIfWriteLimitReached(e);
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.getStackTrace(e));
+                sheetExtractor.closeAnyPending();
+            }
 
             xhtml.endElement("tbody");
             xhtml.endElement("table");
@@ -149,7 +187,8 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             try (InputStream is = commentsPart.getInputStream()) {
                 return new TikaXSSFBCommentsTable(is);
             }
-        } catch (InvalidFormatException | IOException e) {
+        } catch (InvalidFormatException | IOException | RuntimeException e) {
+            //missing/corrupt comments part must not abort the sheet
             return null;
         }
     }
