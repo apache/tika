@@ -59,10 +59,9 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
     /**
      * Hard cap on the accumulated text-content of a single property element.
      * Real OOXML property values are at most a few hundred bytes; anything beyond
-     * this is either corruption or an attacker trying to drive memory or CPU
-     * pressure (cf. the {@code <vt:decimal>} BigDecimal DoS where a 1M-digit
-     * literal compresses ~1000:1 in deflate). 64 KB leaves headroom for any
-     * legitimate value while bounding the slow-path inputs decisively.
+     * this is malformed (e.g. a {@code <vt:decimal>} with a 1M-digit literal).
+     * 64 KB leaves headroom for any legitimate value while bounding the
+     * slow-path inputs.
      */
     static final int MAX_TEXT_BUFFER_LENGTH = 64 * 1024;
 
@@ -482,9 +481,8 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                         break;
                     case "decimal":
                         // BigDecimal(String) is O(n²) on JDK 17; cap the input
-                        // length to keep an attacker-controlled <vt:decimal>
-                        // from burning CPU. Real values are < 50 chars; 256 is
-                        // generous. See ooxml-bigdecimal-dos.
+                        // length so a large <vt:decimal> can't burn CPU. Real
+                        // values are < 50 chars; 256 is generous.
                         if (trimmed.length() > MAX_DECIMAL_LENGTH) {
                             break;
                         }

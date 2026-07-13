@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,12 +49,16 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFEventBasedWordExtractor;
+import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFFeatureExtractor;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
+import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -75,7 +80,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             new String[]{XWPFRelation.HEADER.getRelation(), XWPFRelation.FOOTER.getRelation(),
                     XWPFRelation.FOOTNOTE.getRelation(),
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"};
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                    AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA};
 
     // Relationship types for Word settings
     private static final String SETTINGS_RELATION =
@@ -97,6 +103,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             };
 
     private final OPCPackage opcPackage;
+
+    //accumulated across all body parts as they're parsed; consumed by handleEmbeddedParts()
+    private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
     private final ParseContext context;
     private final Metadata metadata;
 
@@ -157,6 +166,9 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      * subdocuments, and framesets.
      */
     private void detectSecurityFeatures(PackagePart documentPart, XHTMLContentHandler xhtml) {
+        //hidden text, track changes, comments, comment persons
+        new XWPFFeatureExtractor().process(documentPart, metadata, context);
+
         // Check for attached template (external template reference)
         try {
             PackageRelationshipCollection templateRels =
@@ -357,7 +369,53 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     ExceptionUtils.getStackTrace(e));
             bodyHandler.closeAnyPending();
         }
+        //the body handler collects progId + the emf relationship id for embedded OLE refs as
+        //it parses.  Resolve the display name from the emf, then hand the map to
+        //handleEmbeddedParts() via getEmbeddedPartMetadataMap() below.
+        Map<String, EmbeddedPartMetadata> partMap = bodyHandler.getEmbeddedPartMetadataMap();
+        for (EmbeddedPartMetadata embeddedPartMetadata : partMap.values()) {
+            tryToParseEmbeddedName(packagePart, embeddedPartMetadata);
+        }
+        embeddedPartMetadataMap.putAll(partMap);
         return bodyHandler;
+    }
+
+    @Override
+    protected Map<String, EmbeddedPartMetadata> getEmbeddedPartMetadataMap() {
+        return embeddedPartMetadataMap;
+    }
+
+    /**
+     * The OLE object's display name (e.g. "Acrobat Document") is stored in a comment field in
+     * the emf that renders it.  This mirrors XWPFWordExtractorDecorator#tryToParseEmbeddedName.
+     */
+    private void tryToParseEmbeddedName(PackagePart sourcePart,
+                                        EmbeddedPartMetadata embeddedPartMetadata) {
+        String rid = embeddedPartMetadata.getEmfRelationshipId();
+        if (StringUtils.isBlank(rid)) {
+            return;
+        }
+        try {
+            PackageRelationship rel = sourcePart.getRelationship(rid);
+            if (rel == null) {
+                return;
+            }
+            PackagePart emfPart = safeGetRelatedPart(sourcePart, rel);
+            if (emfPart == null || !"image/x-emf".equals(emfPart.getContentType())) {
+                return;
+            }
+            try (InputStream is = emfPart.getInputStream()) {
+                Metadata m = new Metadata();
+                ToTextContentHandler toTextContentHandler = new ToTextContentHandler();
+                new EMFParser().parse(is, toTextContentHandler, m, new ParseContext());
+                embeddedPartMetadata.setRenderedName(toTextContentHandler.toString().trim());
+                embeddedPartMetadata.setFullName(m.get(EMFParser.EMF_ICON_STRING));
+            }
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            //we tried
+        }
     }
 
     /**
@@ -444,15 +502,6 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             return Collections.emptyMap();
         }
     }
-
-    private PackagePart safeGetRelatedPart(PackagePart parent, PackageRelationship rel) {
-        try {
-            return parent.getRelatedPart(rel);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
 
     private XWPFStylesShim loadStyles(PackagePart packagePart)
             throws InvalidFormatException, TikaException, IOException, SAXException {

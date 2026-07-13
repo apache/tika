@@ -65,11 +65,9 @@ public class MetadataExtractor {
     /**
      * Hard cap on the accumulated text-content of a single property element
      * inside docProps/custom.xml. Real OOXML property values are at most a few
-     * hundred bytes; anything beyond this is either corruption or an attacker
-     * trying to drive memory or CPU pressure (cf. the {@code <vt:decimal>}
-     * BigDecimal DoS where a 1M-digit literal compresses ~1000:1 in deflate).
-     * 64 KB leaves headroom for any legitimate value while bounding the
-     * slow-path inputs decisively.
+     * hundred bytes; anything beyond this is malformed (e.g. a {@code <vt:decimal>}
+     * with a 1M-digit literal). 64 KB leaves headroom for any legitimate value
+     * while bounding the slow-path inputs.
      */
     static final int MAX_TEXT_BUFFER_LENGTH = 64 * 1024;
 
@@ -106,10 +104,9 @@ public class MetadataExtractor {
             extractMetadata(extractor.getExtendedProperties(), metadata);
             // Custom properties are read via SAX directly from the OPC part
             // rather than through POI/XMLBeans. The XMLBeans path materializes
-            // an attacker-controlled <vt:decimal> through BigDecimal(String),
-            // which is O(n²) on JDK 17 -- a 3 KB crafted carrier with a
-            // 1,000,000-digit literal burns ~25 s of CPU before this method
-            // even returns. See ooxml-bigdecimal-dos.
+            // a <vt:decimal> through BigDecimal(String), which is O(n²) on
+            // JDK 17 -- a 3 KB carrier with a 1,000,000-digit literal burns
+            // ~25 s of CPU before this method even returns.
             extractCustomPropertiesViaSAX(extractor.getPackage(), metadata);
         }
     }
@@ -204,12 +201,12 @@ public class MetadataExtractor {
 
     /**
      * Parse {@code docProps/custom.xml} directly via SAX, bypassing
-     * POI/XMLBeans. The XMLBeans path materializes an attacker-controlled
-     * {@code <vt:decimal>} through {@link BigDecimal#BigDecimal(String)}
-     * during XML deserialization, which is O(n²) in the digit count on
-     * JDK 17. By reading the part ourselves we can cap both the buffered
-     * text content ({@link #MAX_TEXT_BUFFER_LENGTH}) and the decimal
-     * literal length ({@link #MAX_DECIMAL_LENGTH}) before any slow parse
+     * POI/XMLBeans. The XMLBeans path materializes a {@code <vt:decimal>}
+     * through {@link BigDecimal#BigDecimal(String)} during XML
+     * deserialization, which is O(n²) in the digit count on JDK 17. By
+     * reading the part ourselves we can cap both the buffered text content
+     * ({@link #MAX_TEXT_BUFFER_LENGTH}) and the decimal literal length
+     * ({@link #MAX_DECIMAL_LENGTH}) before any slow parse
      * runs.
      */
     private void extractCustomPropertiesViaSAX(OPCPackage opcPackage, Metadata metadata) {
@@ -349,9 +346,8 @@ public class MetadataExtractor {
                         break;
                     case "decimal":
                         // BigDecimal(String) is O(n²) on JDK 17; cap the input
-                        // length to keep an attacker-controlled <vt:decimal>
-                        // from burning CPU. Real values are < 50 chars; 256 is
-                        // generous. See ooxml-bigdecimal-dos.
+                        // length so a large <vt:decimal> can't burn CPU. Real
+                        // values are < 50 chars; 256 is generous.
                         if (trimmed.length() > MAX_DECIMAL_LENGTH) {
                             break;
                         }

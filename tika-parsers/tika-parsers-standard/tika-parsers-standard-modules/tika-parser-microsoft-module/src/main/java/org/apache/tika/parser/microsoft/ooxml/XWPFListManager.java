@@ -91,6 +91,10 @@ public class XWPFListManager extends AbstractListManager {
         if (lc == null) {
             lc = loadLevelTuples(abNum);
         }
+        if (lc == null) {
+            //the numbering.xml references an abstractNumId that isn't there
+            return "";
+        }
         if (overrideTuples == null) {
             overrideTuples = loadOverrideTuples(ctNum, lc.getNumberOfLevels());
         }
@@ -133,6 +137,9 @@ public class XWPFListManager extends AbstractListManager {
         //to get the abstract num information for the edge case where
         //someone skips a level and the format is not context-free, e.g. "1.B.i".
         XWPFAbstractNum abstractNum = numbering.getAbstractNum(abNum.getVal());
+        if (abstractNum == null) {
+            return null;
+        }
         CTAbstractNum ctAbstractNum = abstractNum.getCTAbstractNum();
 
         LevelTuple[] levels = new LevelTuple[ctAbstractNum.sizeOfLvlArray()];

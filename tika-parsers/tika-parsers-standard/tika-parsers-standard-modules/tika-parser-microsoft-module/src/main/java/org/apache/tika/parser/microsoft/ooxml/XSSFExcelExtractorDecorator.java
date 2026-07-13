@@ -283,7 +283,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             //swallow
         }
 
-        // Extract external data sources (HIGH security risk - can hide malicious URLs)
+        // Extract external data sources (surface external URLs for downstream analysis)
         try {
             extractExternalDataSources(container, xhtml);
         } catch (InvalidFormatException | TikaException | IOException | SAXException e) {
@@ -526,7 +526,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     emitExternalRef(xhtml, "oleLink", "relationship:" + rId);
                 }
             }
-            // DDE links - security risk: can execute commands
+            // DDE links
             if ("ddeLink".equals(localName)) {
                 foundDdeLink = true;
                 String ddeService = atts.getValue("ddeService");
@@ -676,7 +676,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart threadedCommentPart = sheetPart.getRelatedPart(rel);
+            PackagePart threadedCommentPart = safeGetRelatedPart(sheetPart, rel);
             if (threadedCommentPart == null) {
                 continue;
             }
@@ -703,7 +703,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart personsPart = workbookPart.getRelatedPart(rel);
+            PackagePart personsPart = safeGetRelatedPart(workbookPart, rel);
             if (personsPart == null) {
                 continue;
             }
