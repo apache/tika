@@ -244,9 +244,9 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Decodes text in the frame's declared encoding. Encoding {@code $01} is UTF-16 with a BOM;
-     * when a tagger omits it Java assumes big-endian and turns little-endian text into mojibake
-     * ({@code 'T' 0x54 0x00} decodes to U+5400), so recover the byte order from the bytes.
+     * Decodes text in the frame's declared encoding. $01 is UTF-16 with a BOM; if a tagger omits
+     * it, Java assumes big-endian and turns little-endian text into mojibake ('T' 0x54 0x00 ->
+     * U+5400), so recover the byte order from the bytes.
      */
     private static String decodeText(byte[] data, int offset, int length, TextEncoding encoding)
             throws UnsupportedEncodingException {
@@ -257,7 +257,6 @@ public class ID3v2Frame implements MP3Frame {
         return new String(data, offset, length, charset);
     }
 
-    /** Does the text at the offset start with a UTF-16 BOM? */
     private static boolean hasBOM(byte[] data, int offset, int length) {
         if (length < 2) {
             return false;
@@ -268,10 +267,11 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Byte order of BOM-less UTF-16, from which column holds each code unit's NUL: chars below
-     * U+0100 dominate ID3 tags and encode as {@code 0x00 lo} (BE) or {@code lo 0x00} (LE). No
-     * NULs (eg CJK) means no signal, so keep the big-endian default. Deterministic single-field
-     * form of {@code Utf16ColumnFeatureExtractor} features 0/1.
+     * Recovers the byte order of BOM-less UTF-16, only reached when a $01 frame omits its
+     * mandatory BOM (a malformed tagger). Chars below U+0100, which dominate ID3 tags, carry one
+     * NUL per code unit whose column reveals the order. Chars above (eg CJK) carry no NUL and no
+     * signal; pure-CJK text then falls back to big-endian - Java's own BOM-less default, so this
+     * is never worse than the prior unconditional decode.
      */
     private static String guessUTF16ByteOrder(byte[] data, int offset, int length) {
         int bigEndian = 0;
@@ -288,12 +288,11 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Builds up the ID3 comment, by parsing and extracting
-     * the comment string parts from the given data, or null if the frame
-     * is too short or malformed to hold a comment.
+     * Parses the comment parts from the given data, or null if the frame is too short or
+     * malformed to hold a comment.
      */
     protected static ID3Comment getComment(byte[] data, int offset, int length) {
-        // need at least an encoding flag + 3 byte language
+        // encoding flag + 3-byte language
         if (length < 4) {
             return null;
         }

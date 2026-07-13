@@ -57,7 +57,8 @@ public class TestParameters {
     static final int VP_INDEX_DEPTH = 1;
     static final int VP_INDEX_HEAD = 0;
     static final int VP_INDEX_ROOT = -1;
-    static final int VP_UNKNOWN_NUM_BLOCKS = -1;
+    //0xFFFFFFFF read as an unsigned uint32 (was -1 before the sign-extension fix)
+    static final long VP_UNKNOWN_NUM_BLOCKS = 0xFFFFFFFFL;
     static final int VP_ITSP_UNKNOWN_000C = 10;
     static final int VP_ITSP_UNKNOWN_0024 = 0;
     static final int VP_ITSP_UNKNOWN_002C = 1;

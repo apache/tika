@@ -75,6 +75,12 @@ jobs:
           TIKA_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "tika_version=${TIKA_VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Set build metadata
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "created=$(git show -s --format=%cI HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Build with Maven (skip tests)
         run: mvn clean install -DskipTests -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
@@ -107,6 +113,8 @@ jobs:
           load: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: tika-server-minimal-smoke:ci
 
       - name: Smoke test tika-server minimal image
@@ -139,6 +147,8 @@ jobs:
           push: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: |
             apache/tika:${{ steps.version.outputs.tika_version }}
 
@@ -159,6 +169,8 @@ jobs:
           load: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: tika-server-full-smoke:ci
 
       - name: Smoke test tika-server full image
@@ -191,6 +203,8 @@ jobs:
           push: true
           build-args: |
             TIKA_VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: |
             apache/tika:${{ steps.version.outputs.tika_version }}-full
 
@@ -240,6 +254,8 @@ jobs:
           load: true
           build-args: |
             VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: tika-grpc-smoke:ci
 
       - name: Smoke test tika-grpc image
@@ -274,5 +290,7 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ steps.version.outputs.tika_version }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: |
             apache/tika-grpc:${{ steps.version.outputs.tika_version }}

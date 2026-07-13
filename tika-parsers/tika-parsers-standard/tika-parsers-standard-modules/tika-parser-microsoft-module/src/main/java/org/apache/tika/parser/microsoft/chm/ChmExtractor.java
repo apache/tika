@@ -131,7 +131,10 @@ public class ChmExtractor {
             setLzxBlocksCache(new ArrayList<>());
 
         } catch (IOException e) {
+            //don't swallow: propagate so a broken stream surfaces instead of leaving
+            //a half-built extractor that NPEs later in ChmParser
             LOG.warn("IOException parsing chm file", e);
+            throw e;
         }
     }
 
