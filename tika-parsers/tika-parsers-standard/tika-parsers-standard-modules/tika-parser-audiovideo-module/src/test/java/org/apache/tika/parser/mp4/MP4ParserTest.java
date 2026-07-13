@@ -322,5 +322,11 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
         assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
         assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+
+        //the fixture's disk atom uses the padded 8-byte form; the title after
+        //it proves the ilst walk consumes exactly the declared length
+        assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("12", metadata.get(Audio.DISC_COUNT));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
     }
 }

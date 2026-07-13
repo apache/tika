@@ -168,11 +168,18 @@ public class TikaUserDataBox {
                         reader.skip(toRead);
                     }
                 } else if ("disk".equals(fieldName)) {
-                    int a = reader.getInt32();
-                    short b = reader.getInt16();
-                    metadata.set(XMPDM.DISC_NUMBER, a);
-                    if (b > 0) {
-                        metadata.set(Audio.DISC_COUNT, b);
+                    //2 bytes reserved, 2 bytes disc, 2 bytes total; some encoders
+                    //pad to 8 bytes like trkn, so consume exactly toRead either way
+                    if (toRead >= 6) {
+                        int a = reader.getInt32();
+                        short b = reader.getInt16();
+                        metadata.set(XMPDM.DISC_NUMBER, a);
+                        if (b > 0) {
+                            metadata.set(Audio.DISC_COUNT, b);
+                        }
+                        reader.skip(toRead - 6);
+                    } else {
+                        reader.skip(toRead);
                     }
                 } else {
                     String val = reader.getString(toRead, StandardCharsets.UTF_8);
