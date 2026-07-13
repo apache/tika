@@ -389,7 +389,7 @@
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.22.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
-    <junit6.version>6.1.1</junit6.version>
+    <junit6.version>6.1.2</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
     <junrar.version>7.6.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
