@@ -876,10 +876,14 @@ public class ChmLzxBlock {
         } else {
             throw new ChmParsingException("data segment should not be null");
         }
-        if (blockLength > 0) {
+        //cap at MAX_CONTENT_SIZE: the content buffer is (int) blockLength, so a
+        //blockLength past that either overflows the int (negative allocation) or
+        //trips the Integer.MAX_VALUE branch in checkLzxBlock. Real blocks are ~32KB.
+        if (blockLength > 0 && blockLength <= MAX_CONTENT_SIZE) {
             ++goodParameter;
         } else {
-            throw new ChmParsingException("block length should be more than zero");
+            throw new ChmParsingException(
+                    "block length should be between 1 and " + MAX_CONTENT_SIZE + ": " + blockLength);
         }
         return (goodParameter == 3);
     }

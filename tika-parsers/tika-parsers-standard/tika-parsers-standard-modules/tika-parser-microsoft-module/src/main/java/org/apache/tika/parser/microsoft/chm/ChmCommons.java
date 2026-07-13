@@ -307,7 +307,7 @@ public class ChmCommons {
         checkCopyOfRangeParams(original, from, to);
         int newLength = to - from;
         if (newLength < 0) {
-            throw new IllegalArgumentException(from + " > " + to);
+            throw new ChmParsingException(from + " > " + to);
         }
 
         byte[] copy = new byte[newLength];
@@ -315,18 +315,19 @@ public class ChmCommons {
         return copy;
     }
 
-    private static void checkCopyOfRangeParams(byte[] original, int from, int to) {
+    private static void checkCopyOfRangeParams(byte[] original, int from, int to)
+            throws ChmParsingException {
         if (original == null) {
-            throw new NullPointerException("array is null");
+            throw new ChmParsingException("array is null");
         }
         if (from < 0) {
-            throw new IllegalArgumentException(from + " should be > 0");
+            throw new ChmParsingException(from + " should be > 0");
         }
         if (to < 0) {
-            throw new IllegalArgumentException(to + " should be > 0");
+            throw new ChmParsingException(to + " should be > 0");
         }
         if (to > original.length) {
-            throw new IllegalArgumentException("can't copy beyond array length");
+            throw new ChmParsingException("can't copy beyond array length");
         }
     }
 

@@ -142,4 +142,22 @@ public class TestChmLzxcControlData {
         assertEquals(0x8000L, control.getSize());
     }
 
+    @Test
+    public void testUInt32TopBitNotSignExtended() throws Exception {
+        // size = 0x80000000 little-endian; the top byte's shift must be done in long
+        // arithmetic, else the whole uint32 reads as a negative int (-2147483648)
+        byte[] data = new byte[ChmConstants.CHM_LZXC_MIN_LEN];
+        data[3] = (byte) 0x80; // size = 0x80000000
+        byte[] sig = ChmConstants.LZXC.getBytes(UTF_8);
+        System.arraycopy(sig, 0, data, 4, sig.length);
+        data[8] = 0x01;  // version
+        data[12] = 0x02; // resetInterval
+        data[16] = 0x02; // windowSize
+        data[20] = 0x02; // windowsPerReset
+
+        ChmLzxcControlData control = new ChmLzxcControlData();
+        control.parse(data, control);
+        assertEquals(0x80000000L, control.getSize());
+    }
+
 }
