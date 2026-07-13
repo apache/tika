@@ -60,6 +60,13 @@ class XSSFSharedStringsShim {
     }
 
     String getItemAt(int idx) {
+        //a workbook whose sharedStrings part or relationship is missing still has cells
+        //carrying t="s" indices.  The string table is then empty and every index is out of
+        //range.  Return null (a supported outcome for the caller) so the numeric cells and
+        //the rest of the workbook survive.
+        if (idx < 0 || idx >= strings.size()) {
+            return null;
+        }
         return strings.get(idx);
     }
 

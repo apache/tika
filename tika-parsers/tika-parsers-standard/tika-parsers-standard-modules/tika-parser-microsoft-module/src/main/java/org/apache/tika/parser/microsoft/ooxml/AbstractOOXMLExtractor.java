@@ -65,6 +65,7 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -512,8 +513,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     }
 
     /**
-     * Emits an external reference as an anchor element with appropriate class.
-     * Used for detecting external resources that could be security risks.
+     * Emits an external reference as an anchor element with appropriate class,
+     * surfacing external resources for downstream analysis.
      */
     private void emitExternalRef(XHTMLContentHandler xhtml, String refType, String url)
             throws SAXException {
@@ -651,20 +652,28 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         relatedPartPRC.getRelationship(i);
                 try {
                     PackagePart relatedPartPart =
-                            parentPart.getRelatedPart(relatedPartPackageRelationship);
+                            safeGetRelatedPart(parentPart, relatedPartPackageRelationship);
+                    if (relatedPartPart == null) {
+                        continue;
+                    }
+                    //balance tags a failed sub-parse left open, else the </div> below is misnested
+                    XHTMLBalancingHandler balancer =
+                            new XHTMLBalancingHandler(contentHandler);
                     try (InputStream stream = relatedPartPart.getInputStream()) {
                         XMLReaderUtils.parseSAX(stream,
-                                new EmbeddedContentHandler(contentHandler), context);
+                                new EmbeddedContentHandler(balancer), context);
 
                     } catch (IOException | TikaException e) {
+                        balancer.drainOpenElements();
+                        parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                ExceptionUtils.getStackTrace(e));
+                    } catch (SAXException e) {
+                        balancer.drainOpenElements();
+                        WriteLimitReachedException.throwIfWriteLimitReached(e);
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
                     }
-                } catch (InvalidFormatException | IllegalArgumentException e) {
-                    //getRelatedPart throws an unchecked IllegalArgumentException when the
-                    //target part is missing -- common in truncated/damaged packages.  Record
-                    //it and carry on so that one unreachable part does not abandon the
-                    //remaining slides/parts.
+                } catch (InvalidFormatException e) {
                     parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
                 }
@@ -672,6 +681,27 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             contentHandler.endElement("", "div", "div");
         }
 
+    }
+
+    /**
+     * Like {@code getRelatedPart} but returns null instead of throwing an unchecked
+     * IllegalArgumentException when the target part is missing (common in truncated files).
+     */
+    public static PackagePart safeGetRelatedPart(PackagePart source,
+                                                 PackageRelationship relationship)
+            throws InvalidFormatException {
+        if (source == null || relationship == null) {
+            return null;
+        }
+        if (!source.isRelationshipExists(relationship)) {
+            return null;
+        }
+        try {
+            return source.getRelatedPart(relationship);
+        } catch (IllegalArgumentException e) {
+            // Relationship exists but target part is missing from the package
+            return null;
+        }
     }
 
 }
