@@ -115,7 +115,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 try {
                     handleSlidePart(mainDocument.getRelatedPart(slidesPRC.getRelationship(i)),
                             xhtml);
-                } catch (InvalidFormatException | ZipException e) {
+                } catch (InvalidFormatException | ZipException | IllegalArgumentException e) {
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
                 }
@@ -152,7 +152,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             PackagePart commentAuthorsPart = null;
             try {
                 commentAuthorsPart = mainDocument.getRelatedPart(prc.getRelationship(i));
-            } catch (InvalidFormatException e) {
+            } catch (InvalidFormatException | IllegalArgumentException e) {
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         ExceptionUtils.getStackTrace(e));
             }
@@ -250,11 +250,13 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 PackagePart slidePart = null;
                 try {
                     slidePart = mainDocument.getRelatedPart(slidePRC.getRelationship(i));
-                } catch (InvalidFormatException e) {
+                } catch (InvalidFormatException | IllegalArgumentException e) {
                     metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
                 }
-                addSlideParts(slidePart, parts);
+                if (slidePart != null) {
+                    addSlideParts(slidePart, parts);
+                }
             }
         }
 
@@ -291,7 +293,8 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         for (String relation : new String[]{XSLFRelation.VML_DRAWING.getRelation(),
                 XSLFRelation.SLIDE_LAYOUT.getRelation(), XSLFRelation.NOTES_MASTER.getRelation(),
-                XSLFRelation.NOTES.getRelation()}) {
+                XSLFRelation.NOTES.getRelation(), XSLFRelation.CHART.getRelation(),
+                XSLFRelation.DIAGRAM_DRAWING.getRelation()}) {
             PackageRelationshipCollection prc = null;
             try {
                 prc = slidePart.getRelationshipsByType(relation);

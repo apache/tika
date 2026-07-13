@@ -62,7 +62,9 @@ public class SXSLFExtractorTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various2.pptx", parseContext);
 
-        assertEquals(14, metadataList.size(), "right number of attachments");
+        //15, not 14 -- the chart-backed workbook (Microsoft_Excel_Worksheet.xlsx) is reachable
+        //only via the CHART relation; this matches the DOM extractor's attachment set exactly
+        assertEquals(15, metadataList.size(), "right number of attachments");
 
         String mainContent = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
 

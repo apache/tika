@@ -175,7 +175,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     handlePart(header, xwpfListManager, sb);
                 }
             }
-        } catch (InvalidFormatException e) {
+        } catch (InvalidFormatException | IllegalArgumentException e) {
+            //getRelatedPart throws an unchecked IllegalArgumentException when the target
+            //part is missing -- common in truncated/damaged packages
             LOG.warn("Invalid format", e);
         }
 
@@ -229,7 +231,9 @@ public class XWPFEventBasedWordExtractor implements POIXMLTextExtractor {
                     hyperlinks.put(id, url);
                 }
             }
-        } catch (InvalidFormatException e) {
+        } catch (InvalidFormatException | IllegalArgumentException e) {
+            //getRelatedPart throws an unchecked IllegalArgumentException when the target
+            //part is missing -- common in truncated/damaged packages
             LOG.warn("Invalid format", e);
         }
         return hyperlinks;

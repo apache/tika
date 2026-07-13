@@ -71,11 +71,13 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
 
     //include all parts that might have embedded objects
+    //include all parts that might have embedded objects
     private final static String[] MAIN_PART_RELATIONS =
             new String[]{XWPFRelation.HEADER.getRelation(), XWPFRelation.FOOTER.getRelation(),
                     XWPFRelation.FOOTNOTE.getRelation(),
                     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/endnotes",
-                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments"};
+                    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
+                    AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA};
 
     // Relationship types for Word settings
     private static final String SETTINGS_RELATION =

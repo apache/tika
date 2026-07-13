@@ -660,7 +660,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                                 ExceptionUtils.getStackTrace(e));
                     }
-                } catch (InvalidFormatException e) {
+                } catch (InvalidFormatException | IllegalArgumentException e) {
+                    //getRelatedPart throws an unchecked IllegalArgumentException when the
+                    //target part is missing -- common in truncated/damaged packages.  Record
+                    //it and carry on so that one unreachable part does not abandon the
+                    //remaining slides/parts.
                     parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                             ExceptionUtils.getStackTrace(e));
                 }
