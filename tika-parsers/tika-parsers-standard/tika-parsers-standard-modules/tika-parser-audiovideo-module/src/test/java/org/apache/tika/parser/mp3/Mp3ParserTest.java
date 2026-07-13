@@ -19,6 +19,9 @@ package org.apache.tika.parser.mp3;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -26,6 +29,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.BodyContentHandler;
 
 /**
  * Test case for parsing mp3 files.
@@ -361,5 +366,55 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = getXML("testNakedUTF16BOM.mp3").metadata;
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", metadata.get(XMPDM.GENRE));
+    }
+
+    // each body used to abort the parse of readable audio (AIOOBE / SIOOBE / NPE)
+    @Test
+    public void testMalformedCommentFrameIsSkipped() throws Exception {
+        byte[][] bodies = {
+                new byte[0],                                  // empty body
+                new byte[]{1},                                // no language
+                new byte[]{0, 'e', 'n'},                      // truncated language
+                new byte[]{5, 'e', 'n', 'g', 'D', 'e', 's', 'c', 0, 'T'}, // 0x05 = unknown encoding
+                new byte[]{1, 'e', 'n', 'g', 0}               // ends before the double byte terminator
+        };
+        for (byte[] body : bodies) {
+            String name = "COMM body of length " + body.length;
+            Metadata metadata = new Metadata();
+            try (TikaInputStream tis = TikaInputStream.get(mp3WithFrame("COMM", body))) {
+                new Mp3Parser().parse(tis, new BodyContentHandler(-1), metadata, new ParseContext());
+            }
+            assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE), name);
+            // audio behind the broken tag is still read
+            assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE), name);
+        }
+    }
+
+    // wraps the audio of testMP3noid3.mp3 in an ID3v2.3 tag holding the single given frame
+    private byte[] mp3WithFrame(String frameId, byte[] body) throws Exception {
+        byte[] audio;
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testMP3noid3.mp3")) {
+            audio = tis.readAllBytes();
+        }
+
+        ByteArrayOutputStream frame = new ByteArrayOutputStream();
+        frame.write(frameId.getBytes(StandardCharsets.US_ASCII));
+        // ID3v2.3 frame sizes are plain 32 bit big endian
+        frame.write(new byte[]{(byte) (body.length >>> 24), (byte) (body.length >>> 16),
+                (byte) (body.length >>> 8), (byte) body.length});
+        frame.write(new byte[]{0, 0});
+        frame.write(body);
+        byte[] frames = frame.toByteArray();
+
+        ByteArrayOutputStream mp3 = new ByteArrayOutputStream();
+        mp3.write("ID3".getBytes(StandardCharsets.US_ASCII));
+        mp3.write(new byte[]{3, 0, 0});
+        // tag size is synchsafe (7 bits/byte), unlike the plain frame size above
+        int size = frames.length;
+        mp3.write(new byte[]{(byte) ((size >>> 21) & 0x7f), (byte) ((size >>> 14) & 0x7f),
+                (byte) ((size >>> 7) & 0x7f), (byte) (size & 0x7f)});
+        mp3.write(frames);
+        mp3.write(audio);
+        return mp3.toByteArray();
     }
 }

@@ -71,9 +71,13 @@ public class ID3v22Handler implements ID3Tags {
                 case "TCR":
                     copyright = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "COM":
-                    comments.add(getComment(tag.data, 0, tag.data.length));
+                case "COM": {
+                    ID3Comment comment = getComment(tag.data, 0, tag.data.length);
+                    if (comment != null) {
+                        comments.add(comment);
+                    }
                     break;
+                }
                 case "TRK":
                     trackNumber = getTagString(tag.data, 0, tag.data.length);
                     break;
