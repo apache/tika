@@ -127,26 +127,15 @@ public interface TIFF {
 
     Property EXIF_PAGE_COUNT = Property.externalInteger("exif:PageCount");
 
-    /**
-     * Serial number of the camera body that captured the image
-     * (Adobe {@code aux:} camera-raw schema).
-     */
+    /** Camera-body serial number. */
     Property SERIAL_NUMBER = Property.internalText("aux:SerialNumber");
 
-    /**
-     * Human-readable description of the lens used, e.g. "70-200mm f/2.8"
-     * (Adobe {@code aux:} camera-raw schema).
-     */
+    /** Human-readable lens description, e.g. "70-200mm f/2.8". */
     Property LENS = Property.internalText("aux:Lens");
 
-    /**
-     * Lens specification (min/max focal length and aperture)
-     * (Adobe {@code aux:} camera-raw schema).
-     */
+    /** Lens spec: min/max focal length and aperture. */
     Property LENS_INFO = Property.internalText("aux:LensInfo");
 
-    /**
-     * Numeric identifier of the lens (Adobe {@code aux:} camera-raw schema).
-     */
+    /** Numeric lens identifier. */
     Property LENS_ID = Property.internalText("aux:LensID");
 }

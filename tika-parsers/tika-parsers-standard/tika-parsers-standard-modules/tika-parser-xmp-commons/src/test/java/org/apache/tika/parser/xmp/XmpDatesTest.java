@@ -61,4 +61,14 @@ public class XmpDatesTest {
         assertNull(XmpDates.normalize(""));
         assertNull(XmpDates.normalize(null));
     }
+
+    /**
+     * A partial date (YYYY, YYYY-MM) inflates to a full timestamp; exact-equality (not assertNotNull)
+     * pins that fabricated precision so the value-representation fix trips this test.
+     */
+    @Test
+    public void testPartialDatesInflateToFullTimestamp() {
+        assertEquals("2019-01-01T00:00:00Z", XmpDates.normalize("2019"));
+        assertEquals("2019-06-01T00:00:00Z", XmpDates.normalize("2019-06"));
+    }
 }

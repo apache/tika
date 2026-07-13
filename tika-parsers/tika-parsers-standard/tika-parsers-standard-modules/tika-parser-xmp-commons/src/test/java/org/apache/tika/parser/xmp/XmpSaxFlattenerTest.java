@@ -109,11 +109,47 @@ public class XmpSaxFlattenerTest {
     @Test
     public void testToolkitAndAboutDropped() throws Exception {
         List<XmpProperty> l = flatten();
-        // x:xmptk (adobe:ns:meta/) and rdf:about are not properties
+        // x:xmptk (adobe:ns:meta/) and the empty rdf:about are not emitted as leaves
         assertNull(get(l, "x:xmptk"));
         for (XmpProperty p : l) {
             assertTrue(!p.path.contains("xmptk") && !p.path.contains("about"),
                     "unexpected leaf: " + p);
         }
+    }
+
+    /** Over-cap leaves are dropped so a hostile packet can't produce a giant key or value. */
+    @Test
+    public void testOverlongPathAndValueDropped() throws Exception {
+        String longName = "a".repeat(600);                // path > MAX_PATH (512)
+        String bigValue = "v".repeat((1 << 20) + 64);     // value > MAX_VALUE (1 MB)
+        String packet =
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:foo='http://ns.example.com/foo/1.0/'><rdf:Description rdf:about=''>"
+              + "<foo:" + longName + ">x</foo:" + longName + ">"
+              + "<foo:blob>" + bigValue + "</foo:blob>"
+              + "<foo:ok>fine</foo:ok>"
+              + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        List<XmpProperty> leaves = new XmpSaxFlattener().flatten(packet.getBytes(UTF_8));
+        assertEquals("fine", get(leaves, "foo:ok"));   // normal leaf survives
+        assertNull(get(leaves, "foo:blob"));           // bloated value dropped
+        for (XmpProperty p : leaves) {
+            assertTrue(p.path.length() <= 512, "overlong path leaked");
+        }
+    }
+
+    /** The flattener caps its leaf list (MAX_LEAVES) so a hostile packet can't inflate metadata. */
+    @Test
+    public void testLeafListIsCapped() throws Exception {
+        StringBuilder sb = new StringBuilder(
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:ev='http://evil.example/'><rdf:Description rdf:about=''>");
+        for (int i = 0; i < 60000; i++) {
+            sb.append("<ev:p>v</ev:p>");
+        }
+        sb.append("</rdf:Description></rdf:RDF></x:xmpmeta>");
+        List<XmpProperty> leaves = new XmpSaxFlattener().flatten(sb.toString().getBytes(UTF_8));
+        assertEquals(50000, leaves.size());   // capped at MAX_LEAVES, not 60000
     }
 }

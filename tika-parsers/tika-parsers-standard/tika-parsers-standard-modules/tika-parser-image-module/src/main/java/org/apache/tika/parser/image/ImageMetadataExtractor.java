@@ -124,8 +124,7 @@ public class ImageMetadataExtractor {
         return s;
     }
 
-    // metadata-extractor's ALL_READERS minus XmpReader: Tika parses XMP itself (XmpExtractor),
-    // so skipping the xmpcore XMP parse here avoids parsing the JPEG's XMP twice.
+    // ALL_READERS minus XmpReader: Tika parses XMP itself, avoiding a double XMP parse.
     private static final List<JpegSegmentMetadataReader> JPEG_READERS_NO_XMP = Arrays.asList(
             new JpegReader(), new JpegCommentReader(), new JfifReader(), new JfxxReader(),
             new ExifReader(), new IccReader(), new PhotoshopReader(), new DuckyReader(),
@@ -597,8 +596,7 @@ public class ImageMetadataExtractor {
                     metadata.add(TikaCoreProperties.SUBJECT, k);
                 }
             }
-            // IPTC is a fallback: XMP runs first and is canonical, so only fill these when
-            // XMP did not already provide them (matches the long-standing XMP-wins behavior).
+            // IPTC fallback: XMP is canonical, so only fill what XMP left unset (XMP wins).
             if (metadata.get(TikaCoreProperties.TITLE) == null) {
                 if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
                     metadata.set(TikaCoreProperties.TITLE,

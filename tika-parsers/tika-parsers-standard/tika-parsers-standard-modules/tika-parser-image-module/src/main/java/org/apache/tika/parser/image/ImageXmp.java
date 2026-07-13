@@ -40,9 +40,8 @@ import org.apache.tika.parser.xmp.XMPPacketScanner;
 import org.apache.tika.parser.xmp.XmpExtractor;
 
 /**
- * Image XMP extraction via the shared {@link XmpExtractor} (replaces xmpcore + jempbox here).
- * XMP is auxiliary: a malformed or unreadable packet is recorded on the metadata and swallowed
- * so it never fails the whole image parse (matches the PDF module's handling).
+ * Image XMP via the shared {@link XmpExtractor}. XMP is auxiliary: a bad packet is recorded and
+ * swallowed so it never fails the image parse (matches the PDF module).
  */
 final class ImageXmp {
 

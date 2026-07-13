@@ -28,11 +28,10 @@ import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
 
 /**
- * Reassembles a large XMP packet that a JPEG splits across multiple APP1 segments
- * ("Extended XMP", XMP Spec Part 3). The chunk stitching is borrowed almost verbatim
- * from metadata-extractor's {@code XmpReader} (Apache License 2.0, Drew Noakes); the
- * only change is that we find the GUID by scanning the standard packet instead of via
- * xmpcore, since Tika parses the XMP itself.
+ * Reassembles a large XMP packet split across JPEG APP1 segments ("Extended XMP", XMP Part 3).
+ * Chunk stitching is borrowed almost verbatim from metadata-extractor's {@code XmpReader}
+ * (Apache 2.0, Drew Noakes); we find the GUID by scanning the standard packet since Tika parses
+ * the XMP itself.
  */
 final class ExtendedXmp {
 

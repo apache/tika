@@ -40,7 +40,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class PDMetadataExtractor {
 
-    /** Parse a PDF's XMP packet into metadata via the shared, container-agnostic {@link XmpExtractor}. */
+    /** Parse a PDF's XMP packet via the shared {@link XmpExtractor}. */
     public static void extract(PDMetadata pdMetadata, Metadata metadata, ParseContext context) {
         if (pdMetadata == null) {
             metadata.set(PDF.HAS_XMP, "false");

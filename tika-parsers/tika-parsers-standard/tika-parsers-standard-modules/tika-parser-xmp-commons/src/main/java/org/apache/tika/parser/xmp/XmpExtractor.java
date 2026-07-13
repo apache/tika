@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 
 import org.xml.sax.SAXException;
 
@@ -71,13 +72,14 @@ public class XmpExtractor {
     private static final Map<String, Property> FILL_IF_ABSENT = new HashMap<>();
     // "uri localName" keys that are neither mapped nor passed through as raw (known junk/bloat)
     private static final Set<String> DROP = new HashSet<>();
-    // Unmapped XMP is exposed under this prefix so raw, untrusted keys can never shadow a known
-    // Tika field or an X-TIKA: control key.
+    // Unmapped XMP goes under this prefix so raw, untrusted keys can't shadow a known Tika or
+    // X-TIKA: field. Best-effort discovery surface: keys use the document's prefix (not the URI)
+    // and are non-contractual -- promote a field into TABLE when it needs a stable key.
     static final String RAW_PREFIX = "xmp-raw:";
+    // strip a trailing array index so a raw bag/seq is one multi-valued key, not foo:Bag[1], foo:Bag[2]
+    private static final Pattern TRAILING_INDEX = Pattern.compile("\\[\\d+\\]$");
 
-    // xmpMM:History parallel bags, in a fixed order: each event contributes one value to every bag
-    // that occurs (padding "" for a field it lacks) so HISTORY_ACTION[i] stays aligned with
-    // HISTORY_WHEN[i] etc.
+    // History parallel bags, fixed order; emitHistory pads absent fields so bag[i] stays aligned.
     private static final Property[] HISTORY_PROPS = {
             XMPMM.HISTORY_ACTION, XMPMM.HISTORY_WHEN, XMPMM.HISTORY_EVENT_INSTANCEID,
             XMPMM.HISTORY_SOFTWARE_AGENT, XMPMM.HISTORY_CHANGED, XMPMM.HISTORY_PARAMETERS,
@@ -98,9 +100,8 @@ public class XmpExtractor {
         put(dc, "publisher", DublinCore.PUBLISHER, XMPDC.PUBLISHER);
         put(dc, "contributor", DublinCore.CONTRIBUTOR, XMPDC.CONTRIBUTOR);
         put(dc, "type", DublinCore.TYPE, XMPDC.TYPE);
-        // dc:format and dc:date map to the xmp-namespaced key only: the canonical FORMAT holds the
-        // real MIME type, and dc:date is an ambiguous date bag. The unambiguous xmp:CreateDate /
-        // ModifyDate fill the canonical created/modified instead (set-if-absent, below).
+        // dc:format/dc:date -> xmp key only: canonical FORMAT is the real MIME type, dc:date is
+        // ambiguous; the unambiguous xmp:CreateDate/ModifyDate fill canonical created/modified below.
         put(dc, "format", XMPDC.FORMAT);
         put(dc, "identifier", DublinCore.IDENTIFIER, XMPDC.IDENTIFIER);
         put(dc, "language", DublinCore.LANGUAGE, XMPDC.LANGUAGE);
@@ -121,6 +122,8 @@ public class XmpExtractor {
         put(xmp, "Nickname", XMP.NICKNAME);
         put(xmp, "Identifier", XMP.IDENTIFIER);
         put(xmp, "Advisory", XMP.ADVISORY);
+        // rdf:about (the packet's document URI) -> xmp:About; flattener emits it only when non-empty
+        put(XmpSaxFlattener.RDF, "about", XMP.ABOUT);
 
         String mm = XMPMM.NAMESPACE_URI;
         put(mm, "DocumentID", XMPMM.DOCUMENTID);
@@ -141,8 +144,7 @@ public class XmpExtractor {
         put(rights, "Owner", XMPRights.OWNER);
         put(rights, "Certificate", XMPRights.CERTIFICATE);
 
-        // Promoted from raw passthrough (top xmp-raw keys over the wild-XMP corpus). Each of these
-        // namespaces is XMP-exclusive, so a single canonical key (no xmp-marker) is enough.
+        // Promoted from raw passthrough; these namespaces are XMP-exclusive, so one canonical key suffices.
         String ps = Photoshop.NAMESPACE_URI_PHOTOSHOP;
         put(ps, "ColorMode", Photoshop.COLOR_MODE);
         put(ps, "ICCProfile", Photoshop.ICC_PROFILE);
@@ -150,13 +152,10 @@ public class XmpExtractor {
         put("http://ns.adobe.com/xap/1.0/t/pg/", "NPages", PagedText.N_PAGES);
         put(pdf, "Trapped", PDF.TRAPPED);
 
-        // Camera/EXIF/TIFF metadata -> the shared TIFF interface (which already declares these with
-        // exif:/tiff: keys). tiff:/exif: are double-keyed: the canonical TIFF key can also arrive
-        // from binary EXIF (which wins it, being extracted after XMP and overwriting), so an
-        // XMP-marked XMPTIFF key preserves the XMP provenance. aux: has no binary source, so its
-        // aux: key is already unambiguously XMP -> single-key. Rational fields (ExposureTime/FNumber/
-        // FocalLength/X-YResolution), ResolutionUnit, exif:Flash and exif:Pixel*Dimension are left
-        // raw pending value normalization.
+        // Camera/EXIF/TIFF -> shared TIFF interface. tiff:/exif: double-keyed: the canonical key may
+        // also come from binary EXIF (extracted later, so it wins); the XMPTIFF key keeps XMP
+        // provenance. aux: is XMP-only -> single key. Rationals/ResolutionUnit/Flash stay raw pending
+        // value normalization.
         String aux = "http://ns.adobe.com/exif/1.0/aux/";
         put(aux, "SerialNumber", TIFF.SERIAL_NUMBER);
         put(aux, "Lens", TIFF.LENS);
@@ -174,8 +173,7 @@ public class XmpExtractor {
         String exif = "http://ns.adobe.com/exif/1.0/";
         put(exif, "DateTimeOriginal", TIFF.ORIGINAL_DATE, XMPTIFF.ORIGINAL_DATE);
         put(exif, "ISOSpeedRatings", TIFF.ISO_SPEED_RATINGS, XMPTIFF.ISO_SPEED_RATINGS);
-        // exif:Pixel*Dimension is the valid image size; binary EXIF already funnels it to the same
-        // IMAGE_WIDTH/LENGTH canonical, so this just matches that (integers -> no format question).
+        // exif:Pixel*Dimension -> same IMAGE_WIDTH/LENGTH as binary EXIF (integers, no format question).
         put(exif, "PixelXDimension", TIFF.IMAGE_WIDTH, XMPTIFF.PIXEL_X_DIMENSION);
         put(exif, "PixelYDimension", TIFF.IMAGE_LENGTH, XMPTIFF.PIXEL_Y_DIMENSION);
 
@@ -210,23 +208,18 @@ public class XmpExtractor {
         GOOGLE_CAMERA.put("MicroVideoOffset", Google.MICRO_VIDEO_OFFSET);
         GOOGLE_CAMERA.put("MicroVideoPresentationTimestampUs", Google.MICRO_VIDEO_PRESENTATION_TIMESTAMP_US);
 
-        // xmp:CreateDate/ModifyDate are the standard XMP dates; besides their own xmp-namespaced
-        // keys they fill dcterms:created/modified set-if-absent, so an XMP-only file (no docinfo
-        // or binary EXIF date) is not left dateless. When the photoshop:/exif: namespaces are
-        // promoted, photoshop:DateCreated and exif:DateTimeOriginal belong here as fallbacks.
+        // Standard XMP dates fill dcterms:created/modified set-if-absent, so an XMP-only file (no
+        // docinfo or binary EXIF date) isn't left dateless; photoshop:/exif: dates are fallbacks.
         FILL_IF_ABSENT.put(xmp + " CreateDate", TikaCoreProperties.CREATED);
         FILL_IF_ABSENT.put(xmp + " ModifyDate", TikaCoreProperties.MODIFIED);
         FILL_IF_ABSENT.put(ps + " DateCreated", TikaCoreProperties.CREATED);      // fallback creation date
         FILL_IF_ABSENT.put(exif + " DateTimeOriginal", TikaCoreProperties.CREATED);
 
-        // tiff/exif:NativeDigest is Adobe's internal check that the XMP is still in sync with the
-        // legacy EXIF/TIFF block (a tag-id list + MD5); meaningless to consumers -> drop.
+        // NativeDigest is Adobe's XMP<->legacy-EXIF/TIFF sync check (tag-ids + MD5); useless to consumers.
         DROP.add("http://ns.adobe.com/tiff/1.0/ NativeDigest");
         DROP.add("http://ns.adobe.com/exif/1.0/ NativeDigest");
-        // TODO: the thumbnail is a base64-encoded JPEG; route it through embedded-document
-        // extraction instead of discarding the bytes. For now drop the blob (it bloats every
-        // metadata dump) but keep its xmpGImg:width/height/format siblings so the thumbnail's
-        // existence stays visible.
+        // TODO: base64 JPEG thumbnail -> route through embedded-doc extraction. For now drop the blob
+        // (it bloats every dump) but keep the xmpGImg:width/height/format siblings so it stays visible.
         DROP.add("http://ns.adobe.com/xap/1.0/g/img/ image");
     }
 
@@ -258,8 +251,7 @@ public class XmpExtractor {
     }
 
     private void map(List<XmpProperty> props, Metadata metadata) {
-        // History and language-alternative (rdf:Alt) properties are handled as groups so the
-        // parallel History bags stay index-aligned and an Alt's canonical value is its x-default;
+        // History and rdf:Alt lang sets are handled as groups (aligned bags; Alt canonical = x-default);
         // everything else streams one leaf at a time.
         emitHistory(props, metadata);
         emitLangAlternatives(props, metadata);
@@ -357,8 +349,16 @@ public class XmpExtractor {
             String primaryValue = valueDecoder.apply(primary.value);
             for (Property prop : TABLE.get(e.getKey())) {
                 if (prop.isMultiValuePermitted()) {
-                    // a text bag keeps every language on the canonical key (TIKA-1295 / TIKA-4466)
+                    // a text bag keeps every language on the canonical key (TIKA-1295 / TIKA-4466),
+                    // but x-default leads so metadata.get(prop) -- which returns values[0] -- yields
+                    // the default, not whatever language the packet happened to list first.
+                    if (primaryValue != null && !primaryValue.isEmpty()) {
+                        emit(metadata, prop, primaryValue);
+                    }
                     for (XmpProperty a : alts) {
+                        if (a == primary) {
+                            continue;
+                        }
                         String v = valueDecoder.apply(a.value);
                         if (v != null && !v.isEmpty()) {
                             emit(metadata, prop, v);
@@ -408,10 +408,9 @@ public class XmpExtractor {
                 return;
             }
         }
-        // Map a flat (uri, localName) property only at the top level of rdf:Description; one nested
-        // in a struct (e.g. xmpMM:InstanceID inside xmpMM:Pantry/Ingredients) must not overwrite the
-        // document-level property. Struct segments are joined with '/', array indices are not, so a
-        // top-level property has no '/'. Nested matches fall through to raw passthrough instead.
+        // Map (uri, localName) only at the top level: a property nested in a struct (e.g. xmpMM:InstanceID
+        // inside xmpMM:Pantry) must not overwrite the document-level one. Struct segments join with '/',
+        // array indices don't, so top-level has no '/'; nested falls through to raw passthrough.
         boolean topLevel = p.path.indexOf('/') < 0;
         Property fill = FILL_IF_ABSENT.get(uri + " " + ln);
         if (topLevel && fill != null && metadata.get(fill) == null) {
@@ -425,7 +424,8 @@ public class XmpExtractor {
             }
             return;
         }
-        metadata.add(RAW_PREFIX + p.path, value);   // unmapped: namespaced raw passthrough
+        // unmapped: namespaced raw passthrough; a trailing array index collapses to a multi-valued key
+        metadata.add(RAW_PREFIX + TRAILING_INDEX.matcher(p.path).replaceFirst(""), value);
     }
 
     private void emit(Metadata metadata, Property prop, String value) {

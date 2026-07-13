@@ -243,7 +243,10 @@ public class XmpExtractorTest {
                 + "</rdf:Description></rdf:RDF></x:xmpmeta>";
         Metadata md = new Metadata();
         new XmpExtractor().extract(packet.getBytes(UTF_8), md);
-        assertArrayEquals(new String[]{"Bonjour", "Hello", "Hola"}, md.getValues(TikaCoreProperties.TITLE));
+        // x-default ("Hello") leads the bag even though it is listed second in the packet, so
+        // metadata.get(TITLE) (== values[0]) is the default; the rest follow in document order.
+        assertArrayEquals(new String[]{"Hello", "Bonjour", "Hola"}, md.getValues(TikaCoreProperties.TITLE));
+        assertEquals("Hello", md.get(TikaCoreProperties.TITLE));
         assertEquals("Bonjour", md.get("dc:title:fr"));
         assertEquals("Hello", md.get("dc:title:x-default"));
         assertEquals("Hola", md.get("dc:title:es"));
@@ -367,6 +370,35 @@ public class XmpExtractorTest {
         assertEquals("ok", md.get("xmp-raw:ev:harmless"));
     }
 
+    /**
+     * A raw (unmapped) bag collapses to one multi-valued xmp-raw key; interior indices in an
+     * array-of-structs are kept so element fields stay distinguishable.
+     */
+    @Test
+    public void testRawArrayKeys() throws Exception {
+        String packet =
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:foo='http://ns.example.com/foo/1.0/'>"
+              + "<rdf:Description rdf:about=''>"
+              + "<foo:Tags><rdf:Bag>"
+              + "<rdf:li>alpha</rdf:li><rdf:li>beta</rdf:li><rdf:li>gamma</rdf:li>"
+              + "</rdf:Bag></foo:Tags>"
+              + "<foo:Events><rdf:Seq>"
+              + "<rdf:li rdf:parseType='Resource'><foo:name>e1</foo:name></rdf:li>"
+              + "<rdf:li rdf:parseType='Resource'><foo:name>e2</foo:name></rdf:li>"
+              + "</rdf:Seq></foo:Events>"
+              + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        // bag -> one multi-valued key, no per-index keys
+        assertArrayEquals(new String[]{"alpha", "beta", "gamma"}, md.getValues("xmp-raw:foo:Tags"));
+        assertNull(md.get("xmp-raw:foo:Tags[1]"));
+        // array-of-structs -> interior indices preserved so e1/e2 stay separate
+        assertEquals("e1", md.get("xmp-raw:foo:Events[1]/foo:name"));
+        assertEquals("e2", md.get("xmp-raw:foo:Events[2]/foo:name"));
+    }
+
     /** Option A: dc values land in both the canonical and the xmp-namespaced property. */
     @Test
     public void testDoubleKeying() {
@@ -390,5 +422,62 @@ public class XmpExtractorTest {
         assertEquals("Hello World", md.get("dc:title:x-default"));
         assertEquals("Bonjour World", md.get("dc:title:fr-ca"));
         assertEquals("Bonjour World", md.get("xmp:dc:title:fr-ca"));   // Option A: xmp-namespaced too
+    }
+
+    /** xmpMM:History is capped (MAX_HISTORY_EVENTS) so a hostile packet can't inflate metadata. */
+    @Test
+    public void testHistoryEventsAreCapped() throws Exception {
+        StringBuilder sb = new StringBuilder(
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:xmpMM='http://ns.adobe.com/xap/1.0/mm/'"
+              + "         xmlns:stEvt='http://ns.adobe.com/xap/1.0/sType/ResourceEvent#'>"
+              + "<rdf:Description rdf:about=''><xmpMM:History><rdf:Seq>");
+        for (int i = 0; i < 1100; i++) {
+            sb.append("<rdf:li rdf:parseType='Resource'><stEvt:action>saved</stEvt:action></rdf:li>");
+        }
+        sb.append("</rdf:Seq></xmpMM:History></rdf:Description></rdf:RDF></x:xmpmeta>");
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(sb.toString().getBytes(UTF_8), md);
+        assertEquals(1024, md.getValues(XMPMM.HISTORY_ACTION).length);   // capped, not 1100
+    }
+
+    /** rdf:about is populated to xmp:About when non-empty, and skipped when empty. */
+    @Test
+    public void testRdfAboutMapsToXmpAbout() throws Exception {
+        String withAbout =
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+              + "<rdf:Description rdf:about='uuid:doc-42' xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+              + "<dc:format>application/pdf</dc:format>"
+              + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(withAbout.getBytes(UTF_8), md);
+        assertEquals("uuid:doc-42", md.get(XMP.ABOUT));
+
+        Metadata md2 = new Metadata();
+        new XmpExtractor().extract(withAbout.replace("uuid:doc-42", "").getBytes(UTF_8), md2);
+        assertNull(md2.get(XMP.ABOUT), "empty rdf:about must not be recorded");
+    }
+
+    /** Two rdf:RDF blocks in one packet are both processed. */
+    @Test
+    public void testMultipleRdfBlocks() throws Exception {
+        String packet =
+                "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+              + "<rdf:Description rdf:about=''>"
+              + "<dc:title><rdf:Alt><rdf:li xml:lang='x-default'>First Block</rdf:li></rdf:Alt></dc:title>"
+              + "</rdf:Description></rdf:RDF>"
+              + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'"
+              + "         xmlns:dc='http://purl.org/dc/elements/1.1/'>"
+              + "<rdf:Description rdf:about=''>"
+              + "<dc:creator><rdf:Seq><rdf:li>Second Block</rdf:li></rdf:Seq></dc:creator>"
+              + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(packet.getBytes(UTF_8), md);
+        assertEquals("First Block", md.get(TikaCoreProperties.TITLE));
+        assertEquals("Second Block", md.get(TikaCoreProperties.CREATOR));
     }
 }

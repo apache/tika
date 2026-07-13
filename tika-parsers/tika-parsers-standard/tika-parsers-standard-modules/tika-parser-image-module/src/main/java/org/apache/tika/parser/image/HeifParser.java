@@ -57,11 +57,11 @@ public class HeifParser extends AbstractImageParser {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             File file = tis.getFile();   // spool so the file can be re-read below
             // XMP first so it is canonical; metadata-extractor (EXIF/GPS) fills gaps.
-            // HEIF XMP is an application/rdf+xml item that is xpacket-wrapped in practice
-            // (iPhone/Adobe), so the shared packet scanner finds it; if it is not wrapped,
-            // fall back to locating the item via the meta/iinf/iloc boxes.
-            if (!ImageXmp.scanAndExtract(tis, metadata, parseContext)) {
-                HeifXmp.extract(file, metadata, parseContext);
+            // Locate the XMP item precisely via meta/iinf/iloc first, so an embedded resource's XMP
+            // (e.g. a motion-photo video in mdat) can't be attributed to the image; fall back to the
+            // byte scanner for packets not reachable through the boxes.
+            if (!HeifXmp.extract(file, metadata, parseContext)) {
+                ImageXmp.scanAndExtract(tis, metadata, parseContext);
             }
             try (InputStream heif = Files.newInputStream(file.toPath())) {
                 new ImageMetadataExtractor(metadata).parseHeif(heif);

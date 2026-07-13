@@ -54,15 +54,16 @@ public final class XmpSaxFlattener {
     public List<XmpProperty> flatten(InputStream packet, ParseContext context)
             throws IOException, TikaException, SAXException {
         Handler h = new Handler();
-        // Tika's hardened, pooled path (secure factory + entity-expansion cap +
-        // OfflineContentHandler). CloseShield so it can't close a stream we don't own.
+        // hardened pooled SAX (secure factory + entity cap + OfflineContentHandler); CloseShield the stream
         XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(packet), h, context);
         return h.out;
     }
 
     private static final class Handler extends DefaultHandler {
-        // Cap the leaf list so a hostile packet (millions of elements) can't inflate metadata.
+        // Caps so a hostile packet can't inflate metadata: leaf count, key/path length, value length.
         static final int MAX_LEAVES = 50_000;
+        static final int MAX_PATH = 512;
+        static final int MAX_VALUE = 1 << 20;   // 1 MB
         final List<XmpProperty> out = new ArrayList<>();
         final ArrayDeque<String> segs = new ArrayDeque<>();
         final ArrayDeque<String> uris = new ArrayDeque<>();     // leaf/property namespace per frame
@@ -77,9 +78,11 @@ public final class XmpSaxFlattener {
         }
 
         void add(XmpProperty p) {
-            if (out.size() < MAX_LEAVES) {
-                out.add(p);
+            if (out.size() >= MAX_LEAVES || p.path.length() > MAX_PATH
+                    || (p.value != null && p.value.length() > MAX_VALUE)) {
+                return;   // drop over-cap leaves: count / absurd key / bloated value
             }
+            out.add(p);
         }
 
         String path() {
@@ -174,6 +177,8 @@ public final class XmpSaxFlattener {
                 if (RDF.equals(au)) {
                     if (al.equals("resource")) {
                         add(new XmpProperty(uris.isEmpty() ? "" : uris.peek(), base, v));
+                    } else if (al.equals("about")) {   // empty rdf:about already skipped above
+                        add(new XmpProperty(RDF, base.isEmpty() ? "rdf:about" : base + "/rdf:about", v));
                     }
                     continue;
                 }

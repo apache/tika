@@ -114,7 +114,6 @@ public class WebPXmpTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/webp");
         try (TikaInputStream tis = TikaInputStream.get(file)) {
-            // must not throw; the XMP failure is recorded on the metadata instead
             new WebPParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
         assertNull(metadata.get(TikaCoreProperties.TITLE));

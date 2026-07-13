@@ -42,13 +42,12 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xmp.XmpExtractor;
 
 /**
- * HEIF/HEIC XMP fallback for packets that are <em>not</em> {@code <?xpacket?>}-wrapped, which
- * the byte scanner ({@link ImageXmp#scanAndExtract}) cannot find. XMP is stored as a
- * {@code mime}/{@code application/rdf+xml} item located through the ISO-BMFF
- * {@code meta}/{@code iinf}/{@code iloc} boxes. The box parsing reuses metadata-extractor's
- * public box classes (it already reads the Exif item the same way); only the top-level box
- * walk is ours. metadata-extractor exposes no content-type getter, so a {@code mime} item is
- * confirmed by sniffing its bytes for XMP markers before parsing.
+ * HEIF/HEIC XMP fallback for packets that are <em>not</em> {@code <?xpacket?>}-wrapped (the byte
+ * scanner {@link ImageXmp#scanAndExtract} can't find those). XMP is a
+ * {@code mime}/{@code application/rdf+xml} item located via the ISO-BMFF
+ * {@code meta}/{@code iinf}/{@code iloc} boxes, parsed with metadata-extractor's box classes; only
+ * the top-level box walk is ours. No content-type getter exists, so a mime item is confirmed by
+ * sniffing its bytes for XMP markers.
  */
 final class HeifXmp {
 
@@ -162,12 +161,10 @@ final class HeifXmp {
 
     private static byte[] readExtents(RandomAccessFile raf, List<Extent> extents, long fileLen)
             throws IOException {
-        // Extent.getOffset() is treated as an absolute file offset: iloc construction_method 0,
-        // which every real XMP item uses. Methods 1/2 (idat-/item-relative) are not resolved here
-        // -- the same limitation as metadata-extractor's own Exif-item reader -- but that is a safe
-        // miss, not a fault: a wrong offset either fails the bounds check below or yields bytes that
-        // looksLikeXmp() rejects, so the item is skipped, never read as garbage or thrown. Resolve
-        // the base offset here only if a real method-1/2 XMP file ever turns up.
+        // Extent.getOffset() is an absolute file offset (iloc construction_method 0, which every real
+        // XMP item uses). Methods 1/2 aren't resolved -- like metadata-extractor's Exif reader -- but
+        // that's a safe miss: a wrong offset fails the bounds check or yields bytes looksLikeXmp()
+        // rejects, so the item is skipped. Resolve the base offset if a real method-1/2 file appears.
         long total = 0;
         for (Extent e : extents) {
             if (e.getOffset() < 0 || e.getLength() < 0 || e.getOffset() + e.getLength() > fileLen) {

@@ -60,8 +60,7 @@ public class CustomTikaXMPTest extends TikaTest {
     public void testPDFUA() throws Exception {
         Metadata metadata = extract("testPDFUA.xmp");
         assertEquals(1, metadata.getInt(PDF.PDFUAID_PART));
-        // keywords (pdf:Keywords via the Office.KEYWORDS composite) and subject (dc:subject) both
-        // land in SUBJECT; presence is the contract, order is not.
+        // keywords and subject both land in SUBJECT; presence is the contract, order is not.
         List<String> subjects = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
         assertEquals(2, subjects.size());
         assertTrue(subjects.contains("keywords"), "keywords in SUBJECT");

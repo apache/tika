@@ -18,12 +18,12 @@ package org.apache.tika.metadata;
 
 /**
  * Metadata keys for values that derive strictly from the XMP {@code tiff:} / {@code exif:}
- * schemas. This mirrors {@link TIFF}: Tika folds those values into the canonical {@link TIFF}
- * keys, where they can also arrive from another source (e.g. binary EXIF). These parallel keys
- * preserve the provenance so a consumer can tell an XMP-sourced value apart from a binary one.
+ * schemas, mirroring {@link TIFF}. Tika folds these into the canonical {@link TIFF} keys, where
+ * the same value can also arrive from binary EXIF; these parallel keys preserve provenance so a
+ * consumer can distinguish an XMP-sourced value from a binary one.
  * <p>
- * Same pattern as {@link XMPDC} for Dublin Core. Deliberately not implemented by
- * {@link Metadata}; reference it directly.
+ * Same pattern as {@link XMPDC}. Deliberately not implemented by {@link Metadata}; reference it
+ * directly.
  */
 public interface XMPTIFF {
 
@@ -60,11 +60,11 @@ public interface XMPTIFF {
     Property ISO_SPEED_RATINGS = Property.internalIntegerSequence(
             PREFIX_EXIF + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "IsoSpeedRatings");
 
-    /** The valid image width; folded into the canonical {@link TIFF#IMAGE_WIDTH}. */
+    /** Valid image width; folded into canonical {@link TIFF#IMAGE_WIDTH}. */
     Property PIXEL_X_DIMENSION = Property.internalInteger(
             PREFIX_EXIF + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PixelXDimension");
 
-    /** The valid image height; folded into the canonical {@link TIFF#IMAGE_LENGTH}. */
+    /** Valid image height; folded into canonical {@link TIFF#IMAGE_LENGTH}. */
     Property PIXEL_Y_DIMENSION = Property.internalInteger(
             PREFIX_EXIF + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "PixelYDimension");
 }

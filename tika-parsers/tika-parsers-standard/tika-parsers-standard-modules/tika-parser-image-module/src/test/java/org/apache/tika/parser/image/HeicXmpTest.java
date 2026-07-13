@@ -34,10 +34,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * HEIF/HEIC stores XMP as an {@code application/rdf+xml} item, but in practice (iPhone,
- * Adobe) it is {@code <?xpacket?>}-wrapped, so the shared packet scanner extracts it — the
- * same path used for TIFF/PSD/JXL. metadata-extractor never read HEIF XMP, so this had
- * always been dropped. The fixture is a minimal, hand-built HEIC (no corpus binary).
+ * HEIF/HEIC XMP was always dropped — metadata-extractor never read it. Stored as an
+ * {@code application/rdf+xml} item but usually {@code <?xpacket?>}-wrapped, so the shared packet
+ * scanner catches it (same path as TIFF/PSD/JXL). Fixture is a hand-built HEIC, no corpus binary.
  */
 public class HeicXmpTest {
 

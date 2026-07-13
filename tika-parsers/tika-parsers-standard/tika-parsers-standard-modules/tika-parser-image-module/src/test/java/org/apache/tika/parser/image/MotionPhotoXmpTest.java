@@ -48,7 +48,7 @@ public class MotionPhotoXmpTest extends TikaTest {
         assertEquals("1", metadata.get("Camera:MotionPhoto"));
         assertEquals("1", metadata.get("Camera:MotionPhotoVersion"));
         assertEquals("500000", metadata.get("Camera:MotionPhotoPresentationTimestampUs"));
-        // the camera scalars are also reachable through the declared, typed property
+        // also reachable through the declared, typed property
         assertEquals("1", metadata.get(Google.MOTION_PHOTO));
         // The embedded video item (its byte length lets a client range-fetch the
         // video without downloading the whole file) is exposed too.

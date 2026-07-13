@@ -17,15 +17,14 @@
 package org.apache.tika.metadata;
 
 /**
- * Properties from the Google Photos XMP namespaces used by Motion Photos and the
- * legacy MicroVideo format. See
- * <a href="https://developer.android.com/media/platform/motion-photo-format">the
- * Motion Photo format</a>.
+ * Properties from the Google Photos XMP namespaces used by Motion Photos and the legacy
+ * MicroVideo format. See
+ * <a href="https://developer.android.com/media/platform/motion-photo-format">the Motion Photo
+ * format</a>.
  * <p>
- * The camera namespace is declared with either the {@code Camera} (current) or
- * {@code GCamera} (legacy) prefix depending on the file, but the namespace URI is
- * the same. The image XMP handler maps these by URI so the keys below are stable
- * regardless of the prefix the file happens to use.
+ * Files use the {@code Camera} (current) or {@code GCamera} (legacy) prefix, but the namespace
+ * URI is the same; the image XMP handler maps by URI, so these keys are stable regardless of
+ * prefix.
  */
 public interface Google {
 
