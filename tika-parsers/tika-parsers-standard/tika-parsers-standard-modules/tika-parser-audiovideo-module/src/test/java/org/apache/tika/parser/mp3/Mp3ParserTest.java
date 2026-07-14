@@ -424,4 +424,21 @@ public class Mp3ParserTest extends TikaTest {
         mp3.write(audio);
         return mp3.toByteArray();
     }
+
+    /**
+     * MPEG2 layer 3 frames carry 576 samples instead of 1152, so the frame
+     * walk must use the halved LSF frame length or it lands mid-frame and
+     * the summed duration drifts (TIKA-4791). The fixture is a 22050 Hz CBR
+     * file with 79 frames: 79 * 576 / 22050 = 2.06 seconds.
+     */
+    @Test
+    public void testMp3Mpeg2LowSamplingFrequency() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testMP3mpeg2.mp3", metadata);
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("MPEG 3 Layer III Version 2", metadata.get("version"));
+        assertEquals("22050", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
+        assertEquals(2.0637f, Float.parseFloat(metadata.get(XMPDM.DURATION)), 0.005f);
+    }
 }

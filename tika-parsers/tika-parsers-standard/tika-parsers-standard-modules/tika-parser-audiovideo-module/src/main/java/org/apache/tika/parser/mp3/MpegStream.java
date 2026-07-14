@@ -96,9 +96,17 @@ class MpegStream extends PushbackInputStream {
     private static final int SAMPLE_COUNT_L1 = 384;
 
     /**
-     * Constant for the number of samples for a layer 2 or 3 frame.
+     * Constant for the number of samples for a layer 2 frame (all MPEG
+     * versions) and a layer 3 frame in MPEG1.
      */
     private static final int SAMPLE_COUNT_L2 = 1152;
+
+    /**
+     * Constant for the number of samples for a layer 3 frame in MPEG2 and
+     * MPEG2.5: the low sampling frequency mode of ISO/IEC 13818-3 halves the
+     * frame to a single granule of 576 samples.
+     */
+    private static final int SAMPLE_COUNT_L3_LSF = 576;
 
     /**
      * Constant for the size of an MPEG frame header in bytes.
@@ -172,15 +180,20 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the length of an MPEG frame based on the given parameters.
      *
+     * @param mpegVer    the MPEG version
      * @param layer      the layer
      * @param bitRate    the bit rate
      * @param sampleRate the sample rate
      * @param padding    the padding flag
      * @return the length of the frame in bytes
      */
-    private static int calculateFrameLength(int layer, int bitRate, int sampleRate, int padding) {
+    private static int calculateFrameLength(int mpegVer, int layer, int bitRate, int sampleRate,
+            int padding) {
         if (layer == AudioFrame.LAYER_1) {
             return (12 * bitRate / sampleRate + padding) * 4;
+        } else if (layer == AudioFrame.LAYER_3 && mpegVer != AudioFrame.MPEG_V1) {
+            //MPEG2/2.5 layer 3 frames carry 576 samples instead of 1152
+            return 72 * bitRate / sampleRate + padding;
         } else {
             return 144 * bitRate / sampleRate + padding;
         }
@@ -189,12 +202,20 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the duration of a MPEG frame based on the given parameters.
      *
+     * @param mpegVer    the MPEG version
      * @param layer      the layer
      * @param sampleRate the sample rate
      * @return the duration of this frame in milliseconds
      */
-    private static float calculateDuration(int layer, int sampleRate) {
-        int sampleCount = (layer == AudioFrame.LAYER_1) ? SAMPLE_COUNT_L1 : SAMPLE_COUNT_L2;
+    private static float calculateDuration(int mpegVer, int layer, int sampleRate) {
+        int sampleCount;
+        if (layer == AudioFrame.LAYER_1) {
+            sampleCount = SAMPLE_COUNT_L1;
+        } else if (layer == AudioFrame.LAYER_3 && mpegVer != AudioFrame.MPEG_V1) {
+            sampleCount = SAMPLE_COUNT_L3_LSF;
+        } else {
+            sampleCount = SAMPLE_COUNT_L2;
+        }
         return (1000.0f / sampleRate) * sampleCount;
     }
 
@@ -329,8 +350,8 @@ class MpegStream extends PushbackInputStream {
 
         int bitRate = calculateBitRate(mpegVer, layer, bitRateCode);
         int sampleRate = calculateSampleRate(mpegVer, sampleRateCode);
-        int length = calculateFrameLength(layer, bitRate, sampleRate, padding);
-        float duration = calculateDuration(layer, sampleRate);
+        int length = calculateFrameLength(mpegVer, layer, bitRate, sampleRate, padding);
+        float duration = calculateDuration(mpegVer, layer, sampleRate);
         int channels = calculateChannels(bits.get(6, 7));
         return new AudioFrame(mpegVer, layer, bitRate, sampleRate, channels, length, duration);
     }
