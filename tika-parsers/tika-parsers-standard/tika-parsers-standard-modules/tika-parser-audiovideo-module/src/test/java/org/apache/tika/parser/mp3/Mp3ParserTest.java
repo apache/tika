@@ -104,6 +104,8 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
+        assertEquals("128000", metadata.get(Audio.BITRATE));
+        assertEquals("false", metadata.get(Audio.IS_VARIABLE_BITRATE));
 
         // Check XMPDM-typed audio properties
         assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
@@ -164,6 +166,36 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
+    }
+
+    /**
+     * The frames of testMP3vbr.mp3 alternate between 128 and 192 kbps, so
+     * the reported bitrate is the average and the stream is variable rate.
+     */
+    @Test
+    public void testMp3VariableBitRate() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testMP3vbr.mp3", metadata);
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("160000", metadata.get(Audio.BITRATE));
+        assertEquals("true", metadata.get(Audio.IS_VARIABLE_BITRATE));
+    }
+
+    /**
+     * The first frame of testMP3cbrInfoTag.mp3 is an 'Info' tag frame
+     * written at 128 kbps while the audio frames are 320 kbps. The tag frame
+     * must not show up in the bitrate statistics: the file is constant rate
+     * at 320 kbps, not variable rate.
+     */
+    @Test
+    public void testMp3ConstantBitRateWithInfoTagFrame() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testMP3cbrInfoTag.mp3", metadata);
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("320000", metadata.get(Audio.BITRATE));
+        assertEquals("false", metadata.get(Audio.IS_VARIABLE_BITRATE));
     }
 
     /**
@@ -270,6 +302,10 @@ public class Mp3ParserTest extends TikaTest {
         // TODO Find a better sample file
         Metadata metadata = new Metadata();
         String content = getText("testMP3lyrics.mp3", metadata);
+
+        //a real 192 kbps constant bitrate file
+        assertEquals("192000", metadata.get(Audio.BITRATE));
+        assertEquals("false", metadata.get(Audio.IS_VARIABLE_BITRATE));
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
