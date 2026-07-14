@@ -16,7 +16,6 @@
  */
 package org.apache.tika.config;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.InputStream;
@@ -28,10 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -98,30 +93,5 @@ public class ConfigExamplesTest {
     @Test
     public void testFullMigrationExample() throws Exception {
         loadAndValidate("migration-full-example.json");
-    }
-
-    /** The detectors.adoc example: enabling the opt-in pkcs-7-detector yields the CMS smime-type. */
-    @Test
-    public void testPkcs7DetectorConfig() throws Exception {
-        Detector detector = loadDetectors("detector-pkcs7.json");
-        assertEquals("application/pkcs7-mime; smime-type=signed-data",
-                detect(detector, "testPKCS7_signed_data_def.p7m"));
-    }
-
-    private Detector loadDetectors(String resourceName) throws Exception {
-        try (InputStream is = getClass().getResourceAsStream(EXAMPLES_DIR + resourceName)) {
-            assertNotNull(is, "Resource not found: " + resourceName);
-            Path configFile = tempDir.resolve("tika-config.json");
-            Files.writeString(configFile, new String(is.readAllBytes(), StandardCharsets.UTF_8),
-                    StandardCharsets.UTF_8);
-            return TikaLoader.load(configFile).loadDetectors();
-        }
-    }
-
-    private String detect(Detector detector, String resource) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(
-                getClass().getResourceAsStream("/test-documents/" + resource))) {
-            return detector.detect(tis, new Metadata(), new ParseContext()).toString();
-        }
     }
 }

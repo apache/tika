@@ -893,15 +893,6 @@
   <mime-type type="application/pkcs7-mime">
     <glob pattern="*.p7m"/>
     <glob pattern="*.p7c"/>
-    <!-- CMS content types in the 1.2.840.113549.1.9.16.1.* arc (compressedData .9, authData .2,
-         authEnvelopedData .23, ...) with the final OID byte masked. timestamped-data (.31) has the
-         same shape but its own higher-priority magic below. The .7 arc (signed/enveloped/...) is
-         matched by the pkcs7-signature block. Pkcs7Parser refines all of these to the smime-type. -->
-    <magic priority="50">
-      <match value="0x30" offset="0">
-        <match value="0x060B2A864886F70D0109100100" mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00" type="string" offset="2:6"/>
-      </match>
-    </magic>
   </mime-type>
 
   <mime-type type="application/pkcs7-signature">
@@ -935,13 +926,8 @@
 
   <mime-type type="application/timestamped-data">
     <glob pattern="*.tsd"/>
-    <!-- CMS ContentInfo whose contentType is id-ct-timestampedData (1.2.840.113549.1.9.16.1.31),
-         matching the full OID across the DER SEQUENCE length forms (short + 1..4-byte long).
-         Higher priority than the masked pkcs7-mime .9.16.1.* magic so this exact OID wins. -->
-    <magic priority="60">
-      <match value="0x30" offset="0">
-        <match value="0x060B2A864886F70D010910011F" type="string" offset="2:6"/>
-      </match>
+    <magic priority="50">
+      <match value="0x3080060B2A864886F7" type="string" offset="0"/>
     </magic>
   </mime-type>
 
@@ -4881,13 +4867,6 @@
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
-    <!-- PFX ::= SEQUENCE { version INTEGER (v3), authSafe ContentInfo SEQUENCE, ... }: the
-         INTEGER 3 then a SEQUENCE (02 01 03 30) tells it apart from CMS (OID next) and keys. -->
-    <magic priority="50">
-      <match value="0x30" offset="0">
-        <match value="0x02010330" offset="2:6"/>
-      </match>
-    </magic>
   </mime-type>
   <mime-type type="application/x-pkcs7-certificates">
     <glob pattern="*.p7b"/>

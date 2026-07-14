@@ -1,6 +1,0 @@
-{
-  "detectors": [
-    { "pkcs-7-detector": {} },
-    { "default-detector": {} }
-  ]
-}
