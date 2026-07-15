@@ -28,6 +28,9 @@ Release 4.0.0-beta-1 - 6/29/2026
      false, so an out-of-the-box tika-grpc server no longer accepts per-request
      configuration or runtime store mutations (TIKA-4764).
 
+   * Unified XMP extraction across containers; adds HEIF/HEIC and WebP XMP,
+     including Samsung/Google Motion Photo (TIKA-4775).
+
   OTHER CHANGES
 
    * Release artifacts are now channel-specific. Maven Central gets slim
