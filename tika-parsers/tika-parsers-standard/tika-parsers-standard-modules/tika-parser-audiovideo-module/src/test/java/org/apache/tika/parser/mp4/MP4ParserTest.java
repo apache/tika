@@ -39,6 +39,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.QuickTime;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -312,18 +313,24 @@ public class MP4ParserTest extends TikaTest {
         //the Live Photo still moment: presentation time of the single sample of
         //the timed metadata track declaring still-image-time (mebx, leading empty
         //edit of 740/600s). TIKA-4777
-        assertEquals("1233333",
-                metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
-        //a version-1 edit list works as well (600/600s)
-        assertEquals("1000000",
-                metadata.get("test.quicktime.v1delayed.track-start-us"));
-        //not emitted: an empty edit after the first normal entry does not delay
-        //the track (this track also directly follows the delayed one, so it
-        //catches edit list state leaking between tracks) ...
+        assertEquals("1233333", metadata.get(QuickTime.STILL_IMAGE_TIME));
+        //foreign mebx keys get no property (the fixture's other timed metadata
+        //tracks are delayed, non-leading and multi-sample variants), and the
+        //per-key suffix scheme from earlier iterations is gone
+        assertNull(metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
+        assertNull(metadata.get("test.quicktime.v1delayed.track-start-us"));
         assertNull(metadata.get("test.quicktime.nonleading.track-start-us"));
-        //... and neither is a delayed track with more than one sample, whose
-        //start is not the time of any single sample
         assertNull(metadata.get("test.quicktime.multisample.track-start-us"));
+    }
+
+    @Test
+    public void testStillImageTimeZero() throws Exception {
+        //a declared but undelayed single-sample still-image-time track (version 1
+        //edit list with only a media edit): 0 = the still is the first frame,
+        //distinguishable from "no Live Photo" (absent). TIKA-4777
+        Metadata metadata = new Metadata();
+        getText("testMP4_StillImageTimeZero.mov", metadata);
+        assertEquals("0", metadata.get(QuickTime.STILL_IMAGE_TIME));
     }
 
     @Test

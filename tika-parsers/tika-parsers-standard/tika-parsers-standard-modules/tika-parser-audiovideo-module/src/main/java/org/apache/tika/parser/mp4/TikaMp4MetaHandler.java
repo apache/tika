@@ -26,25 +26,28 @@ import com.drew.metadata.Metadata;
 import com.drew.metadata.mp4.Mp4Context;
 import com.drew.metadata.mp4.media.Mp4MetaHandler;
 
+import org.apache.tika.metadata.QuickTime;
+
 /**
  * Handles a QuickTime timed metadata track (handler type 'meta'). The base
  * {@link Mp4MetaHandler} accepts the track's 'stsd' and 'stts' boxes but
  * extracts nothing from them; this subclass reads the key names declared by
- * 'mebx' sample descriptions (ISO 14496-12 boxed metadata) and, for a delayed
- * single-sample track, emits the presentation time of that sample in
- * microseconds under {@code <key name>.track-start-us}.
+ * 'mebx' sample descriptions (ISO 14496-12 boxed metadata) and, for a
+ * single-sample track declaring {@code com.apple.quicktime.still-image-time},
+ * emits the presentation time of that sample as
+ * {@link QuickTime#STILL_IMAGE_TIME}.
  * <p>
- * Both conditions matter: the leading empty edit is what delays the sample to
- * a meaningful point on the timeline, and only with exactly one sample is the
- * track's start also the sample's time. Apple Live Photo videos mark the
- * moment the paired still image was captured this way, as the single one-tick
- * sample of the {@code com.apple.quicktime.still-image-time} track. The
- * sample value itself is a constant -1 marker, so the moov boxes alone are
- * sufficient and mdat is never read. See TIKA-4777.
+ * Apple Live Photo videos mark the moment the paired still image was
+ * captured this way: a leading empty edit delays the track's single one-tick
+ * sample to the still moment. Without a leading empty edit the sample
+ * presents at 0, so 0 is emitted (the still is the first frame); with more
+ * than one sample the track's start is not the time of any single sample and
+ * nothing is emitted. The sample value itself is a constant -1 marker, so
+ * the moov boxes alone are sufficient and mdat is never read. See TIKA-4777.
  */
 class TikaMp4MetaHandler extends Mp4MetaHandler {
 
-    static final String TRACK_START_SUFFIX = ".track-start-us";
+    static final String STILL_IMAGE_TIME_KEY = "com.apple.quicktime.still-image-time";
 
     private final org.apache.tika.metadata.Metadata tikaMetadata;
     //duration of the track's leading empty edit in movie timescale units,
@@ -102,14 +105,17 @@ class TikaMp4MetaHandler extends Mp4MetaHandler {
      * conditions from the class comment hold.
      */
     private void maybeEmit() {
-        if (sampleCount != 1 || keyNames.isEmpty()
-                || movieTimescale <= 0 || emptyEditDuration <= 0
-                || emptyEditDuration > Long.MAX_VALUE / 1_000_000L) {
+        if (sampleCount != 1 || !keyNames.contains(STILL_IMAGE_TIME_KEY)) {
             return;
         }
-        long trackStartUs = emptyEditDuration * 1_000_000L / movieTimescale;
-        for (String keyName : keyNames) {
-            tikaMetadata.add(keyName + TRACK_START_SUFFIX, Long.toString(trackStartUs));
+        if (emptyEditDuration <= 0) {
+            //no leading empty edit: the sample presents at 0, the still is
+            //the first frame
+            tikaMetadata.set(QuickTime.STILL_IMAGE_TIME, 0L);
+        } else if (movieTimescale > 0
+                && emptyEditDuration <= Long.MAX_VALUE / 1_000_000L) {
+            tikaMetadata.set(QuickTime.STILL_IMAGE_TIME,
+                    emptyEditDuration * 1_000_000L / movieTimescale);
         }
         keyNames.clear();
     }
