@@ -141,6 +141,74 @@ public class MpegStreamTest {
     }
 
     /**
+     * Parses a single frame header from the given three header bytes
+     * following the initial 0xFF sync byte.
+     */
+    private AudioFrame parseHeader(int b2, int b3, int b4) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        writeFrame(bos, b2, b3, b4);
+        TikaInputStream tis = TikaInputStream.get(bos.toByteArray());
+        stream = new MpegStream(tis);
+        AudioFrame header = stream.nextFrame();
+        assertNotNull(header, "No header found");
+        return header;
+    }
+
+    /**
+     * An MPEG1 layer 3 frame carries 1152 samples: 128 kbps at 44100 Hz
+     * gives 144 * 128000 / 44100 = 417 bytes and 26.12 ms.
+     */
+    @Test
+    public void testFrameLengthAndDurationMpeg1Layer3() throws IOException {
+        AudioFrame header = parseHeader(0xFB, 0x90, 0);
+        assertEquals(AudioFrame.MPEG_V1, header.getVersionCode(), "Wrong MPEG version");
+        assertEquals(AudioFrame.LAYER_3, header.getLayer(), "Wrong layer");
+        assertEquals(417, header.getLength(), "Wrong frame length");
+        assertEquals(1152000f / 44100, header.getDuration(), 0.01f, "Wrong duration");
+    }
+
+    /**
+     * An MPEG2 layer 3 frame carries only 576 samples (LSF mode), so
+     * 80 kbps at 24000 Hz with padding gives 72 * 80000 / 24000 + 1 = 241
+     * bytes and 24 ms, half of what the MPEG1 formula would report.
+     */
+    @Test
+    public void testFrameLengthAndDurationMpeg2Layer3() throws IOException {
+        AudioFrame header = parseHeader(0xF3, 0x96, 0);
+        assertEquals(AudioFrame.MPEG_V2, header.getVersionCode(), "Wrong MPEG version");
+        assertEquals(AudioFrame.LAYER_3, header.getLayer(), "Wrong layer");
+        assertEquals(241, header.getLength(), "Wrong frame length");
+        assertEquals(24.0f, header.getDuration(), 0.01f, "Wrong duration");
+    }
+
+    /**
+     * MPEG2.5 layer 3 also uses the halved LSF frame: 80 kbps at 12000 Hz
+     * with padding gives 72 * 80000 / 12000 + 1 = 481 bytes and 48 ms.
+     */
+    @Test
+    public void testFrameLengthAndDurationMpeg25Layer3() throws IOException {
+        AudioFrame header = parseHeader(0xE3, 0x96, 0);
+        assertEquals(AudioFrame.MPEG_V2_5, header.getVersionCode(), "Wrong MPEG version");
+        assertEquals(AudioFrame.LAYER_3, header.getLayer(), "Wrong layer");
+        assertEquals(481, header.getLength(), "Wrong frame length");
+        assertEquals(48.0f, header.getDuration(), 0.01f, "Wrong duration");
+    }
+
+    /**
+     * Layer 2 keeps 1152 samples in every MPEG version, so the MPEG2 frame
+     * stays at the full length: 80 kbps at 24000 Hz with padding gives
+     * 144 * 80000 / 24000 + 1 = 481 bytes and 48 ms.
+     */
+    @Test
+    public void testFrameLengthAndDurationMpeg2Layer2() throws IOException {
+        AudioFrame header = parseHeader(0xF5, 0x96, 0);
+        assertEquals(AudioFrame.MPEG_V2, header.getVersionCode(), "Wrong MPEG version");
+        assertEquals(AudioFrame.LAYER_2, header.getLayer(), "Wrong layer");
+        assertEquals(481, header.getLength(), "Wrong frame length");
+        assertEquals(48.0f, header.getDuration(), 0.01f, "Wrong duration");
+    }
+
+    /**
      * Tries to skip a frame if no current header is available.
      */
     @Test
