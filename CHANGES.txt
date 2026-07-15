@@ -1,8 +1,9 @@
-Release 3.3.2 - (unreleased)
+Release 3.3.2 - 7/15/2026
+
+  * Dependency upgrades (TIKA-4738).
 
   * tika-server now requires enableUnsecureFeatures=true when the /pipes, /async, or
-    /status endpoints are selected; the server refuses to start otherwise. Previously
-    listing the endpoint was treated as sufficient consent (TIKA-4760).
+    /status endpoints are selected; the server refuses to start otherwise (TIKA-4760).
 
   * Port the 4.x SAX-based OOXML parsers to 3.x and make SAX default.
     The docx/pptx/xlsx/vsdx SAX parsers gain field-code hyperlink extraction,
@@ -12,7 +13,7 @@ Release 3.3.2 - (unreleased)
 
 Release 3.3.1 - 5/20/2026
 
-  * Dependency upgrades  (TIKA-4695).
+  * Dependency upgrades (TIKA-4695).
 
   * Use the IANA-registered text/markdown as the primary media type, with
     text/x-web-markdown and text/x-markdown kept as aliases (TIKA-4724).
