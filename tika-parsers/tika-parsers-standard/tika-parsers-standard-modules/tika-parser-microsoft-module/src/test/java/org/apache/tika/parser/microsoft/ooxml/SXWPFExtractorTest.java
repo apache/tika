@@ -54,12 +54,9 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @BeforeEach
     public void setUp() {
+        //SAX is the default OOXML extractor as of Tika 3.x; an unconfigured
+        //context exercises (and verifies) that default.
         parseContext = new ParseContext();
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXDocxExtractor(true);
-        officeParserConfig.setUseSAXPptxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-
     }
 
     @Test
@@ -479,7 +476,6 @@ public class SXWPFExtractorTest extends TikaTest {
         ParseContext pc = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeDeletedContent(true);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         officeParserConfig.setIncludeMoveFromContent(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
 
@@ -505,7 +501,6 @@ public class SXWPFExtractorTest extends TikaTest {
         ParseContext pc = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeShapeBasedContent(false);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         pc.set(OfficeParserConfig.class, officeParserConfig);
         String xml = getXML("testWORD_text_box.docx", pc).xml;
         assertContains("This text is directly in the body of the document.", xml);
@@ -572,11 +567,8 @@ public class SXWPFExtractorTest extends TikaTest {
         Metadata m = new Metadata();
         PasswordProvider passwordProvider = metadata -> "tika";
 
-        OfficeParserConfig opc = new OfficeParserConfig();
-        opc.setUseSAXDocxExtractor(true);
         ParseContext passwordContext = new ParseContext();
         passwordContext.set(org.apache.tika.parser.PasswordProvider.class, passwordProvider);
-        passwordContext.set(OfficeParserConfig.class, opc);
         for (Map.Entry<String, String> e : tests.entrySet()) {
             assertContains(e.getValue(), getXML(e.getKey(), passwordContext).xml);
         }
@@ -725,7 +717,6 @@ public class SXWPFExtractorTest extends TikaTest {
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         metadataList = getRecursiveMetadata("testWORD_macros.docm", context);
@@ -802,7 +793,6 @@ public class SXWPFExtractorTest extends TikaTest {
         ParseContext parseContext = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setIncludeHeadersAndFooters(false);
-        officeParserConfig.setUseSAXDocxExtractor(true);
         parseContext.set(OfficeParserConfig.class, officeParserConfig);
         String xml = getXML("testWORD_various.docx", parseContext).xml;
         assertNotContained("This is the header text.", xml);
@@ -811,15 +801,13 @@ public class SXWPFExtractorTest extends TikaTest {
 
     @Test
     public void testDOCXPhoneticStrings() throws Exception {
+        assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
+                getXML("testWORD_phonetic.docx").xml);
+
         OfficeParserConfig config = new OfficeParserConfig();
-        config.setUseSAXDocxExtractor(true);
+        config.setConcatenatePhoneticRuns(false);
         ParseContext parseContext = new ParseContext();
         parseContext.set(OfficeParserConfig.class, config);
-        assertContains("\u6771\u4EAC (\u3068\u3046\u304D\u3087\u3046)",
-                getXML("testWORD_phonetic.docx", parseContext).xml);
-
-
-        config.setConcatenatePhoneticRuns(false);
         String xml = getXML("testWORD_phonetic.docx", parseContext).xml;
         assertContains("\u6771\u4EAC", xml);
         assertNotContained("\u3068", xml);

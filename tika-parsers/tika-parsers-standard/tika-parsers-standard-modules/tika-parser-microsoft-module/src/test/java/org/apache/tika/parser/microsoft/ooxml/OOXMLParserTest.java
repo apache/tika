@@ -375,12 +375,25 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     }
 
     /**
+     * The SAX extractors are the default as of Tika 3.x. A handful of tests below
+     * assert on markup that only the classic DOM extractors produce, so they force DOM.
+     */
+    private static ParseContext domParseContext() {
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setUseSAXDocxExtractor(false);
+        config.setUseSAXPptxExtractor(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        return context;
+    }
+
+    /**
      * Test that the word converter is able to generate the
      * correct HTML for the document
      */
     @Test
     public void testWordHTML() throws Exception {
-        XMLResult result = getXML("testWORD.docx");
+        XMLResult result = getXML("testWORD.docx", domParseContext());
         String xml = result.xml;
         Metadata metadata = result.metadata;
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -409,7 +422,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         // Paragraphs with other styles
         assertTrue(xml.contains("<p class=\"signature\">This one"));
 
-        result = getXML("testWORD_3imgs.docx");
+        result = getXML("testWORD_3imgs.docx", domParseContext());
         xml = result.xml;
 
         // Images 2-4 (there is no 1!)
@@ -425,7 +438,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
-        xml = getXML("testWORD_bold_character_runs.docx").xml;
+        xml = getXML("testWORD_bold_character_runs.docx", domParseContext()).xml;
 
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
@@ -434,7 +447,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
-        xml = getXML("testWORD_bold_character_runs2.docx").xml;
+        xml = getXML("testWORD_bold_character_runs2.docx", domParseContext()).xml;
 
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
@@ -537,14 +550,14 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     @Test
     public void testTextDecorationNested() throws Exception {
-        String xml = getXML("testWORD_various.docx").xml;
+        String xml = getXML("testWORD_various.docx", domParseContext()).xml;
 
         assertContains("<i>ita<s>li</s>c</i>", xml);
         assertContains("<i>ita<s>l<u>i</u></s>c</i>", xml);
         assertContains("<i><u>unde<s>r</s>line</u></i>", xml);
 
         //confirm that spaces aren't added for </s> and </u>
-        String txt = getText("testWORD_various.docx");
+        String txt = getText("testWORD_various.docx", new Metadata(), domParseContext());
         assertContainsCount("italic", txt, 3);
         assertNotContained("ita ", txt);
 
@@ -708,8 +721,10 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     @Test
     public void testSkipHeaderFooter() throws Exception {
         //now test turning off header/footer
+        //header/footer suppression for pptx is only implemented in the DOM extractor
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeHeadersAndFooters(false);
+        config.setUseSAXPptxExtractor(false);
         ParseContext context = new ParseContext();
         context.set(OfficeParserConfig.class, config);
         String xml = getXML("testPPT_various.pptx", context).xml;
@@ -904,7 +919,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     // TIKA-997:
     @Test
     public void testEmbeddedZipInPPTX() throws Exception {
-        String xml = getXML("test_embedded_zip.pptx").xml;
+        String xml = getXML("test_embedded_zip.pptx", domParseContext()).xml;
         int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
         int i = xml.indexOf("Send me a note");
         int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\" />");
@@ -977,7 +992,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
     // TIKA-1032:
     @Test
     public void testEmbeddedPPTXTwoSlides() throws Exception {
-        String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
+        String xml = getXML("testPPT_embedded_two_slides.pptx", domParseContext()).xml;
         assertContains("<div class=\"embedded\" id=\"slide1_rId7\" />", xml);
         assertContains("<div class=\"embedded\" id=\"slide2_rId7\" />", xml);
     }

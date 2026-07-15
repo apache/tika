@@ -4,11 +4,11 @@ Release 3.3.2 - (unreleased)
     /status endpoints are selected; the server refuses to start otherwise. Previously
     listing the endpoint was treated as sufficient consent (TIKA-4760).
 
-  * Port the 4.x SAX-based OOXML parsers to 3.x. The docx/pptx/xlsx/vsdx SAX parsers
-    gain field-code hyperlink extraction, inlined footnotes/endnotes/comments,
-    balanced-XHTML recovery on error, and XMLBeans-free xlsx/xlsb reading. The SAX
-    docx/pptx parsers stay opt-in via useSAXDocxExtractor/useSAXPptxExtractor, so DOM
-    remains the default (TIKA-4692, TIKA-4708).
+  * Port the 4.x SAX-based OOXML parsers to 3.x and make SAX default.
+    The docx/pptx/xlsx/vsdx SAX parsers gain field-code hyperlink extraction,
+    inlined footnotes/endnotes/comments, balanced-XHTML recovery on error, and XMLBeans-free
+    xlsx/xlsb reading. The DOM docx/pptx parsers can still be configured via
+    useSAXDocxExtractor/useSAXPptxExtractor (TIKA-4692, TIKA-4708, TIKA-4790).
 
 Release 3.3.1 - 5/20/2026
 

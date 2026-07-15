@@ -32,8 +32,8 @@ public class OfficeParserConfig implements Serializable {
     private boolean includeSlideMasterContent = true;
     private boolean concatenatePhoneticRuns = true;
 
-    private boolean useSAXDocxExtractor = false;
-    private boolean useSAXPptxExtractor = false;
+    private boolean useSAXDocxExtractor = true;
+    private boolean useSAXPptxExtractor = true;
 
     private boolean preferAlternateContentChoice = true;
 
@@ -142,11 +142,11 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
+     * Use the SAX-based streaming DOCX parser?
+     * If set to <code>true</code>, the SAX-based streaming parser will be used;
+     * if <code>false</code>, the classic DOM parser will be used.
      * <p/>
-     * Default: <code>false</code> (classic DOM parser)
+     * Default: <code>true</code> (SAX streaming parser)
      *
      * @param useSAXDocxExtractor
      */
@@ -159,11 +159,11 @@ public class OfficeParserConfig implements Serializable {
     }
 
     /**
-     * Use the experimental SAX-based streaming DOCX parser?
-     * If set to <code>false</code>, the classic parser will be used; if <code>true</code>,
-     * the new experimental parser will be used.
+     * Use the SAX-based streaming PPTX parser?
+     * If set to <code>true</code>, the SAX-based streaming parser will be used;
+     * if <code>false</code>, the classic DOM parser will be used.
      * <p/>
-     * Default: <code>false</code> (classic DOM parser)
+     * Default: <code>true</code> (SAX streaming parser)
      *
      * @param useSAXPptxExtractor
      */

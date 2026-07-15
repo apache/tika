@@ -51,10 +51,9 @@ public class SXSLFExtractorTest extends TikaTest {
 
     @BeforeEach
     public void setUp() {
+        //SAX is the default OOXML extractor as of Tika 3.x; an unconfigured
+        //context exercises (and verifies) that default.
         parseContext = new ParseContext();
-        officeParserConfig.setUseSAXPptxExtractor(true);
-        parseContext.set(OfficeParserConfig.class, officeParserConfig);
-
     }
 
     @Test
@@ -345,7 +344,6 @@ public class SXSLFExtractorTest extends TikaTest {
         //the actual slide's xml, not just in the master slide.
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
-        config.setUseSAXPptxExtractor(true);
         ParseContext context = new ParseContext();
         context.set(OfficeParserConfig.class, config);
         String xml = getXML("testPPT_masterFooter.pptx", context).xml;
@@ -364,7 +362,6 @@ public class SXSLFExtractorTest extends TikaTest {
         //now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
-        config.setUseSAXPptxExtractor(true);
         ParseContext context = new ParseContext();
         context.set(OfficeParserConfig.class, config);
 
@@ -379,7 +376,6 @@ public class SXSLFExtractorTest extends TikaTest {
         //now test turning off master content
         OfficeParserConfig config = new OfficeParserConfig();
         config.setIncludeSlideMasterContent(false);
-        config.setUseSAXPptxExtractor(true);
         ParseContext context = new ParseContext();
         context.set(OfficeParserConfig.class, config);
 
@@ -397,9 +393,7 @@ public class SXSLFExtractorTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
-        OfficeParserConfig officeParserConfig = new OfficeParserConfig();
-        officeParserConfig.setUseSAXPptxExtractor(true);
-        context.set(OfficeParserConfig.class, officeParserConfig);
+        context.set(OfficeParserConfig.class, new OfficeParserConfig());
 
         getXML("testPPT_custom_props.pptx", metadata, parseContext);
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -529,7 +523,6 @@ public class SXSLFExtractorTest extends TikaTest {
         ParseContext context = new ParseContext();
         OfficeParserConfig officeParserConfig = new OfficeParserConfig();
         officeParserConfig.setExtractMacros(true);
-        officeParserConfig.setUseSAXPptxExtractor(true);
         context.set(OfficeParserConfig.class, officeParserConfig);
 
         Metadata minExpected = new Metadata();
