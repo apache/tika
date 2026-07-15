@@ -248,10 +248,6 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
         }
     }
 
-
-
-
-
     /**
      * Maps an ISO 6709 location string (latitude, longitude, optional altitude) to the
      * standard {@code geo:lat}/{@code geo:long}/{@code geo:alt} properties, in addition to

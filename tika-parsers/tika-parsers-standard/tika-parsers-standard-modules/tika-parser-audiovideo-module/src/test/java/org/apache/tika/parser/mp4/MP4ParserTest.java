@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.drew.lang.SequentialByteArrayReader;
+import com.drew.metadata.mp4.Mp4Context;
 import com.drew.metadata.mp4.Mp4Directory;
 import com.drew.metadata.mp4.media.Mp4MetaDirectory;
 import com.drew.metadata.mp4.media.Mp4SoundDirectory;
@@ -327,10 +331,30 @@ public class MP4ParserTest extends TikaTest {
     public void testStillImageTimeZero() throws Exception {
         //a declared but undelayed single-sample still-image-time track (version 1
         //edit list with only a media edit): 0 = the still is the first frame,
-        //distinguishable from "no Live Photo" (absent). TIKA-4777
+        //distinguishable from "no Live Photo" (absent). The track follows a
+        //delayed foreign-key track, so a leaked empty-edit duration would show
+        //up as a non-zero value here. TIKA-4777
         Metadata metadata = new Metadata();
         getText("testMP4_StillImageTimeZero.mov", metadata);
         assertEquals("0", metadata.get(QuickTime.STILL_IMAGE_TIME));
+    }
+
+    @Test
+    public void testStsdEntrySizeOverflow() throws Exception {
+        //a crafted sample description declaring entry size 0xFFFFFFFF used to
+        //turn negative in the int cast and escape parse() as a
+        //NegativeArraySizeException; the handler must treat it as malformed
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(new byte[]{0, 0, 0, 0}); //version and flags
+        bos.write(new byte[]{0, 0, 0, 1}); //entry count
+        bos.write(new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        bos.write("mebx".getBytes(StandardCharsets.ISO_8859_1));
+
+        Metadata tikaMetadata = new Metadata();
+        TikaMp4MetaHandler handler = new TikaMp4MetaHandler(new com.drew.metadata.Metadata(),
+                new Mp4Context(), tikaMetadata, 740, 600);
+        handler.processSampleDescription(new SequentialByteArrayReader(bos.toByteArray()));
+        assertNull(tikaMetadata.get(QuickTime.STILL_IMAGE_TIME));
     }
 
     @Test

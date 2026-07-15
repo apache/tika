@@ -73,7 +73,9 @@ class TikaMp4MetaHandler extends Mp4MetaHandler {
         for (long i = 0; i < entryCount; i++) {
             long entrySize = reader.getUInt32();
             String format = reader.getString(4, StandardCharsets.ISO_8859_1);
-            if (entrySize < 16) {
+            //also reject sizes beyond the remaining payload: a crafted size
+            //like 0xFFFFFFFF would turn negative in the int cast below
+            if (entrySize < 16 || entrySize - 8 > reader.available()) {
                 return;
             }
             byte[] entry = reader.getBytes((int) entrySize - 8);
