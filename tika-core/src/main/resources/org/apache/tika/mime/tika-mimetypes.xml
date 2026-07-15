@@ -4881,11 +4881,18 @@
   <mime-type type="application/x-pkcs12">
     <glob pattern="*.p12"/>
     <glob pattern="*.pfx"/>
-    <!-- PFX ::= SEQUENCE { version INTEGER (v3), authSafe ContentInfo SEQUENCE, ... }: the
-         INTEGER 3 then a SEQUENCE (02 01 03 30) tells it apart from CMS (OID next) and keys. -->
+    <!-- PFX ::= SEQUENCE { version INTEGER (v3), authSafe ContentInfo SEQUENCE, ... }. The
+         INTEGER 3 then a SEQUENCE (02 01 03 30) tells it apart from CMS (OID next) and keys
+         (version 0). "02 01 03 30" alone also matches an SNMPv3 message (SEQUENCE { INTEGER 3,
+         SEQUENCE, ...}), so we additionally require authSafe's ContentInfo type OID: the pkcs7
+         arc 1.2.840.113549.1.7.x (id-data for password integrity, id-signedData for public-key),
+         last byte masked. Its offset varies with the two SEQUENCE length forms, hence 7:15. -->
     <magic priority="50">
       <match value="0x30" offset="0">
-        <match value="0x02010330" offset="2:6"/>
+        <match value="0x02010330" offset="2:6">
+          <match value="0x06092A864886F70D010701" mask="0xFFFFFFFFFFFFFFFFFFFF00"
+                 type="string" offset="7:15"/>
+        </match>
       </match>
     </magic>
   </mime-type>

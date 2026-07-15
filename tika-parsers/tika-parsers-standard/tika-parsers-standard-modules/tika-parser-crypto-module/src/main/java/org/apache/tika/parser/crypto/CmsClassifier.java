@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.crypto;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +28,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.cms.CMSTypedStream;
 import org.bouncycastle.operator.DigestCalculatorProvider;
@@ -62,27 +64,44 @@ public final class CmsClassifier {
         return new MediaType("application", "pkcs7-mime", Map.of("smime-type", smimeType));
     }
 
-    /** @return the refined media type, or {@code null} if not recognizable CMS. */
-    public static MediaType classify(TikaInputStream tis) {
-        if (tis == null) {
-            return null;
-        }
-        Path path;
-        try {
-            path = tis.getPath();   // spool to a file so we can read it more than once
-        } catch (Exception e) {
-            return null;
-        }
-        if (path == null) {
-            return null;
-        }
-        ASN1ObjectIdentifier oid = contentType(path);
+    /**
+     * @return the refined media type, or {@code null} if the stream is not recognizable CMS.
+     * @throws IOException on a genuine spool/read failure — distinct from "not CMS" (which returns
+     *         {@code null}), so a real I/O error is not silently masked as a non-crypto stream.
+     */
+    public static MediaType classify(TikaInputStream tis) throws IOException {
+        ASN1ObjectIdentifier oid = contentType(tis);
         if (oid == null) {
             return null;
         }
+        MediaType nonSigned = nonSignedType(oid);
+        if (nonSigned != null) {
+            return nonSigned;
+        }
         if (PKCSObjectIdentifiers.signedData.equals(oid)) {
-            return refineSigned(path);
-        } else if (PKCSObjectIdentifiers.envelopedData.equals(oid)) {
+            return refineSigned(tis.getPath());   // already spooled by contentType(tis)
+        }
+        return null;   // plain data or a non-CMS OID: let the coarse type stand
+    }
+
+    /**
+     * The {@code ContentInfo} content-type OID, or {@code null} if this is not a DER {@code SEQUENCE}
+     * / not recognizable CMS. Peeks the leading byte before spooling, so a non-DER stream (the
+     * overwhelmingly common non-crypto case) is rejected without writing a temp file.
+     *
+     * @throws IOException on a genuine spool/read failure.
+     */
+    static ASN1ObjectIdentifier contentType(TikaInputStream tis) throws IOException {
+        if (tis == null || !looksLikeDerSequence(tis)) {
+            return null;
+        }
+        Path path = tis.getPath();   // spool so we can read it more than once; IOException propagates
+        return path == null ? null : contentType(path);
+    }
+
+    /** Map a non-signedData ContentInfo OID to its refined type; {@code null} for signedData/plain/unknown. */
+    static MediaType nonSignedType(ASN1ObjectIdentifier oid) {
+        if (PKCSObjectIdentifiers.envelopedData.equals(oid)) {
             return ENVELOPED;
         } else if (PKCSObjectIdentifiers.id_ct_compressedData.equals(oid)) {
             return COMPRESSED;
@@ -91,7 +110,13 @@ public final class CmsClassifier {
         } else if (PKCSObjectIdentifiers.encryptedData.equals(oid)) {
             return ENCRYPTED;
         }
-        return null;   // plain data or a non-CMS OID: let the coarse type stand
+        return null;
+    }
+
+    /** Cheap DER-{@code SEQUENCE} gate: peek one byte (mark/reset, no spool). */
+    private static boolean looksLikeDerSequence(TikaInputStream tis) throws IOException {
+        byte[] head = new byte[1];
+        return tis.peek(head) == 1 && (head[0] & 0xFF) == 0x30;
     }
 
     /** Lazily read only the outer {@code SEQUENCE}'s first element (the ContentInfo OID). */
@@ -123,21 +148,28 @@ public final class CmsClassifier {
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
             CMSSignedDataParser parser = new CMSSignedDataParser(dcp, is);
             try {
-                CMSTypedStream content = parser.getSignedContent();
-                if (content != null) {
-                    return SIGNED;   // has an embedded payload; no need to drain it to classify
-                }
-                boolean hasSigners = !parser.getSignerInfos().getSigners().isEmpty();
-                boolean hasCerts = !parser.getCertificates().getMatches(null).isEmpty();
-                if (hasCerts && !hasSigners) {
-                    return CERTS_ONLY;
-                }
-                return PKCS7_SIGNATURE;
+                return refinedSignedType(parser, parser.getSignedContent());
             } finally {
                 parser.close();
             }
         } catch (Exception e) {
             return PKCS7_MIME;   // it is signedData but we could not refine the sub-shape
         }
+    }
+
+    /**
+     * Sub-shape of an open signedData parser, given its already-fetched signed content: embedded
+     * payload -&gt; signed-data (no drain needed); otherwise certs and no signers -&gt; certs-only,
+     * else a detached signature. Shared by {@link #refineSigned(Path)} (detector labelling) and
+     * {@code Pkcs7Parser}, which reuses the same parser to also extract — avoiding a second parse.
+     */
+    static MediaType refinedSignedType(CMSSignedDataParser parser, CMSTypedStream content)
+            throws CMSException {
+        if (content != null) {
+            return SIGNED;
+        }
+        boolean hasSigners = !parser.getSignerInfos().getSigners().isEmpty();
+        boolean hasCerts = !parser.getCertificates().getMatches(null).isEmpty();
+        return (hasCerts && !hasSigners) ? CERTS_ONLY : PKCS7_SIGNATURE;
     }
 }
