@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.70.0</google.cloud.version>
-    <aws2.version>2.47.5</aws2.version>
+    <aws2.version>2.48.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -409,7 +409,7 @@
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.16.Final</netty.version>
-    <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>2.4.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.10</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -437,7 +437,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.14.0</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
