@@ -1,4 +1,4 @@
-Release 3.3.2 - 7/15/2026
+Release 3.3.2 - 7/16/2026
 
   * Dependency upgrades (TIKA-4738).
 
