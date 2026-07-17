@@ -33,13 +33,14 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.xmp.XMPMetadataExtractor;
+import org.apache.tika.parser.xmp.XmpExtractor;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -166,7 +167,13 @@ public class IDMLParser implements Parser {
             String type = IOUtils.toString(zip, UTF_8);
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
-            XMPMetadataExtractor.parse(zip, metadata);
+            try {
+                new XmpExtractor().extract(zip, metadata, context);
+            } catch (SecurityException e) {
+                throw e;
+            } catch (IOException | SAXException | TikaException | RuntimeException e) {
+                EmbeddedDocumentUtil.recordException(e, metadata);   // malformed XMP must not fail the IDML
+            }
         } else if (entry.getName().contains("MasterSpreads")) {
             Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);

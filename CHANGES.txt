@@ -1,3 +1,12 @@
+Release 4.0.0 - ???
+
+  NEW FEATURES
+
+   * Content-based detection of ASN.1/DER crypto containers at parse time. An
+     opt-in Pkcs7Detector surfaces the subtype at detect() time,
+     but must be enabled via configuration (TIKA-1997).
+
+
 Release 4.0.0-beta-1 - 6/29/2026
 
   BREAKING CHANGES
@@ -27,6 +36,9 @@ Release 4.0.0-beta-1 - 6/29/2026
      runtime Save/Delete of fetchers and pipes iterators). All flags default to
      false, so an out-of-the-box tika-grpc server no longer accepts per-request
      configuration or runtime store mutations (TIKA-4764).
+
+   * Unified XMP extraction across containers; adds HEIF/HEIC and WebP XMP,
+     including Samsung/Google Motion Photo (TIKA-4775).
 
   OTHER CHANGES
 

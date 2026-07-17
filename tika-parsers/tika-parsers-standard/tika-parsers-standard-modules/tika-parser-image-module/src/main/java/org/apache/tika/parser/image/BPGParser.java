@@ -165,7 +165,7 @@ public class BPGParser extends AbstractImageParser {
                         metadataExtractor.parseRawExif(stream, extensionLength, true);
                         break;
                     case EXTENSION_TAG_XMP:
-                        handleXMP(stream, extensionLength, metadataExtractor);
+                        handleXMP(stream, extensionLength, metadata, parseContext);
                         break;
                     default:
                         IOUtils.skipFully(stream, extensionLength);
@@ -186,7 +186,8 @@ public class BPGParser extends AbstractImageParser {
         return this.maxRecordLength;
     }
 
-    protected void handleXMP(InputStream stream, int xmpLength, ImageMetadataExtractor extractor)
+    protected void handleXMP(InputStream stream, int xmpLength, Metadata metadata,
+                             ParseContext context)
             throws IOException, TikaException, SAXException {
         if (xmpLength < 0) {
             throw new TikaException("xmp length must be >= 0");
@@ -199,6 +200,6 @@ public class BPGParser extends AbstractImageParser {
         }
         byte[] xmp = new byte[xmpLength];
         IOUtils.readFully(stream, xmp);
-        extractor.parseRawXMP(xmp);
+        ImageXmp.extractRaw(xmp, metadata, context);
     }
 }

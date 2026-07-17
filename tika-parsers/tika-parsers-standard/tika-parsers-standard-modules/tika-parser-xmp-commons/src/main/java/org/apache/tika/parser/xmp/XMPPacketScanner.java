@@ -50,10 +50,14 @@ public class XMPPacketScanner {
         return skipAfter(in, match, null);
     }
 
+    // Cap the captured packet so a crafted stream can't read an unbounded xpacket into memory.
+    private static final long MAX_PACKET = 64L * 1024 * 1024;
+
     private static boolean skipAfter(InputStream in, byte[] match, OutputStream out)
             throws IOException {
         int found = 0;
         int len = match.length;
+        long written = 0;
         int b;
         while ((b = in.read()) >= 0) {
             if (b == match[found]) {
@@ -65,8 +69,12 @@ public class XMPPacketScanner {
                 if (out != null) {
                     if (found > 0) {
                         out.write(match, 0, found);
+                        written += found;
                     }
                     out.write(b);
+                    if (++written > MAX_PACKET) {
+                        throw new IOException("XMP packet exceeds " + MAX_PACKET + " bytes");
+                    }
                 }
                 found = 0;
             }

@@ -81,7 +81,6 @@ import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
-import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -374,7 +373,7 @@ public class PDFParser implements Parser, RenderingParser {
         if (privateDict == null) {
             return;
         }
-        metadata.set(Metadata.CONTENT_TYPE, XMPSchemaIllustrator.ILLUSTRATOR);
+        metadata.set(Metadata.CONTENT_TYPE, MediaType.application("illustrator").toString());
         //TODO -- consider parsing the metadata
         //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
     }
