@@ -909,26 +909,15 @@
     <magic priority="50">
       <!-- PEM encoded -->
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
-      <!-- DER encoded, sequence+length, object=pkcs7-signedData -->
-      <match value="0x3080" offset="0">
+      <!-- DER encoded: SEQUENCE then a CMS ContentInfo whose contentType is in the pkcs7 arc
+           1.2.840.113549.1.7.x (signedData .2, envelopedData .3, digestedData .5, encryptedData .6,
+           ... last OID byte masked) followed by the [0] content tag (a0). offset 2:6 spans the DER
+           SEQUENCE length forms (short-form + 80/81/82/83/84), so small short-form containers such
+           as a bare digestedData are matched too. This is the coarse family label; Pkcs7Parser
+           refines the exact smime-type. -->
+      <match value="0x30" offset="0">
          <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="2"/>
-      </match>
-      <match value="0x3081" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="3"/>
-      </match>
-      <match value="0x3082" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="4"/>
-      </match>
-      <match value="0x3083" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="5"/>
-      </match>
-      <match value="0x3084" offset="0">
-         <match value="0x06092a864886f70d0107FFa0" type="string"
-                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="6"/>
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="2:6"/>
       </match>
     </magic>
   </mime-type>

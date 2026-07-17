@@ -57,6 +57,9 @@ public class Pkcs7ParserTest {
                 parsedType("testPKCS7_compressed_def_long.p7z"));
         assertEquals("application/pkcs7-mime; smime-type=compressed-data",
                 parsedType("testPKCS7_compressed_ind.p7z"));
+        // TIKA-2856: digestedData refined at parse time (coarse magic now routes it here)
+        assertEquals("application/pkcs7-mime; smime-type=digested-data",
+                parsedType("testPKCS7_digested.p7"));
     }
 
     /** Detached signatures are labelled pkcs7-signature and no longer throw. */
