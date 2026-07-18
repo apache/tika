@@ -314,7 +314,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.70.0</google.cloud.version>
-    <aws2.version>2.47.5</aws2.version>
+    <aws2.version>2.48.3</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -395,7 +395,7 @@
     <junrar.version>7.6.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.3.1</kafka.version>
-    <kotlin-stdlib.version>2.4.0</kotlin-stdlib.version>
+    <kotlin-stdlib.version>2.4.10</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <!-- 3.x requires jdk17 -->
     <log4j2.version>2.26.1</log4j2.version>
@@ -410,7 +410,7 @@
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.16.Final</netty.version>
-    <oak.jackrabbit.version>2.2.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>2.4.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
     <opennlp.version>2.2.0</opennlp.version>
@@ -441,7 +441,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.13.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.14.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
