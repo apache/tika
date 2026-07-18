@@ -50,5 +50,7 @@ public class Pkcs7DetectionTest {
         // existing masked CMS magic detects signed/enveloped coarsely as pkcs7-signature by content
         assertEquals("application/pkcs7-signature", detect("testPKCS7_signed_data_def.p7m"));
         assertEquals("application/pkcs7-signature", detect("testPKCS7_enveloped_def.p7m"));
+        // TIKA-2856: a short-form-length digestedData is now caught coarsely (routes to Pkcs7Parser)
+        assertEquals("application/pkcs7-signature", detect("testPKCS7_digested.p7"));
     }
 }
