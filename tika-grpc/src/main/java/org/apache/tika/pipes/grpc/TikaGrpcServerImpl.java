@@ -59,6 +59,7 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.grpc.mapper.DocumentBuilder;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -291,6 +292,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         Metadata tikaMetadata = new Metadata();
+        // Times the whole pipesClient.process() round trip: fetch and parse both happen
+        // inside the forked pipes worker, so this is fetch+parse latency, not parse-only.
+        long fetchParseStart = System.nanoTime();
         try {
             ParseContext parseContext = new ParseContext();
             String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
@@ -312,6 +316,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
                 fetchReplyBuilder.setErrorMessage(pipesResult.message());
             }
+            long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
+            Metadata primary = null;
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
                 for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
                     for (String name : metadata.names()) {
@@ -321,7 +327,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                         }
                     }
                 }
+                if (!pipesResult.emitData().getMetadataList().isEmpty()) {
+                    primary = pipesResult.emitData().getMetadataList().get(0);
+                }
             }
+            // primary stays null (not an empty Metadata) when the pipes result carried no
+            // metadata, so DocumentBuilder can distinguish "nothing came back" from an
+            // empty parse.
+            fetchReplyBuilder.setDocument(DocumentBuilder.build(
+                    primary, request.getFetchKey(), pipesResult.status().name(),
+                    fetchParseTimeMs));
             responseObserver.onNext(fetchReplyBuilder.build());
         } catch (IOException e) {
             throw new RuntimeException(e);

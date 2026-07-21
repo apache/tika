@@ -1,8 +1,8 @@
-# Tika Pipes GRPC Server
+# Tika Pipes gRPC Server
 
-The following is the Tika Pipes GRPC Server.
-
-This server will manage a pool of Tika Pipes clients.
+The Tika Pipes gRPC server exposes fetcher and iterator management and document
+fetch-and-parse over gRPC. It runs a pool of Tika Pipes worker processes and routes
+requests through the configured fetchers.
 
 * Tika Pipes Fetcher CRUD operations
     * Create
@@ -18,6 +18,45 @@ This server will manage a pool of Tika Pipes clients.
 > tika-config; with management off, the Read RPCs return only component id and class, never
 > the config. See the
 > [Tika gRPC security configuration docs](../docs/modules/ROOT/pages/using-tika/grpc/index.adoc).
+
+## Typed parse output
+
+Parse results additionally carry a typed `org.apache.tika.grpc.v1.Document` on
+`FetchAndParseReply.document`, alongside the existing `fields`
+(`map<string,string>`) and `status`. Nothing is removed: existing clients keep
+working unchanged, and the legacy map will only be deprecated once the typed
+`Document` also carries content.
+
+Rather than one proto message per source format, `Document` models metadata by
+concern:
+
+1. **Typed metadata**: a small, bounded set of common fields on `DocumentMetadata` —
+   the Dublin Core descriptive core (title, authors, description, keywords,
+   languages, publishers, identifiers, dates, rights) — the cross-format facts every
+   consumer wants, typed.
+2. **Tagged tail**: `extra` (`repeated MetadataField`) carries everything
+   format-specific (PDF permissions, EXIF/GPS, OOXML core properties, …), typed where
+   Tika's own `Property` declares a type and a string otherwise — never guessed. This
+   is the lossless catch-all; nothing is dropped.
+3. **Envelope**: detected `content_type`, `origin` (filename, byte size, parser,
+   source SHA-256 when a digester is configured), and a typed `ParseStatus`.
+
+Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
+
+| Module | Role |
+|--------|------|
+| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v1`: `document.proto`), generated Java stubs, bundled `FileDescriptorSet` under `META-INF/` |
+| `tika-grpc-mapper` | Maps Tika `Metadata` to `Document` via `DocumentTransformer`s (code, not schema) |
+| `tika-grpc` | gRPC service implementation (this module) |
+
+See [tika-grpc-api/README.md](../tika-grpc-api/README.md) for the full shape.
+Mapper tests live under `tika-grpc-mapper/src/test/java`.
+
+Build the API and mapper with the rest of the reactor:
+
+```bash
+./mvnw -pl tika-grpc-api,tika-grpc-mapper,tika-grpc test
+```
 
 ## Distribution and Maven Artifact
 

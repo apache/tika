@@ -136,6 +136,16 @@
       <version>${j2objc-annotations.version}</version> <!-- prevent downgrade of version in guava -->
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-grpc-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-grpc-mapper</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-async-cli</artifactId>
       <version>${project.version}</version>
@@ -380,6 +390,9 @@
           <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
           <pluginId>grpc-java</pluginId>
           <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+          <additionalProtoPathElements>
+            <additionalProtoPathElement>${project.basedir}/../tika-grpc-api/src/main/proto</additionalProtoPathElement>
+          </additionalProtoPathElements>
         </configuration>
         <executions>
           <execution>
