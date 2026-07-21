@@ -104,7 +104,7 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.resources = resources;
         this.pipesConfig = pipesConfig;
         this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
     @Override

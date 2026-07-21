@@ -189,7 +189,7 @@ public class PipesServer implements AutoCloseable {
         validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
 
