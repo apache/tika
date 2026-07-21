@@ -108,6 +108,9 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Test Genre", metadata.get(XMPDM.GENRE));
         assertEquals("Test Comments", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        //average bitrate from the esds elementary stream descriptor
+        assertEquals("256000", metadata.get(Audio.BITRATE));
+        assertNull(metadata.get(Audio.HAS_DRM));
         //the totals from the trkn/disk atoms were previously read and discarded
         assertEquals("42", metadata.get(Audio.TRACK_COUNT));
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
@@ -291,6 +294,25 @@ public class MP4ParserTest extends TikaTest {
         }
         return vals;
     } */
+
+    @Test
+    public void testDrmProtectedM4a() throws Exception {
+        //the sample description declares a protected 'drms' sample entry
+        Metadata metadata = new Metadata();
+        getText("testMP4_drm.m4a", metadata);
+        assertEquals("true", metadata.get(Audio.HAS_DRM));
+    }
+
+    @Test
+    public void testEsdsWithDescriptorFlags() throws Exception {
+        //the ES descriptor declares the optional stream dependence, URL and
+        //OCR fields, which shift the DecoderConfigDescriptor; the URL string
+        //deliberately reads "sinf" so a raw fourcc scan would misreport DRM
+        Metadata metadata = new Metadata();
+        getText("testMP4_esdsFlags.m4a", metadata);
+        assertEquals("96000", metadata.get(Audio.BITRATE));
+        assertNull(metadata.get(Audio.HAS_DRM));
+    }
 
     @Test
     public void testQuickTimeMetadataKeys() throws Exception {

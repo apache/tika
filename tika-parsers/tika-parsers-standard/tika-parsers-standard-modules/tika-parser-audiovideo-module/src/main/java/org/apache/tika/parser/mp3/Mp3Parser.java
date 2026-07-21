@@ -96,12 +96,30 @@ public class Mp3Parser implements Parser {
         // Now iterate over all audio frames in the file
         AudioFrame frame = mpegStream.nextFrame();
         float duration = 0;
+        long bitRateSum = 0;
+        long frameCount = 0;
+        int baselineBitRate = -1;
+        boolean variableBitRate = false;
+        boolean firstFrame = true;
         boolean skipped = true;
         while (frame != null && skipped) {
             duration += frame.getDuration();
             if (firstAudio == null) {
                 firstAudio = frame;
             }
+            //the Xing/Info/VBRI header is a valid MPEG frame but carries no
+            //audio and may use a different bitrate, so keep it out of the stats
+            if (!(firstFrame && isMetadataFrame(mpegStream))) {
+                int bitRate = frame.getBitRate();
+                bitRateSum += bitRate;
+                frameCount++;
+                if (baselineBitRate < 0) {
+                    baselineBitRate = bitRate;
+                } else if (bitRate != baselineBitRate) {
+                    variableBitRate = true;
+                }
+            }
+            firstFrame = false;
             skipped = mpegStream.skipFrame();
             if (skipped) {
                 frame = mpegStream.nextFrame();
@@ -136,6 +154,12 @@ public class Mp3Parser implements Parser {
         ret.lyrics = lyrics;
         ret.tags = tags.toArray(new ID3Tags[0]);
         ret.duration = duration;
+        if (frameCount > 0) {
+            //MP3 frame duration does not depend on the bitrate, so the plain
+            //mean over the frames is the true average bitrate
+            ret.averageBitRate = (int) (bitRateSum / frameCount);
+            ret.variableBitRate = variableBitRate;
+        }
         return ret;
     }
 
@@ -159,6 +183,10 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.DURATION, audioAndTags.durationSeconds());
         }
 
+        if (audioAndTags.averageBitRate > 0) {
+            metadata.set(Audio.BITRATE, audioAndTags.averageBitRate);
+            metadata.set(Audio.IS_VARIABLE_BITRATE, audioAndTags.variableBitRate);
+        }
         if (audioAndTags.audio != null) {
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
@@ -278,11 +306,34 @@ public class Mp3Parser implements Parser {
     public int getMaxRecordSize() {
         return ID3v2Frame.getMaxRecordSize();
     }
+    /**
+     * Does the current frame's payload start with a Xing, Info or VBRI
+     * header? Those tag frames describe the stream rather than carrying
+     * audio. The markers sit at small fixed offsets that depend on version
+     * and channel mode, all within the first 40 payload bytes.
+     */
+    private static boolean isMetadataFrame(MpegStream mpegStream) throws IOException {
+        byte[] payload = mpegStream.peekFramePayload(40);
+        for (int i = 0; i + 4 <= payload.length; i++) {
+            if ((payload[i] == 'X' && payload[i + 1] == 'i'
+                    && payload[i + 2] == 'n' && payload[i + 3] == 'g')
+                    || (payload[i] == 'I' && payload[i + 1] == 'n'
+                    && payload[i + 2] == 'f' && payload[i + 3] == 'o')
+                    || (payload[i] == 'V' && payload[i + 1] == 'B'
+                    && payload[i + 2] == 'R' && payload[i + 3] == 'I')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;
         private LyricsHandler lyrics;
         private float duration; // Milliseconds
+        private int averageBitRate; // bits per second, 0 if no frame was seen
+        private boolean variableBitRate;
 
         private float durationSeconds() {
             return duration / 1000;
