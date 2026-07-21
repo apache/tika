@@ -16,9 +16,12 @@
 """
 Turn a CHANGES-X.Y.Z.txt release section into the apt "notable changes" list.
 
-Python 3 port of Chris Mattmann's extract-tika-issues.py (chrismattmann/apachestuff),
-extended to recognise "  BREAKING CHANGES" / "  NEW FEATURES" style section headers
-and to join wrapped continuation lines.
+Python 3 port of Chris Mattmann's extract-tika-issues.py, originally from:
+  https://github.com/chrismattmann/apachestuff/blob/master/extract-tika-issues.py
+Updates over the original: py2 -> py3; dropped the numeric-list heuristic that
+mangled version numbers ("4.x", "12.0.36"); recognise "  BREAKING CHANGES" /
+"  NEW FEATURES" section headers; join wrapped continuation lines; guard the
+common arg-order swap.
 
 Usage:
   extract-tika-issues.py CHANGES_FILE OUTPUT_FILE RELEASE_VERSION

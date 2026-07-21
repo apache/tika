@@ -18,9 +18,13 @@ Emit a CANDIDATE Apache-Tika contributor list (apt bullet format) for a release,
 merging two sources:
 
   1. JIRA  -- reporters, assignees, and comment authors on every issue in the
-     fix version. (Replaces Chris Mattmann's original `extract-tika-contribs`
-     bash script, chrismattmann/apachestuff, which scraped the JIRA printable
-     HTML via `grep ViewProfile | cut | sort | uniq` behind a `tika` shell alias.)
+     fix version. (Reimplements Chris Mattmann's original `extract-tika-contribs`
+     bash script, from
+     https://github.com/chrismattmann/apachestuff/blob/master/extract-tika-contribs
+     which scraped the JIRA printable HTML via `grep ViewProfile | cut | sort |
+     uniq` behind a `tika` shell alias. This version uses the JIRA REST + GitHub
+     compare APIs instead and adds GitHub PR authors, login->name resolution,
+     bot/AI filtering, and a case-insensitive sort.)
 
   2. GitHub -- commit authors and Co-authored-by trailers between the previous
      release tag and the new one. Increasingly contributors go straight to
