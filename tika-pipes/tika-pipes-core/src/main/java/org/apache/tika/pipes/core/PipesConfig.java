@@ -27,6 +27,10 @@ import org.apache.tika.pipes.api.ParseMode;
 public class PipesConfig {
 
 
+    // Must equal PipesMessage.MAX_PAYLOAD_BYTES so the no-arg PipesMessage.read() fallback
+    // enforces the same ceiling as operator-configured call sites.
+    public static final long DEFAULT_MAX_IPC_PAYLOAD_BYTES = 100L * 1024 * 1024;
+
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
     public static final int DEFAULT_NUM_CLIENTS = 4;
@@ -55,6 +59,8 @@ public class PipesConfig {
      * and startup time at the cost of reduced isolation - one crash affects all in-flight requests.
      */
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
+
+    private long maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
 
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
@@ -479,5 +485,37 @@ public class PipesConfig {
      */
     public void setUseSharedServer(boolean useSharedServer) {
         this.useSharedServer = useSharedServer;
+    }
+
+    /**
+     * Maximum size in bytes of a single IPC message payload exchanged between
+     * {@link org.apache.tika.pipes.core.PipesClient} and
+     * {@link org.apache.tika.pipes.core.server.PipesServer}.
+     * <p>
+     * This limit guards both the serialized {@code FetchEmitTuple} sent to the server
+     * and the serialized {@code PipesResult} (extracted text + metadata) returned by
+     * the server. Callers that regularly hit this limit should first consider
+     * configuring a {@code MetadataWriteLimiterFactory} to bound extracted-text size.
+     *
+     * @return the maximum IPC payload size in bytes (default 100 MB)
+     */
+    public long getMaxIpcPayloadBytes() {
+        return maxIpcPayloadBytes;
+    }
+
+    /**
+     * Sets the maximum IPC payload size. Must be a positive value. Note that the
+     * wire protocol uses a 4-byte signed integer for the length field, so values
+     * above {@link Integer#MAX_VALUE} are effectively unlimited at the protocol level.
+     *
+     * @param maxIpcPayloadBytes positive payload limit in bytes
+     * @throws IllegalArgumentException if the value is not positive
+     */
+    public void setMaxIpcPayloadBytes(long maxIpcPayloadBytes) {
+        if (maxIpcPayloadBytes <= 0) {
+            throw new IllegalArgumentException(
+                    "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
+        }
+        this.maxIpcPayloadBytes = maxIpcPayloadBytes;
     }
 }

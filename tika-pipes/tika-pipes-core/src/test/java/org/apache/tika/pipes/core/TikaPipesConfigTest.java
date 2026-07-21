@@ -16,9 +16,48 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.Test;
+
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaJsonConfig;
 
 public class TikaPipesConfigTest extends TikaTest {
+
+    @Test
+    void testMaxIpcPayloadBytesDefault() {
+        PipesConfig config = new PipesConfig();
+        assertEquals(PipesConfig.DEFAULT_MAX_IPC_PAYLOAD_BYTES, config.getMaxIpcPayloadBytes());
+        assertEquals(100L * 1024 * 1024, config.getMaxIpcPayloadBytes());
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesFromJson() throws Exception {
+        String json = """
+                {
+                  "pipes": {
+                    "maxIpcPayloadBytes": 209715200
+                  }
+                }
+                """;
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        PipesConfig config = PipesConfig.load(tikaJsonConfig);
+        assertEquals(209715200L, config.getMaxIpcPayloadBytes());
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesRejectsNonPositive() {
+        PipesConfig config = new PipesConfig();
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(-1));
+    }
+
     //this handles tests for the newer pipes type configs.
 /*
     TODO -- reimplent these with json

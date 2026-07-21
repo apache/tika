@@ -106,7 +106,7 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.resources = resources;
         this.pipesConfig = pipesConfig;
         this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
     @Override
@@ -136,7 +136,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             try {
                 PipesMessage msg;
                 try {
-                    msg = PipesMessage.read(input);
+                    msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     LOG.info("handlerId={}: socket timeout while waiting for task, closing connection",

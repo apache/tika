@@ -46,13 +46,25 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     private static final byte[] EMPTY = new byte[0];
 
     /**
-     * Reads one framed message from the stream.
+     * Reads one framed message from the stream, enforcing {@link #MAX_PAYLOAD_BYTES}.
      *
      * @throws ProtocolDesyncException if magic bytes don't match
      * @throws EOFException if the stream ends before a complete message
      * @throws IOException on payload size violations or I/O errors
      */
     public static PipesMessage read(DataInputStream in) throws IOException {
+        return read(in, MAX_PAYLOAD_BYTES);
+    }
+
+    /**
+     * Reads one framed message from the stream, enforcing a configurable payload limit.
+     *
+     * @param maxPayloadBytes maximum allowed payload size in bytes
+     * @throws ProtocolDesyncException if magic bytes don't match
+     * @throws EOFException if the stream ends before a complete message
+     * @throws IOException on payload size violations or I/O errors
+     */
+    public static PipesMessage read(DataInputStream in, long maxPayloadBytes) throws IOException {
         int m0 = in.read();
         if (m0 == -1) {
             throw new EOFException("Stream closed before magic byte");
@@ -77,9 +89,9 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
         if (len < 0) {
             throw new IOException("Negative payload length: " + len);
         }
-        if (len > MAX_PAYLOAD_BYTES) {
+        if (len > maxPayloadBytes) {
             throw new IOException("Payload length " + len +
-                    " exceeds maximum of " + MAX_PAYLOAD_BYTES + " bytes");
+                    " exceeds maximum of " + maxPayloadBytes + " bytes");
         }
 
         byte[] payload;
