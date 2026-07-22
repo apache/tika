@@ -381,7 +381,7 @@ public class PipesClient implements Closeable {
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get());
             }
             try {
-                PipesMessage msg = PipesMessage.read(tuple.input);
+                PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
                 LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
 
                 // Send ACK only for messages that require it
