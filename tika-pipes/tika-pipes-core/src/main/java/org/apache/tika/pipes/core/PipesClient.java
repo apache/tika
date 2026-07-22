@@ -72,7 +72,6 @@ public class PipesClient implements Closeable {
     public static final int SOCKET_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
-    private final long maxIpcPayloadBytes;
     private final ServerManager serverManager;
     private final boolean ownsServerManager;
     private final int pipesClientId;
@@ -96,7 +95,6 @@ public class PipesClient implements Closeable {
      */
     public PipesClient(PipesConfig pipesConfig, ServerManager serverManager) {
         this.pipesConfig = pipesConfig;
-        this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.serverManager = serverManager;
         this.ownsServerManager = false;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
@@ -114,7 +112,6 @@ public class PipesClient implements Closeable {
      */
     public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
-        this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
         this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigPath, pipesClientId);
         this.ownsServerManager = true;
@@ -138,7 +135,7 @@ public class PipesClient implements Closeable {
         }
         try {
             PipesMessage.ping().write(tuple.output);
-            PipesMessage response = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
+            PipesMessage response = PipesMessage.read(tuple.input);
             if (response.type() == PipesMessageType.PING) {
                 return true;
             }
@@ -372,7 +369,7 @@ public class PipesClient implements Closeable {
                         intermediateResult.get());
             }
             try {
-                PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
+                PipesMessage msg = PipesMessage.read(tuple.input);
                 LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
 
                 // Send ACK only for messages that require it
@@ -468,7 +465,7 @@ public class PipesClient implements Closeable {
         if (tuple == null) {
             throw new IOException("connection closed");
         }
-        PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
+        PipesMessage msg = PipesMessage.read(tuple.input);
         if (msg.type() == PipesMessageType.READY) {
             LOG.info("clientId={}: server successfully started", pipesClientId);
         } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {

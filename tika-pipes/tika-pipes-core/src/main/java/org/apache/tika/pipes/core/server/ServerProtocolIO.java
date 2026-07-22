@@ -51,12 +51,10 @@ public class ServerProtocolIO {
 
     private final DataInputStream input;
     private final DataOutputStream output;
-    private final long maxIpcPayloadBytes;
 
-    public ServerProtocolIO(DataInputStream input, DataOutputStream output, long maxIpcPayloadBytes) {
+    public ServerProtocolIO(DataInputStream input, DataOutputStream output) {
         this.input = input;
         this.output = output;
-        this.maxIpcPayloadBytes = maxIpcPayloadBytes;
     }
 
     /**
@@ -103,7 +101,7 @@ public class ServerProtocolIO {
      * @throws IOException if the message is any other non-ACK type, or on I/O error
      */
     public void awaitAck() throws IOException {
-        PipesMessage msg = PipesMessage.read(input, maxIpcPayloadBytes);
+        PipesMessage msg = PipesMessage.read(input);
         if (msg.type() == PipesMessageType.ACK) {
             return;
         }

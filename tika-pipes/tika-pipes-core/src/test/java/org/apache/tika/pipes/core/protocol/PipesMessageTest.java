@@ -124,7 +124,7 @@ class PipesMessageTest {
         dos.write(PipesMessage.MAGIC_0);
         dos.write(PipesMessage.MAGIC_1);
         dos.write(PipesMessageType.FINISHED.getByte());
-        dos.writeInt(PipesMessage.MAX_PAYLOAD_BYTES + 1);
+        dos.writeInt((int) (PipesMessage.MAX_PAYLOAD_BYTES + 1));
         dos.flush();
 
         assertThrows(IOException.class, () ->
@@ -192,43 +192,6 @@ class PipesMessageTest {
         assertEquals(PipesMessageType.INTERMEDIATE_RESULT, roundTrip(PipesMessage.intermediateResult(data)).type());
         assertEquals(PipesMessageType.STARTUP_FAILED, roundTrip(PipesMessage.startupFailed(data)).type());
         assertEquals(PipesMessageType.OOM, roundTrip(PipesMessage.crash(PipesMessageType.OOM, data)).type());
-    }
-
-    // --- configurable read limit ---
-
-    @Test
-    void testCustomReadLimit_withinLimit() throws IOException {
-        byte[] payload = "hello".getBytes(StandardCharsets.UTF_8); // 5 bytes
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PipesMessage.finished(payload).write(new DataOutputStream(baos));
-
-        PipesMessage result = PipesMessage.read(
-                new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), 5);
-        assertArrayEquals(payload, result.payload());
-    }
-
-    @Test
-    void testCustomReadLimit_exceedsCustomLimit() throws IOException {
-        byte[] payload = "hello world".getBytes(StandardCharsets.UTF_8); // 11 bytes
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PipesMessage.finished(payload).write(new DataOutputStream(baos));
-
-        // limit of 10 < payload of 11 → must reject
-        assertThrows(IOException.class, () ->
-                PipesMessage.read(
-                        new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), 10));
-    }
-
-    @Test
-    void testCustomReadLimit_belowDefaultButAboveCustom() throws IOException {
-        // payload well under MAX_PAYLOAD_BYTES but above a tighter custom limit
-        byte[] payload = new byte[1024];
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PipesMessage.finished(payload).write(new DataOutputStream(baos));
-
-        assertThrows(IOException.class, () ->
-                PipesMessage.read(
-                        new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), 512));
     }
 
     private PipesMessage roundTrip(PipesMessage msg) throws IOException {

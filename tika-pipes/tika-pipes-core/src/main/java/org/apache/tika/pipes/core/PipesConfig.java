@@ -23,13 +23,12 @@ import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
 
 public class PipesConfig {
 
 
-    // Must equal PipesMessage.MAX_PAYLOAD_BYTES so the no-arg PipesMessage.read() fallback
-    // enforces the same ceiling as operator-configured call sites.
-    public static final long DEFAULT_MAX_IPC_PAYLOAD_BYTES = 100L * 1024 * 1024;
+    public static final long DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
@@ -517,5 +516,6 @@ public class PipesConfig {
                     "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
         }
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
+        PipesMessage.MAX_PAYLOAD_BYTES = maxIpcPayloadBytes;
     }
 }
