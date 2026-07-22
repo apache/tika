@@ -1,0 +1,352 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+syntax = "proto3";
+package tika;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika";
+option java_outer_classname = "TikaTypedResponseProto";
+option objc_class_prefix = "HLW";
+
+// Experimental: strongly-typed parse response as an alternative to the flat map<string,string>
+// fields in FetchAndParseReply.  Motivation: Tika's metadata is already strongly typed internally
+// (booleans, integers, timestamps, lists) — serialising everything to strings wastes CPU cycles
+// during serialisation/deserialisation and forces callers to re-parse values.
+//
+// This message is populated alongside the existing `fields` map in FetchAndParseReply (field 5).
+// It is opt-in and backward compatible — existing clients that ignore field 5 are unaffected.
+//
+// Design credit: Kristian Rickert (ai-pipestream/pipestream-protos) who produced the original
+// comprehensive typed schema that inspired this implementation.
+//
+// See TIKA-4727.
+message TikaTypedResponse {
+  // Extracted plain-text body and summary fields.
+  TikaTextContent content = 1;
+
+  // Dublin Core standard descriptive metadata — present for most document types.
+  DublinCoreMetadata dublin_core = 2;
+
+  // Document-type-specific typed fields.  Exactly one branch is populated based on Content-Type.
+  oneof document_metadata {
+    PdfTypedMetadata pdf        = 3;
+    OfficeTypedMetadata office  = 4;
+    ImageTypedMetadata image    = 5;
+    EmailTypedMetadata email    = 6;
+    MediaTypedMetadata media    = 7;
+    GenericTypedMetadata generic = 8;
+  }
+
+  // Parse lifecycle details.
+  TikaTypedParseStatus parse_status = 9;
+
+  // Embedded documents discovered during parsing (depth-limited by the Tika config).
+  repeated TikaEmbeddedDocument embedded_documents = 10;
+
+  // Fields present in the original metadata that were not mapped to any typed field above.
+  // This allows callers to receive all Tika metadata without falling back to the full
+  // map<string,string> fields response.
+  map<string, string> overflow_fields = 11;
+}
+
+// Plain-text extraction result.
+message TikaTextContent {
+  // Full extracted body text.
+  string body = 1;
+  optional string title = 2;
+  optional string description = 3;
+  optional string keywords = 4;
+  // Number of Unicode characters in the extracted body (can differ from body.length() for
+  // supplementary characters).
+  optional int64 content_length = 5;
+}
+
+// Dublin Core Metadata Elements (https://www.dublincore.org/specifications/dublin-core/dces/).
+// Field names follow dcterms / dc namespace conventions as used inside Tika.
+message DublinCoreMetadata {
+  optional string title = 1;
+  repeated string creator = 2;
+  optional string description = 3;
+  repeated string subject = 4;
+  optional string publisher = 5;
+  repeated string contributor = 6;
+  optional google.protobuf.Timestamp date = 7;
+  optional string date_raw = 8;
+  optional string type = 9;
+  optional string format = 10;
+  optional string identifier = 11;
+  optional string source = 12;
+  repeated string language = 13;
+  optional string relation = 14;
+  optional string coverage = 15;
+  optional string rights = 16;
+  optional google.protobuf.Timestamp created = 17;
+  optional string created_raw = 18;
+  optional google.protobuf.Timestamp modified = 19;
+  optional string modified_raw = 20;
+  // xmp:CreatorTool
+  optional string creator_tool = 21;
+  optional string comments = 22;
+  optional string rating = 23;
+}
+
+// Typed PDF metadata — populated when Content-Type is application/pdf.
+// Field names correspond to Tika's PDF and AccessPermissions interfaces.
+message PdfTypedMetadata {
+  optional string pdf_version = 1;
+  optional bool is_encrypted = 2;
+  optional int32 page_count = 3;
+  optional string producer = 4;
+
+  // PDF DocInfo fields
+  optional string doc_info_creator = 5;
+  optional string doc_info_creator_tool = 6;
+  optional google.protobuf.Timestamp doc_info_created = 7;
+  optional string doc_info_created_raw = 8;
+  optional google.protobuf.Timestamp doc_info_modified = 9;
+  optional string doc_info_modified_raw = 10;
+  optional string doc_info_keywords = 11;
+  optional string doc_info_producer = 12;
+  optional string doc_info_subject = 13;
+  optional string doc_info_title = 14;
+
+  // Standards compliance
+  optional string pdfa_version = 15;
+  optional string pdfaid_conformance = 16;
+  optional int32 pdfaid_part = 17;
+
+  // Document features
+  optional bool has_xfa = 18;
+  optional bool has_xmp = 19;
+  optional bool has_acroform_fields = 20;
+  optional bool has_marked_content = 21;
+  optional bool has_collection = 22;
+  optional bool has_3d = 23;
+  optional bool has_signature = 24;
+
+  // Access permissions (from AccessPermissions interface)
+  optional bool can_print = 25;
+  optional bool can_print_faithful = 26;
+  optional bool can_modify_document = 27;
+  optional bool can_modify_annotations = 28;
+  optional bool can_extract_content = 29;
+  optional bool can_assemble_document = 30;
+  optional bool can_fill_in_form = 31;
+  optional bool can_extract_for_accessibility = 32;
+
+  // Text quality
+  optional int32 total_unmapped_unicode_chars = 33;
+  optional double overall_pct_unmapped_unicode_chars = 34;
+  optional bool contains_damaged_font = 35;
+  optional bool contains_non_embedded_font = 36;
+  optional int32 ocr_page_count = 37;
+
+  // Actions / annotations
+  repeated string action_types = 38;
+  repeated string annotation_types = 39;
+
+  // Versioning
+  optional int32 incremental_update_number = 40;
+
+  // Parsing diagnostics
+  repeated string parsed_by = 41;
+  optional string content_type = 42;
+}
+
+// Typed Office document metadata — populated when Content-Type matches Microsoft Office
+// (OOXML, OLE2) or OpenDocument formats.
+// Field names correspond to Tika's Office, OfficeOpenXMLCore, and OfficeOpenXMLExtended interfaces.
+message OfficeTypedMetadata {
+  // Application identity
+  optional string application = 1;
+  optional string app_version = 2;
+  optional string template = 3;
+
+  // Authorship
+  repeated string author = 4;
+  optional string last_author = 5;
+  optional string initial_author = 6;
+  optional string last_modified_by = 7;
+  optional string company = 8;
+  repeated string manager = 9;
+
+  // Dates
+  optional google.protobuf.Timestamp creation_date = 10;
+  optional string creation_date_raw = 11;
+  optional google.protobuf.Timestamp save_date = 12;
+  optional string save_date_raw = 13;
+  optional google.protobuf.Timestamp print_date = 14;
+  optional string print_date_raw = 15;
+  optional google.protobuf.Timestamp last_printed = 16;
+  optional string last_printed_raw = 17;
+
+  // Document statistics
+  optional int32 page_count = 18;
+  optional int32 word_count = 19;
+  optional int32 character_count = 20;
+  optional int32 character_count_with_spaces = 21;
+  optional int32 paragraph_count = 22;
+  optional int32 line_count = 23;
+  optional int32 slide_count = 24;
+  optional int32 image_count = 25;
+  optional int32 table_count = 26;
+
+  // Versioning and identity
+  optional string revision = 27;
+  optional string category = 28;
+  optional string content_status = 29;
+  optional string presentation_format = 30;
+  optional string notes = 31;
+  optional int32 doc_security = 32;
+  optional string doc_security_string = 33;
+
+  // Feature flags
+  optional bool has_track_changes = 34;
+  optional bool has_hidden_text = 35;
+  optional bool has_comments = 36;
+  optional bool is_encrypted = 37;
+  optional bool has_signature = 38;
+  optional bool has_hidden_sheets = 39;
+  optional bool has_animations = 40;
+
+  // Parsing diagnostics
+  repeated string parsed_by = 41;
+  optional string content_type = 42;
+}
+
+// Typed image metadata — populated when Content-Type starts with image/.
+// Field names follow Tika's TIFF / EXIF interfaces.
+message ImageTypedMetadata {
+  optional int32 image_width = 1;
+  optional int32 image_height = 2;
+  optional int32 bits_per_sample = 3;
+  optional int32 samples_per_pixel = 4;
+  optional string color_space = 5;
+
+  // Resolution
+  optional double x_resolution = 6;
+  optional double y_resolution = 7;
+  optional string resolution_unit = 8;
+
+  // Compression / encoding
+  optional string compression = 9;
+  optional string pixel_array_dimensions = 10;
+  optional string color_transform = 11;
+
+  // EXIF capture info
+  optional google.protobuf.Timestamp datetime_original = 12;
+  optional string datetime_original_raw = 13;
+  optional google.protobuf.Timestamp datetime_digitized = 14;
+  optional string datetime_digitized_raw = 15;
+  optional string make = 16;
+  optional string model = 17;
+  optional string software = 18;
+  optional string orientation = 19;
+  optional double exposure_time = 20;
+  optional double f_number = 21;
+  optional int32 iso_speed_ratings = 22;
+  optional double focal_length = 23;
+  optional string flash = 24;
+  optional string metering_mode = 25;
+  optional string white_balance = 26;
+
+  // GPS
+  optional double gps_latitude = 27;
+  optional double gps_longitude = 28;
+  optional double gps_altitude = 29;
+
+  // Parsing diagnostics
+  repeated string parsed_by = 30;
+  optional string content_type = 31;
+}
+
+// Typed email / message metadata — populated when Content-Type is message/rfc822 or similar.
+message EmailTypedMetadata {
+  optional string message_from = 1;
+  repeated string message_to = 2;
+  repeated string message_cc = 3;
+  repeated string message_bcc = 4;
+  optional string subject = 5;
+  optional google.protobuf.Timestamp message_date = 6;
+  optional string message_date_raw = 7;
+  optional string message_id = 8;
+  optional string in_reply_to = 9;
+  optional bool is_multipart = 10;
+  optional int32 attachment_count = 11;
+  repeated string parsed_by = 12;
+  optional string content_type = 13;
+}
+
+// Typed audio/video metadata — populated when Content-Type starts with audio/ or video/.
+message MediaTypedMetadata {
+  optional string format = 1;
+  optional string duration_raw = 2;
+  optional double duration_seconds = 3;
+  optional int32 video_width = 4;
+  optional int32 video_height = 5;
+  optional double video_frame_rate = 6;
+  optional string video_compressor = 7;
+  optional int32 audio_sample_rate = 8;
+  optional int32 audio_channels = 9;
+  optional string audio_compressor = 10;
+  optional int32 audio_bits_per_sample = 11;
+  optional int32 bit_rate = 12;
+  optional string channel_type = 13;
+  repeated string parsed_by = 14;
+  optional string content_type = 15;
+}
+
+// Typed metadata for document types not covered by the specialised messages above
+// (HTML, plain text, XML, archives, fonts, etc.).
+message GenericTypedMetadata {
+  optional string content_type = 1;
+  repeated string parsed_by = 2;
+  optional string detected_language = 3;
+  optional double detected_language_confidence = 4;
+  optional string detected_encoding = 5;
+  optional int32 version_count = 6;
+  optional int32 version_number = 7;
+  optional string resource_name = 8;
+}
+
+// Parse lifecycle information.
+message TikaTypedParseStatus {
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_PARTIAL = 2;
+    STATUS_FAILED = 3;
+    STATUS_TIMEOUT = 4;
+  }
+  Status status = 1;
+  repeated string parsers_used = 2;
+  repeated string warnings = 3;
+  optional string error_message = 4;
+}
+
+// Reference to a document embedded within the parent document.
+// The embedded document is reported separately in the emit data list and can be correlated
+// by fetch_key.
+message TikaEmbeddedDocument {
+  string fetch_key = 1;
+  optional string filename = 2;
+  optional string content_type = 3;
+  optional int32 embed_depth = 4;
+}
