@@ -41,7 +41,7 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     static final byte MAGIC_1 = 0x4B; // 'K'
 
     /** Maximum payload size; configurable via {@link org.apache.tika.pipes.core.PipesConfig#setMaxIpcPayloadBytes}. */
-    public static long MAX_PAYLOAD_BYTES = 100 * 1024 * 1024;
+    public static int MAX_PAYLOAD_BYTES = 100 * 1024 * 1024;
 
     private static final byte[] EMPTY = new byte[0];
 

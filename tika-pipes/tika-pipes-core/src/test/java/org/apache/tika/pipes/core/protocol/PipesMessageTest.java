@@ -124,7 +124,7 @@ class PipesMessageTest {
         dos.write(PipesMessage.MAGIC_0);
         dos.write(PipesMessage.MAGIC_1);
         dos.write(PipesMessageType.FINISHED.getByte());
-        dos.writeInt((int) (PipesMessage.MAX_PAYLOAD_BYTES + 1));
+        dos.writeInt(PipesMessage.MAX_PAYLOAD_BYTES + 1);
         dos.flush();
 
         assertThrows(IOException.class, () ->

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
 
 public class TikaPipesConfigTest extends TikaTest {
 
@@ -33,7 +34,7 @@ public class TikaPipesConfigTest extends TikaTest {
     void testMaxIpcPayloadBytesDefault() {
         PipesConfig config = new PipesConfig();
         assertEquals(PipesConfig.DEFAULT_MAX_IPC_PAYLOAD_BYTES, config.getMaxIpcPayloadBytes());
-        assertEquals(100L * 1024 * 1024, config.getMaxIpcPayloadBytes());
+        assertEquals(100 * 1024 * 1024, config.getMaxIpcPayloadBytes());
     }
 
     @Test
@@ -48,7 +49,8 @@ public class TikaPipesConfigTest extends TikaTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
         PipesConfig config = PipesConfig.load(tikaJsonConfig);
-        assertEquals(209715200L, config.getMaxIpcPayloadBytes());
+        assertEquals(209715200, config.getMaxIpcPayloadBytes());
+        assertEquals(209715200, PipesMessage.MAX_PAYLOAD_BYTES);
     }
 
     @Test

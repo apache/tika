@@ -28,7 +28,7 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 public class PipesConfig {
 
 
-    public static final long DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
+    public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
@@ -59,7 +59,7 @@ public class PipesConfig {
      */
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
-    private long maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
+    private int maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
 
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
@@ -487,30 +487,24 @@ public class PipesConfig {
     }
 
     /**
-     * Maximum size in bytes of a single IPC message payload exchanged between
-     * {@link org.apache.tika.pipes.core.PipesClient} and
-     * {@link org.apache.tika.pipes.core.server.PipesServer}.
-     * <p>
-     * This limit guards both the serialized {@code FetchEmitTuple} sent to the server
-     * and the serialized {@code PipesResult} (extracted text + metadata) returned by
-     * the server. Callers that regularly hit this limit should first consider
-     * configuring a {@code MetadataWriteLimiterFactory} to bound extracted-text size.
+     * Returns the maximum IPC payload size in bytes.
+     * Configurable via {@code maxIpcPayloadBytes} in the {@code pipes} section of tika-config.json.
      *
      * @return the maximum IPC payload size in bytes (default 100 MB)
      */
-    public long getMaxIpcPayloadBytes() {
+    public int getMaxIpcPayloadBytes() {
         return maxIpcPayloadBytes;
     }
 
     /**
-     * Sets the maximum IPC payload size. Must be a positive value. Note that the
-     * wire protocol uses a 4-byte signed integer for the length field, so values
-     * above {@link Integer#MAX_VALUE} are effectively unlimited at the protocol level.
+     * Sets the maximum IPC payload size in bytes. Must be a positive value.
+     * Both the client and server JVMs read from the same tika-config.json, so
+     * setting this once configures the limit on both ends automatically.
      *
      * @param maxIpcPayloadBytes positive payload limit in bytes
      * @throws IllegalArgumentException if the value is not positive
      */
-    public void setMaxIpcPayloadBytes(long maxIpcPayloadBytes) {
+    public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
         if (maxIpcPayloadBytes <= 0) {
             throw new IllegalArgumentException(
                     "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
