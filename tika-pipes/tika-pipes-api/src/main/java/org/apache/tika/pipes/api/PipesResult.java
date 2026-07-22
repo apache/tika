@@ -66,6 +66,7 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         EMIT_EXCEPTION(CATEGORY.TASK_EXCEPTION),
         FETCHER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
         EMITTER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
+        PAYLOAD_LIMIT_EXCEEDED(CATEGORY.TASK_EXCEPTION),
 
         // Process crashes - forked process died, auto-restart
         OOM(CATEGORY.PROCESS_CRASH),

@@ -510,6 +510,5 @@ public class PipesConfig {
                     "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
         }
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
-        PipesMessage.MAX_PAYLOAD_BYTES = maxIpcPayloadBytes;
     }
 }

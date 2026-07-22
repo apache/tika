@@ -50,7 +50,8 @@ public class TikaPipesConfigTest extends TikaTest {
                 new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
         PipesConfig config = PipesConfig.load(tikaJsonConfig);
         assertEquals(209715200, config.getMaxIpcPayloadBytes());
-        assertEquals(209715200, PipesMessage.MAX_PAYLOAD_BYTES);
+        // The global constant is unchanged — the configured limit is passed per-read
+        assertEquals(100 * 1024 * 1024, PipesMessage.MAX_PAYLOAD_BYTES);
     }
 
     @Test
@@ -58,6 +59,16 @@ public class TikaPipesConfigTest extends TikaTest {
         PipesConfig config = new PipesConfig();
         assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(0));
         assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(-1));
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesFromJsonRejectsZero() throws Exception {
+        String json = """
+                {"pipes": {"maxIpcPayloadBytes": 0}}
+                """;
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        assertThrows(Exception.class, () -> PipesConfig.load(tikaJsonConfig));
     }
 
     //this handles tests for the newer pipes type configs.

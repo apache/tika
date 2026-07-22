@@ -127,7 +127,7 @@ class PipesMessageTest {
         dos.writeInt(PipesMessage.MAX_PAYLOAD_BYTES + 1);
         dos.flush();
 
-        assertThrows(IOException.class, () ->
+        assertThrows(PayloadLimitExceededException.class, () ->
                 PipesMessage.read(new DataInputStream(new ByteArrayInputStream(baos.toByteArray()))));
     }
 
