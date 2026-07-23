@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 public class ESClientTest extends TikaTest {
 
@@ -91,13 +92,20 @@ public class ESClientTest extends TikaTest {
         assertNotContained("relation_type", json);
     }
 
+    /** tk:chunks is reserved; simulate a trusted producer having written it. */
+    private static void setChunks(Metadata metadata, String json) {
+        metadata.setTrusted(true);
+        metadata.set(TikaCoreProperties.TIKA_CHUNKS, json);
+        metadata.setTrusted(false);
+    }
+
     @Test
     public void testChunksFieldWrittenAsRawJson() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set("title", "test doc");
         // "PwAAAEEgAABAwAAA" is the ES-documented base64 for [0.5, 10.0, 6.0]
         // in big-endian float32 — the exact format ES dense_vector expects.
-        metadata.set("tika:chunks",
+        setChunks(metadata,
                 "[{\"text\":\"hello\",\"vector\":\"PwAAAEEgAABAwAAA\","
                         + "\"locators\":{\"text\":[{\"start_offset\":0,"
                         + "\"end_offset\":5}]}}]");
@@ -105,9 +113,9 @@ public class ESClientTest extends TikaTest {
                 metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
 
         JsonNode doc = MAPPER.readTree(json);
-        JsonNode chunks = doc.get("tika:chunks");
+        JsonNode chunks = doc.get("tk:chunks");
         assertTrue(chunks.isArray(),
-                "tika:chunks should be a JSON array, not a string");
+                "tk:chunks should be a JSON array, not a string");
         assertEquals(1, chunks.size());
         assertEquals("hello", chunks.get(0).get("text").asText());
         assertEquals("PwAAAEEgAABAwAAA", chunks.get(0).get("vector").asText());
@@ -116,12 +124,12 @@ public class ESClientTest extends TikaTest {
     @Test
     public void testNonJsonFieldStaysString() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set("tika:chunks", "not json at all");
+        setChunks(metadata, "not json at all");
         String json = ESClient.metadataToJsonContainerInsert(
                 metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
         JsonNode doc = MAPPER.readTree(json);
-        assertTrue(doc.get("tika:chunks").isTextual());
-        assertEquals("not json at all", doc.get("tika:chunks").asText());
+        assertTrue(doc.get("tk:chunks").isTextual());
+        assertEquals("not json at all", doc.get("tk:chunks").asText());
     }
 
     @Test
@@ -139,12 +147,12 @@ public class ESClientTest extends TikaTest {
         // A value that passes a naive readTree() check but contains trailing
         // content that would inject extra fields into the document via writeRawValue.
         Metadata metadata = new Metadata();
-        metadata.set("tika:chunks", "[1,2,3], \"injected\": true");
+        setChunks(metadata, "[1,2,3], \"injected\": true");
         String json = ESClient.metadataToJsonContainerInsert(
                 metadata, ESEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS);
         JsonNode doc = MAPPER.readTree(json);
         // Must be written as an escaped string, not raw JSON — no injection
-        assertTrue(doc.get("tika:chunks").isTextual(),
+        assertTrue(doc.get("tk:chunks").isTextual(),
                 "trailing-content value must be escaped, not written as raw JSON");
         assertFalse(doc.has("injected"),
                 "injected field must not appear in document");

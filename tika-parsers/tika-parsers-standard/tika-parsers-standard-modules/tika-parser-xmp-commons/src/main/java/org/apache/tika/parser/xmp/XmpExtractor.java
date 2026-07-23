@@ -73,7 +73,7 @@ public class XmpExtractor {
     // "uri localName" keys that are neither mapped nor passed through as raw (known junk/bloat)
     private static final Set<String> DROP = new HashSet<>();
     // Unmapped XMP goes under this prefix so raw, untrusted keys can't shadow a known Tika or
-    // X-TIKA: field. Best-effort discovery surface: keys use the document's prefix (not the URI)
+    // tk: field. Best-effort discovery surface: keys use the document's prefix (not the URI)
     // and are non-contractual -- promote a field into TABLE when it needs a stable key.
     static final String RAW_PREFIX = "xmp-raw:";
     // strip a trailing array index so a raw bag/seq is one multi-valued key, not foo:Bag[1], foo:Bag[2]

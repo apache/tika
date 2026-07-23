@@ -64,16 +64,16 @@ public class MP4ParserTest extends TikaTest {
     @Before
     public void setUp() {
 
-        skipKeysB.add("X-TIKA:Parsed-By");
-        skipKeysA.add("X-TIKA:parse_time_millis");
-        skipKeysB.add("X-TIKA:content_handler");
-        skipKeysA.add("X-TIKA:content_handler");
-        skipKeysB.add("X-TIKA:parse_time_millis");
+        skipKeysB.add("tk:parsed-by");
+        skipKeysA.add("tk:parse-time-millis");
+        skipKeysB.add("tk:content-handler");
+        skipKeysA.add("tk:content-handler");
+        skipKeysB.add("tk:parse-time-millis");
         skipKeysB.add("xmpDM:videoCompressor");
         //skipKeysB.add("xmpDM:audioChannelType");
         //skipKeysB.add("xmpDM:audioChannelType");
-        skipKeysA.add("X-TIKA:content");
-        skipKeysB.add("X-TIKA:content");
+        skipKeysA.add("tk:content");
+        skipKeysB.add("tk:content");
         skipKeysB.add("xmpDM:copyright");
     }*/
     /**

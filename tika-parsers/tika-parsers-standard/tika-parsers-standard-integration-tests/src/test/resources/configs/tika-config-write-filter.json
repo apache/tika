@@ -12,7 +12,7 @@
     },
     "standard-metadata-limiter-factory": {
       "includeFields": [
-        "X-TIKA:content",
+        "tk:content",
         "dc:creator"
       ]
     }

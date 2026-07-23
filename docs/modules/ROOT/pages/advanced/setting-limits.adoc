@@ -103,7 +103,7 @@ siblings at the current level continue to be processed.
 |`throwOnMaxDepth`
 |false
 |Whether to throw an `EmbeddedLimitReachedException` when maxDepth is reached.
-If false, processing continues and `X-TIKA:maxDepthReached=true` is set in metadata.
+If false, processing continues and `tk:exception:embedded-depth-limit-reached=true` is set in metadata.
 
 |`maxCount`
 |-1 (unlimited)
@@ -113,7 +113,7 @@ stops immediately.
 |`throwOnMaxCount`
 |false
 |Whether to throw an `EmbeddedLimitReachedException` when maxCount is reached.
-If false, processing continues and `X-TIKA:maxEmbeddedCountReached=true` is set.
+If false, processing continues and `tk:exception:embedded-resource-limit-reached=true` is set.
 |===
 
 === maxDepth Behavior
@@ -380,7 +380,7 @@ Metadata metadata = Metadata.newInstance(context);
 |`maxTotalBytes`
 |10 MB
 |Maximum total estimated size of all metadata in UTF-16 bytes. When exceeded,
-additional metadata is silently dropped and `X-TIKA:WARN:truncated_metadata` is set.
+additional metadata is silently dropped and `tk:warn:truncated-metadata` is set.
 
 |`maxFieldSize`
 |100 KB
@@ -436,15 +436,15 @@ of `includeFields` or size limits:
 
 * `Content-Type` - Required for parser selection
 * `Content-Length`, `Content-Encoding`, `Content-Disposition`
-* `X-TIKA:content` - The extracted text content
-* `X-TIKA:Parsed-By` - Parser chain information
-* `X-TIKA:WARN:*` - Warning metadata
+* `tk:content` - The extracted text content
+* `tk:parsed-by` - Parser chain information
+* `tk:warn:*` - Warning metadata
 * Access permission fields
 
 === Detecting Truncation
 
 When metadata is truncated due to limits, Tika sets the metadata field
-`X-TIKA:WARN:truncated_metadata` to `true`. You can check for this in your code:
+`tk:warn:truncated-metadata` to `true`. You can check for this in your code:
 
 [source,java]
 ----
@@ -458,7 +458,7 @@ if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
 
 1. **Always set limits** when processing untrusted content
 2. **Use `includeFields`** to capture only the metadata you need
-3. **Monitor for truncation** by checking `X-TIKA:WARN:truncated_metadata`
+3. **Monitor for truncation** by checking `tk:warn:truncated-metadata`
 4. **Combine with process isolation** - limits protect against memory issues,
    but xref:advanced/robustness.adoc[process isolation] protects against crashes
 5. **Test with adversarial files** - use Tika's `MockParser` to simulate extreme cases

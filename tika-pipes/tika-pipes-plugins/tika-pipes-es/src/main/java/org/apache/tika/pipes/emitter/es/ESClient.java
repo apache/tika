@@ -334,7 +334,7 @@ public class ESClient {
      * (arrays/objects) rather than escaped strings so that
      * ES can index vectors, locators, etc. natively.
      */
-    static final Set<String> INFERENCE_JSON_FIELDS = Set.of("tika:chunks");
+    static final Set<String> INFERENCE_JSON_FIELDS = Set.of("tk:chunks");
 
     private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator)
             throws IOException {

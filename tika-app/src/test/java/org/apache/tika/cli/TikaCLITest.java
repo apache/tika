@@ -159,7 +159,7 @@ public class TikaCLITest {
         assertTrue(content.contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
 
         content = getParamOutContent("-x", "--digest=sha256", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
+        assertTrue(content.contains("<meta name=\"tk:digest:SHA256\" content=\"e90779adbac09c4ee"));
 
     }
 
@@ -175,7 +175,7 @@ public class TikaCLITest {
         assertTrue(content.contains("<title></title>"), "Expanded <title></title> element should be present");
 
         content = getParamOutContent("-h", "--digest=sha384", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
+        assertTrue(content.contains("<meta name=\"tk:digest:SHA384\" content=\"c69ea023f5da95a026"));
     }
 
     /**
@@ -215,7 +215,7 @@ public class TikaCLITest {
 
         content = getParamOutContent("-m", "--digest=SHA512", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("text/plain"));
-        assertTrue(content.contains("X-TIKA:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
+        assertTrue(content.contains("tk:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
     }
 
     /**
@@ -228,7 +228,7 @@ public class TikaCLITest {
         String json = getParamOutContent("--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html");
         //TIKA-1310
         assertTrue(json.contains("\"html:fb:admins\":\"1,2,3,4\","));
-        assertTrue(json.contains("\"X-TIKA:digest:MD2\":"));
+        assertTrue(json.contains("\"tk:digest:MD2\":"));
     }
 
     /**
@@ -254,7 +254,7 @@ public class TikaCLITest {
         String json = getParamOutContent("-J",
                 resourcePrefix + "testPDF_incrementalUpdates.pdf");
         assertTrue(json.contains("pdf:incrementalUpdateCount\":\"2\""));
-        assertTrue(json.contains("embeddedResourceType\":\"VERSION\""));
+        assertTrue(json.contains("tk:embedded-resource-type\":\"VERSION\""));
     }
 
     @Test
@@ -673,8 +673,8 @@ public class TikaCLITest {
         String content = getParamOutContent("-m", "-J", "-r", resourcePrefix + "test_recursive_embedded.docx");
         assertTrue(content.contains("\"extended-properties:AppVersion\" : \"15.0000\","));
         assertTrue(content.contains("\"extended-properties:Application\" : \"Microsoft Office Word\","));
-        assertTrue(content.contains("\"X-TIKA:embedded_resource_path\" : \"/embed1.zip\""));
-        assertFalse(content.contains("X-TIKA:content"));
+        assertTrue(content.contains("\"tk:embedded-resource-path\" : \"/embed1.zip\""));
+        assertFalse(content.contains("\"tk:content\""));
     }
 
     @Test
@@ -697,8 +697,8 @@ public class TikaCLITest {
     @Test
     public void testDigestInJson() throws Exception {
         String content = getParamOutContent("-J", "-r", "-t", "--digest=md5", resourcePrefix + "test_recursive_embedded.docx");
-        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
-        assertTrue(content.contains("\"X-TIKA:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
+        assertTrue(content.contains("\"tk:digest:MD5\" : \"59f626e09a8c16ab6dbc2800c685f772\","));
+        assertTrue(content.contains("\"tk:digest:MD5\" : \"f9627095ef86c482e61d99f0cc1cf87d\""));
     }
 
     @Test

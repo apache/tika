@@ -33,7 +33,7 @@ public class AttachmentCountingListFilter extends MetadataFilter {
         if (metadataList == null || metadataList.isEmpty()) {
             return;
         }
-        metadataList.get(0).set("X-TIKA:attachment_count", Integer.toString(metadataList.size() - 1));
+        metadataList.get(0).set("tk:attachment-count", Integer.toString(metadataList.size() - 1));
         count += metadataList.size();
     }
 

@@ -107,11 +107,11 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList
                 .get(6)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
 
         assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList
                 .get(10)
-                .get("X-TIKA:digest:MD5"));
+                .get("tk:digest:MD5"));
     }
 
     @Test
@@ -148,7 +148,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList
                 .get(6)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
 
     }
 
@@ -168,11 +168,11 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .get(OfficeOpenXMLExtended.APPLICATION));
         assertContains("plundered our seas", metadataList
                 .get(6)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
 
         assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList
                 .get(10)
-                .get("X-TIKA:digest:MD5"));
+                .get("tk:digest:MD5"));
     }
 
     @Test

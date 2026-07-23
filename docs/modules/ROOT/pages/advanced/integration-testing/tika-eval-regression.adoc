@@ -106,7 +106,7 @@ match.
 ----
 
 The `parse-context > commons-digester-factory` block makes every
-extracted record carry an `X-TIKA:digest:SHA256` metadata field —
+extracted record carry an `tk:digest:SHA256` metadata field —
 required by `tika-eval` for embedded-document alignment across runs.
 
 === Config B (variant under test)
@@ -233,7 +233,7 @@ Open the `.xlsx` files directly, or use the `regression` skill
 == Tips
 
 * *Keep the digester identical between A and B.*  tika-eval uses the
-  `X-TIKA:digest:SHA256` field on embedded documents to align records
+  `tk:digest:SHA256` field on embedded documents to align records
   across the two extracts.  If A digests and B doesn't (or different
   algorithms), the embedded-doc alignment falls back to filename and
   produces false-positive diffs.
@@ -310,7 +310,7 @@ Compare step finishes in 2-5 minutes depending on extract size.
 . Open `reports/mimes/mime_diffs_A_to_B.xlsx` to see the headline
   MIME-detection differences; the encoding-detector chain change
   surfaces as charset diffs in `mimes/mime_diffs_A_to_B_details.xlsx`
-  (`X-TIKA:detected_encoding`).
+  (`tk:detected-encoding`).
 
 A regression analysis writeup goes in
 `~/Desktop/claude-todo/<reports-dir-name>-analysis.md` per the

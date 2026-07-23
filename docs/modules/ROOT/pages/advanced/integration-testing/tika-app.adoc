@@ -147,7 +147,7 @@ java -jar tika-app.jar -J -t /tmp/tika-app-test/batch-input /tmp/tika-app-test/b
 ls /tmp/tika-app-test/batch-output2
 ----
 
-*Expected:* Creates .json files with text content (X-TIKA:content_handler should be ToTextContentHandler).
+*Expected:* Creates .json files with text content (tk:content-handler should be ToTextContentHandler).
 
 === Test 11: Version Check
 
@@ -183,7 +183,7 @@ java -jar tika-app.jar --language testPDF.pdf
 java -jar tika-app.jar --digest=md5 --json testPDF.pdf
 ----
 
-*Expected:* JSON output includes `X-TIKA:digest:MD5` field.
+*Expected:* JSON output includes `tk:digest:MD5` field.
 
 === Test 15: URL Input
 

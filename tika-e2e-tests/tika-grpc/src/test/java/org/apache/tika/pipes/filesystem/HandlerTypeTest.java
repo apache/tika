@@ -314,7 +314,7 @@ class HandlerTypeTest {
             Assertions.assertEquals("PARSE_SUCCESS", htmlReply.getStatus(),
                     "Parse should succeed with HTML handler type");
 
-            String htmlContent = htmlReply.getFieldsMap().get("X-TIKA:content");
+            String htmlContent = htmlReply.getFieldsMap().get("tk:content");
             Assertions.assertNotNull(htmlContent, "Content should be present in HTML response");
             LOG.info("HTML content (first 200 chars): {}", htmlContent.substring(0, Math.min(200, htmlContent.length())));
             Assertions.assertTrue(
@@ -332,7 +332,7 @@ class HandlerTypeTest {
             Assertions.assertEquals("PARSE_SUCCESS", textReply.getStatus(),
                     "Parse should succeed with TEXT handler type");
 
-            String textContent = textReply.getFieldsMap().get("X-TIKA:content");
+            String textContent = textReply.getFieldsMap().get("tk:content");
             Assertions.assertNotNull(textContent, "Content should be present in text response");
             LOG.info("Text content (first 200 chars): {}", textContent.substring(0, Math.min(200, textContent.length())));
             Assertions.assertFalse(

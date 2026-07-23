@@ -76,7 +76,9 @@ public class StandardMetadataLimiterTest extends TikaTest {
 
         String[] creators = metadata.getValues("dc:creator");
         assertEquals(2, creators.length);
-        assertEquals("012345678901", creators[1]);
+        // tk: keys are shorter than the old X-TIKA: keys, so ALWAYS_SET_FIELDS overhead
+        // shrank by 4 bytes (tk:parsed-by vs X-TIKA:Parsed-By) -> 4 more value bytes survive
+        assertEquals("0123456789012345", creators[1]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
         assertTruncated(metadata);
     }
@@ -123,7 +125,8 @@ public class StandardMetadataLimiterTest extends TikaTest {
 
         //this gets more than the other test because this is filtering out some fields
         assertEquals(3, creators.length);
-        assertEquals("012345678901234", creators[2]);
+        // +4 value bytes vs the old X-TIKA: keys (see testMetadataFactoryConfig)
+        assertEquals("0123456789012345678", creators[2]);
         assertContainsCount(" hello ", metadata.get(TikaCoreProperties.TIKA_CONTENT), 30);
         assertTruncated(metadata);
     }

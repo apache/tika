@@ -322,7 +322,8 @@ public class Metadata
 
     /**
      * Mark this Metadata as a trusted transformation target (e.g. a metadata filter), letting
-     * String writes reach reserved {@code X-TIKA:} keys. Reset when the transformation is done.
+     * String writes reach reserved Tika-native ({@code tk:}) keys. Reset when the transformation
+     * is done.
      */
     public void setTrusted(boolean trusted) {
         this.trusted = trusted;
@@ -332,9 +333,9 @@ public class Metadata
         return trusted;
     }
 
-    /** Drop String writes to reserved {@code X-TIKA:} keys unless trusted; use their Property. */
+    /** Drop String writes to reserved Tika-native keys unless trusted; use their Property. */
     private boolean blockReservedKeyWrite(String name) {
-        if (!trusted && name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+        if (!trusted && ReservedNamespaces.isTikaNative(name)) {
             LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
             return true;
         }
@@ -347,7 +348,7 @@ public class Metadata
      * @param append add rather than set
      */
     public void reconstruct(String name, String value, boolean append) {
-        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+        if (ReservedNamespaces.isTikaNative(name)) {
             Property property = Property.get(name);
             if (property != null) {
                 if (append) {

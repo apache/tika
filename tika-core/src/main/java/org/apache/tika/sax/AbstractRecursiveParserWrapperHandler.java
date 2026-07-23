@@ -35,10 +35,11 @@ import org.apache.tika.metadata.TikaCoreProperties;
 public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandler
         implements Serializable {
 
-    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = Property.internalBoolean(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
-    public final static Property EMBEDDED_DEPTH_LIMIT_REACHED = Property.internalBoolean(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_depth_limit_reached");
+    // Canonical definitions live in TikaCoreProperties; alias here so the key can never diverge.
+    public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED =
+            TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED;
+    public final static Property EMBEDDED_DEPTH_LIMIT_REACHED =
+            TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED;
     private static final int MAX_DEPTH = 100;
     private final ContentHandlerFactory contentHandlerFactory;
     private int embeddedDepth = 0;

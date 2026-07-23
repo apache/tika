@@ -41,7 +41,7 @@ from potentially overwriting existing metadata values in the Metadata object.
 
 |Resource name
 |Renamed
-|`resourceName` changed to `X-TIKA:resourceName`
+|`resourceName` changed to `tk:resource-name`
 
 |Unrecognized image metadata
 |Prefixed with `img:`
@@ -50,7 +50,113 @@ from potentially overwriting existing metadata values in the Metadata object.
 |Office metadata
 |Prefix changed
 |Changed from `meta` prefix to `office` prefix
+
+|QuattroPro metadata
+|Prefix changed
+|Changed from `wordperfect:` (a collision — it was shared with WordPerfect) to `quattropro:`
 |===
+
+== Tika-native namespace consolidation (`tk:`)
+
+Tika 4.0.0 consolidates every *Tika-asserted* metadata key — keys Tika computes about the
+parse, not values copied out of the document — under a single `tk:` prefix, normalized to
+kebab-case. This replaces the pre-4.0.0 `X-TIKA:` prefix and the scattered `tika:`, `tika_pg:`,
+`rendering:`, `signature:`, `imagereader:` prefixes and bare `hasSignature` /
+`embeddedResourceType` keys. This is a *clean break*: there is no automatic remapping. Code that
+references these keys by string must be updated per the table below (code using the
+`TikaCoreProperties` / `TikaPagedText` / `Rendering` constants needs no change — the constants
+now resolve to the `tk:` names).
+
+The `tk:` namespace is also a trust boundary: a file-controlled key can no longer enter it via a
+String write. The pre-4.0.0 `X-TIKA:` prefix stays *reserved* (rejected on String writes) during
+the 4.x line so a crafted file cannot forge it, even though Tika no longer emits it.
+
+File-claimed namespaces (`dc:`, `xmp:`, `pdf:`, `office:`, `html:`, standards and passthrough)
+are unchanged — they are the file's assertions, not Tika's, and keep their verbatim prefixes.
+
+The canonical `Content-Type` key is likewise unchanged (it is the routing media type). But the
+Tika-added *variants* of it — hint/override/magic-detected — are Tika's own assertions about
+detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type-hint`).
+
+.3.x → 4.0.0 Tika-native metadata key migration
+[cols="1,1"]
+|===
+|3.x key |4.0.0 key
+
+|`tika:chunks` |`tk:chunks`
+|`X-TIKA:content` |`tk:content`
+|`X-TIKA:content_handler` |`tk:content-handler`
+|`X-TIKA:content_handler_type` |`tk:content-handler-type`
+|`Content-Type-Hint` |`tk:content-type-hint`
+|`Content-Type-Override` |`tk:content-type-override`
+|`Content-Type-Parser-Override` |`tk:content-type-parser-override`
+|`Content-Type-Magic-Detected` |`tk:content-type-magic-detected`
+|`X-TIKA:decodedCharset` |`tk:decoded-charset`
+|`X-TIKA:detectedEncoding` |`tk:detected-encoding`
+|`X-TIKA:detected_language` |`tk:detected-language`
+|`X-TIKA:detected_language_confidence` |`tk:detected-language-confidence`
+|`X-TIKA:detected_language_confidence_raw` |`tk:detected-language-confidence-raw`
+|`X-TIKA:detection_content_length` |`tk:detection-content-length`
+|`X-TIKA:embedded_depth` |`tk:embedded-depth`
+|`X-TIKA:embedded_id` |`tk:embedded-id`
+|`X-TIKA:embedded_id_path` |`tk:embedded-id-path`
+|`X-TIKA:embeddedRelationshipId` |`tk:embedded-relationship-id`
+|`X-TIKA:embedded_resource_path` |`tk:embedded-resource-path`
+|`embeddedResourceType` |`tk:embedded-resource-type`
+|`X-TIKA:encodingDetectionTrace` |`tk:encoding-detection-trace`
+|`X-TIKA:encodingDetector` |`tk:encoding-detector`
+|`X-TIKA:encrypted` |`tk:encrypted`
+|`X-TIKA:final_embedded_resource_path` |`tk:final-embedded-resource-path`
+|`hasSignature` |`tk:has-signature`
+|`X-TIKA:internalPath` |`tk:internal-path`
+|`imagereader:NumImages` |`tk:num-images`
+|`X-TIKA:origResourceName` |`tk:orig-resource-name`
+|`X-TIKA:parse_time_millis` |`tk:parse-time-millis`
+|`X-TIKA:Parsed-By` |`tk:parsed-by`
+|`X-TIKA:Parsed-By-Full-Set` |`tk:parsed-by-full-set`
+|`X-TIKA:pipes_result` |`tk:pipes-result`
+|`X-TIKA:resourceName` |`tk:resource-name`
+|`X-TIKA:resourceNameExtensionInferred` |`tk:resource-name-extension-inferred`
+|`X-TIKA:sourcePath` |`tk:source-path`
+|`X-TIKA:truncated_content_for_detection` |`tk:truncated-content-for-detection`
+|`X-TIKA:versionCount` |`tk:version-count`
+|`X-TIKA:versionNumber` |`tk:version-number`
+|`X-TIKA:EXCEPTION:container_exception` |`tk:exception:container-exception`
+|`X-TIKA:EXCEPTION:embedded_bytes_exception` |`tk:exception:embedded-bytes-exception`
+|`X-TIKA:EXCEPTION:embedded_depth_limit_reached` |`tk:exception:embedded-depth-limit-reached`
+|`X-TIKA:EXCEPTION:embedded_exception` |`tk:exception:embedded-exception`
+|`X-TIKA:EXCEPTION:embedded_resource_limit_reached` |`tk:exception:embedded-resource-limit-reached`
+|`X-TIKA:EXCEPTION:embedded_stream_exception` |`tk:exception:embedded-stream-exception`
+|`X-TIKA:EXCEPTION:embedded_warning` |`tk:exception:embedded-warning`
+|`X-TIKA:EXCEPTION:warn` |`tk:exception:warn`
+|`X-TIKA:EXCEPTION:write_limit_reached` |`tk:exception:write-limit-reached`
+|`tika_pg:page_number` |`tk:page:number`
+|`tika_pg:page_numbers` |`tk:page:numbers`
+|`tika_pg:page_rotation` |`tk:page:rotation`
+|`rendering:pdfbox-image-writing-ms` |`tk:rendering:pdfbox-image-writing-ms`
+|`rendering:pdfbox-rendering-ms` |`tk:rendering:pdfbox-rendering-ms`
+|`rendering:Rendered-By` |`tk:rendering:rendered-by`
+|`rendering:rendering-time-ms` |`tk:rendering:rendering-time-ms`
+|`signature:contact-info` |`tk:signature:contact-info`
+|`signature:date` |`tk:signature:date`
+|`signature:filter` |`tk:signature:filter`
+|`signature:location` |`tk:signature:location`
+|`signature:name` |`tk:signature:name`
+|`signature:reason` |`tk:signature:reason`
+|`X-TIKA:WARN:truncated_metadata` |`tk:warn:truncated-metadata`
+|===
+
+Open key families migrate by prefix, suffix preserved verbatim (e.g. digest algorithm names):
+
+[cols="1,1"]
+|===
+|3.x prefix |4.0.0 prefix
+
+|`X-TIKA:digest:\*` |`tk:digest:*`
+|`X-TIKA:EXCEPTION:\*` |`tk:exception:*`
+|`X-TIKA:WARN:\*` |`tk:warn:*`
+|===
+
 
 == Migration Steps
 
@@ -87,7 +193,7 @@ String value = metadata.get("mapi:some-property");
 String name = metadata.get("resourceName");
 
 // After (4.x)
-String name = metadata.get("X-TIKA:resourceName");
+String name = metadata.get("tk:resource-name");
 ----
 
 === Image Metadata

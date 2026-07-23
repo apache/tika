@@ -33,8 +33,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * <p>
  * The metadata key format is:
  * <ul>
- *   <li>{@code X-TIKA:digest:MD5} - for HEX encoding (default)</li>
- *   <li>{@code X-TIKA:digest:SHA256:BASE32} - for non-default encodings</li>
+ *   <li>{@code tk:digest:MD5} - for HEX encoding (default)</li>
+ *   <li>{@code tk:digest:SHA256:BASE32} - for non-default encodings</li>
  * </ul>
  */
 public class DigestDef {
@@ -114,8 +114,8 @@ public class DigestDef {
     /**
      * Returns the metadata key for storing this digest value.
      * <p>
-     * For HEX encoding (the default), returns {@code X-TIKA:digest:ALGORITHM}.
-     * For other encodings, returns {@code X-TIKA:digest:ALGORITHM:ENCODING}.
+     * For HEX encoding (the default), returns {@code tk:digest:ALGORITHM}.
+     * For other encodings, returns {@code tk:digest:ALGORITHM:ENCODING}.
      *
      * @return the metadata key
      */

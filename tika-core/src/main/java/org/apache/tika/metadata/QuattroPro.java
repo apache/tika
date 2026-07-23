@@ -24,7 +24,7 @@ package org.apache.tika.metadata;
  * @author Pascal Essiembre
  */
 public interface QuattroPro {
-    String QUATTROPRO_METADATA_NAME_PREFIX = "wordperfect";
+    String QUATTROPRO_METADATA_NAME_PREFIX = "quattropro";
 
     /**
      * ID.

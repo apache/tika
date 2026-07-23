@@ -55,7 +55,7 @@ public class ExtractProfiler extends ProfilerBase {
             new ColInfo(Cols.ELAPSED_TIME_MILLIS, Types.INTEGER), new ColInfo(Cols.NUM_ATTACHMENTS, Types.INTEGER), new ColInfo(Cols.NUM_METADATA_VALUES, Types.INTEGER),
             new ColInfo(Cols.NUM_PAGES, Types.INTEGER), new ColInfo(Cols.NUM_OCR_PAGES, Types.INTEGER), new ColInfo(Cols.HAS_CONTENT, Types.BOOLEAN));
     /** Charset detection per file (one row only when detection ran): final pick,
-     * winning detector, declared charset from metadata (Content-Type-Hint). */
+     * winning detector, declared charset from metadata (tk:content-type-hint). */
     public static TableInfo ENCODINGS_TABLE = new TableInfo("encodings",
             new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"),
             new ColInfo(Cols.DETECTED_ENCODING, Types.VARCHAR, 64),

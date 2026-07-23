@@ -58,7 +58,7 @@ public class OOXMLParserTest extends TikaTest {
                 getRecursiveMetadata("testMSChart-govdocs-428996.pptx", parser, parseContext);
         assertEquals(4, metadataList.size());
         for (Metadata m : metadataList) {
-            assertNotNull(m.get("X-TIKA:digest:SHA256:BASE32"));
+            assertNotNull(m.get("tk:digest:SHA256:BASE32"));
             assertNull(m.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         }
     }
