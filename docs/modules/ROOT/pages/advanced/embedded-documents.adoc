@@ -122,7 +122,7 @@ Microsoft Office formats use additional identifiers for embedded objects.
 A Microsoft-specific identifier used internally to reference embedded objects within
 Office documents. This is the relationship ID from the Office Open XML or OLE structure.
 
-`Office.EMBEDDED_STORAGE_CLASS_ID` (`msoffice:embeddedStorageClassId`)::
+`Office.EMBEDDED_STORAGE_CLASS_ID` (`msoffice:embedded-storage-class-id`)::
 A UUID that identifies the class of embedded object in Microsoft formats. While not
 exactly a MIME type, it provides similar information about what type of object is
 embedded. Defined in the `Office` metadata class.
@@ -166,7 +166,7 @@ embedded. Defined in the `Office` metadata class.
 |Container (MS)
 
 |`Office.EMBEDDED_STORAGE_CLASS_ID`
-|`msoffice:embeddedStorageClassId`
+|`msoffice:embedded-storage-class-id`
 |Container (MS)
 |===
 

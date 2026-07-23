@@ -55,7 +55,7 @@ public class MetadataWriteLimiterTest {
     /**
      * Test that MetadataWriteLimiterFactory is loaded from config and limits are applied.
      * The config specifies includeFields: ["dc:creator", "Content-Type", "tk:content"]
-     * so other fields like "pdf:PDFVersion" should be filtered out.
+     * so other fields like "pdf:pdf-version" should be filtered out.
      */
     @Test
     public void testWriteLimiterFromConfig(@TempDir Path tmp) throws Exception {
@@ -74,7 +74,7 @@ public class MetadataWriteLimiterTest {
 
         // Fields not in includeFields should be filtered out
         // (unless they're "must add" fields like tk:parsed-by)
-        assertNull(metadata.get("pdf:PDFVersion"), "pdf:PDFVersion should be filtered out");
+        assertNull(metadata.get("pdf:pdf-version"), "pdf:pdf-version should be filtered out");
         assertNull(metadata.get("dc:format"), "dc:format should be filtered out");
     }
 
@@ -82,7 +82,7 @@ public class MetadataWriteLimiterTest {
      * Test that MetadataWriteLimiterFactory can be overridden via ParseContext.
      * The default config excludes tk:parse-time-millis, but the override allows it.
      *
-     * Note: We use tk:parse-time-millis instead of pdf:PDFVersion because the PDF parser
+     * Note: We use tk:parse-time-millis instead of pdf:pdf-version because the PDF parser
      * module is not a dependency of this test module, so PDF-specific metadata isn't extracted.
      */
     @Test

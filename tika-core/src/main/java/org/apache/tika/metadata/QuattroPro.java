@@ -30,23 +30,23 @@ public interface QuattroPro {
      * ID.
      */
     Property ID = Property.internalText(
-            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Id");
+            QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "id");
     /**
      * Version.
      */
     Property VERSION = Property.internalInteger(
             QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Version");
+                    "version");
     /**
      * Build.
      */
     Property BUILD = Property.internalInteger(
             QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "Build");
+                    "build");
     /**
      * Lowest version.
      */
     Property LOWEST_VERSION = Property.internalInteger(
             QUATTROPRO_METADATA_NAME_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "LowestVersion");
+                    "lowest-version");
 }

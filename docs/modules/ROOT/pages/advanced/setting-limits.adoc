@@ -423,7 +423,7 @@ Use this to extract only the metadata you need.
       "maxKeySize": 1024,
       "maxValuesPerField": 100,
       "includeFields": ["dc:title", "dc:creator", "dc:subject"],
-      "excludeFields": ["pdf:unmappedUnicodeCharsPerPage"]
+      "excludeFields": ["pdf:unmapped-unicode-chars-per-page"]
     }
   }
 }
