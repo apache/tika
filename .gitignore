@@ -21,3 +21,7 @@ nb-configuration.xml
 tika-pipes/tika-pipes-plugins/tika-pipes-ignite/ignite
 tika-grpc/ignite
 .flattened-pom.xml
+
+# Python bytecode (e.g. from .skills scripts)
+__pycache__/
+*.pyc
