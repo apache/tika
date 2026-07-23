@@ -19,9 +19,13 @@ package org.apache.tika.pipes.core.protocol;
 import java.io.IOException;
 
 /**
- * Thrown when an incoming IPC payload exceeds {@link PipesMessage#MAX_PAYLOAD_BYTES}.
- * The stream is desynchronized at this point (payload bytes were not consumed),
- * so the connection must be closed. The server process itself remains healthy.
+ * Thrown when an incoming IPC payload's declared length exceeds the configured limit
+ * (see {@link org.apache.tika.pipes.core.PipesConfig#getMaxIpcPayloadBytes()};
+ * default {@link PipesMessage#MAX_PAYLOAD_BYTES}). The payload bytes were not consumed,
+ * so the stream is desynchronized and the connection must be closed. With a shared server
+ * the process keeps running (only this connection ends); with the default per-client forked
+ * server the process may still exit on the failed write, and the client reconnects on the
+ * next task.
  */
 public class PayloadLimitExceededException extends IOException {
     public PayloadLimitExceededException(String message) {

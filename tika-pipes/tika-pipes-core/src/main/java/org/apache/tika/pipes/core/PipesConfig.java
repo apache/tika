@@ -498,8 +498,9 @@ public class PipesConfig {
 
     /**
      * Sets the maximum IPC payload size in bytes. Must be a positive value.
-     * Both the client and server JVMs read from the same tika-config.json, so
-     * setting this once configures the limit on both ends automatically.
+     * This bounds the size of a message the client will accept back from the
+     * forked server (chiefly the FINISHED result). Request payloads
+     * (client to server) are small and use the built-in default.
      *
      * @param maxIpcPayloadBytes positive payload limit in bytes
      * @throws IllegalArgumentException if the value is not positive

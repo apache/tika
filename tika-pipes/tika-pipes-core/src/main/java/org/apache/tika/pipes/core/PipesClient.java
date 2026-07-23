@@ -425,8 +425,7 @@ public class PipesClient implements Closeable {
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
                         ExceptionUtils.getStackTrace(e));
             } catch (PayloadLimitExceededException e) {
-                // Stream is desynchronized (payload bytes were not consumed) but server is healthy.
-                // Close the connection without restarting the server.
+                // Stream is desynchronized (payload bytes were not consumed); close the connection.
                 LOG.warn("clientId={}: payload too large for id={}: {}", pipesClientId, t.getId(), e.getMessage());
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(),
