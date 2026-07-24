@@ -783,7 +783,7 @@ public class TikaResource {
                 handlerTypeName, context.get(ContentHandlerFactory.class));
 
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
-        // EmitHandler will strip everything except X-TIKA:content
+        // EmitHandler will strip everything except tk:content
         List<Metadata> metadataList;
         try {
             metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);

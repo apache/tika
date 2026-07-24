@@ -117,7 +117,7 @@ public class JsonMetadataListTest {
         JsonMetadataList.setPrettyPrinting(true);
         JsonMetadataList.toJson(metadataList, writer);
         String expected = "[ {[NEWLINE]  \"zk1\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"zk2\" : \"v1\",[NEWLINE]" +
-                "  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}, " +
+                "  \"tk:content\" : \"this is the content\"[NEWLINE]}, " +
                 "{[NEWLINE]  \"k3\" : [ \"v1\", \"v2\", \"v3\", \"v4\", \"v4\" ],[NEWLINE]  \"k4\" : \"v1\"[NEWLINE]} ]";
         assertEquals(expected, writer
                 .toString()

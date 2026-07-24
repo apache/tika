@@ -23,7 +23,7 @@ document deduplication, integrity verification, and forensic analysis.
 == Overview
 
 Digesters compute hash values of document content and store them in metadata. The digest value
-is stored with a key like `X-TIKA:digest:SHA256` (for HEX encoding) or `X-TIKA:digest:SHA256:BASE32`
+is stored with a key like `tk:digest:SHA256` (for HEX encoding) or `tk:digest:SHA256:BASE32`
 (for non-default encodings).
 
 Tika provides two digester implementations:
@@ -95,7 +95,7 @@ By default, digest values are encoded as lowercase hexadecimal. You can specify 
 }
 ----
 
-Non-default encodings include the encoding in the metadata key: `X-TIKA:digest:SHA256:BASE32`.
+Non-default encodings include the encoding in the metadata key: `tk:digest:SHA256:BASE32`.
 
 === Skip Container Document Digest
 

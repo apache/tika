@@ -100,7 +100,7 @@ curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/xml
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/json
 ----
 
-*Expected:* JSON object with metadata and X-TIKA:content field.
+*Expected:* JSON object with metadata and tk:content field.
 
 === Test 7: PUT /meta
 

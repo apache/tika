@@ -279,7 +279,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         assertEquals(1, metadataList.size());
         assertContains("quick brown fox", metadataList
                 .get(0)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
         testBaseline();
 
     }
@@ -312,7 +312,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .get("author"));
         assertContains("hello world", metadataList
                 .get(0)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
 
         //now test no tls config
         webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
@@ -355,7 +355,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                 .get("author"));
         assertContains("hello world", metadataList
                 .get(0)
-                .get("X-TIKA:content"));
+                .get("tk:content"));
 
         //now test that no tls config fails
         webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
@@ -453,7 +453,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
                     .get("author"));
             assertContains("hello world", metadataList
                     .get(0)
-                    .get("X-TIKA:content"));
+                    .get("tk:content"));
             return;
         }
         fail("should have completed within 3 tries");

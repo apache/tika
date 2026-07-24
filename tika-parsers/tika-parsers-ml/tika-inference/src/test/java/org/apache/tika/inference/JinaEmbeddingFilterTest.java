@@ -124,8 +124,8 @@ public class JinaEmbeddingFilterTest {
         list.add(metadata);
         filter.filter(list);
 
-        String chunksJson = metadata.get("tika:chunks");
-        assertNotNull(chunksJson, "Should have tika:chunks");
+        String chunksJson = metadata.get("tk:chunks");
+        assertNotNull(chunksJson, "Should have tk:chunks");
 
         List<Chunk> chunks = ChunkSerializer.fromJson(chunksJson);
         assertEquals(2, chunks.size());

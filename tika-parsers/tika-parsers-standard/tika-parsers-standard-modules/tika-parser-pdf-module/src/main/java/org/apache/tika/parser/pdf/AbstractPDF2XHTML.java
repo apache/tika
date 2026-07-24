@@ -584,12 +584,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             renderMetadata, context);
                 }
-                // Propagate enrichment metadata added by the OCR parser (e.g. tika:chunks
+                // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
                 // from image embedding parsers) back to the parent document so it isn't
                 // silently discarded when the renderMetadata goes out of scope.
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
                 if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
-                    metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
+                    // tk:chunks is reserved; this is Tika propagating its own native output
+                    boolean wasTrusted = metadata.isTrusted();
+                    metadata.setTrusted(true);
+                    try {
+                        metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
+                    } finally {
+                        metadata.setTrusted(wasTrusted);
+                    }
                 }
             }
         } catch (IOException e) {

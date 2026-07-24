@@ -44,7 +44,7 @@ public class InputStreamDigester implements Digester {
     /**
      * @param algorithm   name of the digest algorithm to retrieve from the Provider
      * @param metadataKey the full metadata key to use when storing the digest
-     *                    (e.g., "X-TIKA:digest:MD5" or "X-TIKA:digest:SHA256:BASE32")
+     *                    (e.g., "tk:digest:MD5" or "tk:digest:SHA256:BASE32")
      * @param encoder     encoder to convert the byte array returned from the digester to a
      *                    string
      */

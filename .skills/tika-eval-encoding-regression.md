@@ -158,10 +158,10 @@ To see what one chain change actually did, Compare the new run against the
 (IBM850 / x-MacRoman → windows-1252) vs the prior run and nothing else. A
 bigger-than-expected diff means the change fired more broadly than intended.
 
-## Per-file detector attribution (`X-TIKA:encodingDetectionTrace`)
+## Per-file detector attribution (`tk:encoding-detection-trace`)
 
 Every JSON extract from a chain with multiple detectors carries
-`X-TIKA:encodingDetectionTrace` in metadata. It's a per-detector emission
+`tk:encoding-detection-trace` in metadata. It's a per-detector emission
 log with the META detector's arbitration tag at the end:
 
 ```
@@ -174,8 +174,8 @@ meta detector chose. If the trace shows ONLY Mojibuster firing with a CJK
 pick, the bug is in Mojibuster's emission (pool too narrow), not in
 JunkFilter's arbitration.
 
-`X-TIKA:encodingDetector` is the simple-name credit string;
-`X-TIKA:detectedEncoding` is the final answer (also in `Content-Encoding`).
+`tk:encoding-detector` is the simple-name credit string;
+`tk:detected-encoding` is the final answer (also in `Content-Encoding`).
 
 ## Reproducing a single-file detection without a full chain
 
