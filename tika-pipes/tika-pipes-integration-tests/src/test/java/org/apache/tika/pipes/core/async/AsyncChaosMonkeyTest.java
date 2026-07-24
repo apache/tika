@@ -191,7 +191,7 @@ public class AsyncChaosMonkeyTest {
                 metadataList = JsonMetadataList.fromJson(reader);
             }
             assertEquals(64,
-                    metadataList.get(0).get("X-TIKA:digest:SHA-256").trim().length());
+                    metadataList.get(0).get("tk:digest:SHA-256").trim().length());
             assertEquals("application/mock+xml",
                     metadataList.get(0).get(Metadata.CONTENT_TYPE));
             String val = metadataList.get(0).get(TikaCoreProperties.PIPES_RESULT);

@@ -3,7 +3,7 @@
     {
       "include-field-metadata-filter": {
         "include": [
-          "X-TIKA:content",
+          "tk:content",
           "extended-properties:Application",
           "Content-Type"
         ]

@@ -7,7 +7,7 @@
       "maxKeySize": 999,
       "maxFieldSize": 10001,
       // maxTotalBytes accounts for ~244 bytes of ALWAYS_SET_FIELDS overhead
-      // (Content-Type, X-TIKA:Parsed-By, etc.) plus room for dc:title and 3 dc:creator values
+      // (Content-Type, tk:parsed-by, etc.) plus room for dc:title and 3 dc:creator values
       "maxTotalBytes": 421,
       "maxValuesPerField": 100,
       "includeFields": ["dc:creator", "dc:title"]

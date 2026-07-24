@@ -32,7 +32,7 @@ public class InputStreamDigesterTest {
 
     @Test
     public void testReservedDigestKeySurvivesGuard() throws Exception {
-        String key = "X-TIKA:digest:SHA256";
+        String key = "tk:digest:SHA256";
         InputStreamDigester digester = new InputStreamDigester("SHA256", key,
                 bytes -> Base64.getEncoder().encodeToString(bytes));
         Metadata metadata = new Metadata();

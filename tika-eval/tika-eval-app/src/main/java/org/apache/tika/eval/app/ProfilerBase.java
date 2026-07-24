@@ -94,7 +94,7 @@ public abstract class ProfilerBase {
     private static final String ZERO = "0";
     private static final String UNKNOWN_EXTENSION = "unk";
     //make this configurable
-    private static final String DIGEST_KEY = "X-TIKA:digest:MD5";
+    private static final String DIGEST_KEY = "tk:digest:MD5";
     private static final Map<String, Cols> UC_TAGS_OF_INTEREST = initTags();
     private final static Pattern ACCESS_PERMISSION_EXCEPTION = Pattern.compile("org\\.apache\\.tika\\.exception\\.AccessPermissionException");
     private final static Pattern ENCRYPTION_EXCEPTION = Pattern.compile("org\\.apache\\.tika.exception\\.EncryptedDocumentException");
@@ -561,7 +561,7 @@ public abstract class ProfilerBase {
     /**
      * Per-file charset-detection record: the final detected encoding, the
      * detector that won, and the declared charset from metadata
-     * (Content-Type-Hint).  Writes a row only when a detected encoding is
+     * (tk:content-type-hint).  Writes a row only when a detected encoding is
      * present, so the table holds only files that ran charset detection.
      */
     protected void writeEncodingData(String fileId, Metadata m, TableInfo encodingsTable) {

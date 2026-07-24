@@ -92,7 +92,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
                 metadata, parseContext, true);
         for (Metadata m : metadataList) {
             for (String k : m.names()) {
-                assertTrue(k.startsWith("X-TIKA:") || k.startsWith("access_permission:")
+                assertTrue(k.startsWith("tk:") || k.startsWith("access-permission:")
                         || k.startsWith("Content-") || k.equals("dc:creator"),
                         "unexpected key: " + k);
             }
@@ -109,15 +109,15 @@ public class AutoDetectParserConfigTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p, context);
         // SHA256 with BASE32 encoding includes encoding in the key
         assertEquals("SO67W5OGGMOFPMFQTHTNL5YU5EQXWPMNEPU7HKOZX2ULHRQICRZA====",
-                metadataList.get(0).get("X-TIKA:digest:SHA256:BASE32"));
+                metadataList.get(0).get("tk:digest:SHA256:BASE32"));
 
         assertEquals("a16f14215ebbfa47bd995e799f03cb18",
-                metadataList.get(0).get("X-TIKA:digest:MD5"));
+                metadataList.get(0).get("tk:digest:MD5"));
 
         assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
-                metadataList.get(6).get("X-TIKA:digest:SHA256:BASE32"));
+                metadataList.get(6).get("tk:digest:SHA256:BASE32"));
         assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
-                metadataList.get(6).get("X-TIKA:digest:MD5"));
+                metadataList.get(6).get("tk:digest:MD5"));
     }
 
     @Test
@@ -129,13 +129,13 @@ public class AutoDetectParserConfigTest extends TikaTest {
         ParseContext context = loader.loadParseContext();
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_EmbeddedPDF.pptx", p, context);
         // SHA256 with BASE32 encoding includes encoding in the key
-        assertNull(metadataList.get(0).get("X-TIKA:digest:SHA256:BASE32"));
-        assertNull(metadataList.get(0).get("X-TIKA:digest:MD5"));
+        assertNull(metadataList.get(0).get("tk:digest:SHA256:BASE32"));
+        assertNull(metadataList.get(0).get("tk:digest:MD5"));
 
         assertEquals("Q7D3RFV6DNGZ4BQIS6UKNWX4CDIKPIGDU2D7ADBUDVOBYSZHF7FQ====",
-                metadataList.get(6).get("X-TIKA:digest:SHA256:BASE32"));
+                metadataList.get(6).get("tk:digest:SHA256:BASE32"));
         assertEquals("90a8b249a6d6b6cb127c59e01cef3aaa",
-                metadataList.get(6).get("X-TIKA:digest:MD5"));
+                metadataList.get(6).get("tk:digest:MD5"));
     }
 
     @Test
@@ -147,9 +147,9 @@ public class AutoDetectParserConfigTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testPDF.pdf", p, context);
         assertEquals(1, metadataList.size());
         assertEquals("4ef0d3bdb12ba603f4caf7d2e2c6112e",
-                metadataList.get(0).get("X-TIKA:digest:MD5"));
+                metadataList.get(0).get("tk:digest:MD5"));
         assertEquals("org.apache.tika.parser.EmptyParser",
-                metadataList.get(0).get("X-TIKA:Parsed-By"));
+                metadataList.get(0).get("tk:parsed-by"));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
             ParseContext context = loader.loadParseContext();
             List<Metadata> metadataList = getRecursiveMetadata(tmp, p, context, true);
             assertEquals("d41d8cd98f00b204e9800998ecf8427e",
-                    metadataList.get(0).get("X-TIKA:digest:MD5"));
+                    metadataList.get(0).get("tk:digest:MD5"));
             assertEquals("0", metadataList.get(0).get(Metadata.CONTENT_LENGTH));
         } finally {
             Files.delete(tmp);

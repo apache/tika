@@ -49,7 +49,7 @@ public class DigestingOpenContainersTest extends TikaTest {
         }
         List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc",
                 autoDetectParser, parseContext);
-        assertEquals(expectedSha, metadataList.get(2).get("X-TIKA:digest:SHA256"));
+        assertEquals(expectedSha, metadataList.get(2).get("tk:digest:SHA256"));
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
     }

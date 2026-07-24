@@ -441,7 +441,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 true, true);
 
-        String md5Key = "X-TIKA:digest:MD5";
+        String md5Key = "tk:digest:MD5";
         assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
         assertEquals("ccdf3882e7e4c2454e28884db9b0a54d", list.get(6).get(md5Key));
         assertEquals("a869bf6432ebd14e19fc79416274e0c9", list.get(7).get(md5Key));

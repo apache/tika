@@ -23,11 +23,11 @@ public interface DWG {
 
     String DWG_PREFIX = "dwg" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "applicationName");
+    Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "application-name");
 
-    Property APPLICATION_VERSION = Property.externalText(DWG_PREFIX + "applicationVersion");
+    Property APPLICATION_VERSION = Property.externalText(DWG_PREFIX + "application-version");
 
-    Property APPLICATION_COMMENT = Property.externalText(DWG_PREFIX + "applicationComment");
+    Property APPLICATION_COMMENT = Property.externalText(DWG_PREFIX + "application-comment");
 
-    Property PRODUCT_INFO = Property.externalText(DWG_PREFIX + "productInfo");
+    Property PRODUCT_INFO = Property.externalText(DWG_PREFIX + "product-info");
 }

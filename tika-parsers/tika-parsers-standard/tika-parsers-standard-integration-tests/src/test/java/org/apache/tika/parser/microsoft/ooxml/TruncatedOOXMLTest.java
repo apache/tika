@@ -53,10 +53,10 @@ public class TruncatedOOXMLTest extends TikaTest {
 
         /* for debuging problems in commons compress 1.25.0 -> 1.26.0
         metadataList.forEach(m -> {
-            System.out.println("depth: " + m.get("X-TIKA:embedded_depth"));
+            System.out.println("depth: " + m.get("tk:embedded-depth"));
             System.out.println("relid: " + m.get("embeddedRelationshipId"));
             System.out.println("res:   " + m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-            System.out.println("cont:  " + m.get("X-TIKA:content"));
+            System.out.println("cont:  " + m.get("tk:content"));
         });
         */
         assertEquals(4, metadataList.size());

@@ -54,8 +54,8 @@ public class MetadataWriteLimiterTest {
 
     /**
      * Test that MetadataWriteLimiterFactory is loaded from config and limits are applied.
-     * The config specifies includeFields: ["dc:creator", "Content-Type", "X-TIKA:content"]
-     * so other fields like "pdf:PDFVersion" should be filtered out.
+     * The config specifies includeFields: ["dc:creator", "Content-Type", "tk:content"]
+     * so other fields like "pdf:pdf-version" should be filtered out.
      */
     @Test
     public void testWriteLimiterFromConfig(@TempDir Path tmp) throws Exception {
@@ -73,29 +73,29 @@ public class MetadataWriteLimiterTest {
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
 
         // Fields not in includeFields should be filtered out
-        // (unless they're "must add" fields like X-TIKA:Parsed-By)
-        assertNull(metadata.get("pdf:PDFVersion"), "pdf:PDFVersion should be filtered out");
+        // (unless they're "must add" fields like tk:parsed-by)
+        assertNull(metadata.get("pdf:pdf-version"), "pdf:pdf-version should be filtered out");
         assertNull(metadata.get("dc:format"), "dc:format should be filtered out");
     }
 
     /**
      * Test that MetadataWriteLimiterFactory can be overridden via ParseContext.
-     * The default config excludes X-TIKA:parse_time_millis, but the override allows it.
+     * The default config excludes tk:parse-time-millis, but the override allows it.
      *
-     * Note: We use X-TIKA:parse_time_millis instead of pdf:PDFVersion because the PDF parser
+     * Note: We use tk:parse-time-millis instead of pdf:pdf-version because the PDF parser
      * module is not a dependency of this test module, so PDF-specific metadata isn't extracted.
      */
     @Test
     public void testWriteLimiterOverrideViaParseContext(@TempDir Path tmp) throws Exception {
         Metadata metadata;
         try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
-            // Create a ParseContext with an override that allows X-TIKA:parse_time_millis
-            // The default config's includeFields (dc:creator, Content-Type, X-TIKA:content)
-            // does NOT include X-TIKA:parse_time_millis, but this override does.
+            // Create a ParseContext with an override that allows tk:parse-time-millis
+            // The default config's includeFields (dc:creator, Content-Type, tk:content)
+            // does NOT include tk:parse-time-millis, but this override does.
             ParseContext parseContext = new ParseContext();
             String overrideJson = """
                     {
-                        "includeFields": ["Content-Type", "X-TIKA:parse_time_millis"],
+                        "includeFields": ["Content-Type", "tk:parse-time-millis"],
                         "maxKeySize": 100,
                         "maxFieldSize": 1000,
                         "maxTotalBytes": 10000,
@@ -113,7 +113,7 @@ public class MetadataWriteLimiterTest {
 
         // These fields should be present (in the override includeFields or ALWAYS_SET/ADD_FIELDS)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
-        assertNotNull(metadata.get("X-TIKA:parse_time_millis"), "X-TIKA:parse_time_millis should be present (allowed by override)");
+        assertNotNull(metadata.get("tk:parse-time-millis"), "tk:parse-time-millis should be present (allowed by override)");
 
         // dc:creator was in the default config's includeFields but NOT in the override
         assertNull(metadata.get("dc:creator"), "dc:creator should be filtered out (not in override)");

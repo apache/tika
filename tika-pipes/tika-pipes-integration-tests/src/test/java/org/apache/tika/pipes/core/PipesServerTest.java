@@ -47,7 +47,7 @@ public class PipesServerTest extends TikaTest {
 
                 parseData = pipesServer.parseFromTuple(fetchEmitTuple, fetcher);
         assertEquals("5f3b924303e960ce35d7f705e91d3018dd110a9c3cef0546a91fe013d6dad6fd",
-                parseData.metadataList.get(0).get("X-TIKA:digest:SHA-256"));
+                parseData.metadataList.get(0).get("tk:digest:SHA-256"));
     }
     */
 }

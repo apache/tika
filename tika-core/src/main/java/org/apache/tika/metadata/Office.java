@@ -149,11 +149,11 @@ public interface Office {
      * Embedded files may have a "progID" associated with them, such as
      * Word.Document.12 or AcroExch.Document.DC
      */
-    Property PROG_ID = Property.internalText("msoffice:progID");
+    Property PROG_ID = Property.internalText("msoffice:prog-id");
 
-    Property OCX_NAME = Property.internalText("msoffice:ocxName");
+    Property OCX_NAME = Property.internalText("msoffice:ocx-name");
 
-    Property EMBEDDED_STORAGE_CLASS_ID = Property.internalText("msoffice:embeddedStorageClassId");
+    Property EMBEDDED_STORAGE_CLASS_ID = Property.internalText("msoffice:embedded-storage-class-id");
 
     Property HAS_HIDDEN_SHEETS = Property.internalBoolean("msoffice:excel:has-hidden-sheets");
 

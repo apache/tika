@@ -41,7 +41,7 @@ from potentially overwriting existing metadata values in the Metadata object.
 
 |Resource name
 |Renamed
-|`resourceName` changed to `X-TIKA:resourceName`
+|`resourceName` changed to `tk:resource-name`
 
 |Unrecognized image metadata
 |Prefixed with `img:`
@@ -50,7 +50,218 @@ from potentially overwriting existing metadata values in the Metadata object.
 |Office metadata
 |Prefix changed
 |Changed from `meta` prefix to `office` prefix
+
+|QuattroPro metadata
+|Prefix changed
+|Changed from `wordperfect:` (a collision — it was shared with WordPerfect) to `quattropro:`
 |===
+
+== Tika-native namespace consolidation (`tk:`)
+
+Tika 4.0.0 consolidates every *Tika-asserted* metadata key — keys Tika computes about the
+parse, not values copied out of the document — under a single `tk:` prefix, normalized to
+kebab-case. This replaces the pre-4.0.0 `X-TIKA:` prefix and the scattered `tika:`, `tika_pg:`,
+`rendering:`, `signature:`, `imagereader:` prefixes and bare `hasSignature` /
+`embeddedResourceType` keys. This is a *clean break*: there is no automatic remapping. Code that
+references these keys by string must be updated per the table below (code using the
+`TikaCoreProperties` / `TikaPagedText` / `Rendering` constants needs no change — the constants
+now resolve to the `tk:` names).
+
+The `tk:` namespace is also a trust boundary: a file-controlled key can no longer enter it via a
+String write. The pre-4.0.0 `X-TIKA:` prefix stays *reserved* (rejected on String writes) during
+the 4.x line so a crafted file cannot forge it, even though Tika no longer emits it.
+
+File-claimed namespaces (`dc:`, `xmp:`, `pdf:`, `office:`, `html:`, standards and passthrough)
+are unchanged — they are the file's assertions, not Tika's, and keep their verbatim prefixes.
+
+The canonical `Content-Type` key is likewise unchanged (it is the routing media type). But the
+Tika-added *variants* of it — hint/override/magic-detected — are Tika's own assertions about
+detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type-hint`).
+
+.3.x → 4.0.0 Tika-native metadata key migration
+[cols="1,1"]
+|===
+|3.x key |4.0.0 key
+
+|`tika:chunks` |`tk:chunks`
+|`X-TIKA:content` |`tk:content`
+|`X-TIKA:content_handler` |`tk:content-handler`
+|`X-TIKA:content_handler_type` |`tk:content-handler-type`
+|`Content-Type-Hint` |`tk:content-type-hint`
+|`Content-Type-Override` |`tk:content-type-override`
+|`Content-Type-Parser-Override` |`tk:content-type-parser-override`
+|`Content-Type-Magic-Detected` |`tk:content-type-magic-detected`
+|`X-TIKA:decodedCharset` |`tk:decoded-charset`
+|`X-TIKA:detectedEncoding` |`tk:detected-encoding`
+|`X-TIKA:detected_language` |`tk:detected-language`
+|`X-TIKA:detected_language_confidence` |`tk:detected-language-confidence`
+|`X-TIKA:detected_language_confidence_raw` |`tk:detected-language-confidence-raw`
+|`X-TIKA:detection_content_length` |`tk:detection-content-length`
+|`X-TIKA:embedded_depth` |`tk:embedded-depth`
+|`X-TIKA:embedded_id` |`tk:embedded-id`
+|`X-TIKA:embedded_id_path` |`tk:embedded-id-path`
+|`X-TIKA:embeddedRelationshipId` |`tk:embedded-relationship-id`
+|`X-TIKA:embedded_resource_path` |`tk:embedded-resource-path`
+|`embeddedResourceType` |`tk:embedded-resource-type`
+|`X-TIKA:encodingDetectionTrace` |`tk:encoding-detection-trace`
+|`X-TIKA:encodingDetector` |`tk:encoding-detector`
+|`X-TIKA:encrypted` |`tk:encrypted`
+|`X-TIKA:final_embedded_resource_path` |`tk:final-embedded-resource-path`
+|`hasSignature` |`tk:has-signature`
+|`X-TIKA:internalPath` |`tk:internal-path`
+|`imagereader:NumImages` |`tk:num-images`
+|`X-TIKA:origResourceName` |`tk:orig-resource-name`
+|`X-TIKA:parse_time_millis` |`tk:parse-time-millis`
+|`X-TIKA:Parsed-By` |`tk:parsed-by`
+|`X-TIKA:Parsed-By-Full-Set` |`tk:parsed-by-full-set`
+|`X-TIKA:pipes_result` |`tk:pipes-result`
+|`X-TIKA:resourceName` |`tk:resource-name`
+|`X-TIKA:resourceNameExtensionInferred` |`tk:resource-name-extension-inferred`
+|`X-TIKA:sourcePath` |`tk:source-path`
+|`X-TIKA:truncated_content_for_detection` |`tk:truncated-content-for-detection`
+|`X-TIKA:versionCount` |`tk:version-count`
+|`X-TIKA:versionNumber` |`tk:version-number`
+|`X-TIKA:EXCEPTION:container_exception` |`tk:exception:container-exception`
+|`X-TIKA:EXCEPTION:embedded_bytes_exception` |`tk:exception:embedded-bytes-exception`
+|`X-TIKA:EXCEPTION:embedded_depth_limit_reached` |`tk:exception:embedded-depth-limit-reached`
+|`X-TIKA:EXCEPTION:embedded_exception` |`tk:exception:embedded-exception`
+|`X-TIKA:EXCEPTION:embedded_resource_limit_reached` |`tk:exception:embedded-resource-limit-reached`
+|`X-TIKA:EXCEPTION:embedded_stream_exception` |`tk:exception:embedded-stream-exception`
+|`X-TIKA:EXCEPTION:embedded_warning` |`tk:exception:embedded-warning`
+|`X-TIKA:EXCEPTION:warn` |`tk:exception:warn`
+|`X-TIKA:EXCEPTION:write_limit_reached` |`tk:exception:write-limit-reached`
+|`tika_pg:page_number` |`tk:page:number`
+|`tika_pg:page_numbers` |`tk:page:numbers`
+|`tika_pg:page_rotation` |`tk:page:rotation`
+|`rendering:pdfbox-image-writing-ms` |`tk:rendering:pdfbox-image-writing-ms`
+|`rendering:pdfbox-rendering-ms` |`tk:rendering:pdfbox-rendering-ms`
+|`rendering:Rendered-By` |`tk:rendering:rendered-by`
+|`rendering:rendering-time-ms` |`tk:rendering:rendering-time-ms`
+|`signature:contact-info` |`tk:signature:contact-info`
+|`signature:date` |`tk:signature:date`
+|`signature:filter` |`tk:signature:filter`
+|`signature:location` |`tk:signature:location`
+|`signature:name` |`tk:signature:name`
+|`signature:reason` |`tk:signature:reason`
+|`X-TIKA:WARN:truncated_metadata` |`tk:warn:truncated-metadata`
+|===
+
+Open key families migrate by prefix, suffix preserved verbatim (e.g. digest algorithm names):
+
+[cols="1,1"]
+|===
+|3.x prefix |4.0.0 prefix
+
+|`X-TIKA:digest:\*` |`tk:digest:*`
+|`X-TIKA:EXCEPTION:\*` |`tk:exception:*`
+|`X-TIKA:WARN:\*` |`tk:warn:*`
+|===
+
+
+== Format-namespace key casing
+
+The same casing rule applies *inside* format namespaces, decided by **who authored the key
+name**: names Tika coined are kebab-cased; names that come from the file or an external
+standard/schema keep their verbatim spelling. So the namespace prefix (the domain) is
+independent of casing (the name's origin).
+
+- **Kebab-cased** (Tika-coined names): `pdf:` structural flags (`pdf:hasMarkedContent` ->
+  `pdf:has-marked-content`), `access-permission:`, `zip:`, `database:`, `pst:`, `dwg:`,
+  `wordperfect:`, `quattropro:`, and the few camelCase `msoffice:` stragglers.
+- **Left verbatim** (standard/schema/file names): Dublin Core (`dc:`), the XMP schemas
+  (`xmp*:`), EXIF/`tiff:`, `iptc:`, `photoshop:`, `geo:`, the CF/CMIP attributes under `cf:`,
+  MAPI property names, email headers, the ECMA-376 OOXML core/extended property names
+  (`AppVersion`, `lastModifiedBy`, `TotalTime`, …), and the PDF/A/X/VT/UA sub-namespaces
+  (`pdfaid:`, `pdfx:`, …) and PDF Info-dict names (`pdf:Trapped`, `pdf:docinfo:producer`, …).
+
+(The `access_permission:` prefix is also normalized to `access-permission:`. The
+`extended-properties:HiddedSlides` entry additionally corrects a long-standing spelling typo.)
+
+.3.x -> 4.0.0 format-namespace key casing
+[cols="1,1"]
+|===
+|3.x key |4.0.0 key
+
+|`access_permission:assemble_document` |`access-permission:assemble-document`
+|`access_permission:can_modify` |`access-permission:can-modify`
+|`access_permission:can_print` |`access-permission:can-print`
+|`access_permission:can_print_faithful` |`access-permission:can-print-faithful`
+|`access_permission:extract_content` |`access-permission:extract-content`
+|`access_permission:extract_for_accessibility` |`access-permission:extract-for-accessibility`
+|`access_permission:fill_in_form` |`access-permission:fill-in-form`
+|`access_permission:modify_annotations` |`access-permission:modify-annotations`
+|`database:column_count` |`database:column-count`
+|`database:column_name` |`database:column-name`
+|`database:row_count` |`database:row-count`
+|`database:table_name` |`database:table-name`
+|`dwg:applicationComment` |`dwg:application-comment`
+|`dwg:applicationName` |`dwg:application-name`
+|`dwg:applicationVersion` |`dwg:application-version`
+|`dwg:productInfo` |`dwg:product-info`
+|`extended-properties:HiddedSlides` |`extended-properties:HiddenSlides`
+|`extended-properties:DocSecurityString` |`extended-properties:doc-security-string`
+|`msoffice:embeddedStorageClassId` |`msoffice:embedded-storage-class-id`
+|`msoffice:ocxName` |`msoffice:ocx-name`
+|`msoffice:progID` |`msoffice:prog-id`
+|`pdf:actionTrigger` |`pdf:action-trigger`
+|`pdf:actionTriggers` |`pdf:action-triggers`
+|`pdf:actionTypes` |`pdf:action-types`
+|`pdf:annotationSubtypes` |`pdf:annotation-subtypes`
+|`pdf:annotationTypes` |`pdf:annotation-types`
+|`pdf:associatedFileRelationship` |`pdf:associated-file-relationship`
+|`pdf:charsPerPage` |`pdf:chars-per-page`
+|`pdf:containsDamagedFont` |`pdf:contains-damaged-font`
+|`pdf:containsNonEmbeddedFont` |`pdf:contains-non-embedded-font`
+|`pdf:docinfo:creator_tool` |`pdf:docinfo:creator-tool`
+|`pdf:embeddedFileAnnotationType` |`pdf:embedded-file-annotation-type`
+|`pdf:embeddedFileDescription` |`pdf:embedded-file-description`
+|`pdf:embeddedFileSubtype` |`pdf:embedded-file-subtype`
+|`pdf:eofOffsets` |`pdf:eof-offsets`
+|`pdf:has3D` |`pdf:has-3d`
+|`pdf:hasAcroFormFields` |`pdf:has-acro-form-fields`
+|`pdf:hasCollection` |`pdf:has-collection`
+|`pdf:hasMarkedContent` |`pdf:has-marked-content`
+|`pdf:hasSignatureFields` |`pdf:has-signature-fields`
+|`pdf:hasXFA` |`pdf:has-xfa`
+|`pdf:hasXMP` |`pdf:has-xmp`
+|`pdf:incrementalUpdateCount` |`pdf:incremental-update-count`
+|`pdf:incrementalUpdateNumber` |`pdf:incremental-update-number`
+|`pdf:jsName` |`pdf:js-name`
+|`pdf:num3DAnnotations` |`pdf:num-3d-annotations`
+|`pdf:ocrPageCount` |`pdf:ocr-page-count`
+|`pdf:overallPercentageUnmappedUnicodeChars` |`pdf:overall-percentage-unmapped-unicode-chars`
+|`pdf:PDFExtensionVersion` |`pdf:pdf-extension-version`
+|`pdf:PDFVersion` |`pdf:pdf-version`
+|`pdf:totalUnmappedUnicodeChars` |`pdf:total-unmapped-unicode-chars`
+|`pdf:unmappedUnicodeCharsPerPage` |`pdf:unmapped-unicode-chars-per-page`
+|`pdf:xmpLocation` |`pdf:xmp-location`
+|`pdfa:PDFVersion` |`pdfa:pdf-version`
+|`pst:discriptorNodeId` |`pst:discriptor-node-id`
+|`pst:isValid` |`pst:is-valid`
+|`quattropro:Build` |`quattropro:build`
+|`quattropro:Id` |`quattropro:id`
+|`quattropro:LowestVersion` |`quattropro:lowest-version`
+|`quattropro:Version` |`quattropro:version`
+|`wordperfect:Encrypted` |`wordperfect:encrypted`
+|`wordperfect:FileId` |`wordperfect:file-id`
+|`wordperfect:FileSize` |`wordperfect:file-size`
+|`wordperfect:FileType` |`wordperfect:file-type`
+|`wordperfect:MajorVersion` |`wordperfect:major-version`
+|`wordperfect:MinorVersion` |`wordperfect:minor-version`
+|`wordperfect:ProductType` |`wordperfect:product-type`
+|`zip:centralDirectoryOnlyEntries` |`zip:central-directory-only-entries`
+|`zip:compressedSize` |`zip:compressed-size`
+|`zip:compressionMethod` |`zip:compression-method`
+|`zip:detectorDataDescriptorRequired` |`zip:detector-data-descriptor-required`
+|`zip:detectorZipFileOpened` |`zip:detector-zip-file-opened`
+|`zip:duplicateEntryNames` |`zip:duplicate-entry-names`
+|`zip:integrityCheckResult` |`zip:integrity-check-result`
+|`zip:localHeaderOnlyEntries` |`zip:local-header-only-entries`
+|`zip:uncompressedSize` |`zip:uncompressed-size`
+|`zip:unixMode` |`zip:unix-mode`
+|`zip:versionMadeBy` |`zip:version-made-by`
+|===
+
 
 == Migration Steps
 
@@ -87,7 +298,7 @@ String value = metadata.get("mapi:some-property");
 String name = metadata.get("resourceName");
 
 // After (4.x)
-String name = metadata.get("X-TIKA:resourceName");
+String name = metadata.get("tk:resource-name");
 ----
 
 === Image Metadata

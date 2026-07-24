@@ -61,7 +61,7 @@ import org.apache.tika.serialization.JsonMetadataList;
  * <h2>Pipeline</h2>
  * <ol>
  *   <li>For each {@code .json} extract under {@code --extracts} (tika-app output
- *       via {@link JsonMetadataList}), read {@code X-TIKA:content}.</li>
+ *       via {@link JsonMetadataList}), read {@code tk:content}.</li>
  *   <li>Per document: determine the dominant Unicode script (non-COMMON / non-
  *       INHERITED tally) and drop documents whose dominant-script fraction is
  *       below {@link #MIN_DOC_SCRIPT_DOMINANCE} — mixed-script pages are too
@@ -523,7 +523,7 @@ public final class BuildJunkAugmentationData {
         return count;
     }
 
-    /** Reads {@code X-TIKA:content} from the first metadata record of a tika-app RMETA JSON. */
+    /** Reads {@code tk:content} from the first metadata record of a tika-app RMETA JSON. */
     static String readContent(Path jsonFile) {
         try (Reader r = new InputStreamReader(
                 Files.newInputStream(jsonFile), StandardCharsets.UTF_8)) {

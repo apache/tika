@@ -80,7 +80,7 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
         assertEquals(5, metadataList.size());
 
         Set<String> expectedKeys = new HashSet<>();
-        expectedKeys.add("X-TIKA:content");
+        expectedKeys.add("tk:content");
         expectedKeys.add("extended-properties:Application");
         expectedKeys.add("Content-Type");
         for (Metadata m : metadataList) {

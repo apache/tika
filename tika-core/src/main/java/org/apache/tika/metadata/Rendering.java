@@ -17,8 +17,8 @@
 package org.apache.tika.metadata;
 
 public interface Rendering {
-    String RENDERING_PREFIX = "rendering:";
+    String RENDERING_PREFIX = "tk:rendering:";
 
-    Property RENDERED_BY = Property.externalTextBag(RENDERING_PREFIX + "Rendered-By");
+    Property RENDERED_BY = Property.externalTextBag(RENDERING_PREFIX + "rendered-by");
     Property RENDERED_MS = Property.externalReal(RENDERING_PREFIX + "rendering-time-ms");
 }

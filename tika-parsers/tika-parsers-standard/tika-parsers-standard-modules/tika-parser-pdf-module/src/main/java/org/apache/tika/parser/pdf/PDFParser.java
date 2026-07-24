@@ -675,7 +675,7 @@ public class PDFParser implements Parser, RenderingParser {
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
         //    There are also three potential pdf specific version keys:
-        //    pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        //    pdf:pdf-version, pdfa:pdf-version, pdf:pdf-extension-version
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
         metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
                 Float.toString(document.getDocument().getVersion()));
@@ -708,7 +708,7 @@ public class PDFParser implements Parser, RenderingParser {
                 } else {
                     // WARN that there is an Extension, but it's not Adobe's, and so is a 'new'
                     // format'.
-                    metadata.set("pdf:foundNonAdobeExtensionName", extName.getName());
+                    metadata.set("pdf:found-non-adobe-extension-name", extName.getName());
                 }
             }
         }

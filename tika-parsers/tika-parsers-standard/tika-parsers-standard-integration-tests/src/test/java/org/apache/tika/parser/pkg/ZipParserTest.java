@@ -114,13 +114,13 @@ public class ZipParserTest extends AbstractPkgTest {
 
         //mime is 0 bytes
         assertContains("InputStream must have > 0 bytes",
-                results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(1).get("tk:exception:embedded-exception"));
         //source.xml is binary, not xml
         assertContains("TikaException: XML parse error",
-                results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(2).get("tk:exception:embedded-exception"));
         //manifest.xml has malformed xml
         assertContains("TikaException: XML parse error",
-                results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(4).get("tk:exception:embedded-exception"));
     }
 
     private static class GatherInternalPathsDocumentExtractor implements EmbeddedDocumentExtractor {

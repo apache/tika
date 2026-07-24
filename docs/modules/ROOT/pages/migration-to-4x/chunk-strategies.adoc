@@ -18,7 +18,7 @@
 = Chunk Strategies for Search Engines
 
 Tika 4.x introduces a unified chunking and embedding pipeline (`tika-inference`) that produces
-a `tika:chunks` array on each document's metadata. This page describes the strategies for
+a `tk:chunks` array on each document's metadata. This page describes the strategies for
 emitting those chunks to Elasticsearch and OpenSearch.
 
 == Background
@@ -33,7 +33,7 @@ The `tika-inference` module produces chunks from two sources:
   image embedding endpoint (e.g., Jina CLIP v2). Each chunk carries a `PaginatedLocator`
   (page number) and a vector, but no text.
 
-Both types are stored in the same `tika:chunks` metadata field as a JSON array. When multiple
+Both types are stored in the same `tk:chunks` metadata field as a JSON array. When multiple
 components produce chunks (e.g., image embedder runs during parsing, text embedder runs as a
 metadata filter), they merge into the same array via `ChunkSerializer.mergeInto()`.
 
@@ -57,13 +57,13 @@ Image-only chunks omit `text`; text-only chunks omit `paginated`.
 
 === Option A: Chunks as Nested Objects
 
-Each file (container or embedded) is **one ES/OpenSearch document**. The `tika:chunks` field
+Each file (container or embedded) is **one ES/OpenSearch document**. The `tk:chunks` field
 is mapped as a https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html[`nested`] type.
 
 [source,json]
 ----
 {"index":{"_id":"report.pdf"}}
-{"title":"Q4 Report","mime":"application/pdf","tika:chunks":[
+{"title":"Q4 Report","mime":"application/pdf","tk:chunks":[
   {"text":"Revenue grew...","vector":"...","locators":{"text":[{"start_offset":0,"end_offset":120}]}},
   {"text":"Operating costs...","vector":"...","locators":{"text":[{"start_offset":121,"end_offset":300}]}},
   {"vector":"...","locators":{"paginated":[{"page":1}]}},
@@ -143,11 +143,11 @@ within each document (not exploded into separate docs, not a stringified blob).
 [source,json]
 ----
 {"index":{"_id":"email.msg"}}
-{"title":"Re: Q4 report","mime":"message/rfc822","tika:chunks":[
+{"title":"Re: Q4 report","mime":"message/rfc822","tk:chunks":[
   {"text":"Hi team, see attached...","vector":"...","locators":{"text":[{"start_offset":0,"end_offset":35}]}}
 ]}
 {"index":{"_id":"email.msg-<uuid>"}}
-{"title":"Q4-report.pdf","mime":"application/pdf","parent":"email.msg","tika:chunks":[
+{"title":"Q4-report.pdf","mime":"application/pdf","parent":"email.msg","tk:chunks":[
   {"vector":"...","locators":{"paginated":[{"page":1}]}},
   {"vector":"...","locators":{"paginated":[{"page":2}]}},
   {"text":"Revenue grew...","vector":"...","locators":{"text":[{"start_offset":0,"end_offset":120}]}},
@@ -174,15 +174,15 @@ Tika 4.x currently implements **Option D**:
 
 * The `AttachmentStrategy` (`SEPARATE_DOCUMENTS` or `PARENT_CHILD`) controls how
   **embedded files** are emitted — each embedded file becomes its own document.
-* The `tika:chunks` field on each document holds all chunks (text + image) as a
+* The `tk:chunks` field on each document holds all chunks (text + image) as a
   structured JSON array.
-* The emitter clients (`ElasticsearchClient`, `OpenSearchClient`) detect the `tika:chunks`
+* The emitter clients (`ElasticsearchClient`, `OpenSearchClient`) detect the `tk:chunks`
   field and write it as **raw JSON** rather than an escaped string, so the nested objects
   are indexable.
 
-== The `tika:chunks` Field
+== The `tk:chunks` Field
 
-All chunk data — regardless of source — is unified in a single metadata field: `tika:chunks`.
+All chunk data — regardless of source — is unified in a single metadata field: `tk:chunks`.
 
 There is no separate field for image embeddings vs. text embeddings. A chunk is a chunk:
 
@@ -207,7 +207,7 @@ For Option D with `nested` kNN support, a mapping like this works:
       "mime": {"type": "keyword"},
       "content": {"type": "text"},
       "parent": {"type": "keyword"},
-      "tika:chunks": {
+      "tk:chunks": {
         "type": "nested",
         "properties": {
           "text": {"type": "text"},
@@ -241,7 +241,7 @@ For Option D with `nested` kNN support, a mapping like this works:
 }
 ----
 
-NOTE: The `vector` field in `tika:chunks` stores base64-encoded float32 arrays during Tika
+NOTE: The `vector` field in `tk:chunks` stores base64-encoded float32 arrays during Tika
 processing, but the emitter writes them as-is. If your mapping uses `dense_vector`, you may
 need a pipeline or custom serialization to convert the base64 vectors to float arrays at
 index time. Alternatively, map `vector` as `keyword` and decode at query time.
