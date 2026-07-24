@@ -47,6 +47,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.protocol.PayloadLimitExceededException;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
@@ -72,6 +73,7 @@ public class PipesClient implements Closeable {
     public static final int SOCKET_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
+    private final int maxIpcPayloadBytes;
     private final ServerManager serverManager;
     private final boolean ownsServerManager;
     private final int pipesClientId;
@@ -95,6 +97,7 @@ public class PipesClient implements Closeable {
      */
     public PipesClient(PipesConfig pipesConfig, ServerManager serverManager) {
         this.pipesConfig = pipesConfig;
+        this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.serverManager = serverManager;
         this.ownsServerManager = false;
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
@@ -112,6 +115,7 @@ public class PipesClient implements Closeable {
      */
     public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
+        this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
         this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigPath, pipesClientId);
         this.ownsServerManager = true;
@@ -369,7 +373,7 @@ public class PipesClient implements Closeable {
                         intermediateResult.get());
             }
             try {
-                PipesMessage msg = PipesMessage.read(tuple.input);
+                PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
                 LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
 
                 // Send ACK only for messages that require it
@@ -420,6 +424,13 @@ public class PipesClient implements Closeable {
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
                         ExceptionUtils.getStackTrace(e));
+            } catch (PayloadLimitExceededException e) {
+                // Stream is desynchronized (payload bytes were not consumed); close the connection.
+                LOG.warn("clientId={}: payload too large for id={}: {}", pipesClientId, t.getId(), e.getMessage());
+                closeConnection();
+                return buildFatalResult(t.getId(), t.getEmitKey(),
+                        PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                        intermediateResult.get(), e.getMessage());
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {

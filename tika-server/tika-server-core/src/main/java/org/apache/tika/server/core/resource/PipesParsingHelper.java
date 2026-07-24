@@ -282,6 +282,7 @@ public class PipesParsingHelper {
                     Response.Status.SERVICE_UNAVAILABLE;
             case FETCH_EXCEPTION, EMIT_EXCEPTION,
                  FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
+                 PAYLOAD_LIMIT_EXCEEDED,
                  FETCHER_INITIALIZATION_EXCEPTION, EMITTER_INITIALIZATION_EXCEPTION,
                  FAILED_TO_INITIALIZE ->
                     Response.Status.INTERNAL_SERVER_ERROR;

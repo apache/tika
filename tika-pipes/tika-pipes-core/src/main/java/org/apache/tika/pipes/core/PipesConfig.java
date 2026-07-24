@@ -23,9 +23,12 @@ import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
 
 public class PipesConfig {
 
+
+    public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
@@ -55,6 +58,8 @@ public class PipesConfig {
      * and startup time at the cost of reduced isolation - one crash affects all in-flight requests.
      */
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
+
+    private int maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
 
     private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
     private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
@@ -479,5 +484,32 @@ public class PipesConfig {
      */
     public void setUseSharedServer(boolean useSharedServer) {
         this.useSharedServer = useSharedServer;
+    }
+
+    /**
+     * Returns the maximum IPC payload size in bytes.
+     * Configurable via {@code maxIpcPayloadBytes} in the {@code pipes} section of tika-config.json.
+     *
+     * @return the maximum IPC payload size in bytes (default 100 MB)
+     */
+    public int getMaxIpcPayloadBytes() {
+        return maxIpcPayloadBytes;
+    }
+
+    /**
+     * Sets the maximum IPC payload size in bytes. Must be a positive value.
+     * This bounds the size of a message the client will accept back from the
+     * forked server (chiefly the FINISHED result). Request payloads
+     * (client to server) are small and use the built-in default.
+     *
+     * @param maxIpcPayloadBytes positive payload limit in bytes
+     * @throws IllegalArgumentException if the value is not positive
+     */
+    public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
+        if (maxIpcPayloadBytes <= 0) {
+            throw new IllegalArgumentException(
+                    "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
+        }
+        this.maxIpcPayloadBytes = maxIpcPayloadBytes;
     }
 }
