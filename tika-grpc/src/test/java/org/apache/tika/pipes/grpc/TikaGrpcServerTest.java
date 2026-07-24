@@ -76,6 +76,7 @@ import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.SavePipesIteratorReply;
 import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.grpc.v1.Document;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.serialization.config.JsonConfigHelper;
@@ -377,6 +378,80 @@ public class TikaGrpcServerTest {
         return TikaGrpc.newBlockingStub(channel);
     }
 
+    /**
+     * The stage-1 typed contract, in-process (real forked pipes worker, real proto
+     * round trip): the reply is additive -- legacy fields/status keep working -- and
+     * document carries the typed envelope, Dublin Core metadata, and a lossless tagged
+     * tail that never double-ships what already has a typed home.
+     */
+    @Test
+    public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+
+        // Use the fetcher configured statically in tika-pipes-test-config.json
+        // (basePath = target): runtime-saved fetchers do not reach the forked worker
+        // with the default in-memory config store.
+        String folderName = "typed-doc-" + UUID.randomUUID();
+        File testDocumentFolder = new File("target/" + folderName);
+        assertTrue(testDocumentFolder.mkdir());
+        try {
+            File testFile = new File(testDocumentFolder, "typed.html");
+            FileUtils.writeStringToFile(testFile,
+                    "<html><head><title>Typed Contract</title>"
+                            + "<meta name=\"author\" content=\"Jane Doe\"/></head>"
+                            + "<body>hello typed world</body></html>",
+                    StandardCharsets.UTF_8);
+
+            String fetchKey = folderName + "/typed.html";
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(createFetcherId(1))
+                    .setFetchKey(fetchKey)
+                    .build());
+
+            assertEquals("PARSE_SUCCESS", reply.getStatus());
+            assertTrue(reply.hasDocument(), "reply should carry a typed Document");
+            Document document = reply.getDocument();
+
+            // additive contract: the legacy fields map still carries the flat content
+            String legacyContent = reply.getFieldsMap().get("X-TIKA:content");
+            assertNotNull(legacyContent,
+                    "legacy fields map must keep working alongside the typed Document");
+            assertTrue(legacyContent.contains("hello typed world"));
+
+            // envelope
+            assertEquals(fetchKey, document.getId());
+            assertTrue(document.getContentType().startsWith("text/html"),
+                    "detected content type, got: " + document.getContentType());
+            assertTrue(document.getOrigin().getFilename().endsWith("typed.html"),
+                    "origin filename, got: " + document.getOrigin().getFilename());
+            assertTrue(document.hasParsedAt());
+
+            // typed Dublin Core fields
+            assertEquals("Typed Contract", document.getMetadata().getTitle());
+            assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
+
+            // status
+            assertEquals(org.apache.tika.grpc.v1.ParseStatus.Status.SUCCESS,
+                    document.getStatus().getStatus());
+            assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
+            assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
+            Assertions.assertFalse(document.getStatus().getParsersUsedList().isEmpty());
+            assertTrue(document.getStatus().getFetchParseTimeMs() >= 0);
+
+            // the tagged tail is lossless but never double-ships a typed home
+            assertTrue(document.getExtraCount() > 0,
+                    "unmapped keys should survive in the tagged tail");
+            assertTrue(document.getExtraList().stream().noneMatch(f ->
+                            f.getKey().equals("X-TIKA:content")
+                                    || f.getKey().equals("Content-Type")
+                                    || f.getKey().equals("dc:title")),
+                    "typed/envelope keys must not duplicate into the tail");
+        } finally {
+            FileUtils.deleteDirectory(testDocumentFolder);
+        }
+    }
+
     @Test
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
@@ -483,6 +558,16 @@ public class TikaGrpcServerTest {
             assertEquals(NUM_TEST_DOCS, successes.size());
             assertEquals(1, errors.size());
             assertTrue(finished.get());
+
+            // Every successful reply carries the typed Document alongside the legacy
+            // fields map, with the envelope populated.
+            for (FetchAndParseReply success : successes) {
+                assertTrue(success.hasDocument(),
+                        "reply should carry a typed Document for " + success.getFetchKey());
+                assertEquals(success.getStatus(),
+                        success.getDocument().getStatus().getPipesStatus());
+                assertTrue(success.getDocument().getStatus().getFetchParseTimeMs() >= 0);
+            }
 
             tikaGrpcServerImpl.shutdown();
             server.shutdown();

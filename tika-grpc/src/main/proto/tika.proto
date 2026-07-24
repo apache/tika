@@ -14,6 +14,8 @@
 syntax = "proto3";
 package tika;
 
+import "org/apache/tika/grpc/v1/document.proto";
+
 option java_multiple_files = true;
 option java_package = "org.apache.tika";
 option java_outer_classname = "TikaProto";
@@ -68,8 +70,8 @@ service Tika   {
     Get a pipes iterator's data from the iterator store.   
   */
   rpc GetPipesIterator(GetPipesIteratorRequest) returns (GetPipesIteratorReply) {}
-  /* 
-    Delete a pipes iterator from the iterator store.   
+  /*
+    Delete a pipes iterator from the iterator store.
   */
   rpc DeletePipesIterator(DeletePipesIteratorRequest) returns (DeletePipesIteratorReply) {}
 }
@@ -117,6 +119,10 @@ message FetchAndParseReply {
   string status = 3;
   // If there was an error, this will contain the error message.
   string error_message = 4;
+  // Strongly-typed parse output (see org/apache/tika/grpc/v1/document.proto). Carried
+  // alongside the legacy fields/status for now; those will be deprecated only once the
+  // typed Document also carries the extracted content.
+  org.apache.tika.grpc.v1.Document document = 5;
 }
 
 message DeleteFetcherRequest {

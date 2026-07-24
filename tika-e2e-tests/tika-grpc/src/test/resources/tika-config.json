@@ -1,5 +1,8 @@
 {
   "plugin-roots": ["/var/cache/tika/plugins"],
+  "grpc": {
+    "allowComponentManagement": true
+  },
   "pipes": {
     "numClients": 1,
     "forkedJvmArgs": [
