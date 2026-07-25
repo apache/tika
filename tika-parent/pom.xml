@@ -302,7 +302,7 @@
     <maven.failsafe.version>3.5.6</maven.failsafe.version>
     <maven.surefire.version>3.5.6</maven.surefire.version>
     <maven.javadoc.version>3.12.0</maven.javadoc.version>
-    <maven.jar.version>3.5.0</maven.jar.version>
+    <maven.jar.version>3.5.1</maven.jar.version>
     <maven.scr.version>1.26.4</maven.scr.version>
     <maven.shade.version>3.6.2</maven.shade.version>
     <maven.project.info.reports.version>3.9.0</maven.project.info.reports.version>
@@ -390,7 +390,7 @@
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.1.2</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>7.6.0</junrar.version>
+    <junrar.version>8.0.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.3.1</kafka.version>
     <kotlin-stdlib.version>2.4.10</kotlin-stdlib.version>
@@ -432,7 +432,7 @@
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.8</spring.version>
-    <sqlite.version>3.53.2.0</sqlite.version>
+    <sqlite.version>3.53.2.1</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
