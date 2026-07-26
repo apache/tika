@@ -75,7 +75,7 @@
       <dependency>
         <groupId>net.bytebuddy</groupId>
         <artifactId>byte-buddy</artifactId>
-        <version>1.18.7</version>
+        <version>1.18.11</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -149,7 +149,7 @@
       <dependency>
           <groupId>org.apache.ivy</groupId>
           <artifactId>ivy</artifactId>
-          <version>2.5.3</version>
+          <version>2.6.0</version>
       </dependency>
       <dependency>
           <groupId>org.apache.hadoop</groupId>
@@ -180,7 +180,7 @@
       <dependency>
           <groupId>io.dropwizard.metrics</groupId>
           <artifactId>metrics-core</artifactId>
-          <version>4.2.38</version>
+          <version>4.2.39</version>
       </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
@@ -190,12 +190,12 @@
       <dependency>
           <groupId>org.codehaus.woodstox</groupId>
           <artifactId>stax2-api</artifactId>
-          <version>4.2.2</version>
+          <version>4.3.0</version>
       </dependency>
       <dependency>
           <groupId>org.apache.commons</groupId>
           <artifactId>commons-configuration2</artifactId>
-          <version>2.13.0</version>
+          <version>2.15.1</version>
       </dependency>
       <dependency>
           <groupId>org.apache.spark</groupId>
@@ -215,7 +215,7 @@
       <dependency>
           <groupId>org.jline</groupId>
           <artifactId>jline</artifactId>
-          <version>3.30.7</version>
+          <version>4.3.1</version>
       </dependency>
       <dependency>
           <groupId>javax.activation</groupId>
@@ -245,7 +245,7 @@
       <dependency>
           <groupId>dnsjava</groupId>
           <artifactId>dnsjava</artifactId>
-          <version>3.6.4</version>
+          <version>3.6.5</version>
       </dependency>
       <dependency>
           <groupId>com.jamesmurty.utils</groupId>
