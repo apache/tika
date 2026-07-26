@@ -1,6 +1,9 @@
 # Apache Tika gRPC API
 
-Typed protobuf messages for Tika parse output under `org.apache.tika.grpc.v1`.
+Typed protobuf messages for Tika parse output under `org.apache.tika.grpc.v2`.
+
+This is the experimental v2 document contract. The existing `tika.Tika` gRPC service
+(legacy `fields` map replies) is unchanged and lives outside this module.
 
 ## Contents
 
@@ -8,7 +11,7 @@ Typed protobuf messages for Tika parse output under `org.apache.tika.grpc.v1`.
   an envelope (content type, origin, parse status), typed common metadata
   (`DocumentMetadata`), and a tagged metadata tail (`extra`) that losslessly carries
   everything else.
-- **Bundled descriptors** — `META-INF/org.apache.tika.grpc.v1.descriptors` in the
+- **Bundled descriptors** — `META-INF/org.apache.tika.grpc.v2.descriptors` in the
   published jar.
 
 ## Usage
@@ -50,6 +53,8 @@ change.
 Planned follow-ups extend `Document` additively (proto3 field additions are
 wire-compatible): a structured content tree, and recursion into embedded documents.
 Field numbers for those are intentionally left unassigned in `document.proto`.
+Parse-only entrypoints such as ParseBytes are separate issues that reuse this same
+`Document` reply on the v2 service.
 
 ## Lint
 

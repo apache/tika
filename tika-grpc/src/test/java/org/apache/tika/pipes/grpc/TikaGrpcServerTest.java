@@ -76,7 +76,8 @@ import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.SavePipesIteratorReply;
 import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.grpc.v1.Document;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.TikaV2Grpc;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.serialization.config.JsonConfigHelper;
@@ -147,10 +148,13 @@ public class TikaGrpcServerTest {
     public void testFetcherCrud(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        TikaGrpcServerImpl serviceImpl =
+                new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString());
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString()))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -359,13 +363,14 @@ public class TikaGrpcServerTest {
         assertNotNull(reply.getMessage());
     }
 
-    private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
-            throws Exception {
+    private static ManagedChannel startChannel(Resources resources, Path config) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(config.toAbsolutePath().toString()))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -375,18 +380,25 @@ public class TikaGrpcServerTest {
                 .directExecutor()
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
-        return TikaGrpc.newBlockingStub(channel);
+        return channel;
+    }
+
+    private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
+            throws Exception {
+        return TikaGrpc.newBlockingStub(startChannel(resources, config));
     }
 
     /**
-     * The stage-1 typed contract, in-process (real forked pipes worker, real proto
-     * round trip): the reply is additive -- legacy fields/status keep working -- and
-     * document carries the typed envelope, Dublin Core metadata, and a lossless tagged
-     * tail that never double-ships what already has a typed home.
+     * The stage-1 typed contract on the experimental v2 service (real forked pipes
+     * worker, real proto round trip): Document carries the typed envelope, Dublin Core
+     * metadata, and a lossless tagged tail that never double-ships what already has a
+     * typed home. v1 remains the legacy fields-map surface.
      */
     @Test
     public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
-        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfig);
+        ManagedChannel channel = startChannel(resources, tikaConfig);
+        TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
+        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
 
         // Use the fetcher configured statically in tika-pipes-test-config.json
         // (basePath = target): runtime-saved fetchers do not reach the forked worker
@@ -403,21 +415,28 @@ public class TikaGrpcServerTest {
                     StandardCharsets.UTF_8);
 
             String fetchKey = folderName + "/typed.html";
-            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+            String fetcherId = createFetcherId(1);
+
+            // v1 keeps the legacy fields-map contract
+            FetchAndParseReply v1Reply = v1.fetchAndParse(FetchAndParseRequest
                     .newBuilder()
-                    .setFetcherId(createFetcherId(1))
+                    .setFetcherId(fetcherId)
                     .setFetchKey(fetchKey)
                     .build());
-
-            assertEquals("PARSE_SUCCESS", reply.getStatus());
-            assertTrue(reply.hasDocument(), "reply should carry a typed Document");
-            Document document = reply.getDocument();
-
-            // additive contract: the legacy fields map still carries the flat content
-            String legacyContent = reply.getFieldsMap().get("X-TIKA:content");
-            assertNotNull(legacyContent,
-                    "legacy fields map must keep working alongside the typed Document");
+            assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
+            String legacyContent = v1Reply.getFieldsMap().get("X-TIKA:content");
+            assertNotNull(legacyContent, "v1 fields map must keep working");
             assertTrue(legacyContent.contains("hello typed world"));
+
+            // v2 returns the typed Document contract
+            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(fetcherId)
+                            .setFetchKey(fetchKey)
+                            .build());
+
+            assertTrue(reply.hasDocument(), "v2 reply should carry a typed Document");
+            Document document = reply.getDocument();
 
             // envelope
             assertEquals(fetchKey, document.getId());
@@ -432,7 +451,7 @@ public class TikaGrpcServerTest {
             assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
 
             // status
-            assertEquals(org.apache.tika.grpc.v1.ParseStatus.Status.SUCCESS,
+            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.SUCCESS,
                     document.getStatus().getStatus());
             assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
             assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
@@ -461,6 +480,7 @@ public class TikaGrpcServerTest {
                 .forName(serverName)
                 .directExecutor()
                 .addService(tikaGrpcServerImpl)
+                .addService(new TikaGrpcV2ServerImpl(tikaGrpcServerImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -559,14 +579,11 @@ public class TikaGrpcServerTest {
             assertEquals(1, errors.size());
             assertTrue(finished.get());
 
-            // Every successful reply carries the typed Document alongside the legacy
-            // fields map, with the envelope populated.
+            // v1 bi-stream replies keep the legacy fields-map contract
             for (FetchAndParseReply success : successes) {
-                assertTrue(success.hasDocument(),
-                        "reply should carry a typed Document for " + success.getFetchKey());
-                assertEquals(success.getStatus(),
-                        success.getDocument().getStatus().getPipesStatus());
-                assertTrue(success.getDocument().getStatus().getFetchParseTimeMs() >= 0);
+                assertEquals("PARSE_SUCCESS", success.getStatus());
+                assertNotNull(success.getFieldsMap().get("X-TIKA:content"),
+                        "v1 reply should carry content in fields for " + success.getFetchKey());
             }
 
             tikaGrpcServerImpl.shutdown();

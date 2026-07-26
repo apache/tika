@@ -25,14 +25,14 @@ import java.util.Set;
 
 import com.google.protobuf.Timestamp;
 
-import org.apache.tika.grpc.v1.BooleanValues;
-import org.apache.tika.grpc.v1.Document;
-import org.apache.tika.grpc.v1.IntegerValues;
-import org.apache.tika.grpc.v1.MetadataField;
-import org.apache.tika.grpc.v1.MetadataValue;
-import org.apache.tika.grpc.v1.NumberValues;
-import org.apache.tika.grpc.v1.StringValues;
-import org.apache.tika.grpc.v1.TimestampValues;
+import org.apache.tika.grpc.v2.BooleanValues;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.IntegerValues;
+import org.apache.tika.grpc.v2.MetadataField;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.NumberValues;
+import org.apache.tika.grpc.v2.StringValues;
+import org.apache.tika.grpc.v2.TimestampValues;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.utils.DateUtils;

@@ -19,7 +19,7 @@ package org.apache.tika.grpc.mapper.transform;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.tika.grpc.v1.Document;
+import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.metadata.Metadata;
 
 /**

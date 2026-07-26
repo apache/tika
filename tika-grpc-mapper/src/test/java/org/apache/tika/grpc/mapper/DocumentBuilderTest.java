@@ -24,9 +24,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.grpc.v1.Document;
-import org.apache.tika.grpc.v1.MetadataValue;
-import org.apache.tika.grpc.v1.ParseStatus;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.ParseStatus;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;

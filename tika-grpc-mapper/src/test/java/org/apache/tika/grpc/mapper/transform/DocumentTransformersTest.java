@@ -24,7 +24,7 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.grpc.v1.Document;
+import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 

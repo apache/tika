@@ -45,10 +45,11 @@ import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
-import org.apache.tika.grpc.v1.Document;
-import org.apache.tika.grpc.v1.MetadataField;
-import org.apache.tika.grpc.v1.MetadataValue;
-import org.apache.tika.grpc.v1.ParseStatus;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataField;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.ParseStatus;
+import org.apache.tika.grpc.v2.TikaV2Grpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
@@ -360,41 +361,46 @@ class HandlerTypeTest {
     }
 
     /**
-     * Exercises the typed Document contract end-to-end for a PDF: typed Dublin Core
-     * DocumentMetadata fields, the tagged `extra` tail (a boolean-typed key, an
-     * integer-typed key, and a string-typed key), and ParseStatus -- all through the
-     * live server and real gRPC wire serialization, not the in-process mapper tests.
-     * The legacy fields map must keep working unchanged alongside the typed Document.
+     * Exercises the experimental v2 typed Document contract end-to-end for a PDF:
+     * typed Dublin Core DocumentMetadata fields, the tagged `extra` tail (boolean,
+     * integer, and string keys), and ParseStatus through the live server. Fetcher
+     * registration stays on v1; v1's fields-map reply is also checked so the two
+     * surfaces stay independent.
      */
     @Test
     void typedDocumentContractOverLiveServer() throws Exception {
         String fetcherId = "typedContractFetcher";
         ManagedChannel channel = getManagedChannel();
         try {
-            TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+            TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
+            TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
 
             FileSystemFetcherConfig config = new FileSystemFetcherConfig();
             config.setBasePath(TEST_FOLDER.getAbsolutePath());
 
-            SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest.newBuilder()
+            SaveFetcherReply saveReply = v1.saveFetcher(SaveFetcherRequest.newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetcherType("file-system-fetcher")
                     .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
                     .build());
             LOG.info("Fetcher created: {}", saveReply.getFetcherId());
 
-            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
+            FetchAndParseReply v1Reply = v1.fetchAndParse(FetchAndParseRequest.newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey("testPDF.pdf")
                     .build());
+            Assertions.assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
+            Assertions.assertNotNull(v1Reply.getFieldsMap().get("X-TIKA:content"),
+                    "v1 fields map must keep working independently of v2");
 
-            Assertions.assertEquals("PARSE_SUCCESS", reply.getStatus());
-            Assertions.assertTrue(reply.hasDocument(), "reply should carry a typed Document");
+            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(fetcherId)
+                            .setFetchKey("testPDF.pdf")
+                            .build());
+
+            Assertions.assertTrue(reply.hasDocument(), "v2 reply should carry a typed Document");
             Document document = reply.getDocument();
-
-            // the reply is additive: the legacy fields map still carries the content
-            Assertions.assertNotNull(reply.getFieldsMap().get("X-TIKA:content"),
-                    "legacy fields map must keep working alongside the typed Document");
 
             // envelope
             Assertions.assertEquals("application/pdf", document.getContentType());

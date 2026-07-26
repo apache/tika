@@ -17,7 +17,7 @@
 package org.apache.tika.grpc.mapper;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.grpc.v1.Document;
+import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;

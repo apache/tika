@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 import com.google.protobuf.Timestamp;
 
-import org.apache.tika.grpc.v1.DocumentMetadata;
+import org.apache.tika.grpc.v2.DocumentMetadata;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;

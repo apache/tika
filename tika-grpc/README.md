@@ -19,13 +19,16 @@ requests through the configured fetchers.
 > the config. See the
 > [Tika gRPC security configuration docs](../docs/modules/ROOT/pages/using-tika/grpc/index.adoc).
 
-## Typed parse output
+## v1 and v2 parse surfaces
 
-Parse results additionally carry a typed `org.apache.tika.grpc.v1.Document` on
-`FetchAndParseReply.document`, alongside the existing `fields`
-(`map<string,string>`) and `status`. Nothing is removed: existing clients keep
-working unchanged, and the legacy map will only be deprecated once the typed
-`Document` also carries content.
+The server exposes two gRPC services on the same port:
+
+- **`tika.Tika` (v1)** — the existing fetcher/iterator management RPCs and
+  fetch-and-parse replies that return the legacy `fields` map. Unchanged for
+  current clients; whether/when to deprecate it is a separate maintainers' call.
+- **`org.apache.tika.grpc.v2.TikaV2` (experimental)** — typed parse replies that
+  return `org.apache.tika.grpc.v2.Document`. Fetcher management stays on v1;
+  additive follow-ups (ParseBytes, content tree, embedded recursion) extend v2.
 
 Rather than one proto message per source format, `Document` models metadata by
 concern:
@@ -45,9 +48,9 @@ Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
 
 | Module | Role |
 |--------|------|
-| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v1`: `document.proto`), generated Java stubs, bundled `FileDescriptorSet` under `META-INF/` |
+| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v2`: `document.proto`), generated Java stubs, bundled `FileDescriptorSet` under `META-INF/` |
 | `tika-grpc-mapper` | Maps Tika `Metadata` to `Document` via `DocumentTransformer`s (code, not schema) |
-| `tika-grpc` | gRPC service implementation (this module) |
+| `tika-grpc` | gRPC service implementation (this module): v1 + v2 |
 
 See [tika-grpc-api/README.md](../tika-grpc-api/README.md) for the full shape.
 Mapper tests live under `tika-grpc-mapper/src/test/java`.

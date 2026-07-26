@@ -29,12 +29,12 @@
 
 syntax = "proto3";
 
-package org.apache.tika.grpc.v1;
+package org.apache.tika.grpc.v2;
 
 import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
-option java_package = "org.apache.tika.grpc.v1";
+option java_package = "org.apache.tika.grpc.v2";
 
 message Document {
   // envelope

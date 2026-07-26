@@ -22,9 +22,9 @@ import java.util.Set;
 
 import org.apache.tika.Tika;
 import org.apache.tika.grpc.mapper.transform.DocumentTransformers;
-import org.apache.tika.grpc.v1.Document;
-import org.apache.tika.grpc.v1.ParseStatus;
-import org.apache.tika.grpc.v1.SourceOrigin;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.ParseStatus;
+import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
