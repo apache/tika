@@ -33,7 +33,8 @@
 
   <properties>
       <curator.version>5.9.0</curator.version>
-      <hadoop.version>3.4.3</hadoop.version>
+      <hadoop.version>3.5.0</hadoop.version>
+      <jersey.version>2.48</jersey.version>
   </properties>
 
   <!-- we're not maintaining this module.
@@ -251,6 +252,27 @@
           <groupId>com.jamesmurty.utils</groupId>
           <artifactId>java-xmlbuilder</artifactId>
           <version>1.3</version>
+      </dependency>
+      <!-- because of convergence errors with hadoop 3.5.0 -->
+      <dependency>
+          <groupId>org.glassfish.jersey.core</groupId>
+          <artifactId>jersey-server</artifactId>
+          <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.glassfish.jersey.core</groupId>
+          <artifactId>jersey-client</artifactId>
+          <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.glassfish.jersey.containers</groupId>
+          <artifactId>jersey-container-servlet</artifactId>
+          <version>${jersey.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.glassfish.jersey.containers</groupId>
+          <artifactId>jersey-container-servlet-core</artifactId>
+          <version>2.48</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
