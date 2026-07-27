@@ -1,3 +1,15 @@
+---
+name: tika-eval-encoding-regression
+description: >
+  Condensed pattern for hunting charset/encoding-detector regressions (SBCS→CJK
+  style, or any "A picks encoding X, B picks Y" question) by running two configs
+  against a single tika-app build instead of two distributions. Covers the
+  canonical detector-chain configs, the encoding-flip SQL, reading OOV /
+  languageness / U+FFFD together, per-file detector attribution
+  (X-TIKA:encodingDetectionTrace), and single-file reproduction. Use for
+  encoding/charset-detector eval work.
+---
+
 # tika-eval for encoding-detector regression hunts
 
 A condensed pattern for finding SBCS→CJK style charset-detector regressions

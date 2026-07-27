@@ -1,3 +1,14 @@
+---
+name: tika-eval-h2-query
+description: >
+  Query the tika-eval H2 database directly (the `-d <name>` from Compare produces
+  `<name>.mv.db`) for exact counts, custom joins, and better-vs-worse tallies the
+  xlsx/summary.md reports don't compute. Covers the no-username/no-password
+  connect gotcha, key tables (PROFILES/CONTENTS/ENCODINGS/CONTENT_COMPARISONS),
+  paired-by-id joins, and the silent case-sensitive REGEXP trap. Use when the
+  canned tika-eval reports aren't enough.
+---
+
 # Query the tika-eval H2 database directly
 
 `tika-eval` (Compare / Profile / Report) stores everything in an **H2** database

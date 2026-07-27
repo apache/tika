@@ -1,3 +1,14 @@
+---
+name: dev
+description: >
+  Core guidelines and checklist for developing against the Apache Tika codebase:
+  git policy (never commit/push for the user), Maven rules (always `clean`,
+  absolute `-Dmaven.repo.local`, `-Pfast` for quick builds, install before forked
+  pipes tests), module paths, code conventions (no machine-specific paths, ASF
+  headers, spotless), and pre-commit checks. Use whenever building, testing, or
+  preparing a change to Tika.
+---
+
 # Tika Development Skill
 
 Guidelines and checklist for developing against the Apache Tika codebase.
@@ -97,7 +108,7 @@ provide the suggested commit message for the user to execute.
 
 When a change affects parsing output (e.g., new parser behavior,
 encoding fix), run a before/after comparison using tika-eval.
-See `.skills/tika-eval-compare.md` for the full procedure.
+See `.skills/tika-eval-compare/SKILL.md` for the full procedure.
 
 ## Pre-Commit Checks
 

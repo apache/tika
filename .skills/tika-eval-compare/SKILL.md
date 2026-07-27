@@ -1,3 +1,14 @@
+---
+name: tika-eval-compare
+description: >
+  Compare the output of two Tika versions against a corpus to catch regressions
+  in content extraction, encoding, exceptions, and embedded-document handling
+  before a release. Covers building the two tika-app distros, generating
+  extracts, running tika-eval Compare, and the mandatory review checklist (never
+  bless a run on dice scores alone — check the total-files delta). Use for "run a
+  before/after eval", "check for regressions", "tika-eval compare".
+---
+
 # tika-eval: Compare Before/After Extracts
 
 Compare the output of two versions of Tika against a corpus of files
