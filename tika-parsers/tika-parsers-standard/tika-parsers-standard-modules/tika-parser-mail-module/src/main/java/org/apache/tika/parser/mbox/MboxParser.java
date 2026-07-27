@@ -43,6 +43,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -71,6 +72,8 @@ public class MboxParser implements Parser {
     private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
+    private static final PassthroughPrefix EMAIL_HEADER =
+            PassthroughPrefix.file(EMAIL_HEADER_METADATA_PREFIX, "mbox email header names");
     private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
     private final Map<Integer, Metadata> trackingMetadata = new HashMap<>();
     private boolean tracking = false;
@@ -224,7 +227,7 @@ public class MboxParser implements Parser {
             metadata.add(Metadata.CONTENT_TYPE, headerContent);
             metadata.set(TikaCoreProperties.FORMAT, headerContent);
         } else {
-            metadata.add(EMAIL_HEADER_METADATA_PREFIX + headerTag, headerContent);
+            metadata.add(EMAIL_HEADER.key(headerTag), headerContent);
         }
     }
 }

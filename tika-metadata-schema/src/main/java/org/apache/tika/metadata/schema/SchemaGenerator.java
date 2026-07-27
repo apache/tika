@@ -29,6 +29,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.tika.digest.DigestDef;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 
 /**
@@ -42,9 +43,11 @@ import org.apache.tika.metadata.Property;
  */
 public final class SchemaGenerator {
 
-    // Field/parameter descriptor for org.apache.tika.metadata.Property in a .class constant pool.
+    // Field/parameter descriptors in a .class constant pool: a class referencing one is force-loaded.
     private static final byte[] PROP_DESC =
             "Lorg/apache/tika/metadata/Property;".getBytes(StandardCharsets.ISO_8859_1);
+    private static final byte[] PASSTHROUGH_DESC =
+            "Lorg/apache/tika/metadata/PassthroughPrefix;".getBytes(StandardCharsets.ISO_8859_1);
 
     private SchemaGenerator() {
     }
@@ -105,7 +108,8 @@ public final class SchemaGenerator {
     }
 
     private static void maybeLoad(String classPath, byte[] bytes, ClassLoader cl) {
-        if (!classPath.startsWith("org/apache/tika/") || !contains(bytes, PROP_DESC)) {
+        if (!classPath.startsWith("org/apache/tika/")
+                || (!contains(bytes, PROP_DESC) && !contains(bytes, PASSTHROUGH_DESC))) {
             return;
         }
         String cn = classPath.substring(0, classPath.length() - 6).replace('/', '.');
@@ -149,9 +153,28 @@ public final class SchemaGenerator {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
     }
 
+    /** Declared passthrough prefixes as stable JSON. Call after {@link #generate()} has loaded classes. */
+    public static String passthroughJson() {
+        TreeMap<String, String[]> m = new TreeMap<>();
+        for (PassthroughPrefix p : PassthroughPrefix.registered()) {
+            m.put(p.prefix(), new String[]{p.provenance().name(), p.description()});
+        }
+        StringBuilder sb = new StringBuilder("[\n");
+        int i = 0;
+        int n = m.size();
+        for (Map.Entry<String, String[]> e : m.entrySet()) {
+            sb.append("  {\"prefix\":").append(quote(e.getKey()))
+              .append(",\"provenance\":\"").append(e.getValue()[0])
+              .append("\",\"description\":").append(quote(e.getValue()[1]))
+              .append("}").append(++i < n ? "," : "").append('\n');
+        }
+        return sb.append("]\n").toString();
+    }
+
     public static void main(String[] args) throws Exception {
-        Path out = Path.of(args[0]);
-        Files.writeString(out, generate());
-        System.out.println("wrote " + out);
+        Files.writeString(Path.of(args[0]), generate());   // triggers the classpath scan
+        if (args.length > 1) {
+            Files.writeString(Path.of(args[1]), passthroughJson());
+        }
     }
 }

@@ -25,24 +25,35 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 /**
- * The CI gate: regenerate the registry from the live {@link org.apache.tika.metadata.Property}
- * declarations and assert it matches the committed {@code metadata-keys.json}. If a Property is
- * added/changed/renamed without regenerating, this fails — the registry cannot silently drift.
+ * The CI gate: regenerate both registries from the live {@link org.apache.tika.metadata.Property}
+ * and {@link org.apache.tika.metadata.PassthroughPrefix} declarations and assert each matches its
+ * committed file. If a declaration is added/changed/renamed without regenerating, this fails — the
+ * registries cannot silently drift.
  */
 public class MetadataSchemaTest {
 
-    private static final String RESOURCE = "/org/apache/tika/metadata/metadata-keys.json";
+    private static final String KEYS = "/org/apache/tika/metadata/metadata-keys.json";
+    private static final String OPEN = "/org/apache/tika/metadata/metadata-open-namespaces.json";
 
     @Test
-    public void committedRegistryMatchesDeclarations() throws Exception {
-        String committed;
-        try (InputStream in = MetadataSchemaTest.class.getResourceAsStream(RESOURCE)) {
-            assertNotNull(in, "committed " + RESOURCE + " is missing");
-            committed = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+    public void committedKeysMatchDeclarations() throws Exception {
+        assertEquals(committed(KEYS), SchemaGenerator.generate(),
+                "metadata-keys.json is stale. Run SchemaGenerator.main and commit the result.");
+    }
+
+    @Test
+    public void committedOpenNamespacesMatchDeclarations() throws Exception {
+        // generate() first, so the classpath scan force-loads the PassthroughPrefix declarations.
+        SchemaGenerator.generate();
+        assertEquals(committed(OPEN), SchemaGenerator.passthroughJson(),
+                "metadata-open-namespaces.json is stale. Run SchemaGenerator.main and commit the "
+                        + "result.");
+    }
+
+    private static String committed(String resource) throws Exception {
+        try (InputStream in = MetadataSchemaTest.class.getResourceAsStream(resource)) {
+            assertNotNull(in, "committed " + resource + " is missing");
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
-        String regenerated = SchemaGenerator.generate();
-        assertEquals(committed, regenerated,
-                "metadata-keys.json is stale. Run `mvn -pl tika-metadata-schema exec:java` "
-                        + "(or SchemaGenerator.main) and commit the regenerated file.");
     }
 }

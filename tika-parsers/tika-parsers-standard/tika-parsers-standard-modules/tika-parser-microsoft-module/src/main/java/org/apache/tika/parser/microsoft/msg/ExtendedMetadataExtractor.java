@@ -148,7 +148,7 @@ public class ExtendedMetadataExtractor {
         if (!includeType(propertyValue)) {
             return;
         }
-        String key = MAPI.PREFIX_MAPI_PROPERTY + pair.tikaMapiProperty.name;
+        String key = MAPI.PROPERTY.key(pair.tikaMapiProperty.name);
         Types.MAPIType type = propertyValue.getActualType();
         if (type == Types.TIME || type == Types.MV_TIME || type == Types.APP_TIME || type == Types.MV_APP_TIME) {
             Calendar calendar = (Calendar) propertyValue.getValue();

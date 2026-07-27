@@ -36,6 +36,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -76,6 +77,8 @@ public class FLVParser implements Parser {
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
+    private static final PassthroughPrefix FLV =
+            PassthroughPrefix.file("flv:", "FLV onMetaData tag keys");
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -245,7 +248,7 @@ public class FLVParser implements Parser {
                             if (entry.getValue() == null) {
                                 continue;
                             }
-                            metadata.set("flv:" + entry.getKey(), entry.getValue().toString());
+                            metadata.set(FLV.key(entry.getKey()), entry.getValue().toString());
                         }
                     }
                 }

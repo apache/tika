@@ -17,7 +17,14 @@
 # tika-metadata-schema
 
 A machine-readable schema of Apache Tika's metadata keys. Two registries, because Tika has two
-kinds of keys:
+kinds of keys.
+
+**Scope: `tika-core` + the standard parser bundle.** The heavier/optional parser families
+(scientific, sqlite3, nlp, vlm) are *not* scanned — pulling their runtime deps (netcdf, grib,
+opennlp, DL4J, sqlite-jdbc) into a build-time schema module isn't worth it. Their keys are the only
+ones absent (e.g. `sqlite3:`, `vlm:`, `grib:`, `netcdf:`, `ctakes:`, `NER_`). `MetadataCoverageTest`
+enforces this: any module declaring keys that is neither scanned nor on its explicit out-of-scope
+list fails the build, so nothing escapes *silently*.
 
 ## `metadata-keys.json` — the closed set (generated + gated)
 Every key Tika declares as a `Property` constant, plus the bounded digest cross-product
@@ -29,22 +36,30 @@ declare a `Property` field, force-loads them, reads the global `Property` table,
 sorted JSON. `MetadataSchemaTest` regenerates in-memory and asserts it matches the committed file, so
 the registry can never drift from the declarations.
 
-Regenerate after adding/changing a `Property`:
+Regenerate after adding/changing a `Property` **or** a `PassthroughPrefix` (writes both files):
 ```
 java -cp <tika-metadata-schema + deps classpath> \
      org.apache.tika.metadata.schema.SchemaGenerator \
-     src/main/resources/org/apache/tika/metadata/metadata-keys.json
+     src/main/resources/org/apache/tika/metadata/metadata-keys.json \
+     src/main/resources/org/apache/tika/metadata/metadata-open-namespaces.json
 ```
 
-## `metadata-open-namespaces.json` — the open sets (curated)
-Keys minted at **runtime** whose names are not `Property` constants, so they cannot be generated:
-- **open/passthrough namespaces** — file-controlled key names (scraped HTML `<meta>` under `html:`,
-  OOXML `custom:`, email `Message:Raw-Header:`, Access `MDB_PROP:`, Vorbis comments, GRIB/NetCDF/FLV
-  attributes, …);
-- **templates** — e.g. XMP `rdf:Alt` language variants `<base-key>:<lang>` (`dc:title:fr`).
+## `metadata-open-namespaces.json` — the open sets (generated + gated)
+The **prefixes** under which parsers mint file-controlled key names at runtime — names that are not
+`Property` constants, so the individual keys cannot be enumerated (scraped HTML `<meta>` under
+`html:`, OOXML `custom:`, email `Message:Raw-Header:`, Access `MDB_PROP:`, Vorbis comments, FLV
+attributes, unmapped image/XMP tags, …). Each record: `{ prefix, provenance, description }`.
 
-**Curated (hand-maintained, reviewed), not generated**, and possibly not exhaustive; the
-closed-namespace lint (a follow-up) is the intended completeness backstop.
+**Generated from the `PassthroughPrefix` declarations, never hand-edited.** Every such prefix is a
+registered `PassthroughPrefix` constant; `SchemaGenerator` reads that registry the same way it reads
+the `Property` table, and `MetadataSchemaTest` gates it identically. Adding a passthrough prefix in a
+parser and forgetting to regenerate fails the build.
 
-Together the two files describe the whole key space: closed keys are enumerated and gated; open keys
-are described by rule.
+Not covered here: **templates** — parameterized key families like XMP `rdf:Alt` language variants
+`<base-key>:<lang>` (`dc:title:fr`), where the *suffix* rather than the prefix is open. These are
+documented by rule, not enumerated.
+
+Together the files describe the key space of the scanned bundle: closed keys are enumerated and
+gated; open namespaces are enumerated by prefix and gated; templates are described by rule; and
+`MetadataCoverageTest` guarantees no scanned-bundle module is silently missed. Keys from the
+out-of-scope families above are excluded by design.
