@@ -260,6 +260,23 @@ independent of casing (the name's origin).
 |`zip:uncompressedSize` |`zip:uncompressed-size`
 |`zip:unixMode` |`zip:unix-mode`
 |`zip:versionMadeBy` |`zip:version-made-by`
+|`csv:num_columns` |`csv:num-columns`
+|`csv:num_rows` |`csv:num-rows`
+|`emf:iconOnly` |`emf:icon-only`
+|`emf:iconString` |`emf:icon-string`
+|`tess:page_number` |`tess:page-number`
+|`tess:image_magick_processed` |`tess:image-magick-processed`
+|`tess:orientation_confidence` |`tess:orientation-confidence`
+|`tess:script_confidence` |`tess:script-confidence`
+|`vlm:prompt_tokens` |`vlm:prompt-tokens`
+|`vlm:completion_tokens` |`vlm:completion-tokens`
+|`xmlprofiler:root_entity` |`xmlprofiler:root-entity`
+|`xmlprofiler:entity_uris` |`xmlprofiler:entity-uris`
+|`xmlprofiler:entity_local_names` |`xmlprofiler:entity-local-names`
+|`Password (un-namespaced)` |`mdb:password`
+|`MDB_PROP:*` |`mdb-prop:*`
+|`MDB_SUMMARY_PROP:*` |`mdb-summary-prop:*`
+|`MDB_USER_PROP:*` |`mdb-user-prop:*`
 |===
 
 

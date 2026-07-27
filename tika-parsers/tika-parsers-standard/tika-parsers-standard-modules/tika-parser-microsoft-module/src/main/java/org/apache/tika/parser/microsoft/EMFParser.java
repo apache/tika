@@ -64,8 +64,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 @TikaComponent
 public class EMFParser implements Parser {
 
-    public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:iconOnly");
-    public static Property EMF_ICON_STRING = Property.internalText("emf:iconString");
+    public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:icon-only");
+    public static Property EMF_ICON_STRING = Property.internalText("emf:icon-string");
 
     private static String ICON_ONLY = "IconOnly";
 

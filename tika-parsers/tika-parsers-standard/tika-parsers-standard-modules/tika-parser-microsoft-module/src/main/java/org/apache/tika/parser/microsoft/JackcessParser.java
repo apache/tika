@@ -54,7 +54,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class JackcessParser implements Parser {
 
     public static final String SUMMARY_PROPERTY_PREFIX =
-            "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "mdb-summary-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     private final static LinkResolver IGNORE_LINK_RESOLVER = new IgnoreLinkResolver();
     private static final long serialVersionUID = -752276948656079347L;
     private static final MediaType MEDIA_TYPE = MediaType.application("x-msaccess");
@@ -63,10 +63,10 @@ public class JackcessParser implements Parser {
     //TODO: figure out how to get this info
     // public static Property LINKED_DATABASES = Property.externalTextBag("LinkedDatabases");
     public static String MDB_PROPERTY_PREFIX =
-            "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "mdb-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static String USER_DEFINED_PROPERTY_PREFIX =
-            "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static Property MDB_PW = Property.externalText("Password");
+            "mdb-user-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static Property MDB_PW = Property.externalText("mdb:password");
     private Locale locale = Locale.ROOT;
 
     @Override
