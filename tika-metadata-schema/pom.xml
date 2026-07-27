@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>tika-metadata-schema</artifactId>
+  <name>Apache Tika metadata schema</name>
+  <description>Generates and enforces the machine-readable metadata key registry
+    (metadata-keys.json) from the live Property declarations.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- brings the standard parser classes onto the classpath so their Property
+         constants are discoverable by the generator -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <!-- Regenerate the committed registry with:
+       java -cp <module+deps classpath> org.apache.tika.metadata.schema.SchemaGenerator \
+            src/main/resources/org/apache/tika/metadata/metadata-keys.json
+       MetadataSchemaTest regenerates in-memory and asserts no diff, so CI catches drift. -->
+</project>
