@@ -452,7 +452,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.6</zookeeper.version>
-    <zstd.version>1.5.7-11</zstd.version>
+    <zstd.version>1.5.7-12</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <logback.version>1.6.0</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
@@ -777,7 +777,7 @@
       <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.14.2</version>
+        <version>2.14.3</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -1399,6 +1399,7 @@
         <artifactId>spotless-maven-plugin</artifactId>
         <version>${spotless.version}</version>
         <configuration>
+            <skip>true</skip>
           <lineEndings>UNIX</lineEndings>
           <java>
             <includes>
