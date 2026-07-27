@@ -16,8 +16,8 @@
 -->
 # tika-metadata-schema
 
-A machine-readable schema of Apache Tika's metadata keys. Two registries, because Tika has two
-kinds of keys.
+A machine-readable schema of Apache Tika's metadata keys, plus a registry-driven validator
+(`MetadataKeyValidator`) that classifies any key as CLOSED / OPEN / TEMPLATE / UNKNOWN.
 
 **Scope: `tika-core` + the standard parser bundle.** The heavier/optional parser families
 (scientific, sqlite3, nlp, vlm) are *not* scanned — pulling their runtime deps (netcdf, grib,
@@ -59,7 +59,26 @@ Not covered here: **templates** — parameterized key families like XMP `rdf:Alt
 `<base-key>:<lang>` (`dc:title:fr`), where the *suffix* rather than the prefix is open. These are
 documented by rule, not enumerated.
 
+## `metadata-string-keys.json` — legacy bare-String closed keys (curated + gated)
+A handful of closed keys predate `Property` and are still declared as bare `String` constants
+(`HttpHeaders.CONTENT_TYPE` = `Content-Type`, the `Content-*`/`Location` family, `Message-*` /
+`Multipart-*`, `tika:chunks`). They self-register nowhere, so the `Property` scan can't see them —
+yet Tika emits them constantly. Each record: `{ key, source }`.
+
+**Curated, but gated against the code:** `MetadataStringKeysTest` reflects each `source` constant
+(e.g. `HttpHeaders.CONTENT_TYPE`) and asserts its live value equals `key`, so a rename/retype/value
+change fails the build. The right long-term fix is to make these `Property` constants (then they'd
+move to `metadata-keys.json` automatically); that's a large, `Content-Type`-blast-radius change left
+for a future major release.
+
+## `MetadataKeyValidator` — the registry-driven lint
+Classifies any key by reading the three registries above (no parser classes needed):
+`CLOSED` (in `metadata-keys.json` or `metadata-string-keys.json`), `OPEN` (under a registered
+passthrough prefix), `TEMPLATE` (a `<closed-key>:<lang>` lang-alt instance), or `UNKNOWN` — a typo,
+an unregistered namespace, or a key nobody declared. This is the payoff the registries exist for: a
+data-driven legitimacy check instead of a hand-coded regex.
+
 Together the files describe the key space of the scanned bundle: closed keys are enumerated and
-gated; open namespaces are enumerated by prefix and gated; templates are described by rule; and
-`MetadataCoverageTest` guarantees no scanned-bundle module is silently missed. Keys from the
-out-of-scope families above are excluded by design.
+gated (Property-backed and legacy-String alike); open namespaces are enumerated by prefix and gated;
+templates are described by rule; and `MetadataCoverageTest` guarantees no scanned-bundle module is
+silently missed. Keys from the out-of-scope families above are excluded by design.
