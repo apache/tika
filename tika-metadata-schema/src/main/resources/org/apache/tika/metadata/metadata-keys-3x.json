@@ -545,5 +545,6 @@
   {"class":"org.apache.tika.metadata.XMPRights","field":"OWNER","key":"xmpRights:Owner"},
   {"class":"org.apache.tika.metadata.XMPRights","field":"USAGE_TERMS","key":"xmpRights:UsageTerms"},
   {"class":"org.apache.tika.metadata.XMPRights","field":"WEB_STATEMENT","key":"xmpRights:WebStatement"},
-  {"class":"org.apache.tika.sax.AbstractRecursiveParserWrapperHandler","field":"EMBEDDED_RESOURCE_LIMIT_REACHED","key":"X-TIKA:EXCEPTION:embedded_resource_limit_reached"}
+  {"class":"org.apache.tika.sax.AbstractRecursiveParserWrapperHandler","field":"EMBEDDED_RESOURCE_LIMIT_REACHED","key":"X-TIKA:EXCEPTION:embedded_resource_limit_reached"},
+  {"class":"org.apache.tika.utils.ParserUtils","field":"EMBEDDED_PARSER","key":"X-TIKA:EXCEPTION:embedded_parser"}
 ]
