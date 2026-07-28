@@ -131,6 +131,37 @@ class PipesMessageTest {
                 PipesMessage.read(new DataInputStream(new ByteArrayInputStream(baos.toByteArray()))));
     }
 
+    /**
+     * A caller-supplied limit well under {@link PipesMessage#MAX_PAYLOAD_BYTES} must be
+     * enforced on its own, not just the built-in default — this is what makes the limit
+     * actually configurable rather than a second name for the same constant.
+     */
+    @Test
+    void testCustomPayloadLimitRejectsAboveBound() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        dos.write(PipesMessage.MAGIC_0);
+        dos.write(PipesMessage.MAGIC_1);
+        dos.write(PipesMessageType.FINISHED.getByte());
+        dos.writeInt(1000); // one byte over the 999-byte custom limit below
+        dos.flush();
+
+        assertThrows(PayloadLimitExceededException.class, () ->
+                PipesMessage.read(new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), 999));
+    }
+
+    @Test
+    void testCustomPayloadLimitAcceptsAtBound() throws IOException {
+        byte[] payload = new byte[999];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PipesMessage.finished(payload).write(new DataOutputStream(baos));
+
+        PipesMessage roundTripped = PipesMessage.read(
+                new DataInputStream(new ByteArrayInputStream(baos.toByteArray())), 999);
+        assertEquals(PipesMessageType.FINISHED, roundTripped.type());
+        assertEquals(999, roundTripped.payload().length);
+    }
+
     @Test
     void testRequiresAckAssertions() {
         assertFalse(PipesMessageType.PING.requiresAck());
