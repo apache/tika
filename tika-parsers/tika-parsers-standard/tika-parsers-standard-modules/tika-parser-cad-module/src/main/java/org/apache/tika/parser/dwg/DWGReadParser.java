@@ -294,7 +294,7 @@ public class DWGReadParser extends AbstractDWGParser {
                 if (nextToken.isStructStart()) {
                     jsonParser.skipChildren();
                 } else if (nextToken.isScalarValue()) {
-                    metadata.set("dwg:" + nextFieldName, jsonParser.getText());
+                    metadata.set(DWG.RAW_FIELD.key(nextFieldName), jsonParser.getText());
                 }
             }
         }
@@ -347,7 +347,7 @@ public class DWGReadParser extends AbstractDWGParser {
                         } else if ("HYPERLINKBASE".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.RELATION, textVal);
                         } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
-                            metadata.set("dwg:" + nextFieldName, textVal);
+                            metadata.set(DWG.RAW_FIELD.key(nextFieldName), textVal);
                         }
                     }
                 }

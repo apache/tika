@@ -1,38 +1,22 @@
-{
-  "_note": "Open / passthrough namespaces and templates. These keys are minted at RUNTIME (their names come from the document, an external tool, or a per-item qualifier), so they are NOT registered Property constants and do NOT appear in metadata-keys.json. This file is CURATED (hand-maintained, reviewed), not generated, and may not be exhaustive; the closed-namespace lint is the intended completeness backstop. provenance: 'file' = key name taken from document content; 'tool' = key name from an external tool/model.",
-
-  "open-namespaces": [
-    {"prefix": "html:", "provenance": "file", "note": "scraped HTML <meta>/http-equiv/OpenGraph names"},
-    {"prefix": "custom:", "provenance": "file", "note": "OOXML/OLE2/ODF user-defined document properties"},
-    {"prefix": "pdf:docinfo:custom:", "provenance": "file", "note": "PDF Info-dictionary custom keys"},
-    {"prefix": "Message:Raw-Header:", "provenance": "file", "note": "RFC822 / Outlook raw email header names"},
-    {"prefix": "MboxParser-", "provenance": "file", "note": "mbox header names"},
-    {"prefix": "warc:", "provenance": "file", "note": "WARC record + HTTP response header names (also warc:http:)"},
-    {"prefix": "mapi:property:", "provenance": "file", "note": "MSG MAPI named properties"},
-    {"prefix": "MDB_PROP:", "provenance": "file", "note": "MS Access document properties (also MDB_SUMMARY_PROP:, MDB_USER_PROP:)"},
-    {"prefix": "img:", "provenance": "file", "note": "ImageIO/drewnoakes unrecognized image tag names (also ICC:)"},
-    {"prefix": "dwg-custom:", "provenance": "file", "note": "DWG custom properties (DWGParser)"},
-    {"prefix": "dwg:", "provenance": "file", "note": "DWGRead JSON field passthrough"},
-    {"prefix": "iworks:", "provenance": "file", "note": "iWork '13 package plist keys"},
-    {"prefix": "numbers:", "provenance": "file", "note": "iWork Numbers element names"},
-    {"prefix": "flv:", "provenance": "file", "note": "FLV onMetaData ECMA-array keys"},
-    {"prefix": "vorbis:", "provenance": "file", "note": "Vorbis/FLAC/Opus/Speex comment field names"},
-    {"prefix": "streams-", "provenance": "file", "note": "Ogg per-stream metadata"},
-    {"prefix": "grib:", "provenance": "file", "note": "GRIB global attribute names"},
-    {"prefix": "netcdf:", "provenance": "file", "note": "NetCDF global attribute names"},
-    {"prefix": "envi.", "provenance": "file", "note": "ENVI header field names"},
-    {"prefix": "rtf_pict:", "provenance": "file", "note": "RTF embedded-object \\sn/\\sv keys"},
-    {"prefix": "grobid:header_", "provenance": "tool", "note": "GROBID TEI header fields"},
-    {"prefix": "NER_", "provenance": "tool", "note": "named-entity types (NamedEntityParser)"},
-    {"prefix": "ctakes:", "provenance": "tool", "note": "cTAKES/UIMA type names"}
-  ],
-
-  "templates": [
-    {
-      "pattern": "<base-key>:<BCP-47-language-tag>",
-      "provenance": "file",
-      "note": "XMP rdf:Alt language variants, e.g. dc:title:x-default, dc:title:fr. The unqualified base key holds the x-default value; to type a variant, resolve to its base key. NOTE: the language qualifier reuses ':' so 'dc:title:fr' is only disambiguated from a sub-namespace by this rule.",
-      "example-base-keys": ["dc:title", "dc:description", "dc:rights", "xmpRights:UsageTerms"]
-    }
-  ]
-}
+[
+  {"prefix":"ICC:","provenance":"FILE","description":"unrecognized ICC profile tag names"},
+  {"prefix":"MDB_PROP:","provenance":"FILE","description":"MS Access database properties"},
+  {"prefix":"MDB_SUMMARY_PROP:","provenance":"FILE","description":"MS Access summary properties"},
+  {"prefix":"MDB_USER_PROP:","provenance":"FILE","description":"MS Access user-defined properties"},
+  {"prefix":"MboxParser-","provenance":"FILE","description":"mbox email header names"},
+  {"prefix":"Message:Raw-Header:","provenance":"FILE","description":"RFC822 / Outlook raw email header names"},
+  {"prefix":"custom:","provenance":"FILE","description":"OOXML/OLE2/ODF user-defined document properties"},
+  {"prefix":"dwg-custom:","provenance":"FILE","description":"DWG custom document properties"},
+  {"prefix":"dwg:","provenance":"FILE","description":"DWGRead JSON header/summary field names"},
+  {"prefix":"flv:","provenance":"FILE","description":"FLV onMetaData tag keys"},
+  {"prefix":"html:","provenance":"FILE","description":"scraped <meta>/http-equiv/OpenGraph names not mapped to a Property"},
+  {"prefix":"img:","provenance":"FILE","description":"unrecognized image tag names"},
+  {"prefix":"iworks:","provenance":"FILE","description":"iWork '13 plist document properties"},
+  {"prefix":"mapi:property:","provenance":"FILE","description":"MAPI named properties"},
+  {"prefix":"numbers:","provenance":"FILE","description":"iWork Numbers document metadata element names"},
+  {"prefix":"pdf:docinfo:custom:","provenance":"FILE","description":"PDF Info-dict custom keys"},
+  {"prefix":"vorbis:","provenance":"FILE","description":"Vorbis comment field names"},
+  {"prefix":"warc:","provenance":"FILE","description":"WARC record header names"},
+  {"prefix":"warc:http:","provenance":"FILE","description":"WARC HTTP response header names"},
+  {"prefix":"xmp-raw:","provenance":"FILE","description":"unmapped XMP keys"}
+]

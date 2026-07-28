@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -55,6 +56,9 @@ public class NetCDFParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -5940938274907708665L;
+
+    public static final PassthroughPrefix NETCDF =
+            PassthroughPrefix.file("netcdf:", "NetCDF global attribute names");
 
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-netcdf"));
@@ -81,7 +85,7 @@ public class NetCDFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
-            metadata.set("netcdf:File-Type-Description", ncFile.getFileTypeDescription());
+            metadata.set(NETCDF.key("File-Type-Description"), ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
                 if (attr.getDataType().isString()) {
@@ -142,7 +146,7 @@ public class NetCDFParser implements Parser {
         } else if (CF_GLOBAL_ATTRIBUTES.contains(name)) {
             metadata.add(name, value);
         } else {
-            metadata.add("netcdf:" + name, value);
+            metadata.add(NETCDF.key(name), value);
         }
     }
 }

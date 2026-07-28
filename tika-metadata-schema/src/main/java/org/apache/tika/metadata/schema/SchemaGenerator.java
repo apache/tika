@@ -19,16 +19,20 @@ package org.apache.tika.metadata.schema;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.tika.digest.DigestDef;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 
 /**
@@ -39,12 +43,19 @@ import org.apache.tika.metadata.Property;
  *
  * <p>The generated file is committed; {@code MetadataSchemaTest} regenerates and asserts no diff,
  * so the registry can never drift from the declarations.
+ *
+ * <p>TIKA-4797: {@link #fieldTable()} additionally emits a {@code {class, field, key}} table (the
+ * field provenance that {@code Property.PROPERTIES} discards) so the 3.x&#8594;4.x key migration can
+ * be built by a field-identity join. Synthesized keys with no declaring field (digests) are absent
+ * from that table by design; they migrate by prefix rule.
  */
 public final class SchemaGenerator {
 
-    // Field/parameter descriptor for org.apache.tika.metadata.Property in a .class constant pool.
+    // Field/parameter descriptors in a .class constant pool: a class referencing one is force-loaded.
     private static final byte[] PROP_DESC =
             "Lorg/apache/tika/metadata/Property;".getBytes(StandardCharsets.ISO_8859_1);
+    private static final byte[] PASSTHROUGH_DESC =
+            "Lorg/apache/tika/metadata/PassthroughPrefix;".getBytes(StandardCharsets.ISO_8859_1);
 
     private SchemaGenerator() {
     }
@@ -52,14 +63,7 @@ public final class SchemaGenerator {
     /** @return the registry as stable JSON (sorted by key). */
     public static String generate() throws Exception {
         ClassLoader cl = SchemaGenerator.class.getClassLoader();
-        for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
-            File f = new File(entry);
-            if (f.isDirectory()) {
-                scanDir(f, f.toPath(), cl);
-            } else if (f.getName().endsWith(".jar")) {
-                scanJar(f, cl);
-            }
-        }
+        scanClasspath(cl);
         Field fld = Property.class.getDeclaredField("PROPERTIES");
         fld.setAccessible(true);
         @SuppressWarnings("unchecked")
@@ -80,37 +84,89 @@ public final class SchemaGenerator {
         return toJson(entries);
     }
 
-    private static void scanDir(File root, Path dir, ClassLoader cl) throws IOException {
+    /**
+     * TIKA-4797. @return the field-attributed table {@code [{class, field, key}]} as stable JSON,
+     * sorted by {@code class#field} — one record per static {@link Property} constant. Aliases (two
+     * fields, same key) are distinct records; that is what lets the migration join detect renames.
+     */
+    public static String fieldTable() throws Exception {
+        ClassLoader cl = SchemaGenerator.class.getClassLoader();
+        TreeMap<String, String[]> rows = new TreeMap<>();
+        for (String cn : scanClasspath(cl)) {
+            Class<?> c;
+            try {
+                c = Class.forName(cn, true, cl);
+            } catch (Throwable ignore) {
+                continue;
+            }
+            for (Field f : c.getDeclaredFields()) {
+                if (!Modifier.isStatic(f.getModifiers()) || f.getType() != Property.class) {
+                    continue;
+                }
+                try {
+                    f.setAccessible(true);
+                    Property p = (Property) f.get(null);
+                    if (p != null) {
+                        rows.put(c.getName() + "#" + f.getName(),
+                                new String[]{c.getName(), f.getName(), p.getName()});
+                    }
+                } catch (Throwable ignore) {
+                    // unreadable field; skip
+                }
+            }
+        }
+        return fieldTableJson(rows);
+    }
+
+    /** Scans the classpath, force-loads every Property/PassthroughPrefix-bearing class (static init
+     * registers the constants), and returns the loaded class names. */
+    private static List<String> scanClasspath(ClassLoader cl) throws IOException {
+        List<String> loaded = new ArrayList<>();
+        for (String entry : System.getProperty("java.class.path").split(File.pathSeparator)) {
+            File f = new File(entry);
+            if (f.isDirectory()) {
+                scanDir(f, f.toPath(), cl, loaded);
+            } else if (f.getName().endsWith(".jar")) {
+                scanJar(f, cl, loaded);
+            }
+        }
+        return loaded;
+    }
+
+    private static void scanDir(File root, Path dir, ClassLoader cl, List<String> loaded)
+            throws IOException {
         try (var stream = Files.walk(dir)) {
             for (Path p : (Iterable<Path>) stream::iterator) {
                 if (!p.toString().endsWith(".class")) {
                     continue;
                 }
                 String rel = root.toPath().relativize(p).toString().replace(File.separatorChar, '/');
-                maybeLoad(rel, Files.readAllBytes(p), cl);
+                maybeLoad(rel, Files.readAllBytes(p), cl, loaded);
             }
         }
     }
 
-    private static void scanJar(File jar, ClassLoader cl) throws IOException {
+    private static void scanJar(File jar, ClassLoader cl, List<String> loaded) throws IOException {
         try (JarFile jf = new JarFile(jar)) {
             for (Enumeration<JarEntry> e = jf.entries(); e.hasMoreElements(); ) {
                 JarEntry je = e.nextElement();
                 if (!je.getName().endsWith(".class")) {
                     continue;
                 }
-                maybeLoad(je.getName(), jf.getInputStream(je).readAllBytes(), cl);
+                maybeLoad(je.getName(), jf.getInputStream(je).readAllBytes(), cl, loaded);
             }
         }
     }
 
-    private static void maybeLoad(String classPath, byte[] bytes, ClassLoader cl) {
-        if (!classPath.startsWith("org/apache/tika/") || !contains(bytes, PROP_DESC)) {
+    private static void maybeLoad(String classPath, byte[] bytes, ClassLoader cl, List<String> loaded) {
+        if (!classPath.startsWith("org/apache/tika/")
+                || (!contains(bytes, PROP_DESC) && !contains(bytes, PASSTHROUGH_DESC))) {
             return;
         }
         String cn = classPath.substring(0, classPath.length() - 6).replace('/', '.');
         try {
             Class.forName(cn, true, cl);   // static init registers any Property constants
+            loaded.add(cn);
         } catch (Throwable ignore) {
             // classes whose static init needs an absent dependency are skipped; the corpus test backs this
         }
@@ -145,13 +201,49 @@ public final class SchemaGenerator {
         return sb.append("]\n").toString();
     }
 
+    private static String fieldTableJson(TreeMap<String, String[]> rows) {
+        StringBuilder sb = new StringBuilder("[\n");
+        int i = 0;
+        int n = rows.size();
+        for (Map.Entry<String, String[]> e : rows.entrySet()) {
+            String[] r = e.getValue();
+            sb.append("  {\"class\":").append(quote(r[0]))
+              .append(",\"field\":").append(quote(r[1]))
+              .append(",\"key\":").append(quote(r[2]))
+              .append("}").append(++i < n ? "," : "").append('\n');
+        }
+        return sb.append("]\n").toString();
+    }
+
     private static String quote(String s) {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
     }
 
+    /** Declared passthrough prefixes as stable JSON. Call after {@link #generate()} has loaded classes. */
+    public static String passthroughJson() {
+        TreeMap<String, String[]> m = new TreeMap<>();
+        for (PassthroughPrefix p : PassthroughPrefix.registered()) {
+            m.put(p.prefix(), new String[]{p.provenance().name(), p.description()});
+        }
+        StringBuilder sb = new StringBuilder("[\n");
+        int i = 0;
+        int n = m.size();
+        for (Map.Entry<String, String[]> e : m.entrySet()) {
+            sb.append("  {\"prefix\":").append(quote(e.getKey()))
+              .append(",\"provenance\":\"").append(e.getValue()[0])
+              .append("\",\"description\":").append(quote(e.getValue()[1]))
+              .append("}").append(++i < n ? "," : "").append('\n');
+        }
+        return sb.append("]\n").toString();
+    }
+
     public static void main(String[] args) throws Exception {
-        Path out = Path.of(args[0]);
-        Files.writeString(out, generate());
-        System.out.println("wrote " + out);
+        Files.writeString(Path.of(args[0]), generate());   // triggers the classpath scan
+        if (args.length > 1) {
+            Files.writeString(Path.of(args[1]), passthroughJson());
+        }
+        if (args.length > 2) {
+            Files.writeString(Path.of(args[2]), fieldTable());   // TIKA-4797 field-attributed table
+        }
     }
 }
