@@ -347,7 +347,7 @@ public class PipesServer implements AutoCloseable {
             while (true) {
                 PipesMessage msg;
                 try {
-                    msg = PipesMessage.read(input);
+                    msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     // Exit cleanly — PipesClient will restart the server if needed.

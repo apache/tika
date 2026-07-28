@@ -137,7 +137,7 @@ public class PipesClient implements Closeable {
         }
         try {
             PipesMessage.ping().write(tuple.output);
-            PipesMessage response = PipesMessage.read(tuple.input);
+            PipesMessage response = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
             if (response.type() == PipesMessageType.PING) {
                 return true;
             }
@@ -505,7 +505,7 @@ public class PipesClient implements Closeable {
         if (tuple == null) {
             throw new IOException("connection closed");
         }
-        PipesMessage msg = PipesMessage.read(tuple.input);
+        PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
         if (msg.type() == PipesMessageType.READY) {
             LOG.info("clientId={}: server successfully started", pipesClientId);
         } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {
