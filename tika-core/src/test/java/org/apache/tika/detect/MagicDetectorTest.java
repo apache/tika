@@ -26,6 +26,12 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
@@ -156,6 +162,65 @@ public class MagicDetectorTest {
         assertDetect(detector, html, data);
         assertDetect(detector, html, data1);
         assertDetect(detector, MediaType.OCTET_STREAM, data2);
+    }
+
+    /**
+     * A MagicDetector is built once and reused for the life of the process, so
+     * repeated calls must be independent of each other. Guards the compiled
+     * Pattern against per-call state leaking in.
+     */
+    @Test
+    public void testRegExDetectorRepeatedCallsStable() throws Exception {
+        MediaType html = new MediaType("text", "html");
+        String pattern = "(?s)\\A.{0,1024}\\x3c\\!(?:DOCTYPE|doctype) (?:HTML|html) ";
+        Detector detector =
+                new MagicDetector(html, pattern.getBytes(US_ASCII), null, true, 0, 0);
+
+        String match = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\">";
+        String noMatch = "<html><head><title>plain</title></head>";
+
+        for (int i = 0; i < 100; i++) {
+            assertDetect(detector, html, match);
+            assertDetect(detector, MediaType.OCTET_STREAM, noMatch);
+        }
+    }
+
+    /**
+     * MimeTypes shares one MagicDetector instance per magic clause across every
+     * caller, so the regex path has to be safe to use concurrently.
+     */
+    @Test
+    public void testRegExDetectorConcurrent() throws Exception {
+        MediaType pdf = new MediaType("application", "pdf");
+        Detector detector =
+                new MagicDetector(pdf, "(?s)\\A.{0,144}%PDF-".getBytes(US_ASCII), null, true, 0, 0);
+
+        byte[] match = "%PDF-1.4\nsome trailing content".getBytes(US_ASCII);
+        byte[] noMatch = "not a pdf at all".getBytes(US_ASCII);
+
+        int threads = 8;
+        int iterations = 200;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (int t = 0; t < threads; t++) {
+                futures.add(executor.submit(() -> {
+                    for (int i = 0; i < iterations; i++) {
+                        assertEquals(pdf, detector.detect(new ByteArrayInputStream(match),
+                                new Metadata()));
+                        assertEquals(MediaType.OCTET_STREAM,
+                                detector.detect(new ByteArrayInputStream(noMatch), new Metadata()));
+                    }
+                    return null;
+                }));
+            }
+            for (Future<?> future : futures) {
+                // an assertion failure on a worker surfaces here as an ExecutionException
+                future.get(60, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+        }
     }
 
     @Test
