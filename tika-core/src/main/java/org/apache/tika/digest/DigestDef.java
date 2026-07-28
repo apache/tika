@@ -124,7 +124,7 @@ public class DigestDef {
         sb.append(TikaCoreProperties.TIKA_META_PREFIX);
         sb.append("digest");
         sb.append(TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER);
-        sb.append(algorithm.name());
+        sb.append(algorithm.getJavaName());
         if (encoding != Encoding.HEX) {
             sb.append(":");
             sb.append(encoding.name());

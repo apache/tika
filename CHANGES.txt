@@ -6,6 +6,11 @@ Release 4.0.0 - ???
      opt-in Pkcs7Detector surfaces the subtype at detect() time,
      but must be enabled via configuration (TIKA-1997).
 
+  OTHER CHANGES
+
+   * MagicDetector now compiles its regular expression once, in the
+     constructor, instead of recompiling it on every match (TIKA-4796).
+
 
 Release 4.0.0-beta-1 - 6/29/2026
 
