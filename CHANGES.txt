@@ -1,3 +1,8 @@
+Release 3.3.3 - ???
+
+  * MagicDetector now compiles its regular expression once, in the
+    constructor, instead of recompiling it on every match (TIKA-4796).
+
 Release 3.3.2 - 7/16/2026
 
   * Dependency upgrades (TIKA-4738).
