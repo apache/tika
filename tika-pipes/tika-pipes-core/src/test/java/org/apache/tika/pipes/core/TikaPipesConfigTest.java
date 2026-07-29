@@ -16,9 +16,61 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+
+import org.junit.jupiter.api.Test;
+
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
 
 public class TikaPipesConfigTest extends TikaTest {
+
+    @Test
+    void testMaxIpcPayloadBytesDefault() {
+        PipesConfig config = new PipesConfig();
+        assertEquals(PipesConfig.DEFAULT_MAX_IPC_PAYLOAD_BYTES, config.getMaxIpcPayloadBytes());
+        assertEquals(100 * 1024 * 1024, config.getMaxIpcPayloadBytes());
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesFromJson() throws Exception {
+        String json = """
+                {
+                  "pipes": {
+                    "maxIpcPayloadBytes": 209715200
+                  }
+                }
+                """;
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        PipesConfig config = PipesConfig.load(tikaJsonConfig);
+        assertEquals(209715200, config.getMaxIpcPayloadBytes());
+        // The global constant is unchanged — the configured limit is passed per-read
+        assertEquals(100 * 1024 * 1024, PipesMessage.MAX_PAYLOAD_BYTES);
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesRejectsNonPositive() {
+        PipesConfig config = new PipesConfig();
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(-1));
+    }
+
+    @Test
+    void testMaxIpcPayloadBytesFromJsonRejectsZero() throws Exception {
+        String json = """
+                {"pipes": {"maxIpcPayloadBytes": 0}}
+                """;
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        assertThrows(Exception.class, () -> PipesConfig.load(tikaJsonConfig));
+    }
+
     //this handles tests for the newer pipes type configs.
 /*
     TODO -- reimplent these with json
