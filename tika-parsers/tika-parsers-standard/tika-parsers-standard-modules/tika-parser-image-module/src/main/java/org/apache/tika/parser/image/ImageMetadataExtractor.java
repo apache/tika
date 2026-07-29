@@ -73,6 +73,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -92,6 +93,10 @@ public class ImageMetadataExtractor {
 
     public static final String UNKNOWN_IMG_NS = "img" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final PassthroughPrefix UNKNOWN_IMG =
+            PassthroughPrefix.file(UNKNOWN_IMG_NS, "unrecognized image tag names");
+    public static final PassthroughPrefix ICC =
+            PassthroughPrefix.file(ICC_NS, "unrecognized ICC profile tag names");
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
@@ -292,11 +297,11 @@ public class ImageMetadataExtractor {
                             value = Boolean.FALSE.toString();
                         }
                         if (directory instanceof ExifDirectoryBase) {
-                            metadata.set(UNKNOWN_IMG_NS + directory.getName() + ":" + name, value);
+                            metadata.set(UNKNOWN_IMG.key(directory.getName() + ":" + name), value);
                         } else if (directory instanceof IccDirectory) {
-                            metadata.set(ICC_NS + name, value);
+                            metadata.set(ICC.key(name), value);
                         } else {
-                            metadata.set(UNKNOWN_IMG_NS + name, value);
+                            metadata.set(UNKNOWN_IMG.key(name), value);
                         }
                     }
                 }

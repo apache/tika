@@ -102,13 +102,13 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         db.setDateTimeType(DateTimeType.DATE);
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
-            parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
+            parentMetadata.add(JackcessParser.MDB_PROPERTY.key(p.getName()),
                     toString(p.getValue(), p.getType()));
         }
 
         PropertyMap up = db.getUserDefinedProperties();
         for (PropertyMap.Property p : up) {
-            parentMetadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX + p.getName(),
+            parentMetadata.add(JackcessParser.MDB_USER_PROPERTY.key(p.getName()),
                     toString(p.getValue(), p.getType()));
         }
 
@@ -137,7 +137,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
             for (PropertyMap.Property p : db.getSummaryProperties()) {
                 if (!found.contains(p.getName())) {
-                    parentMetadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
+                    parentMetadata.add(JackcessParser.MDB_SUMMARY_PROPERTY.key(p.getName()),
                             toString(p.getValue(), p.getType()));
                 }
             }

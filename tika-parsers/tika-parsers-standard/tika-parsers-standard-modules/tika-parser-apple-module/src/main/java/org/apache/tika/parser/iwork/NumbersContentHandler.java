@@ -25,10 +25,14 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 class NumbersContentHandler extends DefaultHandler {
+
+    private static final PassthroughPrefix NUMBERS_METADATA =
+            PassthroughPrefix.file("numbers:", "iWork Numbers document metadata element names");
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
@@ -226,7 +230,7 @@ class NumbersContentHandler extends DefaultHandler {
         } else if ("comment".equals(localName)) {
             metadata.add(TikaCoreProperties.COMMENTS, value);
         } else {
-            metadata.add("numbers:" + localName, value);
+            metadata.add(NUMBERS_METADATA.key(localName), value);
         }
     }
 }

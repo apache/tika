@@ -192,8 +192,7 @@ public class SummaryExtractor {
     private void parse(CustomProperties customProperties) {
         if (customProperties != null) {
             for (String name : customProperties.nameSet()) {
-                // Apply the custom prefix
-                String key = Office.USER_DEFINED_METADATA_NAME_PREFIX + name;
+                String key = Office.USER_DEFINED.key(name);
 
                 // Get, convert and save property value
                 Object value = customProperties.get(name);

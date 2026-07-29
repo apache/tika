@@ -32,6 +32,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -60,6 +61,8 @@ public class DWGParser extends AbstractDWGParser {
     }
 
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
+    public static final PassthroughPrefix DWG_CUSTOM =
+            PassthroughPrefix.file(DWG_CUSTOM_META_PREFIX, "DWG custom document properties");
     /**
      * Serial version UID
      */
@@ -169,7 +172,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2004String(tis);
             String propValue = read2004String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
+                metadata.add(DWG_CUSTOM.key(propName), propValue);
             }
         }
     }
@@ -204,7 +207,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2007and2010String(tis);
             String propValue = read2007and2010String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM_META_PREFIX + propName, propValue);
+                metadata.add(DWG_CUSTOM.key(propName), propValue);
             }
         }
     }
@@ -255,7 +258,7 @@ public class DWGParser extends AbstractDWGParser {
                     if (splitAt > -1) {
                         String propName = val.substring(0, splitAt);
                         String propVal = val.substring(splitAt + 1);
-                        metadata.add(DWGParser.DWG_CUSTOM_META_PREFIX + propName, propVal);
+                        metadata.add(DWG_CUSTOM.key(propName), propVal);
                     }
                 }
             } else {

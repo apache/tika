@@ -84,7 +84,7 @@ public class OpenDocumentMetaParser extends XMLParser {
         // custom:Info1=Text1
         ContentHandler branch = new MatchingContentHandler(
                 new AttributeDependantMetadataHandler(md, "meta:name",
-                        Office.USER_DEFINED_METADATA_NAME_PREFIX), matcher);
+                        Office.USER_DEFINED.prefix()), matcher);
         return new TeeContentHandler(ch, branch);
     }
 
