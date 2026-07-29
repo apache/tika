@@ -30,7 +30,8 @@ import org.junit.jupiter.api.io.TempDir;
 /**
  * Covers the trust-cert-collection states that {@link TikaGrpcServer#start()} should refuse
  * to start on when {@code --client-auth-required} is set: omitted, nonexistent, unreadable,
- * and invalid/corrupt content, plus {@code --client-auth-required} without {@code --secure}.
+ * and invalid/corrupt content. Also covers {@code --client-auth-required} without
+ * {@code --secure}, which implies {@code --secure} rather than being rejected.
  */
 class TikaGrpcServerTlsTest {
     private static final File CERT_CHAIN = Paths.get("src", "test", "resources", "certs", "server1.pem").toFile();
@@ -38,11 +39,19 @@ class TikaGrpcServerTlsTest {
     private static final File VALID_TRUST_COLLECTION = Paths.get("src", "test", "resources", "certs", "ca.pem").toFile();
 
     @Test
-    void clientAuthRequiredWithoutSecureRefusesToStart() {
+    void clientAuthRequiredWithoutSecureImpliesSecureAndStarts() throws Exception {
         TikaGrpcServer server = new TikaGrpcServer()
+                .setPort(0)
                 .setSecure(false)
+                .setCertChain(CERT_CHAIN)
+                .setPrivateKey(PRIVATE_KEY)
+                .setTrustCertCollection(VALID_TRUST_COLLECTION)
                 .setClientAuthRequired(true);
-        assertThrows(IllegalArgumentException.class, server::start);
+        try {
+            server.start();
+        } finally {
+            server.stop();
+        }
     }
 
     @Test

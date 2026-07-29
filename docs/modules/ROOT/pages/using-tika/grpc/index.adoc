@@ -126,10 +126,11 @@ java -jar tika-grpc-<version>.jar --secure \
   --trust-cert-collection ca.pem --client-auth-required
 ----
 
-Mutual TLS is opt-in: `--client-auth-required` is off by default, so it has no
-effect unless `--trust-cert-collection` is also given (a missing or non-existent
-trust-collection path is silently ignored). The default port is `50052`
-(`-p`/`--port`).
+`--client-auth-required` implies `--secure` -- it's included above for clarity,
+but TLS is enabled automatically whenever client authentication is required.
+`--trust-cert-collection` must point to a readable file when
+`--client-auth-required` is set; the server refuses to start otherwise. The
+default port is `50052` (`-p`/`--port`).
 
 When running the Docker image, append these flags to the container command — they
 are forwarded to the server — and mount the certificate files into the container.
