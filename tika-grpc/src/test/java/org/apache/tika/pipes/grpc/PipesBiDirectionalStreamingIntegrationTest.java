@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import io.grpc.Grpc;
 import io.grpc.ManagedChannel;
+import io.grpc.StatusRuntimeException;
 import io.grpc.TlsChannelCredentials;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
@@ -211,5 +212,29 @@ class PipesBiDirectionalStreamingIntegrationTest {
         Awaitility.await().atMost(Duration.ofSeconds(600)).until(() -> result.size() == files.size());
 
         Assertions.assertEquals(files.size(), numParsed.get());
+    }
+
+    @Test
+    void testClientAuthRequiredRejectsCertlessClient() throws Exception {
+        // Same running server as the other tests, but this channel presents no client
+        // certificate, so the call should fail at the handshake.
+        String target = InetAddress
+                .getByName("localhost")
+                .getHostAddress() + ":" + grpcPort;
+        TlsChannelCredentials.Builder channelCredBuilder = TlsChannelCredentials.newBuilder();
+        channelCredBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE.getTrustManagers());
+        ManagedChannel certlessChannel = Grpc
+                .newChannelBuilder(target, channelCredBuilder.build())
+                .build();
+        try {
+            TikaGrpc.TikaBlockingStub certlessStub = TikaGrpc.newBlockingStub(certlessChannel);
+            Assertions.assertThrows(StatusRuntimeException.class, () -> certlessStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(httpFetcherId)
+                    .setFetchKey(httpServerUrl + "/" + files.get(0))
+                    .build()));
+        } finally {
+            certlessChannel.shutdownNow();
+        }
     }
 }

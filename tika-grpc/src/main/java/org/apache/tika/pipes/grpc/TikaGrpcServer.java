@@ -79,14 +79,21 @@ public class TikaGrpcServer {
         if (secure) {
             TlsServerCredentials.Builder channelCredBuilder = TlsServerCredentials.newBuilder();
             channelCredBuilder.keyManager(certChain, privateKey, privateKeyPassword);
-            if (trustCertCollection != null && trustCertCollection.exists()) {
-                channelCredBuilder.trustManager(trustCertCollection);
-                if (clientAuthRequired) {
-                    channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+            if (clientAuthRequired) {
+                if (trustCertCollection == null || !trustCertCollection.isFile() || !trustCertCollection.canRead()) {
+                    throw new IllegalArgumentException("--client-auth-required is set but --trust-cert-collection is " +
+                            "missing, not a file, or unreadable; refusing to start");
                 }
+                channelCredBuilder.trustManager(trustCertCollection);
+                channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+            } else if (trustCertCollection != null && trustCertCollection.exists()) {
+                channelCredBuilder.trustManager(trustCertCollection);
             }
             creds = channelCredBuilder.build();
         } else {
+            if (clientAuthRequired) {
+                throw new IllegalArgumentException("--client-auth-required requires --secure; refusing to start");
+            }
             creds = InsecureServerCredentials.create();
         }
         if (tikaConfigXml == null) {
