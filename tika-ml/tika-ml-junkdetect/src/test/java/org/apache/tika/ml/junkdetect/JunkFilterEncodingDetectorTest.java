@@ -231,6 +231,96 @@ public class JunkFilterEncodingDetectorTest {
         }
     }
 
+    /** {@code <a x="..">plain body</a>} with {@code hi} as the attribute's high
+     *  bytes — all non-ASCII lives in markup, so every candidate's tag-stripped
+     *  text ties and the equivalent-decode shortcut engages. */
+    private static byte[] markupWithHighBytes(byte[] hi) {
+        byte[] pre = "<a x=\"".getBytes(StandardCharsets.US_ASCII);
+        byte[] post = "\">plain ascii body text here</a>".getBytes(StandardCharsets.US_ASCII);
+        byte[] out = new byte[pre.length + hi.length + post.length];
+        System.arraycopy(pre, 0, out, 0, pre.length);
+        System.arraycopy(hi, 0, out, pre.length, hi.length);
+        System.arraycopy(post, 0, out, pre.length + hi.length, post.length);
+        return out;
+    }
+
+    @Test
+    public void structuralUtf8OverridesDeclaredLatin() throws Exception {
+        // Real-bug shape (TIKA test.html): declared x-MacRoman but bytes are UTF-8
+        // (é = C3 A9) with the only high bytes in markup, so stripped text ties.
+        // A STRUCTURAL proof must beat the contradicted declaration.
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset macRoman = Charset.forName("x-MacRoman");
+        byte[] bytes = markupWithHighBytes(new byte[] {(byte) 0xC3, (byte) 0xA9});
+
+        ParseContext pc = contextWith(
+                new EncodingResult(macRoman, 0.9f, "x-MacRoman",
+                        EncodingResult.ResultType.DECLARATIVE),
+                new EncodingResult(utf8, 0.95f, "UTF-8",
+                        EncodingResult.ResultType.STRUCTURAL));
+
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new PreferenceStub("UTF-8"));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(utf8, out.get(0).getCharset());
+            assertEquals("junk-filter-prefer-structural",
+                    pc.get(EncodingDetectorContext.class).getArbitrationInfo());
+        }
+    }
+
+    @Test
+    public void structuralUtf8DefersToDeclaredCjkWithoutWideSequence() throws Exception {
+        // Declared Shift_JIS + STRUCTURAL UTF-8, but the only UTF-8 evidence is a
+        // 2-byte sequence a legacy CJK pair can fake — keep the declaration.
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset sjis = Charset.forName("Shift_JIS");
+        byte[] bytes = markupWithHighBytes(new byte[] {(byte) 0xC3, (byte) 0xA9});
+
+        ParseContext pc = contextWith(
+                new EncodingResult(sjis, 0.9f, "Shift_JIS",
+                        EncodingResult.ResultType.DECLARATIVE),
+                new EncodingResult(utf8, 0.95f, "UTF-8",
+                        EncodingResult.ResultType.STRUCTURAL));
+
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new PreferenceStub("UTF-8"));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(sjis, out.get(0).getCharset());
+            assertEquals("junk-filter-prefer-declarative",
+                    pc.get(EncodingDetectorContext.class).getArbitrationInfo());
+        }
+    }
+
+    @Test
+    public void structuralUtf8OverridesDeclaredCjkWithWideSequence() throws Exception {
+        // Declared Shift_JIS + STRUCTURAL UTF-8 with a 3-byte sequence (日 =
+        // E6 97 A5): unfakeable by a legacy 2-byte CJK pair, so the proof wins.
+        Charset utf8 = StandardCharsets.UTF_8;
+        Charset sjis = Charset.forName("Shift_JIS");
+        byte[] bytes = markupWithHighBytes(
+                new byte[] {(byte) 0xE6, (byte) 0x97, (byte) 0xA5});
+
+        ParseContext pc = contextWith(
+                new EncodingResult(sjis, 0.9f, "Shift_JIS",
+                        EncodingResult.ResultType.DECLARATIVE),
+                new EncodingResult(utf8, 0.95f, "UTF-8",
+                        EncodingResult.ResultType.STRUCTURAL));
+
+        JunkFilterEncodingDetector detector =
+                new JunkFilterEncodingDetector(new PreferenceStub("UTF-8"));
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<EncodingResult> out = detector.detect(tis, new Metadata(), pc);
+            assertEquals(1, out.size());
+            assertEquals(utf8, out.get(0).getCharset());
+            assertEquals("junk-filter-prefer-structural",
+                    pc.get(EncodingDetectorContext.class).getArbitrationInfo());
+        }
+    }
+
     // NOTE: a full default-constructor integration test (which would load
     // the bundled JunkDetector via ServiceLoader) is not included here
     // because JunkDetector currently exposes only static factory methods
