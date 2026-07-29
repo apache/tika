@@ -53,7 +53,7 @@ public class MSOfficeXMLConverter extends AbstractConverter {
     public XMPMeta process(Metadata metadata) throws XMPException {
         super.setMetadata(metadata);
 
-        createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
+        createProperty(HttpHeaders.CONTENT_TYPE.getName(), XMPConst.NS_DC, "format");
 
         // Core Properties
         createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");

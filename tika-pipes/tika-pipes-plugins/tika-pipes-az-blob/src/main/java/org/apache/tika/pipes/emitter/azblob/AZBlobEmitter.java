@@ -157,7 +157,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {
         for (String n : userMetadata.names()) {
-            if (n.equals(Metadata.CONTENT_LENGTH)) {
+            if (n.equals(Metadata.CONTENT_LENGTH.getName())) {
                 continue;
             }
             String[] vals = userMetadata.getValues(n);

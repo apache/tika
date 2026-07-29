@@ -149,7 +149,7 @@ public class TSDParser implements Parser {
         int count = 1;
 
         for (TSDMetas tsdm : tsdMetasList) {
-            metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE.getName(), TSD_MIME_TYPE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL,
                     TSD_DESCRIPTION_VALUE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL,

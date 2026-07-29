@@ -79,7 +79,7 @@ public class OleObjectRegressionTest extends TikaTest {
         // Sanity check that the digester actually ran (so we know the test is exercising
         // the digest code path).
         long digested = list.stream()
-                .filter(m -> m.get("X-TIKA:digest:MD5") != null)
+                .filter(m -> m.get("tk:digest:MD5") != null)
                 .count();
         assertTrue(digested > 0,
                 "expected the digester to have computed at least one MD5; "
@@ -108,9 +108,9 @@ public class OleObjectRegressionTest extends TikaTest {
                                     .contains("openxmlformats-officedocument.oleobject"),
                     "expected " + n + " to be detected as its inner POIFS type, not "
                             + "as the dead-end oleobject mime; ct=" + ct);
-            assertNull(m.get("X-TIKA:EXCEPTION:embedded_exception"),
+            assertNull(m.get("tk:exception:embedded-exception"),
                     "expected no embedded_exception on " + n
-                            + "; got: " + m.get("X-TIKA:EXCEPTION:embedded_exception"));
+                            + "; got: " + m.get("tk:exception:embedded-exception"));
         }
     }
 }

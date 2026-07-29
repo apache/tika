@@ -761,7 +761,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     /**
      * Documents that includeFullMetadata=true in FRICTIONLESS adds a
-     * metadata.json envelope whose entries carry X-TIKA:content (the extracted
+     * metadata.json envelope whose entries carry tk:content (the extracted
      * text) and Content-Type alongside the per-document metadata.
      */
     @Test
@@ -804,10 +804,10 @@ public class UnpackerResourceTest extends CXFTestBase {
                 "Container metadata entry should carry Content-Type. Entry: " + container);
         assertEquals("application/msword", container.get("Content-Type").asText(),
                 "Container metadata entry should describe the submitted .doc");
-        assertTrue(container.has("X-TIKA:content"),
-                "Container metadata entry should carry X-TIKA:content (extracted text). Entry: " + container);
-        assertTrue(container.get("X-TIKA:content").asText().length() > 0,
-                "X-TIKA:content for the container should be non-empty");
+        assertTrue(container.has("tk:content"),
+                "Container metadata entry should carry tk:content (extracted text). Entry: " + container);
+        assertTrue(container.get("tk:content").asText().length() > 0,
+                "tk:content for the container should be non-empty");
     }
 
     /**

@@ -84,7 +84,8 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("TEST DATA FOR TIKA.", handler.toString());
         assertContains("This is text inside an unencrypted zip file", handler.toString());
         assertContains("TIKA-1028", handler.toString());
-        assertEquals("<juha.haaga@gmail.com>", metadata.get("Message:Raw-Header:Return-Path"));
+        assertEquals("<juha.haaga@gmail.com>",
+                metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX + "Return-Path"));
     }
 
     /**

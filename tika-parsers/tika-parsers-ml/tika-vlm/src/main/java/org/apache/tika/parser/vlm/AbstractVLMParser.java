@@ -73,9 +73,9 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     public static final Property VLM_MODEL = Property.externalText(VLM_META + "model");
     public static final Property VLM_PROMPT_TOKENS =
-            Property.externalInteger(VLM_META + "prompt_tokens");
+            Property.externalInteger(VLM_META + "prompt-tokens");
     public static final Property VLM_COMPLETION_TOKENS =
-            Property.externalInteger(VLM_META + "completion_tokens");
+            Property.externalInteger(VLM_META + "completion-tokens");
 
     /**
      * Encapsulates a fully built HTTP request for a VLM API call.

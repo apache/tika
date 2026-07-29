@@ -54,7 +54,7 @@ public class OpenDocumentConverter extends AbstractConverter {
     public XMPMeta process(Metadata metadata) throws XMPException {
         super.setMetadata(metadata);
 
-        createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
+        createProperty(HttpHeaders.CONTENT_TYPE.getName(), XMPConst.NS_DC, "format");
 
         createProperty(Office.CHARACTER_COUNT, Office.NAMESPACE_URI_DOC_META, "character-count");
         createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");

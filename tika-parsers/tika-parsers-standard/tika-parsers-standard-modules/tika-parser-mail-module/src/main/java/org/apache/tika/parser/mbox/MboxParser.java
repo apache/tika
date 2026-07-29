@@ -44,6 +44,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -196,7 +197,7 @@ public class MboxParser implements Parser {
                 metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, headerContent);
             }
 
-            String property = Metadata.MESSAGE_TO;
+            Property property = Metadata.MESSAGE_TO;
             if (headerTag.equalsIgnoreCase("Cc")) {
                 property = Metadata.MESSAGE_CC;
             } else if (headerTag.equalsIgnoreCase("Bcc")) {
@@ -224,7 +225,7 @@ public class MboxParser implements Parser {
             // TODO - key off content-type in headers to
             // set mapping to use for content and convert if necessary.
 
-            metadata.add(Metadata.CONTENT_TYPE, headerContent);
+            metadata.set(Metadata.CONTENT_TYPE, headerContent);
             metadata.set(TikaCoreProperties.FORMAT, headerContent);
         } else {
             metadata.add(EMAIL_HEADER.key(headerTag), headerContent);

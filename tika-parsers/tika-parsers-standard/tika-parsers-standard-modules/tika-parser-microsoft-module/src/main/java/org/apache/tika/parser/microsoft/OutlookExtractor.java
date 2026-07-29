@@ -357,7 +357,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         if (contentId != null && contentIdNames.contains(contentId)) {
             // Layer 1: CID referenced in the message body — high confidence inline
-            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         } else if (contentId != null
                 && attachFlags != null
@@ -365,7 +365,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 && isInlineableMimeType(metadata.get(MAPI.ATTACH_MIME))) {
             // Layer 2: MAPI says rendered in body + image MIME type — the CID regex
             // missed it (e.g. encapsulated RTF with stripped img tags)
-            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         }
     }

@@ -35,7 +35,7 @@ import org.apache.tika.plugins.ExtensionConfig;
  *     "my-jdbc-emitter": {
  *       "connection": "jdbc:postgresql://localhost/mydb",
  *       "insert": "insert into docs (id, content) values (?, ?)",
- *       "keys": {"id": "X-TIKA:content", "content": "content"}
+ *       "keys": {"id": "tk:content", "content": "content"}
  *     }
  *   }
  * }

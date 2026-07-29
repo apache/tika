@@ -100,7 +100,7 @@ public class MboxParserTest extends TikaTest {
         assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
         assertEquals("subject", mailMetadata.get(TikaCoreProperties.SUBJECT));
         assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("author@domain.com", mailMetadata.get("Message-From"));
+        assertEquals("author@domain.com", mailMetadata.get(Metadata.MESSAGE_FROM));
         assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
     }
 

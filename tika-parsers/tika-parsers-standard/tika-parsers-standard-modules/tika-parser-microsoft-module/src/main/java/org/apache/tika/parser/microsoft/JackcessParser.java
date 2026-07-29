@@ -55,7 +55,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class JackcessParser implements Parser {
 
     public static final String SUMMARY_PROPERTY_PREFIX =
-            "MDB_SUMMARY_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "mdb-summary-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static final PassthroughPrefix MDB_SUMMARY_PROPERTY =
             PassthroughPrefix.file(SUMMARY_PROPERTY_PREFIX, "MS Access summary properties");
     private final static LinkResolver IGNORE_LINK_RESOLVER = new IgnoreLinkResolver();
@@ -66,14 +66,14 @@ public class JackcessParser implements Parser {
     //TODO: figure out how to get this info
     // public static Property LINKED_DATABASES = Property.externalTextBag("LinkedDatabases");
     public static String MDB_PROPERTY_PREFIX =
-            "MDB_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "mdb-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static final PassthroughPrefix MDB_PROPERTY =
             PassthroughPrefix.file(MDB_PROPERTY_PREFIX, "MS Access database properties");
     public static String USER_DEFINED_PROPERTY_PREFIX =
-            "MDB_USER_PROP" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "mdb-user-prop" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static final PassthroughPrefix MDB_USER_PROPERTY =
             PassthroughPrefix.file(USER_DEFINED_PROPERTY_PREFIX, "MS Access user-defined properties");
-    public static Property MDB_PW = Property.externalText("Password");
+    public static Property MDB_PW = Property.externalText("mdb:password");
     private Locale locale = Locale.ROOT;
 
     @Override

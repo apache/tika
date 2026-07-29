@@ -101,19 +101,19 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
     public static final Property IMAGE_MAGICK =
-            Property.externalBooleanSeq(TESS_META + "image_magick_processed");
+            Property.externalBooleanSeq(TESS_META + "image-magick-processed");
     private static final String TESSDATA_PREFIX = "TESSDATA_PREFIX";
 
     public static final Property
-            PSM0_PAGE_NUMBER = Property.externalInteger(TESS_META + "page_number");
+            PSM0_PAGE_NUMBER = Property.externalInteger(TESS_META + "page-number");
     public static final Property
             PSM0_ORIENTATION = Property.externalInteger(TESS_META + "orientation");
     public static final Property PSM0_ROTATE = Property.externalInteger(TESS_META + "rotate");
     public static final Property PSM0_ORIENTATION_CONFIDENCE = Property.externalReal(TESS_META +
-            "orientation_confidence");
+            "orientation-confidence");
     public static final Property PSM0_SCRIPT = Property.externalText(TESS_META + "script");
     public static final Property PSM0_SCRIPT_CONFIDENCE = Property.externalReal(TESS_META +
-            "script_confidence");
+            "script-confidence");
 
     private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
