@@ -240,7 +240,14 @@ public class TikaServerProcess {
         return details;
     }
 
-    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig) throws GeneralSecurityException, IOException {
+    private static TLSServerParameters getTlsParams(TlsConfig tlsConfig)
+            throws GeneralSecurityException, IOException, TikaConfigException {
+        // Also checked in TlsConfig.checkInitialization() at config-load time; kept here too
+        // since this is where the TLS credentials are actually built.
+        if (tlsConfig.isClientAuthenticationRequired() && !tlsConfig.hasTrustStore()) {
+            throw new TikaConfigException(
+                    "requiring client authentication, but no trust store has been specified");
+        }
         KeyStoreType keyStore = new KeyStoreType();
         keyStore.setType(tlsConfig.getKeyStoreType());
         keyStore.setPassword(tlsConfig.getKeyStorePassword());

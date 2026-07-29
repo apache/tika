@@ -205,6 +205,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
                         "files and reach network resources.");
             }
         }
+        tlsConfig.checkInitialization();
     }
 
     public String getHost() {
