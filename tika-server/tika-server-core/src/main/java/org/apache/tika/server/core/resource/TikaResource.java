@@ -211,7 +211,7 @@ public class TikaResource {
         }
 
         if (mediaType != null) {
-            metadata.add(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
             metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
         }
 
@@ -300,7 +300,7 @@ public class TikaResource {
             String contentType = fileAtt.getContentType().toString();
             if (contentType != null && !contentType.startsWith("multipart/") &&
                     !"application/octet-stream".equals(contentType)) {
-                metadata.add(Metadata.CONTENT_TYPE, contentType);
+                metadata.set(Metadata.CONTENT_TYPE, contentType);
                 metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, contentType);
             }
         }
@@ -783,7 +783,7 @@ public class TikaResource {
                 handlerTypeName, context.get(ContentHandlerFactory.class));
 
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
-        // EmitHandler will strip everything except X-TIKA:content
+        // EmitHandler will strip everything except tk:content
         List<Metadata> metadataList;
         try {
             metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);

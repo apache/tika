@@ -90,10 +90,10 @@ parser.parse(inputStream, handler, metadata, context);  // May fail on truncated
 
 The detector also sets additional metadata hints for parsers:
 
-`zip:detectorZipFileOpened`:: `true` if the detector successfully opened the ZIP as a `ZipFile`.
+`zip:detector-zip-file-opened`:: `true` if the detector successfully opened the ZIP as a `ZipFile`.
 The `ZipFile` object is available via `TikaInputStream.getOpenContainer()` for reuse by parsers.
 
-`zip:detectorDataDescriptorRequired`:: `true` if streaming detection required
+`zip:detector-data-descriptor-required`:: `true` if streaming detection required
 DATA_DESCRIPTOR support. This hint helps parsers choose the correct streaming mode.
 
 == Related Topics

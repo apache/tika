@@ -90,7 +90,7 @@ public class IWork18PackageParser implements Parser {
             }
         }
         if (type != null) {
-            metadata.add(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
         }
     }
 

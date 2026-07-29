@@ -5,7 +5,7 @@
   "parse-context": {
     "standard-metadata-limiter-factory": {
       // maxTotalBytes accounts for ~244 bytes of ALWAYS_SET_FIELDS overhead
-      // (Content-Type, X-TIKA:Parsed-By, etc.) plus room for 2 dc:creator values
+      // (Content-Type, tk:parsed-by, etc.) plus room for 2 dc:creator values
       "maxTotalBytes": 330,
       "includeFields": ["dc:creator"]
     }

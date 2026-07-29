@@ -22,8 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-/** Reserved {@code X-TIKA:} keys can't be overwritten by String writes, only via Property. */
+/** Reserved Tika-native ({@code tk:}) keys can't be overwritten by String writes, only via Property. */
 public class MetadataInternalKeyGuardTest {
+
+    @Test
+    public void testLegacyXTikaPrefixStaysReserved() {
+        Metadata metadata = new Metadata();
+        // pre-4.0.0 prefix stays reserved so a crafted file can't forge it during the 4.x window
+        metadata.add(TikaCoreProperties.LEGACY_TIKA_META_PREFIX + "Parsed-By", "org.evil.FakeParser");
+        assertNull(metadata.get(TikaCoreProperties.LEGACY_TIKA_META_PREFIX + "Parsed-By"),
+                "legacy X-TIKA: String write must still be dropped");
+    }
 
     @Test
     public void testStringWriteToInternalKeyIsDropped() {

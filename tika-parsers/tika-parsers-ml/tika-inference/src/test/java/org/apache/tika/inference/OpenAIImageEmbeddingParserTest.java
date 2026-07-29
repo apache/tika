@@ -79,7 +79,7 @@ public class OpenAIImageEmbeddingParserTest {
         }
 
         String output = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
-        assertNotNull(output, "Should have tika:chunks");
+        assertNotNull(output, "Should have tk:chunks");
 
         List<Chunk> chunks = ChunkSerializer.fromJson(output);
         assertEquals(1, chunks.size());
@@ -225,8 +225,8 @@ public class OpenAIImageEmbeddingParserTest {
         // Pre-populate with a text chunk (simulating text chunker ran first)
         Chunk textChunk = new Chunk("existing text", 0, 13);
         textChunk.setVector(new float[]{0.1f, 0.2f});
-        metadata.set(TikaCoreProperties.TIKA_CHUNKS,
-                ChunkSerializer.toJson(List.of(textChunk)));
+        // simulate the text chunker via the real (trusted) merge path; tk:chunks is reserved
+        ChunkSerializer.mergeInto(metadata, List.of(textChunk));
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());

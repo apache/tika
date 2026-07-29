@@ -57,7 +57,7 @@ public class MetadataKeyValidatorTest {
     @Test
     public void unregisteredKeyIsUnknown() {
         assertEquals(UNKNOWN, v.classify("bogus:notakey"));
-        assertEquals(UNKNOWN, v.classify("Content-Type"));      // bare String constant, not a Property
+        assertEquals(UNKNOWN, v.classify("Content-Type"));      // not in this fixture's closed set
         assertEquals(UNKNOWN, v.classify("dc:title:notalangtag_but_long"));
     }
 
@@ -80,9 +80,9 @@ public class MetadataKeyValidatorTest {
         MetadataKeyValidator real = MetadataKeyValidator.fromClasspath();
         // Every real closed key classifies CLOSED; a real passthrough suffix classifies OPEN.
         assertEquals(CLOSED, real.classify("dc:title"));
-        assertEquals(CLOSED, real.classify("X-TIKA:digest:MD5"));   // synthesized digest key
-        assertEquals(CLOSED, real.classify("Content-Type"));        // bare-String key registry
-        assertEquals(CLOSED, real.classify("Message-From"));
+        assertEquals(CLOSED, real.classify("tk:digest:MD5"));   // synthesized digest key
+        assertEquals(CLOSED, real.classify("Content-Type"));        // now a Property (HTTP name verbatim)
+        assertEquals(CLOSED, real.classify("message:from"));
         assertEquals(OPEN, real.classify("html:twitter:card"));
         assertTrue(real.isLegitimate("dc:title:fr"));
         assertFalse(real.isLegitimate("totally:made:up:key"));

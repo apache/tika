@@ -26,11 +26,11 @@ public interface DWG {
     PassthroughPrefix RAW_FIELD =
             PassthroughPrefix.file(DWG_PREFIX, "DWGRead JSON header/summary field names");
 
-    Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "applicationName");
+    Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "application-name");
 
-    Property APPLICATION_VERSION = Property.externalText(DWG_PREFIX + "applicationVersion");
+    Property APPLICATION_VERSION = Property.externalText(DWG_PREFIX + "application-version");
 
-    Property APPLICATION_COMMENT = Property.externalText(DWG_PREFIX + "applicationComment");
+    Property APPLICATION_COMMENT = Property.externalText(DWG_PREFIX + "application-comment");
 
-    Property PRODUCT_INFO = Property.externalText(DWG_PREFIX + "productInfo");
+    Property PRODUCT_INFO = Property.externalText(DWG_PREFIX + "product-info");
 }

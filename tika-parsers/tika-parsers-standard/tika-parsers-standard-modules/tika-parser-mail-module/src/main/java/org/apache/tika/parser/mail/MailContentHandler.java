@@ -395,7 +395,7 @@ class MailContentHandler implements ContentHandler {
         }
     }
 
-    private void processAddressList(ParsedField field, String addressListType, String metadataField)
+    private void processAddressList(ParsedField field, String addressListType, Property metadataField)
             throws MimeException {
         AddressListField toField = (AddressListField) field;
         if (toField.isValidField()) {

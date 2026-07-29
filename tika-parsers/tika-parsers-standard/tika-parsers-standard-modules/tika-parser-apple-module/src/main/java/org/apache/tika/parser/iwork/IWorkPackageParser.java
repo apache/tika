@@ -124,7 +124,7 @@ public class IWorkPackageParser implements Parser {
                         throw new TikaException("Unhandled iWorks file " + type);
                 }
 
-                metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
+                metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
                     XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),

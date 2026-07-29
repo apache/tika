@@ -81,7 +81,7 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 6, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE.getName()),
                 "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.SLIDE_COUNT.getName()),
                 "Metadata not found in " + metadataKeys);
@@ -160,7 +160,7 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 50, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE.getName()),
                 "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
                 "Metadata not found in " + metadataKeys);
@@ -221,7 +221,7 @@ public class IWorkParserTest extends TikaTest {
         // (Exact numbers will vary based on composites)
         assertTrue(metadata.size() >= 8, "Insufficient metadata found " + metadata.size());
         List<String> metadataKeys = Arrays.asList(metadata.names());
-        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE),
+        assertTrue(metadataKeys.contains(Metadata.CONTENT_TYPE.getName()),
                 "Metadata not found in " + metadataKeys);
         assertTrue(metadataKeys.contains(Office.PAGE_COUNT.getName()),
                 "Metadata not found in " + metadataKeys);

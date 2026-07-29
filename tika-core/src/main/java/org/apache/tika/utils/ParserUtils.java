@@ -32,7 +32,7 @@ import org.apache.tika.parser.ParserDecorator;
 public class ParserUtils {
 
     public final static Property EMBEDDED_PARSER = Property.internalText(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
+            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded-parser");
 
 
     /**
