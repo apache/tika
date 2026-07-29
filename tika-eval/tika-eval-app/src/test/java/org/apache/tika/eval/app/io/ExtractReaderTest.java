@@ -18,6 +18,8 @@ package org.apache.tika.eval.app.io;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -86,6 +88,38 @@ public class ExtractReaderTest extends TikaTest {
         assertContains("attachment", metadataList
                 .get(0)
                 .get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testLegacyKeyNormalization() throws Exception {
+        // a pre-4.0 (4.0.0-beta-1 style) extract: X-TIKA:/camelCase Tika-native keys
+        Path f = getResourceAsFile("/test-dirs/legacy/beta1-style.doc.json").toPath();
+        List<Metadata> list = new ExtractReader().loadExtract(f);
+        assertEquals(2, list.size());
+
+        Metadata container = list.get(0);
+        // readable via the 4.0 Property constants that tika-eval uses
+        assertEquals("the quick brown fox", container.get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("12", container.get(TikaCoreProperties.PARSE_TIME_MILLIS));
+        assertEquals("boom", container.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertEquals("abc123", container.get("tk:digest:MD5"));
+        // the legacy keys are gone
+        assertNull(container.get("X-TIKA:content"));
+        assertNull(container.get("X-TIKA:digest:MD5"));
+
+        Metadata embedded = list.get(1);
+        assertEquals("inner.txt", embedded.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertEquals("1", embedded.get(TikaCoreProperties.EMBEDDED_DEPTH));
+        assertEquals("inner.txt", embedded.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("ATTACHMENT", embedded.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNull(embedded.get("X-TIKA:embedded_resource_path"));
+    }
+
+    @Test
+    public void testLegacyNormalizationCollisionFailsLoud() throws Exception {
+        // both the legacy and modern content key present with different values -> must not clobber
+        Path f = getResourceAsFile("/test-dirs/legacy/collision.doc.json").toPath();
+        assertThrows(IllegalStateException.class, () -> new ExtractReader().loadExtract(f));
     }
 
     @Test
