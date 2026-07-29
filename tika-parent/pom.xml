@@ -314,7 +314,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.70.0</google.cloud.version>
-    <aws2.version>2.49.3</aws2.version>
+    <aws2.version>2.49.5</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -1098,12 +1098,6 @@
         <groupId>com.nimbusds</groupId>
         <artifactId>nimbus-jose-jwt</artifactId>
         <version>${nimbus-jose-jwt.version}</version>
-      </dependency>
-      <!-- TODO try removing after updating aws2, last tested with 2.46.17, trouble with transcribe -->
-      <dependency>
-        <groupId>org.apache.httpcomponents.core5</groupId>
-        <artifactId>httpcore5</artifactId>
-        <version>5.4.3</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
