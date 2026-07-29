@@ -211,7 +211,7 @@ public class TikaResource {
         }
 
         if (mediaType != null) {
-            metadata.add(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
             metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
         }
 
@@ -300,7 +300,7 @@ public class TikaResource {
             String contentType = fileAtt.getContentType().toString();
             if (contentType != null && !contentType.startsWith("multipart/") &&
                     !"application/octet-stream".equals(contentType)) {
-                metadata.add(Metadata.CONTENT_TYPE, contentType);
+                metadata.set(Metadata.CONTENT_TYPE, contentType);
                 metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, contentType);
             }
         }

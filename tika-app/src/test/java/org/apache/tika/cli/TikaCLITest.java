@@ -159,7 +159,7 @@ public class TikaCLITest {
         assertTrue(content.contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
 
         content = getParamOutContent("-x", "--digest=sha256", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("<meta name=\"tk:digest:SHA256\" content=\"e90779adbac09c4ee"));
+        assertTrue(content.contains("<meta name=\"tk:digest:SHA-256\" content=\"e90779adbac09c4ee"));
 
     }
 
@@ -175,7 +175,7 @@ public class TikaCLITest {
         assertTrue(content.contains("<title></title>"), "Expanded <title></title> element should be present");
 
         content = getParamOutContent("-h", "--digest=sha384", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("<meta name=\"tk:digest:SHA384\" content=\"c69ea023f5da95a026"));
+        assertTrue(content.contains("<meta name=\"tk:digest:SHA-384\" content=\"c69ea023f5da95a026"));
     }
 
     /**
@@ -215,7 +215,7 @@ public class TikaCLITest {
 
         content = getParamOutContent("-m", "--digest=SHA512", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("text/plain"));
-        assertTrue(content.contains("tk:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
+        assertTrue(content.contains("tk:digest:SHA-512: dd459d99bc19ff78fd31fbae46e0"));
     }
 
     /**

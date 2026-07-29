@@ -731,6 +731,15 @@ public class Metadata
     }
 
     /**
+     * Remove a metadata property and all its associated values.
+     *
+     * @param property metadata property to remove
+     */
+    public void remove(Property property) {
+        remove(property.getName());
+    }
+
+    /**
      * Returns the number of metadata names in this metadata.
      *
      * @return number of metadata names

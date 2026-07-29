@@ -44,8 +44,6 @@ public final class MetadataKeyValidator {
 
     private static final String KEYS = "/org/apache/tika/metadata/metadata-keys.json";
     private static final String OPEN = "/org/apache/tika/metadata/metadata-open-namespaces.json";
-    // Legacy closed keys declared as bare String constants (not Property), so absent from KEYS.
-    private static final String STRING_KEYS = "/org/apache/tika/metadata/metadata-string-keys.json";
 
     // Conservative BCP-47 subset for the XMP lang-alt template suffix (<closed-key>:<lang>).
     private static final Pattern LANG_TAG =
@@ -63,9 +61,8 @@ public final class MetadataKeyValidator {
 
     /** Loads the validator from the committed registries on the classpath. */
     public static MetadataKeyValidator fromClasspath() {
-        Set<String> closed = new HashSet<>(readValues(KEYS, "key"));
-        closed.addAll(readValues(STRING_KEYS, "key"));
-        return new MetadataKeyValidator(closed, readValues(OPEN, "prefix"));
+        return new MetadataKeyValidator(
+                new HashSet<>(readValues(KEYS, "key")), readValues(OPEN, "prefix"));
     }
 
     public Classification classify(String key) {

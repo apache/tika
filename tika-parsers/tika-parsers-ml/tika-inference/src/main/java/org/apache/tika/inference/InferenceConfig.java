@@ -69,7 +69,7 @@ public class InferenceConfig implements Serializable {
     /**
      * The metadata field where the JSON chunk array is written.
      */
-    private String outputField = TikaCoreProperties.TIKA_CHUNKS;
+    private String outputField = TikaCoreProperties.TIKA_CHUNKS.getName();
 
     /**
      * If {@code true}, the embedding filter is skipped entirely for this

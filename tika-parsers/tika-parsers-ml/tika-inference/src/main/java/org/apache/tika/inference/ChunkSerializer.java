@@ -76,7 +76,7 @@ public final class ChunkSerializer {
     public static void mergeInto(
             org.apache.tika.metadata.Metadata metadata,
             List<Chunk> newChunks) throws IOException {
-        mergeInto(metadata, newChunks, TikaCoreProperties.TIKA_CHUNKS);
+        mergeInto(metadata, newChunks, TikaCoreProperties.TIKA_CHUNKS.getName());
     }
 
     public static void mergeInto(

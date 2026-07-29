@@ -52,8 +52,44 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <!-- Regenerate the committed registry with:
-       java -cp <module+deps classpath> org.apache.tika.metadata.schema.SchemaGenerator \
-            src/main/resources/org/apache/tika/metadata/metadata-keys.json
-       MetadataSchemaTest regenerates in-memory and asserts no diff, so CI catches drift. -->
+
+  <!-- The registries under src/main/resources are committed and drift-gated: MetadataSchemaTest /
+       MetadataFieldTableTest regenerate in-memory and fail if they go stale. Regenerate with:
+         ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes
+       Forking exec goal is deliberate: exec:java runs in-process, scans the wrong classpath, and
+       silently emits a near-empty registry. See .skills/metadata-schema.md. -->
+  <profiles>
+    <profile>
+      <id>regen-metadata-schema</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.3</version>
+            <executions>
+              <execution>
+                <id>regen-registries</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>java</executable>
+                  <arguments>
+                    <argument>-cp</argument>
+                    <classpath/>
+                    <argument>org.apache.tika.metadata.schema.SchemaGenerator</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-keys.json</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-open-namespaces.json</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-key-fields.json</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>

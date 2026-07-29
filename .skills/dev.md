@@ -47,6 +47,11 @@ provide the suggested commit message for the user to execute.
   Run **without** `-Pfast` before final commit to catch formatting
   and style issues.
 
+  **`-Pfast` skips test *execution*** (by design): a green `-Pfast`
+  build — including `-Pfast test` — has run zero tests, and stale
+  `target/surefire-reports/*` will look current. Verify with a plain
+  (non-`-Pfast`) `test` run.
+
 - **Forked JVM tests** — Integration tests in `tika-pipes` fork new
   JVMs that load classes from the local Maven repo, not from
   `target/classes`.  You must `./mvnw clean install -Pfast` the
@@ -92,6 +97,12 @@ provide the suggested commit message for the user to execute.
   `@TempDir`, or an in-repo `src/test/resources` fixture instead.  *Only*
   legitimate exception: a path that is the data under test (e.g. an expected
   metadata value extracted from a test document) — leave those untouched.
+
+## Metadata Keys & Schema Registry
+
+Adding/renaming a metadata key touches the committed, build-gated registry in
+`tika-metadata-schema` — regeneration has real traps. See
+`.skills/metadata-schema.md`.
 
 ## Testing an End-to-End Change
 
