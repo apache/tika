@@ -57,4 +57,26 @@ public class HeifParserTest extends TikaTest {
         }
     }
 
+    /*
+        testHEIC_livePhoto.heic is the still half of an Apple Live Photo
+        (iPhone 15 Pro, iOS 18.5), retrieved from the MIT licensed osxphotos
+        test suite:
+        https://github.com/RhetTbull/osxphotos/tree/main/tests/Test-Live-15.7.2.photoslibrary
+     */
+    @Test
+    public void testAppleLivePhotoMakerNote() throws Exception {
+        //the content identifier pairs the still with its video half; the
+        //Live Photo ID (Apple maker note tag 0x0017) is written as LONG8 and
+        //was dropped before metadata-extractor 2.21.0. TIKA-4776
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testHEIC_livePhoto.heic")) {
+            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+
+            assertEquals("CD28D161-D5EC-4CDE-8B60-DACCC1363B6B",
+                    metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Content Identifier"));
+            assertEquals("5283876",
+                    metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Live Photo ID"));
+        }
+    }
+
 }
