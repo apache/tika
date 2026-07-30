@@ -58,10 +58,14 @@ public class HeifParserTest extends TikaTest {
     }
 
     /*
-        testHEIC_livePhoto.heic is the still half of an Apple Live Photo
+        testHEIC_livePhoto.heic carries the unmodified EXIF payload (including
+        the Apple maker note) of the still half of an Apple Live Photo
         (iPhone 15 Pro, iOS 18.5), retrieved from the MIT licensed osxphotos
         test suite:
         https://github.com/RhetTbull/osxphotos/tree/main/tests/Test-Live-15.7.2.photoslibrary
+        The EXIF item was repackaged into a minimal HEIC container (the
+        picture item data is replaced by filler bytes) to keep the fixture
+        small.
      */
     @Test
     public void testAppleLivePhotoMakerNote() throws Exception {
