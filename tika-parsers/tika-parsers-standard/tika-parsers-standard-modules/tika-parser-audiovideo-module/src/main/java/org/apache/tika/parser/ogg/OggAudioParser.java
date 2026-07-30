@@ -218,61 +218,72 @@ public abstract class OggAudioParser extends AbstractParser {
                 //not valid base64, skip
                 continue;
             }
-
-            // The picture block holds a 32 bit BE picture type, the mime
-            // type, the description, the image geometry and the picture
-            // data, with mime type, description and data length prefixed
-            int pictureType;
-            String mimeType;
-            String description;
-            byte[] picture;
-            try {
-                ByteBuffer buffer = ByteBuffer.wrap(decoded);
-                pictureType = buffer.getInt();
-                mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
-                if (mimeType == null || "-->".equals(mimeType)) {
-                    // Malformed, or a link to a picture rather than an
-                    // embedded one
-                    continue;
-                }
-                description = getPrefixedString(buffer, StandardCharsets.UTF_8);
-                if (description == null) {
-                    continue;
-                }
-                // Width, height, color depth and number of colors
-                buffer.position(buffer.position() + 16);
-                int dataLength = buffer.getInt();
-                if (dataLength <= 0 || dataLength > buffer.remaining()) {
-                    continue;
-                }
-                picture = new byte[dataLength];
-                buffer.get(picture);
-            } catch (BufferUnderflowException | IllegalArgumentException e) {
-                //truncated picture block, skip
-                continue;
-            }
-
             if (extractor == null) {
                 extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             }
-            Metadata pictureMetadata = Metadata.newInstance(context);
-            pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-            if (!mimeType.isEmpty()) {
-                pictureMetadata.set(Metadata.CONTENT_TYPE, mimeType);
+            extractPictureBlock(decoded, xhtml, context, extractor);
+        }
+    }
+
+    /**
+     * Parses one FLAC picture block and sends the picture it holds to the
+     * embedded document extractor. Native FLAC PICTURE metadata blocks use
+     * the very same structure, so {@link FlacParser} shares this method.
+     * Malformed or truncated blocks are skipped silently.
+     */
+    static void extractPictureBlock(byte[] block, XHTMLContentHandler xhtml,
+            ParseContext context, EmbeddedDocumentExtractor extractor)
+            throws IOException, SAXException {
+        // The picture block holds a 32 bit BE picture type, the mime
+        // type, the description, the image geometry and the picture
+        // data, with mime type, description and data length prefixed
+        int pictureType;
+        String mimeType;
+        String description;
+        byte[] picture;
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(block);
+            pictureType = buffer.getInt();
+            mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
+            if (mimeType == null || "-->".equals(mimeType)) {
+                // Malformed, or a link to a picture rather than an
+                // embedded one
+                return;
             }
-            if (!description.isEmpty()) {
-                pictureMetadata.set(TikaCoreProperties.TITLE, description);
+            description = getPrefixedString(buffer, StandardCharsets.UTF_8);
+            if (description == null) {
+                return;
             }
-            //the FLAC picture block reuses the ID3v2 APIC picture types
-            if (pictureType >= 0 && pictureType < ID3Tags.PICTURE_TYPES.length) {
-                pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
-                        ID3Tags.PICTURE_TYPES[pictureType]);
+            // Width, height, color depth and number of colors
+            buffer.position(buffer.position() + 16);
+            int dataLength = buffer.getInt();
+            if (dataLength <= 0 || dataLength > buffer.remaining()) {
+                return;
             }
-            if (extractor.shouldParseEmbedded(pictureMetadata)) {
-                try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
-                    extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
-                }
+            picture = new byte[dataLength];
+            buffer.get(picture);
+        } catch (BufferUnderflowException | IllegalArgumentException e) {
+            //truncated picture block, skip
+            return;
+        }
+
+        Metadata pictureMetadata = Metadata.newInstance(context);
+        pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        if (!mimeType.isEmpty()) {
+            pictureMetadata.set(Metadata.CONTENT_TYPE, mimeType);
+        }
+        if (!description.isEmpty()) {
+            pictureMetadata.set(TikaCoreProperties.TITLE, description);
+        }
+        //the FLAC picture block reuses the ID3v2 APIC picture types
+        if (pictureType >= 0 && pictureType < ID3Tags.PICTURE_TYPES.length) {
+            pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                    ID3Tags.PICTURE_TYPES[pictureType]);
+        }
+        if (extractor.shouldParseEmbedded(pictureMetadata)) {
+            try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
+                extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
             }
         }
     }

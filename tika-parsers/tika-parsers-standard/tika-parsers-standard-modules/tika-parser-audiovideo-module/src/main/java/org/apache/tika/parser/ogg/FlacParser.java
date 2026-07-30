@@ -16,7 +16,12 @@
  */
 package org.apache.tika.parser.ogg;
 
+import java.io.BufferedInputStream;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -31,6 +36,8 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
@@ -53,6 +60,11 @@ public class FlacParser extends AbstractParser {
 
     private static List<MediaType> TYPES = Arrays.asList(NATIVE_FLAC, OGG_FLAC);
 
+    /**
+     * The metadata block type of a native FLAC PICTURE block
+     */
+    private static final int PICTURE_BLOCK_TYPE = 6;
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return new HashSet<>(TYPES);
@@ -63,6 +75,11 @@ public class FlacParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "FLAC");
+
+        // Spool to a file first: FlacFile.open consumes the stream, but
+        //  native FLAC PICTURE blocks are read through a second stream
+        //  over the file later on
+        Path path = tis.getPath();
 
         // Open the FLAC file
         FlacFile flac = FlacFile.open(tis);
@@ -85,6 +102,13 @@ public class FlacParser extends AbstractParser {
         // Extract any Vorbis-style comments
         OggAudioParser.extractComments(metadata, xhtml, flac.getTags(), context);
 
+        // Extract any embedded pictures, such as cover art, from native
+        //  FLAC PICTURE metadata blocks (Ogg-contained FLAC carries its
+        //  pictures in metadata_block_picture comments instead)
+        if (!(flac instanceof FlacOggFile)) {
+            extractNativePictures(path, xhtml, context);
+        }
+
         // Extract duration if available from header
         FlacInfo info = flac.getInfo();
         if (info.getNumberOfSamples() > 0 && info.getSampleRate() > 0) {
@@ -100,5 +124,60 @@ public class FlacParser extends AbstractParser {
     protected void extractInfo(Metadata metadata, FlacInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getSampleRate());
         OggAudioParser.extractChannelInfo(metadata, info.getNumChannels());
+    }
+
+    /**
+     * Walks the metadata blocks of a native FLAC file and sends any
+     * PICTURE blocks to the embedded document extractor. Their payload is
+     * identical to the metadata_block_picture comments handled by
+     * {@link OggAudioParser}. vorbis-java parses these blocks but keeps
+     * them without a public accessor, so they are read through a second
+     * stream over the spooled file, leaving the main parse untouched.
+     * The walk stops at the block flagged as last, at the end of the
+     * stream, or at a block that declares more data than is left.
+     * TODO: remove this block walk once a vorbis-java release ships
+     * FlacFile.getOtherMetadata(), present on their master but unreleased
+     * as of 0.8, see https://github.com/Gagravarr/VorbisJava/issues/46
+     */
+    private static void extractNativePictures(Path path, XHTMLContentHandler xhtml,
+            ParseContext context) throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor = null;
+        try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
+            byte[] magic = stream.readNBytes(4);
+            if (magic.length != 4 || magic[0] != 'f' || magic[1] != 'L'
+                    || magic[2] != 'a' || magic[3] != 'C') {
+                return;
+            }
+            boolean lastBlock = false;
+            while (!lastBlock) {
+                // 1 byte of last-block flag and block type, then a
+                //  24 bit BE block length
+                byte[] header = stream.readNBytes(4);
+                if (header.length != 4) {
+                    return;
+                }
+                lastBlock = (header[0] & 0x80) != 0;
+                int blockType = header[0] & 0x7F;
+                int blockLength = ((header[1] & 0xFF) << 16) | ((header[2] & 0xFF) << 8)
+                        | (header[3] & 0xFF);
+                if (blockType == PICTURE_BLOCK_TYPE) {
+                    byte[] block = stream.readNBytes(blockLength);
+                    if (block.length != blockLength) {
+                        return;
+                    }
+                    if (extractor == null) {
+                        extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                    }
+                    OggAudioParser.extractPictureBlock(block, xhtml, context, extractor);
+                } else {
+                    try {
+                        stream.skipNBytes(blockLength);
+                    } catch (EOFException e) {
+                        //truncated block, stop the walk
+                        return;
+                    }
+                }
+            }
+        }
     }
 }
