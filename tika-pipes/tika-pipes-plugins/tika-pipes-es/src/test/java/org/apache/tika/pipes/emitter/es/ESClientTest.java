@@ -94,9 +94,7 @@ public class ESClientTest extends TikaTest {
 
     /** tk:chunks is reserved; simulate a trusted producer having written it. */
     private static void setChunks(Metadata metadata, String json) {
-        metadata.setTrusted(true);
-        metadata.set(TikaCoreProperties.TIKA_CHUNKS, json);
-        metadata.setTrusted(false);
+        metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(), json);
     }
 
     @Test

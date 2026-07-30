@@ -307,6 +307,13 @@ String value = metadata.get("mapi:some-property");
 String value = metadata.get("mapi:some-property");
 ----
 
+[CAUTION]
+====
+`pst:folderPath` does not migrate one-to-one, and the opt-in `LegacyKeyMigrationFilter` cannot
+restore it: it is *dropped*, not renamed. In 4.x the Outlook PST parser folds the folder path into
+`tk:internal-path` (`<folder>/<item-name>`, a superset), so there is no folder-only value to map back to.
+====
+
 === Resource Name
 
 [source,java]

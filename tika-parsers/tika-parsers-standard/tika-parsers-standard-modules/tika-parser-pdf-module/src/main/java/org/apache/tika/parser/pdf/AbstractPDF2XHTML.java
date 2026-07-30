@@ -590,13 +590,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
                 if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
                     // tk:chunks is reserved; this is Tika propagating its own native output
-                    boolean wasTrusted = metadata.isTrusted();
-                    metadata.setTrusted(true);
-                    try {
-                        metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
-                    } finally {
-                        metadata.setTrusted(wasTrusted);
-                    }
+                    metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(), renderChunks);
                 }
             }
         } catch (IOException e) {

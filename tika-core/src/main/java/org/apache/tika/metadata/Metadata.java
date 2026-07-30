@@ -100,7 +100,6 @@ public class Metadata
 
 
     private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
-    private transient boolean trusted;
     /**
      * Constructs a new, empty metadata.
      */
@@ -312,30 +311,22 @@ public class Metadata
         if (blockReservedKeyWrite(name)) {
             return;
         }
-        addUnchecked(name, value);
-    }
-
-    /** Trusted add, bypassing the reserved-key guard. */
-    private void addUnchecked(final String name, final String value) {
-        writeLimiter.add(name, value, metadata);
+        addTrusted(name, value);
     }
 
     /**
-     * Mark this Metadata as a trusted transformation target (e.g. a metadata filter), letting
-     * String writes reach reserved Tika-native ({@code tk:}) keys. Reset when the transformation
-     * is done.
+     * Trusted add, bypassing the reserved-key guard: writes reach reserved Tika-native
+     * ({@code tk:}) keys directly. For internal/known-trusted writers (metadata filters,
+     * clone/merge/deserialize, emit-time enrichment) that legitimately need to assert a
+     * reserved key by name rather than by its {@link Property}.
      */
-    public void setTrusted(boolean trusted) {
-        this.trusted = trusted;
+    public void addTrusted(final String name, final String value) {
+        writeLimiter.add(name, value, metadata);
     }
 
-    public boolean isTrusted() {
-        return trusted;
-    }
-
-    /** Drop String writes to reserved Tika-native keys unless trusted; use their Property. */
+    /** Drop String writes to reserved Tika-native keys; use their Property or {@link #addTrusted}/{@link #setTrusted(String, String)}. */
     private boolean blockReservedKeyWrite(String name) {
-        if (!trusted && ReservedNamespaces.isTikaNative(name)) {
+        if (ReservedNamespaces.isTikaNative(name)) {
             LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
             return true;
         }
@@ -357,9 +348,9 @@ public class Metadata
                     set(property, value);
                 }
             } else if (append) {
-                addUnchecked(name, value);
+                addTrusted(name, value);
             } else {
-                setUnchecked(name, value);
+                setTrusted(name, value);
             }
             return;
         }
@@ -383,7 +374,7 @@ public class Metadata
             set(name, newValues);
         } else {
             for (String val : newValues) {
-                addUnchecked(name, val);
+                addTrusted(name, val);
             }
         }
     }
@@ -414,7 +405,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    addUnchecked(property.getName(), value);
+                    addTrusted(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -450,11 +441,14 @@ public class Metadata
         if (blockReservedKeyWrite(name)) {
             return;
         }
-        setUnchecked(name, value);
+        setTrusted(name, value);
     }
 
-    /** Trusted set, bypassing the reserved-key guard. */
-    private void setUnchecked(String name, String value) {
+    /**
+     * Trusted set, bypassing the reserved-key guard: writes reach reserved Tika-native
+     * ({@code tk:}) keys directly. See {@link #addTrusted}.
+     */
+    public void setTrusted(String name, String value) {
         writeLimiter.set(name, value, metadata);
     }
 
@@ -464,7 +458,7 @@ public class Metadata
         if (values != null) {
             metadata.remove(name);
             for (String v : values) {
-                addUnchecked(name, v);
+                addTrusted(name, v);
             }
         } else {
             metadata.remove(name);
@@ -490,7 +484,7 @@ public class Metadata
                 }
             }
         } else {
-            setUnchecked(property.getName(), value);
+            setTrusted(property.getName(), value);
         }
     }
 

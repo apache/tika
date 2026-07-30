@@ -33,7 +33,7 @@ public class MockUpperCaseFilter extends MetadataFilterBase {
             String[] vals = metadata.getValues(n);
             metadata.remove(n);
             for (String val : vals) {
-                metadata.add(n, val.toUpperCase(Locale.US));
+                metadata.addTrusted(n, val.toUpperCase(Locale.US));
             }
         }
     }

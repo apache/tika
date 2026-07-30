@@ -121,14 +121,22 @@ public class MetadataInternalKeyGuardTest {
     }
 
     @Test
-    public void testTrustedModeAllowsReservedStringWrites() {
+    public void testTrustedWriteBypassesGuard() {
         Metadata metadata = new Metadata();
-        metadata.setTrusted(true);
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
+        metadata.setTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
         assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
 
-        metadata.setTrusted(false);
+        // untrusted String-path attempt must not clobber
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "blocked");
         assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testTrustedAddBypassesGuard() {
+        Metadata metadata = new Metadata();
+        metadata.addTrusted(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p1");
+        metadata.addTrusted(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p2");
+        assertArrayEquals(new String[] {"p1", "p2"},
+                metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY));
     }
 }

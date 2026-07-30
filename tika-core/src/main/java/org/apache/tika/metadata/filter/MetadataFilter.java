@@ -19,9 +19,7 @@ package org.apache.tika.metadata.filter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -41,21 +39,14 @@ public abstract class MetadataFilter implements Serializable, Closeable {
      */
     public final void filter(List<Metadata> metadataList, ParseContext parseContext)
             throws TikaException {
-        Map<Metadata, Boolean> previous = new IdentityHashMap<>();
-        for (Metadata m : metadataList) {
-            previous.put(m, m.isTrusted());
-            m.setTrusted(true);
-        }
-        try {
-            doFilter(metadataList, parseContext);
-        } finally {
-            previous.forEach(Metadata::setTrusted);
-        }
+        doFilter(metadataList, parseContext);
     }
 
     /**
-     * Applies the filter in place. Reserved-key String writes are permitted here: filters run
-     * on already-parsed, trusted metadata.
+     * Applies the filter in place. A filter that needs to write a reserved Tika-native
+     * ({@code tk:}) key by name (rather than via its {@link org.apache.tika.metadata.Property})
+     * should call {@link Metadata#addTrusted} / {@link Metadata#setTrusted} explicitly at that
+     * write.
      *
      * @param metadataList the list to filter (must be mutable)
      * @param parseContext per-request context

@@ -207,6 +207,7 @@
             <inputExclude>src/test/resources/test-documents/file-list.txt</inputExclude>
             <inputExclude>src/test/resources/test-documents/ang20150420t182050_corr_v1e_img.hdr</inputExclude>
             <inputExclude>src/test/resources/test-documents/*.pdf</inputExclude>
+            <inputExclude>src/main/resources/org/apache/tika/metadata/metadata-migration-3x-4x.json</inputExclude>
           </inputExcludes>
         </configuration>
       </plugin>

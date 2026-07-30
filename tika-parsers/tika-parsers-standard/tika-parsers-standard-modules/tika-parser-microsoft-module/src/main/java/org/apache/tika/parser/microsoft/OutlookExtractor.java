@@ -133,11 +133,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     static {
         for (MAPIProperty property : LITERAL_TIME_MAPI_PROPERTIES) {
-            String name = property.mapiProperty.toLowerCase(Locale.ROOT);
-            name = name.substring(3);
-            name = name.replace('_', '-');
-            name = MAPI.PREFIX_MAPI_META + name;
-            Property tikaProp = Property.internalDate(name);
+            Property tikaProp;
+            if (property == MAPIProperty.CLIENT_SUBMIT_TIME) {
+                tikaProp = MAPI.CLIENT_SUBMIT_TIME;   // curated key, same as the PST parser
+            } else {
+                String name = property.mapiProperty.toLowerCase(Locale.ROOT);
+                name = name.substring(3);
+                name = name.replace('_', '-');
+                name = MAPI.PREFIX_MAPI_META + name;
+                tikaProp = Property.internalDate(name);
+            }
             LITERAL_TIME_PROPERTIES.put(property, tikaProp);
         }
         loadMessageClasses();
