@@ -216,7 +216,7 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("<EBB9951D34EA4B41B70AB946CF3FB6EC1A297D98@ftm02.FT.FTG.COM>",
                 metadata.get(MAPI.INTERNET_MESSAGE_ID));
         assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
-        assertTrue(metadata.get("mapi:client-submit-time").startsWith("2011-03-29"));
+        assertTrue(metadata.get(MAPI.CLIENT_SUBMIT_TIME).startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:message-delivery-time").startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:last-modification-time").startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:creation-time").startsWith("2011-03-29"));

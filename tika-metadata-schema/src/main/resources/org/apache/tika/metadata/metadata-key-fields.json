@@ -186,6 +186,7 @@
   {"class":"org.apache.tika.metadata.MAPI","field":"ATTACH_LONG_PATH_NAME","key":"mapi:attach:long-path-name"},
   {"class":"org.apache.tika.metadata.MAPI","field":"ATTACH_MIME","key":"mapi:attach:mime"},
   {"class":"org.apache.tika.metadata.MAPI","field":"BODY_TYPES_PROCESSED","key":"mapi:body-types-processed"},
+  {"class":"org.apache.tika.metadata.MAPI","field":"CLIENT_SUBMIT_TIME","key":"mapi:msg-client-submit-time"},
   {"class":"org.apache.tika.metadata.MAPI","field":"CONVERSATION_INDEX","key":"mapi:conversation-index"},
   {"class":"org.apache.tika.metadata.MAPI","field":"CONVERSATION_TOPIC","key":"mapi:conversation-topic"},
   {"class":"org.apache.tika.metadata.MAPI","field":"FROM_REPRESENTING_EMAIL","key":"mapi:from-representing-email"},

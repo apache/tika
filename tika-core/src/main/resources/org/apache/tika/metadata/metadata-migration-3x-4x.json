@@ -66,7 +66,7 @@
 {"v3":"meta:mapi-importance","v4":"mapi:importance"},
 {"v3":"meta:mapi-is-flagged","v4":"mapi:is-flagged"},
 {"v3":"meta:mapi-message-class","v4":"mapi:message-class"},
-{"v3":"meta:mapi-msg-client-submit-time","v4":"mapi:msg-submission-accepted-at-time"},
+{"v3":"meta:mapi-msg-client-submit-time","v4":"mapi:msg-client-submit-time"},
 {"v3":"meta:mapi-recipients-string","v4":"mapi:recipients-string"},
 {"v3":"meta:mapi-sent-by-server-type","v4":"mapi:sent-by-server-type"},
 {"v3":"msoffice:ocxName","v4":"msoffice:ocx-name"},

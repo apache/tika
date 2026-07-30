@@ -309,15 +309,9 @@ String value = metadata.get("mapi:some-property");
 
 [CAUTION]
 ====
-Two 3.x keys do not migrate one-to-one, and the opt-in `LegacyKeyMigrationFilter` cannot restore
-them cleanly:
-
-* `pst:folderPath` is *dropped*, not renamed. In 4.x the Outlook PST parser folds the folder path
-into `tk:internal-path` (`<folder>/<item-name>`, a superset), so there is no folder-only value to
-map back to.
-* `mapi:msg-client-submit-time` is *consolidated* into `mapi:msg-submission-accepted-at-time`: 4.x
-removed the distinct client-submit key and repoints PST's client-submit value onto
-submission-accepted. The value carries over, but these are distinct MAPI properties.
+`pst:folderPath` does not migrate one-to-one, and the opt-in `LegacyKeyMigrationFilter` cannot
+restore it: it is *dropped*, not renamed. In 4.x the Outlook PST parser folds the folder path into
+`tk:internal-path` (`<folder>/<item-name>`, a superset), so there is no folder-only value to map back to.
 ====
 
 === Resource Name

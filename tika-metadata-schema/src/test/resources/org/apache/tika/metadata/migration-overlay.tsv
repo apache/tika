@@ -24,11 +24,7 @@ meta:mapi-is-flagged	mapi:is-flagged
 meta:mapi-message-class	mapi:message-class
 meta:mapi-recipients-string	mapi:recipients-string
 meta:mapi-sent-by-server-type	mapi:sent-by-server-type
-# CONSOLIDATION not clean rename: 4.x removed the client-submit key and repoints PST's
-# getClientSubmitTime() into SUBMISSION_ACCEPTED_AT_TIME (distinct MAPI props -> mislabel).
-# --> IF patches/MAPI-client-submit-time.patch is applied, retarget this to  mapi:msg-client-submit-time
-#     (a CLEAN rename). Until then, the value follows to submission-accepted, so this maps there.
-meta:mapi-msg-client-submit-time	mapi:msg-submission-accepted-at-time
+meta:mapi-msg-client-submit-time	mapi:msg-client-submit-time
 # DROPPED (confirmed intentional): 4.x OutlookPSTParser sets TikaCoreProperties.INTERNAL_PATH
 # (tk:internal-path) = folderPath + "/" + item-name on each mail item -> the folder path became the
 # full item path, a SUPERSET. Not a 1:1 value, so the key-rename bridge can't reproduce the folder-only
