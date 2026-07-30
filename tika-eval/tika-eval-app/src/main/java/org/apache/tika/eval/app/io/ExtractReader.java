@@ -247,21 +247,16 @@ public class ExtractReader {
      * real diffs, not the rename. Harmless on 4.0 extracts: the legacy keys are simply absent.
      */
     private static void normalizeLegacyKeys(Metadata m) {
-        m.setTrusted(true);   // sanctioned trusted transformation: may write reserved tk: keys
-        try {
-            for (Map.Entry<String, String> e : LEGACY_KEY_MAP.entrySet()) {
-                remapLegacyKey(m, e.getKey(), e.getValue());
+        for (Map.Entry<String, String> e : LEGACY_KEY_MAP.entrySet()) {
+            remapLegacyKey(m, e.getKey(), e.getValue());
+        }
+        // digest keys: X-TIKA:digest:<alg> -> tk:digest:<alg> (algorithm unchanged; MD5 drives
+        // embedded-doc matching). names() is a snapshot, so remapping while iterating is safe.
+        for (String name : m.names()) {
+            if (name.startsWith(LEGACY_DIGEST_PREFIX)) {
+                remapLegacyKey(m, name, TikaCoreProperties.TIKA_META_PREFIX
+                        + name.substring(TikaCoreProperties.LEGACY_TIKA_META_PREFIX.length()));
             }
-            // digest keys: X-TIKA:digest:<alg> -> tk:digest:<alg> (algorithm unchanged; MD5 drives
-            // embedded-doc matching). names() is a snapshot, so remapping while iterating is safe.
-            for (String name : m.names()) {
-                if (name.startsWith(LEGACY_DIGEST_PREFIX)) {
-                    remapLegacyKey(m, name, TikaCoreProperties.TIKA_META_PREFIX
-                            + name.substring(TikaCoreProperties.LEGACY_TIKA_META_PREFIX.length()));
-                }
-            }
-        } finally {
-            m.setTrusted(false);
         }
     }
 
@@ -281,9 +276,9 @@ public class ExtractReader {
         } else {
             for (int i = 0; i < legacyVals.length; i++) {
                 if (i == 0) {
-                    m.set(modernKey, legacyVals[i]);
+                    m.setTrusted(modernKey, legacyVals[i]);
                 } else {
-                    m.add(modernKey, legacyVals[i]);
+                    m.addTrusted(modernKey, legacyVals[i]);
                 }
             }
         }

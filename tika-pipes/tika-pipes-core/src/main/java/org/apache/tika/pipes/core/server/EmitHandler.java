@@ -232,18 +232,12 @@ class EmitHandler {
 
     private void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
         Metadata target = metadataList.get(0);
-        boolean prev = target.isTrusted();
-        target.setTrusted(true);
-        try {
-            for (String n : userMetadata.names()) {
-                //overwrite whatever was there
-                target.set(n, null);
-                for (String val : userMetadata.getValues(n)) {
-                    target.add(n, val);
-                }
+        for (String n : userMetadata.names()) {
+            //overwrite whatever was there
+            target.setTrusted(n, null);
+            for (String val : userMetadata.getValues(n)) {
+                target.addTrusted(n, val);
             }
-        } finally {
-            target.setTrusted(prev);
         }
     }
 

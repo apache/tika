@@ -92,13 +92,7 @@ public final class ChunkSerializer {
         }
         existing.addAll(newChunks);
         // Chunks are Tika-native output; the default field (tk:chunks) is reserved, so write trusted.
-        boolean wasTrusted = metadata.isTrusted();
-        metadata.setTrusted(true);
-        try {
-            metadata.set(fieldName, toJson(existing));
-        } finally {
-            metadata.setTrusted(wasTrusted);
-        }
+        metadata.setTrusted(fieldName, toJson(existing));
     }
 
     /**

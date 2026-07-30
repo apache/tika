@@ -112,7 +112,8 @@ public class CaptureGroupMetadataFilter extends MetadataFilterBase implements In
         }
         Matcher m = regex.matcher(val);
         if (m.find()) {
-            metadata.set(targetField, m.group(1));
+            // target field name is operator-configured; may legitimately be a reserved key
+            metadata.setTrusted(targetField, m.group(1));
         }
     }
 

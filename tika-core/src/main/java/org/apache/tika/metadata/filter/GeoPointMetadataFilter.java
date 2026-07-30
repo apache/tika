@@ -88,6 +88,7 @@ public class GeoPointMetadataFilter extends MetadataFilterBase {
         if (StringUtils.isEmpty(lng)) {
             return;
         }
-        metadata.set(geoPointFieldName, lat + "," + lng);
+        // target field name is operator-configured; may legitimately be a reserved key
+        metadata.setTrusted(geoPointFieldName, lat + "," + lng);
     }
 }
