@@ -49,6 +49,9 @@ public interface MAPI {
 
     Property SUBMISSION_ACCEPTED_AT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-submission-accepted-at-time");
 
+    // PidTagClientSubmitTime -- distinct MAPI prop from the provider-side SUBMISSION_ACCEPTED_AT_TIME.
+    Property CLIENT_SUBMIT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-client-submit-time");
+
     Property SUBMISSION_ID = Property.internalText(PREFIX_MAPI_META + "msg-submission-id");
 
     Property INTERNET_MESSAGE_ID = Property.internalText(PREFIX_MAPI_META + "internet-message-id");

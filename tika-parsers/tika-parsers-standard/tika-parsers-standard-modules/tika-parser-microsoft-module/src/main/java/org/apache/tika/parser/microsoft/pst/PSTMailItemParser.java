@@ -139,7 +139,7 @@ public class PSTMailItemParser implements Parser {
         metadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
-        metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, pstMail.getClientSubmitTime());
+        metadata.set(MAPI.CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
         metadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
         metadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         metadata.set(PST.DESCRIPTOR_NODE_ID, valueOf(pstMail.getDescriptorNodeId()));
