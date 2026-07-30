@@ -126,6 +126,12 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
             //sound track: our handler additionally reads DRM markers and the
             //esds average bitrate from the sample description
             return new TikaMp4SoundHandler(metadata, context, tikaMetadata);
+        } else if (box.equals("hdlr") && payload != null && payload.length >= 12
+                && payload[8] == 'v' && payload[9] == 'i'
+                && payload[10] == 'd' && payload[11] == 'e') {
+            //video track: our handler additionally reads the btrt average
+            //bitrate from the sample description
+            return new TikaMp4VideoHandler(metadata, context, tikaMetadata);
         }
 
         return super.processBox(box, payload, size, context);

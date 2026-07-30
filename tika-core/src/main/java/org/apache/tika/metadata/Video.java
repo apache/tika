@@ -30,4 +30,11 @@ public interface Video {
      * measured rate.
      */
     Property FRAME_RATE = Property.internalReal("video:frame-rate");
+
+    /**
+     * Average bitrate in bits per second, from the video track's BitRateBox
+     * ('btrt'). A per-stream value: in a file with several video tracks it
+     * reflects the last one.
+     */
+    Property BITRATE = Property.internalInteger("video:bitrate");
 }
