@@ -28,6 +28,8 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
@@ -39,6 +41,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
+import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -291,7 +294,49 @@ public class Mp3Parser implements Parser {
             xhtml.endElement("p");
         }
 
+        // Any embedded pictures, such as cover art, become
+        //  embedded documents of the audio file
+        extractPictures(audioAndTags.tags, xhtml, context);
+
         xhtml.endDocument();
+    }
+
+    /**
+     * Sends the embedded pictures, such as cover art, from the ID3v2 tags
+     * to the embedded document extractor. The pictures only become embedded
+     * documents, no metadata is recorded on the audio document itself.
+     */
+    private static void extractPictures(ID3Tags[] tags, XHTMLContentHandler xhtml,
+                                        ParseContext context)
+            throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor = null;
+        for (ID3Tags tag : tags) {
+            for (ID3Picture picture : tag.getPictures()) {
+                if (extractor == null) {
+                    extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                }
+                Metadata pictureMetadata = Metadata.newInstance(context);
+                pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                if (picture.getMimeType() != null) {
+                    pictureMetadata.set(Metadata.CONTENT_TYPE, picture.getMimeType());
+                }
+                if (picture.getDescription() != null && !picture.getDescription().isEmpty()) {
+                    pictureMetadata.set(TikaCoreProperties.TITLE, picture.getDescription());
+                }
+                if (picture.getPictureType() >= 0 &&
+                        picture.getPictureType() < ID3Tags.PICTURE_TYPES.length) {
+                    pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                            ID3Tags.PICTURE_TYPES[picture.getPictureType()]);
+                }
+                if (extractor.shouldParseEmbedded(pictureMetadata)) {
+                    try (TikaInputStream pictureStream = TikaInputStream.get(picture.getData())) {
+                        extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context,
+                                true);
+                    }
+                }
+            }
+        }
     }
 
     /**

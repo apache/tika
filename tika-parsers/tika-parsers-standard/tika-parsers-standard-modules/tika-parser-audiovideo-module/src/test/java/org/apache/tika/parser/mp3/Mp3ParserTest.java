@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -128,6 +129,25 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Mono", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("MP3", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         checkDuration(metadata, 2);
+    }
+
+    /**
+     * Test that cover art in an ID3v2 APIC frame becomes an embedded
+     * document, with no extra metadata on the audio document itself
+     */
+    @Test
+    public void testMp3ParsingID3v2CoverArt() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMP3_coverArt.mp3");
+
+        assertEquals(2, metadataList.size());
+        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        Metadata pictureMetadata = metadataList.get(1);
+        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
     }
 
     /**

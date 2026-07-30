@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mp3;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -164,6 +165,36 @@ public interface ID3Tags {
             /* sentinel */ ""};
 
     /**
+     * List of predefined picture types for embedded pictures, indexed
+     * by the type byte of the ID3v2 APIC / PIC frames. The FLAC picture
+     * block, as also embedded in Vorbis comments, reuses the same list.
+     * <p>
+     * See <a href="https://id3.org/id3v2.4.0-frames">http://id3.org/id3v2.4.0-frames</a>
+     */
+    String[] PICTURE_TYPES = new String[]{
+            /*  0 */ "Other",
+            /*  1 */ "32x32 pixels 'file icon' (PNG only)",
+            /*  2 */ "Other file icon",
+            /*  3 */ "Cover (front)",
+            /*  4 */ "Cover (back)",
+            /*  5 */ "Leaflet page",
+            /*  6 */ "Media (e.g. label side of CD)",
+            /*  7 */ "Lead artist/lead performer/soloist",
+            /*  8 */ "Artist/performer",
+            /*  9 */ "Conductor",
+            /* 10 */ "Band/Orchestra",
+            /* 11 */ "Composer",
+            /* 12 */ "Lyricist/text writer",
+            /* 13 */ "Recording Location",
+            /* 14 */ "During recording",
+            /* 15 */ "During performance",
+            /* 16 */ "Movie/video screen capture",
+            /* 17 */ "A bright coloured fish",
+            /* 18 */ "Illustration",
+            /* 19 */ "Band/artist logotype",
+            /* 20 */ "Publisher/Studio logotype"};
+
+    /**
      * Does the file contain this kind of tags?
      */
     boolean getTagsPresent();
@@ -197,6 +228,15 @@ public interface ID3Tags {
      * one with any language/description pair.
      */
     List<ID3Comment> getComments();
+
+    /**
+     * Retrieves the embedded pictures (e.g. cover art), if any.
+     * Only ID3v2 tags can carry pictures, so this defaults to
+     * an empty list.
+     */
+    default List<ID3Picture> getPictures() {
+        return Collections.emptyList();
+    }
 
     String getGenre();
 
@@ -256,6 +296,52 @@ public interface ID3Tags {
          */
         public String getText() {
             return text;
+        }
+    }
+
+    /**
+     * Represents an embedded picture in ID3 v2, such as cover art,
+     * as carried by the APIC (v2.3/v2.4) and PIC (v2.2) frames
+     */
+    class ID3Picture {
+        private final String mimeType;
+        private final String description;
+        private final int pictureType;
+        private final byte[] data;
+
+        public ID3Picture(String mimeType, String description, int pictureType, byte[] data) {
+            this.mimeType = mimeType;
+            this.description = description;
+            this.pictureType = pictureType;
+            this.data = data;
+        }
+
+        /**
+         * Gets the declared mime type, if present
+         */
+        public String getMimeType() {
+            return mimeType;
+        }
+
+        /**
+         * Gets the description, if present
+         */
+        public String getDescription() {
+            return description;
+        }
+
+        /**
+         * Gets the picture type byte, which indexes {@link #PICTURE_TYPES}
+         */
+        public int getPictureType() {
+            return pictureType;
+        }
+
+        /**
+         * Gets the raw picture data
+         */
+        public byte[] getData() {
+            return data;
         }
     }
 }

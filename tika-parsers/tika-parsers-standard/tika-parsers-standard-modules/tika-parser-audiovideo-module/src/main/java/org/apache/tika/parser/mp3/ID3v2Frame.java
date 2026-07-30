@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
+import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 
 /**
  * A frame of ID3v2 data, which is then passed to a handler to
@@ -352,6 +353,137 @@ public class ID3v2Frame implements MP3Frame {
             throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
                     e);
         }
+    }
+
+    /**
+     * Parses the picture parts from an ID3v2.3/v2.4 APIC frame, or null
+     * if the frame is too short or malformed to hold a picture.
+     */
+    protected static ID3Picture getPicture(byte[] data, int offset, int length) {
+        // encoding flag + empty mime terminator + picture type
+        if (length < 3) {
+            return null;
+        }
+
+        // Pictures must have an encoding
+        int encodingFlag = data[offset];
+        if (encodingFlag < 0 || encodingFlag >= encodings.length) {
+            // Invalid picture
+            return null;
+        }
+        TextEncoding encoding = encodings[encodingFlag];
+
+        int end = offset + length;
+
+        // First is the mime type, always ISO-8859-1 and null terminated
+        int mimeStart = offset + 1;
+        int mimeEnd = -1;
+        for (int i = mimeStart; i < end; i++) {
+            if (data[i] == 0) {
+                mimeEnd = i;
+                break;
+            }
+        }
+        if (mimeEnd == -1 || mimeEnd + 1 >= end) {
+            return null;
+        }
+        String mimeType = getString(data, mimeStart, mimeEnd - mimeStart);
+        if (mimeType.isEmpty()) {
+            // Leave the type for auto-detection
+            mimeType = null;
+        }
+
+        // Then one byte of picture type
+        int pictureType = data[mimeEnd + 1] & 0xFF;
+
+        // Then the description and the picture data
+        return getPictureWithDescription(data, mimeEnd + 2, end, encoding, mimeType, pictureType);
+    }
+
+    /**
+     * Parses the picture parts from an ID3v2.2 PIC frame, which declares
+     * a three letter image format instead of a mime type. Linked pictures
+     * (format "-->") are skipped, they hold a URL rather than image data.
+     */
+    protected static ID3Picture getV22Picture(byte[] data, int offset, int length) {
+        // encoding flag + 3 byte image format + picture type
+        if (length < 5) {
+            return null;
+        }
+
+        // Pictures must have an encoding
+        int encodingFlag = data[offset];
+        if (encodingFlag < 0 || encodingFlag >= encodings.length) {
+            // Invalid picture
+            return null;
+        }
+        TextEncoding encoding = encodings[encodingFlag];
+
+        String format = getString(data, offset + 1, 3);
+        String mimeType;
+        if ("PNG".equals(format)) {
+            mimeType = "image/png";
+        } else if ("JPG".equals(format)) {
+            mimeType = "image/jpeg";
+        } else if ("-->".equals(format)) {
+            // A link to a picture, not an embedded one
+            return null;
+        } else {
+            // Leave the type for auto-detection
+            mimeType = null;
+        }
+
+        // Then one byte of picture type
+        int pictureType = data[offset + 4] & 0xFF;
+
+        // Then the description and the picture data
+        return getPictureWithDescription(data, offset + 5, offset + length, encoding, mimeType,
+                pictureType);
+    }
+
+    /**
+     * Reads a picture frame's description, terminated per the text encoding,
+     * and the picture data following it. Returns null when the terminator or
+     * the picture data is missing.
+     */
+    private static ID3Picture getPictureWithDescription(byte[] data, int descStart, int end,
+                                                        TextEncoding encoding, String mimeType,
+                                                        int pictureType) {
+        int dataStart = -1;
+        String description = null;
+        try {
+            if (encoding.doubleByte) {
+                // a double byte terminator needs both bytes present, and sits
+                // on a two byte boundary relative to the description start
+                for (int i = descStart; i + 1 < end; i += 2) {
+                    if (data[i] == 0 && data[i + 1] == 0) {
+                        description = decodeText(data, descStart, i - descStart, encoding);
+                        dataStart = i + 2;
+                        break;
+                    }
+                }
+            } else {
+                for (int i = descStart; i < end; i++) {
+                    if (data[i] == 0) {
+                        description = decodeText(data, descStart, i - descStart, encoding);
+                        dataStart = i + 1;
+                        break;
+                    }
+                }
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
+                    e);
+        }
+
+        // Without a terminated description there is no picture data
+        if (dataStart == -1 || dataStart >= end) {
+            return null;
+        }
+
+        byte[] picture = new byte[end - dataStart];
+        System.arraycopy(data, dataStart, picture, 0, picture.length);
+        return new ID3Picture(mimeType, description, pictureType, picture);
     }
 
     /**
