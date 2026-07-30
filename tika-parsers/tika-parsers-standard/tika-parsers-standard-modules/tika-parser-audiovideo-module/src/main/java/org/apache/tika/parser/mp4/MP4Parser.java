@@ -48,6 +48,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.Video;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -157,6 +158,12 @@ public class MP4Parser implements Parser {
         if (mp4Directory.containsTag(Mp4VideoDirectory.TAG_COMPRESSOR_NAME)) {
             String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
             metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
+        }
+        Float frameRate = mp4Directory.getFloatObject(Mp4VideoDirectory.TAG_FRAME_RATE);
+        if (frameRate != null) {
+            // set as the float's own string: set(Property, double) would widen it
+            // and print the double-rounding artefact (e.g. 29.969999...).
+            metadata.set(Video.FRAME_RATE, frameRate.toString());
         }
     }
 
