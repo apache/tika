@@ -70,7 +70,7 @@ public class CustomClassSerializationTest {
                     String[] values = metadata.getValues(name);
                     metadata.remove(name);
                     for (String value : values) {
-                        metadata.add(name, prefix + value.toUpperCase(Locale.ROOT));
+                        metadata.addTrusted(name, prefix + value.toUpperCase(Locale.ROOT));
                     }
                 }
             }

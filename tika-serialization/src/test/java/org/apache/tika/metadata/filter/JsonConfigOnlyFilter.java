@@ -59,7 +59,7 @@ public class JsonConfigOnlyFilter extends MetadataFilterBase {
             String[] values = metadata.getValues(name);
             metadata.remove(name);
             for (String value : values) {
-                metadata.add(name, prefix + value);
+                metadata.addTrusted(name, prefix + value);
             }
         }
     }
