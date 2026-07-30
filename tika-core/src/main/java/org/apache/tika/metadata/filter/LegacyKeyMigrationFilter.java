@@ -137,7 +137,7 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
                 String[] values = metadata.getValues(name);
                 metadata.remove(name);
                 for (String v : values) {
-                    metadata.add(mapped, v);            // trusted context: reserved keys allowed
+                    metadata.addTrusted(mapped, v);     // targets may be reserved (tk:/X-TIKA:)
                 }
             }
             // unmapped -> pass through unchanged

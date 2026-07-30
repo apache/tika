@@ -34,7 +34,7 @@ public class LegacyKeyMigrationFilterTest {
     private static List<Metadata> apply(LegacyKeyMigrationFilter f, Metadata m) throws Exception {
         List<Metadata> list = new ArrayList<>();
         list.add(m);
-        f.filter(list);   // public entry sets the trusted bracket
+        f.filter(list);
         return list;
     }
 
@@ -59,11 +59,9 @@ public class LegacyKeyMigrationFilterTest {
         var f = new LegacyKeyMigrationFilter(
                 Map.of("X-TIKA:Parsed-By", "tk:parsed-by"), Direction.V4_TO_V3);
         Metadata m = new Metadata();
-        // Post-4.0 tk: is reserved too, so seed it the trusted way a parse would (a raw String set
-        // to a reserved key is dropped by the guard); the point of the test is the X-TIKA: target.
-        m.setTrusted(true);
-        m.set("tk:parsed-by", "org.apache.tika.parser.DefaultParser");
-        m.setTrusted(false);
+        // Post-4.0 tk: is reserved too, so seed it with a trusted write (a plain String set to a
+        // reserved key is dropped by the guard); the point of the test is the X-TIKA: target.
+        m.setTrusted("tk:parsed-by", "org.apache.tika.parser.DefaultParser");
         apply(f, m);
         assertEquals("org.apache.tika.parser.DefaultParser", m.get("X-TIKA:Parsed-By"));
         assertNull(m.get("tk:parsed-by"));
@@ -107,9 +105,7 @@ public class LegacyKeyMigrationFilterTest {
         // default ctor loads the committed metadata-migration-3x-4x.json; egress (V4_TO_V3).
         LegacyKeyMigrationFilter f = new LegacyKeyMigrationFilter();
         Metadata m = new Metadata();
-        m.setTrusted(true);
-        m.set("tk:content", "hello");              // reserved 4.x key -> X-TIKA:content
-        m.setTrusted(false);
+        m.setTrusted("tk:content", "hello");       // reserved 4.x key -> X-TIKA:content
         m.set("message:from-email", "a@b.com");    // non-reserved 4.x key -> Message:From-Email
         apply(f, m);
         assertEquals("hello", m.get("X-TIKA:content"));
@@ -122,11 +118,9 @@ public class LegacyKeyMigrationFilterTest {
         // digest keys have no declaring field, so not in the flat table -> handled by the prefix rule.
         var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
         Metadata m = new Metadata();
-        m.setTrusted(true);
-        m.set("tk:digest:SHA-256", "abc");
-        m.set("tk:digest:SHA-256:BASE32", "def");   // encoding suffix preserved
-        m.set("tk:digest:MD5", "ghi");              // MD5 unchanged between 3.x/4.x
-        m.setTrusted(false);
+        m.setTrusted("tk:digest:SHA-256", "abc");
+        m.setTrusted("tk:digest:SHA-256:BASE32", "def");   // encoding suffix preserved
+        m.setTrusted("tk:digest:MD5", "ghi");              // MD5 unchanged between 3.x/4.x
         apply(f, m);
         assertEquals("abc", m.get("X-TIKA:digest:SHA256"));
         assertEquals("def", m.get("X-TIKA:digest:SHA256:BASE32"));
@@ -138,9 +132,7 @@ public class LegacyKeyMigrationFilterTest {
     public void digestPrefixRuleIngest() throws Exception {
         var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
         Metadata m = new Metadata();
-        m.setTrusted(true);
-        m.set("X-TIKA:digest:SHA3_512", "z");
-        m.setTrusted(false);
+        m.setTrusted("X-TIKA:digest:SHA3_512", "z");
         apply(f, m);
         assertEquals("z", m.get("tk:digest:SHA3-512"));
         assertNull(m.get("X-TIKA:digest:SHA3_512"));
