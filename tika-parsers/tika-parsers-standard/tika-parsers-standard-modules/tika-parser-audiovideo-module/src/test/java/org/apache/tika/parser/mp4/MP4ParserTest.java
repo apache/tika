@@ -142,6 +142,23 @@ public class MP4ParserTest extends TikaTest {
         //TODO: why don't we check the output here?
     }
 
+    /**
+     * Test that cover art in the covr atom becomes an embedded document,
+     * with no extra metadata on the audio document itself
+     */
+    @Test
+    public void testMP4CoverArt() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMP4_coverArt.m4a");
+
+        assertEquals(2, metadataList.size());
+        assertEquals("audio/mp4", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        Metadata pictureMetadata = metadataList.get(1);
+        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
     @Test

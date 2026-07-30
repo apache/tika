@@ -34,6 +34,7 @@ import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp4.boxes.ISO6709;
 import org.apache.tika.parser.mp4.boxes.TikaUserDataBox;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -53,6 +54,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
 
     org.apache.tika.metadata.Metadata tikaMetadata;
     final XHTMLContentHandler xhtml;
+    private final ParseContext parseContext;
 
     //key names for the current 'meta' box, filled from its 'keys' box and consumed
     //by the following 'ilst' box (e.g. com.apple.quicktime.content.identifier)
@@ -63,10 +65,11 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     private long emptyEditDuration = -1;
 
     public TikaMp4BoxHandler(Metadata metadata, org.apache.tika.metadata.Metadata tikaMetadata,
-                             XHTMLContentHandler xhtml) {
+                             XHTMLContentHandler xhtml, ParseContext parseContext) {
         super(metadata);
         this.tikaMetadata = tikaMetadata;
         this.xhtml = xhtml;
+        this.parseContext = parseContext;
     }
 
     @Override
@@ -134,7 +137,8 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
             return this;
         }
         try {
-            new TikaUserDataBox(box, payload, tikaMetadata, xhtml).addMetadata(directory);
+            new TikaUserDataBox(box, payload, tikaMetadata, xhtml, parseContext)
+                    .addMetadata(directory);
         } catch (SAXException e) {
             throw new IOException(e);
         }
