@@ -45,6 +45,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -198,6 +199,7 @@ public class MP4Parser implements Parser {
 
         try {
             int numChannels = mp4SoundDirectory.getInt(Mp4SoundDirectory.TAG_NUMBER_OF_CHANNELS);
+            metadata.set(Audio.CHANNELS, numChannels);
 
             if (numChannels == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
