@@ -18,7 +18,7 @@ package org.apache.tika.pipes.api;
 
 import java.util.Locale;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * Controls how embedded documents are handled during parsing.
@@ -62,7 +62,7 @@ public enum ParseMode {
      * <p>
      * This mode parses like CONCATENATE (producing a single metadata object with
      * merged content from all embedded documents), but at emit time, emitters
-     * write only the value of {@code X-TIKA:content} as a raw string instead of
+     * write only the value of {@code tk:content} as a raw string instead of
      * serializing the full metadata list as JSON.
      * <p>
      * This is useful when you want plain text, markdown, or HTML output files

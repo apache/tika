@@ -36,8 +36,8 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.DetectHelper;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.serialization;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +72,7 @@ public class JsonMetadataTest {
         String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\"," +
                 "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\"," +
                 "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\"," +
-                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
+                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"tk:content\" : \"this is the content\"[NEWLINE]}";
         assertEquals(expected, writer
                 .toString()
                 .replaceAll("[\r\n]+", "[NEWLINE]"));
@@ -128,6 +129,27 @@ public class JsonMetadataTest {
         StringWriter writer = new StringWriter();
         JsonMetadata.toJson(m, writer);
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
+        assertEquals(m, deserialized);
+    }
+
+    @Test
+    public void testInternalKeysRoundTrip() throws Exception {
+        //reserved keys must survive serialize->deserialize (reconstructed via Property).
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.TIKA_CONTENT, "the content");
+        m.add(TikaCoreProperties.TIKA_PARSED_BY, "org.apache.tika.parser.DefaultParser");
+        m.add(TikaCoreProperties.TIKA_PARSED_BY, "org.apache.tika.parser.pdf.PDFParser");
+        m.add("k1", "v1");
+
+        StringWriter writer = new StringWriter();
+        JsonMetadata.toJson(m, writer);
+        Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
+
+        assertEquals("the content", deserialized.get(TikaCoreProperties.TIKA_CONTENT));
+        assertArrayEquals(
+                new String[] {"org.apache.tika.parser.DefaultParser",
+                        "org.apache.tika.parser.pdf.PDFParser"},
+                deserialized.getValues(TikaCoreProperties.TIKA_PARSED_BY));
         assertEquals(m, deserialized);
     }
 }

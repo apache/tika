@@ -70,10 +70,10 @@ public class TikaGrpcServer {
     @Parameter(names = {"--private-key-password"}, description = "Private key password, if needed")
     private String privateKeyPassword;
 
-    @Parameter(names = {"--trust-cert-collection"}, description = "The trust certificate collection (root certs). Example: ca.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
+    @Parameter(names = {"--trust-cert-collection"}, description = "The trust certificate collection (root certs). Required, and must be a readable file, when --client-auth-required is set. Example: ca.pem See: https://github.com/grpc/grpc-java/tree/b3ffb5078df361d7460786e134db7b5c00939246/examples/example-tls")
     private File trustCertCollection;
 
-    @Parameter(names = {"--client-auth-required"}, description = "Is Mutual TLS required?")
+    @Parameter(names = {"--client-auth-required"}, description = "Is Mutual TLS required? Implies --secure.")
     private boolean clientAuthRequired;
 
     @Parameter(names = {"-h", "-H", "--help"}, description = "Display help menu")
@@ -82,14 +82,22 @@ public class TikaGrpcServer {
     public void start() throws Exception {
         HealthStatusManager healthStatusManager = new HealthStatusManager();
         ServerCredentials creds;
+        if (clientAuthRequired && !secure) {
+            LOGGER.info("--client-auth-required implies --secure; enabling TLS.");
+            secure = true;
+        }
         if (secure) {
             TlsServerCredentials.Builder channelCredBuilder = TlsServerCredentials.newBuilder();
             channelCredBuilder.keyManager(certChain, privateKey, privateKeyPassword);
-            if (trustCertCollection != null && trustCertCollection.exists()) {
-                channelCredBuilder.trustManager(trustCertCollection);
-                if (clientAuthRequired) {
-                    channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+            if (clientAuthRequired) {
+                if (trustCertCollection == null || !trustCertCollection.isFile() || !trustCertCollection.canRead()) {
+                    throw new IllegalArgumentException("--client-auth-required is set but --trust-cert-collection is " +
+                            "missing, not a file, or unreadable; refusing to start");
                 }
+                channelCredBuilder.trustManager(trustCertCollection);
+                channelCredBuilder.clientAuth(TlsServerCredentials.ClientAuth.REQUIRE);
+            } else if (trustCertCollection != null && trustCertCollection.exists()) {
+                channelCredBuilder.trustManager(trustCertCollection);
             }
             creds = channelCredBuilder.build();
         } else {

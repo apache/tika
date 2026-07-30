@@ -89,5 +89,16 @@ EXPOSE 9998
 # tika-server auto-discovers pf4j plugins from /opt/tika-server/plugins/.
 ENTRYPOINT [ "/bin/sh", "-c", "exec java -cp \"/opt/tika-server/*:/opt/tika-server/lib/*:/tika-extras/*\" org.apache.tika.server.core.TikaServerCli -h 0.0.0.0 $0 $@"]
 
-LABEL maintainer="Apache Tika Developers dev@tika.apache.org"
-
+ARG REVISION
+ARG CREATED
+LABEL maintainer="Apache Tika Developers dev@tika.apache.org" \
+      org.opencontainers.image.title="Apache Tika Server (full)" \
+      org.opencontainers.image.description="Apache Tika content detection and analysis server with OCR, fonts, and GDAL support" \
+      org.opencontainers.image.url="https://hub.docker.com/r/apache/tika" \
+      org.opencontainers.image.source="https://github.com/apache/tika" \
+      org.opencontainers.image.documentation="https://tika.apache.org/" \
+      org.opencontainers.image.vendor="Apache Software Foundation" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${TIKA_VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"

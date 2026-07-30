@@ -19,7 +19,7 @@ package org.apache.tika.pipes.core.extractor;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.metadata.Metadata;

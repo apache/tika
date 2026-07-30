@@ -36,9 +36,9 @@ import org.apache.commons.csv.CSVRecord;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
@@ -85,14 +85,14 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
      * If the file is detected as a csv/tsv, this is the number of columns in the first row.
      */
     public static final Property NUM_COLUMNS = Property.externalInteger(
-            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_columns");
+            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num-columns");
 
     /**
      * If the file is detected as a csv/tsv, this is the number of rows if the file
      * is successfully read (e.g. no encapsulation exceptions, etc).
      */
     public static final Property NUM_ROWS = Property.externalInteger(
-            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num_rows");
+            CSV_PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "num-rows");
 
     private static final String TD = "td";
     private static final String TR = "tr";

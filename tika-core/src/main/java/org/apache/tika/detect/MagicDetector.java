@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -41,6 +41,9 @@ import org.apache.tika.parser.ParseContext;
  * Because this works on bytes, not characters, by default any string
  * matching is done as ISO_8859_1. To use an explicit different
  * encoding, supply a type other than "string" / "stringignorecase"
+ * <p>
+ * Instances of this class are immutable and safe for use by multiple
+ * concurrent threads.
  *
  * @since Apache Tika 0.3
  */
@@ -94,6 +97,12 @@ public class MagicDetector implements Detector {
      * starts at this offset.
      */
     private final int offsetRangeEnd;
+    /**
+     * The compiled form of {@link #pattern} when {@link #isRegex} is true,
+     * <code>null</code> otherwise. Compiled once here rather than per match,
+     * as every input to it is fixed at construction time.
+     */
+    private final Pattern compiledPattern;
 
     /**
      * Creates a detector for input documents that have the exact given byte
@@ -140,6 +149,16 @@ public class MagicDetector implements Detector {
     /**
      * Creates a detector for input documents that meet the specified
      * magic match.
+     * <p>
+     * When <code>isRegex</code> is true the pattern is compiled here rather
+     * than on each match, so a malformed pattern is reported by this
+     * constructor instead of by the first call to
+     * {@link #detect(TikaInputStream, Metadata, ParseContext)} or
+     * {@link #matches(byte[])}.
+     *
+     * @throws java.util.regex.PatternSyntaxException if <code>isRegex</code>
+     *         is true and <code>pattern</code> is not a valid regular
+     *         expression
      */
     public MagicDetector(MediaType type, byte[] pattern, byte[] mask, boolean isRegex,
                          boolean isStringIgnoreCase, int offsetRangeBegin, int offsetRangeEnd) {
@@ -181,6 +200,13 @@ public class MagicDetector implements Detector {
             } else {
                 this.pattern[i] = 0;
             }
+        }
+
+        if (this.isRegex) {
+            int flags = this.isStringIgnoreCase ? Pattern.CASE_INSENSITIVE : 0;
+            this.compiledPattern = Pattern.compile(new String(this.pattern, UTF_8), flags);
+        } else {
+            this.compiledPattern = null;
         }
 
         this.offsetRangeBegin = offsetRangeBegin;
@@ -444,20 +470,13 @@ public class MagicDetector implements Detector {
      */
     private boolean matchesBuffer(byte[] buffer, int startOffset, int endOffset) {
         if (this.isRegex) {
-            int flags = 0;
-            if (this.isStringIgnoreCase) {
-                flags = Pattern.CASE_INSENSITIVE;
-            }
-
-            Pattern p = Pattern.compile(new String(this.pattern, UTF_8), flags);
-
             int bufferLen = Math.min(buffer.length - startOffset, length + (endOffset - startOffset));
             if (bufferLen <= 0) {
                 return false;
             }
             ByteBuffer bb = ByteBuffer.wrap(buffer, startOffset, bufferLen);
             CharBuffer result = ISO_8859_1.decode(bb);
-            Matcher m = p.matcher(result);
+            Matcher m = compiledPattern.matcher(result);
 
             // Loop until we've covered the entire offset range
             for (int i = 0; i <= endOffset - startOffset; i++) {

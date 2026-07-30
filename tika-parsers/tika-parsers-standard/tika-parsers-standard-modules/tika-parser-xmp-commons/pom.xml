@@ -31,14 +31,12 @@
 
 
   <dependencies>
+    <!-- pdfbox-core for org.apache.pdfbox.util.DateConverter (XMP date normalization).
+         Already on the standard-bundle classpath via the PDF module; net-new only to
+         standalone image/IDML consumers. See the XMP-unification plan. -->
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
-      <artifactId>jempbox</artifactId>
-      <version>${jempbox.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.pdfbox</groupId>
-      <artifactId>xmpbox</artifactId>
+      <artifactId>pdfbox</artifactId>
       <version>${pdfbox.version}</version>
     </dependency>
   </dependencies>

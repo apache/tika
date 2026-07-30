@@ -32,9 +32,9 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -44,6 +44,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
+/**
+ * Locations here are inferred from the text (NER + gazetteer), so they are stored under
+ * {@code Geographic_*} keys rather than the standard {@code Geographic} coordinate properties, which
+ * denote coordinates the file asserts about itself.
+ */
 @TikaComponent
 public class GeoParser implements Parser {
     private static final long serialVersionUID = -2241391757440215491L;

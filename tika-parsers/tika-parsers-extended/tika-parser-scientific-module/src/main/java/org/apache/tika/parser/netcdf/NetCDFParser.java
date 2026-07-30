@@ -30,11 +30,12 @@ import ucar.nc2.Dimension;
 import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -55,6 +56,9 @@ public class NetCDFParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = -5940938274907708665L;
+
+    public static final PassthroughPrefix NETCDF =
+            PassthroughPrefix.file("netcdf:", "NetCDF global attribute names");
 
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-netcdf"));
@@ -81,15 +85,14 @@ public class NetCDFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
-            metadata.set("File-Type-Description", ncFile.getFileTypeDescription());
+            metadata.set(NETCDF.key("File-Type-Description"), ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
-                Property property = resolveMetadataKey(attr.getFullName());
                 if (attr.getDataType().isString()) {
-                    metadata.add(property, attr.getStringValue());
+                    addGlobalAttribute(metadata, attr.getFullName(), attr.getStringValue());
                 } else if (attr.getDataType().isNumeric()) {
-                    int value = attr.getNumericValue().intValue();
-                    metadata.add(property, String.valueOf(value));
+                    addGlobalAttribute(metadata, attr.getFullName(),
+                            String.valueOf(attr.getNumericValue().intValue()));
                 }
             }
 
@@ -130,10 +133,20 @@ public class NetCDFParser implements Parser {
         }
     }
 
-    private Property resolveMetadataKey(String localName) {
-        if ("title".equals(localName)) {
-            return TikaCoreProperties.TITLE;
+    private static final Set<String> CF_GLOBAL_ATTRIBUTES = Set.of(
+            ClimateForcast.PROGRAM_ID, ClimateForcast.COMMAND_LINE, ClimateForcast.HISTORY,
+            ClimateForcast.TABLE_ID, ClimateForcast.INSTITUTION, ClimateForcast.SOURCE,
+            ClimateForcast.CONTACT, ClimateForcast.PROJECT_ID, ClimateForcast.CONVENTIONS,
+            ClimateForcast.REFERENCES, ClimateForcast.ACKNOWLEDGEMENT, ClimateForcast.REALIZATION,
+            ClimateForcast.EXPERIMENT_ID, ClimateForcast.COMMENT, ClimateForcast.MODEL_NAME_ENGLISH);
+
+    private static void addGlobalAttribute(Metadata metadata, String name, String value) {
+        if ("title".equals(name)) {
+            metadata.add(TikaCoreProperties.TITLE, value);
+        } else if (CF_GLOBAL_ATTRIBUTES.contains(name)) {
+            metadata.add(name, value);
+        } else {
+            metadata.add(NETCDF.key(name), value);
         }
-        return Property.internalText(localName);
     }
 }

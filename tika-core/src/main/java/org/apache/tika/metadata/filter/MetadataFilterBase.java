@@ -30,7 +30,8 @@ import org.apache.tika.parser.ParseContext;
 public abstract class MetadataFilterBase extends MetadataFilter {
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext)
+            throws TikaException {
         for (Metadata m : metadataList) {
             filter(m);
         }

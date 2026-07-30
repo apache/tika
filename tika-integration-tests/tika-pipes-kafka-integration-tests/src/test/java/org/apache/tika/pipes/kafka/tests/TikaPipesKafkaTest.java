@@ -62,8 +62,8 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.utils.SystemUtils;
 
 /**

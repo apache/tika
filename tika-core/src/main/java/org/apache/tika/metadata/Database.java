@@ -19,8 +19,8 @@ package org.apache.tika.metadata;
 public interface Database {
     String PREFIX = "database" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    Property TABLE_NAME = Property.externalTextBag(PREFIX + "table_name");
-    Property ROW_COUNT = Property.externalInteger(PREFIX + "row_count");
-    Property COLUMN_COUNT = Property.externalInteger(PREFIX + "column_count");
-    Property COLUMN_NAME = Property.externalTextBag(PREFIX + "column_name");
+    Property TABLE_NAME = Property.externalTextBag(PREFIX + "table-name");
+    Property ROW_COUNT = Property.externalInteger(PREFIX + "row-count");
+    Property COLUMN_COUNT = Property.externalInteger(PREFIX + "column-count");
+    Property COLUMN_NAME = Property.externalTextBag(PREFIX + "column-name");
 }

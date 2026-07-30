@@ -131,6 +131,7 @@ JSON uses the backslash as an escape character, so path options (e.g. `tesseract
 
 === Other Configuration
 
+* xref:configuration/detectors.adoc[Detectors] — Configuring content (MIME) detection, incl. the opt-in PKCS7/CMS detector
 * xref:configuration/digesters.adoc[Digesters] — Computing cryptographic hashes of documents
 * xref:configuration/encoding-detectors.adoc[Encoding Detectors] — Configuring charset/encoding detection
 

@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -149,7 +149,7 @@ public class TSDParser implements Parser {
         int count = 1;
 
         for (TSDMetas tsdm : tsdMetasList) {
-            metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE, TSD_MIME_TYPE);
+            metadata.set(TSD_LOOP_LABEL + count + " - " + Metadata.CONTENT_TYPE.getName(), TSD_MIME_TYPE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_DESCRIPTION_LABEL,
                     TSD_DESCRIPTION_VALUE);
             metadata.set(TSD_LOOP_LABEL + count + " - " + TSD_PARSED_LABEL,

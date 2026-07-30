@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.langdetect.charsoup;
-
 import java.nio.charset.Charset;
 import java.util.LinkedHashMap;
 import java.util.List;

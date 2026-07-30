@@ -30,7 +30,7 @@ import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -103,7 +103,7 @@ public class TrueTypeParser implements Parser {
                     metadata.set(AdobeFontMetricParser.MET_PS_NAME, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_COPYRIGHT) {
-                    metadata.set("Copyright", nr.getString());
+                    metadata.set(TikaCoreProperties.RIGHTS, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_TRADEMARK) {
                     metadata.set("Trademark", nr.getString());

@@ -33,13 +33,14 @@ import org.netpreserve.jwarc.WarcResponse;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.WARC;
@@ -63,6 +64,11 @@ public class WARCParser implements Parser {
 
     public static String WARC_PREFIX = "warc:";
     public static String WARC_HTTP_PREFIX = WARC_PREFIX + "http:";
+
+    public static final PassthroughPrefix WARC_HEADER =
+            PassthroughPrefix.file(WARC_PREFIX, "WARC record header names");
+    public static final PassthroughPrefix WARC_HTTP_HEADER =
+            PassthroughPrefix.file(WARC_HTTP_PREFIX, "WARC HTTP response header names");
 
     public static String WARC_HTTP_STATUS = WARC_HTTP_PREFIX + "status";
 
@@ -159,7 +165,7 @@ public class WARCParser implements Parser {
     private void processWarcMetadata(WarcResponse warcResponse, Metadata metadata) {
         for (Map.Entry<String, List<String>> e : warcResponse.headers().map().entrySet()) {
             for (String val : e.getValue()) {
-                metadata.add(WARC_PREFIX + e.getKey(), val);
+                metadata.add(WARC_HEADER.key(e.getKey()), val);
             }
         }
     }
@@ -171,7 +177,7 @@ public class WARCParser implements Parser {
         }
         for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
             for (String val : e.getValue()) {
-                metadata.add(WARC_HTTP_PREFIX + e.getKey(), val);
+                metadata.add(WARC_HTTP_HEADER.key(e.getKey()), val);
             }
         }
     }

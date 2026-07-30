@@ -16,14 +16,14 @@
  */
 package org.apache.tika.digest;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 @TikaComponent
 public class MockDigesterFactory implements DigesterFactory {
 
     @Override
     public Digester build() {
-        return new InputStreamDigester("SHA-256", "X-TIKA:digest:SHA-256", new MockEncoder());
+        return new InputStreamDigester("SHA-256", "tk:digest:SHA-256", new MockEncoder());
     }
 
     private static class MockEncoder implements Encoder {

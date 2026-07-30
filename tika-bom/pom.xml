@@ -257,6 +257,11 @@
 
       <dependency>
         <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parser-datauri-commons</artifactId>
+        <version>${revision}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-digest-commons</artifactId>
         <version>${revision}</version>
       </dependency>

@@ -21,9 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -74,7 +74,7 @@ public class RemoveByMimeMetadataFilter extends MetadataFilter {
     }
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         metadataList.removeIf(this::shouldRemove);
     }
 

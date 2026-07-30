@@ -45,6 +45,9 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.datauri.DataURIScheme;
+import org.apache.tika.parser.datauri.DataURISchemeParseException;
+import org.apache.tika.parser.datauri.DataURISchemeUtil;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -204,7 +207,7 @@ class HtmlHandler extends TextContentHandler {
             return;
         }
 
-        if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)) {
+        if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE.getName())) {
             //don't overwrite Metadata.CONTENT_TYPE!
             MediaType type = MediaType.parse(value);
             if (type != null) {

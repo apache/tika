@@ -130,6 +130,12 @@ jobs:
             echo "grpc<<EOF";    echo "$grpc";    echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Set build metadata
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "created=$(git show -s --format=%cI HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
@@ -150,6 +156,8 @@ jobs:
           push: true
           build-args: |
             TIKA_VERSION=${{ env.TAG }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: ${{ steps.tags.outputs.minimal }}
 
       - name: Build and push tika-server full
@@ -160,6 +168,8 @@ jobs:
           push: true
           build-args: |
             TIKA_VERSION=${{ env.TAG }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           tags: ${{ steps.tags.outputs.full }}
 
       # After a successful publish, push a `<tag>-<build_number>` git tag for
@@ -185,6 +195,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.source_ref || env.TAG }}
+
+      - name: Set build metadata
+        id: meta
+        run: |
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "created=$(git show -s --format=%cI HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
@@ -266,6 +282,8 @@ jobs:
           push: true
           build-args: |
             VERSION=${{ env.TAG }}
+            REVISION=${{ steps.meta.outputs.sha }}
+            CREATED=${{ steps.meta.outputs.created }}
           # apache/tika-grpc is new in 4.x with no prior `:latest` to protect, so
           # we track latest from the start (unlike apache/tika the server image,
           # whose :latest stays on 3.x until 4.0.0 GA).

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.language.translate;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 /**
  * Dummy translator that always declines to give any text. Useful as a

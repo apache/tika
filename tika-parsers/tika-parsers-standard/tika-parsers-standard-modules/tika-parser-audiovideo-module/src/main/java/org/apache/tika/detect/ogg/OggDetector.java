@@ -32,7 +32,7 @@ import org.gagravarr.ogg.OggStreamIdentifier.OggStreamType;
 import org.gagravarr.skeleton.SkeletonPacket;
 import org.gagravarr.skeleton.SkeletonPacketFactory;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;

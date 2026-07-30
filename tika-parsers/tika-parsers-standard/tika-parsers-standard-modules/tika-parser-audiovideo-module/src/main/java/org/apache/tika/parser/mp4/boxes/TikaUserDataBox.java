@@ -18,8 +18,6 @@ package org.apache.tika.parser.mp4.boxes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
@@ -29,6 +27,7 @@ import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
@@ -43,8 +42,6 @@ public class TikaUserDataBox {
     private static final String MDTA = "mdta";
     private static final String HDLR = "hdlr";
     private static final String MDIR = "mdir";//apple metadata itunes reader
-    private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)");
 
     @Nullable
     private String coordinateString;
@@ -161,14 +158,29 @@ public class TikaUserDataBox {
                         long numA = reader.getUInt32();
                         long numB = reader.getUInt32();
                         metadata.set(XMPDM.TRACK_NUMBER, (int)numA);
+                        //2 bytes track total, 2 bytes reserved
+                        int trackCount = (int) (numB >>> 16);
+                        if (trackCount > 0) {
+                            metadata.set(Audio.TRACK_COUNT, trackCount);
+                        }
                     } else {
                         //log
                         reader.skip(toRead);
                     }
                 } else if ("disk".equals(fieldName)) {
-                    int a = reader.getInt32();
-                    short b = reader.getInt16();
-                    metadata.set(XMPDM.DISC_NUMBER, a);
+                    //2 bytes reserved, 2 bytes disc, 2 bytes total; some encoders
+                    //pad to 8 bytes like trkn, so consume exactly toRead either way
+                    if (toRead >= 6) {
+                        int a = reader.getInt32();
+                        short b = reader.getInt16();
+                        metadata.set(XMPDM.DISC_NUMBER, a);
+                        if (b > 0) {
+                            metadata.set(Audio.DISC_COUNT, b);
+                        }
+                        reader.skip(toRead - 6);
+                    } else {
+                        reader.skip(toRead);
+                    }
                 } else {
                     String val = reader.getString(toRead, StandardCharsets.UTF_8);
                     try {
@@ -264,12 +276,14 @@ public class TikaUserDataBox {
 
     public void addMetadata(Mp4Directory directory) {
         if (this.coordinateString != null) {
-            Matcher matcher = COORDINATE_PATTERN.matcher(this.coordinateString);
-            if (matcher.find()) {
-                double latitude = Double.parseDouble(matcher.group(1));
-                double longitude = Double.parseDouble(matcher.group(2));
-                directory.setDouble(8193, latitude);
-                directory.setDouble(8194, longitude);
+            ISO6709.Location location = ISO6709.parse(this.coordinateString);
+            if (location != null) {
+                directory.setDouble(8193, location.latitude);
+                directory.setDouble(8194, location.longitude);
+                //Mp4Directory has no altitude tag, so set geo:alt directly
+                if (location.altitude != null) {
+                    metadata.set(TikaCoreProperties.ALTITUDE, location.altitude);
+                }
             }
         }
     }

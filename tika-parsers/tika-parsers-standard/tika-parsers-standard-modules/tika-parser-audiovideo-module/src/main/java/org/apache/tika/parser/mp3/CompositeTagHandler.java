@@ -76,6 +76,15 @@ public class CompositeTagHandler implements ID3Tags {
         return null;
     }
 
+    public String getCopyright() {
+        for (ID3Tags tag : tags) {
+            if (tag.getCopyright() != null) {
+                return tag.getCopyright();
+            }
+        }
+        return null;
+    }
+
     public String getYear() {
         for (ID3Tags tag : tags) {
             if (tag.getYear() != null) {

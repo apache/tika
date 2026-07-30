@@ -27,11 +27,12 @@ import java.util.stream.Stream;
 
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.FetchAndParseReply;
 import org.apache.tika.FetchAndParseRequest;
@@ -41,9 +42,10 @@ import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
-@Slf4j
 @DisabledOnOs(value = OS.WINDOWS, disabledReason = "exec:exec classpath exceeds Windows CreateProcess command-line length limit")
 class FileSystemFetcherTest extends ExternalTestBase {
+    private static final Logger LOG = LoggerFactory.getLogger(FileSystemFetcherTest.class);
+
     
     @Test
     void testFileSystemFetcher() throws Exception {
@@ -59,7 +61,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
         config.setBasePath(basePath);
         
         String configJson = OBJECT_MAPPER.writeValueAsString(config);
-        log.info("Creating fetcher with config (basePath={}): {}", basePath, configJson);
+        LOG.info("Creating fetcher with config (basePath={}): {}", basePath, configJson);
         
         SaveFetcherReply saveReply = blockingStub.saveFetcher(SaveFetcherRequest
                 .newBuilder()
@@ -68,7 +70,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
                 .setFetcherConfigJson(configJson)
                 .build());
         
-        log.info("Fetcher created: {}", saveReply.getFetcherId());
+        LOG.info("Fetcher created: {}", saveReply.getFetcherId());
 
         List<FetchAndParseReply> successes = Collections.synchronizedList(new ArrayList<>());
         List<FetchAndParseReply> errors = Collections.synchronizedList(new ArrayList<>());
@@ -78,7 +80,7 @@ class FileSystemFetcherTest extends ExternalTestBase {
                 requestStreamObserver = tikaStub.fetchAndParseBiDirectionalStreaming(new StreamObserver<>() {
             @Override
             public void onNext(FetchAndParseReply fetchAndParseReply) {
-                log.debug("Reply from fetch-and-parse - key={}, status={}", 
+                LOG.debug("Reply from fetch-and-parse - key={}, status={}", 
                     fetchAndParseReply.getFetchKey(), fetchAndParseReply.getStatus());
                 if ("FETCH_AND_PARSE_EXCEPTION".equals(fetchAndParseReply.getStatus())) {
                     errors.add(fetchAndParseReply);
@@ -89,14 +91,14 @@ class FileSystemFetcherTest extends ExternalTestBase {
 
             @Override
             public void onError(Throwable throwable) {
-                log.error("Received an error", throwable);
+                LOG.error("Received an error", throwable);
                 Assertions.fail(throwable);
                 countDownLatch.countDown();
             }
 
             @Override
             public void onCompleted() {
-                log.info("Finished streaming fetch and parse replies");
+                LOG.info("Finished streaming fetch and parse replies");
                 countDownLatch.countDown();
             }
         });
@@ -122,13 +124,13 @@ class FileSystemFetcherTest extends ExternalTestBase {
                         }
                     });
         }
-        log.info("Done submitting files to fetcher {}", fetcherId);
+        LOG.info("Done submitting files to fetcher {}", fetcherId);
 
         requestStreamObserver.onCompleted();
 
         try {
             if (!countDownLatch.await(3, TimeUnit.MINUTES)) {
-                log.error("Timed out waiting for parse to complete");
+                LOG.error("Timed out waiting for parse to complete");
                 Assertions.fail("Timed out waiting for parsing to complete");
             }
         } catch (InterruptedException e) {
@@ -140,14 +142,14 @@ class FileSystemFetcherTest extends ExternalTestBase {
             assertAllFilesFetched(TEST_FOLDER.toPath(), successes, errors);
         } else {
             int totalProcessed = successes.size() + errors.size();
-            log.info("Processed {} documents (limit was {})", totalProcessed, maxDocs);
+            LOG.info("Processed {} documents (limit was {})", totalProcessed, maxDocs);
             Assertions.assertTrue(totalProcessed <= maxDocs, 
                 "Should not process more than " + maxDocs + " documents");
             Assertions.assertTrue(totalProcessed > 0, 
                 "Should have processed at least one document");
         }
         
-        log.info("Test completed successfully - {} successes, {} errors", 
+        LOG.info("Test completed successfully - {} successes, {} errors", 
             successes.size(), errors.size());
         } finally {
             channel.shutdown();

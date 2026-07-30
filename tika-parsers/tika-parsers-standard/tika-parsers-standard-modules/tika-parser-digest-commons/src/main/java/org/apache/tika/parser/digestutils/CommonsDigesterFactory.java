@@ -19,7 +19,7 @@ package org.apache.tika.parser.digestutils;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.digest.DigestDef;
 import org.apache.tika.digest.Digester;
 import org.apache.tika.digest.DigesterFactory;

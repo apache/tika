@@ -29,9 +29,9 @@
   <name>Apache Tika Pipes Microsoft Graph</name>
 
   <properties>
-    <microsoft-graph.version>6.65.0</microsoft-graph.version>
+    <microsoft-graph.version>6.67.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.25.0</msal4j.version>
+    <msal4j.version>1.25.1</msal4j.version>
     <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
     to get messed up when finding your plugins. -->
@@ -124,7 +124,6 @@
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
-      <version>${kotlin-stdlib.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

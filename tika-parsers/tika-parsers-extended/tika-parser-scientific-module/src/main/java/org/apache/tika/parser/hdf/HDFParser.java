@@ -30,7 +30,7 @@ import ucar.nc2.Attribute;
 import ucar.nc2.Group;
 import ucar.nc2.NetcdfFile;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -105,7 +105,7 @@ public class HDFParser implements Parser {
         }
 
         // get file type
-        met.set("File-Type-Description", ncFile.getFileTypeDescription());
+        met.set("hdf:File-Type-Description", ncFile.getFileTypeDescription());
         // unravel its string attrs
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {

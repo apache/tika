@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -38,7 +39,7 @@ public class MIFParserTest extends TikaTest {
     public void testParserToText() throws Exception {
         Metadata metadata = new Metadata();
         String content = getText("testFramemakerMif.mif", parser, metadata);
-        assertEquals("1", metadata.get("PageCount"));
+        assertEquals("1", metadata.get(Office.PAGE_COUNT));
         assertEquals("application/x-mif", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("Lorem ipsum dolor sit amet, consectetur adipiscing elit", content);
     }
@@ -47,7 +48,7 @@ public class MIFParserTest extends TikaTest {
     public void testParserToXML() throws Exception {
         Metadata metadata = new Metadata();
         String xml = getXML("testFramemakerMif.mif", parser, metadata).xml;
-        assertEquals("1", metadata.get("PageCount"));
+        assertEquals("1", metadata.get(Office.PAGE_COUNT));
         assertContains("<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit", xml);
         assertContains("<meta name=\"Content-Type\" content=\"application/x-mif\" />", xml);
     }

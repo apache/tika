@@ -70,10 +70,10 @@ public class DigestConfigTest extends TikaTest {
 
         assertEquals(EXPECTED_MD2, m.get(P + "MD2"), "MD2 digest should match");
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
-        assertEquals(EXPECTED_SHA1, m.get(P + "SHA1"), "SHA1 digest should match");
-        assertEquals(EXPECTED_SHA256, m.get(P + "SHA256"), "SHA256 digest should match");
-        assertEquals(EXPECTED_SHA384, m.get(P + "SHA384"), "SHA384 digest should match");
-        assertEquals(EXPECTED_SHA512, m.get(P + "SHA512"), "SHA512 digest should match");
+        assertEquals(EXPECTED_SHA1, m.get(P + "SHA-1"), "SHA1 digest should match");
+        assertEquals(EXPECTED_SHA256, m.get(P + "SHA-256"), "SHA256 digest should match");
+        assertEquals(EXPECTED_SHA384, m.get(P + "SHA-384"), "SHA384 digest should match");
+        assertEquals(EXPECTED_SHA512, m.get(P + "SHA-512"), "SHA512 digest should match");
     }
 
     @Test
@@ -85,7 +85,7 @@ public class DigestConfigTest extends TikaTest {
         getXML("test_recursive_embedded.docx", p, m, context);
 
         // SHA256 with BASE32 encoding - just verify it exists with non-default key
-        assertNotNull(m.get(P + "SHA256:BASE32"),
+        assertNotNull(m.get(P + "SHA-256:BASE32"),
                 "SHA256:BASE32 digest should be present");
         // MD5 with default HEX encoding
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
@@ -134,10 +134,10 @@ public class DigestConfigTest extends TikaTest {
 
         assertEquals(EXPECTED_MD2, m.get(P + "MD2"), "MD2 digest should match");
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
-        assertEquals(EXPECTED_SHA1, m.get(P + "SHA1"), "SHA1 digest should match");
-        assertEquals(EXPECTED_SHA256, m.get(P + "SHA256"), "SHA256 digest should match");
-        assertEquals(EXPECTED_SHA384, m.get(P + "SHA384"), "SHA384 digest should match");
-        assertEquals(EXPECTED_SHA512, m.get(P + "SHA512"), "SHA512 digest should match");
+        assertEquals(EXPECTED_SHA1, m.get(P + "SHA-1"), "SHA1 digest should match");
+        assertEquals(EXPECTED_SHA256, m.get(P + "SHA-256"), "SHA256 digest should match");
+        assertEquals(EXPECTED_SHA384, m.get(P + "SHA-384"), "SHA384 digest should match");
+        assertEquals(EXPECTED_SHA512, m.get(P + "SHA-512"), "SHA512 digest should match");
     }
 
     @Test
@@ -149,10 +149,10 @@ public class DigestConfigTest extends TikaTest {
         getXML("test_recursive_embedded.docx", p, m, context);
 
         assertEquals(EXPECTED_MD5, m.get(P + "MD5"), "MD5 digest should match");
-        assertEquals(EXPECTED_SHA256, m.get(P + "SHA256"), "SHA256 digest should match");
-        assertEquals(EXPECTED_SHA384, m.get(P + "SHA384"), "SHA384 digest should match");
-        assertEquals(EXPECTED_SHA512, m.get(P + "SHA512"), "SHA512 digest should match");
-        assertEquals(EXPECTED_SHA3_512, m.get(P + "SHA3_512"), "SHA3_512 digest should match");
+        assertEquals(EXPECTED_SHA256, m.get(P + "SHA-256"), "SHA256 digest should match");
+        assertEquals(EXPECTED_SHA384, m.get(P + "SHA-384"), "SHA384 digest should match");
+        assertEquals(EXPECTED_SHA512, m.get(P + "SHA-512"), "SHA512 digest should match");
+        assertEquals(EXPECTED_SHA3_512, m.get(P + "SHA3-512"), "SHA3_512 digest should match");
 
         // MD2 was not configured
         assertNull(m.get(P + "MD2"), "MD2 should not be present");
@@ -167,7 +167,7 @@ public class DigestConfigTest extends TikaTest {
         getXML("test_recursive_embedded.docx", p, m, context);
 
         // Non-default encoding includes encoding in the key
-        assertEquals(EXPECTED_SHA1_BASE32, m.get(P + "SHA1:BASE32"),
+        assertEquals(EXPECTED_SHA1_BASE32, m.get(P + "SHA-1:BASE32"),
                 "SHA1 BASE32 digest should match");
     }
 

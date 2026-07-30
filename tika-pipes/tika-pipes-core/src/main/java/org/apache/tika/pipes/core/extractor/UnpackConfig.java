@@ -19,7 +19,7 @@ package org.apache.tika.pipes.core.extractor;
 import java.io.Serializable;
 import java.util.Objects;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 
 @TikaComponent(name = "unpack-config")
 public class UnpackConfig implements Serializable {

@@ -16,7 +16,7 @@
  */
 package org.apache.tika.langdetect.charsoup.tools;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
 
 /**
  * Quantizes float32 model weights to INT8 for compact storage.

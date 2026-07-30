@@ -35,7 +35,7 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -124,7 +124,7 @@ public class IWorkPackageParser implements Parser {
                         throw new TikaException("Unhandled iWorks file " + type);
                 }
 
-                metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
+                metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
                     XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),

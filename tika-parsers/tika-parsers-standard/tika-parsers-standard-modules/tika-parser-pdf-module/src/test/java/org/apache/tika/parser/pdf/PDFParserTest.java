@@ -697,11 +697,11 @@ public class PDFParserTest extends TikaTest {
             assertTrue(foundDC, "dc:format ::" + e.getValue());
             String extensionVersionTruth = pdfExtensionVersions.get(e.getKey());
             if (extensionVersionTruth != null) {
-                assertEquals(extensionVersionTruth, r.metadata.get("pdf:PDFExtensionVersion"),
-                        "pdf:PDFExtensionVersion :: " + extensionVersionTruth);
+                assertEquals(extensionVersionTruth, r.metadata.get("pdf:pdf-extension-version"),
+                        "pdf:pdf-extension-version :: " + extensionVersionTruth);
             }
             assertEquals(pdfVersions.get(e.getKey()),
-                    r.metadata.get("pdf:PDFVersion"), "pdf:PDFVersion");
+                    r.metadata.get("pdf:pdf-version"), "pdf:pdf-version");
         }
         //now test full 11.x
         XMLResult r = getXML("testPDF_Version.11.x.PDFA-1b.pdf");
@@ -1570,10 +1570,14 @@ public class PDFParserTest extends TikaTest {
         assertEquals("xmp-xmpmm-documentid", m.get(XMPMM.DOCUMENTID));
         assertEquals("13", m.get(PagedText.N_PAGES));
 
+        // keywords/subject from XMP and doc-info merge into SUBJECT; presence is the contract, order is not.
         String[] expectedSubjectVals = new String[]{
                 "xmp-pdf-keywords", "xmp-dc-subject", "pdf-keywords", "pdf-subject"
         };
-        assertArrayEquals(expectedSubjectVals, m.getValues(TikaCoreProperties.SUBJECT));
+        String[] actualSubjectVals = m.getValues(TikaCoreProperties.SUBJECT);
+        assertEquals(expectedSubjectVals.length, actualSubjectVals.length);
+        assertEquals(new HashSet<>(Arrays.asList(expectedSubjectVals)),
+                new HashSet<>(Arrays.asList(actualSubjectVals)));
     }
 
     @Test

@@ -24,13 +24,13 @@ package org.apache.tika.metadata;
  * Use {@link PagedText} where possible
  */
 public interface TikaPagedText {
-    String TIKA_PAGED_TEXT_PREFIX = "tika_pg:";
+    String TIKA_PAGED_TEXT_PREFIX = "tk:page:";
     /**
      * 1-based page number for a specific page.  Set when a resource is
      * anchored to exactly one page; for resources spanning multiple pages
      * see {@link #PAGE_NUMBERS}.
      */
-    Property PAGE_NUMBER = Property.internalInteger(TIKA_PAGED_TEXT_PREFIX + "page_number");
+    Property PAGE_NUMBER = Property.internalInteger(TIKA_PAGED_TEXT_PREFIX + "number");
 
     /**
      * 1-based page numbers an embedded resource is anchored to, as a
@@ -56,7 +56,7 @@ public interface TikaPagedText {
      * </ul>
      */
     Property PAGE_NUMBERS =
-            Property.internalIntegerSequence(TIKA_PAGED_TEXT_PREFIX + "page_numbers");
+            Property.internalIntegerSequence(TIKA_PAGED_TEXT_PREFIX + "numbers");
 
     /**
      * Sentinel value used as the sole element of {@link #PAGE_NUMBERS}
@@ -66,5 +66,5 @@ public interface TikaPagedText {
      */
     int UNLINKED_PAGE = -1;
 
-    Property PAGE_ROTATION = Property.internalRational(TIKA_PAGED_TEXT_PREFIX + "page_rotation");
+    Property PAGE_ROTATION = Property.internalRational(TIKA_PAGED_TEXT_PREFIX + "rotation");
 }

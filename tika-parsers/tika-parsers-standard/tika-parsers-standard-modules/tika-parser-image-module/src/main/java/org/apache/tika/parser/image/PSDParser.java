@@ -30,9 +30,9 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
@@ -44,7 +44,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -159,8 +158,9 @@ public class PSDParser implements Parser {
             } else if (rb.id == ResourceBlock.ID_XMP) {
                 //if there are multiple xmps in a file, this will
                 //overwrite the data from the earlier xmp
-                JempboxExtractor ex = new JempboxExtractor(metadata);
-                ex.parse(UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get());
+                ImageXmp.scanAndExtract(
+                        UnsynchronizedByteArrayInputStream.builder().setByteArray(rb.data).get(),
+                        metadata, context);
             }
             blocks++;
         }

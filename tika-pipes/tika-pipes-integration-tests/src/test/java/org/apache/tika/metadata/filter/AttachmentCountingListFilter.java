@@ -18,7 +18,7 @@ package org.apache.tika.metadata.filter;
 
 import java.util.List;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -29,11 +29,11 @@ public class AttachmentCountingListFilter extends MetadataFilter {
     private Integer count = 0;
 
     @Override
-    public void filter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
+    protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
         if (metadataList == null || metadataList.isEmpty()) {
             return;
         }
-        metadataList.get(0).set("X-TIKA:attachment_count", Integer.toString(metadataList.size() - 1));
+        metadataList.get(0).set("tk:attachment-count", Integer.toString(metadataList.size() - 1));
         count += metadataList.size();
     }
 

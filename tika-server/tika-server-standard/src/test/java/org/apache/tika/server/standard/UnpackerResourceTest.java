@@ -52,12 +52,12 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.UnpackerResource;
@@ -761,7 +761,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     /**
      * Documents that includeFullMetadata=true in FRICTIONLESS adds a
-     * metadata.json envelope whose entries carry X-TIKA:content (the extracted
+     * metadata.json envelope whose entries carry tk:content (the extracted
      * text) and Content-Type alongside the per-document metadata.
      */
     @Test
@@ -804,10 +804,10 @@ public class UnpackerResourceTest extends CXFTestBase {
                 "Container metadata entry should carry Content-Type. Entry: " + container);
         assertEquals("application/msword", container.get("Content-Type").asText(),
                 "Container metadata entry should describe the submitted .doc");
-        assertTrue(container.has("X-TIKA:content"),
-                "Container metadata entry should carry X-TIKA:content (extracted text). Entry: " + container);
-        assertTrue(container.get("X-TIKA:content").asText().length() > 0,
-                "X-TIKA:content for the container should be non-empty");
+        assertTrue(container.has("tk:content"),
+                "Container metadata entry should carry tk:content (extracted text). Entry: " + container);
+        assertTrue(container.get("tk:content").asText().length() > 0,
+                "tk:content for the container should be non-empty");
     }
 
     /**

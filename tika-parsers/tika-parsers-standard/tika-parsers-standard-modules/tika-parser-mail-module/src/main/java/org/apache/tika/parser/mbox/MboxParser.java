@@ -36,13 +36,15 @@ import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -71,6 +73,8 @@ public class MboxParser implements Parser {
     private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
+    private static final PassthroughPrefix EMAIL_HEADER =
+            PassthroughPrefix.file(EMAIL_HEADER_METADATA_PREFIX, "mbox email header names");
     private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
     private final Map<Integer, Metadata> trackingMetadata = new HashMap<>();
     private boolean tracking = false;
@@ -193,7 +197,7 @@ public class MboxParser implements Parser {
                 metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, headerContent);
             }
 
-            String property = Metadata.MESSAGE_TO;
+            Property property = Metadata.MESSAGE_TO;
             if (headerTag.equalsIgnoreCase("Cc")) {
                 property = Metadata.MESSAGE_CC;
             } else if (headerTag.equalsIgnoreCase("Bcc")) {
@@ -221,10 +225,10 @@ public class MboxParser implements Parser {
             // TODO - key off content-type in headers to
             // set mapping to use for content and convert if necessary.
 
-            metadata.add(Metadata.CONTENT_TYPE, headerContent);
+            metadata.set(Metadata.CONTENT_TYPE, headerContent);
             metadata.set(TikaCoreProperties.FORMAT, headerContent);
         } else {
-            metadata.add(EMAIL_HEADER_METADATA_PREFIX + headerTag, headerContent);
+            metadata.add(EMAIL_HEADER.key(headerTag), headerContent);
         }
     }
 }

@@ -32,11 +32,12 @@ import ucar.nc2.NetcdfFile;
 import ucar.nc2.Variable;
 import ucar.nc2.dataset.NetcdfDataset;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -47,6 +48,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class GribParser implements Parser {
 
     public static final String GRIB_MIME_TYPE = "application/x-grib2";
+    public static final PassthroughPrefix GRIB =
+            PassthroughPrefix.file("grib:", "GRIB global attribute names");
     private static final long serialVersionUID = 7855458954474247655L;
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-grib2"));
@@ -74,12 +77,11 @@ public class GribParser implements Parser {
 
                 // first parse out the set of global attributes
                 for (Attribute attr : ncFile.getGlobalAttributes()) {
-                    Property property = resolveMetadataKey(attr.getFullName());
                     if (attr.getDataType().isString()) {
-                        metadata.add(property, attr.getStringValue());
+                        addGlobalAttribute(metadata, attr.getFullName(), attr.getStringValue());
                     } else if (attr.getDataType().isNumeric()) {
-                        int value = attr.getNumericValue().intValue();
-                        metadata.add(property, String.valueOf(value));
+                        addGlobalAttribute(metadata, attr.getFullName(),
+                                String.valueOf(attr.getNumericValue().intValue()));
                     }
                 }
 
@@ -122,11 +124,21 @@ public class GribParser implements Parser {
         }
     }
 
-    private Property resolveMetadataKey(String localName) {
-        if ("title".equals(localName)) {
-            return TikaCoreProperties.TITLE;
+    private static final Set<String> CF_GLOBAL_ATTRIBUTES = Set.of(
+            ClimateForcast.PROGRAM_ID, ClimateForcast.COMMAND_LINE, ClimateForcast.HISTORY,
+            ClimateForcast.TABLE_ID, ClimateForcast.INSTITUTION, ClimateForcast.SOURCE,
+            ClimateForcast.CONTACT, ClimateForcast.PROJECT_ID, ClimateForcast.CONVENTIONS,
+            ClimateForcast.REFERENCES, ClimateForcast.ACKNOWLEDGEMENT, ClimateForcast.REALIZATION,
+            ClimateForcast.EXPERIMENT_ID, ClimateForcast.COMMENT, ClimateForcast.MODEL_NAME_ENGLISH);
+
+    private static void addGlobalAttribute(Metadata metadata, String name, String value) {
+        if ("title".equals(name)) {
+            metadata.add(TikaCoreProperties.TITLE, value);
+        } else if (CF_GLOBAL_ATTRIBUTES.contains(name)) {
+            metadata.add(name, value);
+        } else {
+            metadata.add(GRIB.key(name), value);
         }
-        return Property.internalText(localName);
     }
 
 }

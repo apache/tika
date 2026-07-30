@@ -23,6 +23,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -113,7 +114,7 @@ public class MIFContentHandler extends DefaultHandler {
 
     @Override
     public void endDocument() {
-        metadata.set("PageCount", String.valueOf(bodyPageCount));
+        metadata.set(Office.PAGE_COUNT, String.valueOf(bodyPageCount));
         metadata.set("MasterPageCount", String.valueOf(masterPageCount));
         metadata.set("ReferencePageCount", String.valueOf(referencePageCount));
         metadata.set("TotalPageCount",

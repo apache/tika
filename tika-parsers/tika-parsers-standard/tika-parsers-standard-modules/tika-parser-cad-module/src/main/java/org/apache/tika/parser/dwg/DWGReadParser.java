@@ -47,7 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -294,7 +294,7 @@ public class DWGReadParser extends AbstractDWGParser {
                 if (nextToken.isStructStart()) {
                     jsonParser.skipChildren();
                 } else if (nextToken.isScalarValue()) {
-                    metadata.set(nextFieldName, jsonParser.getText());
+                    metadata.set(DWG.RAW_FIELD.key(nextFieldName), jsonParser.getText());
                 }
             }
         }
@@ -347,7 +347,7 @@ public class DWGReadParser extends AbstractDWGParser {
                         } else if ("HYPERLINKBASE".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.RELATION, textVal);
                         } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
-                            metadata.set(nextFieldName, textVal);
+                            metadata.set(DWG.RAW_FIELD.key(nextFieldName), textVal);
                         }
                     }
                 }

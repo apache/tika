@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.langdetect.charsoup;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,8 +29,12 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.SelfConfiguring;
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.FeatureExtractor;
+import org.apache.tika.langdetect.charsoup.core.ScriptCategory;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;

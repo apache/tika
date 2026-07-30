@@ -1242,10 +1242,9 @@ public class TestMimeTypes {
         // Parameters only have PEM form, always need data
         assertTypeByData("application/x-x509-dsa-parameters", "testDSAPARAMS.pem");
         assertTypeByData("application/x-x509-ec-parameters", "testECPARAMS.pem");
-        // PKCS12 wrappers of Certs+Keys cannot currently be identified
-        // Once solved, see TIKA-3784, ought to work for name or data
-        //assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
-        //assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
+        // PKCS12 is now identified by content via the PFX version-3 anchor (TIKA-1997/TIKA-3784)
+        assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
+        assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12");
         assertTypeByData("application/x-java-keystore", "KeyStore.jks");
     }
 

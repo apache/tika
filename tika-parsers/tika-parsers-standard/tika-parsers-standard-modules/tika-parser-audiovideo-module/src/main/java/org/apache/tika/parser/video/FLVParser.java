@@ -32,10 +32,11 @@ import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -76,6 +77,8 @@ public class FLVParser implements Parser {
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
+    private static final PassthroughPrefix FLV =
+            PassthroughPrefix.file("flv:", "FLV onMetaData tag keys");
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -195,8 +198,8 @@ public class FLVParser implements Parser {
         }
 
         metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
-        metadata.set("hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
-        metadata.set("hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
+        metadata.set("flv:hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
+        metadata.set("flv:hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -245,7 +248,7 @@ public class FLVParser implements Parser {
                             if (entry.getValue() == null) {
                                 continue;
                             }
-                            metadata.set(entry.getKey(), entry.getValue().toString());
+                            metadata.set(FLV.key(entry.getKey()), entry.getValue().toString());
                         }
                     }
                 }

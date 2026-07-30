@@ -36,14 +36,14 @@ public interface Zip {
      * If false, ZipFile failed to open (truncated, corrupt, etc.) and parser should use streaming.
      */
     Property DETECTOR_ZIPFILE_OPENED =
-            Property.internalBoolean(ZIP_PREFIX + "detectorZipFileOpened");
+            Property.internalBoolean(ZIP_PREFIX + "detector-zip-file-opened");
 
     /**
      * Set by the detector to indicate whether streaming required DATA_DESCRIPTOR support.
      * If true, parser should start streaming with allowStoredEntriesWithDataDescriptor=true.
      */
     Property DETECTOR_DATA_DESCRIPTOR_REQUIRED =
-            Property.internalBoolean(ZIP_PREFIX + "detectorDataDescriptorRequired");
+            Property.internalBoolean(ZIP_PREFIX + "detector-data-descriptor-required");
 
     /**
      * Set to true if the ZIP file was salvaged (rebuilt from a corrupt/truncated original).
@@ -63,17 +63,17 @@ public interface Zip {
     /**
      * Compression method used for the entry (0=stored, 8=deflated, etc.).
      */
-    Property COMPRESSION_METHOD = Property.externalInteger(ZIP_PREFIX + "compressionMethod");
+    Property COMPRESSION_METHOD = Property.externalInteger(ZIP_PREFIX + "compression-method");
 
     /**
      * Compressed size of the entry in bytes.
      */
-    Property COMPRESSED_SIZE = Property.externalText(ZIP_PREFIX + "compressedSize");
+    Property COMPRESSED_SIZE = Property.externalText(ZIP_PREFIX + "compressed-size");
 
     /**
      * Uncompressed size of the entry in bytes.
      */
-    Property UNCOMPRESSED_SIZE = Property.externalText(ZIP_PREFIX + "uncompressedSize");
+    Property UNCOMPRESSED_SIZE = Property.externalText(ZIP_PREFIX + "uncompressed-size");
 
     /**
      * CRC-32 checksum of the uncompressed entry data.
@@ -83,7 +83,7 @@ public interface Zip {
     /**
      * Unix file mode/permissions for the entry.
      */
-    Property UNIX_MODE = Property.externalInteger(ZIP_PREFIX + "unixMode");
+    Property UNIX_MODE = Property.externalInteger(ZIP_PREFIX + "unix-mode");
 
     /**
      * Platform that created the entry (0=MS-DOS, 3=Unix, etc.).
@@ -93,7 +93,7 @@ public interface Zip {
     /**
      * Version of ZIP specification used to create the entry.
      */
-    Property VERSION_MADE_BY = Property.externalInteger(ZIP_PREFIX + "versionMadeBy");
+    Property VERSION_MADE_BY = Property.externalInteger(ZIP_PREFIX + "version-made-by");
 
     /**
      * Whether the entry is encrypted.
@@ -107,24 +107,24 @@ public interface Zip {
      * Result of the integrity check comparing central directory to local headers.
      * Values: "PASS" (no issues), "FAIL" (issues found), "PARTIAL" (only duplicate check done).
      */
-    Property INTEGRITY_CHECK_RESULT = Property.internalText(ZIP_PREFIX + "integrityCheckResult");
+    Property INTEGRITY_CHECK_RESULT = Property.internalText(ZIP_PREFIX + "integrity-check-result");
 
     /**
      * Entry names that appear multiple times in the local headers (streaming).
      * Duplicate entries are a potential attack vector.
      */
-    Property DUPLICATE_ENTRY_NAMES = Property.internalTextBag(ZIP_PREFIX + "duplicateEntryNames");
+    Property DUPLICATE_ENTRY_NAMES = Property.internalTextBag(ZIP_PREFIX + "duplicate-entry-names");
 
     /**
      * Entry names that exist in central directory but not in local headers.
      */
     Property CENTRAL_DIRECTORY_ONLY_ENTRIES =
-            Property.internalTextBag(ZIP_PREFIX + "centralDirectoryOnlyEntries");
+            Property.internalTextBag(ZIP_PREFIX + "central-directory-only-entries");
 
     /**
      * Entry names that exist in local headers but not in central directory.
      * These are "hidden" entries that some tools won't see.
      */
     Property LOCAL_HEADER_ONLY_ENTRIES =
-            Property.internalTextBag(ZIP_PREFIX + "localHeaderOnlyEntries");
+            Property.internalTextBag(ZIP_PREFIX + "local-header-only-entries");
 }

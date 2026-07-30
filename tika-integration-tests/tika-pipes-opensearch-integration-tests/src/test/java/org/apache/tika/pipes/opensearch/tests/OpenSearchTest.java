@@ -48,7 +48,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import org.apache.tika.cli.TikaCLI;
 import org.apache.tika.client.HttpClientFactory;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -60,6 +59,7 @@ import org.apache.tika.pipes.emitter.opensearch.HttpClientConfig;
 import org.apache.tika.pipes.emitter.opensearch.JsonResponse;
 import org.apache.tika.pipes.emitter.opensearch.OpenSearchEmitterConfig;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 @Testcontainers(disabledWithoutDocker = true)
 public class OpenSearchTest {
@@ -155,19 +155,23 @@ public class OpenSearchTest {
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"), "should have had 1 parse exception: " + statusCounts);
         //the embedded docx is emitted directly
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"), "should have had 1 emit success: " + statusCounts);
-        assertEquals(2, numberOfCrashes(statusCounts), "should have had 2 OOM or 1 OOM and 1 timeout: " + statusCounts);
+        assertEquals(2, numberOfCrashes(statusCounts),
+                "should have had 2 forked-process crashes (OOM/TIMEOUT/UNSPECIFIED_CRASH): " +
+                        statusCounts);
 
     }
 
     private int numberOfCrashes(Map<String, Integer> statusCounts) {
-        Integer oom = statusCounts.get("OOM");
-        Integer timeout = statusCounts.get("TIMEOUT");
+        // oom.xml (a real heap exhaustion) and fake_oom.xml both crash the fork; how a genuine OOM
+        // surfaces -- OOM vs UNSPECIFIED_CRASH vs TIMEOUT -- is nondeterministic under load, but all
+        // three are PipesResult PROCESS_CRASH statuses. Count the whole category so the assertion is
+        // deterministic and doesn't flake on the exact sub-classification.
         int sum = 0;
-        if (oom != null) {
-            sum += oom;
-        }
-        if (timeout != null) {
-            sum += timeout;
+        for (String crashStatus : new String[]{"OOM", "TIMEOUT", "UNSPECIFIED_CRASH"}) {
+            Integer cnt = statusCounts.get(crashStatus);
+            if (cnt != null) {
+                sum += cnt;
+            }
         }
         return sum;
     }

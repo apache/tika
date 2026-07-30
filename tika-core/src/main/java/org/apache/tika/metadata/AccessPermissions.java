@@ -24,49 +24,49 @@ package org.apache.tika.metadata;
 public interface AccessPermissions {
 
     String PREFIX =
-            "access_permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            "access-permission" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
      * Can any modifications be made to the document
      */
-    Property CAN_MODIFY = Property.externalTextBag(PREFIX + "can_modify");
+    Property CAN_MODIFY = Property.externalTextBag(PREFIX + "can-modify");
 
     /**
      * Should content be extracted, generally.
      */
-    Property EXTRACT_CONTENT = Property.externalText(PREFIX + "extract_content");
+    Property EXTRACT_CONTENT = Property.externalText(PREFIX + "extract-content");
 
     /**
      * Should content be extracted for the purposes
      * of accessibility.
      */
     Property EXTRACT_FOR_ACCESSIBILITY =
-            Property.externalText(PREFIX + "extract_for_accessibility");
+            Property.externalText(PREFIX + "extract-for-accessibility");
 
     /**
      * Can the user insert/rotate/delete pages.
      */
-    Property ASSEMBLE_DOCUMENT = Property.externalText(PREFIX + "assemble_document");
+    Property ASSEMBLE_DOCUMENT = Property.externalText(PREFIX + "assemble-document");
 
 
     /**
      * Can the user fill in a form
      */
-    Property FILL_IN_FORM = Property.externalText(PREFIX + "fill_in_form");
+    Property FILL_IN_FORM = Property.externalText(PREFIX + "fill-in-form");
 
     /**
      * Can the user modify annotations
      */
-    Property CAN_MODIFY_ANNOTATIONS = Property.externalText(PREFIX + "modify_annotations");
+    Property CAN_MODIFY_ANNOTATIONS = Property.externalText(PREFIX + "modify-annotations");
 
     /**
      * Can the user print the document
      */
-    Property CAN_PRINT = Property.externalText(PREFIX + "can_print");
+    Property CAN_PRINT = Property.externalText(PREFIX + "can-print");
 
     /**
      * Can the user print an image-degraded version of the document.
      */
-    Property CAN_PRINT_FAITHFUL = Property.externalText(PREFIX + "can_print_faithful");
+    Property CAN_PRINT_FAITHFUL = Property.externalText(PREFIX + "can-print-faithful");
 
 }

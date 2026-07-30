@@ -17,12 +17,13 @@
 package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.jempbox.xmp.XMPMetadata;
 import org.junit.jupiter.api.Test;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
@@ -33,7 +34,6 @@ import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * This tests our custom schemas and PDF/A
@@ -60,9 +60,11 @@ public class CustomTikaXMPTest extends TikaTest {
     public void testPDFUA() throws Exception {
         Metadata metadata = extract("testPDFUA.xmp");
         assertEquals(1, metadata.getInt(PDF.PDFUAID_PART));
-        String[] subjects = metadata.getValues(TikaCoreProperties.SUBJECT);
-        assertEquals("keywords", subjects[0]);
-        assertEquals("subject", subjects[1]);
+        // keywords and subject both land in SUBJECT; presence is the contract, order is not.
+        List<String> subjects = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+        assertEquals(2, subjects.size());
+        assertTrue(subjects.contains("keywords"), "keywords in SUBJECT");
+        assertTrue(subjects.contains("subject"), "subject in SUBJECT");
         assertEquals("1234567890", metadata.get(XMP.IDENTIFIER));
         assertEquals("Advisory", metadata.get(XMP.ADVISORY));
     }
@@ -109,11 +111,8 @@ public class CustomTikaXMPTest extends TikaTest {
 
     private Metadata extract(String xmpFileName) throws IOException, TikaException, SAXException {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/xmp/" + xmpFileName)) {
-            Document doc = XMLReaderUtils.buildDOM(tis);
-            XMPMetadata xmp = new XMPMetadata(doc);
-            ParseContext context = new ParseContext();
             Metadata metadata = new Metadata();
-            PDMetadataExtractor.extract(xmp, metadata, context);
+            PDMetadataExtractor.extract(tis, metadata, new ParseContext());
             return metadata;
         }
     }

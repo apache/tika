@@ -49,12 +49,12 @@ documents. They answer: "Which document contained this one?" All fields are defi
 
 === Nesting Identifiers
 
-`TikaCoreProperties.EMBEDDED_ID` (`X-TIKA:embedded_id`)::
+`TikaCoreProperties.EMBEDDED_ID` (`tk:embedded-id`)::
 A 1-indexed integer assigned by Tika to each embedded document during parsing. IDs are
 assigned in the order documents are encountered by the `RecursiveParserWrapper`. This ID
 uniquely identifies each embedded document within a single parse operation.
 
-`TikaCoreProperties.EMBEDDED_ID_PATH` (`X-TIKA:embedded_id_path`)::
+`TikaCoreProperties.EMBEDDED_ID_PATH` (`tk:embedded-id-path`)::
 A path showing the containment hierarchy using `EMBEDDED_ID` values. For example, `/1/3`
 indicates that the file with `EMBEDDED_ID=3` was contained within the file with
 `EMBEDDED_ID=1`. This is the most reliable field for tracking containment relationships.
@@ -64,7 +64,7 @@ folder structures or original paths within the containers themselves.
 
 === Synthetic Paths
 
-`TikaCoreProperties.EMBEDDED_RESOURCE_PATH` (`X-TIKA:embedded_resource_path`)::
+`TikaCoreProperties.EMBEDDED_RESOURCE_PATH` (`tk:embedded-resource-path`)::
 A synthetic path built by concatenating file names (from `RESOURCE_NAME_KEY`) at each
 nesting level. This provides a human-readable path through the containment hierarchy.
 +
@@ -72,14 +72,14 @@ WARNING: Do not use this field for creating directory structures to write out at
 There may be path collisions, illegal characters, or zip slip vulnerabilities. Use
 `EMBEDDED_ID_PATH` for reliable containment tracking.
 
-`TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH` (`X-TIKA:final_embedded_resource_path`)::
+`TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH` (`tk:final-embedded-resource-path`)::
 Similar to `EMBEDDED_RESOURCE_PATH`, but calculated at the end of the full parse. For some
 parsers, an embedded file's name isn't known until after its child files have been parsed.
 This field may have fewer "unknown" file names than `EMBEDDED_RESOURCE_PATH`.
 
 === Resource Naming
 
-`TikaCoreProperties.RESOURCE_NAME_KEY` (`X-TIKA:resourceName`)::
+`TikaCoreProperties.RESOURCE_NAME_KEY` (`tk:resource-name`)::
 The file name (not path) of the resource. Tika makes a best effort to determine a meaningful
 name from the container's metadata. When unavailable, Tika falls back to synthetic names
 such as `embedded-1.jpeg`.
@@ -95,7 +95,7 @@ the nesting structure. All fields below are defined in `TikaCoreProperties`.
 
 === Internal Paths
 
-`TikaCoreProperties.INTERNAL_PATH` (`X-TIKA:internalPath`)::
+`TikaCoreProperties.INTERNAL_PATH` (`tk:internal-path`)::
 The path (including file name) as literally stored within the container. This is what the
 container knows about where the file lives in its internal structure:
 +
@@ -108,7 +108,7 @@ This differs fundamentally from `EMBEDDED_RESOURCE_PATH`:
 * `INTERNAL_PATH` is what the _container stores_ about the file's location within itself
 * `EMBEDDED_RESOURCE_PATH` is what _Tika synthesizes_ from the nesting structure
 
-`TikaCoreProperties.ORIGINAL_RESOURCE_NAME` (`X-TIKA:origResourceName`)::
+`TikaCoreProperties.ORIGINAL_RESOURCE_NAME` (`tk:orig-resource-name`)::
 For some file formats, the file path where the document was last saved on the creator's
 system. For example, an `.xlsx` file named `budget.xlsx` may include a metadata property
 storing where it was last saved: `C:\Users\Alice\budget.xlsx`. This is not specific to
@@ -118,11 +118,11 @@ embedded files - it's a property that certain file formats preserve about themse
 
 Microsoft Office formats use additional identifiers for embedded objects.
 
-`TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID` (`X-TIKA:embeddedRelationshipId`)::
+`TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID` (`tk:embedded-relationship-id`)::
 A Microsoft-specific identifier used internally to reference embedded objects within
 Office documents. This is the relationship ID from the Office Open XML or OLE structure.
 
-`Office.EMBEDDED_STORAGE_CLASS_ID` (`msoffice:embeddedStorageClassId`)::
+`Office.EMBEDDED_STORAGE_CLASS_ID` (`msoffice:embedded-storage-class-id`)::
 A UUID that identifies the class of embedded object in Microsoft formats. While not
 exactly a MIME type, it provides similar information about what type of object is
 embedded. Defined in the `Office` metadata class.
@@ -134,39 +134,39 @@ embedded. Defined in the `Office` metadata class.
 |Property |Metadata Key |Source
 
 |`EMBEDDED_ID`
-|`X-TIKA:embedded_id`
+|`tk:embedded-id`
 |Containment
 
 |`EMBEDDED_ID_PATH`
-|`X-TIKA:embedded_id_path`
+|`tk:embedded-id-path`
 |Containment
 
 |`EMBEDDED_RESOURCE_PATH`
-|`X-TIKA:embedded_resource_path`
+|`tk:embedded-resource-path`
 |Containment
 
 |`FINAL_EMBEDDED_RESOURCE_PATH`
-|`X-TIKA:final_embedded_resource_path`
+|`tk:final-embedded-resource-path`
 |Containment
 
 |`RESOURCE_NAME_KEY`
-|`X-TIKA:resourceName`
+|`tk:resource-name`
 |Containment
 
 |`INTERNAL_PATH`
-|`X-TIKA:internalPath`
+|`tk:internal-path`
 |Container
 
 |`ORIGINAL_RESOURCE_NAME`
-|`X-TIKA:origResourceName`
+|`tk:orig-resource-name`
 |Container
 
 |`EMBEDDED_RELATIONSHIP_ID`
-|`X-TIKA:embeddedRelationshipId`
+|`tk:embedded-relationship-id`
 |Container (MS)
 
 |`Office.EMBEDDED_STORAGE_CLASS_ID`
-|`msoffice:embeddedStorageClassId`
+|`msoffice:embedded-storage-class-id`
 |Container (MS)
 |===
 

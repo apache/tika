@@ -226,7 +226,7 @@ For the default classpath resources (general model ~3.2 MB, short-text model
 == WordTokenizer (tika-eval integration)
 
 The same preprocessing pipeline is exposed as a general-purpose word tokenizer
-via `org.apache.tika.langdetect.charsoup.WordTokenizer`. This replaces the former
+via `org.apache.tika.langdetect.charsoup.core.WordTokenizer`. This replaces the former
 Lucene-based tokenizer in `tika-eval`:
 
 * `tokenize(String)` — alphabetic and ideographic tokens only (CJK bigrams)

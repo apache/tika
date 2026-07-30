@@ -19,7 +19,7 @@ package org.apache.tika.langdetect.charsoup.tools;
 import java.io.FileInputStream;
 import java.util.Arrays;
 
-import org.apache.tika.langdetect.charsoup.CharSoupModel;
+import org.apache.tika.langdetect.charsoup.core.CharSoupModel;
 
 public class PrintDiscLabels {
     public static void main(String[] args) throws Exception {

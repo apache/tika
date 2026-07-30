@@ -18,8 +18,11 @@ package org.apache.tika.parser.mp4;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -27,6 +30,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.drew.lang.SequentialByteArrayReader;
+import com.drew.metadata.mp4.Mp4Context;
 import com.drew.metadata.mp4.Mp4Directory;
 import com.drew.metadata.mp4.media.Mp4MetaDirectory;
 import com.drew.metadata.mp4.media.Mp4SoundDirectory;
@@ -37,7 +42,9 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.QuickTime;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -57,16 +64,16 @@ public class MP4ParserTest extends TikaTest {
     @Before
     public void setUp() {
 
-        skipKeysB.add("X-TIKA:Parsed-By");
-        skipKeysA.add("X-TIKA:parse_time_millis");
-        skipKeysB.add("X-TIKA:content_handler");
-        skipKeysA.add("X-TIKA:content_handler");
-        skipKeysB.add("X-TIKA:parse_time_millis");
+        skipKeysB.add("tk:parsed-by");
+        skipKeysA.add("tk:parse-time-millis");
+        skipKeysB.add("tk:content-handler");
+        skipKeysA.add("tk:content-handler");
+        skipKeysB.add("tk:parse-time-millis");
         skipKeysB.add("xmpDM:videoCompressor");
         //skipKeysB.add("xmpDM:audioChannelType");
         //skipKeysB.add("xmpDM:audioChannelType");
-        skipKeysA.add("X-TIKA:content");
-        skipKeysB.add("X-TIKA:content");
+        skipKeysA.add("tk:content");
+        skipKeysB.add("tk:content");
         skipKeysB.add("xmpDM:copyright");
     }*/
     /**
@@ -101,8 +108,14 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Test Genre", metadata.get(XMPDM.GENRE));
         assertEquals("Test Comments", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        //average bitrate from the esds elementary stream descriptor
+        assertEquals("256000", metadata.get(Audio.BITRATE));
+        assertNull(metadata.get(Audio.HAS_DRM));
+        //the totals from the trkn/disk atoms were previously read and discarded
+        assertEquals("42", metadata.get(Audio.TRACK_COUNT));
         assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("12", metadata.get(Audio.DISC_COUNT));
         assertEquals("0", metadata.get(XMPDM.COMPILATION));
 
 
@@ -281,4 +294,109 @@ public class MP4ParserTest extends TikaTest {
         }
         return vals;
     } */
+
+    @Test
+    public void testDrmProtectedM4a() throws Exception {
+        //the sample description declares a protected 'drms' sample entry
+        Metadata metadata = new Metadata();
+        getText("testMP4_drm.m4a", metadata);
+        assertEquals("true", metadata.get(Audio.HAS_DRM));
+    }
+
+    @Test
+    public void testEsdsWithDescriptorFlags() throws Exception {
+        //the ES descriptor declares the optional stream dependence, URL and
+        //OCR fields, which shift the DecoderConfigDescriptor; the URL string
+        //deliberately reads "sinf" so a raw fourcc scan would misreport DRM
+        Metadata metadata = new Metadata();
+        getText("testMP4_esdsFlags.m4a", metadata);
+        assertEquals("96000", metadata.get(Audio.BITRATE));
+        assertNull(metadata.get(Audio.HAS_DRM));
+    }
+
+    @Test
+    public void testQuickTimeMetadataKeys() throws Exception {
+        //QuickTime item-list metadata (moov/meta/keys+ilst, the com.apple.quicktime.*
+        //keys such as the content identifier and ISO 6709 location) was previously
+        //dropped by the MP4 handler. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_QuickTimeMetadata.mov", metadata);
+        assertEquals("TEST-UUID-0001-LIVEPHOTO",
+                metadata.get("com.apple.quicktime.content.identifier"));
+
+        //the raw ISO 6709 location is preserved ...
+        assertEquals("+12.3456-098.7654+010.500/",
+                metadata.get("com.apple.quicktime.location.ISO6709"));
+        //... and also mapped to the standard geo:* properties (incl. altitude)
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+
+        //numeric well-known value types (uint8, float32, int32, float64)
+        assertEquals("1", metadata.get("com.apple.quicktime.live-photo.auto"));
+        assertEquals("0.75", metadata.get("com.apple.quicktime.live-photo.vitality-score"));
+        assertEquals("-13",
+                metadata.get("com.apple.quicktime.camera.focal_length.35mm_equivalent"));
+        assertEquals("1.5",
+                metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
+
+        //the Live Photo still moment: presentation time of the single sample of
+        //the timed metadata track declaring still-image-time (mebx, leading empty
+        //edit of 740/600s). TIKA-4777
+        assertEquals("1233333", metadata.get(QuickTime.STILL_IMAGE_TIME));
+        //foreign mebx keys get no property (the fixture's other timed metadata
+        //tracks are delayed, non-leading and multi-sample variants), and the
+        //per-key suffix scheme from earlier iterations is gone
+        assertNull(metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
+        assertNull(metadata.get("test.quicktime.v1delayed.track-start-us"));
+        assertNull(metadata.get("test.quicktime.nonleading.track-start-us"));
+        assertNull(metadata.get("test.quicktime.multisample.track-start-us"));
+    }
+
+    @Test
+    public void testStillImageTimeZero() throws Exception {
+        //a declared but undelayed single-sample still-image-time track (version 1
+        //edit list with only a media edit): 0 = the still is the first frame,
+        //distinguishable from "no Live Photo" (absent). The track follows a
+        //delayed foreign-key track, so a leaked empty-edit duration would show
+        //up as a non-zero value here. TIKA-4777
+        Metadata metadata = new Metadata();
+        getText("testMP4_StillImageTimeZero.mov", metadata);
+        assertEquals("0", metadata.get(QuickTime.STILL_IMAGE_TIME));
+    }
+
+    @Test
+    public void testStsdEntrySizeOverflow() throws Exception {
+        //a crafted sample description declaring entry size 0xFFFFFFFF used to
+        //turn negative in the int cast and escape parse() as a
+        //NegativeArraySizeException; the handler must treat it as malformed
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(new byte[]{0, 0, 0, 0}); //version and flags
+        bos.write(new byte[]{0, 0, 0, 1}); //entry count
+        bos.write(new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF});
+        bos.write("mebx".getBytes(StandardCharsets.ISO_8859_1));
+
+        Metadata tikaMetadata = new Metadata();
+        TikaMp4MetaHandler handler = new TikaMp4MetaHandler(new com.drew.metadata.Metadata(),
+                new Mp4Context(), tikaMetadata, 740, 600);
+        handler.processSampleDescription(new SequentialByteArrayReader(bos.toByteArray()));
+        assertNull(tikaMetadata.get(QuickTime.STILL_IMAGE_TIME));
+    }
+
+    @Test
+    public void testUdtaLocation() throws Exception {
+        //the udta "(c)xyz" ISO 6709 location is mapped to geo:lat/geo:long, and its
+        //optional altitude, which was previously dropped, to geo:alt. See TIKA-2861.
+        Metadata metadata = new Metadata();
+        getText("testMP4_udtaLocation.mp4", metadata);
+        assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
+        assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
+        assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
+
+        //the fixture's disk atom uses the padded 8-byte form; the title after
+        //it proves the ilst walk consumes exactly the declared length
+        assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("12", metadata.get(Audio.DISC_COUNT));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
+    }
 }

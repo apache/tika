@@ -32,7 +32,7 @@ import org.apache.tika.parser.ParserDecorator;
 public class ParserUtils {
 
     public final static Property EMBEDDED_PARSER = Property.internalText(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_parser");
+            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded-parser");
 
 
     /**
@@ -43,11 +43,10 @@ public class ParserUtils {
 
         for (String n : m.names()) {
             if (!m.isMultiValued(n)) {
-                clone.set(n, m.get(n));
+                clone.reconstruct(n, m.get(n), false);
             } else {
-                String[] vals = m.getValues(n);
-                for (String val : vals) {
-                    clone.add(n, val);
+                for (String val : m.getValues(n)) {
+                    clone.reconstruct(n, val, true);
                 }
             }
         }

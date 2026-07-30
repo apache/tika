@@ -135,7 +135,7 @@ WHERE DETECTED_ENCODING REGEXP 'big5|gb|euc|shift|jis|2022|949'
 ```
 
 (`DETECTED_ENCODING` is on `ENCODINGS_A`/`ENCODINGS_B` — join to `PROFILES`/`CONTENTS`
-on `ID` — populated from `X-TIKA:detectedEncoding`.)
+on `ID` — populated from `tk:detected-encoding`.)
 
 ## Tip
 

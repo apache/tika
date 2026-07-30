@@ -61,6 +61,7 @@
   </dependencies>
   <modules>
     <module>tika-parser-jdbc-commons</module>
+    <module>tika-parser-datauri-commons</module>
     <module>tika-parser-digest-commons</module>
     <module>tika-parser-mail-commons</module>
     <module>tika-parser-xmp-commons</module>

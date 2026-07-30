@@ -34,7 +34,7 @@ import org.apache.poi.util.StringUtil;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -64,8 +64,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 @TikaComponent
 public class EMFParser implements Parser {
 
-    public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:iconOnly");
-    public static Property EMF_ICON_STRING = Property.internalText("emf:iconString");
+    public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:icon-only");
+    public static Property EMF_ICON_STRING = Property.internalText("emf:icon-string");
 
     private static String ICON_ONLY = "IconOnly";
 

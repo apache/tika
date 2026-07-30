@@ -32,15 +32,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * GROBID header fields are namespaced under {@code grobid:header_*} rather than mapped to standard
+ * properties (e.g. {@code dc:title}): they are model inferences, not what the file asserts about itself.
+ */
 @TikaComponent
 public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
+
+    public static final PassthroughPrefix GROBID_HEADER =
+            PassthroughPrefix.tool("grobid:header_", "GROBID-inferred header fields");
 
     private static final String GROBID_REST_HOST = "http://localhost:8070";
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";
@@ -106,7 +114,7 @@ public class GrobidRESTParser {
             String resp = response.readEntity(String.class);
             Metadata teiMet = new TEIDOMParser().parse(resp, context);
             for (String key : teiMet.names()) {
-                metadata.add("grobid:header_" + key, teiMet.get(key));
+                metadata.add(GROBID_HEADER.key(key), teiMet.get(key));
             }
         } catch (Exception e) {
             LOG.warn("Couldn't read response", e);

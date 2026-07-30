@@ -95,7 +95,7 @@ public class FontParsersTest extends TikaTest {
         assertEquals("Bold", metadata.get(MET_FONT_SUB_FAMILY_NAME));
         assertEquals("OpenSans-Bold", metadata.get(MET_PS_NAME));
 
-        assertEquals("Digitized", metadata.get("Copyright").substring(0, 9));
+        assertEquals("Digitized", metadata.get(TikaCoreProperties.RIGHTS).substring(0, 9));
         assertEquals("Open Sans", metadata.get("Trademark").substring(0, 9));
 
         // Not extracted

@@ -32,11 +32,14 @@ import org.gagravarr.vorbis.VorbisStyleComments;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -46,10 +49,28 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
 
-    private static final DecimalFormat DURATION_FORMAT =
-            (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
-    static {
-        DURATION_FORMAT.applyPattern("0.0#");
+    private static final PassthroughPrefix VORBIS =
+            PassthroughPrefix.file("vorbis:", "Vorbis comment field names");
+
+
+    /**
+     * Returns the first positive integer found under the given comment keys,
+     * or null if there is none.
+     */
+    private static Integer firstPositiveInteger(VorbisStyleComments comments, String... keys) {
+        for (String key : keys) {
+            for (String value : comments.getComments(key)) {
+                try {
+                    int parsed = Integer.parseInt(value.trim());
+                    if (parsed > 0) {
+                        return parsed;
+                    }
+                } catch (NumberFormatException e) {
+                    //skip unparseable values
+                }
+            }
+        }
+        return null;
     }
 
     protected static void extractChannelInfo(Metadata metadata, OggAudioInfoHeader info) {
@@ -78,7 +99,14 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.GENRE, comments.getGenre());
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
-        metadata.add("vendor", comments.getVendor());
+        metadata.add("vorbis:vendor", comments.getVendor());
+
+        //xmpDM:copyright is single-valued, so map the first comment; like
+        //vendor, the raw comments also stay available under the vorbis: name
+        List<String> copyrights = comments.getComments("copyright");
+        if (!copyrights.isEmpty()) {
+            metadata.set(XMPDM.COPYRIGHT, copyrights.get(0));
+        }
 
         for (String comment : comments.getComments("comment")) {
             metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
@@ -94,7 +122,7 @@ public abstract class OggAudioParser extends AbstractParser {
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(key, value);
+                    metadata.add(VORBIS.key(key), value);
                 }
             }
         }
@@ -106,9 +134,39 @@ public abstract class OggAudioParser extends AbstractParser {
         // Album and Track number
         if (comments.getTrackNumber() != null) {
             xhtml.element("p", comments.getAlbum() + ", track " + comments.getTrackNumber());
-            metadata.set(XMPDM.TRACK_NUMBER, comments.getTrackNumber());
+            metadata.set(Audio.RAW_TRACK_NUMBER, comments.getTrackNumber());
+            NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(comments.getTrackNumber());
+            if (trackNumberAndTotal != null) {
+                if (trackNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
+                }
+                if (trackNumberAndTotal.total != null) {
+                    metadata.set(Audio.TRACK_COUNT, trackNumberAndTotal.total);
+                }
+            }
         } else {
             xhtml.element("p", comments.getAlbum());
+        }
+        for (String discValue : comments.getComments("discnumber")) {
+            metadata.set(Audio.RAW_DISC_NUMBER, discValue);
+            NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(discValue);
+            if (discNumberAndTotal != null) {
+                if (discNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.DISC_NUMBER, discNumberAndTotal.number);
+                }
+                if (discNumberAndTotal.total != null) {
+                    metadata.set(Audio.DISC_COUNT, discNumberAndTotal.total);
+                }
+            }
+        }
+        //explicit totals win over the combined "n/total" form
+        Integer trackTotal = firstPositiveInteger(comments, "tracktotal", "totaltracks");
+        if (trackTotal != null) {
+            metadata.set(Audio.TRACK_COUNT, trackTotal);
+        }
+        Integer discTotal = firstPositiveInteger(comments, "disctotal", "totaldiscs");
+        if (discTotal != null) {
+            metadata.set(Audio.DISC_COUNT, discTotal);
         }
 
         // A few other bits
@@ -133,8 +191,13 @@ public abstract class OggAudioParser extends AbstractParser {
             double duration) throws SAXException {
         // Record the duration, if available
         if (duration > 0) {
-            // Save as metadata to the nearest .01 seconds
-            metadata.add(XMPDM.DURATION, DURATION_FORMAT.format(duration));
+            // Save as metadata to the nearest .01 seconds.
+            // DecimalFormat is not thread-safe and these parsers are shared across
+            // threads, so create a new one per call (see MP4Parser).
+            DecimalFormat durationFormat =
+                    (DecimalFormat) NumberFormat.getNumberInstance(Locale.ROOT);
+            durationFormat.applyPattern("0.0#");
+            metadata.add(XMPDM.DURATION, durationFormat.format(duration));
 
             // Output as Hours / Minutes / Seconds / Parts
             String durationStr = formatDuration(duration);
@@ -155,4 +218,5 @@ public abstract class OggAudioParser extends AbstractParser {
             return String.format(Locale.ROOT, "%d:%02d", minutes, seconds);
         }
     }
+
 }

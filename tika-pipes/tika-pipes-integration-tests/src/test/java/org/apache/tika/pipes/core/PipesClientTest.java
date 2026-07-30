@@ -107,7 +107,7 @@ public class PipesClientTest {
             Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
             assertEquals(5, pipesResult.emitData().getMetadataList().size());
             Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+            assertEquals(4, Integer.parseInt(metadata.get("tk:attachment-count")));
         }
     }
 
@@ -158,7 +158,7 @@ public class PipesClientTest {
         }
 
         // AttachmentCountingListFilter should have added the count
-        assertEquals(4, Integer.parseInt(metadata.get("X-TIKA:attachment_count")));
+        assertEquals(4, Integer.parseInt(metadata.get("tk:attachment-count")));
 
         // MockUpperCaseFilter should have uppercased the resource name
         assertEquals("MOCK-EMBEDDED.XML", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -720,7 +720,7 @@ public class PipesClientTest {
 
     @Test
     public void testContentOnlyMode(@TempDir Path tmp) throws Exception {
-        // Test that CONTENT_ONLY mode strips all metadata except X-TIKA:content
+        // Test that CONTENT_ONLY mode strips all metadata except tk:content
         try (PipesClient pipesClient = init(tmp, testDoc)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);

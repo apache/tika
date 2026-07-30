@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 package org.apache.tika.parser.html;
-
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
@@ -28,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.EncodingResult;
+import org.apache.tika.detect.html.HtmlEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;

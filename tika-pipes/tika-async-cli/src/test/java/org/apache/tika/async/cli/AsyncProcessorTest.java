@@ -39,7 +39,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.JsonConfigHelper;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -54,6 +53,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 /**
  * This should be in tika-core, but we want to avoid a dependency mess with tika-serialization

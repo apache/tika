@@ -160,6 +160,8 @@ public class PipesServer implements AutoCloseable {
                 String msg = ExceptionUtils.getStackTrace(e);
                 byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
                 PipesMessage.startupFailed(bytes).write(dos);
+                // pipesConfig may not have loaded successfully (that may be why we're
+                // here); use the built-in default rather than an unreliable reference.
                 PipesMessage ackMsg = PipesMessage.read(dis);
                 if (ackMsg.type() != PipesMessageType.ACK) {
                     LOG.warn("Expected ACK but got: {}", ackMsg.type());
@@ -336,7 +338,7 @@ public class PipesServer implements AutoCloseable {
             while (true) {
                 PipesMessage msg;
                 try {
-                    msg = PipesMessage.read(input);
+                    msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     // Exit cleanly — PipesClient will restart the server if needed.

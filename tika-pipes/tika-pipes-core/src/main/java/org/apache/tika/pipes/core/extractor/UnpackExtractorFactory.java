@@ -16,7 +16,7 @@
  */
 package org.apache.tika.pipes.core.extractor;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;

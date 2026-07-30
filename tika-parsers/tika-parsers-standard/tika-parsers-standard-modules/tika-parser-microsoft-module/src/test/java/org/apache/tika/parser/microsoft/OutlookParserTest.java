@@ -119,12 +119,13 @@ public class OutlookParserTest extends TikaTest {
 
         //test that last header is added
         assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
-                Arrays.asList(metadata.getValues("Message:Raw-Header:X-OriginalArrivalTime")));
+                Arrays.asList(metadata.getValues(
+                        Metadata.MESSAGE_RAW_HEADER_PREFIX + "X-OriginalArrivalTime")));
         //confirm next line is added correctly
         assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
                         "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " +
                         "-0800",
-                Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
+                Arrays.asList(metadata.getValues(Metadata.MESSAGE_RAW_HEADER_PREFIX + "Received")));
         assertEquals("EX", metadata.get(MAPI.SENT_BY_SERVER_TYPE));
         assertEquals("NOTE", metadata.get(MAPI.MESSAGE_CLASS));
         assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));

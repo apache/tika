@@ -26,7 +26,7 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Properties;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 
 /**

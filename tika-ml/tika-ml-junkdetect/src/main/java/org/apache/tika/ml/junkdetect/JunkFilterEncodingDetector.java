@@ -18,6 +18,7 @@ package org.apache.tika.ml.junkdetect;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,7 +33,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.CharsetSupersets;
 import org.apache.tika.detect.EncodingDetectorContext;
 import org.apache.tika.detect.EncodingProbeCache;
@@ -42,6 +43,7 @@ import org.apache.tika.detect.MetaEncodingDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.ml.chardetect.AdaptiveProbe;
+import org.apache.tika.ml.chardetect.StructuralEncodingRules;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.quality.TextQualityDetector;
 
@@ -203,6 +205,20 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // decoded as the author intended.
         Charset declared = pickDeclarativeWithEquivalentDecode(context, candidates);
         if (declared != null) {
+            // A STRUCTURAL proof (valid multi-byte UTF-8, ISO-2022, BOM) outranks a
+            // DECLARATIVE self-claim on conflict.  The equivalent-decode shortcut
+            // compares tag-stripped text, so a doc whose only high bytes live in
+            // markup (a <meta> attribute, an <o:..> tag) ties on visible text and
+            // would honour a declaration the bytes contradict.  Defer to the proof
+            // (CJK-declaration guard in #overridesDeclared).
+            Charset structural = conflictingStructural(context, candidates, declared);
+            if (structural != null && overridesDeclared(structural, declared, bytes)) {
+                context.setArbitrationInfo("junk-filter-prefer-structural");
+                LOG.trace("junk-filter -> {} (structural proof overrides declared {})",
+                        structural.name(), declared.name());
+                return List.of(new EncodingResult(structural,
+                        context.getTopConfidenceFor(structural)));
+            }
             float conf = context.getTopConfidenceFor(declared);
             context.setArbitrationInfo("junk-filter-prefer-declarative");
             LOG.trace("junk-filter -> {} (declarative with equivalent decode)",
@@ -579,6 +595,36 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
             }
         }
         return null;
+    }
+
+    /** A decoded STRUCTURAL candidate other than the declared charset — evidence
+     *  that can outrank the declaration; {@code null} if none. */
+    private static Charset conflictingStructural(EncodingDetectorContext context,
+            Map<Charset, String> candidates, Charset declared) {
+        for (EncodingDetectorContext.Result r : context.getResults()) {
+            for (EncodingResult er : r.getEncodingResults()) {
+                if (er.getResultType() != EncodingResult.ResultType.STRUCTURAL) {
+                    continue;
+                }
+                Charset cs = er.getCharset();
+                if (!cs.equals(declared) && candidates.containsKey(cs)) {
+                    return cs;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Whether a conflicting STRUCTURAL proof overrides the declaration.  UTF-8 vs
+     *  a variable-length CJK declaration is ambiguous on a short probe (a 2-byte CJK
+     *  pair can fake a 2-byte UTF-8 char, never a wide one) → require a wide
+     *  sequence; all other proofs are unambiguous. */
+    private static boolean overridesDeclared(Charset structural, Charset declared,
+            byte[] bytes) {
+        if (StandardCharsets.UTF_8.equals(structural) && isCjkCharset(declared.name())) {
+            return StructuralEncodingRules.hasWideUtf8Sequence(bytes);
+        }
+        return true;
     }
 
     private static boolean allDecodingsIdentical(Map<Charset, String> candidates) {

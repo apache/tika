@@ -230,14 +230,13 @@ public class ID3v2Frame implements MP3Frame {
         // (return empty string), because new String(..)
         // gives different results on different JVMs
         if (encoding.encoding.equals("UTF-16") && actualLength == 2 &&
-                ((data[offset] == (byte) 0xff && data[offset + 1] == (byte) 0xfe) ||
-                        (data[offset] == (byte) 0xfe && data[offset + 1] == (byte) 0xff))) {
+                hasBOM(data, offset, actualLength)) {
             return "";
         }
 
         try {
             // Build the base string
-            return new String(data, offset, actualLength, encoding.encoding);
+            return decodeText(data, offset, actualLength, encoding);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
                     e);
@@ -245,10 +244,59 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Builds up the ID3 comment, by parsing and extracting
-     * the comment string parts from the given data.
+     * Decodes text in the frame's declared encoding. $01 is UTF-16 with a BOM; if a tagger omits
+     * it, Java assumes big-endian and turns little-endian text into mojibake ('T' 0x54 0x00 ->
+     * U+5400), so recover the byte order from the bytes.
+     */
+    private static String decodeText(byte[] data, int offset, int length, TextEncoding encoding)
+            throws UnsupportedEncodingException {
+        String charset = encoding.encoding;
+        if ("UTF-16".equals(charset) && !hasBOM(data, offset, length)) {
+            charset = guessUTF16ByteOrder(data, offset, length);
+        }
+        return new String(data, offset, length, charset);
+    }
+
+    private static boolean hasBOM(byte[] data, int offset, int length) {
+        if (length < 2) {
+            return false;
+        }
+        int first = data[offset] & 0xff;
+        int second = data[offset + 1] & 0xff;
+        return (first == 0xff && second == 0xfe) || (first == 0xfe && second == 0xff);
+    }
+
+    /**
+     * Recovers the byte order of BOM-less UTF-16, only reached when a $01 frame omits its
+     * mandatory BOM (a malformed tagger). Chars below U+0100, which dominate ID3 tags, carry one
+     * NUL per code unit whose column reveals the order. Chars above (eg CJK) carry no NUL and no
+     * signal; pure-CJK text then falls back to big-endian - Java's own BOM-less default, so this
+     * is never worse than the prior unconditional decode.
+     */
+    private static String guessUTF16ByteOrder(byte[] data, int offset, int length) {
+        int bigEndian = 0;
+        int littleEndian = 0;
+        for (int i = 0; i + 1 < length; i += 2) {
+            if (data[offset + i] == 0) {
+                bigEndian++;
+            }
+            if (data[offset + i + 1] == 0) {
+                littleEndian++;
+            }
+        }
+        return littleEndian > bigEndian ? "UTF-16LE" : "UTF-16BE";
+    }
+
+    /**
+     * Parses the comment parts from the given data, or null if the frame is too short or
+     * malformed to hold a comment.
      */
     protected static ID3Comment getComment(byte[] data, int offset, int length) {
+        // encoding flag + 3-byte language
+        if (length < 4) {
+            return null;
+        }
+
         // Comments must have an encoding
         int encodingFlag = data[offset];
         if (encodingFlag >= 0 && encodingFlag < encodings.length) {
@@ -264,6 +312,7 @@ public class ID3v2Frame implements MP3Frame {
         String lang = getString(data, offset + 1, 3);
 
         // After that we have [Desc]\0(\0)[Text]
+        int end = offset + length;
         int descStart = offset + 4;
         int textStart = -1;
         String description = null;
@@ -271,29 +320,30 @@ public class ID3v2Frame implements MP3Frame {
 
         // Find where the description ends
         try {
-            for (int i = descStart; i < offset + length; i++) {
-                if (encoding.doubleByte && data[i] == 0 && data[i + 1] == 0) {
+            for (int i = descStart; i < end; i++) {
+                // a double byte terminator needs both bytes present
+                if (encoding.doubleByte && i + 1 < end && data[i] == 0 && data[i + 1] == 0) {
                     // Handle LE vs BE on low byte text
-                    if (i + 2 < offset + length && data[i + 1] == 0 && data[i + 2] == 0) {
+                    if (i + 2 < end && data[i + 2] == 0) {
                         i++;
                     }
                     textStart = i + 2;
-                    description = new String(data, descStart, i - descStart, encoding.encoding);
+                    description = decodeText(data, descStart, i - descStart, encoding);
                     break;
                 }
                 if (!encoding.doubleByte && data[i] == 0) {
                     textStart = i + 1;
-                    description = new String(data, descStart, i - descStart, encoding.encoding);
+                    description = decodeText(data, descStart, i - descStart, encoding);
                     break;
                 }
             }
 
             // Did we find the end?
             if (textStart > -1) {
-                text = new String(data, textStart, offset + length - textStart, encoding.encoding);
+                text = decodeText(data, textStart, end - textStart, encoding);
             } else {
                 // Assume everything is the text
-                text = new String(data, descStart, offset + length - descStart, encoding.encoding);
+                text = decodeText(data, descStart, end - descStart, encoding);
             }
 
             // Return

@@ -26,7 +26,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.JsonConfigHelper;
+import org.apache.tika.serialization.config.JsonConfigHelper;
 
 public class PluginsTestHelper {
     private static final Logger LOG = LoggerFactory.getLogger(PluginsTestHelper.class);

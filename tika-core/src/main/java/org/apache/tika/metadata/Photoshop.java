@@ -47,6 +47,9 @@ public interface Photoshop {
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
             _COLOR_MODE_CHOICES_INDEXED);
 
+    Property ICC_PROFILE = Property.internalText(
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ICCProfile");
+
     Property CAPTION_WRITER = Property.internalText(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");
 

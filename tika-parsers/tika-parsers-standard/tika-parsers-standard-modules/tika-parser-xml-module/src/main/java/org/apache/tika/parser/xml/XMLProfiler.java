@@ -31,7 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.config.TikaComponent;
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -77,10 +77,10 @@ public class XMLProfiler implements Parser {
                     MediaType.application("rdf+xml"),//xmp
                     //xfa: https://en.wikipedia.org/wiki/XFA
                     MediaType.application("vnd.adobe.xdp+xml"))));
-    public static Property ROOT_ENTITY = Property.internalText("xmlprofiler:root_entity");
-    public static Property ENTITY_URIS = Property.internalTextBag("xmlprofiler:entity_uris");
+    public static Property ROOT_ENTITY = Property.internalText("xmlprofiler:root-entity");
+    public static Property ENTITY_URIS = Property.internalTextBag("xmlprofiler:entity-uris");
     public static Property ENTITY_LOCAL_NAMES =
-            Property.internalTextBag("xmlprofiler:entity_local_names");
+            Property.internalTextBag("xmlprofiler:entity-local-names");
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

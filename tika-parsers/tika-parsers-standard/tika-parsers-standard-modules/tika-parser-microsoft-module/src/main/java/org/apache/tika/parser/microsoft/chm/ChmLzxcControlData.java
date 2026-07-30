@@ -225,8 +225,11 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
         if (4 > getDataRemained()) {
             throw new ChmParsingException("4 > dataLenght");
         }
-        dest = data[this.getCurrentPlace()] | data[this.getCurrentPlace() + 1] << 8 |
-                data[this.getCurrentPlace() + 2] << 16 | data[this.getCurrentPlace() + 3] << 24;
+        //shift the top byte in long arithmetic so a value >= 2^31 stays unsigned
+        dest = (data[this.getCurrentPlace()] & 0xff) |
+                (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
+                (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
+                ((long) (data[this.getCurrentPlace() + 3] & 0xff)) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);

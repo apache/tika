@@ -57,10 +57,10 @@ import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaComponent;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -81,7 +81,6 @@ import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
-import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -374,7 +373,7 @@ public class PDFParser implements Parser, RenderingParser {
         if (privateDict == null) {
             return;
         }
-        metadata.set(Metadata.CONTENT_TYPE, XMPSchemaIllustrator.ILLUSTRATOR);
+        metadata.set(Metadata.CONTENT_TYPE, MediaType.application("illustrator").toString());
         //TODO -- consider parsing the metadata
         //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
     }
@@ -666,7 +665,7 @@ public class PDFParser implements Parser, RenderingParser {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
+                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM.key(name),
                         info.getCOSObject().getDictionaryObject(key));
             }
         }
@@ -676,7 +675,7 @@ public class PDFParser implements Parser, RenderingParser {
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
         //    There are also three potential pdf specific version keys:
-        //    pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        //    pdf:pdf-version, pdfa:pdf-version, pdf:pdf-extension-version
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
         metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
                 Float.toString(document.getDocument().getVersion()));
@@ -709,7 +708,7 @@ public class PDFParser implements Parser, RenderingParser {
                 } else {
                     // WARN that there is an Extension, but it's not Adobe's, and so is a 'new'
                     // format'.
-                    metadata.set("pdf:foundNonAdobeExtensionName", extName.getName());
+                    metadata.set("pdf:found-non-adobe-extension-name", extName.getName());
                 }
             }
         }

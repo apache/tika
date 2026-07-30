@@ -298,6 +298,58 @@ public class StandardHtmlEncodingDetectorTest {
     }
 
     @Test
+    public void withCharsetInContentEncoding() throws IOException {
+        // When Content-Type is absent, the charset should be read from Content-Encoding
+        Metadata meta = new Metadata();
+        meta.set(Metadata.CONTENT_ENCODING, "UTF-8");
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        TikaInputStream tis = TikaInputStream.get("".getBytes(StandardCharsets.UTF_8));
+        List<EncodingResult> results = detector.detect(tis, meta, new ParseContext());
+        assertEquals(1, results.size());
+        assertEquals(StandardCharsets.UTF_8, results.get(0).getCharset());
+        assertEquals(1.0f, results.get(0).getConfidence(), 0.0f);
+        assertEquals("UTF-8", results.get(0).getLabel());
+    }
+
+    @Test
+    public void encodingResultFields() throws IOException {
+        // A declarative charset yields confidence 1.0, the charset name as the label,
+        // and a DECLARATIVE result type
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        TikaInputStream tis = TikaInputStream.get(
+                "<meta charset='UTF-8'>".getBytes(StandardCharsets.UTF_8));
+        List<EncodingResult> results = detector.detect(tis, metadata, new ParseContext());
+        assertEquals(1, results.size());
+        EncodingResult result = results.get(0);
+        assertEquals(StandardCharsets.UTF_8, result.getCharset());
+        assertEquals(1.0f, result.getConfidence(), 0.0f);
+        assertEquals("UTF-8", result.getLabel());
+        assertEquals(EncodingResult.ResultType.DECLARATIVE, result.getResultType());
+    }
+
+    @Test
+    public void defaultMarkLimit() throws IOException {
+        // The default mark limit is 64 KiB (65536 bytes)
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        assertEquals(65536, detector.getMarkLimit());
+    }
+
+    @Test
+    public void customMarkLimit() throws IOException {
+        // setMarkLimit should change the limit returned by getMarkLimit
+        StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
+        detector.setMarkLimit(100);
+        assertEquals(100, detector.getMarkLimit());
+
+        // The meta tag starts at byte 80, within the 100-byte limit, but the charset value
+        // is truncated at byte 100 before it can be parsed, so no charset is detected
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 80; i++) sb.append("x");
+        sb.append("<meta charset='WINDOWS-1252'>");
+        assertCharset(sb.toString(), null, detector);
+    }
+
+    @Test
     public void throwResistance() throws IOException {
         // The preprocessing should return right after having found the charset
         // So if an error is thrown in the stream AFTER the declaration,

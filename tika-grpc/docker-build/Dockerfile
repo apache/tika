@@ -61,4 +61,16 @@ ENV TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE=$TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE
 ENV TIKA_GRPC_NUM_THREADS=$TIKA_GRPC_NUM_THREADS
 ENTRYPOINT ["/tika/bin/start-tika-grpc.sh"]
 
-LABEL maintainer="Apache Tika Developers dev@tika.apache.org"
+ARG REVISION
+ARG CREATED
+LABEL maintainer="Apache Tika Developers dev@tika.apache.org" \
+      org.opencontainers.image.title="Apache Tika gRPC Server" \
+      org.opencontainers.image.description="Apache Tika content detection and analysis server with gRPC interface" \
+      org.opencontainers.image.url="https://hub.docker.com/r/apache/tika-grpc" \
+      org.opencontainers.image.source="https://github.com/apache/tika" \
+      org.opencontainers.image.documentation="https://tika.apache.org/" \
+      org.opencontainers.image.vendor="Apache Software Foundation" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"

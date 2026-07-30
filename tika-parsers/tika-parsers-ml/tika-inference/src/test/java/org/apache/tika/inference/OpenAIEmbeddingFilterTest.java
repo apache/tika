@@ -72,14 +72,14 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(2, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), content);
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, content);
 
         List<Metadata> metadataList = new ArrayList<>();
         metadataList.add(metadata);
         filter.filter(metadataList);
 
-        String chunksJson = metadata.get("tika:chunks");
-        assertNotNull(chunksJson, "Should have tika:chunks");
+        String chunksJson = metadata.get("tk:chunks");
+        assertNotNull(chunksJson, "Should have tk:chunks");
 
         List<Chunk> chunks = ChunkSerializer.fromJson(chunksJson);
         assertEquals(2, chunks.size());
@@ -107,7 +107,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
@@ -124,19 +124,19 @@ public class OpenAIEmbeddingFilterTest {
         list.add(metadata);
         filter.filter(list);
 
-        assertNull(metadata.get("tika:chunks"));
+        assertNull(metadata.get("tk:chunks"));
         assertEquals(0, server.getRequestCount());
     }
 
     @Test
     void testBlankContent() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "   ");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "   ");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
 
-        assertNull(metadata.get("tika:chunks"));
+        assertNull(metadata.get("tk:chunks"));
         assertEquals(0, server.getRequestCount());
     }
 
@@ -145,7 +145,7 @@ public class OpenAIEmbeddingFilterTest {
         server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
 
@@ -183,12 +183,12 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Single chunk of text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Single chunk of text.");
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);
         filter.filter(list);
 
-        String chunksJson = metadata.get("tika:chunks");
+        String chunksJson = metadata.get("tk:chunks");
         JsonNode array = MAPPER.readTree(chunksJson);
         assertEquals(1, array.size());
 
@@ -205,7 +205,7 @@ public class OpenAIEmbeddingFilterTest {
                 buildEmbeddingResponse(1, 3)));
 
         Metadata metadata = new Metadata();
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "Some text.");
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "Some text.");
 
         // Pre-populate with an image chunk
         Chunk imgChunk = new Chunk(null,
@@ -214,8 +214,8 @@ public class OpenAIEmbeddingFilterTest {
                                 new org.apache.tika.inference.locator
                                         .PaginatedLocator(1)));
         imgChunk.setVector(new float[]{0.5f, 0.6f});
-        metadata.set(TikaCoreProperties.TIKA_CHUNKS,
-                ChunkSerializer.toJson(List.of(imgChunk)));
+        // simulate a prior producer via the real (trusted) merge path; tk:chunks is reserved
+        ChunkSerializer.mergeInto(metadata, List.of(imgChunk));
 
         List<Metadata> list = new ArrayList<>();
         list.add(metadata);

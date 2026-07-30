@@ -416,6 +416,9 @@ Refresh the website documentation to reflect the new release:
 * Update download links
 * Update version numbers in documentation
 * Add release notes
+* Publish the aggregated API docs (Javadoc) -- see
+  xref:maintainers/site.adoc[Publishing the Documentation Site], "Publishing the
+  API docs (Javadoc)"
 
 === Release Docker and Helm Images
 
