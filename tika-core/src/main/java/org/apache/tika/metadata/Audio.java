@@ -78,4 +78,9 @@ public interface Audio {
      * channels. A per-stream value, see {@link #BITRATE}.
      */
     Property CHANNELS = Property.internalInteger("audio:channels");
+
+    /**
+     * Audio sample size in bits (e.g. 16). A per-stream value, see {@link #BITRATE}.
+     */
+    Property BITS_PER_SAMPLE = Property.internalInteger("audio:bits-per-sample");
 }

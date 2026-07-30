@@ -123,6 +123,7 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("2", metadata.get(Audio.CHANNELS));
+        assertEquals("16", metadata.get(Audio.BITS_PER_SAMPLE));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
 

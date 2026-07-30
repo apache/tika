@@ -196,6 +196,8 @@ public class MP4Parser implements Parser {
                                         Metadata metadata) {
         addInt(mp4SoundDirectory, metadata, Mp4SoundDirectory.TAG_AUDIO_SAMPLE_RATE,
                 XMPDM.AUDIO_SAMPLE_RATE);
+        addInt(mp4SoundDirectory, metadata, Mp4SoundDirectory.TAG_AUDIO_SAMPLE_SIZE,
+                Audio.BITS_PER_SAMPLE);
 
         try {
             int numChannels = mp4SoundDirectory.getInt(Mp4SoundDirectory.TAG_NUMBER_OF_CHANNELS);
