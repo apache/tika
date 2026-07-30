@@ -17,9 +17,14 @@
 package org.apache.tika.parser.ogg;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,6 +37,9 @@ import org.gagravarr.vorbis.VorbisStyleComments;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PassthroughPrefix;
@@ -39,7 +47,9 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.audio.NumberAndTotal;
+import org.apache.tika.parser.mp3.ID3Tags;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -51,6 +61,12 @@ public abstract class OggAudioParser extends AbstractParser {
 
     private static final PassthroughPrefix VORBIS =
             PassthroughPrefix.file("vorbis:", "Vorbis comment field names");
+
+    /**
+     * Comment holding an embedded picture (e.g. cover art) as a base64
+     * encoded FLAC picture block
+     */
+    private static final String METADATA_BLOCK_PICTURE = "metadata_block_picture";
 
 
     /**
@@ -90,7 +106,8 @@ public abstract class OggAudioParser extends AbstractParser {
     }
 
     protected static void extractComments(Metadata metadata, XHTMLContentHandler xhtml,
-            VorbisStyleComments comments) throws TikaException, SAXException {
+            VorbisStyleComments comments, ParseContext context)
+            throws IOException, TikaException, SAXException {
         // Get the specific known comments
         metadata.set(TikaCoreProperties.TITLE, comments.getTitle());
         metadata.set(TikaCoreProperties.CREATOR, comments.getArtist());
@@ -112,12 +129,13 @@ public abstract class OggAudioParser extends AbstractParser {
             metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
         }
 
-        // Grab the rest just in case
+        // Grab the rest just in case; the pictures become embedded
+        //  documents instead, their raw base64 blocks help nobody
         List<String> done = Arrays.asList(
                 VorbisComments.KEY_TITLE, VorbisComments.KEY_ARTIST,
                 VorbisComments.KEY_ALBUM, VorbisComments.KEY_GENRE,
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
-                "vendor", "comment"
+                "vendor", "comment", METADATA_BLOCK_PICTURE
         );
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
@@ -175,6 +193,102 @@ public abstract class OggAudioParser extends AbstractParser {
             xhtml.element("p", comment);
         }
         xhtml.element("p", comments.getGenre());
+
+        // Any embedded pictures, such as cover art, become
+        //  embedded documents of the audio file
+        extractPictures(xhtml, comments, context);
+    }
+
+    /**
+     * Sends the embedded pictures, such as cover art, from the comments to
+     * the embedded document extractor. The pictures are carried as base64
+     * encoded FLAC picture blocks; malformed blocks are skipped silently.
+     * The pictures only become embedded documents, no metadata is recorded
+     * on the audio document itself.
+     */
+    private static void extractPictures(XHTMLContentHandler xhtml,
+            VorbisStyleComments comments, ParseContext context)
+            throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor = null;
+        for (String block : comments.getComments(METADATA_BLOCK_PICTURE)) {
+            byte[] decoded;
+            try {
+                decoded = Base64.getMimeDecoder().decode(block);
+            } catch (IllegalArgumentException e) {
+                //not valid base64, skip
+                continue;
+            }
+
+            // The picture block holds a 32 bit BE picture type, the mime
+            // type, the description, the image geometry and the picture
+            // data, with mime type, description and data length prefixed
+            int pictureType;
+            String mimeType;
+            String description;
+            byte[] picture;
+            try {
+                ByteBuffer buffer = ByteBuffer.wrap(decoded);
+                pictureType = buffer.getInt();
+                mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
+                if (mimeType == null || "-->".equals(mimeType)) {
+                    // Malformed, or a link to a picture rather than an
+                    // embedded one
+                    continue;
+                }
+                description = getPrefixedString(buffer, StandardCharsets.UTF_8);
+                if (description == null) {
+                    continue;
+                }
+                // Width, height, color depth and number of colors
+                buffer.position(buffer.position() + 16);
+                int dataLength = buffer.getInt();
+                if (dataLength <= 0 || dataLength > buffer.remaining()) {
+                    continue;
+                }
+                picture = new byte[dataLength];
+                buffer.get(picture);
+            } catch (BufferUnderflowException | IllegalArgumentException e) {
+                //truncated picture block, skip
+                continue;
+            }
+
+            if (extractor == null) {
+                extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            }
+            Metadata pictureMetadata = Metadata.newInstance(context);
+            pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+            if (!mimeType.isEmpty()) {
+                pictureMetadata.set(Metadata.CONTENT_TYPE, mimeType);
+            }
+            if (!description.isEmpty()) {
+                pictureMetadata.set(TikaCoreProperties.TITLE, description);
+            }
+            //the FLAC picture block reuses the ID3v2 APIC picture types
+            if (pictureType >= 0 && pictureType < ID3Tags.PICTURE_TYPES.length) {
+                pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                        ID3Tags.PICTURE_TYPES[pictureType]);
+            }
+            if (extractor.shouldParseEmbedded(pictureMetadata)) {
+                try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
+                    extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Reads a 32 bit length prefixed string from the buffer, or null if the
+     * declared length is invalid for the remaining data.
+     */
+    private static String getPrefixedString(ByteBuffer buffer, Charset charset) {
+        int length = buffer.getInt();
+        if (length < 0 || length > buffer.remaining()) {
+            return null;
+        }
+        byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return new String(bytes, charset);
     }
 
     protected static void extractDuration(Metadata metadata, XHTMLContentHandler xhtml,

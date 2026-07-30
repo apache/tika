@@ -83,7 +83,7 @@ public class FlacParser extends AbstractParser {
         }
 
         // Extract any Vorbis-style comments
-        OggAudioParser.extractComments(metadata, xhtml, flac.getTags());
+        OggAudioParser.extractComments(metadata, xhtml, flac.getTags(), context);
 
         // Extract duration if available from header
         FlacInfo info = flac.getInfo();

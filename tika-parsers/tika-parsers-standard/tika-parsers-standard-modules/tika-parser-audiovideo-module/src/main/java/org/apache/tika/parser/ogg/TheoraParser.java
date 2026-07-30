@@ -77,7 +77,7 @@ public class TheoraParser extends AbstractParser {
         extractInfo(metadata, theora.getInfo());
 
         // Extract the common Theora comments
-        OggAudioParser.extractComments(metadata, xhtml, theora.getComments());
+        OggAudioParser.extractComments(metadata, xhtml, theora.getComments(), context);
 
         // Extract any soundtracks
         for (OggAudioHeaders audio : theora.getSoundtracks()) {

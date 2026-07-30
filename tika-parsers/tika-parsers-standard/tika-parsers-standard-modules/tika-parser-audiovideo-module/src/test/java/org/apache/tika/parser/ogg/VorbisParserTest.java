@@ -19,6 +19,8 @@ package org.apache.tika.parser.ogg;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.util.List;
+
 import org.gagravarr.vorbis.VorbisInfo;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -27,6 +29,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 
@@ -49,6 +52,27 @@ public class VorbisParserTest extends TikaTest {
         assertEquals("80000", metadata.get(Audio.BITRATE));
         assertEquals("true", metadata.get(Audio.IS_VARIABLE_BITRATE));
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
+    }
+
+    /**
+     * Cover art in a metadata_block_picture comment becomes an embedded
+     * document; neither the raw base64 block nor any other new metadata
+     * lands on the audio document itself.
+     */
+    @Test
+    public void testCoverArt() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testVORBIS_coverArt.ogg");
+
+        assertEquals(2, metadataList.size());
+        assertEquals("audio/vorbis", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertNull(metadataList.get(0).get("vorbis:metadata_block_picture"));
+
+        Metadata pictureMetadata = metadataList.get(1);
+        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
     }
 
     private static Metadata extractInfo(int upper, int nominal, int lower) throws Exception {
