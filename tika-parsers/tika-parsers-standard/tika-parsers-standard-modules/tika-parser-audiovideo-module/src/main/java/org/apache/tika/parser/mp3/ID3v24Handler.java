@@ -175,7 +175,8 @@ public class ID3v24Handler implements ID3Tags {
 
     private class RawV24TagIterator extends RawTagIterator {
         private RawV24TagIterator(ID3v2Frame frame) {
-            frame.super(4, 4, 1, 2);
+            //v2.4 frame sizes are synchsafe integers
+            frame.super(4, 4, 1, 2, true);
         }
     }
 }

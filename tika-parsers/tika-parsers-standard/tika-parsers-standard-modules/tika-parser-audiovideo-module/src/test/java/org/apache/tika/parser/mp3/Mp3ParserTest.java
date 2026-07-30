@@ -151,6 +151,50 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     /**
+     * Test that a file with several APIC frames yields one embedded
+     * document per picture, in file order. The first frame is larger
+     * than 127 bytes, so this also exercises the synchsafe frame sizes
+     * of ID3v2.4: reading them as plain integers desyncs the frame walk
+     * and loses every picture after the first
+     */
+    @Test
+    public void testMp3ParsingID3v24MultipleCovers() throws Exception {
+        assertTwoCovers("testMP3_twoCovers.mp3");
+    }
+
+    /**
+     * Test the same two pictures in an ID3v2.3 tag, whose frame sizes
+     * are plain integers
+     */
+    @Test
+    public void testMp3ParsingID3v23MultipleCovers() throws Exception {
+        assertTwoCovers("testMP3v23_twoCovers.mp3");
+    }
+
+    private void assertTwoCovers(String fileName) throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata(fileName);
+
+        assertEquals(3, metadataList.size());
+        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        //the 64x40 front cover comes first in the file,
+        //the 30x30 back cover second
+        Metadata front = metadataList.get(1);
+        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
+
+        Metadata back = metadataList.get(2);
+        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
+    }
+
+    /**
      * Test that metadata is added before xhtml content
      * is written...so that more metadata shows up in the xhtml
      */

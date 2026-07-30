@@ -49,4 +49,25 @@ public class FlacParserTest extends TikaTest {
         assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
     }
+
+    /**
+     * A file with several PICTURE blocks yields one embedded document
+     * per picture, in file order.
+     */
+    @Test
+    public void testMultipleCovers() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testFLAC_twoCovers.flac");
+
+        assertEquals(3, metadataList.size());
+
+        Metadata front = metadataList.get(1);
+        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
+
+        Metadata back = metadataList.get(2);
+        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
+    }
 }

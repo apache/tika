@@ -159,6 +159,26 @@ public class MP4ParserTest extends TikaTest {
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
+    /**
+     * Test that a covr entry with several data atoms, one image each,
+     * yields one embedded document per image, in file order
+     */
+    @Test
+    public void testMP4MultipleCovers() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMP4_twoCovers.m4a");
+
+        assertEquals(3, metadataList.size());
+        //a png data atom (well-known type 14) followed by a jpeg one (13)
+        Metadata front = metadataList.get(1);
+        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        Metadata back = metadataList.get(2);
+        assertEquals("image/jpeg", back.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
     // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
     @Test

@@ -75,6 +75,28 @@ public class VorbisParserTest extends TikaTest {
         assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
     }
 
+    /**
+     * A file with several metadata_block_picture comments yields one
+     * embedded document per picture, in file order.
+     */
+    @Test
+    public void testMultipleCovers() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testVORBIS_twoCovers.ogg");
+
+        assertEquals(3, metadataList.size());
+        assertNull(metadataList.get(0).get("vorbis:metadata_block_picture"));
+
+        Metadata front = metadataList.get(1);
+        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
+
+        Metadata back = metadataList.get(2);
+        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
+    }
+
     private static Metadata extractInfo(int upper, int nominal, int lower) throws Exception {
         VorbisInfo info = new VorbisInfo();
         info.setRate(44100);

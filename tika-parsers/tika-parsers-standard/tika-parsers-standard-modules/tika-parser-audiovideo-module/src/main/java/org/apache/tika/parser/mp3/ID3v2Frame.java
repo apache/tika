@@ -539,7 +539,7 @@ public class ID3v2Frame implements MP3Frame {
         private int headerSize;
 
         private RawTag(int nameLength, int sizeLength, int sizeMultiplier, int flagLength,
-                       byte[] frameData, int offset) {
+                       boolean synchsafeSize, byte[] frameData, int offset) {
             headerSize = nameLength + sizeLength + flagLength;
 
             // Name, normally 3 or 4 bytes
@@ -549,6 +549,8 @@ public class ID3v2Frame implements MP3Frame {
             int rawSize;
             if (sizeLength == 3) {
                 rawSize = getInt3(frameData, offset + nameLength);
+            } else if (synchsafeSize) {
+                rawSize = getV24FrameSize(frameData, offset, headerSize, nameLength);
             } else {
                 rawSize = getInt(frameData, offset + nameLength);
             }
@@ -575,6 +577,66 @@ public class ID3v2Frame implements MP3Frame {
             return headerSize + data.length;
         }
 
+        /**
+         * Returns the size of an ID3v2.4 frame. The spec encodes frame
+         * sizes as synchsafe integers, but widespread taggers (e.g. older
+         * iTunes) wrote plain integers instead. Reading a synchsafe size
+         * as a plain integer (or the other way around) makes the frame
+         * walk skip into the middle of the following frames, losing them,
+         * so when the two readings disagree, pick the one that lands the
+         * walk on a plausible next frame.
+         */
+        private static int getV24FrameSize(byte[] frameData, int offset, int headerSize,
+                                           int nameLength) {
+            int plain = getInt(frameData, offset + nameLength);
+            // A size byte with the high bit set cannot be synchsafe
+            if (((frameData[offset + nameLength] | frameData[offset + nameLength + 1] |
+                    frameData[offset + nameLength + 2] | frameData[offset + nameLength + 3]) &
+                    0x80) != 0) {
+                return plain;
+            }
+            int synchsafe = get7BitsInt(frameData, offset + nameLength);
+            if (synchsafe == plain) {
+                return synchsafe;
+            }
+            if (isPlausibleFrameStart(frameData, offset + headerSize + synchsafe)) {
+                return synchsafe;
+            }
+            if (isPlausibleFrameStart(frameData, offset + headerSize + plain)) {
+                return plain;
+            }
+            // Neither reading looks right, go with the spec
+            return synchsafe;
+        }
+
+        /**
+         * Checks whether the given offset is a plausible place for the
+         * next frame to start: the end of the tag, padding, or a frame id
+         * made of capital letters and digits.
+         */
+        private static boolean isPlausibleFrameStart(byte[] frameData, int nextOffset) {
+            if (nextOffset < 0 || nextOffset > frameData.length) {
+                return false;
+            }
+            if (nextOffset == frameData.length) {
+                return true;
+            }
+            if (frameData[nextOffset] == 0) {
+                // Padding
+                return true;
+            }
+            if (nextOffset + 4 > frameData.length) {
+                return false;
+            }
+            for (int i = nextOffset; i < nextOffset + 4; i++) {
+                byte b = frameData[i];
+                if (!((b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9'))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
 
     /**
@@ -587,15 +649,22 @@ public class ID3v2Frame implements MP3Frame {
         private int sizeLength;
         private int sizeMultiplier;
         private int flagLength;
+        private boolean synchsafeSize;
 
         private int offset = 0;
 
         protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
                                  int flagLength) {
+            this(nameLength, sizeLength, sizeMultiplier, flagLength, false);
+        }
+
+        protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
+                                 int flagLength, boolean synchsafeSize) {
             this.nameLength = nameLength;
             this.sizeLength = sizeLength;
             this.sizeMultiplier = sizeMultiplier;
             this.flagLength = flagLength;
+            this.synchsafeSize = synchsafeSize;
         }
 
         public boolean hasNext() {
@@ -604,8 +673,8 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public RawTag next() {
-            RawTag tag =
-                    new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data, offset);
+            RawTag tag = new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength,
+                    synchsafeSize, data, offset);
             offset += tag.getSize();
             return tag;
         }
