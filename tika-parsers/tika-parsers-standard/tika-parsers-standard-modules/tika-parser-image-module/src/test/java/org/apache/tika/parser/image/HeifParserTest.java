@@ -75,13 +75,11 @@ public class HeifParserTest {
         //Live Photo ID (Apple maker note tag 0x0017) is written as LONG8 and
         //was dropped before metadata-extractor 2.21.0. TIKA-4776
         Metadata metadata = new Metadata();
-        try (TikaInputStream tis = getResourceAsStream("/test-documents/testHEIC_livePhoto.heic")) {
-            parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testHEIC_livePhoto.heic")) {
+            parser.parse(is, new DefaultHandler(), metadata, new ParseContext());
 
-            assertEquals("CD28D161-D5EC-4CDE-8B60-DACCC1363B6B",
-                    metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Content Identifier"));
-            assertEquals("5283876",
-                    metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Live Photo ID"));
+            assertEquals("CD28D161-D5EC-4CDE-8B60-DACCC1363B6B", metadata.get("Content Identifier"));
+            assertEquals("5283876", metadata.get("Live Photo ID"));
         }
     }
 
