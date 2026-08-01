@@ -37,6 +37,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -47,6 +48,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class GribParser implements Parser {
 
     public static final String GRIB_MIME_TYPE = "application/x-grib2";
+    public static final PassthroughPrefix GRIB =
+            PassthroughPrefix.file("grib:", "GRIB global attribute names");
     private static final long serialVersionUID = 7855458954474247655L;
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-grib2"));
@@ -134,7 +137,7 @@ public class GribParser implements Parser {
         } else if (CF_GLOBAL_ATTRIBUTES.contains(name)) {
             metadata.add(name, value);
         } else {
-            metadata.add("grib:" + name, value);
+            metadata.add(GRIB.key(name), value);
         }
     }
 

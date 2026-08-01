@@ -70,7 +70,8 @@ public class FieldNameMappingFilter extends MetadataFilterBase {
                     String[] vals = metadata.getValues(n);
                     metadata.remove(n);
                     for (String val : vals) {
-                        metadata.add(mappings.get(n), val);
+                        // target field name is operator-configured; may legitimately be a reserved key
+                        metadata.addTrusted(mappings.get(n), val);
                     }
                 } else {
                     metadata.remove(n);
@@ -82,7 +83,7 @@ public class FieldNameMappingFilter extends MetadataFilterBase {
                     String[] vals = metadata.getValues(n);
                     metadata.remove(n);
                     for (String val : vals) {
-                        metadata.add(mappings.get(n), val);
+                        metadata.addTrusted(mappings.get(n), val);
                     }
                 }
             }

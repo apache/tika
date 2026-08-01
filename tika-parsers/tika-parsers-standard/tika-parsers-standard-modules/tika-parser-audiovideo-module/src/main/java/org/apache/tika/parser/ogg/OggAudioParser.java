@@ -34,6 +34,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -47,6 +48,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
+
+    private static final PassthroughPrefix VORBIS =
+            PassthroughPrefix.file("vorbis:", "Vorbis comment field names");
 
 
     /**
@@ -118,7 +122,7 @@ public abstract class OggAudioParser extends AbstractParser {
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add("vorbis:" + key, value);
+                    metadata.add(VORBIS.key(key), value);
                 }
             }
         }

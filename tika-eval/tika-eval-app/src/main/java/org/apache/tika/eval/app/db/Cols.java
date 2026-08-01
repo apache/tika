@@ -26,7 +26,7 @@ public enum Cols {
     //profile table
     ID, LENGTH, FILE_NAME, FILE_EXTENSION, ELAPSED_TIME_MILLIS, NUM_METADATA_VALUES, IS_EMBEDDED, EMBEDDED_FILE_PATH, MIME_ID, TIKA_MIME_ID, FILE_MIME_ID, SHA256, MD5,
     NUM_ATTACHMENTS, ATTACHMENT_TYPE, EMBEDDED_DEPTH, HAS_CONTENT,
-    //charset detection (encodings table): final pick, winning detector, declared-via-metadata (Content-Type-Hint)
+    //charset detection (encodings table): final pick, winning detector, declared-via-metadata (tk:content-type-hint)
     DETECTED_ENCODING, ENCODING_DETECTOR, DECLARED_METADATA,
 
     //content

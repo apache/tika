@@ -1,0 +1,23 @@
+[
+  {"prefix":"ICC:","provenance":"FILE","description":"unrecognized ICC profile tag names"},
+  {"prefix":"MboxParser-","provenance":"FILE","description":"mbox email header names"},
+  {"prefix":"custom:","provenance":"FILE","description":"OOXML/OLE2/ODF user-defined document properties"},
+  {"prefix":"dwg-custom:","provenance":"FILE","description":"DWG custom document properties"},
+  {"prefix":"dwg:","provenance":"FILE","description":"DWGRead JSON header/summary field names"},
+  {"prefix":"flv:","provenance":"FILE","description":"FLV onMetaData tag keys"},
+  {"prefix":"html:","provenance":"FILE","description":"scraped <meta>/http-equiv/OpenGraph names not mapped to a Property"},
+  {"prefix":"img:","provenance":"FILE","description":"unrecognized image tag names"},
+  {"prefix":"iworks:","provenance":"FILE","description":"iWork '13 plist document properties"},
+  {"prefix":"mapi:property:","provenance":"FILE","description":"MAPI named properties"},
+  {"prefix":"mdb-prop:","provenance":"FILE","description":"MS Access database properties"},
+  {"prefix":"mdb-summary-prop:","provenance":"FILE","description":"MS Access summary properties"},
+  {"prefix":"mdb-user-prop:","provenance":"FILE","description":"MS Access user-defined properties"},
+  {"prefix":"message:raw-header:","provenance":"FILE","description":"RFC822 / Outlook raw email header names"},
+  {"prefix":"numbers:","provenance":"FILE","description":"iWork Numbers document metadata element names"},
+  {"prefix":"pdf:docinfo:custom:","provenance":"FILE","description":"PDF Info-dict custom keys"},
+  {"prefix":"rtf:pict:","provenance":"FILE","description":"RTF embedded picture-object property pairs (sn/sv); file-controlled names"},
+  {"prefix":"vorbis:","provenance":"FILE","description":"Vorbis comment field names"},
+  {"prefix":"warc:","provenance":"FILE","description":"WARC record header names"},
+  {"prefix":"warc:http:","provenance":"FILE","description":"WARC HTTP response header names"},
+  {"prefix":"xmp-raw:","provenance":"FILE","description":"unmapped XMP keys"}
+]

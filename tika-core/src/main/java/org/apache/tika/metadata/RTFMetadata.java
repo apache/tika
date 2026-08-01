@@ -17,10 +17,17 @@
 package org.apache.tika.metadata;
 
 public interface RTFMetadata {
-    String PREFIX_RTF_META = "rtf_meta";
+    // TIKA-4794: rtf_meta -> rtf (bare format name, matches pdf:/zip:/dwg:; "_meta" was redundant).
+    String PREFIX_RTF_META = "rtf";
 
+    // TIKA-4794: rtf_pict -> rtf:pict (sub-namespace, no underscore). Kept SEPARATE from the fixed
+    // rtf: keys below: the suffix here is file-controlled (the RTF \sn property name), so a crafted
+    // doc must not be able to forge a fixed rtf: key. PICT registers it as an open namespace.
+    String RTF_PICT_META_PREFIX = "rtf:pict:";
 
-    String RTF_PICT_META_PREFIX = "rtf_pict:";
+    /** Open (file-controlled) RTF embedded-object property names built off {@link #RTF_PICT_META_PREFIX}. */
+    PassthroughPrefix PICT = PassthroughPrefix.file(RTF_PICT_META_PREFIX,
+            "RTF embedded picture-object property pairs (sn/sv); file-controlled names");
 
     /**
      * if set to true, this means that an image file is probably a "thumbnail"
@@ -33,19 +40,19 @@ public interface RTFMetadata {
      * if an application and version is given as part of the
      * embedded object, this is the literal string
      */
-    Property EMB_APP_VERSION = Property.internalText(
-            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_app_version");
+    Property EMBEDDED_APP_VERSION = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "embedded-app-version");
 
-    Property EMB_CLASS = Property.internalText(
-            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_class");
+    Property EMBEDDED_CLASS = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "embedded-class");
 
-    Property EMB_TOPIC = Property.internalText(
-            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_topic");
+    Property EMBEDDED_TOPIC = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "embedded-topic");
 
-    Property EMB_ITEM = Property.internalText(
-            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "emb_item");
+    Property EMBEDDED_ITEM = Property.internalText(
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "embedded-item");
 
     Property CONTAINS_ENCAPSULATED_HTML = Property.internalBoolean(
-            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "contains_encapsulated_html");
+            PREFIX_RTF_META + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "contains-encapsulated-html");
 
 }

@@ -43,7 +43,7 @@ public class ImageEmbeddingConfig implements Serializable {
      * image vector and locators. Defaults to the canonical chunks field
      * so image embeddings merge with text chunks in a single array.
      */
-    private String outputField = TikaCoreProperties.TIKA_CHUNKS;
+    private String outputField = TikaCoreProperties.TIKA_CHUNKS.getName();
 
     public String getBaseUrl() {
         return baseUrl;

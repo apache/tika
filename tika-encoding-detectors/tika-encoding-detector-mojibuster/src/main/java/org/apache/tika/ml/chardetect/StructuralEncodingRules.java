@@ -750,6 +750,43 @@ public final class StructuralEncodingRules {
     }
 
     /**
+     * True if the sample has a COMPLETE 3-/4-byte UTF-8 sequence (lead
+     * {@code 0xE0–0xF4}, continuations {@code 0x80–0xBF}).  A legacy 2-byte CJK
+     * pair can fake a 2-byte UTF-8 char but never a wide one — the discriminator
+     * between real UTF-8 and a CJK coincidence.  Tests width only; caller must
+     * already know the sample is valid UTF-8 (see {@link #checkUtf8}).
+     */
+    public static boolean hasWideUtf8Sequence(byte[] bytes) {
+        return hasWideUtf8Sequence(bytes, 0, bytes.length);
+    }
+
+    public static boolean hasWideUtf8Sequence(byte[] bytes, int offset, int length) {
+        int end = offset + length;
+        for (int i = offset; i < end; i++) {
+            int b = bytes[i] & 0xFF;
+            if (b < 0xE0 || b > 0xF4) {
+                continue;
+            }
+            int seqLen = (b >= 0xF0) ? 4 : 3;
+            if (i + seqLen > end) {
+                continue; // truncated lead at probe end — not proof
+            }
+            boolean complete = true;
+            for (int k = 1; k < seqLen; k++) {
+                int cb = bytes[i + k] & 0xFF;
+                if (cb < 0x80 || cb > 0xBF) {
+                    complete = false;
+                    break;
+                }
+            }
+            if (complete) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Counts the number of malformed UTF-8 <em>sequences</em> in the sample —
      * one event per bad lead, orphaned continuation, overlong, surrogate, or
      * out-of-range codepoint, regardless of how many bytes the bad sequence

@@ -80,9 +80,9 @@ public class TestParsingExample extends TikaTest {
         assertEquals(12, metadataList.size(), "Number of embedded documents + 1 for the container document");
         Metadata m = metadataList.get(6);
         //this is the location the embed3.txt text file within the outer .docx
-        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt", m.get("X-TIKA:embedded_resource_path"));
+        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt", m.get("tk:embedded-resource-path"));
         //it contains some html encoded content
-        assertContains("When in the Course", m.get("X-TIKA:content"));
+        assertContains("When in the Course", m.get("tk:content"));
     }
 
     @Test

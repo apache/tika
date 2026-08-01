@@ -19,6 +19,6 @@ package org.apache.tika.metadata;
 public interface PST {
 
     String PST_PREFIX = "pst:";
-    Property DESCRIPTOR_NODE_ID = Property.internalText(PST_PREFIX + "discriptorNodeId");
-    Property IS_VALID = Property.internalBoolean(PST_PREFIX + "isValid");
+    Property DESCRIPTOR_NODE_ID = Property.internalText(PST_PREFIX + "discriptor-node-id");
+    Property IS_VALID = Property.internalBoolean(PST_PREFIX + "is-valid");
 }

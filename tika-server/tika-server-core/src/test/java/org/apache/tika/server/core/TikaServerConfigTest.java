@@ -157,4 +157,76 @@ public class TikaServerConfigTest extends TikaTest {
         assertEquals("pass2", tlsConfig.getTrustStorePassword());
         assertEquals("/something/or/other2", tlsConfig.getTrustStoreFile());
     }
+
+    // The four cases below exercise TLS config validation through the CommandLine-based
+    // TikaServerConfig.load() overload, rather than the Path-based overload testTlsConfig()
+    // above uses.
+
+    @Test
+    public void testClientAuthRequiredWithoutTrustStoreRefusesToLoad() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-client-auth-no-truststore.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("client authentication", ex.getMessage());
+        assertContains("no trust store", ex.getMessage());
+    }
+
+    @Test
+    public void testPartialTrustStoreConfigRefusesToLoad() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-partial-truststore.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("Partial truststore configuration", ex.getMessage());
+    }
+
+    @Test
+    public void testMissingKeyStoreFileRefusesToLoad() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-missing-keystore.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("keyStoreFile does not exist", ex.getMessage());
+    }
+
+    @Test
+    public void testClientAuthRequiredWithValidTrustStoreLoadsSuccessfully() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-client-auth-valid.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaServerConfig config = TikaServerConfig.load(commandLine);
+        assertTrue(config.getTlsConfig().isClientAuthenticationRequired());
+    }
 }

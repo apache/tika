@@ -56,7 +56,7 @@ public class MSOfficeBinaryConverter extends AbstractConverter {
         super.setMetadata(metadata);
 
         // For all formats, Tika uses the same keys
-        createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
+        createProperty(HttpHeaders.CONTENT_TYPE.getName(), XMPConst.NS_DC, "format");
         createProperty(OfficeOpenXMLExtended.APPLICATION, XMPConst.NS_XMP, "CreatorTool");
         createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
                 PropertyOptions.ARRAY_ORDERED);

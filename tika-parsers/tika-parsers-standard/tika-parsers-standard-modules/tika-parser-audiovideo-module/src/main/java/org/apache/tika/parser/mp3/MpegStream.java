@@ -19,6 +19,7 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 
@@ -114,6 +115,12 @@ class MpegStream extends PushbackInputStream {
     private static final int HEADER_SIZE = 4;
 
     /**
+     * Pushback capacity: enough for the header handling plus
+     * {@link #peekFramePayload(int)} peeks into the frame payload.
+     */
+    private static final int PEEK_BUFFER_SIZE = 48;
+
+    /**
      * The current MPEG header.
      */
     private AudioFrame currentHeader;
@@ -130,7 +137,7 @@ class MpegStream extends PushbackInputStream {
      * @param in the underlying audio stream
      */
     public MpegStream(InputStream in) {
-        super(in, 2 * HEADER_SIZE);
+        super(in, PEEK_BUFFER_SIZE);
     }
 
     /**
@@ -285,7 +292,9 @@ class MpegStream extends PushbackInputStream {
     public boolean skipFrame() throws IOException {
         if (currentHeader != null) {
             long toSkip = currentHeader.getLength() - HEADER_SIZE;
-            long skipped = IOUtils.skip(in, toSkip);
+            //skip through this stream, not the wrapped one, so bytes pushed
+            //back by peekFramePayload are honored
+            long skipped = IOUtils.skip(this, toSkip);
             currentHeader = null;
             if (skipped < toSkip) {
                 return false;
@@ -293,6 +302,27 @@ class MpegStream extends PushbackInputStream {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Reads up to {@code count} bytes of the current frame's payload and
+     * pushes them back, leaving the stream position and the frame accounting
+     * undisturbed. Used to recognize metadata-only frames (Xing/Info/VBRI).
+     */
+    byte[] peekFramePayload(int count) throws IOException {
+        byte[] buffer = new byte[count];
+        int read = 0;
+        while (read < count) {
+            int r = read(buffer, read, count - read);
+            if (r < 0) {
+                break;
+            }
+            read += r;
+        }
+        if (read > 0) {
+            unread(buffer, 0, read);
+        }
+        return read == count ? buffer : Arrays.copyOf(buffer, Math.max(read, 0));
     }
 
     /**

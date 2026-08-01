@@ -359,7 +359,7 @@ public class PDFParserTest extends TikaTest {
                 metadatas.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         for (String key : metadatas.get(1).names()) {
-            if (key.startsWith("X-TIKA:EXCEPTION")) {
+            if (key.startsWith("tk:exception")) {
                 fail("Exception: " + metadatas.get(1).get(key));
             }
         }

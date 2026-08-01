@@ -1,0 +1,39 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# TIKA-4797 manual migration overlay (core scope, adjudicated + confirmed 2026-07-28)
+# The moves/removals the field-identity join could NOT auto-bridge. Everything else auto-renames.
+#
+# v3<TAB>v4    (v4 = DROPPED means 4.x no longer emits it; not bridgeable)
+meta:mapi-from-representing-email	mapi:from-representing-email
+meta:mapi-from-representing-name	mapi:from-representing-name
+meta:mapi-importance	mapi:importance
+meta:mapi-is-flagged	mapi:is-flagged
+meta:mapi-message-class	mapi:message-class
+meta:mapi-recipients-string	mapi:recipients-string
+meta:mapi-sent-by-server-type	mapi:sent-by-server-type
+meta:mapi-msg-client-submit-time	mapi:msg-client-submit-time
+# DROPPED (confirmed intentional): 4.x OutlookPSTParser sets TikaCoreProperties.INTERNAL_PATH
+# (tk:internal-path) = folderPath + "/" + item-name on each mail item -> the folder path became the
+# full item path, a SUPERSET. Not a 1:1 value, so the key-rename bridge can't reproduce the folder-only
+# value; document "folder path now part of tk:internal-path". Not bridgeable as a rename.
+pst:folderPath	DROPPED
+# RTF embedded-object fields: 4.x renamed the Java fields EMB_* -> EMBEDDED_* AND the keys
+# rtf_meta:emb_* -> rtf:embedded-*, so field-identity can't bridge them. Clean renames (targets
+# verified present in the 4.x closed set); fuzzy suggested each correctly.
+rtf_meta:emb_app_version	rtf:embedded-app-version
+rtf_meta:emb_class	rtf:embedded-class
+rtf_meta:emb_item	rtf:embedded-item
+rtf_meta:emb_topic	rtf:embedded-topic

@@ -119,12 +119,13 @@ public class OutlookParserTest extends TikaTest {
 
         //test that last header is added
         assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
-                Arrays.asList(metadata.getValues("Message:Raw-Header:X-OriginalArrivalTime")));
+                Arrays.asList(metadata.getValues(
+                        Metadata.MESSAGE_RAW_HEADER_PREFIX + "X-OriginalArrivalTime")));
         //confirm next line is added correctly
         assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
                         "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " +
                         "-0800",
-                Arrays.asList(metadata.getValues("Message:Raw-Header:Received")));
+                Arrays.asList(metadata.getValues(Metadata.MESSAGE_RAW_HEADER_PREFIX + "Received")));
         assertEquals("EX", metadata.get(MAPI.SENT_BY_SERVER_TYPE));
         assertEquals("NOTE", metadata.get(MAPI.MESSAGE_CLASS));
         assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));
@@ -215,7 +216,7 @@ public class OutlookParserTest extends TikaTest {
         assertEquals("<EBB9951D34EA4B41B70AB946CF3FB6EC1A297D98@ftm02.FT.FTG.COM>",
                 metadata.get(MAPI.INTERNET_MESSAGE_ID));
         assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
-        assertTrue(metadata.get("mapi:client-submit-time").startsWith("2011-03-29"));
+        assertTrue(metadata.get(MAPI.CLIENT_SUBMIT_TIME).startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:message-delivery-time").startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:last-modification-time").startsWith("2011-03-29"));
         assertTrue(metadata.get("mapi:creation-time").startsWith("2011-03-29"));

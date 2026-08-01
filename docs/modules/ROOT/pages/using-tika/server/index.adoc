@@ -211,7 +211,7 @@ document on the same server is unlikely to succeed without a configuration fix.
 
 NOTE: A successful parse that encountered internal parser errors (e.g. a truncated
 embedded document) still returns `200 OK`. The partial-parse exception is surfaced
-in the `X-TIKA:EXCEPTION:container_exception` metadata field of the response, not as an
+in the `tk:exception:container-exception` metadata field of the response, not as an
 HTTP error code.
 
 == Configuration

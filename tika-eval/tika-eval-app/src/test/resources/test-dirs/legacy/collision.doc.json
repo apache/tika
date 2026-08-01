@@ -1,0 +1,7 @@
+[
+  {
+    "Content-Type" : "text/plain",
+    "X-TIKA:content" : "legacy value",
+    "tk:content" : "modern value"
+  }
+]

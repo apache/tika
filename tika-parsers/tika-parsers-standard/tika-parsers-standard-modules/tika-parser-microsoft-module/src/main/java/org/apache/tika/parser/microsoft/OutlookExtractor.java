@@ -133,11 +133,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     static {
         for (MAPIProperty property : LITERAL_TIME_MAPI_PROPERTIES) {
-            String name = property.mapiProperty.toLowerCase(Locale.ROOT);
-            name = name.substring(3);
-            name = name.replace('_', '-');
-            name = MAPI.PREFIX_MAPI_META + name;
-            Property tikaProp = Property.internalDate(name);
+            Property tikaProp;
+            if (property == MAPIProperty.CLIENT_SUBMIT_TIME) {
+                tikaProp = MAPI.CLIENT_SUBMIT_TIME;   // curated key, same as the PST parser
+            } else {
+                String name = property.mapiProperty.toLowerCase(Locale.ROOT);
+                name = name.substring(3);
+                name = name.replace('_', '-');
+                name = MAPI.PREFIX_MAPI_META + name;
+                tikaProp = Property.internalDate(name);
+            }
             LITERAL_TIME_PROPERTIES.put(property, tikaProp);
         }
         loadMessageClasses();
@@ -357,7 +362,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         if (contentId != null && contentIdNames.contains(contentId)) {
             // Layer 1: CID referenced in the message body — high confidence inline
-            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         } else if (contentId != null
                 && attachFlags != null
@@ -365,7 +370,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 && isInlineableMimeType(metadata.get(MAPI.ATTACH_MIME))) {
             // Layer 2: MAPI says rendered in body + image MIME type — the CID regex
             // missed it (e.g. encapsulated RTF with stripped img tags)
-            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY,
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.name());
         }
     }

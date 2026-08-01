@@ -91,7 +91,7 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("couchbase@couchbase.com", m6.get(MAPI.FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
         assertNull(m1.get(MAPI.RECIPIENTS_STRING));
-        assertContains("2014-02-26", m1.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME));
+        assertContains("2014-02-26", m1.get(MAPI.CLIENT_SUBMIT_TIME));
 
         //test full EX email
         assertEquals(

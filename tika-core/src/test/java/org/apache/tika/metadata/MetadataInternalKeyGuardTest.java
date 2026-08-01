@@ -22,8 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Test;
 
-/** Reserved {@code X-TIKA:} keys can't be overwritten by String writes, only via Property. */
+/** Reserved Tika-native ({@code tk:}) keys can't be overwritten by String writes, only via Property. */
 public class MetadataInternalKeyGuardTest {
+
+    @Test
+    public void testLegacyXTikaPrefixStaysReserved() {
+        Metadata metadata = new Metadata();
+        // pre-4.0.0 prefix stays reserved so a crafted file can't forge it during the 4.x window
+        metadata.add(TikaCoreProperties.LEGACY_TIKA_META_PREFIX + "Parsed-By", "org.evil.FakeParser");
+        assertNull(metadata.get(TikaCoreProperties.LEGACY_TIKA_META_PREFIX + "Parsed-By"),
+                "legacy X-TIKA: String write must still be dropped");
+    }
 
     @Test
     public void testStringWriteToInternalKeyIsDropped() {
@@ -112,14 +121,22 @@ public class MetadataInternalKeyGuardTest {
     }
 
     @Test
-    public void testTrustedModeAllowsReservedStringWrites() {
+    public void testTrustedWriteBypassesGuard() {
         Metadata metadata = new Metadata();
-        metadata.setTrusted(true);
-        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
+        metadata.setTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
         assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
 
-        metadata.setTrusted(false);
+        // untrusted String-path attempt must not clobber
         metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "blocked");
         assertEquals("trusted", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testTrustedAddBypassesGuard() {
+        Metadata metadata = new Metadata();
+        metadata.addTrusted(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p1");
+        metadata.addTrusted(TikaCoreProperties.TIKA_PARSED_BY.getName(), "p2");
+        assertArrayEquals(new String[] {"p1", "p2"},
+                metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY));
     }
 }

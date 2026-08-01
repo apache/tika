@@ -36,12 +36,12 @@
       "field-name-mapping-filter": {
         "excludeUnmapped": true,
         "mappings": {
-          "X-TIKA:content": "content_s",
+          "tk:content": "content_s",
           "Content-Length": "length_i",
           "dc:creator": "creators_ss",
           "dc:title": "title_s",
           "Content-Type": "mime_s",
-          "X-TIKA:EXCEPTION:container_exception": "tika_exception_s"
+          "tk:exception:container-exception": "tika_exception_s"
         }
       }
     }

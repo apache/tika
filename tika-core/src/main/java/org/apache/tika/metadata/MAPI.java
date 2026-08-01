@@ -27,6 +27,7 @@ public interface MAPI {
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_PROPERTY = PREFIX_MAPI_META + "property" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    PassthroughPrefix PROPERTY = PassthroughPrefix.file(PREFIX_MAPI_PROPERTY, "MAPI named properties");
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
@@ -47,6 +48,9 @@ public interface MAPI {
     Property FROM_REPRESENTING_EMAIL = Property.internalText(PREFIX_MAPI_META + "from-representing-email");
 
     Property SUBMISSION_ACCEPTED_AT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-submission-accepted-at-time");
+
+    // PidTagClientSubmitTime -- distinct MAPI prop from the provider-side SUBMISSION_ACCEPTED_AT_TIME.
+    Property CLIENT_SUBMIT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-client-submit-time");
 
     Property SUBMISSION_ID = Property.internalText(PREFIX_MAPI_META + "msg-submission-id");
 

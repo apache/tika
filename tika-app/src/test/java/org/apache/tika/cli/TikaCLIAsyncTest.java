@@ -145,7 +145,7 @@ public class TikaCLIAsyncTest {
         String json = FileUtils.readFileToString(f, UTF_8);
         int previous = json.indexOf("Content-Length");
         assertTrue(previous > -1);
-        for (String k : new String[]{"Content-Type", "dc:creator", "dcterms:created", "dcterms:modified", "X-TIKA:content\""}) {
+        for (String k : new String[]{"Content-Type", "dc:creator", "dcterms:created", "dcterms:modified", "tk:content\""}) {
             int i = json.indexOf(k);
             assertTrue(i > -1, "should have found " + k);
             assertTrue(i > previous, "bad order: " + k + " at " + i + " not less than " + previous);

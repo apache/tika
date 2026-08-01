@@ -207,7 +207,7 @@ class HtmlHandler extends TextContentHandler {
             return;
         }
 
-        if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)) {
+        if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE.getName())) {
             //don't overwrite Metadata.CONTENT_TYPE!
             MediaType type = MediaType.parse(value);
             if (type != null) {

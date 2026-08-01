@@ -49,4 +49,26 @@ public interface Audio {
      * The disc value exactly as tagged, see {@link #RAW_TRACK_NUMBER}.
      */
     Property RAW_DISC_NUMBER = Property.internalText("audio:raw-disc-number");
+
+    /**
+     * Average or nominal bitrate in bits per second (averaged over the MP3
+     * frames, the Vorbis nominal bitrate, or the MP4 'esds' average bitrate).
+     * A per-stream value: in a file with several audio tracks it reflects
+     * the last sound track's sample description.
+     */
+    Property BITRATE = Property.internalInteger("audio:bitrate");
+
+    /**
+     * True if the stream is variable bitrate: the MP3 frames declare differing
+     * bitrates, or the Vorbis identification header does not declare one fixed
+     * rate for upper, nominal and lower.
+     */
+    Property IS_VARIABLE_BITRATE = Property.internalBoolean("audio:is-variable-bitrate");
+
+    /**
+     * True if the container declares DRM protection through a protected
+     * sample entry format such as 'drms' or 'enca'. A file-level flag: any
+     * protected audio track sets it. Only set when protection is detected.
+     */
+    Property HAS_DRM = Property.internalBoolean("audio:has-drm");
 }

@@ -72,7 +72,7 @@ public class JsonMetadataTest {
         String expected = "{[NEWLINE]  \"alma_mater\" : \"普林斯顿大学\",[NEWLINE]  \"html\" : \"<html><body>&amp;&nbsp;</body></html>\"," +
                 "[NEWLINE]  \"json_escapes\" : \"the: \\\"quick\\\" brown, fox\"," +
                 "[NEWLINE]  \"k1\" : [ \"v1\", \"v2\" ],[NEWLINE]  \"k3\" : [ \"v3\", \"v3\" ],[NEWLINE]  \"k4\" : \"500,000\"," +
-                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"X-TIKA:content\" : \"this is the content\"[NEWLINE]}";
+                "[NEWLINE]  \"url\" : \"/myApp/myAction.html?method=router&cmd=1\",[NEWLINE]  \"tk:content\" : \"this is the content\"[NEWLINE]}";
         assertEquals(expected, writer
                 .toString()
                 .replaceAll("[\r\n]+", "[NEWLINE]"));

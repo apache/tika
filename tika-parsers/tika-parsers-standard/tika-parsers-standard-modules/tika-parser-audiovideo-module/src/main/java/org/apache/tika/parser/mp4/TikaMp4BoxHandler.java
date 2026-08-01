@@ -117,6 +117,12 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
             Long movieTimescale = directory.getLongObject(Mp4Directory.TAG_TIME_SCALE);
             return new TikaMp4MetaHandler(metadata, context, tikaMetadata,
                     emptyEditDuration, movieTimescale == null ? 0 : movieTimescale);
+        } else if (box.equals("hdlr") && payload != null && payload.length >= 12
+                && payload[8] == 's' && payload[9] == 'o'
+                && payload[10] == 'u' && payload[11] == 'n') {
+            //sound track: our handler additionally reads DRM markers and the
+            //esds average bitrate from the sample description
+            return new TikaMp4SoundHandler(metadata, context, tikaMetadata);
         }
 
         return super.processBox(box, payload, size, context);
