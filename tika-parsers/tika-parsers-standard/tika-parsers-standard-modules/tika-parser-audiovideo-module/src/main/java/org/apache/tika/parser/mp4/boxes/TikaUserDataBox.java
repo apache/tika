@@ -27,11 +27,15 @@ import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class TikaUserDataBox {
@@ -49,10 +53,13 @@ public class TikaUserDataBox {
     private boolean isQuickTime = false;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
+    private final ParseContext parseContext;
     public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
-                           XHTMLContentHandler xhtml) throws IOException, SAXException {
+                           XHTMLContentHandler xhtml, ParseContext parseContext)
+            throws IOException, SAXException {
         this.metadata = metadata;
         this.xhtml = xhtml;
+        this.parseContext = parseContext;
         int length = payload.length;
         SequentialReader reader = new SequentialByteArrayReader(payload);
         while (reader.getPosition() < (long) length) {
@@ -139,7 +146,10 @@ public class TikaUserDataBox {
             String typeName = reader.getString(4, StandardCharsets.ISO_8859_1);//data
             totalRead += 16;
             if ("data".equals(typeName)) {
-                reader.skip(8);//not sure what these are
+                //1 byte version and 3 bytes flags; for the "well-known"
+                //types the flags hold the value type
+                long valueType = reader.getUInt32() & 0xFFFFFF;
+                reader.skip(4L);//locale
                 totalRead += 8;
                 int toRead = (int) fieldLen - 16;
                 if (toRead <= 0) {
@@ -147,9 +157,31 @@ public class TikaUserDataBox {
                     return;
                 }
                 if ("covr".equals(fieldName)) {
-                    //covr can be an image file, e.g. png or jpeg
-                    //skip this for now
-                    reader.skip(toRead);
+                    //covr holds one image file (e.g. png or jpeg) per data
+                    //atom, and may repeat the data atom for further images
+                    handleCoverArt(reader, valueType, toRead);
+                    long remaining = recordLen - 8 - fieldLen;
+                    while (remaining >= 16) {
+                        long extraLen = reader.getUInt32();
+                        String extraTypeName = reader.getString(4, StandardCharsets.ISO_8859_1);
+                        long extraValueType = reader.getUInt32() & 0xFFFFFF;
+                        reader.skip(4L);//locale
+                        totalRead += 16;
+                        remaining -= 16;
+                        int extraToRead = (int) extraLen - 16;
+                        if (!"data".equals(extraTypeName) || extraToRead <= 0 ||
+                                extraToRead > remaining) {
+                            //malformed, skip the rest of the record
+                            break;
+                        }
+                        handleCoverArt(reader, extraValueType, extraToRead);
+                        totalRead += extraToRead;
+                        remaining -= extraToRead;
+                    }
+                    if (remaining > 0) {
+                        reader.skip(remaining);
+                        totalRead += remaining;
+                    }
                 } else if ("cpil".equals(fieldName)) {
                     int compilationId = (int)reader.getByte();
                     metadata.set(XMPDM.COMPILATION, compilationId);
@@ -204,6 +236,38 @@ public class TikaUserDataBox {
         }
     }
 
+
+    /**
+     * Sends one embedded cover image to the embedded document extractor.
+     * The image only becomes an embedded document, no metadata is recorded
+     * on the audio document itself.
+     */
+    private void handleCoverArt(SequentialReader reader, long valueType, int length)
+            throws IOException {
+        byte[] picture = reader.getBytes(length);
+        Metadata pictureMetadata = Metadata.newInstance(parseContext);
+        pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        //the data atom's well-known value type declares the image format;
+        //for any other type leave the content type for auto-detection
+        if (valueType == 13) {
+            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        } else if (valueType == 14) {
+            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/png");
+        } else if (valueType == 27) {
+            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/bmp");
+        }
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        if (extractor.shouldParseEmbedded(pictureMetadata)) {
+            try (TikaInputStream tis = TikaInputStream.get(picture)) {
+                extractor.parseEmbedded(tis, xhtml, pictureMetadata, parseContext, true);
+            } catch (SAXException e) {
+                //need to punch through IOException catching in MP4Reader
+                throw new RuntimeSAXException(e);
+            }
+        }
+    }
 
     private void addMetadata(String key, String value) throws SAXException {
         switch (key) {

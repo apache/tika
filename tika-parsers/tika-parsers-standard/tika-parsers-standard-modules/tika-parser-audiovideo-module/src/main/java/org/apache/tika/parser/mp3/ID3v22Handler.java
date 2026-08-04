@@ -44,6 +44,7 @@ public class ID3v22Handler implements ID3Tags {
     private String albumArtist;
     private String disc;
     private List<ID3Comment> comments = new ArrayList<>();
+    private List<ID3Picture> pictures = new ArrayList<>();
 
     public ID3v22Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV22TagIterator(frame);
@@ -75,6 +76,13 @@ public class ID3v22Handler implements ID3Tags {
                     ID3Comment comment = getComment(tag.data, 0, tag.data.length);
                     if (comment != null) {
                         comments.add(comment);
+                    }
+                    break;
+                }
+                case "PIC": {
+                    ID3Picture picture = ID3v2Frame.getV22Picture(tag.data, 0, tag.data.length);
+                    if (picture != null) {
+                        pictures.add(picture);
                     }
                     break;
                 }
@@ -147,6 +155,10 @@ public class ID3v22Handler implements ID3Tags {
 
     public List<ID3Comment> getComments() {
         return comments;
+    }
+
+    public List<ID3Picture> getPictures() {
+        return pictures;
     }
 
     public String getGenre() {

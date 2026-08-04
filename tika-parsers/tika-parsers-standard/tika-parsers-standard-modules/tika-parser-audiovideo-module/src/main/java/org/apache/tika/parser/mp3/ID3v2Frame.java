@@ -25,6 +25,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
+import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 
 /**
  * A frame of ID3v2 data, which is then passed to a handler to
@@ -355,6 +356,137 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
+     * Parses the picture parts from an ID3v2.3/v2.4 APIC frame, or null
+     * if the frame is too short or malformed to hold a picture.
+     */
+    protected static ID3Picture getPicture(byte[] data, int offset, int length) {
+        // encoding flag + empty mime terminator + picture type
+        if (length < 3) {
+            return null;
+        }
+
+        // Pictures must have an encoding
+        int encodingFlag = data[offset];
+        if (encodingFlag < 0 || encodingFlag >= encodings.length) {
+            // Invalid picture
+            return null;
+        }
+        TextEncoding encoding = encodings[encodingFlag];
+
+        int end = offset + length;
+
+        // First is the mime type, always ISO-8859-1 and null terminated
+        int mimeStart = offset + 1;
+        int mimeEnd = -1;
+        for (int i = mimeStart; i < end; i++) {
+            if (data[i] == 0) {
+                mimeEnd = i;
+                break;
+            }
+        }
+        if (mimeEnd == -1 || mimeEnd + 1 >= end) {
+            return null;
+        }
+        String mimeType = getString(data, mimeStart, mimeEnd - mimeStart);
+        if (mimeType.isEmpty()) {
+            // Leave the type for auto-detection
+            mimeType = null;
+        }
+
+        // Then one byte of picture type
+        int pictureType = data[mimeEnd + 1] & 0xFF;
+
+        // Then the description and the picture data
+        return getPictureWithDescription(data, mimeEnd + 2, end, encoding, mimeType, pictureType);
+    }
+
+    /**
+     * Parses the picture parts from an ID3v2.2 PIC frame, which declares
+     * a three letter image format instead of a mime type. Linked pictures
+     * (format "-->") are skipped, they hold a URL rather than image data.
+     */
+    protected static ID3Picture getV22Picture(byte[] data, int offset, int length) {
+        // encoding flag + 3 byte image format + picture type
+        if (length < 5) {
+            return null;
+        }
+
+        // Pictures must have an encoding
+        int encodingFlag = data[offset];
+        if (encodingFlag < 0 || encodingFlag >= encodings.length) {
+            // Invalid picture
+            return null;
+        }
+        TextEncoding encoding = encodings[encodingFlag];
+
+        String format = getString(data, offset + 1, 3);
+        String mimeType;
+        if ("PNG".equals(format)) {
+            mimeType = "image/png";
+        } else if ("JPG".equals(format)) {
+            mimeType = "image/jpeg";
+        } else if ("-->".equals(format)) {
+            // A link to a picture, not an embedded one
+            return null;
+        } else {
+            // Leave the type for auto-detection
+            mimeType = null;
+        }
+
+        // Then one byte of picture type
+        int pictureType = data[offset + 4] & 0xFF;
+
+        // Then the description and the picture data
+        return getPictureWithDescription(data, offset + 5, offset + length, encoding, mimeType,
+                pictureType);
+    }
+
+    /**
+     * Reads a picture frame's description, terminated per the text encoding,
+     * and the picture data following it. Returns null when the terminator or
+     * the picture data is missing.
+     */
+    private static ID3Picture getPictureWithDescription(byte[] data, int descStart, int end,
+                                                        TextEncoding encoding, String mimeType,
+                                                        int pictureType) {
+        int dataStart = -1;
+        String description = null;
+        try {
+            if (encoding.doubleByte) {
+                // a double byte terminator needs both bytes present, and sits
+                // on a two byte boundary relative to the description start
+                for (int i = descStart; i + 1 < end; i += 2) {
+                    if (data[i] == 0 && data[i + 1] == 0) {
+                        description = decodeText(data, descStart, i - descStart, encoding);
+                        dataStart = i + 2;
+                        break;
+                    }
+                }
+            } else {
+                for (int i = descStart; i < end; i++) {
+                    if (data[i] == 0) {
+                        description = decodeText(data, descStart, i - descStart, encoding);
+                        dataStart = i + 1;
+                        break;
+                    }
+                }
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("Core encoding " + encoding.encoding + " is not available",
+                    e);
+        }
+
+        // Without a terminated description there is no picture data
+        if (dataStart == -1 || dataStart >= end) {
+            return null;
+        }
+
+        byte[] picture = new byte[end - dataStart];
+        System.arraycopy(data, dataStart, picture, 0, picture.length);
+        return new ID3Picture(mimeType, description, pictureType, picture);
+    }
+
+    /**
      * Returns the String at the given
      * offset and length. Strings are ISO-8859-1
      */
@@ -407,7 +539,7 @@ public class ID3v2Frame implements MP3Frame {
         private int headerSize;
 
         private RawTag(int nameLength, int sizeLength, int sizeMultiplier, int flagLength,
-                       byte[] frameData, int offset) {
+                       boolean synchsafeSize, byte[] frameData, int offset) {
             headerSize = nameLength + sizeLength + flagLength;
 
             // Name, normally 3 or 4 bytes
@@ -417,6 +549,8 @@ public class ID3v2Frame implements MP3Frame {
             int rawSize;
             if (sizeLength == 3) {
                 rawSize = getInt3(frameData, offset + nameLength);
+            } else if (synchsafeSize) {
+                rawSize = getV24FrameSize(frameData, offset, headerSize, nameLength);
             } else {
                 rawSize = getInt(frameData, offset + nameLength);
             }
@@ -443,6 +577,66 @@ public class ID3v2Frame implements MP3Frame {
             return headerSize + data.length;
         }
 
+        /**
+         * Returns the size of an ID3v2.4 frame. The spec encodes frame
+         * sizes as synchsafe integers, but widespread taggers (e.g. older
+         * iTunes) wrote plain integers instead. Reading a synchsafe size
+         * as a plain integer (or the other way around) makes the frame
+         * walk skip into the middle of the following frames, losing them,
+         * so when the two readings disagree, pick the one that lands the
+         * walk on a plausible next frame.
+         */
+        private static int getV24FrameSize(byte[] frameData, int offset, int headerSize,
+                                           int nameLength) {
+            int plain = getInt(frameData, offset + nameLength);
+            // A size byte with the high bit set cannot be synchsafe
+            if (((frameData[offset + nameLength] | frameData[offset + nameLength + 1] |
+                    frameData[offset + nameLength + 2] | frameData[offset + nameLength + 3]) &
+                    0x80) != 0) {
+                return plain;
+            }
+            int synchsafe = get7BitsInt(frameData, offset + nameLength);
+            if (synchsafe == plain) {
+                return synchsafe;
+            }
+            if (isPlausibleFrameStart(frameData, offset + headerSize + synchsafe)) {
+                return synchsafe;
+            }
+            if (isPlausibleFrameStart(frameData, offset + headerSize + plain)) {
+                return plain;
+            }
+            // Neither reading looks right, go with the spec
+            return synchsafe;
+        }
+
+        /**
+         * Checks whether the given offset is a plausible place for the
+         * next frame to start: the end of the tag, padding, or a frame id
+         * made of capital letters and digits.
+         */
+        private static boolean isPlausibleFrameStart(byte[] frameData, int nextOffset) {
+            if (nextOffset < 0 || nextOffset > frameData.length) {
+                return false;
+            }
+            if (nextOffset == frameData.length) {
+                return true;
+            }
+            if (frameData[nextOffset] == 0) {
+                // Padding
+                return true;
+            }
+            if (nextOffset + 4 > frameData.length) {
+                return false;
+            }
+            for (int i = nextOffset; i < nextOffset + 4; i++) {
+                byte b = frameData[i];
+                if (!((b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9'))) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
     }
 
     /**
@@ -455,15 +649,22 @@ public class ID3v2Frame implements MP3Frame {
         private int sizeLength;
         private int sizeMultiplier;
         private int flagLength;
+        private boolean synchsafeSize;
 
         private int offset = 0;
 
         protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
                                  int flagLength) {
+            this(nameLength, sizeLength, sizeMultiplier, flagLength, false);
+        }
+
+        protected RawTagIterator(int nameLength, int sizeLength, int sizeMultiplier,
+                                 int flagLength, boolean synchsafeSize) {
             this.nameLength = nameLength;
             this.sizeLength = sizeLength;
             this.sizeMultiplier = sizeMultiplier;
             this.flagLength = flagLength;
+            this.synchsafeSize = synchsafeSize;
         }
 
         public boolean hasNext() {
@@ -472,8 +673,8 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public RawTag next() {
-            RawTag tag =
-                    new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength, data, offset);
+            RawTag tag = new RawTag(nameLength, sizeLength, sizeMultiplier, flagLength,
+                    synchsafeSize, data, offset);
             offset += tag.getSize();
             return tag;
         }

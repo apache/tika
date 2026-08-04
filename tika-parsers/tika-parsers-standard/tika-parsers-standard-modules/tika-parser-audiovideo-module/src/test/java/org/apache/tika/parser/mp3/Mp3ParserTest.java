@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -128,6 +129,69 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("Mono", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("MP3", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         checkDuration(metadata, 2);
+    }
+
+    /**
+     * Test that cover art in an ID3v2 APIC frame becomes an embedded
+     * document, with no extra metadata on the audio document itself
+     */
+    @Test
+    public void testMp3ParsingID3v2CoverArt() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testMP3_coverArt.mp3");
+
+        assertEquals(2, metadataList.size());
+        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        Metadata pictureMetadata = metadataList.get(1);
+        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
+    }
+
+    /**
+     * Test that a file with several APIC frames yields one embedded
+     * document per picture, in file order. The first frame is larger
+     * than 127 bytes, so this also exercises the synchsafe frame sizes
+     * of ID3v2.4: reading them as plain integers desyncs the frame walk
+     * and loses every picture after the first
+     */
+    @Test
+    public void testMp3ParsingID3v24MultipleCovers() throws Exception {
+        assertTwoCovers("testMP3_twoCovers.mp3");
+    }
+
+    /**
+     * Test the same two pictures in an ID3v2.3 tag, whose frame sizes
+     * are plain integers
+     */
+    @Test
+    public void testMp3ParsingID3v23MultipleCovers() throws Exception {
+        assertTwoCovers("testMP3v23_twoCovers.mp3");
+    }
+
+    private void assertTwoCovers(String fileName) throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata(fileName);
+
+        assertEquals(3, metadataList.size());
+        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+
+        //the 64x40 front cover comes first in the file,
+        //the 30x30 back cover second
+        Metadata front = metadataList.get(1);
+        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
+
+        Metadata back = metadataList.get(2);
+        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
     }
 
     /**

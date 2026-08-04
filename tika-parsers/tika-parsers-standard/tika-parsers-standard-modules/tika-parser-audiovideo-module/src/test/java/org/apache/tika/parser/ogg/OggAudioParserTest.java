@@ -20,13 +20,24 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.List;
+
 import org.gagravarr.vorbis.VorbisComments;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -95,10 +106,61 @@ public class OggAudioParserTest {
     }
 
     /**
+     * A metadata_block_picture comment becomes an embedded document with
+     * the declared mime type, description and picture type, while the raw
+     * base64 block stays out of the vorbis passthrough metadata.
+     */
+    @Test
+    public void testMetadataBlockPictureBecomesEmbeddedDocument() throws Exception {
+        byte[] pictureData = new byte[]{1, 2, 3, 4};
+        byte[] mime = "image/jpeg".getBytes(StandardCharsets.ISO_8859_1);
+        byte[] description = "Back cover".getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + mime.length + 4 + description.length +
+                16 + 4 + pictureData.length);
+        buffer.putInt(4);//picture type: cover (back)
+        buffer.putInt(mime.length).put(mime);
+        buffer.putInt(description.length).put(description);
+        buffer.putInt(1).putInt(1).putInt(24).putInt(0);//width, height, depth, colors
+        buffer.putInt(pictureData.length).put(pictureData);
+        String block = Base64.getEncoder().encodeToString(buffer.array());
+
+        List<Metadata> pictures = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                    Metadata metadata, ParseContext parseContext, boolean outputHtml) {
+                pictures.add(metadata);
+            }
+        });
+
+        Metadata metadata = extractComments(context, "metadata_block_picture", block);
+
+        assertEquals(1, pictures.size());
+        Metadata pictureMetadata = pictures.get(0);
+        assertEquals("image/jpeg", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Back cover", pictureMetadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
+        assertNull(metadata.get("vorbis:metadata_block_picture"));
+    }
+
+    private static Metadata extractComments(String... keysAndValues) throws Exception {
+        return extractComments(new ParseContext(), keysAndValues);
+    }
+
+    /**
      * Runs the given key/value comment pairs through the shared comment
      * extraction and returns the resulting metadata.
      */
-    private static Metadata extractComments(String... keysAndValues) throws Exception {
+    private static Metadata extractComments(ParseContext context, String... keysAndValues)
+            throws Exception {
         VorbisComments comments = new VorbisComments();
         comments.addComment("title", "Test Title");
         comments.addComment("artist", "Test Artist");
@@ -110,7 +172,7 @@ public class OggAudioParserTest {
         Metadata metadata = new Metadata();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), metadata);
         xhtml.startDocument();
-        OggAudioParser.extractComments(metadata, xhtml, comments);
+        OggAudioParser.extractComments(metadata, xhtml, comments, context);
         xhtml.endDocument();
         return metadata;
     }

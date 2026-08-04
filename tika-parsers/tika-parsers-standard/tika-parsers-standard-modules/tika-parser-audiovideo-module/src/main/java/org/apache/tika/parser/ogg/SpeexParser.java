@@ -76,7 +76,7 @@ public class SpeexParser extends OggAudioParser {
         extractInfo(metadata, speex.getInfo());
 
         // Extract any Vorbis comments
-        extractComments(metadata, xhtml, speex.getTags());
+        extractComments(metadata, xhtml, speex.getTags(), context);
 
         // Extract the audio length
         extractDuration(metadata, xhtml, speex, speex);

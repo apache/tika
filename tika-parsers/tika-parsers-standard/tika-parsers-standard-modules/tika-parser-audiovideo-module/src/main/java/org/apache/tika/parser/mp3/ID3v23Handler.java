@@ -45,6 +45,7 @@ public class ID3v23Handler implements ID3Tags {
     private String disc;
     private String compilation;
     private List<ID3Comment> comments = new ArrayList<>();
+    private List<ID3Picture> pictures = new ArrayList<>();
 
     public ID3v23Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV23TagIterator(frame);
@@ -76,6 +77,13 @@ public class ID3v23Handler implements ID3Tags {
                     ID3Comment comment = getComment(tag.data, 0, tag.data.length);
                     if (comment != null) {
                         comments.add(comment);
+                    }
+                    break;
+                }
+                case "APIC": {
+                    ID3Picture picture = ID3v2Frame.getPicture(tag.data, 0, tag.data.length);
+                    if (picture != null) {
+                        pictures.add(picture);
                     }
                     break;
                 }
@@ -133,6 +141,10 @@ public class ID3v23Handler implements ID3Tags {
 
     public List<ID3Comment> getComments() {
         return comments;
+    }
+
+    public List<ID3Picture> getPictures() {
+        return pictures;
     }
 
     public String getGenre() {

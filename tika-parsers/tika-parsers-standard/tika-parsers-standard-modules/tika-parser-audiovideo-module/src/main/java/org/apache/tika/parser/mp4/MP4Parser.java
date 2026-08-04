@@ -100,7 +100,7 @@ public class MP4Parser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
-        Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml);
+        Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml, context);
         //we used to spool to disk and then read from that with sannies parser.
         //we think that drewnoakes' parser streams the data so we don't need to spool
         try {
