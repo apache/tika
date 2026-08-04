@@ -52,6 +52,13 @@ public interface MAPI {
     // PidTagClientSubmitTime -- distinct MAPI prop from the provider-side SUBMISSION_ACCEPTED_AT_TIME.
     Property CLIENT_SUBMIT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-client-submit-time");
 
+    // CREATED/MODIFIED fallback when no CLIENT_SUBMIT_TIME.
+    Property MESSAGE_DELIVERY_TIME = Property.internalDate(PREFIX_MAPI_META + "message-delivery-time");
+
+    // Storage-level timestamps, not content dates -- don't use for CREATED/MODIFIED (TIKA-4798).
+    Property CREATION_TIME = Property.internalDate(PREFIX_MAPI_META + "creation-time");
+    Property LAST_MODIFICATION_TIME = Property.internalDate(PREFIX_MAPI_META + "last-modification-time");
+
     Property SUBMISSION_ID = Property.internalText(PREFIX_MAPI_META + "msg-submission-id");
 
     Property INTERNET_MESSAGE_ID = Property.internalText(PREFIX_MAPI_META + "internet-message-id");
