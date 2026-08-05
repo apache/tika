@@ -79,6 +79,14 @@ public class OutlookPSTParserTest extends TikaTest {
         assertEquals("Jörn Kottmann", m1.get(MAPI.FROM_REPRESENTING_NAME));
         assertEquals("kottmann@gmail.com", m1.get(MAPI.FROM_REPRESENTING_EMAIL));
         assertEquals("NOTE", m1.get(MAPI.MESSAGE_CLASS));
+        //TIKA-4806: CREATED/MODIFIED reflect the client submit time, not the storage-level
+        //PidTagLastModificationTime (2014-02-26T12:37:43Z), which is ~5 hours later here.
+        assertEquals("2014-02-26T07:50:04Z", m1.get(TikaCoreProperties.CREATED));
+        assertEquals("2014-02-26T07:50:04Z", m1.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2014-02-26T07:50:04Z", m1.get(MAPI.CLIENT_SUBMIT_TIME));
+        assertEquals("2014-02-26T07:51:02Z", m1.get(MAPI.CREATION_TIME));
+        assertEquals("2014-02-26T12:37:43Z", m1.get(MAPI.LAST_MODIFICATION_TIME));
+        assertEquals("2014-02-26T07:51:02Z", m1.get(MAPI.MESSAGE_DELIVERY_TIME));
         assertEquals("/Début du fichier de données Outlook/Re: Feature Generators.msg",
                 m1.get(TikaCoreProperties.INTERNAL_PATH));
         //test that subject is making it into the xhtml
