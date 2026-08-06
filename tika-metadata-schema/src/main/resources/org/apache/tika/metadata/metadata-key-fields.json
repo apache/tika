@@ -493,6 +493,7 @@
   {"class":"org.apache.tika.metadata.TikaPagedText","field":"PAGE_NUMBER","key":"tk:page:number"},
   {"class":"org.apache.tika.metadata.TikaPagedText","field":"PAGE_NUMBERS","key":"tk:page:numbers"},
   {"class":"org.apache.tika.metadata.TikaPagedText","field":"PAGE_ROTATION","key":"tk:page:rotation"},
+  {"class":"org.apache.tika.metadata.Video","field":"BITRATE","key":"video:bitrate"},
   {"class":"org.apache.tika.metadata.Video","field":"FRAME_RATE","key":"video:frame-rate"},
   {"class":"org.apache.tika.metadata.WARC","field":"WARC_PAYLOAD_CONTENT_TYPE","key":"warc:payload-content-type"},
   {"class":"org.apache.tika.metadata.WARC","field":"WARC_RECORD_CONTENT_TYPE","key":"warc:record-content-type"},

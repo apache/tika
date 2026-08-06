@@ -185,10 +185,12 @@ public class MP4ParserTest extends TikaTest {
     // TODO Test an old QuickTime Video File
     @Test
     public void testVideoFrameRate() throws Exception {
-        // a 10 fps H.264 clip generated with ffmpeg (color source, 16x16, 1s)
+        // a 10 fps H.264 clip generated with ffmpeg (color source, 16x16, 1s);
+        // libx264 also writes the average bitrate into the btrt BitRateBox
         XMLResult r = getXML("testMP4Video.mp4");
         assertEquals("video/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
+        assertEquals("6536", r.metadata.get(Video.BITRATE));
     }
 
     @Test

@@ -507,6 +507,7 @@
   {"key":"tk:version-count","namespace":"tk","valueType":"INTEGER","cardinality":"SIMPLE"},
   {"key":"tk:version-number","namespace":"tk","valueType":"INTEGER","cardinality":"SIMPLE"},
   {"key":"tk:warn:truncated-metadata","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE"},
+  {"key":"video:bitrate","namespace":"video","valueType":"INTEGER","cardinality":"SIMPLE"},
   {"key":"video:frame-rate","namespace":"video","valueType":"REAL","cardinality":"SIMPLE"},
   {"key":"w:Comments","namespace":"w","valueType":"TEXT","cardinality":"BAG"},
   {"key":"warc:WARC-Record-ID","namespace":"warc","valueType":"TEXT","cardinality":"SIMPLE"},
