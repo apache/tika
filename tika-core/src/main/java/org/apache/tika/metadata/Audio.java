@@ -71,4 +71,16 @@ public interface Audio {
      * protected audio track sets it. Only set when protection is detected.
      */
     Property HAS_DRM = Property.internalBoolean("audio:has-drm");
+
+    /**
+     * Number of audio channels (e.g. 2 for stereo). {@link XMPDM#AUDIO_CHANNEL_TYPE}
+     * only distinguishes Mono from Stereo and cannot represent more than two
+     * channels. A per-stream value, see {@link #BITRATE}.
+     */
+    Property CHANNELS = Property.internalInteger("audio:channels");
+
+    /**
+     * Audio sample size in bits (e.g. 16). A per-stream value, see {@link #BITRATE}.
+     */
+    Property BITS_PER_SAMPLE = Property.internalInteger("audio:bits-per-sample");
 }

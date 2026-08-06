@@ -45,9 +45,11 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.Video;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -158,6 +160,12 @@ public class MP4Parser implements Parser {
             String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
             metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
         }
+        Float frameRate = mp4Directory.getFloatObject(Mp4VideoDirectory.TAG_FRAME_RATE);
+        if (frameRate != null) {
+            // set as the float's own string: set(Property, double) would widen it
+            // and print the double-rounding artefact (e.g. 29.969999...).
+            metadata.set(Video.FRAME_RATE, frameRate.toString());
+        }
     }
 
     /**
@@ -188,9 +196,12 @@ public class MP4Parser implements Parser {
                                         Metadata metadata) {
         addInt(mp4SoundDirectory, metadata, Mp4SoundDirectory.TAG_AUDIO_SAMPLE_RATE,
                 XMPDM.AUDIO_SAMPLE_RATE);
+        addInt(mp4SoundDirectory, metadata, Mp4SoundDirectory.TAG_AUDIO_SAMPLE_SIZE,
+                Audio.BITS_PER_SAMPLE);
 
         try {
             int numChannels = mp4SoundDirectory.getInt(Mp4SoundDirectory.TAG_NUMBER_OF_CHANNELS);
+            metadata.set(Audio.CHANNELS, numChannels);
 
             if (numChannels == 1) {
                 metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");

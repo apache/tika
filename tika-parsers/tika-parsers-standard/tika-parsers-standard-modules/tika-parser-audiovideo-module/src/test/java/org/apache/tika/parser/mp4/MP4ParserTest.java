@@ -46,6 +46,7 @@ import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.QuickTime;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.Video;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
@@ -121,6 +122,8 @@ public class MP4ParserTest extends TikaTest {
 
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
+        assertEquals("2", metadata.get(Audio.CHANNELS));
+        assertEquals("16", metadata.get(Audio.BITS_PER_SAMPLE));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
 
@@ -179,8 +182,15 @@ public class MP4ParserTest extends TikaTest {
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
-    // TODO Test a MP4 Video file
     // TODO Test an old QuickTime Video File
+    @Test
+    public void testVideoFrameRate() throws Exception {
+        // a 10 fps H.264 clip generated with ffmpeg (color source, 16x16, 1s)
+        XMLResult r = getXML("testMP4Video.mp4");
+        assertEquals("video/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
+    }
+
     @Test
     @Timeout(30000)
     public void testInfiniteLoop() throws Exception {
