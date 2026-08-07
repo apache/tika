@@ -17,7 +17,9 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -50,5 +52,14 @@ public class TikaServerProcessTest {
         // The guard must not false-fire on a non-forking endpoint.
         assertDoesNotThrow(
                 () -> TikaServerProcess.loadCoreProviders(config(false, "meta"), null, null));
+    }
+
+    @Test
+    public void metaAloneNeedsPipesParsingHelper() {
+        // /meta is now pipes-backed too; a config listing only "meta" (no tika/rmeta/
+        // unpack/pipes) must still build the shared PipesParser, or every /meta request
+        // hits IllegalStateException("Pipes-based parsing is not enabled").
+        assertTrue(TikaServerProcess.needsPipesParsingHelper(config(false, "meta")));
+        assertFalse(TikaServerProcess.needsPipesParsingHelper(config(false, "status")));
     }
 }
