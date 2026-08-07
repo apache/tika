@@ -38,7 +38,8 @@ public class MetadataSchemaTest {
     @Test
     public void committedKeysMatchDeclarations() throws Exception {
         assertEquals(committed(KEYS), SchemaGenerator.generate(),
-                "metadata-keys.json is stale. Run SchemaGenerator.main and commit the result.");
+                "metadata-keys.json is stale. Run tika-metadata-schema/regen.sh and commit the "
+                        + "result.");
     }
 
     @Test
@@ -46,8 +47,8 @@ public class MetadataSchemaTest {
         // generate() first, so the classpath scan force-loads the PassthroughPrefix declarations.
         SchemaGenerator.generate();
         assertEquals(committed(OPEN), SchemaGenerator.passthroughJson(),
-                "metadata-open-namespaces.json is stale. Run SchemaGenerator.main and commit the "
-                        + "result.");
+                "metadata-open-namespaces.json is stale. Run tika-metadata-schema/regen.sh and "
+                        + "commit the result.");
     }
 
     private static String committed(String resource) throws Exception {

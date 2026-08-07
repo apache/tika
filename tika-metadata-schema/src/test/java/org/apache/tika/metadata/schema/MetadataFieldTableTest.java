@@ -41,6 +41,6 @@ public class MetadataFieldTableTest {
             committed = new String(in.readAllBytes(), StandardCharsets.UTF_8);
         }
         assertEquals(committed, SchemaGenerator.fieldTable(),
-                "metadata-key-fields.json is stale. Run SchemaGenerator.main (3rd arg) and commit it.");
+                "metadata-key-fields.json is stale. Run tika-metadata-schema/regen.sh and commit it.");
     }
 }

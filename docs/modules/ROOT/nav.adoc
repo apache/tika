@@ -76,6 +76,7 @@
 ** xref:advanced/integration-testing/run-uat-script.adoc[Tika-Server REST UAT Script]
 * xref:developers/index.adoc[Developers]
 ** xref:developers/serialization.adoc[Serialization and Configuration]
+** xref:developers/metadata-keys.adoc[Adding a Metadata Key]
 * xref:faq.adoc[FAQ]
 * xref:security.adoc[Security]
 * xref:roadmap.adoc[Roadmap]

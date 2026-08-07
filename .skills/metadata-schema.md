@@ -18,13 +18,24 @@ shows up as a diff). Don't switch to build-time-only generation — that loses t
 ## Regenerate (after adding/changing a Property or PassthroughPrefix)
 
 ```bash
+tika-metadata-schema/regen.sh
+```
+
+This does the full sequence in one shot: `-am install` so newly added Property/PassthroughPrefix
+classes are on the scan classpath, regenerate all three registries via the forked-exec profile, print
+a before/after key-count check (catches an incomplete classpath scan), `git diff --stat` the
+registries, then run the gate tests. Flags: `--skip-install` (only safe if nothing outside
+`tika-metadata-schema` itself changed since the last install) and `--skip-tests` for a faster inner
+loop. Then review the diff and commit the Property change and the regenerated JSON together.
+
+The manual sequence the script replaces, for reference or if you need to run a step in isolation:
+
+```bash
 # if parser Property classes changed, install them first so the scan sees them:
 ./mvnw -Pfast -DskipTests -pl tika-metadata-schema -am install -Dmaven.repo.local=$(pwd)/.local_m2_repo
 # regenerate all three:
 ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes -Dmaven.repo.local=$(pwd)/.local_m2_repo
 ```
-
-Then `git diff` the JSONs, run the gate tests, commit.
 
 **Trap — never use `exec:java`.** `SchemaGenerator` scans `java.class.path`, force-loads Property
 classes, and swallows load failures. `exec:java` runs in-process on Maven's classpath → finds zero

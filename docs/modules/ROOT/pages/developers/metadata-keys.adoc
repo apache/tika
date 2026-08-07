@@ -1,0 +1,67 @@
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+= Adding a Metadata Key
+
+Every metadata key Tika can emit is a `Property` constant (or, for runtime-minted names like scraped
+HTML `<meta>` tags, a `PassthroughPrefix`) — there are no bare `String` keys. That closed/open key
+space is tracked in a generated, build-gated registry, so adding a key involves one extra step beyond
+writing the Java.
+
+== Add the constant
+
+Add the `Property` to its interface as usual:
+
+[source,java]
+----
+Property MY_NEW_KEY = Property.internalText(TIKA_META_PREFIX + "my-new-key");
+----
+
+Naming conventions (frozen for 4.0):
+
+* Tika-coined keys use the `tk:` namespace, kebab-case, no underscores.
+* External-standard names are used verbatim, including the standard's own prefix (`dc:`, `xmp:`,
+  `cp:`, `extended-properties:`).
+* HTTP headers stay bare — no `http:` namespace (`Content-Type`, `Content-Encoding`, `Location`).
+
+== Regenerate the registry
+
+The registry — three JSON files under `tika-metadata-schema/src/main/resources/`, listing every
+declared key, every open-namespace prefix, and a field-provenance table — is generated from the live
+`Property`/`PassthroughPrefix` declarations, never hand-edited. A committed copy is the reviewable
+audit trail (a rename or dropped key shows up as a diff), and CI fails if it's stale.
+
+Run this after adding, renaming, or removing a `Property` or `PassthroughPrefix`:
+
+[source,bash]
+----
+tika-metadata-schema/regen.sh
+----
+
+It installs the modules the change touched, regenerates all three registry files, sanity-checks the
+diff, and runs the gate tests. Commit the Java change and the regenerated JSON together.
+
+Details, flags, and the traps this script exists to avoid (classpath scanning quirks, `exec:java`
+vs. a forked classpath) are documented in `tika-metadata-schema/README.md`.
+
+== After a rename
+
+The compiler won't catch a stale string literal like `metadata.get("Message-From")`. Grep the repo
+for the old key and replace it with the constant:
+
+[source,bash]
+----
+grep -rn '"Message-' --include=*.java . | grep -v /target/
+----

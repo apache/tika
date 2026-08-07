@@ -22,6 +22,8 @@ with custom parsers, detectors, and other components.
 
 * xref:developers/serialization.adoc[Serialization and Configuration] - JSON configuration,
   @TikaComponent annotation, and creating custom components
+* xref:developers/metadata-keys.adoc[Adding a Metadata Key] - the Property/PassthroughPrefix
+  registry, naming conventions, and regenerating the schema
 
 == Coming Soon
 
