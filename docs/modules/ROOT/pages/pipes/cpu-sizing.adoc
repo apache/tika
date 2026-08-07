@@ -119,20 +119,20 @@ Everything above describes sizing for *one* `PipesParser` — one `pipes`
 config section, one set of forked workers. The auto-sizer has no visibility
 into anything else running in the same JVM.
 
-This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`, `/pipes`,
-and `/async` are backed by *three independent* groups when all are enabled in
-the same server — `/tika`+`/rmeta`+`/unpack` and `/pipes` are each their own
-`PipesParser` instance, and `/async` manages its own forked-worker pool
-directly (not via `PipesParser` at all, though it uses the same underlying
-auto-sizer). Each group's auto-sizer computes its slice from
-`Runtime.availableProcessors()` as if it were the only consumer on the host —
-it does not know sibling groups in the same process are about to fork their
-own `numClients` workers too. The result: with `numClients=2` on all three,
-you get 6 total forked JVMs, each capped assuming exclusive access to the
-whole host. Whether that's *actually* oversubscribed depends on your host's
-real core count relative to those combined `numClients` values — it's not
-automatic, but the auto-sizer also won't warn you, because each group looks
-correctly sized from its own perspective alone. See
+This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`+`/meta`+
+`/pipes` and `/async` are backed by *two independent* groups when both are
+enabled in the same server — the first five endpoints share one `PipesParser`
+instance, and `/async` manages its own forked-worker pool directly (not via
+`PipesParser` at all, though it uses the same underlying auto-sizer). Each
+group's auto-sizer computes its slice from `Runtime.availableProcessors()` as
+if it were the only consumer on the host — it does not know the sibling group
+in the same process is about to fork its own `numClients` workers too. The
+result: with `numClients=2` on both, you get 4 total forked JVMs, each capped
+assuming exclusive access to the whole host. Whether that's *actually*
+oversubscribed depends on your host's real core count relative to those
+combined `numClients` values — it's not automatic, but the auto-sizer also
+won't warn you, because each group looks correctly sized from its own
+perspective alone. See
 xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
 and Forked-Process Groups] for the tika-server-specific guidance.
 
