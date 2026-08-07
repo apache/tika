@@ -36,13 +36,13 @@ declare a `Property` field, force-loads them, reads the global `Property` table,
 sorted JSON. `MetadataSchemaTest` regenerates in-memory and asserts it matches the committed file, so
 the registry can never drift from the declarations.
 
-Regenerate after adding/changing a `Property` **or** a `PassthroughPrefix` (writes both files):
+Regenerate after adding/changing a `Property` **or** a `PassthroughPrefix` (writes all three files):
 ```
-java -cp <tika-metadata-schema + deps classpath> \
-     org.apache.tika.metadata.schema.SchemaGenerator \
-     src/main/resources/org/apache/tika/metadata/metadata-keys.json \
-     src/main/resources/org/apache/tika/metadata/metadata-open-namespaces.json
+tika-metadata-schema/regen.sh
 ```
+Installs the dependency modules, regenerates the registries via the forked-exec profile, sanity-checks
+the key-count diff, and runs the gate tests — see `.skills/metadata-schema.md` for flags and the
+manual steps this replaces.
 
 ## `metadata-open-namespaces.json` — the open sets (generated + gated)
 The **prefixes** under which parsers mint file-controlled key names at runtime — names that are not
