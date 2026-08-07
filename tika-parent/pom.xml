@@ -316,7 +316,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.71.0</google.cloud.version>
-    <aws2.version>2.50.2</aws2.version>
+    <aws2.version>2.51.2</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -343,7 +343,7 @@
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.12.0</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <cxf.version>4.2.2</cxf.version>
+    <cxf.version>4.2.3</cxf.version>
     <ddplist.version>1.30</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -381,8 +381,8 @@
     <jbig2.version>3.0.5</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
-    <jetty.version>12.1.11</jetty.version>
-    <jetty.http2.version>12.1.11</jetty.http2.version>
+    <jetty.version>12.1.12</jetty.version>
+    <jetty.http2.version>12.1.12</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
@@ -408,7 +408,7 @@
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.16.Final</netty.version>
+    <netty.version>4.2.17.Final</netty.version>
     <oak.jackrabbit.version>2.4.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.11</opennlp.version>
@@ -443,7 +443,7 @@
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>7.2.1</woodstox.core.version>
+    <woodstox.core.version>7.2.2</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <zstd.version>1.5.7-12</zstd.version>
