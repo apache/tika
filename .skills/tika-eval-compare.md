@@ -22,6 +22,9 @@ Ask the user for:
   zip archive containing `tika-app-*.jar`, `lib/`, and `plugins/`.
 - A corpus of input files (a directory tree).
 - tika-eval-app, built from `tika-eval/tika-eval-app` (use the zip).
+  The bare `target/tika-eval-app-*.jar` is thin (no bundled deps) and dies with
+  `NoClassDefFoundError: ...GzipCompressorOutputStream` (esp. with `-r`). Always
+  run the jar from the unzipped `target/*.zip` dir, which carries its `lib/`.
 - **Enable MD5 digesting** in both configs so tika-eval can match
   embedded documents by content hash (not just index position).
   Add to the config JSON:
