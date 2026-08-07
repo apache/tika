@@ -49,6 +49,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -57,6 +58,10 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -85,6 +90,7 @@ public class TikaPipesTest extends CXFTestBase {
     private static final String[] VALUE_ARRAY = new String[]{"my-value-1", "my-value-2", "my-value-3"};
 
     private PipesResource pipesResource;
+    private PipesParser pipesParser;
 
     @Override
     @BeforeAll
@@ -115,10 +121,11 @@ public class TikaPipesTest extends CXFTestBase {
     @Override
     @AfterAll
     public void tearDown() throws Exception {
-        if (pipesResource != null) {
-            pipesResource.close();
-            pipesResource = null;
+        if (pipesParser != null) {
+            pipesParser.close();
+            pipesParser = null;
         }
+        pipesResource = null;
         super.tearDown();
         if (tmpDir != null) {
             FileUtils.deleteDirectory(tmpDir.toFile());
@@ -140,7 +147,13 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            pipesResource = new PipesResource(tikaConfigPath);
+            // Mirrors what PipesResource used to build internally, back when it
+            // constructed its own parser instead of sharing one.
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+            pipesResource = new PipesResource(pipesParser);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);

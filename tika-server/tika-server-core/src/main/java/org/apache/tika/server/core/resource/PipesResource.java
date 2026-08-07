@@ -33,15 +33,13 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
-import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
@@ -55,17 +53,13 @@ public class PipesResource {
 
     private final PipesParser pipesParser;
 
-    public PipesResource(java.nio.file.Path tikaConfig) throws TikaConfigException, IOException {
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfig);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        // The /pipes endpoint always emits from the child process; force EMIT_ALL.
-        if (pipesConfig.getEmitStrategy().getType() != EmitStrategy.EMIT_ALL) {
-            if (pipesConfig.getEmitStrategy().getType() != EmitStrategyConfig.DEFAULT_EMIT_STRATEGY) {
-                LOG.warn("resetting emit strategy to EMIT_ALL for pipes endpoint");
-            }
-            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
-        }
-        this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfig);
+    /**
+     * @param pipesParser shared parser, also used by /tika, /rmeta, and /unpack.
+     *                     Lifecycle (construction, shutdown) is owned by whoever
+     *                     built it, not by this class.
+     */
+    public PipesResource(PipesParser pipesParser) {
+        this.pipesParser = pipesParser;
     }
 
 
@@ -98,7 +92,15 @@ public class PipesResource {
     }
 
     private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
-
+        // This parser is shared with /tika+/rmeta+/unpack, whose own default is
+        // PASSBACK_ALL. /pipes needs the child to emit via the client's configured
+        // emitter by default -- set EMIT_ALL explicitly per-request rather than
+        // relying on the parser-level default, but don't clobber a caller's own
+        // explicit override if they set one.
+        ParseContext parseContext = fetchEmitTuple.getParseContext();
+        if (parseContext.get(EmitStrategyConfig.class) == null) {
+            parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+        }
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
         if (pipesResult.isProcessCrash()) {
             return returnProcessCrash(pipesResult.status().toString());
@@ -143,9 +145,5 @@ public class PipesResource {
         statusMap.put("status", "application_error");
         statusMap.put("type", type);
         return statusMap;
-    }
-
-    public void close() throws IOException {
-        pipesParser.close();
     }
 }

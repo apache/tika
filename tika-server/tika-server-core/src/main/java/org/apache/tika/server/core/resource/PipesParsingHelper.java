@@ -42,6 +42,8 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
@@ -144,6 +146,12 @@ public class PipesParsingHelper {
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
+
+            // This parser is shared with /pipes, whose own default is EMIT_ALL. No
+            // emitter is configured for /tika/rmeta/unpack requests (EmitKey.NO_EMIT
+            // below) -- results must come back over the socket, so set PASSBACK_ALL
+            // explicitly per-request rather than relying on the parser-level default.
+            parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
 
             // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
             FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
@@ -357,6 +365,12 @@ public class PipesParsingHelper {
 
             // Set parse mode to UNPACK
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+            // Shared parser (see parse() above) -- PASSBACK_ALL is also required here
+            // for correctness: with UNPACK mode, EmitHandler.shouldEmit() only skips
+            // re-emitting metadata (already emitted as part of the zip) when the
+            // effective strategy is PASSBACK_ALL.
+            parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
 
             // Configure UnpackConfig - use existing or create new
             UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);

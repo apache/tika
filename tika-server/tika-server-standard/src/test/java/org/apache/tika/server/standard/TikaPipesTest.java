@@ -59,6 +59,10 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
@@ -93,6 +97,7 @@ public class TikaPipesTest extends CXFTestBase {
     private FetcherManager fetcherManager;
 
     private PipesResource pipesResource;
+    private PipesParser pipesParser;
 
     @Override
     @BeforeAll
@@ -134,7 +139,13 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
         try {
-            pipesResource = new PipesResource(tikaConfigPath);
+            // Mirrors what PipesResource used to build internally, back when it
+            // constructed its own parser instead of sharing one.
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+            pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+            pipesResource = new PipesResource(pipesParser);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -145,10 +156,11 @@ public class TikaPipesTest extends CXFTestBase {
     @Override
     @AfterAll
     public void tearDown() throws Exception {
-        if (pipesResource != null) {
-            pipesResource.close();
-            pipesResource = null;
+        if (pipesParser != null) {
+            pipesParser.close();
+            pipesParser = null;
         }
+        pipesResource = null;
         super.tearDown();
         if (tmpWorkingDir != null) {
             FileUtils.deleteDirectory(tmpWorkingDir.toFile());
