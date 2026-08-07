@@ -38,6 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -52,6 +53,13 @@ import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
+    // Own dedicated static @TempDir, not the inherited (instance, per-test-method)
+    // TEMP_WORKING_DIR from IntegrationTestBase -- @BeforeAll needs a directory
+    // available before any test method runs, and instance-field @TempDir isn't
+    // populated until right before each @Test method regardless of test-instance
+    // lifecycle.
+    @TempDir
+    private static Path SETUP_DIR;
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
     private static Path TIKA_CONFIG_TIMEOUT;
@@ -59,16 +67,16 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
-        Path inputDir = TEMP_WORKING_DIR.resolve("input");
-        TEMP_OUTPUT_DIR = TEMP_WORKING_DIR.resolve("output");
+        Path inputDir = SETUP_DIR.resolve("input");
+        TEMP_OUTPUT_DIR = SETUP_DIR.resolve("output");
         Files.createDirectories(inputDir);
         Files.createDirectories(TEMP_OUTPUT_DIR);
 
         for (String mockFile : FILES) {
             Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile), inputDir.resolve(mockFile));
         }
-        TIKA_CONFIG = TEMP_WORKING_DIR.resolve("tika-config.json");
-        TIKA_CONFIG_TIMEOUT = TEMP_WORKING_DIR.resolve("tika-config-timeout.json");
+        TIKA_CONFIG = SETUP_DIR.resolve("tika-config.json");
+        TIKA_CONFIG_TIMEOUT = SETUP_DIR.resolve("tika-config-timeout.json");
         CXFTestBase.createPluginsConfig(TIKA_CONFIG, inputDir, TEMP_OUTPUT_DIR, null, 5000L);
         CXFTestBase.createPluginsConfig(TIKA_CONFIG_TIMEOUT, inputDir, TEMP_OUTPUT_DIR, null, 500L);
 
