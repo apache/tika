@@ -894,6 +894,81 @@ public final class StructuralEncodingRules {
         return errors;
     }
 
+    /** Counts complete, valid multi-byte UTF-8 sequences — companion to
+     *  {@link #countUtf8Errors}, same walk, opposite tally. Gauges how much
+     *  genuine UTF-8 evidence a probe carries independent of its error count. */
+    public static int countUtf8Sequences(byte[] bytes) {
+        return countUtf8Sequences(bytes, 0, bytes.length);
+    }
+
+    public static int countUtf8Sequences(byte[] bytes, int offset, int length) {
+        int sequences = 0;
+        int i = offset;
+        int end = offset + length;
+        while (i < end) {
+            int b = bytes[i] & 0xFF;
+            if (b < 0x80) {
+                i++;
+                continue;
+            }
+            int seqLen;
+            if (b >= 0xF8) {
+                i++;
+                continue;
+            } else if (b >= 0xF0) {
+                seqLen = 4;
+            } else if (b >= 0xE0) {
+                seqLen = 3;
+            } else if (b >= 0xC0) {
+                seqLen = 2;
+            } else {
+                i++;
+                continue;
+            }
+            if (seqLen == 2 && b <= 0xC1) {
+                i++;
+                continue;
+            }
+            int kEnd = Math.min(seqLen, end - i);
+            if (kEnd < seqLen) {
+                break;
+            }
+            boolean bad = false;
+            for (int k = 1; k < seqLen; k++) {
+                int cb = bytes[i + k] & 0xFF;
+                if (cb < 0x80 || cb > 0xBF) {
+                    bad = true;
+                    break;
+                }
+            }
+            if (bad) {
+                i += seqLen;
+                continue;
+            }
+            if (seqLen == 3) {
+                int cp = ((b & 0x0F) << 12)
+                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 6
+                        | ((bytes[i + 2] & 0xFF) & 0x3F);
+                if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
+                    i += seqLen;
+                    continue;
+                }
+            } else if (seqLen == 4) {
+                int cp = ((b & 0x07) << 18)
+                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 12
+                        | ((bytes[i + 2] & 0xFF) & 0x3F) << 6
+                        | ((bytes[i + 3] & 0xFF) & 0x3F);
+                if (cp < 0x10000 || cp > 0x10FFFF) {
+                    i += seqLen;
+                    continue;
+                }
+            }
+            sequences++;
+            i += seqLen;
+        }
+        return sequences;
+    }
+
     // -----------------------------------------------------------------------
     //  Result type
     // -----------------------------------------------------------------------
