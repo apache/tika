@@ -894,17 +894,9 @@ public final class StructuralEncodingRules {
         return errors;
     }
 
-    /**
-     * Counts complete, valid multi-byte UTF-8 sequences in the sample —
-     * companion to {@link #countUtf8Errors}, same walk, opposite tally.  Used
-     * to gauge how much genuine UTF-8 evidence a probe carries independent of
-     * its error count: a probe with one tolerated error and hundreds of valid
-     * sequences is overwhelmingly UTF-8; a probe with one tolerated error and
-     * two or three valid sequences (a short filename, say) is not distinguishable
-     * from a coincidentally-valid legacy-encoded string.
-     *
-     * @return number of complete, well-formed multi-byte UTF-8 sequences
-     */
+    /** Counts complete, valid multi-byte UTF-8 sequences — companion to
+     *  {@link #countUtf8Errors}, same walk, opposite tally. Gauges how much
+     *  genuine UTF-8 evidence a probe carries independent of its error count. */
     public static int countUtf8Sequences(byte[] bytes) {
         return countUtf8Sequences(bytes, 0, bytes.length);
     }

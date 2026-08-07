@@ -30,32 +30,13 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.detect.EncodingResult;
 
 /**
- * Regression test for a real-world failure: a genuinely UTF-8 HTML page whose
- * only single-byte "legacy" artifact (a stray {@code &copy;} written as raw
- * {@code 0xA9} rather than an entity) sits before the bulk of the document's
- * real multi-byte content.  {@link StructuralEncodingRules#checkUtf8} correctly
- * reports {@code NOT_UTF8} for the whole probe (one malformed lead byte), and
- * the tolerance mechanism in {@link MojibusterEncodingDetector} is supposed to
- * recognize this as "essentially UTF-8" when there's abundant genuine
- * multi-byte evidence.
- *
- * <p>Commit 360b3d354 ("merge conflict and flaky test", 2026-06-10) dropped the
- * {@code || utf8Tolerated} branch that used to promote this case to a
- * STRUCTURAL UTF-8 candidate, on the assumption that the NB statistical layer
- * would independently propose UTF-8 as a fallback.  That assumption doesn't
- * hold for every script/corpus (verified against a real Bengali-language news
- * page): NB's own candidate pool can come back completely empty, leaving
- * Mojibuster with nothing but the {@code windows-1252} "give up" default —
- * silent, complete mojibake on an otherwise-clean UTF-8 document.</p>
- *
- * <p>The companion {@link #shortProbeWithOneStrayByteIsNotPromoted()} test
- * guards the reason that branch was narrowed in the first place: zip entry
- * names are typically 9-30 bytes, and {@link
- * org.apache.tika.parser.pkg.ZipParser} runs them through this same detector
- * (see {@code ZipParser#isDetectCharsetsInEntryNames}). A single coincidental
- * error byte in a short, genuinely-legacy-encoded filename must NOT be enough
- * to promote it to STRUCTURAL UTF-8 — that would re-open the false-positive
- * this detector is relied on to avoid for filenames.</p>
+ * TIKA-4810: commit 360b3d354 (2026-06-10) dropped the {@code || utf8Tolerated}
+ * branch that promoted a tolerated (near-clean) probe to STRUCTURAL UTF-8,
+ * assuming NB's statistical layer always covers the fallback. It doesn't (a
+ * real Bengali news page's NB pool came back empty) — but restoring the branch
+ * unconditionally would re-open a false positive on short zip entry names
+ * (9-30 bytes, routed through this detector by {@code ZipParser}), which is
+ * why it was narrowed in the first place.
  */
 public class ToleratedUtf8StructuralRegressionTest {
 
@@ -70,10 +51,6 @@ public class ToleratedUtf8StructuralRegressionTest {
         }
     }
 
-    /**
-     * Long document, abundant genuine multi-byte UTF-8 evidence, exactly one
-     * tolerated error byte before it.  Must still be recognized as UTF-8.
-     */
     @Test
     public void longDocumentWithOneStrayByteIsStillUtf8() throws IOException {
         byte[] probe = buildProbe(30);
@@ -87,19 +64,11 @@ public class ToleratedUtf8StructuralRegressionTest {
                         + "results were: " + results);
     }
 
-    /**
-     * Short probe (the zip-entry-name shape), exactly one error byte, only a
-     * handful of genuine multi-byte sequences.  Must NOT be promoted to
-     * STRUCTURAL UTF-8 on the strength of tolerance alone — that's the
-     * false-positive TIKA-4752-era filename detection depends on avoiding.
-     */
+    /** Zip-entry-name-shaped probe: must not be promoted on tolerance alone. */
     @Test
     public void shortProbeWithOneStrayByteIsNotPromoted() throws IOException {
-        // ~20 bytes: one legacy high byte + a couple of genuine multi-byte
-        // UTF-8 chars — the shape of a real (short) zip entry name, not a
-        // full document.
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        bo.write(0xA9); // stray legacy byte, invalid as a UTF-8 lead
+        bo.write(0xA9); // raw © byte: invalid as a UTF-8 lead
         bo.writeBytes("café-Köln.txt".getBytes(StandardCharsets.UTF_8));
         byte[] probe = bo.toByteArray();
 
@@ -113,13 +82,7 @@ public class ToleratedUtf8StructuralRegressionTest {
                         + "results were: " + results);
     }
 
-    /**
-     * Real embedded-file-name regression from {@code attachment_name_diffs.xlsx}
-     * (commoncrawl3/5D/5DXWH7R4A5Q6VAWBAMBSUZM5PNEVAE63): a GBK zip entry name
-     * ({@code 说明.txt}) must stay GB18030, not get pulled toward STRUCTURAL
-     * UTF-8 by tolerance — the same false-positive risk as the Latin case,
-     * CJK-flavored.
-     */
+    /** Real GBK filename from attachment_name_diffs.xlsx; must stay GB18030. */
     @Test
     public void chineseGbkFilenameIsNotPromotedToUtf8() {
         byte[] probe = "说明.txt".getBytes(Charset.forName("GBK"));
@@ -134,12 +97,7 @@ public class ToleratedUtf8StructuralRegressionTest {
                 "Expected a GB18030/GBK candidate; results were: " + results);
     }
 
-    /**
-     * Real embedded-file-name regression from {@code attachment_name_diffs.xlsx}
-     * (bug_trackers/MOZILLA/240463-316268/MOZILLA-296795-4.zip): a windows-1252
-     * zip entry name ({@code Sauté.txt}) must stay legacy SBCS, not get promoted
-     * to STRUCTURAL UTF-8 by tolerance.
-     */
+    /** Real windows-1252 filename from attachment_name_diffs.xlsx. */
     @Test
     public void sauteFilenameIsNotPromotedToUtf8() {
         byte[] probe = "Sauté.txt".getBytes(Charset.forName("windows-1252"));
@@ -152,10 +110,7 @@ public class ToleratedUtf8StructuralRegressionTest {
                         + "UTF-8 on a single tolerated error alone; results were: " + results);
     }
 
-    /** HTML wrapper + {@code repeatCount} copies of a real Bengali sentence,
-     *  with a single raw {@code 0xA9} (not a UTF-8 encoded {@code ©}) planted
-     *  in a meta tag before the real content — matches the real-world
-     *  failure exactly (declared windows-1252, genuinely UTF-8 body). */
+    /** Declared-windows-1252 HTML page, genuinely UTF-8, one stray raw © byte. */
     private static byte[] buildProbe(int repeatCount) throws IOException {
         StringBuilder body = new StringBuilder();
         for (int i = 0; i < repeatCount; i++) {
@@ -166,7 +121,7 @@ public class ToleratedUtf8StructuralRegressionTest {
                 + "content=\"text/html; charset=windows-1252\">")
                 .getBytes(StandardCharsets.US_ASCII));
         bo.writeBytes("<meta name=\"copyright\" content=\"".getBytes(StandardCharsets.US_ASCII));
-        bo.write(0xA9); // stray legacy byte, invalid as a UTF-8 lead
+        bo.write(0xA9); // raw © byte: invalid as a UTF-8 lead
         bo.writeBytes(" 2013\"></head><body><title>".getBytes(StandardCharsets.US_ASCII));
         bo.writeBytes(body.toString().getBytes(StandardCharsets.UTF_8));
         bo.writeBytes("</title></body></html>".getBytes(StandardCharsets.US_ASCII));

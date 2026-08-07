@@ -174,16 +174,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      */
     private static final int UTF8_MAX_TOLERATED_ERRORS = 1;
 
-    /**
-     * Minimum count of complete, valid multi-byte UTF-8 sequences required before
-     * a tolerated (NOT_UTF8-but-within-error-budget) probe is promoted to a
-     * STRUCTURAL UTF-8 candidate.  Tolerance alone isn't enough evidence at any
-     * length — 1 error in a 20-byte zip entry name is a 5% error rate, easily a
-     * coincidentally-valid legacy-encoded string, not corrupted UTF-8.  Requiring
-     * substantial genuine multi-byte evidence (mirrors {@link
-     * CjkDecodeValidator#MIN_HIGH_BYTES}) separates that short-probe false-positive
-     * risk from the long-document case this tolerance mechanism exists for.
-     */
+    /** Minimum valid multi-byte UTF-8 sequences before a tolerated (not clean)
+     *  probe is promoted to STRUCTURAL — else a short filename could false-
+     *  positive on a single coincidental error (mirrors {@link
+     *  CjkDecodeValidator#MIN_HIGH_BYTES}). */
     private static final int MIN_TOLERATED_UTF8_SEQUENCES = 30;
 
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
@@ -367,21 +361,15 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
-        // Emit a structural UTF-8 candidate when the grammar is definitively clean
-        // (LIKELY_UTF8), OR when it's tolerated AND backed by abundant genuine
-        // multi-byte evidence (evidenceTolerated below).  Bare tolerance is not
-        // promoted: on a short probe (e.g. a zip entry name — ZipParser routes
-        // entry-name bytes through this same detector) NB's UTF-8 result is
-        // already kept as a STATISTICAL candidate (see NOT_UTF8 disqualifier
-        // above), and a single tolerated error there is more likely a
-        // coincidentally-valid legacy-encoded string than corrupted UTF-8 — regr-
-        // ession-tested in ToleratedUtf8StructuralRegressionTest. On a long,
-        // overwhelmingly-UTF-8 document a single stray legacy byte (e.g. a raw
-        // 0xA9 copyright sign) must not cost the whole document its STRUCTURAL
-        // proof: NB can come back with an empty pool for some scripts, leaving
-        // nothing for JunkFilter to prefer over the declared charset — real-world
-        // regression from commit 360b3d354 (2026-06-10), which dropped this
-        // branch entirely on the assumption that an NB fallback always exists.
+        // Promote on LIKELY_UTF8, or on tolerated errors backed by abundant
+        // evidence (evidenceTolerated).  Bare tolerance isn't enough: on a short
+        // probe (e.g. a zip entry name, routed here by ZipParser) NB already
+        // covers a real UTF-8 case as STATISTICAL, so a lone tolerated error is
+        // more likely a coincidentally-valid legacy string.  But on a long,
+        // genuinely-UTF-8 document NB can return an empty pool for some scripts
+        // (TIKA-4810) — without this, one stray legacy byte costs the whole
+        // document its STRUCTURAL proof and JunkFilter has nothing to prefer
+        // over the declared charset.
         boolean evidenceTolerated = utf8Tolerated
                 && StructuralEncodingRules.countUtf8Sequences(probe) >= MIN_TOLERATED_UTF8_SEQUENCES;
         if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8 || evidenceTolerated) {
