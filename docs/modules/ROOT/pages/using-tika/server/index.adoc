@@ -298,14 +298,20 @@ xref:migration-to-4x/migrating-tika-server-4x.adoc#_configuration_changes[Config
 [#_endpoints_and_forked_process_groups]
 == Endpoints and Forked-Process Groups
 
-Two independent pipes-backed process groups exist, plus one endpoint that
+Three independent pipes-backed process groups exist, plus one endpoint that
 isn't pipes-backed at all:
 
 * **`/tika` + `/rmeta` + `/unpack`** share one group — all three go through
 the same `PipesParsingHelper`/`PipesParser`, sized by `pipes.numClients`.
-* **`/pipes` + `/async`** share a separate group (gated behind `allowPipes`),
-sized by the same `pipes.numClients` setting in the same config, but as an
-independent set of forked processes.
+* **`/pipes`** is its own separate group (gated behind `allowPipes`) — it
+builds its own independent `PipesParser`, not shared with `/tika`/`/rmeta`/
+`/unpack`, sized by the same `pipes.numClients` setting in the same config
+but as a wholly separate set of forked processes.
+* **`/async`** is a *third*, independent group (also gated behind
+`allowPipes`) — it doesn't share a `PipesParser` with `/pipes` either. It
+manages its own forked-worker pool directly (queued/background processing,
+results delivered via a configured `PipesReporter` rather than in the HTTP
+response), sized by its own read of `pipes.numClients` from the same config.
 * **`/meta` is not pipes-backed** — it still parses in-process, in the
 request-handling JVM, as in 3.x. It isn't bound by `numClients` and doesn't
 participate in anything below, but it also has no crash/OOM isolation: a
@@ -341,13 +347,14 @@ Independently of the above, each group also auto-sizes its forked JVMs'
 xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for the full mechanics. This
 part *can* go wrong across groups: the auto-sizer for one group has no
 visibility into another group running in the same process, so if you enable
-both `/tika`/`/rmeta`/`/unpack` *and* `/pipes`/`/async` together — a config
+`/tika`/`/rmeta`/`/unpack` together with `/pipes` and/or `/async` — a config
 listing all of them, or simply leaving `endpoints` unset while
-`allowPipes=true` — each group's auto-sizer computes its slice as if it owned
-the whole host. Whether that actually causes oversubscription depends on your
-`numClients` values relative to the host's core count; it's not automatic, but
-it's also not something the auto-sizer will warn you about, because from
-either group's perspective alone the sizing looks fine. See
+`allowPipes=true` gives you all three groups at once — each group's auto-sizer
+computes its slice as if it owned the whole host. Whether that actually causes
+oversubscription depends on your `numClients` values relative to the host's
+core count; it's not automatic, but it's also not something the auto-sizer
+will warn you about, because from any one group's perspective alone the sizing
+looks fine. See
 xref:pipes/cpu-sizing.adoc#_known_limitation_multiple_pipes_groups_in_one_process[Known
 limitation: multiple Pipes groups in one process] for the mechanics and
 mitigation (scope `endpoints` to what you actually use, or set
