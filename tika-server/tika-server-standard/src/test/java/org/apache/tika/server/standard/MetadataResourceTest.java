@@ -66,8 +66,8 @@ public class MetadataResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(MetadataResource.class, XMPMetadataResource.class);
-        sf.setResourceProvider(MetadataResource.class, new SingletonResourceProvider(new MetadataResource()));
-        sf.setResourceProvider(XMPMetadataResource.class, new SingletonResourceProvider(new XMPMetadataResource()));
+        sf.setResourceProvider(MetadataResource.class, new SingletonResourceProvider(new MetadataResource(tikaResource)));
+        sf.setResourceProvider(XMPMetadataResource.class, new SingletonResourceProvider(new XMPMetadataResource(tikaResource)));
     }
 
     @Override

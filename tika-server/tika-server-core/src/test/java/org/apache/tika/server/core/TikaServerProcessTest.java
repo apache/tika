@@ -40,15 +40,15 @@ public class TikaServerProcessTest {
         // The pipes/async endpoints fork processes and read/write via fetchers/emitters; the
         // start-guard must refuse them unless allowPipes is set, even when listed.
         assertThrows(TikaConfigException.class,
-                () -> TikaServerProcess.loadCoreProviders(config(false, "pipes"), null));
+                () -> TikaServerProcess.loadCoreProviders(config(false, "pipes"), null, null));
         assertThrows(TikaConfigException.class,
-                () -> TikaServerProcess.loadCoreProviders(config(false, "async"), null));
+                () -> TikaServerProcess.loadCoreProviders(config(false, "async"), null, null));
     }
 
     @Test
     public void ordinaryEndpointIsAllowedWithoutAllowPipes() {
         // The guard must not false-fire on a non-forking endpoint.
         assertDoesNotThrow(
-                () -> TikaServerProcess.loadCoreProviders(config(false, "meta"), null));
+                () -> TikaServerProcess.loadCoreProviders(config(false, "meta"), null, null));
     }
 }

@@ -182,6 +182,24 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
 }
 ----
 
+[IMPORTANT]
+====
+`numClients` is not boilerplate to copy unchanged from this example. In 3.x,
+`/tika`, `/rmeta`, and `/unpack` parsed in-process, in the request-handling
+JVM — no forked processes, no fixed concurrency limit. In 4.x, these same
+default-on endpoints *always* fork `numClients` child JVMs and share a fixed
+pool of that many concurrent workers. Size it too low for your request volume
+and callers start getting `429 CLIENT_UNAVAILABLE_WITHIN_MS` under load that
+used to just queue up on request threads instead (this is deliberate
+backpressure, not a bug — see
+xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
+and Forked-Process Groups]). Size it too high for your host's core count, and
+the forked workers individually starve each other of CPU (see
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing]). Neither failure mode
+throws an error pointing at `numClients` as the cause — size it deliberately
+before deploying, not from this example.
+====
+
 == New Features
 
 === Process Isolation

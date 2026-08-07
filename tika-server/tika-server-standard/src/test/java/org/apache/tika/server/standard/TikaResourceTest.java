@@ -62,7 +62,6 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test-documents/test.doc";
     public static final String TEST_PASSWORD_PROTECTED = "test-documents/password.xls";
     private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
-    private static final String TEST_OOM = "mock/fake_oom.xml";
 
     private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
@@ -75,7 +74,7 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(tikaResource));
     }
 
     @Override

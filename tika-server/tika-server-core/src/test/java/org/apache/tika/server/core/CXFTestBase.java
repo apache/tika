@@ -99,6 +99,7 @@ public abstract class CXFTestBase {
     protected final static int DIGESTER_READ_LIMIT = 20 * 1024 * 1024;
     protected Server server;
     protected TikaLoader tika;
+    protected TikaResource tikaResource;
     private PipesParser pipesParser;
     private Path pipesConfigPath;
     private Path inputTempDirectory = null;
@@ -216,7 +217,7 @@ public abstract class CXFTestBase {
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
                     inputTempDirectory, getUnpackEmitterBasePath(), false);
 
-            TikaResource.init(tika, new ServerStatus(), pipesParsingHelper, isAllowPerRequestConfig());
+            tikaResource = new TikaResource(tika, new ServerStatus(), pipesParsingHelper, isAllowPerRequestConfig());
         } finally {
             // Only delete tika config, keep pipes config for child processes
             Files.deleteIfExists(tmp);

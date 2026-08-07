@@ -43,7 +43,7 @@ public class TikaDetectorsTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaDetectors.class);
-        sf.setResourceProvider(TikaDetectors.class, new SingletonResourceProvider(new TikaDetectors()));
+        sf.setResourceProvider(TikaDetectors.class, new SingletonResourceProvider(new TikaDetectors(tikaResource)));
     }
 
     @Override

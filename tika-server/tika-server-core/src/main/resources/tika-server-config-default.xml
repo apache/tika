@@ -47,34 +47,9 @@
       <!-- whether or not to include the stacktrace when a parse exception happens
           in the data returned to the user -->
       <returnStackTrace>false</returnStackTrace>
-      <!-- If set to 'true', this runs tika server "in process"
-          in the legacy 1.x mode.
-          This means that the server will be susceptible to infinite loops
-          and crashes.
-          If set to 'false', the server will spawn a forked
-          process and restart the forked process on catastrophic failures
-          (this was called -spawnChild mode in 1.x).
-          nofork=false is the default in 2.x
-      -->
-      <noFork>false</noFork>
-      <!-- maximum amount of time to wait for a forked process to
-          start up.
-          Not allowed if nofork=true. -->
-      <maxForkedStartupMillis>120000</maxForkedStartupMillis>
-      <!-- maximum number of times to allow a specific forked process
-          to be restarted.
-          Not allowed if nofork=true. -->
-      <maxRestarts>-1</maxRestarts>
-      <!-- maximum files to parse per forked process before
-          restarting the forked process to clear potential
-          memory leaks.
-          Not allowed if nofork=true. -->
-      <maxFiles>100000</maxFiles>
-      <!-- if you want to specify a specific javaPath for
-          the forked process.  This should be the full path
-          including the executable, e.g.: /usr/bin/java
-          Not allowed if nofork=true. -->
-      <javaPath>java</javaPath>
+      <!-- Per-document process isolation, crash restart, and timeouts are
+          configured via the pipes section (pipes.forkedJvmArgs,
+          pipes.numClients) and parse-context.timeout-limits, not here. -->
     </params>
   </server>
 </properties>

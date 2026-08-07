@@ -260,7 +260,11 @@ public class PipesParsingHelper {
         LOG.debug("Parse returned empty result, status: {}", result.status());
         String message = result.message();
         if (message != null && !message.isEmpty()) {
-            ParseContext context = TikaResource.createParseContext();
+            // Plain ParseContext, not TikaResource.createParseContext() -- this class is
+            // constructed before TikaResource (which takes it as a constructor arg), so
+            // depending back on TikaResource here would be circular. Only used to build
+            // an error-result Metadata object; no actual parsing happens on this path.
+            ParseContext context = new ParseContext();
             Metadata errorMetadata = Metadata.newInstance(context);
             errorMetadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, message);
             return Collections.singletonList(errorMetadata);
@@ -278,8 +282,14 @@ public class PipesParsingHelper {
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
                  PARSE_EXCEPTION_NO_EMIT ->
                     Response.Status.OK;
-            case TIMEOUT, OOM, UNSPECIFIED_CRASH, CLIENT_UNAVAILABLE_WITHIN_MS ->
+            case TIMEOUT, OOM, UNSPECIFIED_CRASH ->
                     Response.Status.SERVICE_UNAVAILABLE;
+            // Distinct from the crash statuses above: nothing failed here, the client
+            // pool was simply at capacity for longer than maxWaitForClientMillis. 429
+            // lets monitoring/alerting on HTTP status alone tell "we're at capacity"
+            // (scale up numClients) apart from "a worker is actually crashing" (503).
+            case CLIENT_UNAVAILABLE_WITHIN_MS ->
+                    Response.Status.TOO_MANY_REQUESTS;
             case FETCH_EXCEPTION, EMIT_EXCEPTION,
                  FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
                  PAYLOAD_LIMIT_EXCEEDED,

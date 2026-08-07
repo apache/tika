@@ -20,7 +20,6 @@ import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 import static org.apache.tika.server.core.resource.TikaResource.getWriteLimit;
 import static org.apache.tika.server.core.resource.TikaResource.setupContentHandlerFactory;
 import static org.apache.tika.server.core.resource.TikaResource.setupContentHandlerFactoryIfNeeded;
-import static org.apache.tika.server.core.resource.TikaResource.setupMultipartConfig;
 
 import java.io.InputStream;
 import java.util.List;
@@ -54,16 +53,22 @@ public class RecursiveMetadataResource {
     protected static final BasicContentHandlerFactory.HANDLER_TYPE DEFAULT_HANDLER_TYPE = BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN;
     private static final Logger LOG = LoggerFactory.getLogger(RecursiveMetadataResource.class);
 
+    private final TikaResource tikaResource;
+
+    public RecursiveMetadataResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
     /**
      * Parses content and returns metadata list.
      * Metadata filtering is done in the child process, so no filtering needed here.
      */
-    public static List<Metadata> parseMetadata(TikaInputStream tis, Metadata metadata,
+    public List<Metadata> parseMetadata(TikaInputStream tis, Metadata metadata,
                                                MultivaluedMap<String, String> httpHeaders,
                                                ServerHandlerConfig handlerConfig)
             throws Exception {
 
-        final ParseContext context = TikaResource.createParseContext();
+        final ParseContext context = tikaResource.createParseContext();
 
         fillMetadata(null, metadata, httpHeaders);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
@@ -80,7 +85,7 @@ public class RecursiveMetadataResource {
         }
 
         // Filtering is done in child process, no need to filter again
-        return TikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+        return tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
     }
 
     static ServerHandlerConfig buildHandlerConfig(MultivaluedMap<String, String> httpHeaders, String handlerTypeName, ParseMode parseMode) {
@@ -125,7 +130,7 @@ public class RecursiveMetadataResource {
     @Produces({"application/json"})
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(),
@@ -147,9 +152,9 @@ public class RecursiveMetadataResource {
             List<Attachment> attachments,
             @Context HttpHeaders httpHeaders) throws Exception {
 
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
 
             TikaResource.logRequest(LOG, "/rmeta/config", metadata);
 
@@ -168,7 +173,7 @@ public class RecursiveMetadataResource {
                 handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached());
 
         // Filtering is done in child process, no need to filter again
-        List<Metadata> metadataList = TikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+        List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
         return new MetadataList(metadataList);
     }
 
@@ -200,7 +205,7 @@ public class RecursiveMetadataResource {
     @Produces("application/json")
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
