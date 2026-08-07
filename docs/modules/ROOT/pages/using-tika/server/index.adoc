@@ -33,6 +33,29 @@ request-handling JVM; treat those as best-effort under load. See
 xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating Tika Server to 4.x]
 for the full breaking-change list when upgrading from 3.x.
 
+[IMPORTANT]
+====
+This is not opt-in the way `/pipes` and `/async` are (those require
+`allowPipes=true` and refuse to start without it). `/tika`, `/rmeta`, and
+`/unpack` are **on by default** — the moment you run a basic `tika-server` and
+PUT a document to `/tika`, you are running Tika Pipes, with a real forked
+child process behind it. (`/meta` is the exception among the main
+content-extraction endpoints — it still parses in-process; see below.) If
+you're upgrading from 3.x, where these endpoints parsed in-process in a
+single JVM, this is a profound change: `pipes.numClients` now controls both
+how many requests these endpoints can serve concurrently and how many forked
+JVMs run at once, and it's easy to size it thinking about only one of those
+two things. Undersized for your request volume, and callers start waiting —
+then failing with `429`s — under load that used to just queue up on request
+threads in 3.x. Oversized for your host's core count, and the forked workers
+individually starve each other of CPU. Neither shows up as an error in your
+own code; both show up as "the server got slower" with nothing pointing at
+`numClients` as the cause. See
+<<_endpoints_and_forked_process_groups,Endpoints and Forked-Process Groups>>
+below and xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] before deploying —
+don't treat the `numClients` value in example configs as safe boilerplate.
+====
+
 == Security
 
 IMPORTANT: The primary rule is *trusted callers only*. `tika-server` is not a security boundary:
@@ -196,10 +219,17 @@ a `message` field is also included (it often contains a server-side stack trace)
 |HTTP status |`status` values |Meaning
 
 |`503 Service Unavailable`
-|`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`, `CLIENT_UNAVAILABLE_WITHIN_MS`
-|The forked parse process failed, or no parse client became available within the
-configured wait time (`CLIENT_UNAVAILABLE_WITHIN_MS`). The server is still healthy;
-the client may retry.
+|`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`
+|The forked parse process actually failed (crashed, OOM'd, or exceeded its timeout).
+The server is still healthy; the client may retry.
+
+|`429 Too Many Requests`
+|`CLIENT_UNAVAILABLE_WITHIN_MS`
+|Nothing failed — no parse client became available within the configured wait time
+(deliberate backpressure, not a bug; see <<_endpoints_and_forked_process_groups,Endpoints
+and Forked-Process Groups>>). Distinct from `503` above on purpose: a `429` spike means
+"raise `numClients` or add capacity," a `503` spike means "something is actually
+crashing" — you can tell them apart from the status code alone.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
@@ -227,6 +257,10 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`allowPipes`
 |`false`
 |Opt-in for the `/pipes` and `/async` endpoints, which drive process-isolated fetching and parsing. The server refuses to start if either is selected without this flag (see <<_security_configuration,Security Configuration>>).
+
+|`endpoints`
+|_all defaults_
+|Which endpoints to expose. Leave unset to get the full default set (includes `/tika` and `/rmeta`). Explicitly listing endpoints also controls how many independent forked-process groups you run — see <<_endpoints_and_forked_process_groups,Endpoints and Forked-Process Groups>> below before combining `/tika`/`/rmeta` with `/pipes`/`/async`.
 
 |`allowPerRequestConfig`
 |`false`
@@ -260,6 +294,64 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 For the full Pipes-related sections (`pipes`, `fetchers`, `emitters`, `parse-context`)
 that tika-server 4.x requires, see
 xref:migration-to-4x/migrating-tika-server-4x.adoc#_configuration_changes[Configuration Changes].
+
+[#_endpoints_and_forked_process_groups]
+== Endpoints and Forked-Process Groups
+
+Two independent pipes-backed process groups exist, plus one endpoint that
+isn't pipes-backed at all:
+
+* **`/tika` + `/rmeta` + `/unpack`** share one group — all three go through
+the same `PipesParsingHelper`/`PipesParser`, sized by `pipes.numClients`.
+* **`/pipes` + `/async`** share a separate group (gated behind `allowPipes`),
+sized by the same `pipes.numClients` setting in the same config, but as an
+independent set of forked processes.
+* **`/meta` is not pipes-backed** — it still parses in-process, in the
+request-handling JVM, as in 3.x. It isn't bound by `numClients` and doesn't
+participate in anything below, but it also has no crash/OOM isolation: a
+hostile or pathological document sent to `/meta` can affect the
+request-handling process itself, unlike the pipes-backed endpoints where the
+same document only takes down a forked child. Treat `/meta` as best-effort
+under adversarial input.
+
+Within a pipes-backed group, `numClients` does two *separate* jobs, and it's
+worth understanding both before picking a value.
+
+=== It bounds how many requests that group can serve at once
+
+Each group holds a fixed pool of `numClients` workers. A request that arrives
+when all of them are busy doesn't fail immediately — it waits, up to
+`pipes.maxWaitForClientMillis` (default 60s), for one to free up. This is
+deliberate backpressure, not a bug: if a worker frees up in time, the request
+is served normally; if the wait times out, the server returns `429` with
+`status: CLIENT_UNAVAILABLE_WITHIN_MS` — an explicit "I'm at capacity, retry"
+signal, not a crash (see <<_error_responses,Error Responses>> above). Under
+3.x's in-process model there was no equivalent hard cap — requests just piled
+up on the HTTP server's own thread pool instead. If you're seeing
+`CLIENT_UNAVAILABLE_WITHIN_MS` under real load, that's this group's
+concurrency limit telling you it's undersized for your request volume: raise
+`numClients` for more concurrent capacity, or tune `maxWaitForClientMillis` to
+fail faster (surface backpressure to the caller sooner) or more patiently
+(absorb bursts, at the cost of tying up more request threads while waiting).
+
+=== It sizes each forked worker's view of available CPU
+
+Independently of the above, each group also auto-sizes its forked JVMs'
+`-XX:ActiveProcessorCount` from `numClients` and the host's core count — see
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for the full mechanics. This
+part *can* go wrong across groups: the auto-sizer for one group has no
+visibility into another group running in the same process, so if you enable
+both `/tika`/`/rmeta`/`/unpack` *and* `/pipes`/`/async` together — a config
+listing all of them, or simply leaving `endpoints` unset while
+`allowPipes=true` — each group's auto-sizer computes its slice as if it owned
+the whole host. Whether that actually causes oversubscription depends on your
+`numClients` values relative to the host's core count; it's not automatic, but
+it's also not something the auto-sizer will warn you about, because from
+either group's perspective alone the sizing looks fine. See
+xref:pipes/cpu-sizing.adoc#_known_limitation_multiple_pipes_groups_in_one_process[Known
+limitation: multiple Pipes groups in one process] for the mechanics and
+mitigation (scope `endpoints` to what you actually use, or set
+`-XX:ActiveProcessorCount` explicitly with the combined total in mind).
 
 == Topics
 
