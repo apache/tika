@@ -41,9 +41,11 @@ import org.apache.tika.server.core.ServerStatus;
 public class DetectorResource {
     private static final Logger LOG = LoggerFactory.getLogger(DetectorResource.class);
     private final ServerStatus serverStatus;
+    private final TikaResource tikaResource;
 
-    public DetectorResource(ServerStatus serverStatus) {
+    public DetectorResource(ServerStatus serverStatus, TikaResource tikaResource) {
         this.serverStatus = serverStatus;
+        this.tikaResource = tikaResource;
     }
 
     @PUT
@@ -51,7 +53,7 @@ public class DetectorResource {
     @Consumes("*/*")
     @Produces("text/plain")
     public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        ParseContext parseContext = TikaResource.createParseContext();
+        ParseContext parseContext = tikaResource.createParseContext();
         Metadata met = Metadata.newInstance(parseContext);
 
         String filename = TikaResource.detectFilename(httpHeaders.getRequestHeaders());
@@ -60,7 +62,7 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
 
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            return TikaResource
+            return tikaResource
                     .getTikaLoader()
                     .loadDetectors()
                     .detect(tis, met, parseContext)

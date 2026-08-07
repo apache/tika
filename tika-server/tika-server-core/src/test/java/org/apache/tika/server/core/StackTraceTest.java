@@ -46,7 +46,6 @@ import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
-import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
@@ -71,11 +70,11 @@ public class StackTraceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<>();
-        rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
-        rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
-        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(new ServerStatus())));
-        rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
-        rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tikaResource)));
+        rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
+        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(new ServerStatus(), tikaResource)));
+        rCoreProviders.add(new SingletonResourceProvider(tikaResource));
+        rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tikaResource)));
         sf.setResourceProviders(rCoreProviders);
     }
 

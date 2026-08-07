@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
-import static org.apache.tika.server.core.resource.TikaResource.setupMultipartConfig;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,12 +50,18 @@ import org.apache.tika.parser.Parser;
 public class MetadataResource {
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
+    private final TikaResource tikaResource;
+
+    public MetadataResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
     @POST
     @Consumes("multipart/form-data")
     @Produces({"text/csv", "application/json"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
                     .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), info))
@@ -78,15 +83,15 @@ public class MetadataResource {
             @Context UriInfo info) throws Exception {
 
         // Load default context from config, then overlay with request config
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             // No need to parse embedded docs for metadata-only extraction
             context.set(DocumentSelector.class, metadata1 -> false);
 
-            Parser parser = TikaResource.createParser();
+            Parser parser = tikaResource.createParser();
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
+            tikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
                 public void endDocument() {
                     metadata.set("language", getLanguage().getLanguage());
                 }
@@ -99,7 +104,7 @@ public class MetadataResource {
     @PUT
     @Produces({"text/csv", "application/json"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
@@ -139,7 +144,7 @@ public class MetadataResource {
         // use BAD request to indicate that we may not have had enough data to
         // process the request
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         boolean success = false;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
@@ -173,14 +178,14 @@ public class MetadataResource {
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
             throws IOException, TikaConfigException {
         // Load default context from config (includes DigesterFactory from parse-context)
-        final ParseContext context = TikaResource.createParseContext();
-        Parser parser = TikaResource.createParser();
+        final ParseContext context = tikaResource.createParseContext();
+        Parser parser = tikaResource.createParser();
         fillMetadata(parser, metadata, httpHeaders);
         //no need to parse embedded docs
         context.set(DocumentSelector.class, metadata1 -> false);
 
         TikaResource.logRequest(LOG, "/meta", metadata);
-        TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
+        tikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
             public void endDocument() {
                 metadata.set("language", getLanguage().getLanguage());
             }

@@ -46,7 +46,7 @@ public class DetectorResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(DetectorResource.class);
-        sf.setResourceProvider(DetectorResource.class, new SingletonResourceProvider(new DetectorResource(new ServerStatus())));
+        sf.setResourceProvider(DetectorResource.class, new SingletonResourceProvider(new DetectorResource(new ServerStatus(), tikaResource)));
 
     }
 

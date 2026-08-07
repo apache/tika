@@ -48,9 +48,11 @@ import org.apache.tika.server.core.HTMLHelper;
 public class TikaParsers {
     private static final ParseContext EMPTY_PC = new ParseContext();
     private HTMLHelper html;
+    private final TikaResource tikaResource;
 
-    public TikaParsers() {
+    public TikaParsers(TikaResource tikaResource) {
         this.html = new HTMLHelper();
+        this.tikaResource = tikaResource;
     }
 
     @GET
@@ -67,7 +69,7 @@ public class TikaParsers {
     }
 
     protected String getParsersHTML(boolean withMimeTypes) throws TikaConfigException {
-        ParserDetails p = new ParserDetails(TikaResource
+        ParserDetails p = new ParserDetails(tikaResource
                 .getTikaLoader()
                 .loadParsers());
 
@@ -134,7 +136,7 @@ public class TikaParsers {
 
     protected String getParsersJSON(boolean withMimeTypes) throws IOException, TikaConfigException {
         Map<String, Object> details = new HashMap<>();
-        parserAsMap(new ParserDetails(TikaResource
+        parserAsMap(new ParserDetails(tikaResource
                 .getTikaLoader()
                 .loadParsers()), withMimeTypes, details);
         ObjectMapper objectMapper = new ObjectMapper();
@@ -180,7 +182,7 @@ public class TikaParsers {
 
     protected String getParsersPlain(boolean withMimeTypes) throws TikaConfigException {
         StringBuffer text = new StringBuffer();
-        renderParser(new ParserDetails(TikaResource
+        renderParser(new ParserDetails(tikaResource
                 .getTikaLoader()
                 .loadParsers()), withMimeTypes, text, "");
         return text.toString();

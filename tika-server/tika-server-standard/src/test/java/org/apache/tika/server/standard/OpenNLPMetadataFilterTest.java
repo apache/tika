@@ -51,8 +51,8 @@ public class OpenNLPMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class, TikaResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
-        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(tikaResource));
 
     }
 

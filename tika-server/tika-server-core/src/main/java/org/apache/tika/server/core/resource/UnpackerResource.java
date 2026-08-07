@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
-import static org.apache.tika.server.core.resource.TikaResource.setupMultipartConfig;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -145,6 +144,12 @@ public class UnpackerResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
+    private final TikaResource tikaResource;
+
+    public UnpackerResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
     /**
      * Extracts embedded documents from a container file (simple PUT, no config).
      * Returns a zip archive containing the extracted files.
@@ -158,7 +163,7 @@ public class UnpackerResource {
     @PUT
     @Produces("application/zip")
     public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = TikaResource.createParseContext();
+        ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -182,9 +187,9 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = TikaResource.createParseContext();
+        ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, pc)) {
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack", metadata);
             return doUnpack(tis, metadata, pc, false);
         }
@@ -203,7 +208,7 @@ public class UnpackerResource {
     @PUT
     @Produces("application/zip")
     public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = TikaResource.createParseContext();
+        ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -227,9 +232,9 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = TikaResource.createParseContext();
+        ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, pc)) {
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
         }
@@ -246,7 +251,7 @@ public class UnpackerResource {
      * @return streaming response with the zip file
      */
     private Response doUnpack(TikaInputStream tis, Metadata metadata, ParseContext pc, boolean saveAll) throws Exception {
-        PipesParsingHelper helper = TikaResource.getPipesParsingHelper();
+        PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
         if (helper == null) {
             throw new WebApplicationException("Pipes-based parsing is not enabled", Response.Status.SERVICE_UNAVAILABLE);
         }

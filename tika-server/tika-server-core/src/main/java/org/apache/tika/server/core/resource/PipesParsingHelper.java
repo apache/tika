@@ -260,7 +260,11 @@ public class PipesParsingHelper {
         LOG.debug("Parse returned empty result, status: {}", result.status());
         String message = result.message();
         if (message != null && !message.isEmpty()) {
-            ParseContext context = TikaResource.createParseContext();
+            // Plain ParseContext, not TikaResource.createParseContext() -- this class is
+            // constructed before TikaResource (which takes it as a constructor arg), so
+            // depending back on TikaResource here would be circular. Only used to build
+            // an error-result Metadata object; no actual parsing happens on this path.
+            ParseContext context = new ParseContext();
             Metadata errorMetadata = Metadata.newInstance(context);
             errorMetadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, message);
             return Collections.singletonList(errorMetadata);

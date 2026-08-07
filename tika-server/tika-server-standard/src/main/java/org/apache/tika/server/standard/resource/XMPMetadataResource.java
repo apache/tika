@@ -34,9 +34,14 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.TikaResource;
 import org.apache.tika.server.core.resource.TikaServerResource;
 
 public class XMPMetadataResource extends MetadataResource implements TikaServerResource {
+
+    public XMPMetadataResource(TikaResource tikaResource) {
+        super(tikaResource);
+    }
 
     @PUT
     @Path("{field}")
