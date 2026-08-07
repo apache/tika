@@ -140,7 +140,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      *  genuine false-CJK ≥5.3%, so ~2.5% separates them (see CjkDecodeValidator). */
     private static final double CJK_FAILURE_VETO_THRESHOLD = 0.025;
 
-    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes. */
+    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes.
+     *  MUST equal JunkFilterEncodingDetector.NO_INFO_CONFIDENCE (tika-ml-junkdetect):
+     *  its strict {@code confidence > NO_INFO_CONFIDENCE} test treats exactly this
+     *  value as "statistical layer abstained" so a declaration can win. */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
     /**
@@ -335,7 +338,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         //     because STRUCTURAL confidence outranks STATISTICAL.
         //   • AMBIGUOUS (pure ASCII or only truncated lead): no
         //     emission; NB + fallbacks handle it.
-        StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
+        StructuralEncodingRules.Utf8Stats utf8Stats = StructuralEncodingRules.utf8Stats(probe);
+        StructuralEncodingRules.Utf8Result utf8 = utf8Stats.toResult();
         // TACTICAL: tolerate small corruption.  If the grammar check returned
         // NOT_UTF8 but the malformed-byte fraction is tiny, treat as UTF-8 —
         // a single bad continuation byte in 2KB of CJK is nearly always
@@ -343,7 +347,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // replaced with a probabilistic decoder.
         boolean utf8Tolerated = false;
         if (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
-            int errors = StructuralEncodingRules.countUtf8Errors(probe);
+            int errors = utf8Stats.errors();
             // Length-aware: absolute floor for short probes, rate for long ones.
             int maxTolerated = Math.max(UTF8_MAX_TOLERATED_ERRORS,
                     (int) (probe.length * UTF8_MALFORMED_TOLERANCE));
@@ -371,7 +375,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // document its STRUCTURAL proof and JunkFilter has nothing to prefer
         // over the declared charset.
         boolean evidenceTolerated = utf8Tolerated
-                && StructuralEncodingRules.countUtf8Sequences(probe) >= MIN_TOLERATED_UTF8_SEQUENCES;
+                && utf8Stats.sequences() >= MIN_TOLERATED_UTF8_SEQUENCES;
         if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8 || evidenceTolerated) {
             pool.add(new EncodingResult(
                     java.nio.charset.StandardCharsets.UTF_8,
@@ -532,83 +536,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         return true;
-    }
-
-    /**
-     * Resolve UTF-16 to LE or BE once NB has called it "UTF-16".
-     *
-     * <p>Two deterministic tests:
-     * <ol>
-     *   <li>Null-density: count null bytes in even-offset positions
-     *       vs odd-offset positions.  For ASCII-in-UTF-16-LE the
-     *       high byte is 0x00 at odd positions; for BE it's at even
-     *       positions.  If one column is clearly null-dominant, that
-     *       column indicates the endianness.</li>
-     *   <li>Codepoint validity fallback: for ambiguous probes (pure
-     *       CJK UTF-16, no nulls in either column) count how many
-     *       16-bit codepoints under LE vs BE interpretation land in
-     *       assigned Unicode BMP ranges (non-PUA, non-unassigned).
-     *       Whichever interpretation yields more valid codepoints
-     *       wins.</li>
-     * </ol>
-     *
-     * <p>Also honors the {@code invalidUtf16Le}/{@code invalidUtf16Be}
-     * flags from {@link WideUnicodeDetector} — if either endianness
-     * is structurally invalid (surrogate-pair violation), the other
-     * wins by default.
-     *
-     * @return the resolved charset, or {@code null} if the probe is
-     *         structurally invalid under both interpretations
-     */
-    private static java.nio.charset.Charset disambiguateUtf16(byte[] probe,
-                                                              boolean invalidLe,
-                                                              boolean invalidBe) {
-        if (invalidLe && invalidBe) {
-            return null;
-        }
-        if (invalidLe) {
-            return java.nio.charset.Charset.forName("UTF-16BE");
-        }
-        if (invalidBe) {
-            return java.nio.charset.Charset.forName("UTF-16LE");
-        }
-        int nullEven = 0;
-        int nullOdd = 0;
-        for (int i = 0; i + 1 < probe.length; i += 2) {
-            if (probe[i] == 0) nullEven++;
-            if (probe[i + 1] == 0) nullOdd++;
-        }
-        // Clear null-density winner: one column is ≥ 3× more
-        // null-dominant than the other.
-        if (nullEven >= 3 * Math.max(1, nullOdd)) {
-            return java.nio.charset.Charset.forName("UTF-16BE");
-        }
-        if (nullOdd >= 3 * Math.max(1, nullEven)) {
-            return java.nio.charset.Charset.forName("UTF-16LE");
-        }
-        // Ambiguous on null-density (CJK content).  Count valid BMP
-        // codepoints under each interpretation.  A "valid" codepoint
-        // is any non-zero codepoint outside the surrogate range
-        // (0xD800-0xDFFF) — for CJK content most bytes map into
-        // assigned blocks, and random-byte-interpreted-as-UTF-16
-        // produces many surrogate-range halves.
-        int validLe = 0;
-        int validBe = 0;
-        for (int i = 0; i + 1 < probe.length; i += 2) {
-            int lo = probe[i] & 0xFF;
-            int hi = probe[i + 1] & 0xFF;
-            int leCp = (hi << 8) | lo;
-            int beCp = (lo << 8) | hi;
-            if (leCp != 0 && (leCp < 0xD800 || leCp > 0xDFFF)) {
-                validLe++;
-            }
-            if (beCp != 0 && (beCp < 0xD800 || beCp > 0xDFFF)) {
-                validBe++;
-            }
-        }
-        return validLe >= validBe
-                ? java.nio.charset.Charset.forName("UTF-16LE")
-                : java.nio.charset.Charset.forName("UTF-16BE");
     }
 
     /**

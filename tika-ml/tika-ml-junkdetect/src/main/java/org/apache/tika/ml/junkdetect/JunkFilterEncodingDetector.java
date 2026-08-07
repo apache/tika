@@ -83,10 +83,13 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
     private static final int DEFAULT_READ_LIMIT = 16384;
 
     /** A STATISTICAL candidate at or below this confidence carries no real
-     *  signal — it's the "I don't know" level (matches Mojibuster's
-     *  windows-1252 fallback confidence).  When the statistical layer offers
-     *  nothing above this, the junk-filter defers to a DECLARATIVE/STRUCTURAL
-     *  anchor instead of arbitrating near-identical decodes by quality. */
+     *  signal — it's the "I don't know" level.  MUST equal
+     *  MojibusterEncodingDetector.FALLBACK_CONFIDENCE (tika-encoding-detector-
+     *  mojibuster); the strict {@code >} in hasConfidentNonDeclarative is
+     *  load-bearing: at exactly this value the fallback counts as abstention.
+     *  When the statistical layer offers nothing above this, the junk-filter
+     *  defers to a DECLARATIVE/STRUCTURAL anchor instead of arbitrating
+     *  near-identical decodes by quality. */
     private static final float NO_INFO_CONFIDENCE = 0.1f;
 
     // Adaptive candidate band (TIKA speed lever).  The tournament only needs

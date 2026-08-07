@@ -656,97 +656,7 @@ public final class StructuralEncodingRules {
     }
 
     public static Utf8Result checkUtf8(byte[] bytes, int offset, int length) {
-        int highByteCount = 0;
-        // Count only multi-byte sequences whose continuations are all
-        // present in the probe.  A truncated lead at probe-end is
-        // valid-so-far but provides no structural evidence — a single
-        // 0xC3 byte alone should not be enough to claim UTF-8.
-        int completeHighSeqCount = 0;
-        int i = offset;
-        int end = offset + length;
-
-        while (i < end) {
-            int b = bytes[i] & 0xFF;
-
-            if (b < 0x80) {
-                i++;
-                continue;
-            }
-
-            highByteCount++;
-
-            // Determine expected continuation count from the lead byte
-            int seqLen;
-            if (b >= 0xF8) {
-                // 5-/6-byte sequences are not valid Unicode
-                return Utf8Result.NOT_UTF8;
-            } else if (b >= 0xF0) {
-                seqLen = 4;
-            } else if (b >= 0xE0) {
-                seqLen = 3;
-            } else if (b >= 0xC0) {
-                seqLen = 2;
-            } else {
-                // 0x80–0xBF is a continuation byte without a lead → invalid
-                return Utf8Result.NOT_UTF8;
-            }
-
-            // Overlong 2-byte sequence (C0 or C1 lead)
-            if (seqLen == 2 && b <= 0xC1) {
-                return Utf8Result.NOT_UTF8;
-            }
-
-            // Check that the right number of continuation bytes follow
-            boolean truncated = false;
-            for (int k = 1; k < seqLen; k++) {
-                if (i + k >= end) {
-                    truncated = true;
-                    break;
-                }
-                int cb = bytes[i + k] & 0xFF;
-                if (cb < 0x80 || cb > 0xBF) {
-                    return Utf8Result.NOT_UTF8;
-                }
-            }
-
-            // Validate scalar value ranges for 3- and 4-byte sequences,
-            // but only when the full sequence is present. Truncated sequences
-            // at the end of a probe are not evidence of invalid UTF-8.
-            if (!truncated) {
-                if (seqLen == 3) {
-                    int cp = ((b & 0x0F) << 12)
-                            | ((bytes[i + 1] & 0xFF) & 0x3F) << 6
-                            | ((bytes[i + 2] & 0xFF) & 0x3F);
-                    if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
-                        return Utf8Result.NOT_UTF8;
-                    }
-                } else if (seqLen == 4) {
-                    int cp = ((b & 0x07) << 18)
-                            | ((bytes[i + 1] & 0xFF) & 0x3F) << 12
-                            | ((bytes[i + 2] & 0xFF) & 0x3F) << 6
-                            | ((bytes[i + 3] & 0xFF) & 0x3F);
-                    if (cp < 0x10000 || cp > 0x10FFFF) {
-                        return Utf8Result.NOT_UTF8;
-                    }
-                }
-                completeHighSeqCount++;
-            }
-
-            i += seqLen;
-        }
-
-        // Grammar is valid.  Require at least one COMPLETE multi-byte
-        // sequence (not just a truncated lead at probe-end) to claim
-        // LIKELY.  A lone 0xC3 at the end of a 1-byte probe is
-        // valid-so-far but provides no structural evidence.
-        if (completeHighSeqCount > 0) {
-            return Utf8Result.LIKELY_UTF8;
-        }
-        // highByteCount > 0 but completeHighSeqCount == 0 means every
-        // high byte we saw was the start of a truncated sequence at
-        // probe-end.  That's not enough evidence — treat as ambiguous.
-        // Zero high bytes = pure ASCII; caller handles this separately.
-        return Utf8Result.AMBIGUOUS;
+        return utf8Stats(bytes, offset, length).toResult();
     }
 
     /**
@@ -787,30 +697,49 @@ public final class StructuralEncodingRules {
     }
 
     /**
-     * Counts the number of malformed UTF-8 <em>sequences</em> in the sample —
-     * one event per bad lead, orphaned continuation, overlong, surrogate, or
-     * out-of-range codepoint, regardless of how many bytes the bad sequence
-     * spans.  Unlike {@link #checkUtf8}, this does not early-exit on the
-     * first bad sequence; it scans the entire range, resyncing after each
-     * error.  Returns 0 for a clean UTF-8 stream.
+     * Single-pass tally of UTF-8 structure over the sample: malformed-sequence
+     * events and complete valid multi-byte sequences.  Same walk as
+     * {@link #checkUtf8} but without the early exit — scans the entire range,
+     * resyncing after each error.
      *
-     * <p>Useful for "tolerant" UTF-8 acceptance: a real-world UTF-8 file with
-     * a few corrupted sequences (copy-paste artefact, truncated upstream,
-     * MIME transport flip) should still be recognized as UTF-8 rather than
-     * rejected outright.  Caller decides what error count is tolerable
-     * (typically as a fraction of probe length).</p>
+     * <p>{@code errors} counts one event per bad lead, orphaned continuation,
+     * overlong, surrogate, or out-of-range codepoint regardless of how many
+     * bytes the bad sequence spans — matching Java's
+     * {@code new String(bytes, UTF_8)} U+FFFD-per-error semantics, the
+     * convention callers use for tolerance thresholds.  A truncated sequence
+     * at probe-end is neither an error nor a sequence.</p>
      *
-     * <p>The count matches Java's {@code new String(bytes, UTF_8)}'s
-     * U+FFFD-per-error semantics (one replacement per malformed sequence).</p>
+     * <p>{@code sequences} gauges how much genuine multi-byte UTF-8 evidence
+     * the probe carries independent of its error count.</p>
      *
-     * @return number of malformed UTF-8 sequence events
+     * <p>{@code truncatedTailInvalid}: the probe ends in a truncated sequence
+     * whose partial continuations are provably NOT UTF-8 (e.g. {@code E0 41}
+     * at probe-end).  Not an error <em>event</em> (no U+FFFD equivalent — the
+     * decoder would ask for more input), but it disqualifies the sample from
+     * {@link Utf8Result#LIKELY_UTF8}/{@link Utf8Result#AMBIGUOUS}.</p>
      */
-    public static int countUtf8Errors(byte[] bytes) {
-        return countUtf8Errors(bytes, 0, bytes.length);
+    public record Utf8Stats(int errors, int sequences, boolean truncatedTailInvalid) {
+
+        /** Collapse to the {@link #checkUtf8} tri-state: any invalidity →
+         *  NOT_UTF8; else ≥1 complete multi-byte sequence → LIKELY_UTF8
+         *  (a lone truncated lead is no structural evidence); else AMBIGUOUS
+         *  (pure ASCII, or truncated-lead-only). */
+        public Utf8Result toResult() {
+            if (errors > 0 || truncatedTailInvalid) {
+                return Utf8Result.NOT_UTF8;
+            }
+            return sequences > 0 ? Utf8Result.LIKELY_UTF8 : Utf8Result.AMBIGUOUS;
+        }
     }
 
-    public static int countUtf8Errors(byte[] bytes, int offset, int length) {
+    public static Utf8Stats utf8Stats(byte[] bytes) {
+        return utf8Stats(bytes, 0, bytes.length);
+    }
+
+    public static Utf8Stats utf8Stats(byte[] bytes, int offset, int length) {
         int errors = 0;
+        int sequences = 0;
+        boolean truncatedTailInvalid = false;
         int i = offset;
         int end = offset + length;
         while (i < end) {
@@ -843,10 +772,16 @@ public final class StructuralEncodingRules {
                 i++;
                 continue;
             }
-            int kEnd = Math.min(seqLen, end - i);
-            // Truncated at probe-end is not an error — just stop here.
-            if (kEnd < seqLen) {
-                i = end;
+            // Truncated at probe-end is not an error event, but a provably-bad
+            // continuation in the partial tail still disqualifies UTF-8.
+            if (end - i < seqLen) {
+                for (int k = 1; k < end - i; k++) {
+                    int cb = bytes[i + k] & 0xFF;
+                    if (cb < 0x80 || cb > 0xBF) {
+                        truncatedTailInvalid = true;
+                        break;
+                    }
+                }
                 break;
             }
             // Verify continuations are well-formed
@@ -860,11 +795,9 @@ public final class StructuralEncodingRules {
             }
             if (bad) {
                 errors++;
-                // Skip the whole intended sequence. Advancing byte-by-byte
-                // would re-count the orphaned continuations as additional
-                // errors and inflate the count above Java's UTF-8 decoder's
-                // U+FFFD-per-event semantics, which is the convention we
-                // match for caller threshold comparisons.
+                // Skip the whole intended sequence: byte-by-byte advancement
+                // would re-count orphaned continuations and inflate the count
+                // above the U+FFFD-per-event convention.
                 i += seqLen;
                 continue;
             }
@@ -889,84 +822,61 @@ public final class StructuralEncodingRules {
                     continue;
                 }
             }
-            i += seqLen;
-        }
-        return errors;
-    }
-
-    /** Counts complete, valid multi-byte UTF-8 sequences — companion to
-     *  {@link #countUtf8Errors}, same walk, opposite tally. Gauges how much
-     *  genuine UTF-8 evidence a probe carries independent of its error count. */
-    public static int countUtf8Sequences(byte[] bytes) {
-        return countUtf8Sequences(bytes, 0, bytes.length);
-    }
-
-    public static int countUtf8Sequences(byte[] bytes, int offset, int length) {
-        int sequences = 0;
-        int i = offset;
-        int end = offset + length;
-        while (i < end) {
-            int b = bytes[i] & 0xFF;
-            if (b < 0x80) {
-                i++;
-                continue;
-            }
-            int seqLen;
-            if (b >= 0xF8) {
-                i++;
-                continue;
-            } else if (b >= 0xF0) {
-                seqLen = 4;
-            } else if (b >= 0xE0) {
-                seqLen = 3;
-            } else if (b >= 0xC0) {
-                seqLen = 2;
-            } else {
-                i++;
-                continue;
-            }
-            if (seqLen == 2 && b <= 0xC1) {
-                i++;
-                continue;
-            }
-            int kEnd = Math.min(seqLen, end - i);
-            if (kEnd < seqLen) {
-                break;
-            }
-            boolean bad = false;
-            for (int k = 1; k < seqLen; k++) {
-                int cb = bytes[i + k] & 0xFF;
-                if (cb < 0x80 || cb > 0xBF) {
-                    bad = true;
-                    break;
-                }
-            }
-            if (bad) {
-                i += seqLen;
-                continue;
-            }
-            if (seqLen == 3) {
-                int cp = ((b & 0x0F) << 12)
-                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 6
-                        | ((bytes[i + 2] & 0xFF) & 0x3F);
-                if (cp < 0x0800 || (cp >= 0xD800 && cp <= 0xDFFF)) {
-                    i += seqLen;
-                    continue;
-                }
-            } else if (seqLen == 4) {
-                int cp = ((b & 0x07) << 18)
-                        | ((bytes[i + 1] & 0xFF) & 0x3F) << 12
-                        | ((bytes[i + 2] & 0xFF) & 0x3F) << 6
-                        | ((bytes[i + 3] & 0xFF) & 0x3F);
-                if (cp < 0x10000 || cp > 0x10FFFF) {
-                    i += seqLen;
-                    continue;
-                }
-            }
             sequences++;
             i += seqLen;
         }
-        return sequences;
+        return new Utf8Stats(errors, sequences, truncatedTailInvalid);
+    }
+
+    /**
+     * Length (2/3/4) of a grammatically valid UTF-8 multi-byte sequence
+     * starting at {@code i}, or 0 if none.  Lead ranges exclude overlong
+     * 2-byte (C0/C1) and out-of-range (&ge;F5) leads; continuations must be
+     * 0x80–0xBF.  Deliberately grammar-only — NO codepoint-range/surrogate
+     * checks — so interleaved-decode callers (see
+     * {@link CjkDecodeValidator#strippedFailureRate}) classify a byte run as
+     * "UTF-8-shaped" cheaply without full validation.
+     */
+    public static int utf8SequenceLength(byte[] b, int i) {
+        int x = b[i] & 0xFF;
+        int len;
+        if (x >= 0xC2 && x <= 0xDF) {
+            len = 2;
+        } else if (x >= 0xE0 && x <= 0xEF) {
+            len = 3;
+        } else if (x >= 0xF0 && x <= 0xF4) {
+            len = 4;
+        } else {
+            return 0;
+        }
+        if (i + len > b.length) {
+            return 0;
+        }
+        for (int k = 1; k < len; k++) {
+            int c = b[i + k] & 0xFF;
+            if (c < 0x80 || c > 0xBF) {
+                return 0;
+            }
+        }
+        return len;
+    }
+
+    /** @see Utf8Stats#errors */
+    public static int countUtf8Errors(byte[] bytes) {
+        return utf8Stats(bytes).errors();
+    }
+
+    public static int countUtf8Errors(byte[] bytes, int offset, int length) {
+        return utf8Stats(bytes, offset, length).errors();
+    }
+
+    /** @see Utf8Stats#sequences */
+    public static int countUtf8Sequences(byte[] bytes) {
+        return utf8Stats(bytes).sequences();
+    }
+
+    public static int countUtf8Sequences(byte[] bytes, int offset, int length) {
+        return utf8Stats(bytes, offset, length).sequences();
     }
 
     // -----------------------------------------------------------------------

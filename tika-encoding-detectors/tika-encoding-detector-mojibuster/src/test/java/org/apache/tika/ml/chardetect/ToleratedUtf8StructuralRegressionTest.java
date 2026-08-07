@@ -55,10 +55,7 @@ public class ToleratedUtf8StructuralRegressionTest {
     public void longDocumentWithOneStrayByteIsStillUtf8() throws IOException {
         byte[] probe = buildProbe(30);
         List<EncodingResult> results = newDetector().detect(probe);
-        boolean hasStructuralUtf8 = results.stream().anyMatch(r ->
-                "UTF-8".equals(r.getCharset().name())
-                        && r.getResultType() == EncodingResult.ResultType.STRUCTURAL);
-        assertTrue(hasStructuralUtf8,
+        assertTrue(hasStructuralUtf8(results),
                 "A long, overwhelmingly UTF-8 document with a single tolerated "
                         + "error byte must still yield a STRUCTURAL UTF-8 candidate; "
                         + "results were: " + results);
@@ -73,10 +70,7 @@ public class ToleratedUtf8StructuralRegressionTest {
         byte[] probe = bo.toByteArray();
 
         List<EncodingResult> results = newDetector().detect(probe);
-        boolean hasStructuralUtf8 = results.stream().anyMatch(r ->
-                "UTF-8".equals(r.getCharset().name())
-                        && r.getResultType() == EncodingResult.ResultType.STRUCTURAL);
-        assertFalse(hasStructuralUtf8,
+        assertFalse(hasStructuralUtf8(results),
                 "A short probe shaped like a zip entry name must not be promoted "
                         + "to STRUCTURAL UTF-8 on a single tolerated error alone; "
                         + "results were: " + results);
@@ -87,10 +81,7 @@ public class ToleratedUtf8StructuralRegressionTest {
     public void chineseGbkFilenameIsNotPromotedToUtf8() {
         byte[] probe = "说明.txt".getBytes(Charset.forName("GBK"));
         List<EncodingResult> results = newDetector().detect(probe);
-        boolean hasStructuralUtf8 = results.stream().anyMatch(r ->
-                "UTF-8".equals(r.getCharset().name())
-                        && r.getResultType() == EncodingResult.ResultType.STRUCTURAL);
-        assertFalse(hasStructuralUtf8,
+        assertFalse(hasStructuralUtf8(results),
                 "A short GBK filename must not be promoted to STRUCTURAL UTF-8 "
                         + "on a single tolerated error alone; results were: " + results);
         assertTrue(results.stream().anyMatch(r -> r.getCharset().name().startsWith("GB")),
@@ -102,12 +93,14 @@ public class ToleratedUtf8StructuralRegressionTest {
     public void sauteFilenameIsNotPromotedToUtf8() {
         byte[] probe = "Sauté.txt".getBytes(Charset.forName("windows-1252"));
         List<EncodingResult> results = newDetector().detect(probe);
-        boolean hasStructuralUtf8 = results.stream().anyMatch(r ->
-                "UTF-8".equals(r.getCharset().name())
-                        && r.getResultType() == EncodingResult.ResultType.STRUCTURAL);
-        assertFalse(hasStructuralUtf8,
+        assertFalse(hasStructuralUtf8(results),
                 "A short windows-1252 filename must not be promoted to STRUCTURAL "
                         + "UTF-8 on a single tolerated error alone; results were: " + results);
+    }
+
+    private static boolean hasStructuralUtf8(List<EncodingResult> results) {
+        return results.stream().anyMatch(r -> "UTF-8".equals(r.getCharset().name())
+                && r.getResultType() == EncodingResult.ResultType.STRUCTURAL);
     }
 
     /** Declared-windows-1252 HTML page, genuinely UTF-8, one stray raw © byte. */
