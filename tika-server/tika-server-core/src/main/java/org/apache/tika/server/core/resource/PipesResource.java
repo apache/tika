@@ -29,11 +29,11 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -76,12 +76,14 @@ public class PipesResource {
      * Must specify a fetcherString and an emitter in the posted json.
      *
      * @param info uri info
-     * @return InputStream that can be deserialized as a list of {@link Metadata} objects
+     * @return a JSON body describing the outcome (status/type, or a parse_exception),
+     *         with HTTP status reflecting whether the process succeeded, crashed, or
+     *         was unavailable within the configured wait
      * @throws Exception
      */
     @POST
     @Produces("application/json")
-    public Map<String, String> postRmeta(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response postRmeta(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         FetchEmitTuple t = null;
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             t = JsonFetchEmitTuple.fromJson(reader);
@@ -91,7 +93,7 @@ public class PipesResource {
         return processTuple(t);
     }
 
-    private Map<String, String> processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
+    private Response processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
         // This parser is shared with /tika+/rmeta+/unpack, whose own default is
         // PASSBACK_ALL. /pipes needs the child to emit via the client's configured
         // emitter by default -- set EMIT_ALL explicitly per-request rather than
@@ -102,21 +104,27 @@ public class PipesResource {
             parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
         }
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
+        Map<String, String> body;
         if (pipesResult.isProcessCrash()) {
-            return returnProcessCrash(pipesResult.status().toString());
+            body = returnProcessCrash(pipesResult.status().toString());
         } else if (!pipesResult.isSuccess()) {
             // Handle fatal errors, initialization failures, and task exceptions
-            return returnApplicationError(pipesResult
+            body = returnApplicationError(pipesResult
                     .status()
                     .toString());
+        } else {
+            body = switch (pipesResult.status()) {
+                case EMIT_SUCCESS_PARSE_EXCEPTION -> parseException(pipesResult.message(), true);
+                case PARSE_EXCEPTION_NO_EMIT -> parseException(pipesResult.message(), false);
+                default -> returnSuccess();
+            };
         }
-        switch (pipesResult.status()) {
-            case EMIT_SUCCESS_PARSE_EXCEPTION:
-                return parseException(pipesResult.message(), true);
-            case PARSE_EXCEPTION_NO_EMIT:
-                return parseException(pipesResult.message(), false);
-        }
-        return returnSuccess();
+        // Same status mapping /tika+/rmeta+/unpack use (PipesParsingHelper) -- e.g. 429 for
+        // CLIENT_UNAVAILABLE_WITHIN_MS, 503 for TIMEOUT/OOM/UNSPECIFIED_CRASH -- rather than
+        // always 200 with the failure only visible in the body.
+        return Response.status(PipesParsingHelper.mapStatusToHttpResponse(pipesResult.status()))
+                .entity(body)
+                .build();
     }
 
     private Map<String, String> parseException(String msg, boolean emitted) {
