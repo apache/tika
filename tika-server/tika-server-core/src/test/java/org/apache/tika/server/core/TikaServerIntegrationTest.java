@@ -145,49 +145,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testOOMWithPipes() throws Exception {
-        // With pipes-based parsing, OOM in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-
-        // Server should return 503 (Service Unavailable) for OOM, not crash
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "OOM");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
     public void testSystemExit() throws Exception {
         // With pipes-based parsing, System.exit in a child process should NOT crash the server
         startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
-
-        // UNSPECIFIED_CRASH is a transient process failure — 503, same category as OOM/TIMEOUT
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "UNSPECIFIED_CRASH");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
-    public void testSystemExitWithPipes() throws Exception {
-        // With pipes-based parsing, System.exit in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
 
         awaitServerStartup();
 
