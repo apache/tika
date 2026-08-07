@@ -404,7 +404,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(null, metadataList.get(1).get(Metadata.CONTENT_DISPOSITION));
         assertEquals("attachment; filename=\"testPNG.png\"",
                 metadataList.get(2).get(Metadata.CONTENT_DISPOSITION));
-        assertEquals("/Test Attachment Email.eml/embedded-1",
+        assertEquals("/Test Attachment Email.eml/embedded-1.txt",
                 metadataList.get(1).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));
         assertEquals("/Test Attachment Email.eml/testPNG.png",
                 metadataList.get(2).get(TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH));

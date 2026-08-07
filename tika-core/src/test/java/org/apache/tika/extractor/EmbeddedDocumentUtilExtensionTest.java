@@ -16,12 +16,16 @@
  */
 package org.apache.tika.extractor;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.parser.ParseContext;
 
 /**
  * TIKA-4808 -- a media type carrying parameters must still resolve to the
@@ -105,6 +109,32 @@ public class EmbeddedDocumentUtilExtensionTest {
                 "application/pkcs7-mime; smime-type=signed-data"));
         assertEquals("image-0.png", EmbeddedDocumentUtil.generateResourceName(
                 EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, 0, "image/png"));
+    }
+
+    /**
+     * A declared type that simply has no glob must not trigger detection -- that would
+     * overwrite a CONTENT_TYPE the calling parser set deliberately.
+     */
+    @Test
+    public void testDeclaredUnregisteredTypeIsNotOverwritten() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "application/tika-bogus-xyz");
+        EmbeddedDocumentUtil util = new EmbeddedDocumentUtil(new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("%PDF-1.4\n".getBytes(UTF_8))) {
+            assertEquals("", util.getExtension(tis, metadata));
+            assertEquals("application/tika-bogus-xyz", metadata.get(Metadata.CONTENT_TYPE));
+        }
+    }
+
+    @Test
+    public void testDeclaredParameterizedTypeResolvesAndIsPreserved() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        EmbeddedDocumentUtil util = new EmbeddedDocumentUtil(new ParseContext());
+        try (TikaInputStream tis = TikaInputStream.get("hello".getBytes(UTF_8))) {
+            assertEquals(".txt", util.getExtension(tis, metadata));
+            assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+        }
     }
 
     /**

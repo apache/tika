@@ -148,23 +148,27 @@ public class EmbeddedDocumentUtil implements Serializable {
         //use the buffered mimetypes as default
         MimeTypes localMimeTypes = getMimeTypes();
 
-        MimeType mimeType = null;
-        if (mimeString != null) {
-            mimeType = getRegisteredMimeType(localMimeTypes, mimeString);
+        //a parseable declared type wins, even if we have no glob for it. Don't
+        //detect just because the registry lookup came back empty -- that would
+        //overwrite a type the calling parser set deliberately.
+        if (mimeString != null && MediaType.parse(mimeString) != null) {
+            return extensionOf(getRegisteredMimeType(localMimeTypes, mimeString));
         }
-        if (mimeType == null) {
-            try {
-                MediaType mediaType = getDetector().detect(is, metadata, context);
-                is.reset();
-                //set or correct the mime type. Record what was detected, not the
-                //registry match, which may have fallen back to the base type.
-                metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
-                mimeType = getRegisteredMimeType(localMimeTypes, mediaType.toString());
-            } catch (IOException e) {
-                //swallow
-            }
+        try {
+            MediaType mediaType = getDetector().detect(is, metadata, context);
+            is.reset();
+            //set or correct the mime type. Record what was detected, not the
+            //registry match, which may have fallen back to the base type.
+            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
+            return extensionOf(getRegisteredMimeType(localMimeTypes, mediaType.toString()));
+        } catch (IOException e) {
+            //swallow
         }
-        return mimeType == null ? ".bin" : mimeType.getExtension();
+        return ".bin";
+    }
+
+    private static String extensionOf(MimeType mimeType) {
+        return mimeType == null ? "" : mimeType.getExtension();
     }
 
     /**
