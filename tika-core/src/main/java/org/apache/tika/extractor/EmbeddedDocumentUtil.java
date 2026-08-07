@@ -149,40 +149,24 @@ public class EmbeddedDocumentUtil implements Serializable {
         MimeTypes localMimeTypes = getMimeTypes();
 
         MimeType mimeType = null;
-        boolean detected = false;
         if (mimeString != null) {
-            try {
-                mimeType = localMimeTypes.forName(mimeString);
-            } catch (MimeTypeException e) {
-                //swallow
-            }
+            mimeType = getRegisteredMimeType(localMimeTypes, mimeString);
         }
         if (mimeType == null) {
             try {
                 MediaType mediaType = getDetector().detect(is, metadata, context);
-                mimeType = localMimeTypes.forName(mediaType.toString());
-                detected = true;
                 is.reset();
-            } catch (IOException | MimeTypeException e) {
+                //set or correct the mime type. Record what was detected, not the
+                //registry match, which may have fallen back to the base type.
+                metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
+                mimeType = getRegisteredMimeType(localMimeTypes, mediaType.toString());
+            } catch (IOException e) {
                 //swallow
             }
         }
-        if (mimeType != null) {
-            if (detected) {
-                //set or correct the mime type
-                metadata.set(Metadata.CONTENT_TYPE, mimeType.toString());
-            }
-            return mimeType.getExtension();
-        }
-        return ".bin";
+        return mimeType == null ? ".bin" : mimeType.getExtension();
     }
 
-    /**
-     * Looks up the file extension for a given media type string.
-     *
-     * @param mediaType the media type string (e.g., "image/png")
-     * @return the extension including the dot (e.g., ".png"), or empty string if unknown
-     */
     /**
      * Normalizes internal OCR routing media types (e.g., {@code image/ocr-png})
      * back to standard media types (e.g., {@code image/png}).
@@ -198,16 +182,36 @@ public class EmbeddedDocumentUtil implements Serializable {
         return mediaType;
     }
 
+    /**
+     * Looks up the file extension for a given media type string.
+     *
+     * @param mediaType the media type string (e.g., "image/png"), parameters allowed
+     * @return the extension including the dot (e.g., ".png"), or empty string if unknown
+     */
     public static String getExtensionForMediaType(String mediaType) {
         if (mediaType == null) {
             return "";
         }
-        mediaType = normalizeMediaType(mediaType);
+        MimeType mimeType =
+                getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(),
+                        normalizeMediaType(mediaType));
+        return mimeType == null ? "" : mimeType.getExtension();
+    }
+
+    /**
+     * Not {@link MimeTypes#forName(String)}: that registers a new, glob-less type for
+     * any name it doesn't recognize, so <code>text/plain; charset=UTF-8</code> would
+     * lose its extension and add a registry entry per charset seen. This prefers an
+     * exact parameterized match (<code>application/dita+xml;format=map</code> is real)
+     * and otherwise falls back to the base type.
+     *
+     * @return the registered type, or null if unknown or invalid
+     */
+    private static MimeType getRegisteredMimeType(MimeTypes mimeTypes, String name) {
         try {
-            MimeType mimeType = MimeTypes.getDefaultMimeTypes().forName(mediaType);
-            return mimeType.getExtension();
+            return mimeTypes.getRegisteredMimeType(name);
         } catch (MimeTypeException e) {
-            return "";
+            return null;
         }
     }
 
