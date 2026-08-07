@@ -18,7 +18,6 @@ package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -37,13 +36,16 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.server.core.TikaServerParseException;
 
 
 @Path("/meta")
@@ -63,8 +65,9 @@ public class MetadataResource {
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
         ParseContext context = tikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
-                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), info))
+                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), context))
                     .build();
         }
     }
@@ -79,25 +82,14 @@ public class MetadataResource {
     @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
-            @Context HttpHeaders httpHeaders,
-            @Context UriInfo info) throws Exception {
+            @Context HttpHeaders httpHeaders) throws Exception {
 
         // Load default context from config, then overlay with request config
         ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
-            // No need to parse embedded docs for metadata-only extraction
-            context.set(DocumentSelector.class, metadata1 -> false);
-
-            Parser parser = tikaResource.createParser();
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            tikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
-                public void endDocument() {
-                    metadata.set("language", getLanguage().getLanguage());
-                }
-            }, metadata, context);
-
-            return Response.ok(metadata).build();
+            return Response.ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context)).build();
         }
     }
 
@@ -107,19 +99,19 @@ public class MetadataResource {
         ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
-                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
+                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
                     .build();
         }
     }
 
     /**
-     * Get a specific metadata field. If the input stream cannot be parsed, but a
-     * value was found for the given metadata field, then the value of the field
-     * is returned as part of a 200 OK response; otherwise a
-     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} is generated. If the stream
-     * was successfully parsed but the specific metadata field was not found, then a
-     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned.
+     * Get a specific metadata field. If the document parses successfully but the
+     * specific metadata field was not found, a
+     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned. Unlike the other
+     * /meta endpoints, a bare field value has no envelope to embed a container-level
+     * exception in, so that case is thrown (422) instead.
      * <p/>
      * Note that this method handles multivalue fields and returns possibly more
      * metadata value than requested.
@@ -131,35 +123,29 @@ public class MetadataResource {
      * @param httpHeaders httpheaders
      * @param info        info
      * @param field       the tika metadata field name
-     * @return one of {@link javax.ws.rs.core.Response.Status#OK},
-     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND}, or
-     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST}
+     * @return one of {@link javax.ws.rs.core.Response.Status#OK} or
+     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND}
      * @throws Exception
      */
     @PUT
     @Path("{field}")
     @Produces({"text/csv", "application/json", "text/plain"})
     public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
-
-        // use BAD request to indicate that we may not have had enough data to
-        // process the request
-        Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         ParseContext context = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        boolean success = false;
+        Metadata metadata;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);
-            // once we've parsed the document successfully, we should use NOT_FOUND
-            // if we did not see the field
-            defaultErrorResponse = Response.Status.NOT_FOUND;
-            success = true;
-        } catch (Exception e) {
-            LOG.warn("Failed to process field {}", field, e);
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            metadata = parseMetadata(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), context);
         }
 
-        if (success == false || metadata.get(field) == null) {
+        String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        if (containerException != null && !containerException.isEmpty()) {
+            throw new TikaServerParseException(new TikaException(containerException));
+        }
+
+        if (metadata.get(field) == null) {
             return Response
-                    .status(defaultErrorResponse)
+                    .status(Response.Status.NOT_FOUND)
                     .entity("Failed to get metadata field " + field)
                     .build();
         }
@@ -175,21 +161,26 @@ public class MetadataResource {
                 .build();
     }
 
-    protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
-            throws IOException, TikaConfigException {
-        // Load default context from config (includes DigesterFactory from parse-context)
-        final ParseContext context = tikaResource.createParseContext();
-        Parser parser = tikaResource.createParser();
-        fillMetadata(parser, metadata, httpHeaders);
-        //no need to parse embedded docs
-        context.set(DocumentSelector.class, metadata1 -> false);
+    /**
+     * Parses via the shared pipes-backed PipesParser, stopping at the container document
+     * (EmbeddedLimits maxDepth=0) with content capture off ("ignore" handler) -- metadata
+     * only, matching /meta's contract. Set unconditionally so per-request config can't
+     * turn content capture back on. A container-level exception is embedded in
+     * CONTAINER_EXCEPTION here, not thrown; getMetadataField throws instead since it
+     * returns a bare scalar with nowhere to embed it.
+     */
+    protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, ParseContext context)
+            throws Exception {
+        fillMetadata(null, metadata, httpHeaders);
+        context.set(EmbeddedLimits.class, new EmbeddedLimits(0, false, EmbeddedLimits.UNLIMITED, false));
+        context.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
 
         TikaResource.logRequest(LOG, "/meta", metadata);
-        tikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
-            public void endDocument() {
-                metadata.set("language", getLanguage().getLanguage());
-            }
-        }, metadata, context);
-        return metadata;
+        List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+        if (metadataList.isEmpty()) {
+            return Metadata.newInstance(context);
+        }
+        return metadataList.get(0);
     }
 }

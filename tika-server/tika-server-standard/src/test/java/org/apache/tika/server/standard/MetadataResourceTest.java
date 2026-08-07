@@ -47,6 +47,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.server.core.CXFTestBase;
+import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
@@ -73,6 +74,8 @@ public class MetadataResourceTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
+        // Needed by getMetadataField's TikaServerParseException throw.
+        providers.add(new TikaServerParseExceptionMapper(false));
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());
@@ -118,10 +121,13 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .post(new MultipartBody(Arrays.asList(fileAtt)));
 
-        // Won't work, no password given - EncryptedDocumentException returns 422
-        assertEquals(500, response.getStatus());
+        // A failed decrypt isn't a process failure -- 200, exception on the metadata.
+        assertEquals(200, response.getStatus());
+        Metadata noPasswordMetadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException",
+                noPasswordMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
-        // Test 2: Wrong password - should fail
+        // Test 2: Wrong password - should fail the same way
         fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
         fileAtt = new Attachment("file",
                 ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED), fileCd);
@@ -142,7 +148,10 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .post(new MultipartBody(Arrays.asList(fileAtt, wrongConfigAtt)));
 
-        assertEquals(500, response.getStatus());
+        assertEquals(200, response.getStatus());
+        Metadata wrongPasswordMetadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException",
+                wrongPasswordMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
         // Test 3: Correct password - should work
         fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
@@ -213,8 +222,9 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testGetField_Author_TEXT_Partial_BAD_REQUEST() throws Exception {
-
+    public void testGetField_Author_TEXT_Partial_UNPROCESSABLE() throws Exception {
+        // Truncating at 8000 bytes corrupts the OLE2 structure enough that OfficeParser
+        // throws -- a real container exception, not just a missing field.
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
         Response response = WebClient
@@ -222,7 +232,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 .type("application/msword")
                 .accept(MediaType.TEXT_PLAIN)
                 .put(copy(stream, 8000));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(422, response.getStatus());
     }
 
     @Test

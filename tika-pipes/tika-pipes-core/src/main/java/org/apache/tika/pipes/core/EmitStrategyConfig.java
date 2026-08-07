@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core;
 
 import java.io.Serializable;
 
+import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 
@@ -45,7 +46,13 @@ import org.apache.tika.exception.TikaException;
  * ParseContext context = new ParseContext();
  * context.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
  * </pre>
+ * <p>
+ * {@code @TikaComponent}-registered so that a per-request instance set on ParseContext
+ * survives serialization across the parent-child pipes IPC boundary (JsonPipesIpc /
+ * ParseContextSerializer require every context-map entry's class to have a registered
+ * friendly name) -- without this, setting it per-request throws during serialization.
  */
+@TikaComponent(name = "emit-strategy-config")
 public class EmitStrategyConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;

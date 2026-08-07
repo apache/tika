@@ -21,7 +21,7 @@
 
 == Overview
 
-Tika Server 4.x introduces pipes-based parsing for the main content-extraction endpoints (`/tika`, `/rmeta`, `/unpack`), which provides process isolation for those operations. This improves stability and resource management but introduces some breaking changes. A few endpoints (notably `/meta`) still parse in-process in the request-handling JVM.
+Tika Server 4.x introduces pipes-based parsing for the main content-extraction endpoints (`/tika`, `/rmeta`, `/unpack`, `/meta`), which provides process isolation for those operations. This improves stability and resource management but introduces some breaking changes.
 
 == New `/tika` Endpoint Structure
 
@@ -111,6 +111,29 @@ The HTTP status codes are also more precise:
 **Migration:** Clients that parse plain-text error bodies must switch to JSON. Clients
 that branch only on HTTP status code are unaffected unless they were treating
 `UNSPECIFIED_CRASH` as a `500`.
+
+=== `/meta` Is Now Pipes-Backed
+
+`/meta` previously parsed in-process, in the request-handling JVM, with no crash
+isolation and its own ad hoc error handling (`500` for most parse failures, `400`
+for a field that couldn't be extracted from an incompletely-parsed document). It
+now shares the same pipes-backed `PipesParser` as `/tika`, `/rmeta`, and `/unpack`
+(see
+xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
+and Forked-Process Groups]), with the same crash isolation and the same
+per-document exception handling as those endpoints (see
+xref:using-tika/server/index.adoc#_error_responses[Error Responses]):
+
+* `/meta`, `/meta/form`, `/meta/config` now return `200 OK` with the exception
+  embedded in `tk:exception:container-exception`, instead of `500`.
+* `/meta/\{field}` now returns `422 Unprocessable Entity` for a genuine parse
+  exception, instead of `500` or `400`.
+
+**Migration:** clients that treated any non-`200` from `/meta` as "parse failed"
+should check the new status codes above. Clients that inspected the response body
+for error text should check `tk:exception:container-exception` (full-object
+endpoints) or the `422` body (`/meta/\{field}`, populated only when
+`returnStackTrace=true`).
 
 === Accept Header Routing Removed
 

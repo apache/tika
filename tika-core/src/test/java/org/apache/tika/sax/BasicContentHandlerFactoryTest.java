@@ -76,8 +76,9 @@ public class BasicContentHandlerFactoryTest {
                         .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        //unfortunatley, the DefaultHandler does not return "",
-        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
+        // toString() returns "" (not Object's default identity string) so callers can
+        // blank-check it directly instead of special-casing DefaultHandler's class identity.
+        assertEquals("", handler.toString());
 
         //tests that no write limit exception is thrown
         p = new MockParser(100);
@@ -85,7 +86,7 @@ public class BasicContentHandlerFactoryTest {
                 .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
+        assertEquals("", handler.toString());
     }
 
     @Test

@@ -24,25 +24,23 @@ This section covers running Apache Tika as a REST server via `tika-server`.
 Tika Server provides a RESTful HTTP interface for parsing documents and extracting
 content. It can be deployed as a standalone service or in a containerized environment.
 
-In Tika 4.x, the main content-extraction endpoints — `/tika`, `/rmeta`, and
-`/unpack` — parse in forked child processes via the Tika Pipes infrastructure.
-This provides process isolation (a parser crash or OOM in a child cannot take
-down the request-handling process) at the cost of requiring a Pipes
-configuration. A few endpoints (notably `/meta`) still parse in-process in the
-request-handling JVM; treat those as best-effort under load. See
+In Tika 4.x, the main content-extraction endpoints — `/tika`, `/rmeta`,
+`/unpack`, and `/meta` — parse in forked child processes via the Tika Pipes
+infrastructure. This provides process isolation (a parser crash or OOM in a
+child cannot take down the request-handling process) at the cost of requiring
+a Pipes configuration. See
 xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating Tika Server to 4.x]
 for the full breaking-change list when upgrading from 3.x.
 
 [IMPORTANT]
 ====
 This is not opt-in the way `/pipes` and `/async` are (those require
-`allowPipes=true` and refuse to start without it). `/tika`, `/rmeta`, and
-`/unpack` are **on by default** — the moment you run a basic `tika-server` and
-PUT a document to `/tika`, you are running Tika Pipes, with a real forked
-child process behind it. (`/meta` is the exception among the main
-content-extraction endpoints — it still parses in-process; see below.) If
-you're upgrading from 3.x, where these endpoints parsed in-process in a
-single JVM, this is a profound change: `pipes.numClients` now controls both
+`allowPipes=true` and refuse to start without it). `/tika`, `/rmeta`,
+`/unpack`, and `/meta` are **on by default** — the moment you run a basic
+`tika-server` and PUT a document to `/tika`, you are running Tika Pipes, with
+a real forked child process behind it. If you're upgrading from 3.x, where
+these endpoints parsed in-process in a single JVM, this is a profound change:
+`pipes.numClients` now controls both
 how many requests these endpoints can serve concurrently and how many forked
 JVMs run at once, and it's easy to size it thinking about only one of those
 two things. Undersized for your request volume, and callers start waiting —
@@ -200,6 +198,12 @@ is a plain opt-in endpoint — enable it simply by listing it under `endpoints`.
 
 == Error Responses
 
+tika-server distinguishes two different kinds of failure: the forked worker itself
+dying, and the worker running fine but catching an exception while parsing one
+particular document. They get different treatment.
+
+=== Process-level failures
+
 When parsing fails due to a process-level problem — the forked child process timed out,
 ran out of memory, or crashed unexpectedly — the server returns an HTTP error with a
 JSON body whose shape matches the `PipesResult` status:
@@ -239,10 +243,54 @@ crashing" — you can tell them apart from the status code alone.
 document on the same server is unlikely to succeed without a configuration fix.
 |===
 
-NOTE: A successful parse that encountered internal parser errors (e.g. a truncated
-embedded document) still returns `200 OK`. The partial-parse exception is surfaced
-in the `tk:exception:container-exception` metadata field of the response, not as an
-HTTP error code.
+=== Per-document parse exceptions
+
+A process-level failure (above) means the worker itself is gone — nothing was parsed.
+A per-document parse exception is different: the worker ran to completion and simply
+caught an exception while parsing this one document (an encrypted file with no
+password, a malformed embedded object, an NPE in a specific parser). The worker is
+healthy, and whatever content it managed to extract is still available.
+
+Which HTTP status this gets depends on whether the response shape has room to embed
+the exception alongside content:
+
+[cols="1,1,3"]
+|===
+|Endpoints |Status |Behavior
+
+|`/rmeta`, `/tika/json`, `/meta`'s full-object endpoints
+|`200 OK`
+|The exception is embedded in the response's `tk:exception:container-exception`
+field (or `tk:exception:embedded-exception` on an individual embedded document
+within an `/rmeta` list), alongside whatever content and metadata were captured.
+Partial success is meaningful here — a batch/list response, or a structured object
+with room for an extra field.
+
+|`/tika`'s raw endpoints (`text`, `html`, `xml`, `md`)
+|`422 Unprocessable Entity`
+|A raw byte-stream response has no field to embed the exception in, so the status
+itself signals the failure — but the body still carries whatever content was
+actually extracted, not an empty or generic error body.
+
+|`/meta/\{field}`
+|`422 Unprocessable Entity`
+|A single scalar value has nowhere to embed the exception either, so it's thrown
+rather than silently returned as if the field were simply absent.
+
+|`/unpack`
+|`422 Unprocessable Entity`
+|Same reasoning as the raw endpoints, but content is *not* currently preserved —
+any files already unpacked before the exception are discarded. This is a known
+gap, not yet addressed.
+|===
+
+By default (`returnStackTrace=false`), any exception text exposed this way is trimmed
+to just the exception's class and message — not the full stack trace, which can
+reveal internal file paths and library internals. For the `200 OK` family the
+trimmed field is still always present when a failure occurred, so callers can detect
+it either way; for the `422` family, the body carries no exception text at all unless
+`returnStackTrace=true`. Set `returnStackTrace=true` to get the full trace — useful
+in development, best left off in production.
 
 == Configuration
 
@@ -260,7 +308,7 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 
 |`endpoints`
 |_all defaults_
-|Which endpoints to expose. Leave unset to get the full default set (includes `/tika` and `/rmeta`). Explicitly listing endpoints also controls how many independent forked-process groups you run — see <<_endpoints_and_forked_process_groups,Endpoints and Forked-Process Groups>> below before combining `/tika`/`/rmeta` with `/pipes`/`/async`.
+|Which endpoints to expose. Leave unset to get the full default set (includes `/tika` and `/rmeta`). Explicitly listing endpoints also controls how many independent forked-process groups you run — see <<_endpoints_and_forked_process_groups,Endpoints and Forked-Process Groups>> below before combining `/tika`/`/rmeta`/`/unpack`/`/meta`/`/pipes` with `/async`.
 
 |`allowPerRequestConfig`
 |`false`
@@ -298,21 +346,19 @@ xref:migration-to-4x/migrating-tika-server-4x.adoc#_configuration_changes[Config
 [#_endpoints_and_forked_process_groups]
 == Endpoints and Forked-Process Groups
 
-Two independent pipes-backed process groups exist, plus one endpoint that
-isn't pipes-backed at all:
+Two independent forked-process groups exist:
 
-* **`/tika` + `/rmeta` + `/unpack`** share one group — all three go through
-the same `PipesParsingHelper`/`PipesParser`, sized by `pipes.numClients`.
-* **`/pipes` + `/async`** share a separate group (gated behind `allowPipes`),
-sized by the same `pipes.numClients` setting in the same config, but as an
-independent set of forked processes.
-* **`/meta` is not pipes-backed** — it still parses in-process, in the
-request-handling JVM, as in 3.x. It isn't bound by `numClients` and doesn't
-participate in anything below, but it also has no crash/OOM isolation: a
-hostile or pathological document sent to `/meta` can affect the
-request-handling process itself, unlike the pipes-backed endpoints where the
-same document only takes down a forked child. Treat `/meta` as best-effort
-under adversarial input.
+* **`/tika` + `/rmeta` + `/unpack` + `/meta` + `/pipes`** share one group —
+all five go through the same `PipesParsingHelper`/`PipesParser`, sized by
+`pipes.numClients`. `/pipes` still requires `allowPipes` to actually start
+(the server refuses to start if it's listed without that flag) even though it
+shares its parser with the always-on endpoints; the others don't require
+`allowPipes`.
+* **`/async`** is a separate group (gated behind `allowPipes`) — it doesn't
+share a `PipesParser` with the group above at all. It manages its own
+forked-worker pool directly (queued/background processing, results delivered
+via a configured `PipesReporter` rather than in the HTTP response), sized by
+its own read of `pipes.numClients` from the same config.
 
 Within a pipes-backed group, `numClients` does two *separate* jobs, and it's
 worth understanding both before picking a value.
@@ -340,14 +386,15 @@ Independently of the above, each group also auto-sizes its forked JVMs'
 `-XX:ActiveProcessorCount` from `numClients` and the host's core count — see
 xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for the full mechanics. This
 part *can* go wrong across groups: the auto-sizer for one group has no
-visibility into another group running in the same process, so if you enable
-both `/tika`/`/rmeta`/`/unpack` *and* `/pipes`/`/async` together — a config
-listing all of them, or simply leaving `endpoints` unset while
-`allowPipes=true` — each group's auto-sizer computes its slice as if it owned
-the whole host. Whether that actually causes oversubscription depends on your
-`numClients` values relative to the host's core count; it's not automatic, but
-it's also not something the auto-sizer will warn you about, because from
-either group's perspective alone the sizing looks fine. See
+visibility into the other group running in the same process, so if you enable
+`/async` alongside the shared group — a config listing `async` together with
+any of `tika`/`rmeta`/`unpack`/`meta`/`pipes`, or simply leaving `endpoints`
+unset while `allowPipes=true` gives you both groups at once — each group's
+auto-sizer computes its slice as if it owned the whole host. Whether that
+actually causes oversubscription depends on your `numClients` values relative
+to the host's core count; it's not automatic, but it's also not something the
+auto-sizer will warn you about, because from either group's perspective alone
+the sizing looks fine. See
 xref:pipes/cpu-sizing.adoc#_known_limitation_multiple_pipes_groups_in_one_process[Known
 limitation: multiple Pipes groups in one process] for the mechanics and
 mitigation (scope `endpoints` to what you actually use, or set

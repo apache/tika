@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -42,6 +43,8 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
@@ -145,6 +148,12 @@ public class PipesParsingHelper {
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
 
+            // This parser is shared with /pipes, whose own default is EMIT_ALL. No
+            // emitter is configured for /tika/rmeta/unpack requests (EmitKey.NO_EMIT
+            // below) -- results must come back over the socket, so set PASSBACK_ALL
+            // explicitly per-request rather than relying on the parser-level default.
+            parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+
             // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
             FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
 
@@ -160,7 +169,9 @@ public class PipesParsingHelper {
             PipesResult result = pipesParser.parse(tuple);
 
             // Process result
-            return processResult(result);
+            List<Metadata> metadataList = processResult(result);
+            redactExceptionDetail(metadataList);
+            return metadataList;
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -274,6 +285,40 @@ public class PipesParsingHelper {
     }
 
     /**
+     * Trims CONTAINER_EXCEPTION/EMBEDDED_EXCEPTION to one line unless returnStackTrace is
+     * on -- unlike buildProcessFailureResponse's family, a 200 response has no other way
+     * to signal a per-document exception, so we can't omit these fields entirely.
+     */
+    private void redactExceptionDetail(List<Metadata> metadataList) {
+        if (returnStackTrace || metadataList == null) {
+            return;
+        }
+        for (Metadata m : metadataList) {
+            summarizeInPlace(m, TikaCoreProperties.CONTAINER_EXCEPTION);
+            summarizeInPlace(m, TikaCoreProperties.EMBEDDED_EXCEPTION);
+        }
+    }
+
+    private static void summarizeInPlace(Metadata m, Property property) {
+        String full = m.get(property);
+        if (full != null) {
+            m.set(property, summarizeStackTrace(full, false));
+        }
+    }
+
+    /**
+     * First line of a stack trace (the caught exception's own class + message); no-op if
+     * returnStackTrace.
+     */
+    public static String summarizeStackTrace(String fullTrace, boolean returnStackTrace) {
+        if (returnStackTrace || fullTrace == null || fullTrace.isBlank()) {
+            return fullTrace;
+        }
+        int newline = fullTrace.indexOf('\n');
+        return newline < 0 ? fullTrace : fullTrace.substring(0, newline);
+    }
+
+    /**
      * Maps PipesResult status to HTTP response status.
      */
     public static Response.Status mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
@@ -304,6 +349,14 @@ public class PipesParsingHelper {
      */
     public PipesParser getPipesParser() {
         return pipesParser;
+    }
+
+    /**
+     * Whether failure responses may include the (potentially stack-trace-bearing)
+     * {@code PipesResult} message. Mirrors {@code TikaServerConfig.isReturnStackTrace()}.
+     */
+    public boolean isReturnStackTrace() {
+        return returnStackTrace;
     }
 
     /**
@@ -357,6 +410,12 @@ public class PipesParsingHelper {
 
             // Set parse mode to UNPACK
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
+
+            // Shared parser (see parse() above) -- PASSBACK_ALL is also required here
+            // for correctness: with UNPACK mode, EmitHandler.shouldEmit() only skips
+            // re-emitting metadata (already emitted as part of the zip) when the
+            // effective strategy is PASSBACK_ALL.
+            parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
 
             // Configure UnpackConfig - use existing or create new
             UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
@@ -428,18 +487,10 @@ public class PipesParsingHelper {
                 Metadata containerMetadata = metadataList.get(0);
                 String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
                 if (containerException != null) {
-                    // Map exception type to HTTP status
-                    // 422 (Unprocessable Entity) for parse-related exceptions
-                    int status = 422; // Default for parse exceptions
-                    if (containerException.contains("EncryptedDocumentException") ||
-                            containerException.contains("TikaException") ||
-                            containerException.contains("NullPointerException") ||
-                            containerException.contains("IllegalStateException")) {
-                        status = 422;
-                    }
-                    // Build response with exception string as body for stack trace support
-                    Response response = Response.status(status)
-                            .entity(containerException)
+                    // 422 already signals failure, so (unlike redactExceptionDetail's
+                    // 200 family) the body can be omitted entirely when off.
+                    Response response = Response.status(422)
+                            .entity(returnStackTrace ? containerException : "")
                             .type("text/plain")
                             .build();
                     throw new WebApplicationException(response);

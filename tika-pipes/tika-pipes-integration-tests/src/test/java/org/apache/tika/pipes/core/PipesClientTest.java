@@ -40,6 +40,8 @@ import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 
 public class PipesClientTest {
@@ -853,5 +855,32 @@ public class PipesClientTest {
         // All metadata should still be present (unlike CONTENT_ONLY)
         assertNotNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
                 "RESOURCE_NAME should be preserved in CONCATENATE mode");
+    }
+
+    @Test
+    public void testConcatenateModeIgnoreHandlerDoesNotLeakContent(@TempDir Path tmp) throws Exception {
+        // CONCATENATE + handler type "ignore" must not add TIKA_CONTENT at all -- previously
+        // ParseHandler.parseConcatenated's finally block unconditionally called
+        // handler.toString(), which for the DefaultHandler behind "ignore" produces garbage
+        // like "org.xml.sax.helpers.DefaultHandler@6c8b1edd" instead of skipping, unlike
+        // RecursiveParserWrapperHandler.addContent (used by RMETA mode), which already guards
+        // against this.
+        String testFile = "mock-embedded.xml";
+        Metadata metadata;
+        try (PipesClient pipesClient = init(tmp, testFile)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
+            parseContext.set(ContentHandlerFactory.class,
+                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+        }
+
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CONTENT),
+                "TIKA_CONTENT must not be set when the handler type is \"ignore\"");
     }
 }

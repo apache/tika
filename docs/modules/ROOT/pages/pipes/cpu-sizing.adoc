@@ -119,17 +119,20 @@ Everything above describes sizing for *one* `PipesParser` — one `pipes`
 config section, one set of forked workers. The auto-sizer has no visibility
 into anything else running in the same JVM.
 
-This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack` and
-`/pipes`+`/async` are backed by two *independent* `PipesParser` groups when
-both are enabled in the same server. Each group's auto-sizer computes its
-slice from `Runtime.availableProcessors()` as if it were the only consumer on
-the host — it does not know a sibling group in the same process is about to
-fork its own `numClients` workers too. The result: with `numClients=2` on
-both, you get 4 total forked JVMs, each capped assuming exclusive access to
-the whole host. Whether that's *actually* oversubscribed depends on your
-host's real core count relative to those combined `numClients` values — it's
-not automatic, but the auto-sizer also won't warn you, because each group
-looks correctly sized from its own perspective alone. See
+This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`+`/meta`+
+`/pipes` and `/async` are backed by *two independent* groups when both are
+enabled in the same server — the first five endpoints share one `PipesParser`
+instance, and `/async` manages its own forked-worker pool directly (not via
+`PipesParser` at all, though it uses the same underlying auto-sizer). Each
+group's auto-sizer computes its slice from `Runtime.availableProcessors()` as
+if it were the only consumer on the host — it does not know the sibling group
+in the same process is about to fork its own `numClients` workers too. The
+result: with `numClients=2` on both, you get 4 total forked JVMs, each capped
+assuming exclusive access to the whole host. Whether that's *actually*
+oversubscribed depends on your host's real core count relative to those
+combined `numClients` values — it's not automatic, but the auto-sizer also
+won't warn you, because each group looks correctly sized from its own
+perspective alone. See
 xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
 and Forked-Process Groups] for the tika-server-specific guidance.
 
@@ -138,10 +141,10 @@ directly and constructing more than one instance in a single JVM — the
 auto-sizer will size each independently, with the same caveat.
 
 There is no automatic fix for this today: unlike the single-group case, where
-Tika detects and warns about bad provisioning, a *second* group has no way to
-learn what a sibling group already claimed. Mitigate it explicitly — either
-run only one group per process, or set `-XX:ActiveProcessorCount` yourself
-(next section) with the combined total in mind.
+Tika detects and warns about bad provisioning, each group has no way to learn
+what its siblings already claimed. Mitigate it explicitly — either run fewer
+groups per process, or set `-XX:ActiveProcessorCount` yourself (next section)
+with the combined total in mind.
 
 == Disabling or overriding
 
