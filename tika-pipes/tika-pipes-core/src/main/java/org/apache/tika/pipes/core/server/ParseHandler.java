@@ -259,7 +259,14 @@ class ParseHandler {
             containerException = ExceptionUtils.getStackTrace(e);
             LOG.warn("parse exception: " + fetchEmitTuple.getId(), e);
         } finally {
-            metadata.add(TikaCoreProperties.TIKA_CONTENT, handler.toString());
+            // BasicContentHandlerFactory's "ignore" handler's toString() returns "" (not
+            // Object's default identity string), so a plain blank check is enough here --
+            // no need to special-case its class, which would break under decoration (e.g.
+            // StrictXHTMLValidator when validateXHTML is set).
+            String content = handler.toString();
+            if (content != null && !content.isBlank()) {
+                metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
+            }
             metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
                     contentHandlerFactory.handlerTypeName());
             if (containerException != null) {

@@ -165,7 +165,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                     new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
                     throwOnWriteLimitReached, parseContext));
         } else if (type == HANDLER_TYPE.IGNORE) {
-            return new DefaultHandler();
+            return new NoOpContentHandler();
         }
         ContentHandler formatHandler = getFormatHandler();
         if (writeLimit < 0) {
@@ -201,7 +201,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
 
     private ContentHandler createHandlerInner(OutputStream os, Charset charset) {
         if (type == HANDLER_TYPE.IGNORE) {
-            return new DefaultHandler();
+            return new NoOpContentHandler();
         }
         try {
             if (writeLimit > -1) {
@@ -331,5 +331,21 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
         result = 31 * result + (validateXHTML ? 1 : 0);
         return result;
+    }
+
+    /**
+     * DefaultHandler, but with toString() returning "" instead of the default
+     * Object identity string. Callers that want to know whether a parse
+     * actually produced content can blank-check toString() directly -- no
+     * need to special-case DefaultHandler's class identity, which breaks the
+     * moment this handler is wrapped by a decorator (e.g. StrictXHTMLValidator
+     * when validateXHTML is set): ContentHandlerDecorator.toString() delegates
+     * to the wrapped handler, so the empty string still propagates through.
+     */
+    private static final class NoOpContentHandler extends DefaultHandler {
+        @Override
+        public String toString() {
+            return "";
+        }
     }
 }

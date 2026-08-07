@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -147,20 +146,18 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
     }
 
     void addContent(ContentHandler handler, Metadata metadata) {
-
-        if (handler.getClass().equals(DefaultHandler.class)) {
-            //no-op: we can't rely on just testing for
-            //empty content because DefaultHandler's toString()
-            //returns e.g. "org.xml.sax.helpers.DefaultHandler@6c8b1edd"
-        } else {
-            String content = handler.toString();
-            if (content != null && !content.isBlank()) {
-                metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
-                metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER,
-                        handler.getClass().getSimpleName());
-                metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
-                        getContentHandlerFactory().handlerTypeName());
-            }
+        // BasicContentHandlerFactory's "ignore" handler's toString() returns "" (not
+        // Object's default identity string), so a plain blank check is enough here --
+        // no need to special-case its class, which would break under decoration (e.g.
+        // StrictXHTMLValidator when validateXHTML is set): ContentHandlerDecorator
+        // delegates toString() to the wrapped handler, so "" still propagates through.
+        String content = handler.toString();
+        if (content != null && !content.isBlank()) {
+            metadata.add(TikaCoreProperties.TIKA_CONTENT, content);
+            metadata.add(TikaCoreProperties.TIKA_CONTENT_HANDLER,
+                    handler.getClass().getSimpleName());
+            metadata.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE,
+                    getContentHandlerFactory().handlerTypeName());
         }
     }
 }
