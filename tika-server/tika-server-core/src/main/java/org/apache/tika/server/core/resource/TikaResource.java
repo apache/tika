@@ -515,7 +515,7 @@ public class TikaResource {
     @PUT
     @Consumes("*/*")
     @Produces("text/xml")
-    public StreamingOutput getXhtml(final InputStream is, @Context HttpHeaders httpHeaders)
+    public Response getXhtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -530,7 +530,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     @Path("text")
-    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders)
+    public Response getText(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -545,7 +545,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/html")
     @Path("html")
-    public StreamingOutput getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
+    public Response getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -560,7 +560,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/xml")
     @Path("xml")
-    public StreamingOutput getXml(final InputStream is, @Context HttpHeaders httpHeaders)
+    public Response getXml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -575,7 +575,7 @@ public class TikaResource {
     @Consumes("*/*")
     @Produces("text/plain")
     @Path("md")
-    public StreamingOutput getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
+    public Response getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
@@ -634,7 +634,7 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("config")
-    public StreamingOutput postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -657,7 +657,7 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("config/text")
-    public StreamingOutput postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -679,7 +679,7 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/html")
     @Path("config/html")
-    public StreamingOutput postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -701,7 +701,7 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("config/xml")
-    public StreamingOutput postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -723,7 +723,7 @@ public class TikaResource {
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("config/md")
-    public StreamingOutput postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -760,7 +760,7 @@ public class TikaResource {
     /**
      * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
      */
-    private StreamingOutput produceRawOutput(TikaInputStream tis, Metadata metadata,
+    private Response produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               MultivaluedMap<String, String> httpHeaders,
                                               String handlerTypeName) throws IOException {
         fillMetadata(null, metadata, httpHeaders);
@@ -771,8 +771,11 @@ public class TikaResource {
 
     /**
      * Produces raw streaming output with a pre-configured ParseContext (for PUT endpoints).
+     * A container-level parse exception doesn't discard content already captured -- status
+     * is 422 (no field to embed the exception in, unlike the JSON endpoints), but the body
+     * still carries whatever content was actually extracted.
      */
-    private StreamingOutput produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
+    private Response produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
                                               ParseContext context,
                                               String handlerTypeName) throws IOException {
         logRequest(LOG, "/tika", metadata);
@@ -794,42 +797,45 @@ public class TikaResource {
 
         LOG.debug("produceRawOutput: parseWithPipes returned {} metadata objects", metadataList.size());
 
-        // For raw streaming endpoints, throw exception if there was a parse error
-        // (JSON endpoints return exceptions in metadata)
-        // Note: CONTAINER_EXCEPTION is extracted before the metadata filter runs,
-        // so it's available in the passback even though the filter strips it
-        if (!metadataList.isEmpty()) {
-            String exception = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
-            if (exception != null && !exception.isEmpty()) {
-                LOG.debug("produceRawOutput: parse exception: {}", exception);
-                // Wrap in TikaException so TikaServerParseExceptionMapper returns 422
-                throw new TikaServerParseException(new TikaException(exception));
-            }
-        }
-
-        // Extract content from result
+        // Extract content before checking for an exception -- content must not be
+        // discarded just because a container-level exception also occurred.
         String content = "";
+        boolean hasException = false;
+        String exceptionMessage = null;
         if (!metadataList.isEmpty()) {
             String extracted = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
             LOG.debug("produceRawOutput: TIKA_CONTENT length={}", extracted != null ? extracted.length() : 0);
             if (extracted != null) {
                 content = extracted;
             }
+            exceptionMessage = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+            hasException = exceptionMessage != null && !exceptionMessage.isEmpty();
+            if (hasException) {
+                LOG.debug("produceRawOutput: parse exception: {}", exceptionMessage);
+            }
+        }
+        // No separate field for the exception here, unlike JSON bodies -- append it,
+        // gated by returnStackTrace like TikaServerParseExceptionMapper.
+        if (hasException && pipesParsingHelper != null && pipesParsingHelper.isReturnStackTrace()) {
+            content = content.isEmpty() ? exceptionMessage : content + "\n" + exceptionMessage;
         }
         final String finalContent = content;
 
-        return outputStream -> {
+        StreamingOutput streamingOutput = outputStream -> {
             try (Writer writer = new OutputStreamWriter(outputStream, UTF_8)) {
                 writer.write(finalContent);
                 writer.flush();
             }
         };
+        return Response.status(hasException ? 422 : Response.Status.OK.getStatusCode())
+                .entity(streamingOutput)
+                .build();
     }
 
     /**
      * Produces raw streaming output with a pre-configured ParseContext (for POST endpoints).
      */
-    private StreamingOutput produceRawOutput(TikaInputStream tis, Metadata metadata,
+    private Response produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               ParseContext context,
                                               String handlerTypeName) throws IOException {
         return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);

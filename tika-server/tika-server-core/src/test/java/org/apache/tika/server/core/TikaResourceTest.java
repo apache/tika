@@ -109,7 +109,11 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        // returnStackTrace defaults to false here, so CONTAINER_EXCEPTION is trimmed to
+        // the caught exception's own class + message -- the NPE detail underneath it is
+        // intentionally not exposed by default.
+        assertContains("TikaException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertNotFound("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test

@@ -430,7 +430,8 @@ public class TikaServerProcess {
             // Lifecycle (shutdown/close) is owned by whoever built the shared parser,
             // not by PipesResource.
             PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
-            resourceProviders.add(new SingletonResourceProvider(new PipesResource(helper.getPipesParser())));
+            resourceProviders.add(new SingletonResourceProvider(
+                    new PipesResource(helper.getPipesParser(), helper.isReturnStackTrace())));
         }
         resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;
