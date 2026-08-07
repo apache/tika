@@ -40,13 +40,7 @@ public class TikaServerConfig {
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
     public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
-    /**
-     * Number of milliseconds to wait for forked process to startup
-     */
-    public static final long DEFAULT_FORKED_STARTUP_MILLIS = 120000;
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
-    //used in fork mode -- restart after processing this many files
-    private static final long DEFAULT_MAX_FILES = 100000;
     private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
@@ -58,9 +52,6 @@ public class TikaServerConfig {
      */
     private static final Set<String> ENDPOINTS_REQUIRING_PIPES =
             new HashSet<>(Arrays.asList("pipes", "async"));
-    private static final List<String> ONLY_IN_FORK_MODE = Arrays.asList(
-            new String[]{"maxFiles", "javaPath", "maxRestarts", "numRestarts", "forkedStatusFile", "maxForkedStartupMillis",
-                    "tmpFilePrefix"});
     private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
     /*
 TODO: integrate these settings:

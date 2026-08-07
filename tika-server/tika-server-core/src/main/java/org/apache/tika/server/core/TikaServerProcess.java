@@ -113,11 +113,6 @@ public class TikaServerProcess {
         options.addOption("a", "pluginsConfig", true, "Tika Configuration json for pluginscomponents");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
-        options.addOption("noFork", "noFork", false, "if launched in no fork mode");
-        options.addOption("forkedStatusFile", true,
-                "Not allowed in -noFork: temporary file used to communicate " + "with forking process -- do not use this! " + "Should only be invoked by forking process.");
-        options.addOption("tmpFilePrefix", true, "Not allowed in -noFork: prefix for temp file - for debugging only");
-        options.addOption("numRestarts", true, "Not allowed in -noFork: number of times that " + "the forked server has had to be restarted.");
         return options;
     }
 
