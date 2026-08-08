@@ -68,8 +68,8 @@ service Tika   {
     Get a pipes iterator's data from the iterator store.   
   */
   rpc GetPipesIterator(GetPipesIteratorRequest) returns (GetPipesIteratorReply) {}
-  /* 
-    Delete a pipes iterator from the iterator store.   
+  /*
+    Delete a pipes iterator from the iterator store.
   */
   rpc DeletePipesIterator(DeletePipesIteratorRequest) returns (DeletePipesIteratorReply) {}
 }

@@ -45,6 +45,11 @@ import org.apache.tika.FetchAndParseRequest;
 import org.apache.tika.SaveFetcherReply;
 import org.apache.tika.SaveFetcherRequest;
 import org.apache.tika.TikaGrpc;
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataField;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.ParseStatus;
+import org.apache.tika.grpc.v2.TikaV2Grpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 
@@ -353,5 +358,101 @@ class HandlerTypeTest {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    /**
+     * Exercises the experimental v2 typed Document contract end-to-end for a PDF:
+     * typed Dublin Core DocumentMetadata fields, the tagged `extra` tail (boolean,
+     * integer, and string keys), and ParseStatus through the live server. Fetcher
+     * registration stays on v1; v1's fields-map reply is also checked so the two
+     * surfaces stay independent.
+     */
+    @Test
+    void typedDocumentContractOverLiveServer() throws Exception {
+        String fetcherId = "typedContractFetcher";
+        ManagedChannel channel = getManagedChannel();
+        try {
+            TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
+            TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+
+            FileSystemFetcherConfig config = new FileSystemFetcherConfig();
+            config.setBasePath(TEST_FOLDER.getAbsolutePath());
+
+            SaveFetcherReply saveReply = v1.saveFetcher(SaveFetcherRequest.newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetcherType("file-system-fetcher")
+                    .setFetcherConfigJson(ExternalTestBase.OBJECT_MAPPER.writeValueAsString(config))
+                    .build());
+            LOG.info("Fetcher created: {}", saveReply.getFetcherId());
+
+            FetchAndParseReply v1Reply = v1.fetchAndParse(FetchAndParseRequest.newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey("testPDF.pdf")
+                    .build());
+            Assertions.assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
+            Assertions.assertNotNull(v1Reply.getFieldsMap().get("X-TIKA:content"),
+                    "v1 fields map must keep working independently of v2");
+
+            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(fetcherId)
+                            .setFetchKey("testPDF.pdf")
+                            .build());
+
+            Assertions.assertTrue(reply.hasDocument(), "v2 reply should carry a typed Document");
+            Document document = reply.getDocument();
+
+            // envelope
+            Assertions.assertEquals("application/pdf", document.getContentType());
+            Assertions.assertEquals(ParseStatus.Status.SUCCESS, document.getStatus().getStatus());
+            Assertions.assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
+            Assertions.assertEquals("testPDF.pdf", document.getOrigin().getFilename());
+
+            // typed Dublin Core fields
+            Assertions.assertEquals("Apache Tika - Apache Tika", document.getMetadata().getTitle());
+            Assertions.assertEquals(java.util.List.of("Bertrand Delacrétaz"),
+                    document.getMetadata().getAuthorsList());
+            Assertions.assertTrue(document.getMetadata().hasCreated(),
+                    "created date should map to a typed Timestamp");
+
+            // tagged tail: pdf:encrypted is declared boolean by Tika, so it must arrive
+            // typed as a boolean over the wire, not as a string
+            MetadataValue encrypted = findExtra(document, "pdf:encrypted").getValue();
+            Assertions.assertEquals(MetadataValue.ValuesCase.BOOLEANS, encrypted.getValuesCase(),
+                    "pdf:encrypted has a declared boolean type and must be tagged as one");
+            Assertions.assertEquals(java.util.List.of(Boolean.FALSE),
+                    encrypted.getBooleans().getValuesList(), "testPDF.pdf is not encrypted");
+
+            // tagged tail: xmpTPg:NPages is declared an integer
+            MetadataValue pages = findExtra(document, "xmpTPg:NPages").getValue();
+            Assertions.assertEquals(MetadataValue.ValuesCase.INTEGERS, pages.getValuesCase(),
+                    "xmpTPg:NPages has a declared integer type and must be tagged as one");
+            Assertions.assertEquals(java.util.List.of(1L), pages.getIntegers().getValuesList());
+
+            // tagged tail: a text-typed key stays a string, value intact
+            MetadataValue creatorTool = findExtra(document, "xmp:CreatorTool").getValue();
+            Assertions.assertEquals(MetadataValue.ValuesCase.STRINGS, creatorTool.getValuesCase());
+            Assertions.assertEquals(java.util.List.of("Firefox"),
+                    creatorTool.getStrings().getValuesList());
+        } finally {
+            channel.shutdown();
+            try {
+                if (!channel.awaitTermination(5, TimeUnit.SECONDS)) {
+                    channel.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                channel.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private static MetadataField findExtra(Document document, String key) {
+        return document.getExtraList().stream()
+                .filter(field -> field.getKey().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(
+                        "expected document.extra to contain key '" + key + "', got: "
+                                + document.getExtraList().stream().map(MetadataField::getKey).toList()));
     }
 }

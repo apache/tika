@@ -1,0 +1,55 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// Experimental v2 parse surface. Fetcher/iterator management stays on the
+// existing `tika.Tika` (v1) service; this service returns the typed Document
+// contract instead of the legacy fields map. Additive follow-ups (ParseBytes,
+// content tree, embedded recursion) extend this package.
+
+syntax = "proto3";
+
+package org.apache.tika.grpc.v2;
+
+import "org/apache/tika/grpc/v2/document.proto";
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika.grpc.v2";
+option java_outer_classname = "TikaV2Proto";
+
+service TikaV2 {
+  // Fetch via a previously saved fetcher and return a typed Document.
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
+  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest)
+      returns (stream FetchAndParseReply) {}
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest)
+      returns (stream FetchAndParseReply) {}
+}
+
+message FetchAndParseRequest {
+  // ID of a fetcher previously saved through the v1 Tika service.
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  string additional_fetch_config_json = 3;
+  string emitter_id = 4;
+  // Optional JSON object to configure the ParseContext for this request.
+  string parse_context_json = 5;
+}
+
+message FetchAndParseReply {
+  string fetch_key = 1;
+  Document document = 2;
+}

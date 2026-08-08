@@ -1,5 +1,9 @@
 {
   "plugin-roots": ["/var/cache/tika/plugins"],
+  "grpc": {
+    "allowComponentManagement": true,
+    "allowPerRequestConfig": true
+  },
   "pipes": {
     "numClients": 1,
     "configStoreType": "ignite",
