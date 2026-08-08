@@ -392,7 +392,7 @@
     <!-- junit 6.x requires jdk 17 -->
     <junit5.version>5.14.4</junit5.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>8.0.0</junrar.version>
+    <junrar.version>8.1.0</junrar.version>
     <jwarc.version>0.36.0</jwarc.version>
     <kafka.version>4.3.1</kafka.version>
     <kotlin-stdlib.version>2.4.10</kotlin-stdlib.version>
@@ -452,7 +452,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.6</zookeeper.version>
-    <zstd.version>1.5.7-12</zstd.version>
+    <zstd.version>1.5.7-13</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <logback.version>1.6.0</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
