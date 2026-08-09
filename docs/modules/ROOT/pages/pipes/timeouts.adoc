@@ -23,7 +23,9 @@ Tika Pipes uses a two-tier timeout system to handle both long-running tasks and 
 
 * **`progressTimeoutMillis`** -- Maximum time between progress updates.
   If no progress is reported within this interval, the task is considered stalled and killed.
-  Default: `60000` (1 minute).
+  Default: `120000` (2 minutes).
+  This also caps how long any single external process (OCR, `ExternalParser`, VLM)
+  may run, since those parsers report progress only once a process completes.
 
 * **`totalTaskTimeoutMillis`** -- Maximum wall-clock time for an entire task.
   Even if the parser is making progress, the task is killed after this time.

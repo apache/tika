@@ -259,7 +259,7 @@ since the parser last reported progress.
 |Maximum wall-clock time in milliseconds for the entire parse task.
 
 |`progressTimeoutMillis`
-|60000 (1 minute)
+|120000 (2 minutes)
 |Maximum time in milliseconds since the parser last reported progress. Catches
 infinite loops and hung processes.
 |===
@@ -282,12 +282,17 @@ can extend well past `progressTimeoutMillis`, because each finished page resets
 the timer — but a *single* call that runs longer than `progressTimeoutMillis`
 is still cut short.
 
-That interaction matters at the defaults: `TesseractOCRConfig.timeoutSeconds`
-is 120 seconds, while `progressTimeoutMillis` is 60 seconds. A single
-tesseract call taking between 60 and 120 seconds is stopped by the progress
-timeout before its own per-process timeout applies. If you OCR large or
-high-resolution pages, raise `progressTimeoutMillis` to at least the
-per-process OCR timeout.
+Because of this, `progressTimeoutMillis` also caps how long any single external
+process may run. Parsers that spawn processes size their own timeout via
+`TimeoutLimits.getProcessTimeoutMillis(context, ...)`, which never allows a
+value beyond `progressTimeoutMillis`, so the process is stopped just before the
+progress watchdog would fire.
+
+The shipped defaults are aligned: `progressTimeoutMillis` is 120 seconds and
+the bundled process-spawning parsers (OCR, strings, inference) each default to
+a 120-second per-process timeout, so those defaults are reachable. **If you
+raise a per-process timeout above 120 seconds, raise `progressTimeoutMillis`
+to match** — raising the parser's own timeout alone has no effect.
 
 For most documents — anything without one of the parsers above in the chain —
 the effective ceiling is `progressTimeoutMillis`, not `totalTaskTimeoutMillis`.
