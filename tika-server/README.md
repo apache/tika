@@ -26,22 +26,32 @@ Running
 $ java -jar tika-server/target/tika-server.jar --help
    usage: tikaserver
     -?,--help           this help message
-    -h,--host <arg>     host name (default = localhost)
-    -l,--log <arg>      request URI log level ('debug' or 'info')
+    -c,--config <arg>   tika-config file
+    -h,--host <arg>     host name (default = localhost, use * for all)
+    -i,--id <arg>       id to use for the server in the status endpoint and logging
     -p,--port <arg>     listen port (default = 9998)
-    -s,--includeStack   whether or not to return a stack trace
-                        if there is an exception during 'parse'
 ```
+
+Everything beyond host, port and id is configured in the tika-config JSON file
+passed with `-c`, not on the command line. See
+[Configuration](https://tika.apache.org/configuration/index.html).
 
 Running via Docker
 ------------------
 Assuming you have Docker installed, you can use a prebuilt image:
 
-`docker run -d -p 9998:9998 apache/tika`
+`docker run -d -p 127.0.0.1:9998:9998 apache/tika`
 
 This will load Apache Tika Server and expose its interface on:
 
 `http://localhost:9998`
+
+Note the `127.0.0.1:` prefix. Unlike the jar, which binds `localhost` by default,
+the Docker images start the server with `-h 0.0.0.0`, so publishing the port
+without an explicit interface exposes it on every interface of the host.
+tika-server performs no authentication and parses untrusted files; only expose it
+on a trusted, access-controlled network. See
+[Security](https://tika.apache.org/security.html).
 
 You may also be interested in the https://github.com/apache/tika-docker project
 which provides prebuilt Docker images.
@@ -64,14 +74,17 @@ Usage
 -----
 Usage examples from command line with `curl` utility:
 
-* Extract plain text:  
+* Extract XHTML:  
 `curl -T price.xls http://localhost:9998/tika`
 
-* Extract text with mime-type hint:  
+* Extract plain text:  
+`curl -T price.xls http://localhost:9998/tika/text`
+
+* Extract XHTML with mime-type hint:  
 `curl -v -H "Content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" -T document.docx http://localhost:9998/tika`
 
 * Get all document attachments as ZIP-file:  
-`curl -v -T Doc1_ole.doc http://localhost:9998/unpacker > /var/tmp/x.zip`
+`curl -v -T Doc1_ole.doc http://localhost:9998/unpack > /var/tmp/x.zip`
 
 * Extract metadata to CSV format:  
 `curl -T price.xls http://localhost:9998/meta`
@@ -84,6 +97,9 @@ HTTP Return Codes
 -----------------
 `200` - Ok  
 `204` - No content (for example when we are unpacking file without attachments)  
+`403` - Forbidden (per-request configuration was supplied but `allowPerRequestConfig` is off)  
 `415` - Unknown file type  
 `422` - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)  
+`429` - Too many requests (all forked workers were busy for longer than `maxWaitForClientMillis`; retry with backoff)  
 `500` - Internal error  
+`503` - Service unavailable (the forked worker hit a timeout, ran out of memory, or crashed)  
