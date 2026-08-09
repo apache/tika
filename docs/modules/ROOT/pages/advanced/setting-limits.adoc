@@ -52,7 +52,8 @@ This is the same configuration tested in `AllLimitsTest.java`:
       "zipBombRatio": 100
     },
     "timeout-limits": {
-      "taskTimeoutMillis": 60000
+      "totalTaskTimeoutMillis": 3600000,
+      "progressTimeoutMillis": 60000
     },
     "standard-metadata-limiter-factory": {
       "maxTotalBytes": 1048576,
@@ -243,7 +244,9 @@ See test: `tika-serialization/src/test/java/org/apache/tika/config/OutputLimitsT
 
 == Timeout Limits
 
-The `TimeoutLimits` class controls time-based limits for parsing operations.
+The `TimeoutLimits` class controls time-based limits for parsing operations. Tika 4.x
+uses a *two-tier* timeout: one bound on total wall-clock time, and one on time elapsed
+since the parser last reported progress.
 
 === Configuration Options
 
@@ -251,10 +254,46 @@ The `TimeoutLimits` class controls time-based limits for parsing operations.
 |===
 |Setting |Default |Description
 
-|`taskTimeoutMillis`
+|`totalTaskTimeoutMillis`
+|3600000 (1 hour)
+|Maximum wall-clock time in milliseconds for the entire parse task.
+
+|`progressTimeoutMillis`
 |60000 (1 minute)
-|Maximum time in milliseconds for a parse operation to complete.
+|Maximum time in milliseconds since the parser last reported progress. Catches
+infinite loops and hung processes.
 |===
+
+[IMPORTANT]
+====
+Which bound actually applies depends on whether the parser reports progress.
+A parser that never calls `TikaProgressTracker.update()` never advances the
+timer, so it effectively gets `progressTimeoutMillis` as its total timeout —
+matching the single-timeout behavior of earlier versions.
+
+In practice only long-running parsers report progress: `TesseractOCRParser`,
+`Tess4JParser`, `ExternalParser`, `GDALParser`, the VLM and image-embedding
+parsers, and `StringsParser`. Everything else — including container parsing and
+embedded-document recursion — does not.
+
+Those parsers report progress *after* each external-process invocation
+completes, not while one is running. So a document that needs many OCR calls
+can extend well past `progressTimeoutMillis`, because each finished page resets
+the timer — but a *single* call that runs longer than `progressTimeoutMillis`
+is still cut short.
+
+That interaction matters at the defaults: `TesseractOCRConfig.timeoutSeconds`
+is 120 seconds, while `progressTimeoutMillis` is 60 seconds. A single
+tesseract call taking between 60 and 120 seconds is stopped by the progress
+timeout before its own per-process timeout applies. If you OCR large or
+high-resolution pages, raise `progressTimeoutMillis` to at least the
+per-process OCR timeout.
+
+For most documents — anything without one of the parsers above in the chain —
+the effective ceiling is `progressTimeoutMillis`, not `totalTaskTimeoutMillis`.
+Lower `totalTaskTimeoutMillis` if you need a hard ceiling on OCR-heavy or
+external-process work regardless of progress.
+====
 
 === JSON Configuration
 
@@ -263,7 +302,8 @@ The `TimeoutLimits` class controls time-based limits for parsing operations.
 {
   "parse-context": {
     "timeout-limits": {
-      "taskTimeoutMillis": 120000
+      "totalTaskTimeoutMillis": 7200000,
+      "progressTimeoutMillis": 120000
     }
   }
 }
@@ -275,7 +315,7 @@ Configuration file: `tika-serialization/src/test/resources/configs/timeout-limit
 
 [source,java]
 ----
-TimeoutLimits limits = new TimeoutLimits(120000);
+TimeoutLimits limits = new TimeoutLimits(7200000, 120000);
 context.set(TimeoutLimits.class, limits);
 
 // Helper method
