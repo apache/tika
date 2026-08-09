@@ -189,7 +189,7 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
   "fetchers": {
     "file-system-fetcher": {
       "file-system-fetcher": {
-        "allowAbsolutePaths": true
+        "basePath": "/path/to/your/input"
       }
     }
   },
@@ -204,6 +204,23 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
   "plugin-roots": "path/to/plugins"
 }
 ----
+
+[IMPORTANT]
+====
+Set `basePath` to a directory that contains only the documents you intend the
+server to read. It is the filesystem sandbox: the fetcher rejects any fetch key
+that resolves outside it, including absolute paths and `../` traversal, and
+re-checks after resolving symlinks.
+
+Setting `allowAbsolutePaths` instead of `basePath` turns that sandbox off
+entirely — fetch keys are then used as raw absolute paths, so any caller who can
+reach `/pipes` can read any file the server process can read. The matching
+emitter setting is worse: it grants arbitrary file *write*. `allowAbsolutePaths`
+is not a relaxation of `basePath`; it is what you get when there is no
+`basePath` at all, and it is a no-op when `basePath` is set. Use it only if you
+genuinely intend an unsandboxed fetcher and have restricted access to the server
+by other means.
+====
 
 [IMPORTANT]
 ====
