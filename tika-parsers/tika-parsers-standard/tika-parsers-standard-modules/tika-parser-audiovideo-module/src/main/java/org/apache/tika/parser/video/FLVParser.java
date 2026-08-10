@@ -164,11 +164,17 @@ public class FLVParser implements Parser {
 
     private Object readAMFObject(DataInputStream input, int depth) throws IOException {
         HashMap<String, Object> array = new HashMap<>();
-        while (true) {
+        //an object has no declared count (it runs to the type-9 end marker), so bound the
+        //entry count too, or a crafted flat object of cheap entries would exhaust memory
+        for (int i = 0; ; i++) {
             String key = readAMFString(input);
             int dataType = input.read();
             if (dataType == 9) { // object end marker
                 break;
+            }
+            if (i >= MAX_AMF_ELEMENTS) {
+                throw new IOException("AMF object exceeds the maximum of " + MAX_AMF_ELEMENTS
+                        + " entries");
             }
             array.put(key, readAMFData(input, dataType, depth + 1));
         }

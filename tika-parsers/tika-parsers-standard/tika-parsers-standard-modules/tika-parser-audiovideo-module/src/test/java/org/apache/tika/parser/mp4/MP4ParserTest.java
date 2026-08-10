@@ -497,6 +497,28 @@ public class MP4ParserTest extends TikaTest {
                         boxes.length));
     }
 
+    @Test
+    public void testLargeSizeBoxHeaderAccounting() throws Exception {
+        //a 64-bit largesize box (size field == 1) has a 16-byte header, not 8; accounting
+        //for only 8 over-reads it by 8 bytes and misparses everything after it. Put a
+        //largesize udta before a normal ftyp and confirm the ftyp's major brand still
+        //comes through, which it only does if the largesize header is 16 bytes. TIKA-4812
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        //box 1: largesize udta, 24 bytes total (16-byte header + 8-byte payload)
+        bos.write(new byte[]{0, 0, 0, 1});              //size == 1 -> a 64-bit size follows
+        bos.write("udta".getBytes(StandardCharsets.ISO_8859_1));
+        bos.write(new byte[]{0, 0, 0, 0, 0, 0, 0, 24}); //64-bit box size = 24
+        bos.write(new byte[]{0, 0, 0, 8});              //payload: a dummy 8-byte 'free' sub-box
+        bos.write("free".getBytes(StandardCharsets.ISO_8859_1));
+        //box 2: normal ftyp, 16 bytes
+        bos.write(new byte[]{0, 0, 0, 16});
+        bos.write("ftyp".getBytes(StandardCharsets.ISO_8859_1));
+        bos.write("isom".getBytes(StandardCharsets.ISO_8859_1)); //major brand
+        bos.write(new byte[]{0, 0, 0, 0});              //minor version
+
+        assertEquals("isom", majorBrand(bos.toByteArray(), 1000L));
+    }
+
     private static String majorBrand(byte[] boxes, long maxBoxSize) throws Exception {
         com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
         Metadata tikaMetadata = new Metadata();

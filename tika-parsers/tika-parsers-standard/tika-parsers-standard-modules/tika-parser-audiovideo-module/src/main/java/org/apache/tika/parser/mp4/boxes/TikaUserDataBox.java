@@ -163,7 +163,9 @@ public class TikaUserDataBox {
                     if ("covr".equals(fieldName)) {
                         //covr holds one image per data atom and may repeat the data atom
                         //for further images; the realign below consumes any leftover
-                        handleCoverArt(reader, valueType, toRead);
+                        if (reader.getPosition() + toRead <= recordEnd) {
+                            handleCoverArt(reader, valueType, toRead);
+                        }
                         while (reader.getPosition() + 16 <= recordEnd) {
                             long extraLen = reader.getUInt32();
                             String extraType =
@@ -200,7 +202,7 @@ public class TikaUserDataBox {
                                 metadata.set(Audio.DISC_COUNT, b);
                             }
                         }
-                    } else {
+                    } else if (reader.getPosition() + toRead <= recordEnd) {
                         String val = reader.getString(toRead, StandardCharsets.UTF_8);
                         try {
                             addMetadata(fieldName, val);

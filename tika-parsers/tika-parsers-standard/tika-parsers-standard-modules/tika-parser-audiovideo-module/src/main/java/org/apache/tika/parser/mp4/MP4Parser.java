@@ -112,6 +112,9 @@ public class MP4Parser implements Parser {
     }
 
     public void setMaxBoxSize(long maxBoxSize) {
+        if (maxBoxSize <= 0) {
+            throw new IllegalArgumentException("maxBoxSize must be positive: " + maxBoxSize);
+        }
         this.maxBoxSize = maxBoxSize;
     }
 
