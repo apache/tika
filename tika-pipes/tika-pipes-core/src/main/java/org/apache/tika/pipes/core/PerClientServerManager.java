@@ -65,12 +65,10 @@ public class PerClientServerManager implements ServerManager {
      *  formula could otherwise produce slice=1. */
     private static final int MIN_AUTO_CAP_SLICE = 2;
 
-    /** Share of host/container memory the forks may collectively claim; the remainder
-     *  is left for the parent JVM and the OS. */
+    /** Share of host/container memory the forks may collectively claim; the remainder is
+     *  left for the parent JVM, the OS, and page cache for spooled input. */
     private static final int FORK_HEAP_BUDGET_PERCENT = 75;
 
-    /** Never hand a fork a smaller slice than this, however high numClients goes. */
-    private static final int MIN_FORK_HEAP_PERCENT = 5;
 
     private static boolean userSetHeap(List<String> args) {
         return args.stream().anyMatch(a -> a.startsWith("-Xmx")
@@ -79,8 +77,9 @@ public class PerClientServerManager implements ServerManager {
     }
 
     private static int forkHeapPercentage(int numClients) {
-        return Math.max(MIN_FORK_HEAP_PERCENT, FORK_HEAP_BUDGET_PERCENT / numClients);
+        return Math.max(1, FORK_HEAP_BUDGET_PERCENT / numClients);
     }
+
 
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;

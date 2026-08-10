@@ -173,6 +173,24 @@ not set `-Xmx` (or `-XX:MaxRAMPercentage`/`-XX:MaxRAMFraction`) yourself, Tika i
 `-XX:MaxRAMPercentage=75/numClients`, leaving the remainder for the parent JVM and the OS.
 The `pipes-cpu-sizing` summary line reports the decision as `heap=...`.
 
+[IMPORTANT]
+====
+**`numClients` is sized against CPU, not memory.** The rule above —
+`numClients × 2 + 2 ≤ hostCores` — considers cores only. Memory is then divided among
+however many workers that produced. On a host with many cores relative to its RAM, a
+`numClients` that is correct for CPU can leave each fork with too little heap to parse
+reliably.
+
+Tika cannot reconcile the two automatically: the parent sizes forks as a *percentage* of
+memory and has no portable way to resolve that to bytes. Each forked JVM therefore checks
+its own heap at startup and logs a `WARN` if it came up under 256 MB — the point below which
+ordinary documents, not just pathological ones, begin to fail. If you see that warning,
+lower `numClients`, raise the container memory limit, or set `-Xmx` explicitly.
+
+Cross-check both constraints yourself when sizing: `numClients × 2 + 2 ≤ hostCores` **and**
+`numClients × per-worker-heap ≤ 75% of memory`.
+====
+
 Set `-Xmx` explicitly when you know your workload: the auto-slice is a safe default, not a
 tuned one, and a fork that legitimately needs more than its slice will OOM where an untuned
 JVM might have grown into spare memory.

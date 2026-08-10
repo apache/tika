@@ -642,7 +642,7 @@ public class TikaServerProcess {
         // Only set default pipes config if there's no existing config
         // This allows user-provided config to specify their own numClients, etc.
         if (existingConfigPath == null || !Files.exists(existingConfigPath)) {
-            builder.setPipesConfig(4, null);
+            builder.setPipesConfig(PipesConfig.defaultNumClients(), null);
         }
 
         // Add unpack emitter if /unpack endpoint is enabled
