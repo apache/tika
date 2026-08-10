@@ -23,10 +23,12 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -249,7 +251,7 @@ public class PipesParsingHelper {
             LOG.warn("Failed to serialize PipesResult error response as JSON; falling back to status-only body", e);
             json = "{\"status\":\"" + result.status().name() + "\"}";
         }
-        return Response.status(mapStatusToHttpResponse(result.status()))
+        return responseBuilder(result.status(), pipesConfig.getMaxWaitForClientMillis())
                 .entity(json)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
@@ -320,13 +322,40 @@ public class PipesParsingHelper {
             // (scale up numClients) apart from "a worker is actually crashing" (503).
             case CLIENT_UNAVAILABLE_WITHIN_MS ->
                     Response.Status.TOO_MANY_REQUESTS;
+            // The caller named a fetcher/emitter this server does not have. Nothing failed
+            // on our side, and retrying the same request will never succeed -- 500 told
+            // clients to retry a request that is permanently malformed.
+            case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND ->
+                    Response.Status.BAD_REQUEST;
+            case PAYLOAD_LIMIT_EXCEEDED ->
+                    Response.Status.REQUEST_ENTITY_TOO_LARGE;
             case FETCH_EXCEPTION, EMIT_EXCEPTION,
-                 FETCHER_NOT_FOUND, EMITTER_NOT_FOUND,
-                 PAYLOAD_LIMIT_EXCEEDED,
                  FETCHER_INITIALIZATION_EXCEPTION, EMITTER_INITIALIZATION_EXCEPTION,
                  FAILED_TO_INITIALIZE ->
                     Response.Status.INTERNAL_SERVER_ERROR;
         };
+    }
+
+    /** A crashed child is replaced promptly; no point holding clients off for a minute. */
+    private static final long CRASH_RETRY_AFTER_SECONDS = 5;
+
+    /**
+     * Response builder for a pipes status, carrying {@code Retry-After} on the two families
+     * where the server knows the condition is transient. Without it, a client loop's only
+     * options are to give up or to hammer a pool that is already saturated.
+     */
+    public static Response.ResponseBuilder responseBuilder(PipesResult.RESULT_STATUS status,
+                                                           long maxWaitForClientMillis) {
+        Response.Status httpStatus = mapStatusToHttpResponse(status);
+        Response.ResponseBuilder builder = Response.status(httpStatus);
+        if (httpStatus == Response.Status.TOO_MANY_REQUESTS) {
+            // The pool was already full for this long, so a faster retry just re-queues.
+            builder.header(HttpHeaders.RETRY_AFTER,
+                    Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxWaitForClientMillis)));
+        } else if (httpStatus == Response.Status.SERVICE_UNAVAILABLE) {
+            builder.header(HttpHeaders.RETRY_AFTER, CRASH_RETRY_AFTER_SECONDS);
+        }
+        return builder;
     }
 
     /**

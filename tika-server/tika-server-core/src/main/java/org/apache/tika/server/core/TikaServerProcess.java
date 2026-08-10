@@ -431,7 +431,7 @@ public class TikaServerProcess {
             // not by PipesResource.
             PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
             resourceProviders.add(new SingletonResourceProvider(
-                    new PipesResource(helper.getPipesParser())));
+                    new PipesResource(helper.getPipesParser(), helper.getPipesConfig())));
         }
         resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;

@@ -28,6 +28,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherNotFoundException;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.utils.ExceptionUtils;
 
@@ -58,7 +59,10 @@ class FetchHandler {
     private FetcherOrResult getFetcher(FetchEmitTuple t) {
         try {
             return new FetcherOrResult(fetcherManager.getFetcher(t.getFetchKey().getFetcherId()), null);
-        } catch (IllegalArgumentException e) {
+        } catch (FetcherNotFoundException e) {
+            // Was IllegalArgumentException, which FetcherManager never throws -- so an unknown
+            // fetcher id fell through to the initialization branch below and every caller saw
+            // FETCHER_INITIALIZATION_EXCEPTION (a server-side 500) instead of FETCHER_NOT_FOUND.
             String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
             LOG.warn(noFetcherMsg);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));

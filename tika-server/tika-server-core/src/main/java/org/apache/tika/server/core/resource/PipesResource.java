@@ -40,6 +40,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTuple;
@@ -52,15 +53,17 @@ public class PipesResource {
     private static final Logger LOG = LoggerFactory.getLogger(PipesResource.class);
 
     private final PipesParser pipesParser;
+    private final PipesConfig pipesConfig;
 
     /**
      * @param pipesParser shared parser, also used by /tika, /rmeta, and /unpack.
      *                     Lifecycle (construction, shutdown) is owned by whoever
      *                     built it, not by this class.
-     *                         vs. just the first line.
+     * @param pipesConfig the parser's config; read here for the {@code Retry-After} value.
      */
-    public PipesResource(PipesParser pipesParser) {
+    public PipesResource(PipesParser pipesParser, PipesConfig pipesConfig) {
         this.pipesParser = pipesParser;
+        this.pipesConfig = pipesConfig;
     }
 
 
@@ -123,7 +126,8 @@ public class PipesResource {
         // Same status mapping /tika+/rmeta+/unpack use (PipesParsingHelper) -- e.g. 429 for
         // CLIENT_UNAVAILABLE_WITHIN_MS, 503 for TIMEOUT/OOM/UNSPECIFIED_CRASH -- rather than
         // always 200 with the failure only visible in the body.
-        return Response.status(PipesParsingHelper.mapStatusToHttpResponse(pipesResult.status()))
+        return PipesParsingHelper
+                .responseBuilder(pipesResult.status(), pipesConfig.getMaxWaitForClientMillis())
                 .entity(body)
                 .build();
     }

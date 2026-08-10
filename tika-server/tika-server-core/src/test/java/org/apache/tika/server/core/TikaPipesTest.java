@@ -153,7 +153,7 @@ public class TikaPipesTest extends CXFTestBase {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
             pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
-            pipesResource = new PipesResource(pipesParser);
+            pipesResource = new PipesResource(pipesParser, pipesConfig);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -321,4 +321,30 @@ public class TikaPipesTest extends CXFTestBase {
                 .asBoolean());
         assertFalse(Files.isRegularFile(tmpNpeOutputFile));
     }
+    /**
+     * A fetcher or emitter this server does not have is a permanently malformed request:
+     * retrying it will never succeed, so it must not come back as a 5xx "try again".
+     */
+    @Test
+    public void testUnknownFetcherAndEmitterAre400() throws Exception {
+        FetchEmitTuple badFetcher = new FetchEmitTuple("badFetcher",
+                new FetchKey("no-such-fetcher", "hello_world.xml"),
+                new EmitKey(EMITTER_JSON_ID, ""), new Metadata());
+        assertEquals(400, postTuple(badFetcher).getStatus());
+
+        FetchEmitTuple badEmitter = new FetchEmitTuple("badEmitter",
+                new FetchKey(FETCHER_ID, "hello_world.xml"),
+                new EmitKey("no-such-emitter", ""), new Metadata());
+        assertEquals(400, postTuple(badEmitter).getStatus());
+    }
+
+    private Response postTuple(FetchEmitTuple t) throws Exception {
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        return WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post(writer.toString());
+    }
+
 }

@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
@@ -31,6 +32,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -96,7 +98,7 @@ public class AsyncResource {
      */
     @POST
     @Produces("application/json")
-    public Map<String, Object> post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response post(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
 
         AsyncRequest request = deserializeASyncRequest(is);
 
@@ -154,26 +156,36 @@ public class AsyncResource {
         }
     }
 
-    private Map<String, Object> ok(int size) {
+    private Response ok(int size) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "ok");
         map.put("added", size);
-        return map;
+        return Response.ok(map).build();
     }
 
-    private Map<String, Object> throttle(int requestSize) {
+    /**
+     * 429, not 200. The queue was full for the whole {@code maxQueuePauseMs} wait, so nothing
+     * was accepted -- a 200 made a rejected batch indistinguishable from an accepted one to
+     * any client that checks status rather than parsing the body, and there are such clients.
+     */
+    private Response throttle(int requestSize) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
         map.put("msg", "not able to receive request of size " + requestSize + " at this time");
         map.put("capacity", asyncProcessor.getCapacity());
-        return map;
+        return Response
+                .status(Response.Status.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER,
+                        Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxQueuePauseMs)))
+                .entity(map)
+                .build();
     }
 
-    private Map<String, Object> badEmitter(String emitterName) {
+    private Response badEmitter(String emitterName) {
         throw new BadRequestException("can't find emitter for " + emitterName);
     }
 
-    private Map<String, Object> badFetcher(FetchKey fetchKey) {
+    private Response badFetcher(FetchKey fetchKey) {
         throw new BadRequestException("can't find fetcher for " + fetchKey.getFetcherId());
     }
 
