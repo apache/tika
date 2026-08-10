@@ -52,9 +52,17 @@ import org.apache.tika.server.core.TikaServerParseException;
 public class MetadataResource {
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
-    private final TikaResource tikaResource;
+    private TikaResource tikaResource;
 
     public MetadataResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
+    /** For subclasses the service loader constructs; see {@link TikaResourceAware}. */
+    protected MetadataResource() {
+    }
+
+    protected void setTikaResource(TikaResource tikaResource) {
         this.tikaResource = tikaResource;
     }
 

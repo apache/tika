@@ -82,6 +82,7 @@ import org.apache.tika.server.core.resource.TikaDetectors;
 import org.apache.tika.server.core.resource.TikaMimeTypes;
 import org.apache.tika.server.core.resource.TikaParsers;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.resource.TikaResourceAware;
 import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.resource.TikaVersion;
@@ -433,17 +434,21 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(
                     new PipesResource(helper.getPipesParser(), helper.getPipesConfig())));
         }
-        resourceProviders.addAll(loadResourceServices(serverStatus));
+        resourceProviders.addAll(loadResourceServices(serverStatus, tikaResource));
         return resourceProviders;
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
+    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus,
+                                                                              TikaResource tikaResource) {
         List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
         for (TikaServerResource r : resources) {
             LOG.info("loading resource from SPI: " + r.getClass());
             if (r instanceof ServerStatusResource) {
                 ((ServerStatusResource) r).setServerStatus(serverStatus);
+            }
+            if (r instanceof TikaResourceAware) {
+                ((TikaResourceAware) r).setTikaResource(tikaResource);
             }
             providers.add(new SingletonResourceProvider(r));
         }
