@@ -127,6 +127,7 @@ public class PipesParsingHelper {
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
         String requestId = UUID.randomUUID().toString();
         Path tempFile = null;
+        String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
         try {
             // Spool input to our dedicated temp directory with proper suffix
@@ -162,6 +163,7 @@ public class PipesParsingHelper {
 
             // Process result
             List<Metadata> metadataList = processResult(result);
+            stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
             return metadataList;
 
         } catch (InterruptedException e) {
@@ -177,6 +179,31 @@ public class PipesParsingHelper {
                 } catch (IOException e) {
                     LOG.warn("Failed to delete temp file: {}", tempFile, e);
                 }
+            }
+        }
+    }
+
+    /**
+     * Removes the server's spool filename from the returned metadata.
+     * <p>
+     * The document is fetched from a temp file, so the fetcher records that path as
+     * {@code tk:source-path} and, when the caller supplied no filename, it also becomes
+     * {@code tk:resource-name} -- the field downstream consumers key document identity on.
+     * Neither describes the caller's document: they name a file that has already been
+     * deleted, and they expose the server's spooling scheme.
+     */
+    private static void stripSpoolIdentity(List<Metadata> metadataList, String spoolName,
+                                           String callerSuppliedName) {
+        if (metadataList == null) {
+            return;
+        }
+        for (Metadata m : metadataList) {
+            if (spoolName.equals(m.get(TikaCoreProperties.SOURCE_PATH))) {
+                m.remove(TikaCoreProperties.SOURCE_PATH.getName());
+            }
+            if (callerSuppliedName == null
+                    && spoolName.equals(m.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+                m.remove(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
             }
         }
     }
@@ -348,6 +375,7 @@ public class PipesParsingHelper {
                                     ParseContext parseContext, boolean saveAll) throws IOException {
         String requestId = UUID.randomUUID().toString();
         Path tempFile = null;
+        String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
         try {
             // Spool input to our dedicated temp directory with proper suffix
@@ -452,6 +480,7 @@ public class PipesParsingHelper {
             boolean isFrictionless = unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS;
             Path zipFile = getEmittedZipPath(requestId, isFrictionless);
 
+            stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
             return new UnpackResult(zipFile, metadataList);
         } finally {
             // Clean up temp file

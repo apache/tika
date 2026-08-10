@@ -17,6 +17,7 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -213,5 +214,38 @@ public class TikaResourceTest extends CXFTestBase {
             }
         }
     }*/
+
+    /**
+     * The document is spooled to a temp file, so without this the fetcher's path is what
+     * comes back as tk:source-path -- and, absent a client filename, as tk:resource-name,
+     * which is the field downstream consumers key document identity on.
+     */
+    @Test
+    public void testSpoolNameDoesNotLeak() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
+
+        assertNull(metadata.get(TikaCoreProperties.SOURCE_PATH),
+                "the server's spool path must not be reported to the caller");
+        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        assertTrue(name == null || !name.startsWith("tika-"),
+                "no client filename was sent, so the spool name must not stand in as one: " + name);
+    }
+
+    /** A filename the caller did supply is theirs, and must survive. */
+    @Test
+    public void testClientFilenameIsPreserved() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/json")
+                .header("Content-Disposition", "attachment; filename=\"my-report.xml\"")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
+
+        assertEquals("my-report.xml", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+    }
 
 }
