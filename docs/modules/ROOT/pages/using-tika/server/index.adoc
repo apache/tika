@@ -322,22 +322,17 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`false`
 |Include parser stack traces in error responses. Useful in dev, dangerous in production (leaks internals).
 
-|`digest`
-|`""` (off)
-|Compute a digest of the parsed bytes. Comma-separated algorithm names: `md5`, `sha1`, `sha256`, `sha384`, `sha512`.
-
-|`digestMarkLimit`
-|`20971520` (20 MiB)
-|Max bytes buffered for digest computation.
-
 |`logLevel`
 |_inherited_
 |`debug` or `info` to override the runtime log level.
 
-|`idBase`
+|`id`
 |random UUID
-|Override the auto-generated server ID (the `-i` CLI flag is the same setting).
+|Override the auto-generated server ID, which is written to the startup log (the `-i` CLI flag is the same setting).
 |===
+
+NOTE: Digests are configured in `parse-context`, not in the `server` section. See
+xref:configuration/digesters.adoc[Digesters].
 
 For the full Pipes-related sections (`pipes`, `fetchers`, `emitters`, `parse-context`)
 that tika-server 4.x requires, see

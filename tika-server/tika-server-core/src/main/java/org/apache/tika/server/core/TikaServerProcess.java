@@ -232,6 +232,7 @@ public class TikaServerProcess {
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
+        details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
         return details;
     }
