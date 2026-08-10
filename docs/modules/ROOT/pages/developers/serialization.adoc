@@ -241,6 +241,26 @@ The serialization system implements a security allowlist:
 This prevents attacks where malicious JSON specifies dangerous classes
 for instantiation.
 
+[IMPORTANT]
+====
+The allowlist governs *which components may be instantiated* from JSON. It does
+not restrict *how an already-loaded component may be configured*.
+
+Self-configuring components — which includes every `Parser`, since `Parser`
+extends `SelfConfiguring` — are skipped by the wire-block scan
+(`ParseContextDeserializer.assertNoBlockedComponents`): their config subtree is
+passed through to the component unexamined. So while a request cannot bind a new
+`Parser` from the wire, a request carrying
+`{"parse-context": {"pdf-parser": {"ocr": {"strategy": "OCR_AND_TEXT_EXTRACTION"}}}}`
+will reach `PDFParser` and take effect.
+
+That is why per-request configuration is gated separately by
+`allowPerRequestConfig`, which is off by default. Treat "the caller may supply
+per-request config" as equivalent to "the caller may set any parser option,
+including options that spawn external processes such as OCR" — not as something
+the allowlist constrains.
+====
+
 [source,java]
 ----
 // This will FAIL - class not registered

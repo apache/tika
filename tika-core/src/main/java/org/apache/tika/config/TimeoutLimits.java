@@ -28,7 +28,7 @@ import org.apache.tika.parser.ParseContext;
  *   <li>{@code totalTaskTimeoutMillis} — bounds entire task wall-clock time
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
- *       catches infinite loops and hung processes (default: 60,000 ms = 1 minute)</li>
+ *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes)</li>
  * </ul>
  * <p>
  * Parsers that never call {@link TikaProgressTracker#update()} effectively get
@@ -56,7 +56,14 @@ public class TimeoutLimits implements Serializable {
     private static final long serialVersionUID = 2L;
 
     public static final long DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
-    public static final long DEFAULT_PROGRESS_TIMEOUT_MILLIS = 60_000L;
+
+    /**
+     * Also caps how long a single external process may run (see
+     * {@link #getProcessTimeoutMillis(ParseContext, long)}), so this must not be
+     * shorter than the per-process timeouts the bundled process-spawning parsers
+     * default to, or those defaults become unreachable.
+     */
+    public static final long DEFAULT_PROGRESS_TIMEOUT_MILLIS = 120_000L;
 
     private long totalTaskTimeoutMillis = DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS;
     private long progressTimeoutMillis = DEFAULT_PROGRESS_TIMEOUT_MILLIS;
@@ -133,13 +140,19 @@ public class TimeoutLimits implements Serializable {
     /**
      * Returns the per-process timeout to use for external process execution.
      * <p>
-     * This checks for {@link TimeoutLimits} in the ParseContext and returns
-     * {@code max(0, progressTimeoutMillis - 100)} to give the monitoring loop
-     * a small window to detect the timeout before the process itself times out.
-     * Falls back to {@code defaultMs} if no TimeoutLimits is found.
+     * External processes must not outlive the progress watchdog: a parser only
+     * reports progress once its process has finished, so a process allowed to run
+     * past {@code progressTimeoutMillis} would be killed as a hang. This caps the
+     * caller's timeout at {@code progressTimeoutMillis - 100}, leaving the monitoring
+     * loop a small window to observe the process exit first.
+     * <p>
+     * The cap is a ceiling, not a replacement: a caller asking for less than the cap
+     * keeps its own shorter value. Falls back to {@code defaultMs} when no
+     * TimeoutLimits is in the context.
      *
      * @param context   the ParseContext (may be null)
-     * @param defaultMs default timeout if no TimeoutLimits in context
+     * @param defaultMs the caller's configured timeout; also used if no TimeoutLimits
+     *                  is in the context
      * @return timeout in milliseconds for external process execution
      */
     public static long getProcessTimeoutMillis(ParseContext context, long defaultMs) {
@@ -150,7 +163,7 @@ public class TimeoutLimits implements Serializable {
         if (limits == null) {
             return defaultMs;
         }
-        return Math.max(0, limits.progressTimeoutMillis - 100);
+        return Math.max(0, Math.min(defaultMs, limits.progressTimeoutMillis - 100));
     }
 
     @Override
