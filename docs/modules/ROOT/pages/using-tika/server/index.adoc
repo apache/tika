@@ -195,6 +195,19 @@ and parsing); selecting either without it causes the server to refuse to start. 
 is a plain opt-in endpoint — enable it simply by listing it under `endpoints`. See
 <<_security_configuration,Security Configuration>>.
 
+WARNING: `/language` and `/detect/stream` do their work *in the server's own JVM*, not in a
+forked pipes worker. They are therefore outside the process isolation that protects `/tika`,
+`/rmeta`, `/meta`, and `/unpack` — a crash or memory exhaustion takes the server with it
+rather than one worker.
+
+`/language` caps detection at the first 100,000 characters, since accuracy saturates well
+before that. That bounds the CPU per request, but *not* the memory: the request body is read
+into the server's heap before the cap applies, and the server has no maximum request size. A
+caller can still exhaust the heap with a large enough body, or with enough concurrent ones.
+Treat these endpoints as available only to trusted callers, the same as the rest of the
+server — see xref:security.adoc[the security model]. If you do not need them, omit them from
+`endpoints`.
+
 == Error Responses
 
 tika-server distinguishes two different kinds of failure: the forked worker itself

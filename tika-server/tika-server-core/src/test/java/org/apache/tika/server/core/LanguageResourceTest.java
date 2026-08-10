@@ -18,8 +18,11 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -108,6 +111,80 @@ public class LanguageResourceTest extends CXFTestBase {
         assertNotNull(response);
         String readLang = getStringFromInputStream((InputStream) response.getEntity());
         assertEquals("fr", readLang);
+    }
+
+    /**
+     * Truncation must not change the answer -- detection saturates far below the cap --
+     * and must apply on both the string and the stream path.
+     */
+    @Test
+    public void testOversizeInputIsTruncatedNotRejected() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        while (sb.length() < LanguageResource.MAX_DETECT_CHARS * 2) {
+            sb.append(ENGLISH_STRING).append(' ');
+        }
+        String oversize = sb.toString();
+        assertTrue(oversize.length() > LanguageResource.MAX_DETECT_CHARS);
+
+        Response stringResponse = WebClient
+                .create(endPoint + LANG_STRING_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .put(oversize);
+        assertEquals(200, stringResponse.getStatus());
+        assertEquals("en", getStringFromInputStream((InputStream) stringResponse.getEntity()));
+
+        Response streamResponse = WebClient
+                .create(endPoint + LANG_STREAM_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .put(new ByteArrayInputStream(oversize.getBytes(StandardCharsets.UTF_8)));
+        assertEquals(200, streamResponse.getStatus());
+        assertEquals("en", getStringFromInputStream((InputStream) streamResponse.getEntity()));
+    }
+
+    /** A stream longer than the cap must not be read past it. */
+    @Test
+    public void testStreamIsNotDrainedPastTheCap() throws Exception {
+        byte[] head = ENGLISH_STRING.repeat(
+                (LanguageResource.MAX_DETECT_CHARS / ENGLISH_STRING.length()) + 1)
+                .getBytes(StandardCharsets.UTF_8);
+        CountingInputStream counting = new CountingInputStream(
+                new ByteArrayInputStream(head));
+        assertEquals("en", detectViaResource(counting));
+        assertTrue(counting.count <= LanguageResource.MAX_DETECT_CHARS + 8192,
+                "read " + counting.count + " bytes for a " + LanguageResource.MAX_DETECT_CHARS
+                        + "-char cap");
+    }
+
+    private String detectViaResource(InputStream is) throws Exception {
+        return new LanguageResource().detectPutStream(is);
+    }
+
+    private static class CountingInputStream extends java.io.FilterInputStream {
+        private int count;
+
+        CountingInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws java.io.IOException {
+            int read = super.read(b, off, len);
+            if (read > 0) {
+                count += read;
+            }
+            return read;
+        }
+
+        @Override
+        public int read() throws java.io.IOException {
+            int read = super.read();
+            if (read >= 0) {
+                count++;
+            }
+            return read;
+        }
     }
 
 }
