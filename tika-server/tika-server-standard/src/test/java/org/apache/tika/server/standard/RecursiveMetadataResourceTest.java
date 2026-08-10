@@ -469,9 +469,6 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertContains("plundered our seas", content);
     }
 
-    // TIKA-3227 - TODO: re-enable once maxEmbeddedResources is configurable via JSON
-    // Use maxEmbeddedResources=0 in config to skip embedded documents
-
     @Test
     public void testXFA() throws Exception {
         Response response = WebClient
