@@ -143,17 +143,6 @@ the JSON variant, you can also nest a handler — `/tika/json/text`,
 envelope; that nested handler accepts the full set (`text`, `html`, `xml`,
 `md`, `markdown`, `body`, `ignore`).
 
-==== `X-Tika-Handler` header
-
-For the root `/tika` PUT endpoint you can also pick the handler with a header:
-
-[source,bash]
-----
-curl -T document.pdf -H "X-Tika-Handler: markdown" http://localhost:9998/tika
-----
-
-Accepted values: `text`, `html`, `xml`, `markdown` (or `md`), `body`, `ignore`. The default is `markdown`.
-
 === Recursive Metadata (`/rmeta`)
 
 Returns metadata for the container document and all embedded documents as a JSON
