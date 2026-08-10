@@ -55,7 +55,7 @@ public class TimeoutLimitsTest extends TikaTest {
     public void testDefaults() {
         TimeoutLimits limits = new TimeoutLimits();
         assertEquals(TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS, limits.getProgressTimeoutMillis());
-        assertEquals(60000, limits.getProgressTimeoutMillis());
+        assertEquals(120000, limits.getProgressTimeoutMillis());
         assertEquals(TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, limits.getTotalTaskTimeoutMillis());
         assertEquals(3600000, limits.getTotalTaskTimeoutMillis());
     }
@@ -91,10 +91,15 @@ public class TimeoutLimitsTest extends TikaTest {
         ParseContext context = new ParseContext();
         assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
 
-        // Test with context that has TimeoutLimits
+        // progressTimeoutMillis is a ceiling, not a replacement: a caller asking for
+        // less than the cap keeps its own shorter value
         TimeoutLimits limits = new TimeoutLimits(3600000, 60000);
         context.set(TimeoutLimits.class, limits);
-        assertEquals(59900, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+
+        // a caller asking for more than the cap is capped just under it, so the
+        // process exits before the progress watchdog fires
+        assertEquals(59900, TimeoutLimits.getProcessTimeoutMillis(context, 300000));
 
         // Test with very small progress timeout
         TimeoutLimits smallLimits = new TimeoutLimits(3600000, 50);

@@ -49,6 +49,12 @@ public class ConfigExamplesTest {
             Files.writeString(configFile, json, StandardCharsets.UTF_8);
             TikaLoader loader = TikaLoader.load(configFile);
             assertNotNull(loader, "TikaLoader should not be null for: " + resourceName);
+            // TikaLoader.load only validates top-level keys. Deserialize the server
+            // section too -- otherwise an example carrying a removed server key passes
+            // here and still fails to start a server (FAIL_ON_UNKNOWN_PROPERTIES).
+            TikaServerConfig serverConfig =
+                    loader.getConfig().deserialize("server", TikaServerConfig.class);
+            assertNotNull(serverConfig, "'server' section should deserialize for: " + resourceName);
         }
     }
 

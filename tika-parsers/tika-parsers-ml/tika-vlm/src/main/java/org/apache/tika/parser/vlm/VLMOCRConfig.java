@@ -65,7 +65,7 @@ public class VLMOCRConfig implements Serializable {
      * HTTP timeout in seconds for the chat completions request.
      * VLM inference can be slow; default is generous.
      */
-    private int timeoutSeconds = 300;
+    private int timeoutSeconds = 120;
 
     /** Optional API key for authenticated endpoints. Empty means no auth. */
     private String apiKey = "";

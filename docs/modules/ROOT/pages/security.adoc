@@ -56,8 +56,9 @@ and `allowComponentManagement` — the latter lets clients add, modify, and dele
 and read back stored configs, which can contain secrets — are off by default. Run it only behind
 network controls and, ideally, mutual TLS. See xref:using-tika/grpc/index.adoc[Tika gRPC].
 
-For the upgrade from the former `enableUnsecureFeatures` flag, see
-xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating tika-server to 4.x].
+For the upgrade from the former `enableUnsecureFeatures` flag, which is now split into
+`allowPipes` and `allowPerRequestConfig`, see
+xref:migration-to-4x/migrating-tika-server-4x.adoc#_pipes_and_async_require_allowpipes_per_request_config_requires_allowperrequestconfig[Migrating tika-server to 4.x].
 
 == Known Vulnerabilities
 
