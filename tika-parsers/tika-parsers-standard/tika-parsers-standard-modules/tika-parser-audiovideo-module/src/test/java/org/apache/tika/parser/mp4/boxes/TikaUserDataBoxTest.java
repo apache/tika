@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.mp4.boxes;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -33,9 +34,10 @@ public class TikaUserDataBoxTest {
     /**
      * A meta/mdir udta whose ilst-search hits a sub-box declaring a length below
      * the 8-byte header used to reach the next box: {@code reader.skip(len - 8)}
-     * would be a negative skip, which throws {@link IllegalArgumentException} (not
-     * IOException, so it escapes MP4Reader's catch). The box must consume it
-     * silently instead. See TIKA-4812.
+     * would be a negative skip, which threw {@link IllegalArgumentException} (not
+     * IOException, so it escaped MP4Reader's catch). It must now raise a caught
+     * {@link IOException} instead, so the udta walk aborts and the problem is
+     * recorded rather than either crashing or silently mis-reading. See TIKA-4812.
      */
     @Test
     public void testIlstSearchMalformedSubBoxLength() {
@@ -53,7 +55,7 @@ public class TikaUserDataBoxTest {
 
         Metadata metadata = new Metadata();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), metadata);
-        assertDoesNotThrow(() ->
+        assertThrows(IOException.class, () ->
                 new TikaUserDataBox("udta", buf.array(), metadata, xhtml, new ParseContext()));
     }
 }

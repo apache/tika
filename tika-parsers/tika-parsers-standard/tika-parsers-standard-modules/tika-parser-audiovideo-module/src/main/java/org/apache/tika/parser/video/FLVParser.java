@@ -100,6 +100,12 @@ public class FLVParser implements Parser {
     //blob of deeply nested containers cannot overflow the stack (an uncaught Error)
     private static final int MAX_AMF_DEPTH = 64;
 
+    //cap the declared element count of an AMF array: it is a 32-bit field (up to
+    //~4 billion), and each element grows a collection, so a crafted count backed by
+    //cheap 1-byte elements would exhaust memory before EOF. Legitimate onMetaData
+    //arrays are tiny; this only bounds the crafted case (a short read still throws).
+    private static final int MAX_AMF_ELEMENTS = 100_000;
+
     Object readAMFData(DataInputStream input, int type) throws IOException {
         return readAMFData(input, type, 0);
     }
@@ -137,6 +143,10 @@ public class FLVParser implements Parser {
 
     private Object readAMFStrictArray(DataInputStream input, int depth) throws IOException {
         long count = readUInt32(input);
+        if (count > MAX_AMF_ELEMENTS) {
+            throw new IOException("AMF array count " + count + " exceeds the maximum of "
+                    + MAX_AMF_ELEMENTS);
+        }
         ArrayList<Object> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             list.add(readAMFData(input, -1, depth + 1));
@@ -167,6 +177,10 @@ public class FLVParser implements Parser {
 
     private Object readAMFEcmaArray(DataInputStream input, int depth) throws IOException {
         long size = readUInt32(input);
+        if (size > MAX_AMF_ELEMENTS) {
+            throw new IOException("AMF array size " + size + " exceeds the maximum of "
+                    + MAX_AMF_ELEMENTS);
+        }
         HashMap<String, Object> array = new HashMap<>();
         for (int i = 0; i < size; i++) {
             String key = readAMFString(input);

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mp4;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -475,13 +476,34 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("isom", majorBrand(ftyp, 1000L)); //cap above it -> read and processed
     }
 
+    @Test
+    public void testNestedContainerRecursionIsBounded() throws Exception {
+        //a crafted chain of nested container boxes (moov is accepted as a container)
+        //used to recurse in TikaMp4Reader.processBoxes until the stack overflowed (an
+        //uncaught Error); the reader must bound the nesting depth. TIKA-4812
+        int depth = 100_000;
+        ByteBuffer buf = ByteBuffer.allocate(depth * 8); //big-endian by default
+        for (int k = 0; k < depth; k++) {
+            buf.putInt(8 * (depth - k)); //moov box size, shrinking to the chain end
+            buf.put("moov".getBytes(StandardCharsets.ISO_8859_1));
+        }
+        byte[] boxes = buf.array();
+        TikaMp4BoxHandler handler = new TikaMp4BoxHandler(new com.drew.metadata.Metadata(),
+                new Metadata(), new XHTMLContentHandler(new DefaultHandler(), new Metadata()),
+                new ParseContext());
+        //must return without a StackOverflowError
+        assertDoesNotThrow(() ->
+                TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, 1000L,
+                        boxes.length));
+    }
+
     private static String majorBrand(byte[] boxes, long maxBoxSize) throws Exception {
         com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
         Metadata tikaMetadata = new Metadata();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), tikaMetadata);
         TikaMp4BoxHandler handler =
                 new TikaMp4BoxHandler(mp4Metadata, tikaMetadata, xhtml, new ParseContext());
-        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize);
+        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length);
         Mp4Directory dir = mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
         return dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND);
     }

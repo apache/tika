@@ -43,53 +43,76 @@ final class TikaMp4Reader {
     private TikaMp4Reader() {
     }
 
-    static void extract(InputStream inputStream, Mp4BoxHandler handler, long maxBoxSize) {
+    //MP4 containers nest (moov/trak/mdia/minf/stbl/udta/meta); cap the recursion so a
+    //crafted chain of nested container headers cannot overflow the stack (an uncaught
+    //Error, caught by neither the IOException handler below nor CompositeParser). Real
+    //files nest well under this.
+    private static final int MAX_BOX_DEPTH = 100;
+
+    /**
+     * @param inputLength total input length in bytes, or -1 if unknown. When known, a box
+     *                    that declares more payload than the input holds is skipped rather
+     *                    than allocated (StreamReader.getBytes allocates before reading).
+     */
+    static void extract(InputStream inputStream, Mp4BoxHandler handler, long maxBoxSize,
+                        long inputLength) {
         StreamReader reader = new StreamReader(inputStream);
         reader.setMotorolaByteOrder(true);
-        processBoxes(reader, -1, handler, new Mp4Context(), maxBoxSize);
+        processBoxes(reader, -1, handler, new Mp4Context(), maxBoxSize, inputLength, 0);
     }
 
     private static void processBoxes(StreamReader reader, long atomEnd, Mp4Handler<?> handler,
-                                     Mp4Context context, long maxBoxSize) {
+                                     Mp4Context context, long maxBoxSize, long inputLength,
+                                     int depth) {
+        if (depth > MAX_BOX_DEPTH) {
+            handler.addError("MP4 box nesting exceeds the maximum depth of " + MAX_BOX_DEPTH);
+            return;
+        }
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
                 long boxSize = reader.getUInt32();
                 String boxType = reader.getString(4);
-                boolean isLargeSize = boxSize == 1;
-                if (isLargeSize) {
+                //4 bytes size + 4 bytes type, plus 8 more when a 64-bit largesize follows
+                int headerSize = boxSize == 1 ? 16 : 8;
+                if (headerSize == 16) {
                     boxSize = reader.getInt64();
                 }
                 if (boxSize > Integer.MAX_VALUE) {
                     handler.addError("Box size too large.");
                     break;
                 }
-                if (boxSize < 8) {
+                if (boxSize < headerSize) {
                     handler.addError("Box size too small.");
                     break;
                 }
 
+                long payloadLength = boxSize - headerSize;
                 if (acceptContainer(handler, boxType)) {
-                    processBoxes(reader, boxSize + reader.getPosition() - 8,
+                    processBoxes(reader, reader.getPosition() + payloadLength,
                             processBox(handler, boxType, null, boxSize, context), context,
-                            maxBoxSize);
+                            maxBoxSize, inputLength, depth + 1);
                 } else if (acceptBox(handler, boxType)) {
-                    long payloadLength = boxSize - 8;
-                    if (payloadLength > maxBoxSize) {
+                    //StreamReader.getBytes allocates the whole payload up front, so skip
+                    //(a lazy stream advance) any box over the cap, or one that claims more
+                    //than the input holds, instead of allocating it. Skip-and-continue is
+                    //deliberate: unlike the TikaMemoryLimitException other parsers throw,
+                    //this keeps the remaining boxes' metadata; the skip is recorded as a
+                    //warning via the directory's error list.
+                    boolean tooLarge = payloadLength > maxBoxSize;
+                    boolean beyondInput = inputLength >= 0
+                            && reader.getPosition() + payloadLength > inputLength;
+                    if (tooLarge || beyondInput) {
                         handler.addError("MP4 box '" + boxType + "' payload (" + payloadLength
-                                + " bytes) exceeds the maximum of " + maxBoxSize
-                                + " bytes; skipping.");
+                                + " bytes) exceeds the "
+                                + (tooLarge ? "maximum of " + maxBoxSize + " bytes" : "input size")
+                                + "; skipping.");
                         reader.skip(payloadLength);
                     } else {
                         handler = processBox(handler, boxType,
                                 reader.getBytes((int) payloadLength), boxSize, context);
                     }
-                } else if (isLargeSize) {
-                    if (boxSize < 16) {
-                        break;
-                    }
-                    reader.skip(boxSize - 16);
                 } else {
-                    reader.skip(boxSize - 8);
+                    reader.skip(payloadLength);
                 }
             }
         } catch (IOException e) {

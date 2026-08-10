@@ -79,7 +79,7 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
                 //sample entry: 8 byte header, 6 reserved, 2 data ref index,
                 //then version-dependent fixed sound fields before child boxes
                 int version = EndianUtils.getUShortBE(b, pos + 16);
-                int bitRate = findEsdsAverageBitRate(b, pos + soundEntrySize(version), end);
+                int bitRate = findEsdsAverageBitRate(b, pos + soundEntrySize(version), end, 0);
                 if (bitRate > 0) {
                     tikaMetadata.set(Audio.BITRATE, bitRate);
                 }
@@ -114,10 +114,6 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
      * its average bitrate, or 0 if there is none. QuickTime version 1/2
      * entries may nest the 'esds' inside a 'wave' extension box.
      */
-    private static int findEsdsAverageBitRate(byte[] b, int pos, int end) {
-        return findEsdsAverageBitRate(b, pos, end, 0);
-    }
-
     private static int findEsdsAverageBitRate(byte[] b, int pos, int end, int depth) {
         if (depth > MAX_BOX_DEPTH) {
             return 0;

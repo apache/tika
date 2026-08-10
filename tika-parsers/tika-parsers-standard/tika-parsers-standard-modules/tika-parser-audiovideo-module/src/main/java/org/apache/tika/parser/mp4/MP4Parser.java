@@ -125,8 +125,11 @@ public class MP4Parser implements Parser {
         Mp4BoxHandler boxHandler = new TikaMp4BoxHandler(mp4Metadata, metadata, xhtml, context);
         //we used to spool to disk and then read from that with sannies parser.
         //we think that drewnoakes' parser streams the data so we don't need to spool
+        //when the length is known (file-backed), pass it so a box that claims more than
+        //the input holds is skipped rather than allocated
+        long inputLength = tis.hasLength() ? tis.getLength() : -1;
         try {
-            TikaMp4Reader.extract(tis, boxHandler, maxBoxSize);
+            TikaMp4Reader.extract(tis, boxHandler, maxBoxSize, inputLength);
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
         }

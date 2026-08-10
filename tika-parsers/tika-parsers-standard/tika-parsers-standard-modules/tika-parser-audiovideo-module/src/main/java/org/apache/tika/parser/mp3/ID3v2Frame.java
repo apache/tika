@@ -670,8 +670,12 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public boolean hasNext() {
-            // Check for padding at the end
-            return offset < data.length && data[offset] != 0;
+            // Stop at padding, and at a truncated tail too short for a full frame
+            // header: the RawTag constructor reads the header bytes unconditionally,
+            // so without the data.length no longer being zero-padded (TIKA-4812) a
+            // partial header would throw ArrayIndexOutOfBoundsException.
+            return offset + nameLength + sizeLength + flagLength <= data.length
+                    && data[offset] != 0;
         }
 
         public RawTag next() {
