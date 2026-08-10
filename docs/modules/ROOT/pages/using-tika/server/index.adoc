@@ -92,11 +92,8 @@ The server starts on `localhost:9998` by default.
 |`-c <file>` or `--config <file>`
 |Path to `tika-config.json`. See <<_configuration,Configuration>> below.
 
-|`-a <file>` or `--pluginsConfig <file>`
-|Path to the Tika Pipes plugins configuration file.
-
 |`-i <id>` or `--id <id>`
-|Server ID, surfaced in the `/status` endpoint and in logs.
+|Server ID, written to the startup log. Defaults to a random UUID.
 
 |`-?` or `--help`
 |Print the usage message.
@@ -182,7 +179,7 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 === Other endpoints
 
 * `/version` — server version
-* `/status` — health/status (includes server ID)
+* `/status` — health/status: state, active task count, files processed
 * `/parsers` and `/parsers/details` — registered parsers
 * `/detectors` — registered detectors
 * `/mime-types` — known MIME types

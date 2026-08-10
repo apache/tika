@@ -39,7 +39,6 @@ public class TikaServerConfig {
 
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
-    public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
@@ -75,8 +74,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
             .toString();
     private int port = DEFAULT_PORT;
     private String host = DEFAULT_HOST;
-    //debug or info only
-    private String logLevel = "";
+    private String requestLogLevel = "";
     private Path configPath;
     private ArrayList<String> endpoints = new ArrayList<>();
 
@@ -93,7 +91,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
-        Path pluginsConfig = null;
 
         if (commandLine.hasOption("c")) {
             config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
@@ -201,15 +198,19 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.host = host;
     }
 
-    public String getLogLevel() {
-        return logLevel;
+    /**
+     * Severity at which each request URI is logged. Empty (the default) disables
+     * request logging entirely; this does not change the log level of anything else.
+     */
+    public String getRequestLogLevel() {
+        return requestLogLevel;
     }
 
-    public void setLogLevel(String level) throws TikaConfigException {
+    public void setRequestLogLevel(String level) throws TikaConfigException {
         if (level.equals("debug") || level.equals("info")) {
-            this.logLevel = level;
+            this.requestLogLevel = level;
         } else {
-            throw new TikaConfigException("log level must be one of: 'debug' or 'info'");
+            throw new TikaConfigException("requestLogLevel must be one of: 'debug' or 'info'");
         }
     }
 

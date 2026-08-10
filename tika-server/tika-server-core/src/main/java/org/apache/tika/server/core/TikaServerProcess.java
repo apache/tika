@@ -22,14 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -100,7 +97,6 @@ import org.apache.tika.utils.StringUtils;
 public class TikaServerProcess {
 
 
-    public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     public static final int BIND_EXCEPTION = 42;
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
     public static int DO_NOT_RESTART_EXIT_VALUE = -100;
@@ -110,7 +106,6 @@ public class TikaServerProcess {
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
-        options.addOption("a", "pluginsConfig", true, "Tika Configuration json for pluginscomponents");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
         return options;
@@ -316,16 +311,12 @@ public class TikaServerProcess {
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
 
+        // setRequestLogLevel rejects anything but debug/info, so no validation needed here.
         TikaLoggingFilter logFilter = null;
-        if (!StringUtils.isBlank(tikaServerConfig.getLogLevel())) {
-            String logLevel = tikaServerConfig.getLogLevel();
-            if (LOG_LEVELS.contains(logLevel)) {
-                boolean isInfoLevel = "info".equals(logLevel);
-                logFilter = new TikaLoggingFilter(isInfoLevel);
-                writers.add(logFilter);
-            } else {
-                LOG.warn("Unsupported request URI log level: {}", logLevel);
-            }
+        String requestLogLevel = tikaServerConfig.getRequestLogLevel();
+        if (!StringUtils.isBlank(requestLogLevel)) {
+            logFilter = new TikaLoggingFilter("info".equals(requestLogLevel));
+            writers.add(logFilter);
         }
 
         CrossOriginResourceSharingFilter corsFilter = null;
