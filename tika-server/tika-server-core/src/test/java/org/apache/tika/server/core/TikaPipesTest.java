@@ -347,4 +347,5 @@ public class TikaPipesTest extends CXFTestBase {
                 .post(writer.toString());
     }
 
+
 }

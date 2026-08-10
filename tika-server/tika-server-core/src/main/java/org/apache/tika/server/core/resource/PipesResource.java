@@ -98,6 +98,7 @@ public class PipesResource {
     }
 
     private Response processTuple(FetchEmitTuple fetchEmitTuple) throws InterruptedException, PipesException, IOException {
+        PipesParsingHelper.rejectReservedComponentIds(fetchEmitTuple);
         // This parser is shared with /tika+/rmeta+/unpack, whose own default is
         // PASSBACK_ALL. /pipes needs the child to emit via the client's configured
         // emitter by default -- set EMIT_ALL explicitly per-request rather than
@@ -135,7 +136,6 @@ public class PipesResource {
     private Map<String, String> parseException(String msg, boolean emitted) {
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("status", "ok");
-        // 200 response, so trim rather than omit -- same reasoning as redactExceptionDetail.
         statusMap.put("parse_exception", msg);
         statusMap.put("emitted", Boolean.toString(emitted));
         return statusMap;

@@ -106,6 +106,7 @@ public class AsyncResource {
         //the requested fetchers and emitters
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
+            PipesParsingHelper.rejectReservedComponentIds(t);
             if (!emitterManager
                     .getSupported()
                     .contains(t

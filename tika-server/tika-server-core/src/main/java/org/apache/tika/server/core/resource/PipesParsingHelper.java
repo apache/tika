@@ -22,11 +22,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
@@ -379,6 +381,41 @@ public class PipesParsingHelper {
      * pointing to a writable temp directory.
      */
     public static final String UNPACK_EMITTER_ID = "unpack-emitter";
+
+    /**
+     * Fetcher/emitter ids the server wires up for its own request plumbing. Both are rooted at
+     * the server's spool directories, so a caller who names one is reaching into other requests'
+     * in-flight files rather than into storage of their own -- reading a pending upload through
+     * the fetcher, or planting a file the unpack download path will hand back through the
+     * emitter. The ids are not secret; they are compiled in and documented.
+     * <p>
+     * Applies only to caller-supplied tuples (/pipes, /async). This class names them itself when
+     * it builds the tuples for /tika, /rmeta, and /unpack, which is exactly the use being
+     * reserved.
+     */
+    private static final Set<String> RESERVED_COMPONENT_IDS =
+            Set.of(DEFAULT_FETCHER_ID, UNPACK_EMITTER_ID);
+
+    /**
+     * @throws BadRequestException if a caller-supplied tuple names a server-internal component.
+     */
+    public static void rejectReservedComponentIds(FetchEmitTuple t) {
+        checkNotReserved(t.getFetchKey() == null ? null : t.getFetchKey().getFetcherId(), "fetcher");
+        checkNotReserved(t.getEmitKey() == null ? null : t.getEmitKey().getEmitterId(), "emitter");
+        UnpackConfig unpackConfig = t.getParseContext() == null
+                ? null : t.getParseContext().get(UnpackConfig.class);
+        if (unpackConfig != null) {
+            checkNotReserved(unpackConfig.getEmitter(), "emitter");
+        }
+    }
+
+    private static void checkNotReserved(String id, String kind) {
+        if (id != null && RESERVED_COMPONENT_IDS.contains(id)) {
+            throw new BadRequestException(
+                    "'" + id + "' is reserved for tika-server's internal use and may not be named as a "
+                            + kind + " by a request");
+        }
+    }
 
     /**
      * Parses content using UNPACK mode and returns a path to the zip file containing
