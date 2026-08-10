@@ -89,7 +89,7 @@ Usage examples from command line with `curl` utility:
 `curl -T price.xls http://localhost:9998/meta`
 
 * Detect media type from CSV format using file extension hint:  
-`curl -X PUT -H "Content-Disposition: attachment; filename=foo.csv" --upload-file foo.csv http://localhost:9998/detect/stream`
+`curl -X PUT -H "Content-Disposition: attachment; filename=foo.csv" --upload-file foo.csv http://localhost:9998/detect`
 
 
 HTTP Return Codes

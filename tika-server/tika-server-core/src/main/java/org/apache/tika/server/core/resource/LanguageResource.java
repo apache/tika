@@ -41,35 +41,17 @@ public class LanguageResource {
 
     // TIKA-4510: handle @PUT and @POST separately to avoid nondeterministic failures
     @PUT
-    @Path("/stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detectPutStream(final InputStream is) throws IOException {
+    public String detectPut(final InputStream is) throws IOException {
         return detectStream(is);
     }
 
     @POST
-    @Path("/stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detectPostStream(final InputStream is) throws IOException {
+    public String detectPost(final InputStream is) throws IOException {
         return detectStream(is);
-    }
-
-    @PUT
-    @Path("/string")
-    @Consumes("*/*")
-    @Produces("text/plain")
-    public String detectPutString(final String string) throws IOException {
-        return detectString(string);
-    }
-
-    @POST
-    @Path("/string")
-    @Consumes("*/*")
-    @Produces("text/plain")
-    public String detectPostString(final String string) throws IOException {
-        return detectString(string);
     }
 
     /**
@@ -78,11 +60,10 @@ public class LanguageResource {
      * rather than rejected: the answer is the same either way, and rejecting would break
      * callers who legitimately post whole documents.
      * <p>
-     * This bounds the detection, not the request. These endpoints hold the text in the
+     * This bounds the detection, not the request. This endpoint holds the text in the
      * server's own heap instead of a pipes child, so a large enough body still costs
-     * memory before this class sees it -- for the /string variants the body is already a
-     * String by then. Bounding the body itself needs a request-size limit, which the
-     * server does not currently have. See the DoS note in the server docs.
+     * memory before this class sees it. Bounding the body itself needs a request-size
+     * limit, which the server does not currently have. See the DoS note in the server docs.
      */
     public static final int MAX_DETECT_CHARS = 100_000;
 

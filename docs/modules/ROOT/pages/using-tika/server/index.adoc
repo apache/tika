@@ -186,8 +186,8 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 * `/parsers` and `/parsers/details` — registered parsers
 * `/detectors` — registered detectors
 * `/mime-types` — known MIME types
-* `/detect/stream` — type detection only (no parsing)
-* `/language/stream`, `/language/string` — language detection
+* `/detect` — type detection only (no parsing)
+* `/language` — language detection
 * `/pipes`, `/async` — Pipes-based bulk processing
 
 NOTE: `/pipes` and `/async` require `allowPipes` (they drive process-isolated fetching
@@ -197,7 +197,7 @@ is a plain opt-in endpoint — enable it simply by listing it under `endpoints`.
 
 WARNING: `/language` does its work *in the server's own JVM*, not in a forked pipes worker.
 It is therefore outside the process isolation that protects `/tika`, `/rmeta`, `/meta`,
-`/detect/stream`, and `/unpack` — a crash or memory exhaustion takes the server with it rather than
+`/detect`, and `/unpack` — a crash or memory exhaustion takes the server with it rather than
 one worker.
 
 `/language` caps detection at the first 100,000 characters, since accuracy saturates well
@@ -207,7 +207,7 @@ caller can still exhaust the heap with a large enough body, or with enough concu
 Treat it as available only to trusted callers, the same as the rest of the server — see
 xref:security.adoc[the security model]. If you do not need it, omit it from `endpoints`.
 
-NOTE: `/detect/stream` runs in a forked pipes worker like the parsing endpoints. Detection opens
+NOTE: `/detect` runs in a forked pipes worker like the parsing endpoints. Detection opens
 containers — zip, OPC, POIFS — over caller-supplied bytes, so it gets the same isolation,
 timeouts, and worker restart. It does not require `allowPipes`.
 

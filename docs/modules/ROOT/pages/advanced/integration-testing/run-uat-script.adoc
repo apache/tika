@@ -44,12 +44,12 @@ Integration Testing], translated to bash + curl assertions.
 Coverage includes:
 
 * `/version`, `/parsers`, `/detectors`, `/mime-types` (introspection)
-* `/detect/stream` (mime detection)
+* `/detect` (mime detection)
 * `/tika`, `/tika/text`, `/tika/xml`, `/tika/json` (parse)
 * `/meta`, `/meta/\{field}` (metadata)
 * `/rmeta`, `/rmeta/text` (recursive metadata)
 * `/unpack/all` (embedded extraction; verifies the response is a valid zip)
-* `/language/stream`
+* `/language`
 * `/meta/form`, `/rmeta/form` (multipart variants)
 * `allowPerRequestConfig=false` gating, both enforcement points: the path-based
   filter (`/meta/config`, `/rmeta/config`, `/tika/config`, `/unpack/all/config` all

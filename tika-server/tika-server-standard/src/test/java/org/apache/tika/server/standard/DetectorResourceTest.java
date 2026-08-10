@@ -39,7 +39,7 @@ import org.apache.tika.server.core.writer.ZipWriter;
 public class DetectorResourceTest extends CXFTestBase {
 
     private static final String DETECT_PATH = "/detect";
-    private static final String DETECT_STREAM_PATH = DETECT_PATH + "/stream";
+    private static final String DETECT_STREAM_PATH = DETECT_PATH;
     private static final String FOO_CSV = "test-documents/foo.csv";
     private static final String CDEC_CSV_NO_EXT = "test-documents/CDEC_WEATHER_2010_03_02";
 

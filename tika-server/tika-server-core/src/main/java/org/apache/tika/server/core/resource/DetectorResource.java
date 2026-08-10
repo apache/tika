@@ -50,7 +50,6 @@ public class DetectorResource {
     }
 
     @PUT
-    @Path("stream")
     @Consumes("*/*")
     @Produces("text/plain")
     public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {

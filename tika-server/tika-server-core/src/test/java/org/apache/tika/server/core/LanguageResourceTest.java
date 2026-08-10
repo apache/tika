@@ -39,8 +39,8 @@ import org.apache.tika.server.core.writer.ZipWriter;
 public class LanguageResourceTest extends CXFTestBase {
 
     private static final String LANG_PATH = "/language";
-    private static final String LANG_STREAM_PATH = LANG_PATH + "/stream";
-    private static final String LANG_STRING_PATH = LANG_PATH + "/string";
+    private static final String LANG_STREAM_PATH = LANG_PATH;
+    private static final String LANG_STRING_PATH = LANG_PATH;
     private static final String ENGLISH_STRING = "This is English!";
     private static final String FRENCH_STRING = "c'est comme ci comme ça";
 
@@ -158,7 +158,7 @@ public class LanguageResourceTest extends CXFTestBase {
     }
 
     private String detectViaResource(InputStream is) throws Exception {
-        return new LanguageResource().detectPutStream(is);
+        return new LanguageResource().detectPut(is);
     }
 
     private static class CountingInputStream extends java.io.FilterInputStream {

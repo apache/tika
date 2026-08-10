@@ -97,6 +97,18 @@ These endpoints were never usable as shipped. Every request had to name a fully-
 
 **Migration:** Call the translation service you use directly, or invoke `tika-translate` from your own code. Tika's translation support is unaffected; only the server endpoints are gone.
 
+=== Renamed Endpoints
+
+==== `/detect/stream` is now `/detect`
+
+==== `/language/stream` and `/language/string` are now both `/language`
+
+The `/stream` and `/string` suffixes never described anything a caller could choose between. Every one of these endpoints has always taken the request body and `@Consumes("*/*")`; the two `/language` paths differed only in whether JAX-RS bound the body to a `String` or an `InputStream`, and both then ran the identical detection. The suffixes existed to disambiguate Java method signatures, not to offer an option.
+
+Collapsing them also removes the `/detect/stream` vs `/detectors` near-collision. `/detectors` is unchanged -- it lists the server's configured detectors and does not detect anything.
+
+**Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies, headers, and responses are unchanged.
+
 === Error Response Bodies Are Now JSON
 
 In 3.x, error responses from `/tika`, `/rmeta`, and `/unpack` returned a plain-text
