@@ -55,7 +55,7 @@ public class JsonMaxFieldLengthTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }

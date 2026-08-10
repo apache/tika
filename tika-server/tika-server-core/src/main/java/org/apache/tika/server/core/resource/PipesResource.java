@@ -52,18 +52,15 @@ public class PipesResource {
     private static final Logger LOG = LoggerFactory.getLogger(PipesResource.class);
 
     private final PipesParser pipesParser;
-    private final boolean returnStackTrace;
 
     /**
      * @param pipesParser shared parser, also used by /tika, /rmeta, and /unpack.
      *                     Lifecycle (construction, shutdown) is owned by whoever
      *                     built it, not by this class.
-     * @param returnStackTrace whether parse_exception may include the full stack trace
      *                         vs. just the first line.
      */
-    public PipesResource(PipesParser pipesParser, boolean returnStackTrace) {
+    public PipesResource(PipesParser pipesParser) {
         this.pipesParser = pipesParser;
-        this.returnStackTrace = returnStackTrace;
     }
 
 
@@ -135,7 +132,7 @@ public class PipesResource {
         Map<String, String> statusMap = new HashMap<>();
         statusMap.put("status", "ok");
         // 200 response, so trim rather than omit -- same reasoning as redactExceptionDetail.
-        statusMap.put("parse_exception", PipesParsingHelper.summarizeStackTrace(msg, returnStackTrace));
+        statusMap.put("parse_exception", msg);
         statusMap.put("emitted", Boolean.toString(emitted));
         return statusMap;
     }

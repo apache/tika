@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -73,7 +72,6 @@ public class PipesParsingHelper {
     private final PipesConfig pipesConfig;
     private final Path inputTempDirectory;
     private final Path unpackEmitterBasePath;
-    private final boolean returnStackTrace;
 
     /**
      * Creates a PipesParsingHelper.
@@ -85,19 +83,13 @@ public class PipesParsingHelper {
      * @param unpackEmitterBasePath the basePath where the unpack-emitter writes files.
      *                              This is where the server will find the zip files created
      *                              by UNPACK mode. May be null if UNPACK mode won't be used.
-     * @param returnStackTrace whether failure responses may include the (potentially
-     *                         stack-trace-bearing) {@code PipesResult} message. When false
-     *                         (the default), error bodies carry only the status. Mirrors
-     *                         {@code TikaServerConfig.isReturnStackTrace()}.
      */
     public PipesParsingHelper(PipesParser pipesParser, PipesConfig pipesConfig,
-                              Path inputTempDirectory, Path unpackEmitterBasePath,
-                              boolean returnStackTrace) {
+                              Path inputTempDirectory, Path unpackEmitterBasePath) {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
         this.inputTempDirectory = inputTempDirectory;
         this.unpackEmitterBasePath = unpackEmitterBasePath;
-        this.returnStackTrace = returnStackTrace;
 
         if (inputTempDirectory == null || !Files.isDirectory(inputTempDirectory)) {
             throw new IllegalArgumentException(
@@ -170,7 +162,6 @@ public class PipesParsingHelper {
 
             // Process result
             List<Metadata> metadataList = processResult(result);
-            redactExceptionDetail(metadataList);
             return metadataList;
 
         } catch (InterruptedException e) {
@@ -209,9 +200,9 @@ public class PipesParsingHelper {
      * Builds a JSON error response carrying a subset of the {@code PipesResult}
      * serialization. By default the body is just {@code {"status": "TIMEOUT"}}. The
      * {@code PipesResult} message frequently contains a server-side stack trace
-     * (e.g. for {@code *_EXCEPTION} statuses), so the {@code message} field is included
-     * only when {@code returnStackTrace} is enabled — matching the legacy
-     * {@code TikaServerParseExceptionMapper}, which gates stack traces the same way.
+     * (e.g. for {@code *_EXCEPTION} statuses) and is included: exception detail already
+     * travels in {@code tk:exception:*} metadata on successful parses, so withholding it
+     * here bought nothing while implying a confidentiality boundary that did not exist.
      * Successful-parse fields such as {@code emitData} are never part of an error body.
      * <p>
      * This allows clients to distinguish failure modes (TIMEOUT, OOM, UNSPECIFIED_CRASH, …)
@@ -221,7 +212,7 @@ public class PipesParsingHelper {
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("status", result.status().name());
-        if (returnStackTrace && result.message() != null && !result.message().isBlank()) {
+        if (result.message() != null && !result.message().isBlank()) {
             node.put("message", result.message());
         }
         String json;
@@ -284,39 +275,6 @@ public class PipesParsingHelper {
         return Collections.emptyList();
     }
 
-    /**
-     * Trims CONTAINER_EXCEPTION/EMBEDDED_EXCEPTION to one line unless returnStackTrace is
-     * on -- unlike buildProcessFailureResponse's family, a 200 response has no other way
-     * to signal a per-document exception, so we can't omit these fields entirely.
-     */
-    private void redactExceptionDetail(List<Metadata> metadataList) {
-        if (returnStackTrace || metadataList == null) {
-            return;
-        }
-        for (Metadata m : metadataList) {
-            summarizeInPlace(m, TikaCoreProperties.CONTAINER_EXCEPTION);
-            summarizeInPlace(m, TikaCoreProperties.EMBEDDED_EXCEPTION);
-        }
-    }
-
-    private static void summarizeInPlace(Metadata m, Property property) {
-        String full = m.get(property);
-        if (full != null) {
-            m.set(property, summarizeStackTrace(full, false));
-        }
-    }
-
-    /**
-     * First line of a stack trace (the caught exception's own class + message); no-op if
-     * returnStackTrace.
-     */
-    public static String summarizeStackTrace(String fullTrace, boolean returnStackTrace) {
-        if (returnStackTrace || fullTrace == null || fullTrace.isBlank()) {
-            return fullTrace;
-        }
-        int newline = fullTrace.indexOf('\n');
-        return newline < 0 ? fullTrace : fullTrace.substring(0, newline);
-    }
 
     /**
      * Maps PipesResult status to HTTP response status.
@@ -351,13 +309,6 @@ public class PipesParsingHelper {
         return pipesParser;
     }
 
-    /**
-     * Whether failure responses may include the (potentially stack-trace-bearing)
-     * {@code PipesResult} message. Mirrors {@code TikaServerConfig.isReturnStackTrace()}.
-     */
-    public boolean isReturnStackTrace() {
-        return returnStackTrace;
-    }
 
     /**
      * Gets the PipesConfig instance.
@@ -487,10 +438,8 @@ public class PipesParsingHelper {
                 Metadata containerMetadata = metadataList.get(0);
                 String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
                 if (containerException != null) {
-                    // 422 already signals failure, so (unlike redactExceptionDetail's
-                    // 200 family) the body can be omitted entirely when off.
                     Response response = Response.status(422)
-                            .entity(returnStackTrace ? containerException : "")
+                            .entity(containerException)
                             .type("text/plain")
                             .build();
                     throw new WebApplicationException(response);

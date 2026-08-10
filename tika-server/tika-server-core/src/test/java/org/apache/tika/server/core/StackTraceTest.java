@@ -67,11 +67,6 @@ public class StackTraceTest extends CXFTestBase {
     @TempDir
     private static Path unpackTempDir;
 
-    @Override
-    protected boolean isReturnStackTrace() {
-        // Matches this class's own TikaServerParseExceptionMapper(true) below.
-        return true;
-    }
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -87,7 +82,7 @@ public class StackTraceTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(true));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         //providers.add(new XMPMessageBodyWriter());

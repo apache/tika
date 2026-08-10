@@ -70,7 +70,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private boolean allowPipes = false;
     private boolean allowPerRequestConfig = false;
     private String cors = "";
-    private boolean returnStackTrace = false;
     private String idBase = UUID
             .randomUUID()
             .toString();
@@ -268,13 +267,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.digest = digest;
     }
 
-    public boolean isReturnStackTrace() {
-        return returnStackTrace;
-    }
-
-    public void setReturnStackTrace(boolean returnStackTrace) {
-        this.returnStackTrace = returnStackTrace;
-    }
 
     public TlsConfig getTlsConfig() {
         return tlsConfig;

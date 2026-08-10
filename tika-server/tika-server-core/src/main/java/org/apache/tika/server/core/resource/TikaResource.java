@@ -815,8 +815,7 @@ public class TikaResource {
             }
         }
         // No separate field for the exception here, unlike JSON bodies -- append it,
-        // gated by returnStackTrace like TikaServerParseExceptionMapper.
-        if (hasException && pipesParsingHelper != null && pipesParsingHelper.isReturnStackTrace()) {
+        if (hasException) {
             content = content.isEmpty() ? exceptionMessage : content + "\n" + exceptionMessage;
         }
         final String finalContent = content;

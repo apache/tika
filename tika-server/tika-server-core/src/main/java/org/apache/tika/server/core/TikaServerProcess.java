@@ -309,7 +309,7 @@ public class TikaServerProcess {
         writers.add(new JSONMessageBodyWriter());
         writers.add(new TextMessageBodyWriter());
         writers.addAll(loadWriterServices());
-        writers.add(new TikaServerParseExceptionMapper(tikaServerConfig.isReturnStackTrace()));
+        writers.add(new TikaServerParseExceptionMapper());
         writers.add(new JSONObjWriter());
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
@@ -431,7 +431,7 @@ public class TikaServerProcess {
             // not by PipesResource.
             PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
             resourceProviders.add(new SingletonResourceProvider(
-                    new PipesResource(helper.getPipesParser(), helper.isReturnStackTrace())));
+                    new PipesResource(helper.getPipesParser())));
         }
         resourceProviders.addAll(loadResourceServices(serverStatus));
         return resourceProviders;
@@ -536,7 +536,7 @@ public class TikaServerProcess {
 
         // Create and return the helper
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
-                inputTempDirectory, unpackTempDirectory, tikaServerConfig.isReturnStackTrace());
+                inputTempDirectory, unpackTempDirectory);
 
         // Register shutdown hook to clean up PipesParser and temp directories
         final Path inputDirToClean = inputTempDirectory;

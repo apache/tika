@@ -215,7 +215,7 @@ public abstract class CXFTestBase {
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
-                    inputTempDirectory, getUnpackEmitterBasePath(), isReturnStackTrace());
+                    inputTempDirectory, getUnpackEmitterBasePath());
 
             tikaResource = new TikaResource(tika, new ServerStatus(), pipesParsingHelper, isAllowPerRequestConfig());
         } finally {
@@ -378,12 +378,9 @@ public abstract class CXFTestBase {
     }
 
     /**
-     * Mirrors TikaServerConfig.isReturnStackTrace(); defaults to false (production
+     * Mirrors TikaServerConfig.; defaults to false (production
      * default). Override in tests that exercise exception-detail visibility.
      */
-    protected boolean isReturnStackTrace() {
-        return false;
-    }
 
     protected InputStream getPipesConfigInputStream() throws IOException {
         if (getPipesInputPath() == null) {

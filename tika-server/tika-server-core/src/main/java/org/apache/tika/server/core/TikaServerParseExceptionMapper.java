@@ -34,10 +34,8 @@ import org.apache.tika.exception.UnsupportedFormatException;
 @Provider
 public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServerParseException> {
 
-    private final boolean returnStack;
 
-    public TikaServerParseExceptionMapper(boolean returnStack) {
-        this.returnStack = returnStack;
+    public TikaServerParseExceptionMapper() {
     }
 
     public Response toResponse(TikaServerParseException e) {
@@ -72,7 +70,7 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     private Response buildResponse(Throwable cause, int i) {
-        if (returnStack && cause != null) {
+        if (cause != null) {
             Writer result = new StringWriter();
             PrintWriter writer = new PrintWriter(result);
             cause.printStackTrace(writer);

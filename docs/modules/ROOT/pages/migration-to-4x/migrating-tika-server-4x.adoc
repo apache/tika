@@ -100,8 +100,8 @@ at least a `status` field:
 {"status": "TIMEOUT"}
 ----
 
-When the server is configured with `returnStackTrace=true`, a `message` field is also
-included (it may contain a server-side stack trace), e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
+A `message` field is included when one is available and may contain a server-side stack
+trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 The HTTP status codes are also more precise:
 
@@ -132,8 +132,7 @@ xref:using-tika/server/index.adoc#_error_responses[Error Responses]):
 **Migration:** clients that treated any non-`200` from `/meta` as "parse failed"
 should check the new status codes above. Clients that inspected the response body
 for error text should check `tk:exception:container-exception` (full-object
-endpoints) or the `422` body (`/meta/\{field}`, populated only when
-`returnStackTrace=true`).
+endpoints) or the `422` body (`/meta/\{field}`).
 
 Two changes to the returned metadata come with this, neither of which produces an
 error:
@@ -171,6 +170,13 @@ The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit pa
 === Removed Configuration Options
 
 The following `TikaServerConfig` options have been removed:
+
+* `returnStackTrace` - Removed as misleading. It gated only the error-response body, while
+  exception detail — including messages carrying file paths and document fragments —
+  continued to travel in `tk:exception:*` metadata on successful parses and inside
+  `/unpack` zips. Setting it to `false` did not keep stack traces inside the server, which
+  is what the name implied. Exception detail is now always returned; filter Tika's output
+  with a `MetadataFilter` before forwarding it somewhere less trusted.
 
 * `taskTimeoutMillis` - Now configured via `parse-context.timeout-limits.progressTimeoutMillis` (and optionally `totalTaskTimeoutMillis`); see xref:pipes/timeouts.adoc[Timeouts].
 * `taskPulseMillis` - No longer needed

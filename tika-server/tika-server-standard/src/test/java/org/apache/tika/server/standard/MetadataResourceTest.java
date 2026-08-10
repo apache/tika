@@ -75,7 +75,7 @@ public class MetadataResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         // Needed by getMetadataField's TikaServerParseException throw.
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());

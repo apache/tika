@@ -213,9 +213,8 @@ JSON body whose shape matches the `PipesResult` status:
 {"status": "TIMEOUT"}
 ----
 
-The `status` field is the `PipesResult.RESULT_STATUS` enum name. By default the body
-carries only the `status`. When the server is configured with `returnStackTrace=true`,
-a `message` field is also included (it often contains a server-side stack trace), e.g.
+The `status` field is the `PipesResult.RESULT_STATUS` enum name. A `message` field is
+included when one is available, and often contains a server-side stack trace, e.g.
 `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 [cols="1,1,3"]
@@ -284,13 +283,24 @@ any files already unpacked before the exception are discarded. This is a known
 gap, not yet addressed.
 |===
 
-By default (`returnStackTrace=false`), any exception text exposed this way is trimmed
-to just the exception's class and message — not the full stack trace, which can
-reveal internal file paths and library internals. For the `200 OK` family the
-trimmed field is still always present when a failure occurred, so callers can detect
-it either way; for the `422` family, the body carries no exception text at all unless
-`returnStackTrace=true`. Set `returnStackTrace=true` to get the full trace — useful
-in development, best left off in production.
+[IMPORTANT]
+====
+Exception detail is returned in full, and Tika does not redact it.
+
+Stack traces and their messages can contain the spooled file's path, the source
+filename, and fragments of the document. That detail appears in `tk:exception:*`
+metadata on **successful** parses as well as in error bodies — including inside the
+`*.metadata.json` entries of an `/unpack` zip — so there is no single switch that keeps
+it inside the server.
+
+A `returnStackTrace` setting previously suggested otherwise. It governed only the error
+body, left the metadata untouched, and has been removed rather than left in place
+implying a boundary it did not provide.
+
+If Tika's output is forwarded somewhere less trusted than the server itself, filter it
+on the way out: configure a `MetadataFilter` to drop the fields you do not want, and
+treat the whole response as potentially containing document-derived text.
+====
 
 == Configuration
 
@@ -317,10 +327,6 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`cors`
 |`""` (off)
 |`*` to allow any origin, or an explicit origin string. Empty disables CORS.
-
-|`returnStackTrace`
-|`false`
-|Include parser stack traces in error responses. Useful in dev, dangerous in production (leaks internals).
 
 |`digest`
 |`""` (off)

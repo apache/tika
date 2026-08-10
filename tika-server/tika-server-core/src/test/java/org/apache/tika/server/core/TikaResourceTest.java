@@ -55,7 +55,7 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -109,11 +109,12 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        // returnStackTrace defaults to false here, so CONTAINER_EXCEPTION is trimmed to
-        // the caught exception's own class + message -- the NPE detail underneath it is
-        // intentionally not exposed by default.
+        // Exception detail is reported in full. Tika does not redact it: any scheme that
+        // strips the message has to parse the rendered trace, and it would in any case be
+        // undone by the same detail travelling in tk:exception:* on other responses. Filter
+        // metadata before forwarding it somewhere less trusted.
         assertContains("TikaException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
-        assertNotFound("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test
