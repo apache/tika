@@ -71,6 +71,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private boolean allowPerRequestConfig = false;
     private String cors = "";
     private boolean returnStackTrace = false;
+    private long maxRequestSizeBytes = -1;
     private String idBase = UUID
             .randomUUID()
             .toString();
@@ -266,6 +267,18 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     public void setDigest(String digest) {
         LOG.info("As of Tika 2.5.0, you can set the digester via the AutoDetectParserConfig in " + "tika-config.xml. We plan to remove this commandline option in 2.8.0");
         this.digest = digest;
+    }
+
+    /**
+     * Maximum request body in bytes. Negative (the default) means no limit; tika-server
+     * spools uploads to disk, so an unbounded value lets a caller fill the temp directory.
+     */
+    public long getMaxRequestSizeBytes() {
+        return maxRequestSizeBytes;
+    }
+
+    public void setMaxRequestSizeBytes(long maxRequestSizeBytes) {
+        this.maxRequestSizeBytes = maxRequestSizeBytes;
     }
 
     public boolean isReturnStackTrace() {

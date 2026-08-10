@@ -314,6 +314,7 @@ public class TikaServerProcess {
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
+        writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes()));
 
         TikaLoggingFilter logFilter = null;
         if (!StringUtils.isBlank(tikaServerConfig.getLogLevel())) {
