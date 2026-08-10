@@ -30,8 +30,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jakarta.ws.rs.core.MultivaluedHashMap;
-import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -173,24 +171,6 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList
                 .get(10)
                 .get("tk:digest:MD5"));
-    }
-
-    @Test
-    public void testHeaders() throws Exception {
-        MultivaluedMap<String, String> map = new MultivaluedHashMap<>();
-        map.addAll("meta_mymeta", "first", "second", "third");
-
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .headers(map)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals("first,second,third", metadataList
-                .get(0)
-                .get("mymeta"));
     }
 
     @Test

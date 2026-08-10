@@ -76,12 +76,6 @@ import org.apache.tika.server.core.TikaServerParseException;
 public class TikaResource {
 
     public static final String GREETING = "This is Tika Server (" + Tika.getString() + "). Please PUT\n";
-    /**
-     * Header to specify the handler type for content extraction.
-     * Valid values: text, html, xml, markdown, ignore (default: text)
-     */
-    public static final String HANDLER_TYPE_HEADER = "X-Tika-Handler";
-    private static final String META_PREFIX = "meta_";
     private static final Logger LOG = LoggerFactory.getLogger(TikaResource.class);
 
     // Instance (not static): production only ever creates one CXF server -- and so
@@ -211,6 +205,15 @@ public class TikaResource {
             mediaType = null;
         }
 
+        // Transport content types, not statements about the document: curl sends
+        // x-www-form-urlencoded by default for --data-binary, and multipart/form-data
+        // describes the envelope rather than the file inside it.
+        if (mediaType != null
+                && (mediaType.equals(jakarta.ws.rs.core.MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+                || mediaType.equals(jakarta.ws.rs.core.MediaType.MULTIPART_FORM_DATA_TYPE))) {
+            mediaType = null;
+        }
+
         if (mediaType != null) {
             metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
             metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
@@ -218,19 +221,6 @@ public class TikaResource {
 
         if (httpHeaders.containsKey("Content-Length")) {
             metadata.set(Metadata.CONTENT_LENGTH, httpHeaders.getFirst("Content-Length"));
-        }
-
-        for (Map.Entry<String, List<String>> e : httpHeaders.entrySet()) {
-            if (e
-                    .getKey()
-                    .startsWith(META_PREFIX)) {
-                String tikaKey = e
-                        .getKey()
-                        .substring(META_PREFIX.length());
-                for (String value : e.getValue()) {
-                    metadata.add(tikaKey, value);
-                }
-            }
         }
     }
 

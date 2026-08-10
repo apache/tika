@@ -151,6 +151,75 @@ The following `TikaServerConfig` options have been removed:
 * `taskPulseMillis` - No longer needed
 * `minimumTimeoutMillis` - No longer needed
 
+=== Configuration via HTTP Headers Removed
+
+4.x configures parsing through the tika-config file, not through request headers.
+The remaining per-request configuration headers have been removed and are now
+**silently ignored** if sent — the request succeeds, the header has no effect:
+
+|===
+|Removed header |Replacement
+
+|`writeLimit`
+|`parse-context.output-limits.writeLimit`
+
+|`throwOnWriteLimitReached`
+|`parse-context.output-limits.throwOnWriteLimit`
+
+|`maxEmbeddedResources`, `maxEmbeddedCount`
+|`parse-context.embedded-limits.maxCount`
+
+|`meta_*` (arbitrary metadata injection)
+|_no replacement_ — see below
+
+|`X-Tika-Handler`
+|Use an explicit handler path (`/tika/text`, `/rmeta/xml`, `/tika/json/html`, ...)
+|===
+
+The `X-Tika-OCR*` and `X-Tika-PDF*` header families were removed earlier in the
+4.x line. Parser configuration is now supplied as JSON.
+
+[source,json]
+----
+{
+  "parse-context": {
+    "output-limits": {
+      "writeLimit": 100000,
+      "throwOnWriteLimit": false
+    },
+    "embedded-limits": {
+      "maxCount": 10
+    }
+  }
+}
+----
+
+**Migration:** move these settings into your tika-config. For per-request values,
+POST to a `/config` endpoint (`/tika/config`, `/tika/config/json`, `/rmeta/config`,
+`/meta/config`) with the JSON above as the multipart `config` part; this requires
+`allowPerRequestConfig=true`.
+
+[IMPORTANT]
+====
+Two capabilities are genuinely gone, not relocated.
+
+**Per-request output bounds without `allowPerRequestConfig`.** With the headers
+removed and per-request config off by default, a caller can no longer bound the
+output of a single request; the limits are whatever the operator configured. If
+you relied on clients setting their own `writeLimit`, either enable
+`allowPerRequestConfig` or set a server-wide limit.
+
+**Client-supplied metadata (`meta_*`).** Headers prefixed `meta_` were copied
+into the returned metadata under the remainder of the header name, with no key
+restrictions — so a request could also overwrite keys Tika itself populates.
+There is no replacement on the push endpoints; attach provenance on your side of
+the call, or use `/pipes`, where the `FetchEmitTuple` carries metadata.
+====
+
+Transport headers are unaffected: `Content-Disposition`/`File-Name`,
+`Content-Type` and `Content-Length` still describe the payload and still
+influence detection.
+
 === Removed Features
 
 * **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
