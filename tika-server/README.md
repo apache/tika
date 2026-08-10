@@ -33,8 +33,7 @@ $ java -jar tika-server/target/tika-server.jar --help
 ```
 
 Everything beyond host, port and id is configured in the tika-config JSON file
-passed with `-c`, not on the command line. See
-[Configuration](https://tika.apache.org/configuration/index.html).
+passed with `-c`, not on the command line.
 
 Running via Docker
 ------------------
@@ -50,8 +49,8 @@ Note the `127.0.0.1:` prefix. Unlike the jar, which binds `localhost` by default
 the Docker images start the server with `-h 0.0.0.0`, so publishing the port
 without an explicit interface exposes it on every interface of the host.
 tika-server performs no authentication and parses untrusted files; only expose it
-on a trusted, access-controlled network. See
-[Security](https://tika.apache.org/security.html).
+on a trusted, access-controlled network. See the
+[Tika Security Model](https://tika.apache.org/security-model.html).
 
 You may also be interested in the https://github.com/apache/tika-docker project
 which provides prebuilt Docker images.
