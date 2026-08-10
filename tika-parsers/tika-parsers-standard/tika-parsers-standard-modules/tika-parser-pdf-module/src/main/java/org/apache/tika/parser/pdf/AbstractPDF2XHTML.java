@@ -562,7 +562,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName());
-        if (!ocrParser.getSupportedTypes(context).contains(ocrImageMediaType)) {
+        Set<MediaType> supportedTypes = ocrParser.getSupportedTypes(context);
+        if (supportedTypes == null || !supportedTypes.contains(ocrImageMediaType)) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
                         "" + "I regret that I couldn't find an OCR parser to handle " +

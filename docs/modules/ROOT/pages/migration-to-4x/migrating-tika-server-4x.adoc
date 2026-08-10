@@ -135,6 +135,31 @@ for error text should check `tk:exception:container-exception` (full-object
 endpoints) or the `422` body (`/meta/\{field}`, populated only when
 `returnStackTrace=true`).
 
+Two changes to the returned metadata come with this, neither of which produces an
+error:
+
+* **`/meta` no longer returns a `language` field.** Language detection previously ran
+  inline on this endpoint via a dedicated content handler that buffered text solely to
+  detect the language, which meant holding the document text twice to populate one
+  field. That handler was removed. `/meta` deliberately parses with the `ignore`
+  content handler, so there is no text for a language detector to work from.
++
+**Migration:** configure a language-detection metadata filter
+(`charsoup-metadata-filter`, `optimaize`, or `opennlp`) and use `/rmeta` or
+`/tika/json`, which capture content. The detected value arrives as
+`tk:detected-language`, with `tk:detected-language-confidence`. Note that these
+filters read `tk:content`, so they are no-ops on `/meta` and on any endpoint
+configured with the `ignore` handler.
+
+* **`/meta` now sets `tk:exception:embedded-depth-limit-reached` on any document
+  with embedded content.** `/meta` suppresses embedded parsing by setting an embedded
+  depth limit of `0`, and reaching a limit is recorded. The previous implementation
+  suppressed embedded documents by a different mechanism that recorded nothing. The
+  flag is expected on this endpoint and does not indicate a truncated result.
++
+**Migration:** clients that alert on the presence of any `tk:exception:*` key should
+exclude this one for `/meta`.
+
 === Accept Header Routing Removed
 
 The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit paths instead:
@@ -226,7 +251,24 @@ influence detection.
 
 === `/pipes` and `/async` Require `allowPipes`; Per-Request Config Requires `allowPerRequestConfig`
 
-Previously these endpoints (and per-request parser configuration) were enabled simply by listing endpoints under `server.endpoints`. The capabilities are now split into two default-`false` flags in the `server` section:
+This replaces the `enableUnsecureFeatures` flag that alpha-1 briefly used, and before
+that, enabling these capabilities simply by listing endpoints under `server.endpoints`.
+`enableUnsecureFeatures` no longer exists: a config that still carries it fails to start
+with an "Unrecognized field" error naming the key, rather than silently ignoring it.
+The single flag has been split into two, so that granting batch/fetcher access and
+granting per-request parser configuration are separate decisions:
+
+|===
+|Was |Now
+
+|`enableUnsecureFeatures: true` (to use `/pipes` or `/async`)
+|`allowPipes: true`
+
+|`enableUnsecureFeatures: true` (to send per-request config)
+|`allowPerRequestConfig: true`
+|===
+
+The capabilities are two default-`false` flags in the `server` section:
 
 * `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
 * `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
@@ -258,7 +300,7 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
   "fetchers": {
     "file-system-fetcher": {
       "file-system-fetcher": {
-        "allowAbsolutePaths": true
+        "basePath": "/path/to/your/input"
       }
     }
   },
@@ -273,6 +315,23 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
   "plugin-roots": "path/to/plugins"
 }
 ----
+
+[IMPORTANT]
+====
+Set `basePath` to a directory that contains only the documents you intend the
+server to read. It is the filesystem sandbox: the fetcher rejects any fetch key
+that resolves outside it, including absolute paths and `../` traversal, and
+re-checks after resolving symlinks.
+
+Setting `allowAbsolutePaths` instead of `basePath` turns that sandbox off
+entirely — fetch keys are then used as raw absolute paths, so any caller who can
+reach `/pipes` can read any file the server process can read. The matching
+emitter setting is worse: it grants arbitrary file *write*. `allowAbsolutePaths`
+is not a relaxation of `basePath`; it is what you get when there is no
+`basePath` at all, and it is a no-op when `basePath` is set. Use it only if you
+genuinely intend an unsandboxed fetcher and have restricted access to the server
+by other means.
+====
 
 [IMPORTANT]
 ====

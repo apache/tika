@@ -81,8 +81,8 @@ The outer key (`fsf`) is the fetcher ID — referenced by `pipesIterator.fetcher
 |Field |Default |Description
 
 |`basePath`
-|_required_
-|Base directory for fetch operations. Fetch keys are resolved relative to this path.
+|_none_
+|Base directory for fetch operations. Fetch keys are resolved relative to this path and must stay inside it. Not technically required, but omitting it disables containment entirely — see `allowAbsolutePaths` below and <<security-notes>>.
 
 |`extractFileSystemMetadata`
 |`false`
@@ -90,7 +90,7 @@ The outer key (`fsf`) is the fetcher ID — referenced by `pipesIterator.fetcher
 
 |`allowAbsolutePaths`
 |`false`
-|When `true`, fetch keys may be absolute paths and `basePath` may be omitted. Use sparingly — see <<security-notes>>.
+|Permission to run *without* a `basePath`. It is not a relaxation of `basePath` — see <<security-notes>>.
 |===
 
 [#file-system-emitter]
@@ -253,6 +253,7 @@ Tradeoffs:
 [#security-notes]
 == Security Notes
 
-* **`basePath` is a sandbox boundary.** The fetcher and emitter reject fetch/emit keys that resolve outside `basePath`. Do not set `allowAbsolutePaths=true` unless the source of fetch keys is fully trusted — an attacker-controlled fetch key could otherwise read arbitrary files.
-* **Symlinks are followed.** A symlink under `basePath` pointing outside `basePath` may still be readable. If you need strict containment, do not allow symlinks in your input tree.
+* **`basePath` is the sandbox boundary, and it is the only one.** With `basePath` set, the fetcher and emitter reject any key that resolves outside it, including absolute paths and `../` traversal. `allowAbsolutePaths` has no effect in this state.
+* **Without `basePath` there is no containment at all.** The key is used as a raw absolute path, and the containment checks are skipped entirely. `allowAbsolutePaths=true` is how you assert that you intend this; it is a switch between two states, not a dial that loosens `basePath`. For the fetcher this means any file the process can read; for the emitter, any file it can write. Use it only when fetch/emit keys come from a fully trusted source and access to the service is restricted by other means.
+* **Symlink containment differs between fetcher and emitter.** The fetcher re-checks with `toRealPath()`, so a symlink under `basePath` pointing outside it is rejected. The emitter does not: it checks only the normalized path, so a symlink already present under its `basePath` can be written through. Do not rely on symlinks being contained on the emit side.
 * **Output directories are created automatically.** The emitter creates intermediate directories as needed. Make sure the process's umask is appropriate for the data being written.
