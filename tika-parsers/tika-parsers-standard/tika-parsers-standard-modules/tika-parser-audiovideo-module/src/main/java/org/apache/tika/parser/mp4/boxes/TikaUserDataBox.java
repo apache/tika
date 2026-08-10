@@ -191,6 +191,11 @@ public class TikaUserDataBox {
                 } else if ("cpil".equals(fieldName)) {
                     int compilationId = (int)reader.getByte();
                     metadata.set(XMPDM.COMPILATION, compilationId);
+                    //consume the rest of the declared field: totalRead counts toRead,
+                    //but only 1 byte was read, so skip the remainder to stay aligned
+                    if (toRead > 1) {
+                        reader.skip(toRead - 1L);
+                    }
                 } else if ("trkn".equals(fieldName)) {
                     if (toRead == 8) {
                         long numA = reader.getUInt32();
