@@ -74,6 +74,14 @@ may be bound from the wire; `Parser`, `Detector`, `Renderer`, and similar are
 blocked before anything is constructed. See
 xref:developers/serialization.adoc[Serialization and Configuration].
 
+Note the boundary: the allowlist blocks *binding a component* from the wire, not
+*configuring one that is already loaded*. Self-configuring components — every
+`Parser` among them — have their config subtree passed through unscanned, so a
+per-request config can still set parser options (including ones that spawn
+external processes, such as OCR). This is why `allowPerRequestConfig` is a
+separate gate and is off by default; the allowlist alone does not make
+per-request configuration safe to expose.
+
 === Implementation Challenges
 
 * Converted code to true Java beans with matching getters/setters
