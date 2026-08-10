@@ -123,6 +123,12 @@ public class TikaUserDataBox {
         //this handles "free" types...not sure if there are others?
         //will throw IOException if no ilist is found
         while (! subType.equals(ILST)) {
+            //re-validate each re-read length: len < 8 makes skip(len - 8) negative,
+            //which throws IllegalArgumentException (not IOException, so it escapes
+            //MP4Reader). See TIKA-4812.
+            if (len < 8L || len >= Integer.MAX_VALUE) {
+                return;
+            }
             reader.skip(len - 8);
             len = reader.getUInt32();
             subType = reader.getString(4, StandardCharsets.ISO_8859_1);

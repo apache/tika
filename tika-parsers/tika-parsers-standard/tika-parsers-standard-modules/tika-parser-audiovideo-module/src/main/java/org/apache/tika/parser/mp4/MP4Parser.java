@@ -31,7 +31,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.drew.imaging.mp4.Mp4Reader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.mp4.Mp4BoxHandler;
@@ -77,6 +76,14 @@ public class MP4Parser implements Parser {
     private static final MediaType AUDIO_MP4 = MediaType.audio("mp4");
 
     private static final int MAX_ERROR_MESSAGES = 100;
+
+    //an accepted MP4 box whose declared payload exceeds this is skipped rather than
+    //loaded, so a crafted box size cannot force a multi-GB allocation. Cover art and
+    //other legitimate metadata boxes are well under this; configurable if a real file
+    //needs more. See TikaMp4Reader and TIKA-4812.
+    private static final long DEFAULT_MAX_BOX_SIZE = 100L * 1024L * 1024L;
+
+    private long maxBoxSize = DEFAULT_MAX_BOX_SIZE;
     static {
         // All types should be 4 bytes long, space padded as needed
         typesMap.put(MediaType.audio("mp4"), Arrays.asList("M4A ", "M4B ", "F4A ", "F4B "));
@@ -95,6 +102,19 @@ public class MP4Parser implements Parser {
         return SUPPORTED_TYPES;
     }
 
+    /**
+     * The maximum declared payload, in bytes, of an accepted MP4 box that will be
+     * read into memory; larger boxes are skipped. Guards against a crafted box size
+     * forcing a multi-GB allocation.
+     */
+    public long getMaxBoxSize() {
+        return maxBoxSize;
+    }
+
+    public void setMaxBoxSize(long maxBoxSize) {
+        this.maxBoxSize = maxBoxSize;
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -106,7 +126,7 @@ public class MP4Parser implements Parser {
         //we used to spool to disk and then read from that with sannies parser.
         //we think that drewnoakes' parser streams the data so we don't need to spool
         try {
-            Mp4Reader.extract(tis, boxHandler);
+            TikaMp4Reader.extract(tis, boxHandler, maxBoxSize);
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
         }

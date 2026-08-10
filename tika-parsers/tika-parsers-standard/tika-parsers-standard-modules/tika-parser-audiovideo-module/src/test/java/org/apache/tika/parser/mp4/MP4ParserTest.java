@@ -21,7 +21,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +41,7 @@ import com.drew.metadata.mp4.media.Mp4VideoDirectory;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -51,6 +54,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 
 /**
@@ -430,6 +434,67 @@ public class MP4ParserTest extends TikaTest {
                 new Mp4Context(), tikaMetadata, 740, 600);
         handler.processSampleDescription(new SequentialByteArrayReader(bos.toByteArray()));
         assertNull(tikaMetadata.get(QuickTime.STILL_IMAGE_TIME));
+    }
+
+    @Test
+    public void testStsdNestedWaveRecursion() throws Exception {
+        //a crafted sound sample description whose child boxes are a deep chain of
+        //nested 'wave' boxes used to recurse in findEsdsAverageBitRate until the
+        //stack overflowed (an uncaught Error, not caught by Mp4Reader or
+        //CompositeParser); the handler must bound the box nesting depth. TIKA-4812
+        int depth = 100_000;
+        int childLen = depth * 8;
+        ByteBuffer buf = ByteBuffer.allocate(44 + childLen); //big-endian by default
+        buf.putInt(0);             //version and flags
+        buf.putInt(1);             //entry count
+        buf.putInt(36 + childLen); //sample entry size
+        buf.put("mp4a".getBytes(StandardCharsets.ISO_8859_1));
+        buf.position(44);          //leave the 28 fixed sound fields zero (version 0 -> 36 byte entry)
+        for (int k = 0; k < depth; k++) {
+            buf.putInt(8 * (depth - k)); //'wave' box size, shrinking to the chain end
+            buf.put("wave".getBytes(StandardCharsets.ISO_8859_1));
+        }
+
+        Metadata tikaMetadata = new Metadata();
+        TikaMp4SoundHandler handler = new TikaMp4SoundHandler(new com.drew.metadata.Metadata(),
+                new Mp4Context(), tikaMetadata);
+        //must return without a StackOverflowError, and find no bitrate
+        handler.processBox("stsd", buf.array(), buf.array().length, new Mp4Context());
+        assertNull(tikaMetadata.get(Audio.BITRATE));
+    }
+
+    @Test
+    public void testOversizedBoxIsSkippedNotAllocated() throws Exception {
+        //an accepted box whose declared payload exceeds the cap must be skipped (a
+        //lazy stream advance, no allocation) rather than read into a byte[]; the
+        //metadata-extractor reader would instead do new byte[(int) boxSize - 8].
+        //Use ftyp, an accepted top-level box with an observable side effect (the
+        //major brand). Payload is 16 bytes. TIKA-4812
+        byte[] ftyp = ftypBox();
+        assertNull(majorBrand(ftyp, 8L));            //cap below the payload -> skipped
+        assertEquals("isom", majorBrand(ftyp, 1000L)); //cap above it -> read and processed
+    }
+
+    private static String majorBrand(byte[] boxes, long maxBoxSize) throws Exception {
+        com.drew.metadata.Metadata mp4Metadata = new com.drew.metadata.Metadata();
+        Metadata tikaMetadata = new Metadata();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), tikaMetadata);
+        TikaMp4BoxHandler handler =
+                new TikaMp4BoxHandler(mp4Metadata, tikaMetadata, xhtml, new ParseContext());
+        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize);
+        Mp4Directory dir = mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
+        return dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND);
+    }
+
+    private static byte[] ftypBox() {
+        ByteBuffer buf = ByteBuffer.allocate(24); //big-endian by default
+        buf.putInt(24);            //box size
+        buf.put("ftyp".getBytes(StandardCharsets.ISO_8859_1));
+        buf.put("isom".getBytes(StandardCharsets.ISO_8859_1)); //major brand
+        buf.putInt(0);             //minor version
+        buf.put("mp41".getBytes(StandardCharsets.ISO_8859_1)); //compatible brand
+        buf.put("mp42".getBytes(StandardCharsets.ISO_8859_1)); //compatible brand
+        return buf.array();
     }
 
     @Test
