@@ -469,91 +469,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertContains("plundered our seas", content);
     }
 
-    @Test
-    @org.junit.jupiter.api.Disabled("maxEmbeddedResources header not yet supported with pipes-based parsing")
-    public void testEmbeddedResourceLimit() throws Exception {
-        for (int i : new int[]{0, 1, 5}) {
-            Response response = WebClient
-                    .create(endPoint + META_PATH)
-                    .accept("application/json")
-                    .header("maxEmbeddedResources", Integer.toString(i))
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-            assertEquals(200, response.getStatus());
-            // Check results
-            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-            assertEquals(i + 1, metadataList.size());
-        }
-    }
-
     // TIKA-3227 - TODO: re-enable once maxEmbeddedResources is configurable via JSON
     // Use maxEmbeddedResources=0 in config to skip embedded documents
-
-    @Test
-    public void testWriteLimit() throws Exception {
-        int writeLimit = 10;
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        assertEquals(200, response.getStatus());
-        // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertEquals("true", metadataList
-                .get(0)
-                .get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-
-        //now try with a write limit of 500
-        writeLimit = 550;
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        assertEquals(200, response.getStatus());
-        // Check results
-        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(10, metadataList.size());
-        // Verify write limit was reached and content was partially extracted
-        // (order may vary based on ZIP entry iteration)
-        boolean foundWriteLimitReached = false;
-        int totalContentLength = 0;
-        for (Metadata m : metadataList) {
-            if ("true".equals(m.get(TikaCoreProperties.WRITE_LIMIT_REACHED))) {
-                foundWriteLimitReached = true;
-            }
-            String content = m.get(TikaCoreProperties.TIKA_CONTENT);
-            if (content != null) {
-                totalContentLength += content.length();
-            }
-        }
-        assertTrue(foundWriteLimitReached, "Should have reached write limit");
-        assertTrue(totalContentLength > 0, "Should have extracted some content");
-
-    }
-
-    @Test
-    public void testWriteLimitInPDF() throws Exception {
-        int writeLimit = 10;
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes" + ".pdf"));
-
-        assertEquals(200, response.getStatus());
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        Metadata metadata = metadataList.get(0);
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-    }
 
     @Test
     public void testXFA() throws Exception {
@@ -572,52 +489,53 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertTrue(m.get(TikaCoreProperties.TIKA_CONTENT).contains("Young Abraham Lincoln"));
     }
 
+    /**
+     * Write limits moved from the `writeLimit` HTTP header to output-limits in the
+     * config. Truncation semantics themselves are covered by
+     * BasicContentHandlerFactoryTest; what these two assert is that the server
+     * actually plumbs a configured limit through to the response.
+     */
     @Test
-    public void testNoThrowOnWriteLimitReached() throws Exception {
-        int writeLimit = 100;
-        Response response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .header("throwOnWriteLimitReached", "false")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+    public void testWriteLimitFromConfig() throws Exception {
+        List<Metadata> metadataList = parseWithOutputLimits(
+                "{\"output-limits\": {\"writeLimit\": 100, \"throwOnWriteLimit\": true}}");
 
-        assertEquals(200, response.getStatus());
-        // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("true", metadataList
-                .get(0)
-                .get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-
-        //now try with a write limit of 550
-        writeLimit = 550;
-        response = WebClient
-                .create(endPoint + META_PATH)
-                .accept("application/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .header("throwOnWriteLimitReached", "false")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-
-        assertEquals(200, response.getStatus());
-        // Check results
-        reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(12, metadataList.size());
-        assertEquals("true", metadataList
-                .get(0)
-                .get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-        // Verify content was partially extracted (order may vary based on ZIP entry iteration)
-        int totalContentLength = 0;
+        int total = 0;
         for (Metadata m : metadataList) {
             String content = m.get(TikaCoreProperties.TIKA_CONTENT);
-            if (content != null) {
-                totalContentLength += content.length();
-            }
+            total += (content == null) ? 0 : content.length();
         }
-        assertTrue(totalContentLength > 0, "Should have extracted some content");
-
+        assertTrue(total <= 100, "content should be bounded by the configured writeLimit, was " + total);
     }
 
+    @Test
+    public void testNoThrowOnWriteLimitFromConfig() throws Exception {
+        List<Metadata> metadataList = parseWithOutputLimits(
+                "{\"output-limits\": {\"writeLimit\": 100, \"throwOnWriteLimit\": false}}");
+
+        boolean limitReached = false;
+        for (Metadata m : metadataList) {
+            if ("true".equals(m.get(TikaCoreProperties.WRITE_LIMIT_REACHED))) {
+                limitReached = true;
+            }
+        }
+        assertTrue(limitReached, "write-limit-reached should be reported when throwOnWriteLimit is false");
+    }
+
+    private List<Metadata> parseWithOutputLimits(String configJson) throws Exception {
+        Attachment fileAtt = new Attachment("file", "application/octet-stream",
+                ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        return JsonMetadataList.fromJson(reader);
+    }
 }

@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
-import static org.apache.tika.server.core.resource.TikaResource.getWriteLimit;
 import static org.apache.tika.server.core.resource.TikaResource.setupContentHandlerFactory;
 import static org.apache.tika.server.core.resource.TikaResource.setupContentHandlerFactoryIfNeeded;
 
@@ -74,8 +73,7 @@ public class RecursiveMetadataResource {
         TikaResource.logRequest(LOG, "/rmeta", metadata);
 
         // Set up handler factory in context using shared utility
-        setupContentHandlerFactory(context, handlerConfig.type().toString(), handlerConfig.writeLimit(),
-                handlerConfig.throwOnWriteLimitReached());
+        setupContentHandlerFactory(context, handlerConfig.type().toString());
 
         // Set up embedded limits if specified
         if (handlerConfig.maxEmbeddedCount() >= 0) {
@@ -96,8 +94,8 @@ public class RecursiveMetadataResource {
         } else if (httpHeaders.containsKey("maxEmbeddedCount")) {
             maxEmbeddedCount = Integer.parseInt(httpHeaders.getFirst("maxEmbeddedCount"));
         }
-        return new ServerHandlerConfig(BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE), parseMode,
-                getWriteLimit(httpHeaders), maxEmbeddedCount, TikaResource.getThrowOnWriteLimitReached(httpHeaders));
+        return new ServerHandlerConfig(BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE),
+                parseMode, maxEmbeddedCount);
     }
 
     /**
@@ -169,8 +167,7 @@ public class RecursiveMetadataResource {
     private MetadataList parseMetadataWithContext(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders,
                                                   ServerHandlerConfig handlerConfig, ParseContext context) throws Exception {
         // Set up handler factory in context if not already set using shared utility
-        setupContentHandlerFactoryIfNeeded(context, handlerConfig.type().toString(),
-                handlerConfig.writeLimit(), handlerConfig.throwOnWriteLimitReached());
+        setupContentHandlerFactoryIfNeeded(context, handlerConfig.type().toString());
 
         // Filtering is done in child process, no need to filter again
         List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);

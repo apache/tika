@@ -407,65 +407,18 @@ public class TikaResource {
         }
     }
 
-    public static boolean getThrowOnWriteLimitReached(MultivaluedMap<String, String> httpHeaders) {
-        if (httpHeaders.containsKey("throwOnWriteLimitReached")) {
-            String val = httpHeaders.getFirst("throwOnWriteLimitReached");
-            if ("true".equalsIgnoreCase(val)) {
-                return true;
-            } else if ("false".equalsIgnoreCase(val)) {
-                return false;
-            } else {
-                throw new IllegalArgumentException("'throwOnWriteLimitReached' must be either 'true' or 'false'");
-            }
-        }
-        // Default: throw on write limit reached
-        return true;
-    }
-
     /**
-     * Parses the writeLimit header value from HTTP headers.
-     *
-     * @param httpHeaders the HTTP headers
-     * @return the write limit value, or -1 if not specified
-     */
-    public static int getWriteLimit(MultivaluedMap<String, String> httpHeaders) {
-        if (httpHeaders.containsKey("writeLimit")) {
-            return Integer.parseInt(httpHeaders.getFirst("writeLimit"));
-        }
-        return -1;
-    }
-
-    /**
-     * Sets up the ContentHandlerFactory in the ParseContext based on handler type and HTTP headers.
-     * This is a shared utility method used by both /tika and /rmeta endpoints.
+     * Sets up the ContentHandlerFactory in the ParseContext, taking the write limits from
+     * {@link org.apache.tika.config.OutputLimits} in the context.
      *
      * @param context the ParseContext to configure
      * @param handlerTypeName the handler type name (text, html, xml, ignore), may be null for default
-     * @param httpHeaders the HTTP headers containing writeLimit and throwOnWriteLimitReached
      */
-    public static void setupContentHandlerFactory(ParseContext context, String handlerTypeName,
-                                                   MultivaluedMap<String, String> httpHeaders) {
-        int writeLimit = getWriteLimit(httpHeaders);
-        boolean throwOnWriteLimitReached = getThrowOnWriteLimitReached(httpHeaders);
-        setupContentHandlerFactory(context, handlerTypeName, writeLimit, throwOnWriteLimitReached);
-    }
-
-    /**
-     * Sets up the ContentHandlerFactory in the ParseContext based on explicit parameters.
-     * This overload is used when the values have already been parsed (e.g., from ServerHandlerConfig).
-     *
-     * @param context the ParseContext to configure
-     * @param handlerTypeName the handler type name (text, html, xml, ignore), may be null for default
-     * @param writeLimit the write limit, or -1 for unlimited
-     * @param throwOnWriteLimitReached whether to throw when write limit is reached
-     */
-    public static void setupContentHandlerFactory(ParseContext context, String handlerTypeName,
-                                                   int writeLimit, boolean throwOnWriteLimitReached) {
+    public static void setupContentHandlerFactory(ParseContext context, String handlerTypeName) {
         BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(
                 handlerTypeName, DEFAULT_HANDLER_TYPE);
-        ContentHandlerFactory factory = new BasicContentHandlerFactory(type, writeLimit,
-                throwOnWriteLimitReached, context);
-        context.set(ContentHandlerFactory.class, factory);
+        context.set(ContentHandlerFactory.class,
+                BasicContentHandlerFactory.newInstance(type, context));
     }
 
     /**
@@ -474,28 +427,10 @@ public class TikaResource {
      *
      * @param context the ParseContext to configure
      * @param handlerTypeName the handler type name
-     * @param httpHeaders the HTTP headers
      */
-    public static void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName,
-                                                           MultivaluedMap<String, String> httpHeaders) {
+    public static void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
         if (context.get(ContentHandlerFactory.class) == null) {
-            setupContentHandlerFactory(context, handlerTypeName, httpHeaders);
-        }
-    }
-
-    /**
-     * Sets up the ContentHandlerFactory in the ParseContext if not already set.
-     * This overload is used when the values have already been parsed.
-     *
-     * @param context the ParseContext to configure
-     * @param handlerTypeName the handler type name
-     * @param writeLimit the write limit, or -1 for unlimited
-     * @param throwOnWriteLimitReached whether to throw when write limit is reached
-     */
-    public static void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName,
-                                                           int writeLimit, boolean throwOnWriteLimitReached) {
-        if (context.get(ContentHandlerFactory.class) == null) {
-            setupContentHandlerFactory(context, handlerTypeName, writeLimit, throwOnWriteLimitReached);
+            setupContentHandlerFactory(context, handlerTypeName);
         }
     }
 
@@ -765,7 +700,7 @@ public class TikaResource {
                                               String handlerTypeName) throws IOException {
         fillMetadata(null, metadata, httpHeaders);
         ParseContext context = createParseContext();
-        setupContentHandlerFactory(context, handlerTypeName, httpHeaders);
+        setupContentHandlerFactory(context, handlerTypeName);
         return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);
     }
 
@@ -781,7 +716,7 @@ public class TikaResource {
         logRequest(LOG, "/tika", metadata);
 
         // Ensure content handler factory is set (config may have set it)
-        setupContentHandlerFactoryIfNeeded(context, handlerTypeName, -1, true);
+        setupContentHandlerFactoryIfNeeded(context, handlerTypeName);
 
         LOG.debug("produceRawOutput: handlerType={}, contentHandlerFactory={}",
                 handlerTypeName, context.get(ContentHandlerFactory.class));
@@ -849,7 +784,7 @@ public class TikaResource {
                                   String handlerTypeName) throws IOException {
         fillMetadata(null, metadata, headers);
         ParseContext context = createParseContext();
-        setupContentHandlerFactory(context, handlerTypeName, headers);
+        setupContentHandlerFactory(context, handlerTypeName);
         return produceJsonWithContext(tis, metadata, context, handlerTypeName);
     }
 
@@ -871,7 +806,7 @@ public class TikaResource {
         logRequest(LOG, "/tika", metadata);
 
         // Ensure content handler factory is set (config may have set it)
-        setupContentHandlerFactoryIfNeeded(context, handlerTypeName, -1, true);
+        setupContentHandlerFactoryIfNeeded(context, handlerTypeName);
 
         List<Metadata> metadataList;
         try {

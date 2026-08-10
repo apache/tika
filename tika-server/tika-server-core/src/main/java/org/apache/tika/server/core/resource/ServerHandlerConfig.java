@@ -30,8 +30,6 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 public record ServerHandlerConfig(
         BasicContentHandlerFactory.HANDLER_TYPE type,
         ParseMode parseMode,
-        int writeLimit,
-        int maxEmbeddedCount,
-        boolean throwOnWriteLimitReached
+        int maxEmbeddedCount
 ) {
 }
