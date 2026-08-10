@@ -20,9 +20,11 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -47,6 +49,17 @@ public class ID3v2FrameTest {
     // LATIN has a NUL per char in UTF-16 (a byte-order signal); CJK does not
     private static final String LATIN = "Test Copyright";
     private static final String CJK = "日本語";
+
+    @Test
+    public void testReadFullyTruncatedReturnsActualBytes() throws IOException {
+        //a stream shorter than the declared length must yield only the bytes
+        //present, not a zero-padded full-length array, so a truncated frame's
+        //cover art is not emitted with trailing padding. TIKA-4812
+        byte[] present = "abcdefghij".getBytes(ISO_8859_1); //10 bytes
+        byte[] result = ID3v2Frame.readFully(new ByteArrayInputStream(present), 128, false);
+        assertArrayEquals(present, result);
+        assertEquals(present.length, result.length);
+    }
 
     private static byte[] frame(byte encodingFlag, byte[]... parts) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
