@@ -185,7 +185,7 @@ public class TikaServerProcess {
         PipesParsingHelper pipesParsingHelper = null;
         if (needsPipesParsingHelper(tikaServerConfig)) {
             pipesParsingHelper = initPipesParsingHelper(tikaServerConfig);
-            LOG.info("Pipes-based parsing enabled for /tika, /rmeta, /unpack, /meta, and /pipes endpoints");
+            LOG.info("Pipes-based parsing enabled for /tika, /rmeta, /unpack, /meta, /detect, and /pipes endpoints");
         }
 
         TikaResource tikaResource = new TikaResource(tikaLoader, serverStatus, pipesParsingHelper,
@@ -457,9 +457,9 @@ public class TikaServerProcess {
 
     /**
      * Determines if the shared PipesParser (wrapped in PipesParsingHelper) is needed
-     * based on configured endpoints. It's needed when /tika, /rmeta, /unpack, /meta, or
-     * /pipes are enabled (either explicitly or by default) -- all five now share one
-     * parser. (Note: unlike the others, /pipes also requires allowPipes to actually
+     * based on configured endpoints. It's needed when /tika, /rmeta, /unpack, /meta,
+     * /detect, or /pipes are enabled (either explicitly or by default) -- all six now
+     * share one parser. (Note: unlike the others, /pipes also requires allowPipes to actually
      * start; if it's listed without allowPipes, loadCoreProviders will refuse to start
      * regardless of whether this method already triggered building the shared parser.)
      */
@@ -472,7 +472,7 @@ public class TikaServerProcess {
         }
         return endpoints.contains("tika") || endpoints.contains("rmeta")
                 || endpoints.contains("unpack") || endpoints.contains("pipes")
-                || endpoints.contains("meta");
+                || endpoints.contains("meta") || endpoints.contains("detect");
     }
 
     /**
