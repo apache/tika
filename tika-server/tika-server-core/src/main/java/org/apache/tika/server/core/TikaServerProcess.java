@@ -87,7 +87,6 @@ import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.resource.TikaVersion;
 import org.apache.tika.server.core.resource.TikaWelcome;
-import org.apache.tika.server.core.resource.TranslateResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
@@ -355,7 +354,6 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(tikaResource));
             resourceProviders.add(new SingletonResourceProvider(new UnpackerResource(tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tikaResource)));
@@ -379,8 +377,6 @@ public class TikaServerProcess {
                     resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
                 } else if ("language".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-                } else if ("translate".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
                 } else if ("tika".equals(endPoint)) {
                     resourceProviders.add(new SingletonResourceProvider(tikaResource));
                 } else if ("unpack".equals(endPoint)) {

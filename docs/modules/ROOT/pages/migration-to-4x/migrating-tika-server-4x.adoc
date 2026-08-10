@@ -89,6 +89,14 @@ The separate `/config` endpoints have been removed. Configuration is now handled
 
 **Migration:** Use `POST /tika` or `POST /tika/json` with a `config` part in your multipart request.
 
+==== `/translate/*`
+
+The translation endpoints have been removed, along with tika-server's dependency on `tika-translate`.
+
+These endpoints were never usable as shipped. Every request had to name a fully-qualified translator implementation class in the URL path, and each of the bundled implementations wraps a commercial API that requires credentials the server has no way to supply -- there is no configuration surface for them and none was ever wired up. With the default distribution, every request returned an error.
+
+**Migration:** Call the translation service you use directly, or invoke `tika-translate` from your own code. Tika's translation support is unaffected; only the server endpoints are gone.
+
 === Error Response Bodies Are Now JSON
 
 In 3.x, error responses from `/tika`, `/rmeta`, and `/unpack` returned a plain-text

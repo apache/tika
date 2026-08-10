@@ -188,7 +188,6 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 * `/mime-types` — known MIME types
 * `/detect/stream` — type detection only (no parsing)
 * `/language/stream`, `/language/string` — language detection
-* `/translate/all/\{translator}/\{src}/\{dest}` — translation
 * `/pipes`, `/async` — Pipes-based bulk processing
 
 NOTE: `/pipes` and `/async` require `allowPipes` (they drive process-isolated fetching
