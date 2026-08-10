@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.metadata.filter.AttachmentCountingListFilter;
@@ -527,4 +528,19 @@ public class TestParseContextSerialization {
         assertNotNull(deserialized.get(ContentHandlerFactory.class));
         assertNotNull(deserialized.get(DocumentSelector.class));
     }
+    @Test
+    public void testUnrecognizedComponentNameFails() throws Exception {
+        // parse-context carries the DoS limits, so a typo must not silently fall back
+        // to defaults the operator believes they overrode.
+        ObjectMapper mapper = createMapper();
+        ParseContext ctx = mapper.readValue(
+                "{\"timeout-limitz\": {\"totalTaskTimeoutMillis\": 5000}}", ParseContext.class);
+
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> ParseContextUtils.resolveAll(ctx,
+                        Thread.currentThread().getContextClassLoader()));
+        assertTrue(e.getMessage().contains("timeout-limitz"),
+                "the message must name the offending key: " + e.getMessage());
+    }
+
 }
