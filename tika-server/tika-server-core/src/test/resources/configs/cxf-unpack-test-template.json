@@ -25,12 +25,10 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "MD5" }
-        ]
-      }
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" }
+      ]
     },
     "timeout-limits": {
       "progressTimeoutMillis": "TIMEOUT_MILLIS"
