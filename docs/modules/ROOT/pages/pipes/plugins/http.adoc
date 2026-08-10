@@ -92,7 +92,7 @@ include::example$pipes-http-fetcher.json[]
 
 |`maxRedirects`
 |`0`
-|Maximum number of redirects to follow. `0` means follow none.
+|Maximum number of redirects to follow. `0` means follow none. Not applied to range requests — see <<security-notes>>.
 
 |`maxSpoolSize`
 |`-1`
@@ -122,6 +122,38 @@ include::example$pipes-http-fetcher.json[]
 |_optional_
 |Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
 |===
+
+[#security-notes]
+== Security Notes
+
+This fetcher makes the server issue HTTP requests to a URL supplied as the fetch key.
+That is a server-side request forgery primitive by design, and it is not constrained by
+this plugin. Treat the source of fetch keys as fully trusted, and restrict access to any
+endpoint that can reach it (`/pipes`, `/async`).
+
+* **The fetch key is used as the URL with no validation.** It is passed straight to
+  `new HttpGet(fetchKey)`. There is no scheme allowlist, no host denylist, and no check
+  against loopback, link-local, or RFC1918 addresses. A fetch key of
+  `http://169.254.169.254/...` reaches a cloud metadata endpoint like any other URL. The
+  resolved address is recorded in metadata *after* the fetch, not consulted before it.
+  Schemes other than `http`/`https` fail only because no other scheme is registered in
+  the connection manager — that is a side effect of the transport setup, not a check.
+
+* **TLS certificates are not verified, and this is not configurable here.** The
+  underlying client defaults to `verifySsl=false`, which installs an accept-everything
+  trust strategy and `NoopHostnameVerifier`. `HttpFetcherConfig` exposes no `verifySsl`
+  setting, so an http-fetcher config cannot turn verification on. Do not use this fetcher
+  to retrieve anything whose authenticity matters over an untrusted network.
+
+* **`maxRedirects` does not apply to range requests.** The main `fetch` builds a
+  `RequestConfig` from `maxRedirects`; the `startRange`/`endRange` overload sets no
+  request config at all and therefore uses the client's defaults (redirects enabled).
+  A `maxRedirects: 0` setting does not stop redirects on a range fetch.
+
+* **The redirect host allowlist is currently inert.** `CustomRedirectStrategy` will
+  refuse a redirect to a host outside `allowedHostsForRedirect`, but that set is never
+  populated from any configuration path, and the check is skipped when the set is empty.
+  Do not rely on it to contain redirects.
 
 [#notes]
 == Notes
