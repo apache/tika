@@ -73,6 +73,22 @@ public class MaxRequestSizeFilterTest extends CXFTestBase {
     }
 
     /**
+     * A filename whose extension contains a path separator previously reached
+     * Files.createTempFile and threw IllegalArgumentException, surfacing as a 500
+     * driven entirely by a request header.
+     */
+    @Test
+    public void testHostileFilenameDoesNotError() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .header("Content-Disposition", "attachment; filename=\"a.b/../../c\"")
+                .put(new ByteArrayInputStream(body(50)));
+
+        assertNotEquals(500, response.getStatus(),
+                "a hostile filename suffix must not produce a server error");
+    }
+
+    /**
      * Chunked uploads carry no usable Content-Length, so the declared-length check cannot
      * fire and the counting stream is the only thing enforcing the limit.
      */

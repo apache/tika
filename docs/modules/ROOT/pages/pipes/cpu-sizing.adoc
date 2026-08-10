@@ -166,6 +166,17 @@ report `autoCap=user-set in forkedJvmArgs`.
 [#heap-per-worker]
 == Heap per worker — rule of thumb
 
+Heap is auto-sized the same way CPU is. Left to itself, every forked JVM takes its own
+default max heap — a fixed fraction of host or container memory — so `numClients` forks have
+a combined ceiling well above what the host actually has. When `numClients > 1` and you have
+not set `-Xmx` (or `-XX:MaxRAMPercentage`/`-XX:MaxRAMFraction`) yourself, Tika injects
+`-XX:MaxRAMPercentage=75/numClients`, leaving the remainder for the parent JVM and the OS.
+The `pipes-cpu-sizing` summary line reports the decision as `heap=...`.
+
+Set `-Xmx` explicitly when you know your workload: the auto-slice is a safe default, not a
+tuned one, and a fork that legitimately needs more than its slice will OOM where an untuned
+JVM might have grown into spare memory.
+
 A reasonable starting point is **~2 GB of heap per forked worker** (passed via `-Xmx2g` in `forkedJvmArgs`). The number falls out of three independent constraints any of which can dominate:
 
 * **Worst-case PDF parsing.** A handful of pathological PDFs in any reasonably large corpus will allocate hundreds of MB of intermediate object data per document — large image streams, deeply nested form fields, big embedded fonts. Smaller heaps OOM on those documents; larger heaps just let GC clean up between docs.
