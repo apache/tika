@@ -43,6 +43,7 @@ public class TikaResourceTest extends CXFTestBase {
 
     public static final String TEST_HELLO_WORLD = "test-documents/mock/hello_world.xml";
     public static final String TEST_HELLO_WORLD_LONG = "test-documents/mock/hello_world_long.xml";
+    public static final String TEST_HELLO_WORLD_HEADING = "test-documents/mock/hello_world_heading.xml";
     public static final String TEST_NULL_POINTER = "test-documents/mock/null_pointer.xml";
 
     private static final String TIKA_PATH = "/tika";
@@ -217,5 +218,40 @@ public class TikaResourceTest extends CXFTestBase {
 
         assertEquals("my-report.xml", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
+
+
+    /** An unspecified handler takes the default, which is markdown, not text. */
+    @Test
+    public void testJsonDefaultsToMarkdown() throws Exception {
+        String dflt = jsonContent("/json", TEST_HELLO_WORLD_HEADING);
+        String md = jsonContent("/json/md", TEST_HELLO_WORLD_HEADING);
+        String text = jsonContent("/json/text", TEST_HELLO_WORLD_HEADING);
+
+        assertContains("# Chapter One", md);
+        assertNotFound("# Chapter One", text);
+        assertEquals(md, dflt, "/tika/json with no handler must match /tika/json/md");
+    }
+
+    /** A handler name we don't recognize is the caller's typo: 400, not a silent default. */
+    @Test
+    public void testUnknownHandlerNameIsRejected() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/json/txet")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        assertEquals(400, response.getStatus());
+    }
+
+    private String jsonContent(String path, String doc) throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + path)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(doc));
+        assertEquals(200, response.getStatus(), path + " should have succeeded");
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        return content == null ? "" : content.trim();
+    }
+
 
 }

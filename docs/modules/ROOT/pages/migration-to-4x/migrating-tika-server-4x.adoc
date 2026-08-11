@@ -109,6 +109,26 @@ Collapsing them also removes the `/detect/stream` vs `/detectors` near-collision
 
 **Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies, headers, and responses are unchanged.
 
+=== Handler-Type Changes on `/tika`
+
+==== `/tika/text` is body-only again
+
+3.x served this from a `BodyContentHandler`. 4.0.0 prereleases ran it over the whole XHTML document, so output began with the document title as bare text. This is restored to 3.x behaviour: `/tika/text` returns body content only.
+
+**Migration:** if you relied on the prerelease behaviour, `PUT /tika/json/text` still runs the whole-document handler and returns the content in a JSON envelope.
+
+==== `/tika/json` and `/tika/config/json` default to markdown
+
+Previously they hardcoded plain text. With no handler named in the path they now use the server default, which is markdown -- matching `/rmeta`. Name one explicitly to pin it: `/tika/json/text`, `/tika/json/html`, `/tika/json/xml`, `/tika/json/body`, `/tika/json/md`.
+
+==== Unrecognized handler names are rejected
+
+`/rmeta/txet` used to fall back to the default handler and return output that looked correct. Any unrecognized handler name in the path is now a 400 naming the valid types (`text`, `txt`, `html`, `xml`, `body`, `markdown`, `md`, `ignore`). This applies to `/tika/json/{handler}` and the `/rmeta/{handler}` family.
+
+==== New: `POST /tika/config/json/{handler}`
+
+The PUT family had `/tika/json/{handler}` but the multipart POST family had only fixed paths, so a POST caller wanting text-in-JSON had nowhere to go -- `/tika/config/text` returns raw text with no metadata envelope. Added for parity. Requires `allowPerRequestConfig`.
+
 === Error Response Bodies Are Now JSON
 
 In 3.x, error responses from `/tika`, `/rmeta`, and `/unpack` returned a plain-text

@@ -30,6 +30,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -405,8 +406,13 @@ public class TikaResource {
      * @param handlerTypeName the handler type name (text, html, xml, ignore), may be null for default
      */
     public static void setupContentHandlerFactory(ParseContext context, String handlerTypeName) {
-        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.parseHandlerType(
-                handlerTypeName, DEFAULT_HANDLER_TYPE);
+        BasicContentHandlerFactory.HANDLER_TYPE type;
+        try {
+            type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
+        } catch (IllegalArgumentException e) {
+            // The name comes from the URL path, so this is the caller's typo, not our failure.
+            throw new BadRequestException(e.getMessage());
+        }
         context.set(ContentHandlerFactory.class,
                 BasicContentHandlerFactory.newInstance(type, context));
     }
@@ -460,7 +466,9 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "text");
+        // "body", not "text": 3.x served this from BodyContentHandler, so TEXT (whole XHTML
+        // document, title included as characters) was a 4.x regression.
+        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "body");
     }
 
     /**
@@ -520,7 +528,8 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(is);
         tis.getPath(); // Spool to temp file for pipes-based parsing
         ParseContext context = createParseContext();
-        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "text");
+        // null, not "text": no handler was named, so this takes DEFAULT_HANDLER_TYPE.
+        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), null);
     }
 
     /**
@@ -587,7 +596,7 @@ public class TikaResource {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceRawOutput(tis, metadata, context, "text");
+        return produceRawOutput(tis, metadata, context, "body");
     }
 
     /**
@@ -677,7 +686,27 @@ public class TikaResource {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceJson(tis, metadata, context, "text");
+        return produceJson(tis, metadata, context, null);
+    }
+
+    /**
+     * Multipart sibling of {@code PUT /tika/json/{handlerType}}. Without it, a POST caller
+     * who wants text-in-JSON has nowhere to go: /tika/config/text returns raw text with no
+     * metadata envelope.
+     *
+     * @param handlerTypeName content handler type: text, html, xml, body, markdown, ignore
+     */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/json")
+    @Path("config/json/{" + HANDLER_TYPE_PARAM + "}")
+    public Metadata postJsonWithHandler(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
+                                        @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws IOException, TikaConfigException {
+        ParseContext context = createParseContext();
+        Metadata metadata = Metadata.newInstance(context);
+        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
+        return produceJson(tis, metadata, context, handlerTypeName);
     }
 
     // ==================== Internal methods ====================

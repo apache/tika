@@ -645,4 +645,28 @@ public class TikaResourceTest extends CXFTestBase {
         TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser", Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
     }
 
+    /**
+     * 3.x served /tika/text from a BodyContentHandler. 4.x switched to TEXT, which runs over
+     * the whole XHTML document and emits the <title> as leading character data -- a 4.x
+     * regression, not a longstanding difference. Needs a real parser: the mock fixtures in
+     * tika-server-core never put a title in the XHTML, so TEXT and BODY are identical there.
+     */
+    @Test
+    public void testTextIsBodyOnly() throws Exception {
+        String text = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Test Indexation Html", text);
+        assertNotFound("Title : Test Indexation Html", text);
+
+        // the whole-document handler is still reachable explicitly, and still emits the title
+        String whole = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/json/text")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Title : Test Indexation Html", whole);
+    }
+
 }
