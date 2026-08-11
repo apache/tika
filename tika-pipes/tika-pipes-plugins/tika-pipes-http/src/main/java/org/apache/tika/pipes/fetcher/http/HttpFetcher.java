@@ -162,15 +162,18 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        RequestConfig requestConfig = RequestConfig
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
+        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private RequestConfig buildRequestConfig() {
+        return RequestConfig
                 .custom()
                 .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
-        get.setConfig(requestConfig);
-        setHttpRequestHeaders(metadata, get);
-        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
-        return execute(get, metadata, httpClient, true);
     }
 
     private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
@@ -218,6 +221,11 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                              ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
+        // Same RequestConfig and headers as the whole-document fetch above. Without the
+        // config this used client defaults, which leave redirects ENABLED -- so
+        // maxRedirects: 0 did not stop redirects on a range fetch.
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
@@ -466,7 +474,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
             httpClientFactory.setRequestTimeoutMillis(httpFetcherConfig.getRequestTimeoutMillis());
         }
         if (httpFetcherConfig.getConnectTimeoutMillis() != null) {
-            httpClientFactory.setSocketTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
+            httpClientFactory.setConnectTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
         }
         if (httpFetcherConfig.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(httpFetcherConfig.getMaxConnections());
@@ -474,6 +482,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         if (httpFetcherConfig.getMaxConnectionsPerRoute() != null) {
             httpClientFactory.setMaxConnectionsPerRoute(httpFetcherConfig.getMaxConnectionsPerRoute());
         }
+        // Unreachable before: the factory had the setter, but nothing carried a config value
+        // to it, so TLS verification could not be turned on from any config.
+        httpClientFactory.setVerifySsl(httpFetcherConfig.isVerifySsl());
         if (!StringUtils.isBlank(httpFetcherConfig.getAuthScheme())) {
             httpClientFactory.setUserName(httpFetcherConfig.getUserName());
             httpClientFactory.setPassword(httpFetcherConfig.getPassword());

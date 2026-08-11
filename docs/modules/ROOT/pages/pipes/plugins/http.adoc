@@ -92,7 +92,11 @@ include::example$pipes-http-fetcher.json[]
 
 |`maxRedirects`
 |`0`
-|Maximum number of redirects to follow. `0` means follow none. Not applied to range requests — see <<security-notes>>.
+|Maximum number of redirects to follow. `0` means follow none.
+
+|`verifySsl`
+|`true`
+|Verify server certificates and hostnames. Set `false` to accept any certificate — see <<security-notes>>.
 
 |`maxSpoolSize`
 |`-1`
@@ -139,21 +143,35 @@ endpoint that can reach it (`/pipes`, `/async`).
   Schemes other than `http`/`https` fail only because no other scheme is registered in
   the connection manager — that is a side effect of the transport setup, not a check.
 
-* **TLS certificates are not verified, and this is not configurable here.** The
-  underlying client defaults to `verifySsl=false`, which installs an accept-everything
-  trust strategy and `NoopHostnameVerifier`. `HttpFetcherConfig` exposes no `verifySsl`
-  setting, so an http-fetcher config cannot turn verification on. Do not use this fetcher
-  to retrieve anything whose authenticity matters over an untrusted network.
+* **TLS certificates are verified by default (`verifySsl: true`).** Earlier 4.0.0
+  prereleases could not verify at all: the underlying client defaulted to `false` and
+  `HttpFetcherConfig` exposed no setting, so no configuration could turn verification on.
++
+To opt out -- self-signed internal certificates are the usual reason -- set `verifySsl`
+to `false` on the fetcher:
++
+[source,json]
+----
+{
+  "fetchers": {
+    "my-http-fetcher": {
+      "plugin": "http-fetcher",
+      "config": { "verifySsl": false }
+    }
+  }
+}
+----
++
+That installs an accept-everything trust strategy and `NoopHostnameVerifier`: any
+certificate from any host is accepted, so anything on the network path can read and
+alter what is fetched. Prefer adding your CA to the JVM truststore over turning this off.
 
-* **`maxRedirects` does not apply to range requests.** The main `fetch` builds a
-  `RequestConfig` from `maxRedirects`; the `startRange`/`endRange` overload sets no
-  request config at all and therefore uses the client's defaults (redirects enabled).
-  A `maxRedirects: 0` setting does not stop redirects on a range fetch.
-
-* **The redirect host allowlist is currently inert.** `CustomRedirectStrategy` will
-  refuse a redirect to a host outside `allowedHostsForRedirect`, but that set is never
-  populated from any configuration path, and the check is skipped when the set is empty.
-  Do not rely on it to contain redirects.
+* **The redirect host allowlist is inert, and would not be trustworthy if it were not.**
+  `CustomRedirectStrategy` refuses a redirect to a host outside `allowedHostsForRedirect`,
+  but that set is never populated from any configuration path, and the check is skipped
+  when the set is empty. It also allows the redirect outright when the `Location` header
+  fails to parse as a URI, so the allowlist would have a bypass even once populated. Do
+  not rely on it to contain redirects.
 
 [#notes]
 == Notes
