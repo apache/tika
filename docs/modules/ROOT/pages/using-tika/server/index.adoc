@@ -92,11 +92,8 @@ The server starts on `localhost:9998` by default.
 |`-c <file>` or `--config <file>`
 |Path to `tika-config.json`. See <<_configuration,Configuration>> below.
 
-|`-a <file>` or `--pluginsConfig <file>`
-|Path to the Tika Pipes plugins configuration file.
-
 |`-i <id>` or `--id <id>`
-|Server ID, surfaced in the `/status` endpoint and in logs.
+|Server ID, written to the startup log. Defaults to a random UUID.
 
 |`-?` or `--help`
 |Print the usage message.
@@ -171,7 +168,7 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 === Other endpoints
 
 * `/version` — server version
-* `/status` — health/status (includes server ID)
+* `/status` — health/status: state, active task count, files processed
 * `/parsers` and `/parsers/details` — registered parsers
 * `/detectors` — registered detectors
 * `/mime-types` — known MIME types
@@ -315,22 +312,17 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`-1` (no limit)
 |Maximum request body in bytes; larger requests are rejected with `413`. Enforced for chunked uploads too, not just those declaring a `Content-Length`. Uploads are spooled to disk, so leaving this unset lets a caller fill the temp directory.
 
-|`digest`
-|`""` (off)
-|Compute a digest of the parsed bytes. Comma-separated algorithm names: `md5`, `sha1`, `sha256`, `sha384`, `sha512`.
-
-|`digestMarkLimit`
-|`20971520` (20 MiB)
-|Max bytes buffered for digest computation.
-
 |`logLevel`
 |_inherited_
 |`debug` or `info` to override the runtime log level.
 
-|`idBase`
+|`id`
 |random UUID
-|Override the auto-generated server ID (the `-i` CLI flag is the same setting).
+|Override the auto-generated server ID, which is written to the startup log (the `-i` CLI flag is the same setting).
 |===
+
+NOTE: Digests are configured in `parse-context`, not in the `server` section. See
+xref:configuration/digesters.adoc[Digesters].
 
 For the full Pipes-related sections (`pipes`, `fetchers`, `emitters`, `parse-context`)
 that tika-server 4.x requires, see

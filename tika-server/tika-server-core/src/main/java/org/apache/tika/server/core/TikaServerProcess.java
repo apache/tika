@@ -22,14 +22,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -100,17 +97,19 @@ import org.apache.tika.utils.StringUtils;
 public class TikaServerProcess {
 
 
-    public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     public static final int BIND_EXCEPTION = 42;
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
     public static int DO_NOT_RESTART_EXIT_VALUE = -100;
+
+    private static final List<String> VALID_ENDPOINTS = List.of("tika", "rmeta", "meta",
+            "unpack", "detect", "language", "translate", "mime", "mime-types", "detectors",
+            "parsers", "version", "status", "pipes", "async");
 
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
-        options.addOption("a", "pluginsConfig", true, "Tika Configuration json for pluginscomponents");
         options.addOption("i", "id", true, "id to use for server in server status endpoint");
         options.addOption("?", "help", false, "this help message");
         return options;
@@ -163,6 +162,35 @@ public class TikaServerProcess {
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
     }
 
+    /**
+     * Warns for settings that widen what a caller can reach. The security prose already
+     * exists, but only in the message shown when a flag is *not* set -- i.e. only to the
+     * operators who did not enable the risky thing.
+     */
+    private static void warnOnPermissiveConfig(TikaServerConfig config) {
+        if (config.isAllowPipes()) {
+            LOG.warn("allowPipes is enabled: /pipes and /async can fetch and emit through "
+                    + "configured fetchers/emitters, reaching files and network resources at "
+                    + "the server's privilege level. Expose only to trusted callers.");
+        }
+        if (config.isAllowPerRequestConfig()) {
+            LOG.warn("allowPerRequestConfig is enabled: callers may set any parser option, "
+                    + "including options that spawn external processes such as OCR.");
+        }
+        if (config.isReturnStackTrace()) {
+            LOG.warn("returnStackTrace is enabled: error responses include server-side stack "
+                    + "traces. Intended for development, not production.");
+        }
+        if ("*".equals(config.getCors())) {
+            LOG.warn("cors is '*': any origin may call this server from a browser.");
+        }
+        if ("0.0.0.0".equals(config.getHost()) || "*".equals(config.getHost())) {
+            LOG.warn("host is {}: the server is reachable on every interface. tika-server "
+                    + "performs no authentication; restrict access at the network layer.",
+                    config.getHost());
+        }
+    }
+
     //This returns the server, configured and ready to be started.
     private static ServerDetails initServer(TikaServerConfig tikaServerConfig) throws Exception {
         String host = tikaServerConfig.getHost();
@@ -204,6 +232,8 @@ public class TikaServerProcess {
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
         sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
 
+        warnOnPermissiveConfig(tikaServerConfig);
+
         String protocol = tikaServerConfig
                 .getTlsConfig()
                 .isActive() ? "https" : "http";
@@ -232,6 +262,7 @@ public class TikaServerProcess {
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
+        details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
         return details;
     }
@@ -316,16 +347,12 @@ public class TikaServerProcess {
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
         writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes()));
 
+        // setRequestLogLevel rejects anything but debug/info, so no validation needed here.
         TikaLoggingFilter logFilter = null;
-        if (!StringUtils.isBlank(tikaServerConfig.getLogLevel())) {
-            String logLevel = tikaServerConfig.getLogLevel();
-            if (LOG_LEVELS.contains(logLevel)) {
-                boolean isInfoLevel = "info".equals(logLevel);
-                logFilter = new TikaLoggingFilter(isInfoLevel);
-                writers.add(logFilter);
-            } else {
-                LOG.warn("Unsupported request URI log level: {}", logLevel);
-            }
+        String requestLogLevel = tikaServerConfig.getRequestLogLevel();
+        if (!StringUtils.isBlank(requestLogLevel)) {
+            logFilter = new TikaLoggingFilter("info".equals(requestLogLevel));
+            writers.add(logFilter);
         }
 
         CrossOriginResourceSharingFilter corsFilter = null;
@@ -371,34 +398,38 @@ public class TikaServerProcess {
             // this default set.
         } else {
             for (String endPoint : tikaServerConfig.getEndpoints()) {
-                if ("meta".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new MetadataResource(tikaResource)));
-                } else if ("rmeta".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
-                } else if ("detect".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
-                } else if ("language".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-                } else if ("translate".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
-                } else if ("tika".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(tikaResource));
-                } else if ("unpack".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new UnpackerResource(tikaResource)));
-                } else if ("mime".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tikaResource)));
-                } else if ("detectors".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TikaDetectors(tikaResource)));
-                } else if ("parsers".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TikaParsers(tikaResource)));
-                } else if ("version".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TikaVersion()));
-                } else if ("pipes".equals(endPoint)) {
-                    addPipesResource = true;
-                } else if ("async".equals(endPoint)) {
-                    addAsyncResource = true;
-                } else if ("status".equals(endPoint)) {
-                    resourceProviders.add(new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                switch (endPoint) {
+                    case "meta" -> resourceProviders.add(
+                            new SingletonResourceProvider(new MetadataResource(tikaResource)));
+                    case "rmeta" -> resourceProviders.add(
+                            new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
+                    case "detect" -> resourceProviders.add(
+                            new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
+                    case "language" -> resourceProviders.add(
+                            new SingletonResourceProvider(new LanguageResource()));
+                    case "translate" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TranslateResource(serverStatus)));
+                    case "tika" -> resourceProviders.add(
+                            new SingletonResourceProvider(tikaResource));
+                    case "unpack" -> resourceProviders.add(
+                            new SingletonResourceProvider(new UnpackerResource(tikaResource)));
+                    // "mime-types" accepted too: that is the path, and it is the natural guess.
+                    case "mime", "mime-types" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TikaMimeTypes(tikaResource)));
+                    case "detectors" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TikaDetectors(tikaResource)));
+                    case "parsers" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TikaParsers(tikaResource)));
+                    case "version" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TikaVersion()));
+                    case "status" -> resourceProviders.add(
+                            new SingletonResourceProvider(new TikaServerStatus(serverStatus)));
+                    case "pipes" -> addPipesResource = true;
+                    case "async" -> addAsyncResource = true;
+                    // Refuse rather than skip: a dropped name is a missing endpoint at
+                    // runtime with nothing in the log pointing at the config.
+                    default -> throw new TikaConfigException("Unrecognized endpoint '" + endPoint
+                            + "'. Valid endpoints: " + VALID_ENDPOINTS);
                 }
             }
         }
