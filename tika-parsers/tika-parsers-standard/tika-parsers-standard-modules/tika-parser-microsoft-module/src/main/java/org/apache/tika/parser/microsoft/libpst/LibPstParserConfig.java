@@ -23,7 +23,7 @@ import org.apache.tika.utils.StringUtils;
 
 public class LibPstParserConfig implements Serializable {
 
-    private long timeoutSeconds = 600;
+    private long timeoutMillis = 600_000;
     /**
      * In initial tests, setting this to true resulted in more emails
      * being extracted. It did dramatically slow down processing time. :(
@@ -50,12 +50,12 @@ public class LibPstParserConfig implements Serializable {
      */
     private String readPstPath = "";
 
-    public long getTimeoutSeconds() {
-        return timeoutSeconds;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public void setTimeoutSeconds(long timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public boolean isDebug() {

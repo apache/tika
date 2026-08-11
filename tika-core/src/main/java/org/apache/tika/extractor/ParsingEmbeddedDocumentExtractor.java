@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -87,15 +88,16 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
     }
 
     /**
-     * Checks embedded document limits from ParseRecord.
+     * Checks embedded document limits from ParseRecord: the task deadline, then max
+     * count, then max depth.
      * <p>
-     * If throwOnMaxDepth or throwOnMaxCount is configured and the respective limit is hit,
-     * an EmbeddedLimitReachedException is thrown. Otherwise, returns false and sets the
+     * If throwing is configured for the limit hit, the corresponding
+     * EmbeddedLimitReachedException is thrown. Otherwise, returns false and sets the
      * appropriate limit flag on the ParseRecord.
      * <p>
-     * Note: The count limit is a hard stop (once hit, no more embedded docs are parsed).
-     * The depth limit only affects documents at that depth - sibling documents at
-     * shallower depths will still be parsed.
+     * Note: The deadline and count limits are hard stops (once hit, no more embedded
+     * docs are parsed). The depth limit only affects documents at that depth - sibling
+     * documents at shallower depths will still be parsed.
      * <p>
      * Subclasses that override parseEmbedded() should call this method to enforce limits.
      *
@@ -104,8 +106,39 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
      * @throws EmbeddedLimitReachedException if a limit is exceeded and throwing is configured
      */
     protected boolean checkEmbeddedLimits(ParseRecord parseRecord) {
-        // Count limit is a hard stop - once we've hit max, no more embedded parsing
+        // Deadline is checked first: once the task is out of time, count/depth don't matter.
+        // Unlike a single embedded doc timing out (TikaTimeoutException, recorded, siblings
+        // continued -- see parseEmbedded's catch(TikaException) below), this is a
+        // document-level fact, not an exception path by default.
+        ParseTimeout timeout = context.get(ParseTimeout.class);
+        if (parseRecord.isTaskDeadlineReached()) {
+            // Already recorded by an earlier embedded doc in this task. throwOnDeadline
+            // means every embedded doc from here on must throw, not just the first one
+            // to notice -- without this, only the very first sibling to hit the deadline
+            // threw; every later sibling silently took the skip path instead.
+            if (parseRecord.isThrowOnDeadline()) {
+                throw new EmbeddedLimitReachedException(EmbeddedLimitReachedException.LimitType.DEADLINE,
+                        timeout == null ? 0 : timeout.getHardDeadlineMillis() - timeout.getStartMillis());
+            }
+            return false;
+        }
+        if (timeout != null && timeout.remainingMillis() <= 0) {
+            parseRecord.setTaskDeadlineReached(true);
+            if (parseRecord.isThrowOnDeadline()) {
+                throw new EmbeddedLimitReachedException(
+                        EmbeddedLimitReachedException.LimitType.DEADLINE, timeout.getHardDeadlineMillis() - timeout.getStartMillis());
+            }
+            return false;
+        }
+
+        // Count limit is a hard stop - once we've hit max, no more embedded parsing.
+        // Same reasoning as the deadline branch above: throwOnMaxCount must throw for
+        // every sibling once the limit is hit, not just the one that first noticed.
         if (parseRecord.isEmbeddedCountLimitReached()) {
+            if (parseRecord.isThrowOnMaxCount()) {
+                throw new EmbeddedLimitReachedException(
+                        EmbeddedLimitReachedException.LimitType.MAX_COUNT, parseRecord.getMaxEmbeddedCount());
+            }
             return false;
         }
         int maxCount = parseRecord.getMaxEmbeddedCount();

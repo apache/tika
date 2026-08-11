@@ -350,7 +350,7 @@ public class PipesParsingHelper {
         return switch (status) {
             case PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, EMPTY_OUTPUT,
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
-                 PARSE_EXCEPTION_NO_EMIT ->
+                 PARSE_EXCEPTION_NO_EMIT, PARTIAL_TIMEOUT ->
                     Response.Status.OK;
             case TIMEOUT, OOM, UNSPECIFIED_CRASH ->
                     Response.Status.SERVICE_UNAVAILABLE;

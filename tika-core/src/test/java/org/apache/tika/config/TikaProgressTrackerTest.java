@@ -100,4 +100,16 @@ public class TikaProgressTrackerTest {
         // Should not throw
         TikaProgressTracker.update(new ParseContext());
     }
+
+    @Test
+    public void testStaticUpdateDelegatesToParseTimeout() throws Exception {
+        ParseContext context = new ParseContext();
+        ParseTimeout parseTimeout = ParseTimeout.getOrCreate(context);
+        long initial = parseTimeout.getLastProgressMillis();
+
+        Thread.sleep(20);
+        TikaProgressTracker.update(context);
+
+        assertTrue(parseTimeout.getLastProgressMillis() > initial);
+    }
 }

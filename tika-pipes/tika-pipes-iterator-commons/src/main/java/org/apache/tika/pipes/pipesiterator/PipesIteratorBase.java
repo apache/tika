@@ -104,7 +104,7 @@ public abstract class PipesIteratorBase extends AbstractTikaExtension implements
         @Override
         public boolean hasNext() {
             if (next == null) {
-                next = pollNext();
+                next = pollNextUnchecked();
             }
             return next != COMPLETED_SEMAPHORE;
         }
@@ -116,8 +116,18 @@ public abstract class PipesIteratorBase extends AbstractTikaExtension implements
                         "don't call next() after hasNext() has returned false!");
             }
             FetchEmitTuple ret = next;
-            next = pollNext();
+            next = pollNextUnchecked();
             return ret;
+        }
+
+        // Iterator<T>'s methods cannot declare a checked exception; wrap to match
+        // this class's documented contract ("this will throw a RuntimeException").
+        private FetchEmitTuple pollNextUnchecked() {
+            try {
+                return pollNext();
+            } catch (TikaTimeoutException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         private FetchEmitTuple pollNext() throws TikaTimeoutException {

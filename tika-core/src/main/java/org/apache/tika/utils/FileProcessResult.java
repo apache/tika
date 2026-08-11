@@ -27,6 +27,8 @@ public class FileProcessResult {
     long stderrLength = -1;
     boolean stderrTruncated = false;
     boolean stdoutTruncated = false;
+    long requestedTimeoutMillis = -1;
+    long grantedTimeoutMillis = -1;
 
     public String getStderr() {
         return stderr;
@@ -100,6 +102,41 @@ public class FileProcessResult {
         this.stdoutTruncated = stdoutTruncated;
     }
 
+    /**
+     * @return the timeout the caller's own configuration requested, or {@code -1} if
+     * this result was not produced by a context-aware {@code ProcessUtils.execute} call
+     */
+    public long getRequestedTimeoutMillis() {
+        return requestedTimeoutMillis;
+    }
+
+    public void setRequestedTimeoutMillis(long requestedTimeoutMillis) {
+        this.requestedTimeoutMillis = requestedTimeoutMillis;
+    }
+
+    /**
+     * @return the budget actually granted (after {@code ParseTimeout.budgetFor}
+     * clipping), or {@code -1} if this result was not produced by a context-aware
+     * {@code ProcessUtils.execute} call
+     */
+    public long getGrantedTimeoutMillis() {
+        return grantedTimeoutMillis;
+    }
+
+    public void setGrantedTimeoutMillis(long grantedTimeoutMillis) {
+        this.grantedTimeoutMillis = grantedTimeoutMillis;
+    }
+
+    /**
+     * @return true if the granted budget was clipped below the requested timeout by the
+     * task's remaining time (task's total timeout was binding, not the process's own).
+     * False if not clipped, or if no requested/granted info is present.
+     */
+    public boolean isClippedByRemaining() {
+        return requestedTimeoutMillis >= 0 && grantedTimeoutMillis >= 0
+                && grantedTimeoutMillis < requestedTimeoutMillis;
+    }
+
     @Override
     public String toString() {
         return "FileProcessResult{" +
@@ -112,6 +149,8 @@ public class FileProcessResult {
                 ", stderrLength=" + stderrLength +
                 ", stderrTruncated=" + stderrTruncated +
                 ", stdoutTruncated=" + stdoutTruncated +
+                ", requestedTimeoutMillis=" + requestedTimeoutMillis +
+                ", grantedTimeoutMillis=" + grantedTimeoutMillis +
                 '}';
     }
 }

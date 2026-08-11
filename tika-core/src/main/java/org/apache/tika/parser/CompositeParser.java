@@ -29,6 +29,9 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
@@ -283,10 +286,25 @@ public class CompositeParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
+        // A non-null ParseRecord already back at depth 0 proves a previous top-level parse
+        // on this same (legitimately reused, e.g. across a batch of files) ParseContext has
+        // already finished -- never true for a nested embedded-document call mid-parse,
+        // since depth is only 0 between top-level parses. Only in that proven case do we
+        // reset -- NOT merely because ParseRecord is absent: some callers (e.g. PipesServer)
+        // pre-install ParseTimeout via ParseTimeout.getOrCreate before ParseRecord exists,
+        // for their own external watchdog to hold a reference to; reinstalling ParseTimeout
+        // here on first use would orphan that reference, leaving the watchdog checking a
+        // stale copy no in-progress checkpoint ever reaches.
+        boolean priorTopLevelParseFinished = parserRecord != null && parserRecord.getDepth() == 0;
         if (parserRecord == null) {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
+        } else if (priorTopLevelParseFinished) {
+            parserRecord = ParseRecord.newInstance(context);
+            context.set(ParseRecord.class, parserRecord);
+            context.set(ParseTimeout.class, ParseTimeout.start(TimeoutLimits.get(context)));
         }
+        ParseTimeout.getOrCreate(context);
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
@@ -308,6 +326,16 @@ public class CompositeParser implements Parser {
                     taggedHandler.throwIfCauseOf(e);
                 }
                 throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
+            } catch (EmbeddedLimitReachedException e) {
+                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean the caller wants
+                // this to surface as a hard failure all the way to the top-level caller,
+                // not be recorded and swallowed by whichever embedded-document extractor
+                // is supervising a shallower level of nesting -- which is exactly what
+                // wrapping it in a checked TikaException here would cause: it would then
+                // match a plain catch(TikaException), the same handling as any ordinary
+                // per-document failure. Rethrow unwrapped so it keeps propagating as a
+                // RuntimeException past every intermediate catch(TikaException).
+                throw e;
             } catch (RuntimeException e) {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
@@ -340,6 +368,9 @@ public class CompositeParser implements Parser {
         }
         if (record.isEmbeddedDepthLimitReached()) {
             metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+        }
+        if (record.isTaskDeadlineReached()) {
+            metadata.set(TikaCoreProperties.TASK_DEADLINE_REACHED, true);
         }
 
         for (Metadata m : record.getMetadataList()) {

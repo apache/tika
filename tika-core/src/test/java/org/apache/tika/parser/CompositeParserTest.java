@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +30,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -146,5 +149,61 @@ public class CompositeParserTest {
         both.parse(TikaInputStream.get(new byte[0]), handler, metadata, new ParseContext());
         assertEquals("True", metadata.get("BMP"));
         assertEquals("True", metadata.get("Alias"));
+    }
+
+    /**
+     * Reusing a ParseContext across a batch of top-level parses is normal Tika usage
+     * (set parser config once, reuse for every file). But CompositeParser also stores
+     * per-task scratch state (ParseRecord, ParseTimeout) in that same context -- this
+     * pins down that a second top-level parse on a reused context gets a fresh
+     * ParseTimeout budget and a fresh ParseRecord, rather than inheriting the previous
+     * document's exhausted timeout and leftover warnings.
+     */
+    @Test
+    public void testReusedContextGetsFreshTimeoutAndRecordPerTopLevelParse() throws Exception {
+        Parser recordingParser = new EmptyParser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(MediaType.TEXT_PLAIN);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) {
+                ParseTimeout timeout = ParseTimeout.getOrCreate(context);
+                metadata.set("remainingAtStart", String.valueOf(timeout.remainingMillis()));
+                ParseRecord record = context.get(ParseRecord.class);
+                metadata.set("warningsAtStart", String.valueOf(record.getWarnings().size()));
+                record.addWarning("warning-from-this-parse");
+            }
+        };
+        CompositeParser composite =
+                new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), recordingParser);
+        ContentHandler handler = new BodyContentHandler();
+
+        ParseContext context = new ParseContext();
+        context.set(TimeoutLimits.class, new TimeoutLimits(100, 100_000));
+
+        Metadata firstMetadata = new Metadata();
+        firstMetadata.add(Metadata.CONTENT_TYPE, MediaType.TEXT_PLAIN.toString());
+        composite.parse(TikaInputStream.get(new byte[0]), handler, firstMetadata, context);
+        long firstRemaining = Long.parseLong(firstMetadata.get("remainingAtStart"));
+        assertTrue(firstRemaining > 50, "first parse should start with close to the full 100ms budget");
+        assertEquals("0", firstMetadata.get("warningsAtStart"));
+
+        // Let the first parse's 100ms total budget actually expire before starting a
+        // second, independent top-level parse on the SAME reused context.
+        Thread.sleep(150);
+
+        Metadata secondMetadata = new Metadata();
+        secondMetadata.add(Metadata.CONTENT_TYPE, MediaType.TEXT_PLAIN.toString());
+        composite.parse(TikaInputStream.get(new byte[0]), handler, secondMetadata, context);
+        long secondRemaining = Long.parseLong(secondMetadata.get("remainingAtStart"));
+        assertTrue(secondRemaining > 50,
+                "a second top-level parse on a reused context must get a fresh budget, not " +
+                        "inherit the first parse's exhausted one (was " + secondRemaining + "ms)");
+        assertEquals("0", secondMetadata.get("warningsAtStart"),
+                "a second top-level parse on a reused context must not inherit the first " +
+                        "parse's leftover ParseRecord warnings");
     }
 }

@@ -83,28 +83,16 @@ public class TimeoutLimitsTest extends TikaTest {
     }
 
     @Test
-    public void testGetProcessTimeoutMillis() {
-        // Test with null context
-        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(null, 5000));
-
-        // Test with context that doesn't have TimeoutLimits
+    public void testBudgetForComposesViaParseTimeout() {
+        // getProcessTimeoutMillis() coupled the per-op budget to progressTimeoutMillis (a
+        // liveness setting); budgetFor() replaces it: honor the requested timeout, but never
+        // grant more than remains of totalTaskTimeoutMillis. Full coverage in ParseTimeoutTest.
         ParseContext context = new ParseContext();
-        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        context.set(TimeoutLimits.class, new TimeoutLimits(3600000, 60000));
 
-        // progressTimeoutMillis is a ceiling, not a replacement: a caller asking for
-        // less than the cap keeps its own shorter value
-        TimeoutLimits limits = new TimeoutLimits(3600000, 60000);
-        context.set(TimeoutLimits.class, limits);
-        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        long budget = ParseTimeout.getOrCreate(context).budgetFor(5000);
 
-        // a caller asking for more than the cap is capped just under it, so the
-        // process exits before the progress watchdog fires
-        assertEquals(59900, TimeoutLimits.getProcessTimeoutMillis(context, 300000));
-
-        // Test with very small progress timeout
-        TimeoutLimits smallLimits = new TimeoutLimits(3600000, 50);
-        context.set(TimeoutLimits.class, smallLimits);
-        assertEquals(0, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        assertEquals(5000, budget);
     }
 
     @Test

@@ -55,7 +55,7 @@ public class GeminiVLMParserTest {
         config.setModel("gemini-2.5-flash");
         config.setPrompt("Extract all text from this document.");
         config.setMaxTokens(4096);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
         config.setApiKey("test-gemini-key");
 
         // Queue 200 for the GET /v1beta/models health check in initialize()

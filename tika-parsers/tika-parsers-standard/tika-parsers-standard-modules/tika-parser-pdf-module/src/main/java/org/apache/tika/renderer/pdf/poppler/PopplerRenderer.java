@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -75,7 +76,7 @@ public class PopplerRenderer implements Renderer {
     private String pdftoppmPath = "pdftoppm";
     private int dpi = 300;
     private boolean gray = true;
-    private int timeoutMs = 120000;
+    private int timeoutMillis = 120000;
 
     /**
      * Maximum pixel dimension (in pixels) for the longest edge of a rendered
@@ -151,8 +152,11 @@ public class PopplerRenderer implements Renderer {
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(args);
         FileProcessResult result = ProcessUtils.execute(
-                builder, timeoutMs, 10, 1000);
-        if (result.getExitValue() != 0) {
+                builder, parseContext, timeoutMillis, 10, 1000);
+        if (result.isTimeout()) {
+            throw new TikaTimeoutException("pdftoppm timed out",
+                    result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
+        } else if (result.getExitValue() != 0) {
             throw new TikaException(
                     "pdftoppm failed (exit " + result.getExitValue()
                             + "): " + result.getStderr());
@@ -259,16 +263,16 @@ public class PopplerRenderer implements Renderer {
         this.gray = gray;
     }
 
-    public int getTimeoutMs() {
-        return timeoutMs;
+    public int getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     /**
      * Set the timeout in milliseconds for the pdftoppm process.
      * Defaults to 120000 (2 minutes).
      */
-    public void setTimeoutMs(int timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(int timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public int getMaxScaleTo() {

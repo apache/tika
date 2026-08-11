@@ -3,7 +3,7 @@
     "default-parser",
     {
       "tesseract-ocr-parser": {
-        "timeoutSeconds": 360
+        "timeoutMillis": 360000
       }
     }
   ]
