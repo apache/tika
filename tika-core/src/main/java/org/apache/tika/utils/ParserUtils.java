@@ -43,16 +43,7 @@ public class ParserUtils {
      */
     public static Metadata cloneMetadata(Metadata m) {
         Metadata clone = new Metadata();
-
-        for (String n : m.names()) {
-            if (!m.isMultiValued(n)) {
-                clone.reconstruct(n, m.get(n), false);
-            } else {
-                for (String val : m.getValues(n)) {
-                    clone.reconstruct(n, val, true);
-                }
-            }
-        }
+        clone.putAll(m);
         return clone;
     }
 
