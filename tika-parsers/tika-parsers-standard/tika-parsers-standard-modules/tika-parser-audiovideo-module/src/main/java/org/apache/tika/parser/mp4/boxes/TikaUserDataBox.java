@@ -115,22 +115,25 @@ public class TikaUserDataBox {
         int toSkip = lengthToStartOfList - read;
         reader.skip(toSkip);
         long len = reader.getUInt32();
-        if (len >= Integer.MAX_VALUE || len <= 0) {
-            //log
-            return;
-        }
         String subType = reader.getString(4, StandardCharsets.ISO_8859_1);
-        //this handles "free" types...not sure if there are others?
-        //will throw IOException if no ilist is found
-        while (! subType.equals(ILST)) {
+        //walk the "free"-style sub-boxes to the ilst, validating each declared length
+        //once before it is used: a length below the 8-byte header would make skip(len - 8)
+        //negative (an IllegalArgumentException that escapes MP4Reader), and an oversize one
+        //would desync the walk. Raise a caught IOException instead, so the udta walk aborts
+        //and the problem is recorded as a parse error rather than silently mis-read. It
+        //also throws (EOFException) if no ilst is found. See TIKA-4812.
+        while (! ILST.equals(subType)) {
+            if (len < 8L || len >= Integer.MAX_VALUE) {
+                throw new IOException("Malformed box length in udta metadata: " + len);
+            }
             reader.skip(len - 8);
             len = reader.getUInt32();
             subType = reader.getString(4, StandardCharsets.ISO_8859_1);
         }
-        if (ILST.equals(subType)) {
-            processIList(reader, len);
+        if (len < 8L || len >= Integer.MAX_VALUE) {
+            throw new IOException("Malformed ilst length in udta metadata: " + len);
         }
-
+        processIList(reader, len);
     }
 
 
@@ -140,99 +143,85 @@ public class TikaUserDataBox {
 
         long totalRead = 0;
         while (totalRead < totalLen) {
+            long recordStart = reader.getPosition();
             long recordLen = reader.getUInt32();
+            if (recordLen < 16) {
+                //malformed record header; stop rather than loop or skip a negative span
+                return;
+            }
             String fieldName = reader.getString(4, StandardCharsets.ISO_8859_1);
             long fieldLen = reader.getUInt32();
             String typeName = reader.getString(4, StandardCharsets.ISO_8859_1);//data
-            totalRead += 16;
+            long recordEnd = recordStart + recordLen;
             if ("data".equals(typeName)) {
-                //1 byte version and 3 bytes flags; for the "well-known"
-                //types the flags hold the value type
+                //1 byte version and 3 bytes flags; for the "well-known" types the
+                //flags hold the value type
                 long valueType = reader.getUInt32() & 0xFFFFFF;
                 reader.skip(4L);//locale
-                totalRead += 8;
                 int toRead = (int) fieldLen - 16;
-                if (toRead <= 0) {
-                    //log?
-                    return;
-                }
-                if ("covr".equals(fieldName)) {
-                    //covr holds one image file (e.g. png or jpeg) per data
-                    //atom, and may repeat the data atom for further images
-                    handleCoverArt(reader, valueType, toRead);
-                    long remaining = recordLen - 8 - fieldLen;
-                    while (remaining >= 16) {
-                        long extraLen = reader.getUInt32();
-                        String extraTypeName = reader.getString(4, StandardCharsets.ISO_8859_1);
-                        long extraValueType = reader.getUInt32() & 0xFFFFFF;
-                        reader.skip(4L);//locale
-                        totalRead += 16;
-                        remaining -= 16;
-                        int extraToRead = (int) extraLen - 16;
-                        if (!"data".equals(extraTypeName) || extraToRead <= 0 ||
-                                extraToRead > remaining) {
-                            //malformed, skip the rest of the record
-                            break;
+                if (toRead > 0) {
+                    if ("covr".equals(fieldName)) {
+                        //covr holds one image per data atom and may repeat the data atom
+                        //for further images; the realign below consumes any leftover
+                        if (reader.getPosition() + toRead <= recordEnd) {
+                            handleCoverArt(reader, valueType, toRead);
                         }
-                        handleCoverArt(reader, extraValueType, extraToRead);
-                        totalRead += extraToRead;
-                        remaining -= extraToRead;
-                    }
-                    if (remaining > 0) {
-                        reader.skip(remaining);
-                        totalRead += remaining;
-                    }
-                } else if ("cpil".equals(fieldName)) {
-                    int compilationId = (int)reader.getByte();
-                    metadata.set(XMPDM.COMPILATION, compilationId);
-                } else if ("trkn".equals(fieldName)) {
-                    if (toRead == 8) {
-                        long numA = reader.getUInt32();
-                        long numB = reader.getUInt32();
-                        metadata.set(XMPDM.TRACK_NUMBER, (int)numA);
-                        //2 bytes track total, 2 bytes reserved
-                        int trackCount = (int) (numB >>> 16);
-                        if (trackCount > 0) {
-                            metadata.set(Audio.TRACK_COUNT, trackCount);
+                        while (reader.getPosition() + 16 <= recordEnd) {
+                            long extraLen = reader.getUInt32();
+                            String extraType =
+                                    reader.getString(4, StandardCharsets.ISO_8859_1);
+                            long extraValueType = reader.getUInt32() & 0xFFFFFF;
+                            reader.skip(4L);//locale
+                            int extraToRead = (int) extraLen - 16;
+                            if (!"data".equals(extraType) || extraToRead <= 0
+                                    || reader.getPosition() + extraToRead > recordEnd) {
+                                break;
+                            }
+                            handleCoverArt(reader, extraValueType, extraToRead);
                         }
-                    } else {
-                        //log
-                        reader.skip(toRead);
-                    }
-                } else if ("disk".equals(fieldName)) {
-                    //2 bytes reserved, 2 bytes disc, 2 bytes total; some encoders
-                    //pad to 8 bytes like trkn, so consume exactly toRead either way
-                    if (toRead >= 6) {
-                        int a = reader.getInt32();
-                        short b = reader.getInt16();
-                        metadata.set(XMPDM.DISC_NUMBER, a);
-                        if (b > 0) {
-                            metadata.set(Audio.DISC_COUNT, b);
+                    } else if ("cpil".equals(fieldName)) {
+                        metadata.set(XMPDM.COMPILATION, (int) reader.getByte());
+                    } else if ("trkn".equals(fieldName)) {
+                        if (toRead >= 8) {
+                            long numA = reader.getUInt32();
+                            long numB = reader.getUInt32();
+                            metadata.set(XMPDM.TRACK_NUMBER, (int) numA);
+                            //2 bytes track total, 2 bytes reserved
+                            int trackCount = (int) (numB >>> 16);
+                            if (trackCount > 0) {
+                                metadata.set(Audio.TRACK_COUNT, trackCount);
+                            }
                         }
-                        reader.skip(toRead - 6);
-                    } else {
-                        reader.skip(toRead);
-                    }
-                } else {
-                    String val = reader.getString(toRead, StandardCharsets.UTF_8);
-                    try {
-                        addMetadata(fieldName, val);
-                    } catch (SAXException e) {
-                        //need to punch through IOException catching in MP4Reader
-                        throw new RuntimeSAXException(e);
+                    } else if ("disk".equals(fieldName)) {
+                        if (toRead >= 6) {
+                            //2 bytes reserved, 2 bytes disc, 2 bytes total
+                            int a = reader.getInt32();
+                            short b = reader.getInt16();
+                            metadata.set(XMPDM.DISC_NUMBER, a);
+                            if (b > 0) {
+                                metadata.set(Audio.DISC_COUNT, b);
+                            }
+                        }
+                    } else if (reader.getPosition() + toRead <= recordEnd) {
+                        String val = reader.getString(toRead, StandardCharsets.UTF_8);
+                        try {
+                            addMetadata(fieldName, val);
+                        } catch (SAXException e) {
+                            //need to punch through IOException catching in MP4Reader
+                            throw new RuntimeSAXException(e);
+                        }
                     }
                 }
-
-                totalRead += toRead;
-            } else {
-                int toSkip = (int) recordLen - 16;
-                if (toSkip <= 0) {
-                    //log?
-                    return;
-                }
-                reader.skip(toSkip);
-                totalRead += toSkip;
             }
+            //realign to the end of the record regardless of what the branch consumed, so a
+            //trailing sub-atom (e.g. a 'name' atom after 'data') can't desync the walk
+            long pos = reader.getPosition();
+            if (pos > recordEnd) {
+                //a branch read past the record end (malformed lengths); stop
+                return;
+            }
+            reader.skip(recordEnd - pos);
+            totalRead += recordLen;
         }
     }
 

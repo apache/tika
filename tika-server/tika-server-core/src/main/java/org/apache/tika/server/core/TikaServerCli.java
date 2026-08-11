@@ -43,8 +43,6 @@ public class TikaServerCli {
                 "listen port (default = 9998)\n");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
-        options.addOption("a", "pluginsConfig", true, "tike pipes config");
-
         options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
         return options;
     }
@@ -69,7 +67,7 @@ public class TikaServerCli {
     private static void usage(Options options) throws IOException {
         HelpFormatter helpFormatter = HelpFormatter.builder().get();
         helpFormatter.printHelp("tikaserver", null, options, null, true);
-        System.exit(-1);
+        System.exit(0);
     }
 
 }
