@@ -36,7 +36,7 @@ release-tools/uat/
 
 == What it covers
 
-Roughly 25 REST endpoint checks across the default-mode endpoints, header
+Roughly 30 REST endpoint checks across the default-mode endpoints, header
 behavior, and error handling — the same surface enumerated in the manual
 walkthrough at xref:advanced/integration-testing/tika-server.adoc[Tika-Server
 Integration Testing], translated to bash + curl assertions.
@@ -59,6 +59,14 @@ Coverage includes:
 * `/status` is not registered by default (returns 404 unless explicitly listed
   under `endpoints`)
 * `X-Tika-OCRskipOcr` header
+* Handler selection: `/tika/text` is body-only (no `<title>` in the output),
+  `/tika/json` with no handler named matches `/tika/json/md` (markdown is the
+  default), and an unrecognized handler name returns 400 rather than silently
+  falling back
+* `/meta` with `Accept: application/rdf+xml` returns XMP -- content negotiation,
+  not a distinct path. Worth a smoke check because this shipped broken in
+  4.0.0-alpha-1 and beta-1: the resource failed to load and the endpoint 406'd
+* Removed endpoints stay removed (`/translate/*` returns 404)
 * 404 / 405 error handling
 * OCR (`PUT /tika/text` of an image whose text only exists as pixels): skipped when the
   server has no tesseract (the minimal image / a plain `java -jar` server), and a hard
