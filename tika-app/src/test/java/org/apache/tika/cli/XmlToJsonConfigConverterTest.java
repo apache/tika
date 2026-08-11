@@ -309,7 +309,7 @@ public class XmlToJsonConfigConverterTest {
                 "Should parse third key-value pair");
 
         // Verify regular parameters still work
-        assertTrue(json.contains("\"timeoutSeconds\" : 300"), "Should have integer parameter");
+        assertTrue(json.contains("\"timeoutMillis\" : 300000"), "Should have integer parameter");
         assertTrue(json.contains("\"enableImagePreprocessing\" : true"), "Should have boolean parameter");
         assertTrue(json.contains("\"language\" : \"eng\""), "Should have string parameter");
 

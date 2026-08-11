@@ -47,7 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
@@ -188,19 +188,7 @@ public class PipesServer implements AutoCloseable {
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
         this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-
-        // Validate heartbeat interval is less than socket timeout
-        if (heartbeatIntervalMs >= pipesConfig.getSocketTimeoutMs()) {
-            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
-                    "This configuration will cause socket timeouts during normal processing.",
-                    heartbeatIntervalMs, pipesConfig.getSocketTimeoutMs());
-
-            // Allow override for testing only
-            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
-                throw new TikaConfigException(msg);
-            }
-            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
-        }
+        validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
         this.protocolIO = new ServerProtocolIO(input, output);
@@ -246,6 +234,28 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
+     * Fails fast if heartbeatIntervalMs >= socketTimeoutMs: the client's liveness check
+     * ({@code PipesClient#waitForServer}) relies solely on the socket's own
+     * {@code SO_TIMEOUT}, so a too-slow heartbeat makes a healthy server look dead.
+     * Checked once at startup rather than left as a violable javadoc warning.
+     */
+    private static void validateHeartbeatInterval(PipesConfig pipesConfig) throws TikaConfigException {
+        long heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
+        long socketTimeoutMs = pipesConfig.getSocketTimeoutMs();
+        if (heartbeatIntervalMs >= socketTimeoutMs) {
+            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
+                    "This configuration will cause socket timeouts during normal processing.",
+                    heartbeatIntervalMs, socketTimeoutMs);
+
+            // Allow override for testing only
+            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
+                throw new TikaConfigException(msg);
+            }
+            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
+        }
+    }
+
+    /**
      * Runs the server in shared mode, accepting multiple client connections.
      * <p>
      * Each incoming connection must present a valid auth token (32 bytes) before
@@ -259,6 +269,7 @@ public class PipesServer implements AutoCloseable {
                                       byte[] expectedToken) throws Exception {
         TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+        validateHeartbeatInterval(pipesConfig);
 
         // Load shared resources
         SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
@@ -375,13 +386,15 @@ public class PipesServer implements AutoCloseable {
                         ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                         // Validate the effective (merged + resolved) context
                         ServerProtocolIO.validateParseContext(mergedContext);
-                        TikaProgressTracker tracker = new TikaProgressTracker();
-                        mergedContext.set(TikaProgressTracker.class, tracker);
+                        // Installed here, before submit, so the worker thread's own
+                        // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                        // sees this instance rather than racing to install its own.
+                        ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
                         try {
-                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, tracker);
+                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
                         } catch (Throwable t) {
                             LOG.error("Serious problem processing request", t);
                         }
@@ -437,7 +450,7 @@ public class PipesServer implements AutoCloseable {
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
-                               TikaProgressTracker tracker) throws InterruptedException, IOException {
+                               ParseTimeout parseTimeout) throws InterruptedException, IOException {
         Instant start = Instant.now();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
@@ -486,23 +499,38 @@ public class PipesServer implements AutoCloseable {
             // Send fire-and-forget heartbeat if we've waited long enough
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
             if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
-                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+                PipesMessage.working(parseTimeout.getLastProgressMillis()).write(output);
                 heartbeatCounter++;
             }
 
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(start, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
             }
-            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
 
     }
 
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
+    /**
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not exactly at
+     * {@code totalTaskTimeoutMillis}. The cooperative deadline path
+     * (ParsingEmbeddedDocumentExtractor skipping remaining embedded docs, then
+     * EmitHandler filtering/emitting a PARTIAL_TIMEOUT result) only starts once
+     * ParseTimeout's own deadline -- anchored at the same start, same
+     * totalTaskTimeoutMillis -- is reached, so killing the JVM at that identical instant
+     * leaves no time for that wind-down to run. The grace window is bounded by the
+     * ordinary stall detector: {@link #checkProgressTimeout} still fires independently on
+     * its own schedule, so a wind-down that hangs (rather than progressing to
+     * completion) is still caught, just via the stall path instead of the total-timeout
+     * path.
+     */
+    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
         long elapsed = Duration.between(start, Instant.now()).toMillis();
-        if (elapsed > totalTaskTimeoutMillis) {
+        long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
+                ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
+        if (elapsed > graceDeadline) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
             return true;
@@ -510,8 +538,8 @@ public class PipesServer implements AutoCloseable {
         return false;
     }
 
-    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+    private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = System.currentTimeMillis() - parseTimeout.getLastProgressMillis();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));

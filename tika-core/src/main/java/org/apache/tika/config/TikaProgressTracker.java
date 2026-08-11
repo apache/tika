@@ -31,8 +31,14 @@ import org.apache.tika.parser.ParseContext;
  * {@link ParseContext} on the server side before submitting a parse task
  * and is never sent over the wire.
  *
+ * @deprecated superseded by {@link ParseTimeout#checkpoint()}, installed automatically per
+ * task (see {@link ParseTimeout#getOrCreate(ParseContext)}) and also bounding the task's
+ * total timeout. {@link #update(ParseContext)} still works and now also checkpoints the
+ * {@link ParseTimeout} in the same context, so existing callers are unaffected; new code
+ * should call {@link ParseTimeout#checkpoint(ParseContext)} directly.
  * @since Apache Tika 4.0
  */
+@Deprecated
 public class TikaProgressTracker {
 
     private final AtomicLong lastProgressMillis;
@@ -62,6 +68,8 @@ public class TikaProgressTracker {
         if (tracker != null) {
             tracker.update();
         }
+        // Delegate to the successor so old-API callers still feed stall detection/total-timeout accounting.
+        ParseTimeout.checkpoint(context);
     }
 
     /**

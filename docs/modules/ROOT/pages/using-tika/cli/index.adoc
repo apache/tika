@@ -254,8 +254,14 @@ from parser crashes, OOM, and timeouts.
 |`-f` or `--fork`
 |Run parsing in a forked JVM process.
 
-|`--fork-timeout=<ms>`
-|Parse timeout in milliseconds (default: 60000).
+|`--task-timeout=<ms>`
+|Total per-file budget in milliseconds (default: 3600000 -- 1 hour). Replaces the pre-4.0
+`--fork-timeout`, which is now a hard error naming this flag and `--progress-timeout` as
+its replacements.
+
+|`--progress-timeout=<ms>`
+|Stall detector: maximum time with no progress before the fork is killed as hung, in
+milliseconds (default: 120000 -- 2 minutes).
 
 |`--fork-jvm-args=<args>`
 |JVM args for the forked process, comma-separated. Example: `--fork-jvm-args=-Xmx512m,-Dsome.prop=value`.

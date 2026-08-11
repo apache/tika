@@ -113,9 +113,9 @@ public class Tess4JParserTest {
         p.setOcrEngineMode(1);
         assertEquals(1, p.getOcrEngineMode());
 
-        assertEquals(120, p.getTimeoutSeconds());
-        p.setTimeoutSeconds(60);
-        assertEquals(60, p.getTimeoutSeconds());
+        assertEquals(120_000, p.getTimeoutMillis());
+        p.setTimeoutMillis(60_000);
+        assertEquals(60_000, p.getTimeoutMillis());
 
         assertEquals(300, p.getDpi());
         p.setDpi(150);

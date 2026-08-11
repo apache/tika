@@ -54,7 +54,7 @@ public class OpenAIImageEmbeddingParserTest {
         config = new ImageEmbeddingConfig();
         config.setBaseUrl(server.url());
         config.setModel("jina-clip-v2");
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         parser = new OpenAIImageEmbeddingParser(config);
     }

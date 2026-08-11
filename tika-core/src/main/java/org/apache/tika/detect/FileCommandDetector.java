@@ -56,13 +56,13 @@ public class FileCommandDetector implements Detector {
 
     public static Property FILE_MIME = Property.externalText("file:mime");
     private static final Logger LOGGER = LoggerFactory.getLogger(FileCommandDetector.class);
-    private static final long DEFAULT_TIMEOUT_MS = 6000;
+    private static final long DEFAULT_TIMEOUT_MILLIS = 6000;
     private static final String DEFAULT_FILE_COMMAND_PATH = "file";
     private static boolean HAS_WARNED = false;
     private Boolean hasFileCommand = null;
     private String fileCommandPath = DEFAULT_FILE_COMMAND_PATH;
     private int maxBytes = 1_000_000;
-    private long timeoutMs = DEFAULT_TIMEOUT_MS;
+    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
     private boolean useMime = false;
 
@@ -99,18 +99,18 @@ public class FileCommandDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
         //spool the full file to disk, if there is no underlying file
-        return detectOnPath(tis.getPath(), metadata);
+        return detectOnPath(tis.getPath(), metadata, parseContext);
     }
 
-    private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
+    private MediaType detectOnPath(Path path, Metadata metadata, ParseContext parseContext) throws IOException {
 
         String[] args =
                 new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
                         ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, timeoutMs, 10000, 10000);
+        FileProcessResult result = ProcessUtils.execute(builder, parseContext, timeoutMillis, 10000, 10000);
+        metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         if (result.isTimeout()) {
-            metadata.set(ExternalProcess.IS_TIMEOUT, true);
             return MediaType.OCTET_STREAM;
         }
         if (result.getExitValue() != 0) {
@@ -158,8 +158,12 @@ public class FileCommandDetector implements Detector {
         this.maxBytes = maxBytes;
     }
 
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
 }

@@ -42,7 +42,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -292,7 +291,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertEquals(totalNoLimit, list.size());
 
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertNull(limitReached);
         }
 
@@ -311,7 +310,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertEquals(maxEmbedded + 1, list.size());
 
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertEquals("true", limitReached);
         }
 
@@ -324,7 +323,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             List<Metadata> list = handler.getMetadataList();
             assertEquals(totalNoLimit, list.size());
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertNull(limitReached);
         }
     }

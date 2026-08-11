@@ -38,7 +38,6 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -70,7 +69,7 @@ import org.apache.tika.utils.ProcessUtils;
 @TikaComponent
 public class ExternalParser implements Parser {
 
-    public static final long DEFAULT_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
     public static final String INPUT_FILE_TOKEN = "${INPUT_FILE}";
 
@@ -187,11 +186,9 @@ public class ExternalParser implements Parser {
             }
 
             // Always capture both stdout and stderr in memory
-            long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                    context, config.getTimeoutMs());
             FileProcessResult result = ProcessUtils.execute(
-                    new ProcessBuilder(thisCommandLine),
-                    localTimeoutMillis, config.getMaxStdOut(), config.getMaxStdErr());
+                    new ProcessBuilder(thisCommandLine), context,
+                    config.getTimeoutMillis(), config.getMaxStdOut(), config.getMaxStdErr());
 
             // Set process metadata
             metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());

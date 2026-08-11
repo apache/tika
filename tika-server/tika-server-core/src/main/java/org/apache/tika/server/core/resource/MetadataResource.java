@@ -36,8 +36,9 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -97,7 +98,11 @@ public class MetadataResource {
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            return Response.ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context)).build();
+            // No request headers: on a multipart request those describe the envelope
+            // ("multipart/form-data; boundary=..." and its total length), and would
+            // overwrite the Content-Type/Content-Length setupMultipartConfig derived
+            // from the file part.
+            return Response.ok(parseMetadata(tis, metadata, null, context)).build();
         }
     }
 
@@ -171,7 +176,7 @@ public class MetadataResource {
 
     /**
      * Parses via the shared pipes-backed PipesParser, stopping at the container document
-     * (EmbeddedLimits maxDepth=0) with content capture off ("ignore" handler) -- metadata
+     * (SkipEmbeddedDocumentSelector) with content capture off ("ignore" handler) -- metadata
      * only, matching /meta's contract. Set unconditionally so per-request config can't
      * turn content capture back on. A container-level exception is embedded in
      * CONTAINER_EXCEPTION here, not thrown; getMetadataField throws instead since it
@@ -179,8 +184,12 @@ public class MetadataResource {
      */
     protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, ParseContext context)
             throws Exception {
-        fillMetadata(null, metadata, httpHeaders);
-        context.set(EmbeddedLimits.class, new EmbeddedLimits(0, false, EmbeddedLimits.UNLIMITED, false));
+        if (httpHeaders != null) {
+            fillMetadata(null, metadata, httpHeaders);
+        }
+        // Selector, not EmbeddedLimits(maxDepth=0): reaching a limit is recorded, so a depth
+        // limit would stamp tk:exception:embedded-depth-limit-reached on every container.
+        context.set(DocumentSelector.class, new SkipEmbeddedDocumentSelector());
         context.set(ContentHandlerFactory.class,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
 

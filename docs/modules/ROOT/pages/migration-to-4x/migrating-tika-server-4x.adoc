@@ -218,7 +218,13 @@ The following `TikaServerConfig` options have been removed:
   is what the name implied. Exception detail is now always returned; filter Tika's output
   with a `MetadataFilter` before forwarding it somewhere less trusted.
 
-* `taskTimeoutMillis` - Now configured via `parse-context.timeout-limits.progressTimeoutMillis` (and optionally `totalTaskTimeoutMillis`); see xref:pipes/timeouts.adoc[Timeouts].
+* `taskTimeoutMillis` - Was the total time allowed per task before the forked process was
+  killed; that is now `parse-context.timeout-limits.totalTaskTimeoutMillis` (same
+  meaning, new home). 4.x also adds a second, independent axis with no pre-4.0
+  equivalent -- `progressTimeoutMillis`, a stall detector that kills the task only after
+  a period of genuine silence, not merely after `totalTaskTimeoutMillis` of wall-clock
+  time -- worth setting deliberately rather than leaving at its default. See
+  xref:pipes/timeouts.adoc[Timeouts].
 * `taskPulseMillis` - No longer needed
 * `minimumTimeoutMillis` - No longer needed
 

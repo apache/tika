@@ -42,7 +42,6 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
@@ -166,11 +165,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         String mimeType = detectMimeType(metadata);
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
-        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                parseContext, config.getTimeoutSeconds() * 1000L);
-        int timeoutSeconds = (int) (timeoutMillis / 1000L);
-
-        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, timeoutSeconds);
+        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, config.getTimeoutMillis(), parseContext);
         TikaProgressTracker.update(parseContext);
 
         Locators locators = buildLocators(metadata);
@@ -196,7 +191,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     float[] callEmbeddingEndpoint(ImageEmbeddingConfig config,
                                   String mimeType, String base64Data,
-                                  int timeoutSeconds)
+                                  long timeoutMillis, ParseContext parseContext)
             throws IOException, TikaException {
 
         String requestJson = buildRequest(config, mimeType, base64Data);
@@ -207,7 +202,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
 
-        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutSeconds);
+        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutMillis, parseContext);
         return parseResponse(responseBody);
     }
 
@@ -339,12 +334,12 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         defaultConfig.setApiKey(apiKey);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public boolean isSkipEmbedding() {

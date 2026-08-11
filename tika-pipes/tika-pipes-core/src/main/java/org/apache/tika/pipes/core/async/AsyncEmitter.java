@@ -104,6 +104,13 @@ public class AsyncEmitter implements Callable<Integer> {
         }
 
         void add(EmitDataPair emitDataPair) {
+            if (emitDataPair.emitData() == null) {
+                // Shouldn't happen -- AsyncProcessor.shouldEmit() is expected to filter
+                // these out before offering to the queue -- but a null here must not take
+                // down the whole batch.
+                LOG.warn("null emitData offered for emitterId={}, skipping", emitDataPair.emitterId());
+                return;
+            }
             size++;
             long sz = emitDataPair.emitData().getEstimatedSizeBytes();
             if (estimatedSize + sz > maxBytes) {

@@ -269,7 +269,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         get.setHeader(headerKey, headerValue);
     }
 
-    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
+    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength)
+            throws IOException, TikaTimeoutException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
