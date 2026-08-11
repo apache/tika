@@ -476,6 +476,7 @@
   {"key":"tk:exception:embedded-resource-limit-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE"},
   {"key":"tk:exception:embedded-stream-exception","namespace":"tk","valueType":"TEXT","cardinality":"BAG"},
   {"key":"tk:exception:embedded-warning","namespace":"tk","valueType":"TEXT","cardinality":"BAG"},
+  {"key":"tk:exception:task-deadline-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE"},
   {"key":"tk:exception:warn","namespace":"tk","valueType":"TEXT","cardinality":"BAG"},
   {"key":"tk:exception:write-limit-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE"},
   {"key":"tk:final-embedded-resource-path","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE"},
