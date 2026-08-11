@@ -65,6 +65,9 @@ Failures with stale `X-TIKA:`/underscore/`SHA256` keys usually mean *regenerate*
 ## Naming conventions (frozen for 4.0, TIKA-4794)
 
 - All keys are `Property` constants — no bare `String` keys (`metadata-string-keys.json` retired).
+  Exception: a few deprecated `String` fields (`IPTC.*_WRONG_CASE`,
+  `TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY`) exist only to construct a real `Property`'s
+  name and aren't independent keys.
 - Tika-coined prefix is `tk:` (`X-TIKA:` is legacy); kebab-case, no underscores.
 - External-standard names verbatim, *including* the standard's prefix: `dc:`, `xmp:`, `cp:`, `extended-properties:`.
 - HTTP has no namespace → `Content-Type`, `Content-Encoding`, `Location` stay bare (no `http:`).
