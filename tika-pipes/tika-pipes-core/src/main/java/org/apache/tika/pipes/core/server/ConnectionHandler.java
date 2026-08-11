@@ -293,7 +293,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             }
 
             // Check timeouts
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(start, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
             if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
@@ -302,9 +302,24 @@ public class ConnectionHandler implements Runnable, Closeable {
         }
     }
 
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
+    /**
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not exactly at
+     * {@code totalTaskTimeoutMillis}. The cooperative deadline path
+     * (ParsingEmbeddedDocumentExtractor skipping remaining embedded docs, then
+     * EmitHandler filtering/emitting a PARTIAL_TIMEOUT result) only starts once
+     * ParseTimeout's own deadline -- anchored at the same start, same
+     * totalTaskTimeoutMillis -- is reached, so killing the JVM at that identical instant
+     * leaves no time for that wind-down to run. The grace window is bounded by the
+     * ordinary stall detector: {@link #checkProgressTimeout} still fires independently on
+     * its own schedule, so a wind-down that hangs (rather than progressing to
+     * completion) is still caught, just via the stall path instead of the total-timeout
+     * path.
+     */
+    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
         long elapsed = Duration.between(start, Instant.now()).toMillis();
-        if (elapsed > totalTaskTimeoutMillis) {
+        long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
+                ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
+        if (elapsed > graceDeadline) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
             // Timeout means a parsing thread is stuck - the JVM must be restarted

@@ -205,7 +205,7 @@ public class StringsParser implements Parser, Initializable {
         // Reads content printed out by "strings" command
         Thread gobbler = logStream(out, xhtml, totalBytes);
         gobbler.start();
-        long requestedMillis = config.getTimeoutSeconds() * 1000L;
+        long requestedMillis = config.getTimeoutMillis();
         try {
             long timeoutMillis = ParseTimeout.getOrCreate(context).budgetFor(requestedMillis);
             boolean completed = ProcessUtils.waitForWithHeartbeat(process, context, timeoutMillis);
@@ -250,6 +250,6 @@ public class StringsParser implements Parser, Initializable {
         checkForStrings();
         fileCommandDetector = new FileCommandDetector();
         fileCommandDetector.setFilePath(defaultConfig.getFilePath());
-        fileCommandDetector.setTimeoutMs(defaultConfig.getTimeoutSeconds() * 1000);
+        fileCommandDetector.setTimeoutMillis(defaultConfig.getTimeoutMillis());
     }
 }

@@ -49,6 +49,8 @@ import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
+import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
@@ -284,13 +286,18 @@ public class AsyncProcessorTest extends TikaTest {
 
     @Test
     public void testPartialTimeoutContentIsEmitted() throws Exception {
-        // totalTaskTimeoutMillis=0 makes ParseTimeout deterministically "already exhausted"
-        // (remainingMillis() always 0), so the embedded doc is skipped immediately and the
-        // result becomes PARTIAL_TIMEOUT -- reliably ahead of the server's separate hard
-        // totalTaskTimeoutMillis watchdog (same threshold, polled every ~100-200ms). A
-        // non-zero "tight" value raced unreliably against both that watchdog and machine speed.
+        // totalTaskTimeoutMillis=500 with a checkpointedSleep of 700ms simulates a real
+        // in-flight bounded call (e.g. an external process) that's still running when the
+        // deadline passes -- it's allowed to finish, and only the *subsequent* embedded
+        // doc is skipped. This is realistic (not the old total=0 "always already
+        // exhausted" shortcut) because PipesServer/ConnectionHandler's hard
+        // checkTotalTimeout watchdog now fires at totalTaskTimeoutMillis +
+        // progressTimeoutMillis (10000ms grace here), not at totalTaskTimeoutMillis
+        // itself -- giving the cooperative skip-and-emit wind-down room to complete
+        // instead of racing a ~100-200ms watchdog poll at the exact deadline instant.
         String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
                 "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<checkpointedSleep millis=\"700\" intervalMillis=\"50\"/>" +
                 "<write element=\"p\">main_content</write>" +
                 "<embedded filename=\"embed1.xml\" content-type=\"application/mock+xml\">" +
                 "&lt;mock&gt;&lt;metadata action=\"add\" name=\"dc:creator\"&gt;embeddedAuthor&lt;/metadata&gt;" +
@@ -304,7 +311,7 @@ public class AsyncProcessorTest extends TikaTest {
 
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.RMETA);
-        parseContext.set(TimeoutLimits.class, new TimeoutLimits(0, 10000));
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(500, 10000));
         FetchEmitTuple t = new FetchEmitTuple("partial-timeout-1",
                 new FetchKey("fsf", "mock-partial-timeout.xml"),
                 new EmitKey("fse-json", "emit-partial-timeout"), new Metadata(), parseContext,
@@ -332,5 +339,62 @@ public class AsyncProcessorTest extends TikaTest {
         assertContains("content", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("true", metadataList.get(0).get(TikaCoreProperties.TASK_DEADLINE_REACHED),
                 "container metadata should record that the task deadline was reached");
+    }
+
+    @Test
+    public void testPartialTimeoutEmitAllDoesNotCrashBatch() throws Exception {
+        // TIKA-4813 follow-up: under EMIT_ALL, the server already emits directly and
+        // returns bare EMIT_SUCCESS with null emitData. EmitHandler still relabels that
+        // to PARTIAL_TIMEOUT when the deadline was reached -- before the fix,
+        // AsyncProcessor.FetchEmitWorker.shouldEmit() treated PARTIAL_TIMEOUT alone as
+        // "batch-emit this", offered the null emitData to the queue, and
+        // AsyncEmitter.EmitDataCache.add NPE'd on emitData.getEstimatedSizeBytes(),
+        // which killed the whole run via checkActive()'s ExecutionException handling.
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">main_content</write>" +
+                "<embedded filename=\"embed1.xml\" content-type=\"application/mock+xml\">" +
+                "&lt;mock&gt;&lt;metadata action=\"add\" name=\"dc:creator\"&gt;embeddedAuthor&lt;/metadata&gt;" +
+                "&lt;write element=\"p\"&gt;some_embedded_content&lt;/write&gt;&lt;/mock&gt;" +
+                "</embedded>" +
+                "</mock>";
+        Path mockFile = inputDir.resolve("mock-partial-timeout-emit-all.xml");
+        Files.write(mockFile, mockContent.getBytes(StandardCharsets.UTF_8));
+
+        AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(0, 10000));
+        parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+        FetchEmitTuple t = new FetchEmitTuple("partial-timeout-emit-all-1",
+                new FetchKey("fsf", "mock-partial-timeout-emit-all.xml"),
+                new EmitKey("fse-json", "emit-partial-timeout-emit-all"), new Metadata(), parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        processor.offer(t, 1000);
+        for (int i = 0; i < 10; i++) {
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+        }
+        // Pre-fix, the NPE in AsyncEmitter surfaced here as a RuntimeException out of
+        // checkActive(), failing the test.
+        while (processor.checkActive()) {
+            Thread.sleep(100);
+        }
+        processor.close();
+
+        // EMIT_ALL means the forked server emitted this directly -- the content must be
+        // on disk even though AsyncEmitter never touched it (shouldEmit() must have
+        // skipped the null-emitData offer, not silently dropped real content).
+        Path emitted = jsonOutputDir.resolve("emit-partial-timeout-emit-all");
+        assertTrue(Files.exists(emitted),
+                "EMIT_ALL content must be written server-side even when relabeled PARTIAL_TIMEOUT: " + emitted);
+        List<Metadata> metadataList;
+        try (BufferedReader reader = Files.newBufferedReader(emitted)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertFalse(metadataList.isEmpty(), "container metadata must be present");
+        assertContains("main", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("content", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
     }
 }

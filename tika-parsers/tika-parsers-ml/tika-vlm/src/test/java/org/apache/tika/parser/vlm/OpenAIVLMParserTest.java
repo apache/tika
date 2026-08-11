@@ -55,7 +55,7 @@ public class OpenAIVLMParserTest {
         config.setModel("test-model");
         config.setPrompt("Extract text from this image.");
         config.setMaxTokens(1024);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         // Queue 200 for the GET /v1/models health check in initialize()
         server.enqueue(new TikaTestHttpServer.MockResponse(200, "{\"object\":\"list\"}"));
@@ -229,7 +229,7 @@ public class OpenAIVLMParserTest {
         override.setModel("override-model");
         override.setPrompt("Custom.");
         override.setMaxTokens(2048);
-        override.setTimeoutSeconds(10);
+        override.setTimeoutMillis(10_000);
 
         server.enqueue(new TikaTestHttpServer.MockResponse(200,
                 buildChatResponse("ok", 10, 5)));

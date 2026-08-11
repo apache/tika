@@ -22,6 +22,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,6 +49,7 @@ import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 
@@ -237,18 +247,22 @@ public class PipesClientTest {
     @Test
     public void testWatchdogHonorsCheckpointsDuringLongExternalCall(@TempDir Path tmp) throws Exception {
         // A long "external call" (checkpointedSleep, standing in for e.g. Tesseract's
-        // ProcessUtils.execute wait) reports progress every 300ms over its 4s run, under
-        // a progressTimeoutMillis (1000ms) shorter than that but a totalTaskTimeoutMillis
+        // ProcessUtils.execute wait) reports progress every 500ms over its 6s run, under
+        // a progressTimeoutMillis (3000ms) shorter than that but a totalTaskTimeoutMillis
         // with plenty of room. If the watchdog reads stale progress instead of live
-        // checkpoints, this times out well before the sleep completes.
+        // checkpoints, this times out well before the sleep completes. Margins (3000ms
+        // budget vs. 500ms checkpoints, i.e. 6 checkpoints per budget window) are wide on
+        // purpose -- a tighter 1000ms/300ms version previously flagged as flaky, since a
+        // single GC pause or scheduler stall over ~700ms in the freshly forked JVM could
+        // make one checkpoint arrive late enough to trip the watchdog.
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);
         String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
                 "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
                 "<write element=\"p\">main_content</write>" +
-                "<checkpointedSleep millis=\"4000\" intervalMillis=\"300\"/>" +
+                "<checkpointedSleep millis=\"6000\" intervalMillis=\"500\"/>" +
                 "</mock>";
-        String testFile = "mock-checkpointed-sleep-4s.xml";
+        String testFile = "mock-checkpointed-sleep-6s.xml";
         Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
 
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
@@ -256,7 +270,7 @@ public class PipesClientTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         ParseContext parseContext = new ParseContext();
-        parseContext.set(TimeoutLimits.class, new TimeoutLimits(15000, 1000));
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(20000, 3000));
 
         try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
             PipesResult result = pipesClient.process(
@@ -265,7 +279,7 @@ public class PipesClientTest {
                             FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
 
             assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, result.status(),
-                    "A 4s checkpointing wait must not trip a 1000ms progress timeout");
+                    "A 6s checkpointing wait must not trip a 3000ms progress timeout");
         }
     }
 
@@ -917,5 +931,123 @@ public class PipesClientTest {
 
         assertNull(metadata.get(TikaCoreProperties.TIKA_CONTENT),
                 "TIKA_CONTENT must not be set when the handler type is \"ignore\"");
+    }
+
+    @Test
+    public void testClientBackstopFiresAgainstChattyButNeverFinishingServer(@TempDir Path tmp) throws Exception {
+        // TIKA-4813 follow-up: a "server" that keeps sending WORKING heartbeats forever
+        // (well within SO_TIMEOUT) but never sends FINISHED, standing in for a
+        // wedged-but-chatty or compromised forked worker. Without a client-side backstop,
+        // PipesClient.waitForServer blocks forever, since SO_TIMEOUT resets on any
+        // received message and nothing else bounds total wait time.
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                tmp, tmp.resolve("input"), tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        ParseContext parseContext = new ParseContext();
+        // clientBackstopMillis = total + 2*progress = 1000 + 2*400 = 1800ms
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 400));
+
+        try (ChattyNeverFinishingServerManager fakeServerManager = new ChattyNeverFinishingServerManager();
+             PipesClient pipesClient = new PipesClient(pipesConfig, fakeServerManager)) {
+            long startTime = System.currentTimeMillis();
+            PipesResult result = pipesClient.process(
+                    new FetchEmitTuple("id", new FetchKey(fetcherName, "x"),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            long elapsed = System.currentTimeMillis() - startTime;
+
+            assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, result.status());
+            assertTrue(elapsed < 10000,
+                    "client backstop should fire within a few seconds of its ~1800ms " +
+                            "deadline, not wait for the 60s default SO_TIMEOUT (took " + elapsed + "ms)");
+        }
+    }
+
+    /**
+     * Fake {@link ServerManager} whose "server" accepts one connection, sends READY,
+     * reads the NEW_REQUEST, then sends WORKING heartbeats forever and never FINISHED --
+     * used to prove the client-side wall-clock backstop in
+     * {@code PipesClient#waitForServer} fires independently of anything the "server"
+     * reports about its own liveness.
+     */
+    private static class ChattyNeverFinishingServerManager implements ServerManager {
+        private final ServerSocket serverSocket;
+        private volatile boolean running = true;
+
+        ChattyNeverFinishingServerManager() throws IOException {
+            serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+            Thread acceptor = new Thread(this::acceptLoop, "chatty-never-finishing-server-acceptor");
+            acceptor.setDaemon(true);
+            acceptor.start();
+        }
+
+        private void acceptLoop() {
+            while (running) {
+                try {
+                    Socket socket = serverSocket.accept();
+                    Thread handler = new Thread(() -> handleConnection(socket),
+                            "chatty-never-finishing-server-connection");
+                    handler.setDaemon(true);
+                    handler.start();
+                } catch (IOException e) {
+                    // expected on shutdown when serverSocket.close() unblocks accept()
+                }
+            }
+        }
+
+        private void handleConnection(Socket socket) {
+            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+                 DataInputStream in = new DataInputStream(new BufferedInputStream(socket.getInputStream()))) {
+                PipesMessage.ready().write(out);
+                PipesMessage.read(in); // NEW_REQUEST -- ignored, this fake never parses anything
+                while (!socket.isClosed()) {
+                    PipesMessage.working(System.currentTimeMillis()).write(out);
+                    Thread.sleep(200);
+                }
+            } catch (Exception e) {
+                // expected once the client closes the connection when its backstop fires
+            }
+        }
+
+        @Override
+        public int getPort() {
+            return serverSocket.getLocalPort();
+        }
+
+        @Override
+        public void ensureRunning() {
+            // already running from the constructor
+        }
+
+        @Override
+        public Socket connect(int socketTimeoutMs) throws IOException {
+            Socket socket = new Socket();
+            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), getPort()), socketTimeoutMs);
+            socket.setSoTimeout(socketTimeoutMs);
+            return socket;
+        }
+
+        @Override
+        public void shutdown() {
+            running = false;
+        }
+
+        @Override
+        public boolean isRunning() {
+            return running;
+        }
+
+        @Override
+        public Path getTempDirectory() {
+            return null;
+        }
+
+        @Override
+        public void close() throws IOException {
+            running = false;
+            serverSocket.close();
+        }
     }
 }

@@ -57,7 +57,7 @@ public class ClaudeVLMParserTest {
         config.setModel("claude-sonnet-4-20250514");
         config.setPrompt("Extract all text.");
         config.setMaxTokens(4096);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
         config.setApiKey("sk-ant-test-key");
 
         parser = new ClaudeVLMParser(config);

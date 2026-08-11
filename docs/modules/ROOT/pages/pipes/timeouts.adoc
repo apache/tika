@@ -57,7 +57,8 @@ configuration, alongside any per-parser timeouts:
   "parse-context": {
     "timeout-limits": {
       "totalTaskTimeoutMillis": 600000,
-      "progressTimeoutMillis": 60000
+      "progressTimeoutMillis": 60000,
+      "throwOnDeadline": false
     }
   },
   "pipes": {
@@ -77,12 +78,21 @@ There are two families of outcome:
      `ExternalProcess.IS_TIMEOUT = true` and a recorded exception; the result status is
      `PARSE_SUCCESS_WITH_EXCEPTION` / `EMIT_SUCCESS_PARSE_EXCEPTION`.
   ** If the *document budget* ran out partway through, remaining embedded documents are
-     skipped cleanly, the document metadata carries `taskDeadlineReached = true`, and the
+     skipped cleanly, the document metadata carries `TikaCoreProperties.TASK_DEADLINE_REACHED = true`, and the
      result status is `PARTIAL_TIMEOUT`. The content is complete up to the point the
      budget was exhausted.
 * **The worker is lost.** A genuine hang (or an unkillable child process) forces the
   forked JVM to exit; the client restarts it automatically and the result status is
   `TIMEOUT`. Content for that document is lost (except any intermediate result).
+
+In Pipes mode, a hard external watchdog backs up the cooperative `PARTIAL_TIMEOUT` path
+above rather than racing it: it does not fire until
+`totalTaskTimeoutMillis + progressTimeoutMillis` has elapsed, not at
+`totalTaskTimeoutMillis` itself. That gap exists to give the cooperative path -- skip
+remaining embedded documents, then filter and emit a `PARTIAL_TIMEOUT` result -- room to
+actually run once the deadline is hit, rather than the hard kill landing on top of it at
+the same instant. A wind-down that itself hangs is still caught, just via the ordinary
+stall detector (`progressTimeoutMillis` of silence) rather than the total-timeout path.
 
 Every timeout message reports the *requested* budget, the *granted* budget, and which
 limit did the clipping, e.g.:
@@ -95,6 +105,35 @@ requested=120000ms, granted=30000ms (task remaining)            <- document budg
 `granted == requested` means the parser's own timeout is the one to change;
 `granted < requested` means the document ran out of time and `totalTaskTimeoutMillis`
 is the one to change.
+
+== throwOnDeadline: Failing Hard Instead of Partial
+
+By default (`throwOnDeadline: false`), a document budget running out is *not* an error --
+the document is treated as a success with truncated content (see `PARTIAL_TIMEOUT`
+above). Setting `throwOnDeadline: true` changes that: the moment
+`totalTaskTimeoutMillis` is exhausted, every embedded document that would otherwise be
+skipped cleanly instead throws `EmbeddedLimitReachedException` (an unchecked exception),
+including every later sibling, not only the first one to notice.
+
+The blast radius of that exception depends on how you call Tika:
+
+* **Library usage** (`Tika`/`Parser.parse()` called directly): the exception propagates
+  to your own call site as an ordinary uncaught `RuntimeException`, which you can catch
+  around the parse call like any other.
+* **Pipes mode**: this is *not* an ordinary per-document failure. The exception is
+  uncaught inside the pipes worker's task and surfaces as an `ExecutionException`, which
+  the forked server treats identically to an unexpected crash -- it reports
+  `PipesMessageType.UNSPECIFIED_CRASH` to the client and **exits the forked JVM**,
+  exactly like an OOM. The client restarts the worker automatically (as in the "worker is
+  lost" case above), but any other document that happened to be in flight in that same
+  worker is lost too, not just the one that hit the deadline.
+
+Because of that asymmetry, prefer the default (`false`) in Pipes deployments unless you
+specifically need a deadline-exceeded document to be indistinguishable from a hard
+parser failure (e.g. a pipeline stage downstream that must never see truncated content).
+If you do enable it, budget `totalTaskTimeoutMillis` generously enough that hitting it is
+genuinely exceptional, since each occurrence costs you the whole worker, not just the one
+document.
 
 == Scenario Walkthroughs
 
@@ -133,7 +172,7 @@ Same job but `totalTaskTimeoutMillis=300000` (5 min), and non-OCR work takes 30 
   120 s; image 3 gets min(120, 30 remaining) = **30 s** and is killed when that expires.
   Any further embedded documents are skipped without being started.
 * *What you see:* status `PARTIAL_TIMEOUT`; document metadata
-  `taskDeadlineReached=true`; on image 3,
+  `TikaCoreProperties.TASK_DEADLINE_REACHED = true`; on image 3,
   `requested=120000, granted=30000 (task remaining)`. All earlier content is intact.
 * *What to change:* raise `totalTaskTimeoutMillis` (this job needs roughly
   30 s + 3 x 120 s plus slack). Do *not* raise the tesseract timeout --
@@ -197,7 +236,7 @@ The OS OOM-killer takes the forked JVM mid-parse.
 |`requested=N, granted=N -- budget exhausted` on a child
 |Raise that parser's timeout, or accept
 
-|`PARTIAL_TIMEOUT` / `taskDeadlineReached` (children clipped by `task remaining` or skipped)
+|`PARTIAL_TIMEOUT` / `TASK_DEADLINE_REACHED` (children clipped by `task remaining` or skipped)
 |Raise `totalTaskTimeoutMillis`, or accept truncation
 
 |`TIMEOUT`, "no progress" -- reproduces at the same spot
@@ -256,9 +295,9 @@ the rest are safe by construction.
 
 == Upgrading from Tika 3.x
 
-Two behavioral changes in 4.0 are easy to miss -- neither shows up as a compile error or
-a config validation failure. They change what already-written code and already-tuned
-configs actually do.
+Three behavioral changes in 4.0 are easy to miss -- none of them shows up as a compile
+error or a config validation failure. They change what already-written code and
+already-tuned configs actually do.
 
 `TikaTimeoutException` is now checked, not a `RuntimeException`. It extends
 `TikaException` so a single embedded document's timeout is recorded and its siblings
@@ -279,6 +318,16 @@ Overview): a bounded external call that reports progress no longer needs a large
 timeout (e.g. `tesseract-ocr-parser.timeoutMillis`) or `totalTaskTimeoutMillis`. If your
 only lever was `progressTimeoutMillis`, raise the actual per-parser timeout instead --
 see Scenario 2.
+
+`ProcessUtils.checkCommand()` -- used by several detectors and parsers
+(`FileCommandDetector`, `GDALParser`, etc.) to probe whether an external binary is
+installed and responds, e.g. `file --version` -- now waits at most 5 seconds by default,
+down from a hardcoded 60 seconds. This is a startup/initialization check, not a
+per-document timeout, so it is not governed by `TimeoutLimits`. If your environment's
+probe command is legitimately slow to respond (e.g. antivirus-scanned binaries, a slow
+network filesystem), that probe can now fail where it previously succeeded. Callers that
+need a longer probe window can call `ProcessUtils.checkCommandWithTimeout(cmd,
+timeoutMillis)` directly instead of `checkCommand()`.
 
 == Per-Request Overrides
 
@@ -304,13 +353,21 @@ with per-request values applied on top).
 
 === Standard mode (single file)
 
-For single-document parsing, `--fork` runs the parser in a forked JVM and
-`--fork-timeout` (milliseconds) caps how long it may run:
+For single-document parsing, `--fork` runs the parser in a forked JVM. In that mode,
+`--task-timeout` / `--progress-timeout` (milliseconds) mirror the two `TimeoutLimits`
+settings from <<_overview,Overview>> -- both default to the same values as the library
+(`3600000` / `120000`) when omitted. They only take effect alongside `--fork`; without it
+they are parsed but have nothing to apply to, since there is no forked process to bound:
 
 [source,bash]
 ----
-java -jar tika-app.jar --fork --fork-timeout=120000 document.pdf
+java -jar tika-app.jar --fork --task-timeout=600000 --progress-timeout=60000 document.pdf
 ----
+
+NOTE: The pre-4.0 `--fork-timeout` flag was removed because its meaning was ambiguous --
+it conflated the total per-file budget with the stall detector. Passing it now is a hard
+error naming `--task-timeout` and `--progress-timeout` as the replacements, rather than
+silently mapping to one or the other.
 
 === Pipes mode (`-i` / `-o`)
 

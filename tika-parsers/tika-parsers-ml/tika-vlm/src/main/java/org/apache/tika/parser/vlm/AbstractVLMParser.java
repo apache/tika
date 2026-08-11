@@ -203,7 +203,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         String responseText;
         try {
             String responseBody = httpClient.postJson(
-                    call.url(), call.json(), call.headers(), config.getTimeoutSeconds(), parseContext);
+                    call.url(), call.json(), call.headers(), config.getTimeoutMillis(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
             TikaProgressTracker.update(parseContext);
         } catch (TikaException e) {
@@ -237,7 +237,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
                     ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
                     : Map.of();
-            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutSeconds());
+            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {
@@ -395,12 +395,12 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         defaultConfig.setMaxTokens(maxTokens);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public String getApiKey() {

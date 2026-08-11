@@ -82,7 +82,7 @@ import org.apache.tika.utils.ProcessUtils;
  * <p>
  * int : cleanDwgReadOutputBatchSize - clean output batch size to process 
  * <p>
- * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * long : timeoutMillis -timeout in milliseconds before killing the dwgread process
  * <p>
  * String : cleanDwgReadRegexToReplace - characters to replace in the json 
  * <p>
@@ -123,7 +123,7 @@ public class DWGReadParser extends AbstractDWGParser {
                     tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
             ProcessBuilder pb = new ProcessBuilder().command(command);
             LOG.debug("About to call DWGRead: {}", command);
-            FileProcessResult fpr = ProcessUtils.execute(pb, context, dwgc.getDwgReadTimeout(), 10000, 10000);
+            FileProcessResult fpr = ProcessUtils.execute(pb, context, dwgc.getTimeoutMillis(), 10000, 10000);
             LOG.debug("DWGRead Exit code is: {}", fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {

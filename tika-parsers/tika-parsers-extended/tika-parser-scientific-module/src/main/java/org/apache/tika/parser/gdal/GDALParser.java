@@ -77,7 +77,7 @@ public class GDALParser implements Parser {
     private static final long serialVersionUID = -3869130527323941401L;
     private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);
 
-    public static final long DEFAULT_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(MediaType.application("x-netcdf"), MediaType.application("vrt"),
@@ -147,7 +147,7 @@ public class GDALParser implements Parser {
 
     private int maxStdOut = 100000;
 
-    private long timeoutMs = DEFAULT_TIMEOUT_MS;
+    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
     public GDALParser() {
         setCommand("gdalinfo ${INPUT_FILE}");
@@ -194,7 +194,7 @@ public class GDALParser implements Parser {
         String[] runCommand = processCommand(tis).split("\\s+", -1);
 
         FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand), context,
-                timeoutMs, maxStdOut, maxStdErr);
+                timeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
@@ -330,8 +330,12 @@ public class GDALParser implements Parser {
 
     }
 
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public void setMaxStdErr(int maxStdErr) {

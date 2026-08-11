@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -341,6 +344,17 @@ public class PipesClient implements Closeable {
      * {@code WORKING} heartbeat while alive and making progress, so a healthy-but-slow
      * parse never starves this blocking read -- only a dead or wedged server lets it
      * time out.
+     * <p>
+     * That heartbeat is a liveness signal only, not a deadline in itself: SO_TIMEOUT
+     * resets on <i>any</i> received message, so nothing here bounds total wall-clock time
+     * against a server that keeps emitting well-formed messages (heartbeats or otherwise)
+     * indefinitely without ever finishing -- whether from a bug or from a compromised
+     * worker process (the forked server parses untrusted documents, so it is exactly the
+     * kind of component that can end up doing something unexpected). This method adds a
+     * client-side wall-clock backstop for that case, using the task's own
+     * {@link TimeoutLimits} -- the same config the server itself enforces -- and timing
+     * every check from message-receipt time on this side, never from anything the server
+     * claims about its own progress.
      */
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
         // Snapshot the volatile once; a concurrent close() may null the field, but the
@@ -351,9 +365,22 @@ public class PipesClient implements Closeable {
                     intermediateResult.get());
         }
 
+        TimeoutLimits limits = TimeoutLimits.get(t.getParseContext());
+        long clientBackstopMillis = clientBackstopMillis(limits);
+        Instant start = Instant.now();
+
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
+            }
+            long totalElapsed = Duration.between(start, Instant.now()).toMillis();
+            if (totalElapsed > clientBackstopMillis) {
+                LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
+                                "-- server should have self-terminated well before this", pipesClientId,
+                        t.getId(), totalElapsed, clientBackstopMillis);
+                serverManager.markServerForRestart();
+                closeConnection();
+                return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get());
             }
             try {
                 PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
@@ -431,6 +458,30 @@ public class PipesClient implements Closeable {
                         ExceptionUtils.getStackTrace(e));
             }
         }
+    }
+
+    /**
+     * The server's own hard watchdog (see PipesServer/ConnectionHandler#checkTotalTimeout)
+     * self-terminates at {@code totalTaskTimeoutMillis + progressTimeoutMillis} rather than
+     * exactly at {@code totalTaskTimeoutMillis}, to leave room for the cooperative
+     * skip-remaining-and-emit wind-down once the deadline is reached. The client must wait
+     * at least that long before giving up on its own copy of the same limits, or it would
+     * routinely restart a server that's still in that legitimate wind-down window. The
+     * extra {@code progressTimeoutMillis} of margin on top covers the server's own exit
+     * plus socket teardown actually propagating back to this side as a read failure.
+     */
+    private static long clientBackstopMillis(TimeoutLimits limits) {
+        long total = limits.getTotalTaskTimeoutMillis();
+        long progress = limits.getProgressTimeoutMillis();
+        // Guard against overflow in both the doubling and the addition below.
+        if (progress > Long.MAX_VALUE / 2) {
+            return Long.MAX_VALUE;
+        }
+        long grace = 2 * progress;
+        if (total >= Long.MAX_VALUE - grace) {
+            return Long.MAX_VALUE;
+        }
+        return total + grace;
     }
 
     private PipesResult buildFatalResult(String id, EmitKey emitKey, PipesResult.RESULT_STATUS status,

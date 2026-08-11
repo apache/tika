@@ -96,7 +96,7 @@ public class LibPstParser implements Parser, Initializable {
             ProcessBuilder pb = getProcessBuilder(pst, activeConfig, outDir, debugFile);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata, parseContext);
             FileProcessResult fileProcessResult = ProcessUtils.execute(pb, parseContext,
-                    activeConfig.getTimeoutSeconds() * 1000L, MAX_STDOUT, MAX_STDERR);
+                    activeConfig.getTimeoutMillis(), MAX_STDOUT, MAX_STDERR);
             xhtml.startDocument();
             processContents(outDir, activeConfig, xhtml, metadata, parseContext);
             if (fileProcessResult.isTimeout()) {

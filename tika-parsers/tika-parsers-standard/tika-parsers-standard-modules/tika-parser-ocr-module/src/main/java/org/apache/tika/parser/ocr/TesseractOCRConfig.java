@@ -82,7 +82,7 @@ public class TesseractOCRConfig implements Serializable {
     // runtime switch to turn off OCR
     private boolean skipOcr = false;
     // Maximum time (seconds) to wait for the ocring process termination
-    private int timeoutSeconds = 120;
+    private long timeoutMillis = 120_000;
     // See addOtherTesseractConfig.
     private HashMap<String, String> otherTesseractConfig = new HashMap<>();
     private boolean inlineContent = false;
@@ -261,18 +261,18 @@ public class TesseractOCRConfig implements Serializable {
 
     /**
      * @return timeout value for Tesseract
-     * @see #setTimeoutSeconds(int timeout)
+     * @see #setTimeoutMillis(long timeout)
      */
-    public int getTimeoutSeconds() {
-        return timeoutSeconds;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     /**
-     * Set maximum time (seconds) to wait for the ocring process to terminate.
-     * Default value is 120s.
+     * Set maximum time (millis) to wait for the ocring process to terminate.
+     * Default value is 120000ms.
      */
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     /**

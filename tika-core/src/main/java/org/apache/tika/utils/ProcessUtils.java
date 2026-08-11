@@ -138,7 +138,14 @@ public class ProcessUtils {
                                             long requestedTimeoutMillis,
                                             int maxStdoutBuffer, int maxStdErrBuffer)
             throws IOException {
-        long grantedTimeoutMillis = ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+        // A null context has no task to clip against -- getOrCreate(null) would otherwise
+        // hand back a detached ParseTimeout built from *default* TimeoutLimits (1 hour),
+        // silently capping any request above that and breaking the "granted unclipped"
+        // contract documented above for null-context callers (e.g. a one-off version-check
+        // process run outside any parse).
+        long grantedTimeoutMillis = context == null
+                ? requestedTimeoutMillis
+                : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
         Process p = null;
         String id = null;
         try {
@@ -246,7 +253,12 @@ public class ProcessUtils {
             Files.createDirectories(stdoutRedirect.getParent());
         }
 
-        long grantedTimeoutMillis = ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+        // See the (ProcessBuilder, ParseContext, long, int, int) overload above: a null
+        // context must grant requestedTimeoutMillis unclipped, not silently cap it against
+        // a detached, default-TimeoutLimits ParseTimeout.
+        long grantedTimeoutMillis = context == null
+                ? requestedTimeoutMillis
+                : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
         pb.redirectOutput(stdoutRedirect.toFile());
         Process p = null;
         String id = null;

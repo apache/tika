@@ -95,7 +95,7 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
         }
 
         String responseBody = httpClient.postJson(url, requestJson, headers,
-                config.getTimeoutSeconds(), parseContext);
+                config.getTimeoutMillis(), parseContext);
         TikaProgressTracker.update(parseContext);
         parseResponse(responseBody, chunks);
     }

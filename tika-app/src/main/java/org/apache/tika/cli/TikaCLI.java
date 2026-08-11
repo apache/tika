@@ -221,9 +221,17 @@ public class TikaCLI {
      */
     private boolean forkMode = false;
     /**
-     * Fork mode timeout in milliseconds.
+     * Fork mode total task timeout in milliseconds. Null means unset -- falls back to
+     * {@link TimeoutLimits#DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS}, the same default used
+     * everywhere else in Tika (pipes, library usage), so a CLI user moving to pipes for
+     * production doesn't see different truncation behavior on the same file.
      */
-    private long forkTimeout = 60000;
+    private Long taskTimeoutMillis = null;
+    /**
+     * Fork mode progress (stall-detector) timeout in milliseconds. Null means unset --
+     * falls back to {@link TimeoutLimits#DEFAULT_PROGRESS_TIMEOUT_MILLIS}.
+     */
+    private Long progressTimeoutMillis = null;
     /**
      * Fork mode JVM arguments.
      */
@@ -584,7 +592,14 @@ public class TikaCLI {
         } else if (arg.equals("-f") || arg.equals("--fork")) {
             forkMode = true;
         } else if (arg.startsWith("--fork-timeout=")) {
-            forkTimeout = Long.parseLong(arg.substring("--fork-timeout=".length()));
+            throw new IllegalArgumentException("--fork-timeout was removed in 4.0 because its "
+                    + "meaning was ambiguous (total budget vs. stall detector). Use "
+                    + "--task-timeout=<ms> for the total per-file budget and/or "
+                    + "--progress-timeout=<ms> for the stall detector instead.");
+        } else if (arg.startsWith("--task-timeout=")) {
+            taskTimeoutMillis = Long.parseLong(arg.substring("--task-timeout=".length()));
+        } else if (arg.startsWith("--progress-timeout=")) {
+            progressTimeoutMillis = Long.parseLong(arg.substring("--progress-timeout=".length()));
         } else if (arg.startsWith("--fork-jvm-args=")) {
             forkJvmArgs = Arrays.asList(arg.substring("--fork-jvm-args=".length()).split(","));
         } else if (arg.startsWith("--fork-plugins-dir=")) {
@@ -728,10 +743,14 @@ public class TikaCLI {
             config.setParseMode(ParseMode.CONCATENATE);
         }
 
-        // --fork-timeout maps to totalTaskTimeoutMillis; progressTimeoutMillis (stall
-        // detector) is a separate concept and keeps its own default.
+        // Unset flags fall back to the same TimeoutLimits defaults used everywhere else
+        // in Tika (pipes, library usage) rather than CLI-specific numbers.
+        long effectiveTaskTimeoutMillis = taskTimeoutMillis != null
+                ? taskTimeoutMillis : TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS;
+        long effectiveProgressTimeoutMillis = progressTimeoutMillis != null
+                ? progressTimeoutMillis : TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS;
         config.setTimeoutLimits(new TimeoutLimits(
-                forkTimeout, TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS));
+                effectiveTaskTimeoutMillis, effectiveProgressTimeoutMillis));
 
         // Set JVM args if provided
         if (forkJvmArgs != null && !forkJvmArgs.isEmpty()) {
@@ -883,7 +902,10 @@ public class TikaCLI {
         out.println("Fork Mode (process isolation):");
         out.println("    -f  or --fork          Run parsing in a forked JVM process for isolation");
         out.println("                           Protects against parser crashes, OOM, and timeouts");
-        out.println("    --fork-timeout=<ms>    Parse timeout in milliseconds (default: 60000)");
+        out.println("    --task-timeout=<ms>    Total per-file budget in milliseconds");
+        out.println("                           (default: " + TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS + ")");
+        out.println("    --progress-timeout=<ms> Stall detector: max time with no progress");
+        out.println("                           (default: " + TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS + ")");
         out.println("    --fork-jvm-args=<args> JVM args for forked process (comma-separated)");
         out.println("                           e.g., --fork-jvm-args=-Xmx512m,-Dsome.prop=value");
         out.println("    --fork-plugins-dir=<dir> Directory containing plugin zips");

@@ -101,6 +101,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -544,6 +545,33 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    /**
+     * Mirrors {@link #handleCatchableIOE(IOException)}'s policy (governed by the same
+     * {@code catchIntermediateIOExceptions} config flag) for a single page's OCR call
+     * timing out. Without this, a per-page OCR timeout previously propagated as a plain
+     * {@link IOException} out of {@link #endPage(PDPage)}, aborting the whole document
+     * parse and losing every page after it -- the flagship "one image times out, siblings
+     * continue" behavior this timeout model is built around didn't actually hold for the
+     * most common OCR path. Recording into {@code exceptions} (rather than swallowing
+     * outright) preserves the class's existing contract: remaining pages are still
+     * processed and their content still reaches the handler, but the caller
+     * (PDF2XHTML/OCR2XHTML/etc.) still surfaces a TikaException wrapping the first
+     * recorded failure once every page has been attempted -- exactly like any other
+     * per-page IOException already does via {@link #handleCatchableIOE}.
+     */
+    void handleCatchableTimeout(TikaTimeoutException e) throws TikaTimeoutException {
+        if (config.isCatchIntermediateIOExceptions()) {
+            String msg = e.getMessage();
+            if (msg == null) {
+                msg = "TikaTimeoutException, no message";
+            }
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            exceptions.add(new IOException(msg, e));
+        } else {
+            throw e;
+        }
+    }
+
     void doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
@@ -596,6 +624,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
+        } catch (TikaTimeoutException e) {
+            handleCatchableTimeout(e);
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }

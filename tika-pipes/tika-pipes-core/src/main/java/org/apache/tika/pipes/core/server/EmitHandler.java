@@ -36,6 +36,7 @@ import org.apache.tika.metadata.filter.IncludeFieldMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
@@ -73,18 +74,37 @@ class EmitHandler {
         // variant (parsed-only, emitted, passed back...) the rest of this class chose --
         // relabel any of them uniformly rather than special-casing every return site
         // above. Never relabels a non-SUCCESS category: a genuine failure stays a failure.
+        //
+        // EMIT_SUCCESS_PASSBACK is excluded: its emitData is a *copy* of content already
+        // sent to a real Emitter (see emit()'s passbackFilter branch), kept only so the
+        // caller also gets the metadata back. Relabeling it would make AsyncProcessor's
+        // FetchEmitWorker.shouldEmit() -- which treats PARTIAL_TIMEOUT as "needs batch
+        // emission" -- re-emit content that was already emitted, once per truncated task.
         if (result.getCategory() == PipesResult.CATEGORY.SUCCESS
-                && isTaskDeadlineReached(parseData.getMetadataList())) {
+                && result.status() != PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK
+                && isTaskDeadlineReached(parseContext)) {
             return new PipesResult(PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT, result.emitData(), result.message());
         }
         return result;
     }
 
-    private static boolean isTaskDeadlineReached(List<Metadata> metadataList) {
-        if (metadataIsEmpty(metadataList)) {
+    /**
+     * Reads the deadline flag from {@link ParseRecord} -- worker-thread state set directly
+     * by {@link org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor}, not the
+     * metadata list. Metadata is a data-plane, filterable output (by this point it's
+     * already been through {@link #filterMetadata}, which can drop the
+     * {@code TASK_DEADLINE_REACHED} key entirely, e.g. under CONTENT_ONLY); it must never
+     * be the source of truth for a control-plane decision like this one. ParseContext
+     * always carries a ParseRecord by the time a parse completes (CompositeParser installs
+     * one if absent) -- a missing one here is a real bug, not a benign edge case.
+     */
+    private static boolean isTaskDeadlineReached(ParseContext parseContext) {
+        ParseRecord parseRecord = parseContext.get(ParseRecord.class);
+        if (parseRecord == null) {
+            LOG.warn("no ParseRecord in ParseContext at emit time; can't determine deadline status");
             return false;
         }
-        return "true".equals(metadataList.get(0).get(TikaCoreProperties.TASK_DEADLINE_REACHED));
+        return parseRecord.isTaskDeadlineReached();
     }
 
     private PipesResult emitParseDataInternal(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {

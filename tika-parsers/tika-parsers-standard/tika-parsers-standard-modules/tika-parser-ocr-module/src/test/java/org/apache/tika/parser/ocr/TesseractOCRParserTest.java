@@ -169,7 +169,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
         TesseractOCRConfig tesseractOCRConfig =
                 ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();
-        assertEquals(240, tesseractOCRConfig.getTimeoutSeconds());
+        assertEquals(240_000, tesseractOCRConfig.getTimeoutMillis());
         assertEquals(TesseractOCRConfig.OUTPUT_TYPE.HOCR,
                 tesseractOCRConfig.getOutputType());
         assertEquals("ceb", tesseractOCRConfig.getLanguage());

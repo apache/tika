@@ -76,6 +76,30 @@ public class ProcessUtilsTest {
         assertTrue(!result.isTimeout());
     }
 
+    /**
+     * TIKA-4813 follow-up: a null context has no task to clip against, but
+     * {@code ParseTimeout.getOrCreate(null)} used to hand back a detached ParseTimeout built
+     * from *default* TimeoutLimits (1 hour) -- silently capping any request above that and
+     * contradicting the "granted unclipped" contract the javadoc on this overload promises
+     * (e.g. LibPstParser's one-off version-check process, run during initialize() with no
+     * ParseContext yet).
+     */
+    @Test
+    public void testNullContextGrantsRequestUnclippedEvenAboveDefaultOneHour() throws Exception {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
+        long requestedTimeoutMillis = TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS + 60_000;
+        ProcessBuilder pb = new ProcessBuilder("sleep", "0");
+        FileProcessResult result = ProcessUtils.execute(pb, null, requestedTimeoutMillis, 1000, 1000);
+
+        assertFalse(result.isTimeout());
+        assertFalse(result.isClippedByRemaining(),
+                "a null context must not silently clip the request against a default-TimeoutLimits budget");
+        assertTrue(result.getGrantedTimeoutMillis() == requestedTimeoutMillis,
+                "granted (" + result.getGrantedTimeoutMillis() + ") must equal requested ("
+                        + requestedTimeoutMillis + ") when there is no context to clip against");
+    }
+
     @Test
     public void testTimeoutStillBoundsTheWait() throws Exception {
         assumeFalse(SystemUtils.IS_OS_WINDOWS);

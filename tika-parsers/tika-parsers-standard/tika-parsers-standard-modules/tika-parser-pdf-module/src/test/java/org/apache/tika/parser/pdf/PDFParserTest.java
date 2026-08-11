@@ -19,12 +19,15 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,12 +44,15 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
@@ -69,6 +75,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Test case for parsing pdf files.
@@ -1518,6 +1526,93 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf");
         assertEquals(1, metadataList.size());
         assertEquals(1, metadataList.get(0).getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    /**
+     * TIKA-4813 follow-up: a single page's OCR call timing out must not abort the whole
+     * document -- earlier and later pages' content must still reach the handler, and the
+     * timeout must still be recorded (not silently swallowed) rather than the parse
+     * quietly reporting success as if nothing happened.
+     */
+    @Test
+    public void testOCRPageTimeoutDoesNotAbortWholeDocument() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new Parser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(
+                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException, TikaException {
+                OCRPageCounter counter = context.get(OCRPageCounter.class);
+                int currentPage = counter.getCount();
+                if (currentPage == 2) {
+                    throw new TikaTimeoutException("simulated OCR timeout on page 2", 1000, 1000);
+                }
+                // A raw handler.characters() call is silently dropped here: the caller
+                // wraps this parser's handler in a BodyContentHandler, which only passes
+                // through characters() between its own <body> start/end events -- a real
+                // OCR parser (Tesseract, etc.) always writes through XHTMLContentHandler,
+                // which emits that wrapper itself, so mirror that here too.
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.characters("OCR-PAGE-" + currentPage + "-TEXT");
+                xhtml.endDocument();
+            }
+        });
+
+        // Call PDFParser directly rather than going through RecursiveParserWrapper/
+        // AutoDetectParser (as getRecursiveMetadata does): RecursiveParserWrapper installs
+        // its own Parser.class entry in the ParseContext for its embedded-recursion
+        // bookkeeping, clobbering the mock set above before AbstractPDF2XHTML's
+        // constructor ever reads it.
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler xmlHandler = new ToXMLContentHandler();
+        TikaException thrown = null;
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            new PDFParser().parse(tis, xmlHandler, metadata, context);
+        } catch (TikaException e) {
+            thrown = e;
+        }
+        String xml = xmlHandler.toString();
+
+        // testPDF_bookmarks.pdf has 2 pages; OCR_ONLY forces OCR on every page regardless
+        // of real text content, so page 1 succeeds and page 2's mock throws.
+        assertContainsCount("<div class=\"page\">", xml, 1);
+        assertContainsCount("<div class=\"page\" />", xml, 1);
+        assertContains("OCR-PAGE-1-TEXT", xml);
+        assertNotContained("OCR-PAGE-2-TEXT", xml);
+        assertEquals(2, metadata.getInt(PDF.OCR_PAGE_COUNT),
+                "both pages must have been attempted, not just the one before the timeout");
+
+        assertNotNull(thrown,
+                "the recorded timeout must still surface as an overall parse failure once " +
+                        "every page has been attempted, not be silently swallowed");
+        boolean sawTikaTimeoutExceptionInChain = false;
+        for (Throwable t = thrown; t != null; t = t.getCause()) {
+            if (t instanceof TikaTimeoutException) {
+                sawTikaTimeoutExceptionInChain = true;
+                break;
+            }
+        }
+        assertTrue(sawTikaTimeoutExceptionInChain,
+                "the original TikaTimeoutException must be reachable in the cause chain");
+
+        boolean sawTimeoutWarning = false;
+        for (String warning : metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)) {
+            if (warning.contains("simulated OCR timeout on page 2")) {
+                sawTimeoutWarning = true;
+            }
+        }
+        assertTrue(sawTimeoutWarning,
+                "the timeout must be recorded, not silently dropped, once caught and continued past");
     }
     /**
      * TODO -- need to test signature extraction

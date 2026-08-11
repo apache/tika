@@ -53,10 +53,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class TikaTestHttpServer implements Closeable {
 
-    /** A pre-programmed response to return for the next incoming request. */
-    public record MockResponse(int status, String body, long delayMillis) {
+    /**
+     * A pre-programmed response to return for the next incoming request.
+     *
+     * @param delayMillis                 delay before anything (headers included) is sent
+     * @param bodyDelayAfterHeadersMillis delay between flushing headers and writing the
+     *                                    body -- simulates a slow-trickling response body
+     *                                    after headers have already arrived, distinct
+     *                                    from an overall-slow response
+     */
+    public record MockResponse(int status, String body, long delayMillis, long bodyDelayAfterHeadersMillis) {
         public MockResponse(int status, String body) {
-            this(status, body, 0);
+            this(status, body, 0, 0);
+        }
+
+        public MockResponse(int status, String body, long delayMillis) {
+            this(status, body, delayMillis, 0);
         }
     }
 
@@ -189,6 +201,15 @@ public class TikaTestHttpServer implements Closeable {
                     + "Connection: close\r\n"
                     + "\r\n";
             out.write(responseHeaders.getBytes(StandardCharsets.US_ASCII));
+            out.flush();
+            if (resp.bodyDelayAfterHeadersMillis() > 0) {
+                try {
+                    Thread.sleep(resp.bodyDelayAfterHeadersMillis());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
             out.write(responseBytes);
             out.flush();
         } catch (IOException e) {

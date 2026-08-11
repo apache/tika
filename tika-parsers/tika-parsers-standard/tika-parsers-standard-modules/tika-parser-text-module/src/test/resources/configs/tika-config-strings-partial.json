@@ -3,7 +3,7 @@
     {
       "strings-parser": {
         "encoding": "BIGENDIAN_16_BIT",
-        "timeoutSeconds": 60
+        "timeoutMillis": 60000
       }
     }
   ]

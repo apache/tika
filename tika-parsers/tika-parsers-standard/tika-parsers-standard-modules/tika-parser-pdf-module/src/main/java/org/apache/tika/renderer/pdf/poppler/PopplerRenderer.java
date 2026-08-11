@@ -76,7 +76,7 @@ public class PopplerRenderer implements Renderer {
     private String pdftoppmPath = "pdftoppm";
     private int dpi = 300;
     private boolean gray = true;
-    private int timeoutMs = 120000;
+    private int timeoutMillis = 120000;
 
     /**
      * Maximum pixel dimension (in pixels) for the longest edge of a rendered
@@ -152,7 +152,7 @@ public class PopplerRenderer implements Renderer {
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(args);
         FileProcessResult result = ProcessUtils.execute(
-                builder, parseContext, timeoutMs, 10, 1000);
+                builder, parseContext, timeoutMillis, 10, 1000);
         if (result.isTimeout()) {
             throw new TikaTimeoutException("pdftoppm timed out",
                     result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
@@ -263,16 +263,16 @@ public class PopplerRenderer implements Renderer {
         this.gray = gray;
     }
 
-    public int getTimeoutMs() {
-        return timeoutMs;
+    public int getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     /**
      * Set the timeout in milliseconds for the pdftoppm process.
      * Defaults to 120000 (2 minutes).
      */
-    public void setTimeoutMs(int timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(int timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public int getMaxScaleTo() {

@@ -463,9 +463,15 @@ public class AsyncProcessor implements Closeable {
 
         private boolean shouldEmit(PipesResult result) {
 
-            if (result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
+            // emitData is null for SUCCESS statuses where the server already emitted
+            // directly (EMIT_SUCCESS*) or deliberately skipped emission
+            // (PARSE_EXCEPTION_NO_EMIT) -- PARTIAL_TIMEOUT can wrap either of those (see
+            // EmitHandler.emitParseData), so the status check alone isn't enough to tell
+            // "please batch-emit this" apart from "already handled server-side."
+            if ((result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
                     result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION ||
-                    result.status() == PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT) {
+                    result.status() == PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT) &&
+                    result.emitData() != null) {
                 return true;
             }
             // Emit intermediate results on any non-success if configured

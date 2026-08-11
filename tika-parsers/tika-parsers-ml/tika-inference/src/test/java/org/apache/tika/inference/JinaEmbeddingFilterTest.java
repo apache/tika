@@ -50,7 +50,7 @@ public class JinaEmbeddingFilterTest {
         config.setModel("jina-embeddings-v3");
         config.setMaxChunkChars(500);
         config.setOverlapChars(0);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         filter = new JinaEmbeddingFilter(config);
     }

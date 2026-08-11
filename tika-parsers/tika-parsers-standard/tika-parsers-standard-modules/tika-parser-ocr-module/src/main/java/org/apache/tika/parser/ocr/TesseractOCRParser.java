@@ -510,7 +510,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         Process process = null;
         String id = null;
-        long requestedMillis = config.getTimeoutSeconds() * 1000L;
+        long requestedMillis = config.getTimeoutMillis();
         long timeoutMillis = ParseTimeout.getOrCreate(parseContext).budgetFor(requestedMillis);
         try {
             process = pb.start();
@@ -736,7 +736,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         Process process = null;
         try {
             process = pb.start();
-            getLangs(process, defaultConfig.getTimeoutSeconds());
+            getLangs(process, defaultConfig.getTimeoutMillis());
         } catch (TikaException | IOException e) {
             LOG.warn("Problem preloading langs", e);
         } finally {
@@ -746,7 +746,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
-    private void getLangs(Process process, int timeoutSeconds) throws IOException, TikaException {
+    private void getLangs(Process process, long timeoutMillis) throws IOException, TikaException {
         process.getOutputStream().close();
         InputStream out = process.getInputStream();
         InputStream err = process.getErrorStream();
@@ -759,7 +759,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
 
         int exitValue = Integer.MIN_VALUE;
         try {
-            boolean finished = process.waitFor(timeoutSeconds, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS);
             if (!finished) {
                 throw new TikaException("TesseractOCRParser timeout");
             }

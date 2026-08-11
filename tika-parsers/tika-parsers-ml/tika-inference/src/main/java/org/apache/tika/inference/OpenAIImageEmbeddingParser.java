@@ -165,7 +165,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         String mimeType = detectMimeType(metadata);
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
-        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, config.getTimeoutSeconds(), parseContext);
+        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, config.getTimeoutMillis(), parseContext);
         TikaProgressTracker.update(parseContext);
 
         Locators locators = buildLocators(metadata);
@@ -191,7 +191,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     float[] callEmbeddingEndpoint(ImageEmbeddingConfig config,
                                   String mimeType, String base64Data,
-                                  int timeoutSeconds, ParseContext parseContext)
+                                  long timeoutMillis, ParseContext parseContext)
             throws IOException, TikaException {
 
         String requestJson = buildRequest(config, mimeType, base64Data);
@@ -202,7 +202,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
 
-        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutSeconds, parseContext);
+        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutMillis, parseContext);
         return parseResponse(responseBody);
     }
 
@@ -334,12 +334,12 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         defaultConfig.setApiKey(apiKey);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public boolean isSkipEmbedding() {

@@ -187,12 +187,12 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
         defaultConfig.setApiKey(apiKey);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public int getMaxChunkChars() {

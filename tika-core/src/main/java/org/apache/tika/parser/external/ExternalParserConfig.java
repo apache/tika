@@ -42,7 +42,7 @@ public class ExternalParserConfig implements Serializable {
     private List<Integer> checkErrorCodes;
     private boolean returnStdout = false;
     private boolean returnStderr = false;
-    private long timeoutMs = ExternalParser.DEFAULT_TIMEOUT_MS;
+    private long timeoutMillis = ExternalParser.DEFAULT_TIMEOUT_MILLIS;
     private int maxStdErr = 10000;
     private int maxStdOut = 10000;
 
@@ -137,12 +137,12 @@ public class ExternalParserConfig implements Serializable {
         this.returnStderr = returnStderr;
     }
 
-    public long getTimeoutMs() {
-        return timeoutMs;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public int getMaxStdErr() {

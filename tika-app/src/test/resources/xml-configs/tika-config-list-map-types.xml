@@ -29,7 +29,7 @@
                     <string>preserve_interword_spaces 1</string>
                 </param>
                 <!-- Regular parameters -->
-                <param name="timeoutSeconds" type="int">300</param>
+                <param name="timeoutMillis" type="int">300000</param>
                 <param name="enableImagePreprocessing" type="bool">true</param>
                 <param name="language">eng</param>
             </params>
