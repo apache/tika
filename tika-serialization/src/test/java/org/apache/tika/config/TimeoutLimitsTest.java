@@ -55,7 +55,7 @@ public class TimeoutLimitsTest extends TikaTest {
     public void testDefaults() {
         TimeoutLimits limits = new TimeoutLimits();
         assertEquals(TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS, limits.getProgressTimeoutMillis());
-        assertEquals(60000, limits.getProgressTimeoutMillis());
+        assertEquals(120000, limits.getProgressTimeoutMillis());
         assertEquals(TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, limits.getTotalTaskTimeoutMillis());
         assertEquals(3600000, limits.getTotalTaskTimeoutMillis());
     }

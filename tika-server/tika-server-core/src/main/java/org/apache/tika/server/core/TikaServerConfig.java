@@ -39,9 +39,7 @@ public class TikaServerConfig {
 
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
-    public static final Set<String> LOG_LEVELS = new HashSet<>(Arrays.asList("debug", "info"));
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
-    private static final int DEFAULT_DIGEST_MARK_LIMIT = 20 * 1024 * 1024;
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
      * parsing and async batch processing). Selecting any of these requires
@@ -71,19 +69,14 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private boolean allowPerRequestConfig = false;
     private String cors = "";
     private boolean returnStackTrace = false;
-    private String idBase = UUID
+    private String id = UUID
             .randomUUID()
             .toString();
     private int port = DEFAULT_PORT;
     private String host = DEFAULT_HOST;
-    private int digestMarkLimit = DEFAULT_DIGEST_MARK_LIMIT;
-    private String digest = "";
-    //debug or info only
-    private String logLevel = "";
+    private String requestLogLevel = "";
     private Path configPath;
     private ArrayList<String> endpoints = new ArrayList<>();
-
-    private boolean preventStopMethod = false;
 
     private TlsConfig tlsConfig = new TlsConfig();
 
@@ -98,7 +91,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
-        Path pluginsConfig = null;
 
         if (commandLine.hasOption("c")) {
             config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
@@ -142,10 +134,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setPort(int port) {
         this.port = port;
-    }
-
-    public String getIdBase() {
-        return idBase;
     }
 
     /**
@@ -210,15 +198,19 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.host = host;
     }
 
-    public String getLogLevel() {
-        return logLevel;
+    /**
+     * Severity at which each request URI is logged. Empty (the default) disables
+     * request logging entirely; this does not change the log level of anything else.
+     */
+    public String getRequestLogLevel() {
+        return requestLogLevel;
     }
 
-    public void setLogLevel(String level) throws TikaConfigException {
+    public void setRequestLogLevel(String level) throws TikaConfigException {
         if (level.equals("debug") || level.equals("info")) {
-            this.logLevel = level;
+            this.requestLogLevel = level;
         } else {
-            throw new TikaConfigException("log level must be one of: 'debug' or 'info'");
+            throw new TikaConfigException("requestLogLevel must be one of: 'debug' or 'info'");
         }
     }
 
@@ -237,35 +229,15 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         return configPath != null;
     }
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public Path getConfigPath() {
         return configPath;
     }
 
+    /** Set from the -c argument at load time; not a user-settable config key. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public void setConfigPath(String path) {
         this.configPath = Paths.get(path);
-    }
-
-    public int getDigestMarkLimit() {
-        return digestMarkLimit;
-    }
-
-    public void setDigestMarkLimit(int digestMarkLimit) {
-        this.digestMarkLimit = digestMarkLimit;
-    }
-
-    /**
-     * digest configuration string, e.g. md5 or sha256, alternately w 16 or 32 encoding,
-     * e.g. md5:32,sha256:16 would result in two digests per file
-     *
-     * @return
-     */
-    public String getDigest() {
-        return digest;
-    }
-
-    public void setDigest(String digest) {
-        LOG.info("As of Tika 2.5.0, you can set the digester via the AutoDetectParserConfig in " + "tika-config.xml. We plan to remove this commandline option in 2.8.0");
-        this.digest = digest;
     }
 
     public boolean isReturnStackTrace() {
@@ -292,13 +264,15 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.endpoints = endpoints;
     }
 
+    /**
+     * Identifier for this server, surfaced in the startup log. Defaults to a random UUID.
+     */
     public String getId() {
-        //TODO fix this
-        return idBase;
+        return id;
     }
 
     public void setId(String id) {
-        this.idBase = id;
+        this.id = id;
     }
 
     private void addEndPoints(List<String> endPoints) {

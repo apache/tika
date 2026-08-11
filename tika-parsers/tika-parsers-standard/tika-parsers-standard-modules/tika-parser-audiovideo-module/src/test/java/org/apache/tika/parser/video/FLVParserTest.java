@@ -17,6 +17,12 @@
 package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +30,22 @@ import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
 
 public class FLVParserTest {
+
+    /**
+     * Deeply nested AMF objects used to recurse in readAMFData until the stack
+     * overflowed (an uncaught Error); the reader must bound the nesting depth.
+     */
+    @Test
+    public void testAmfNestingIsBounded() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(3); //top-level AMF object marker
+        for (int i = 0; i < 100_000; i++) {
+            bos.write(new byte[]{0, 0}); //empty key (uint16 length 0)
+            bos.write(3);                //value type = object -> recurse
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        assertThrows(IOException.class, () -> new FLVParser().readAMFData(dis, -1));
+    }
 
     @Test
     public void testFLV() throws Exception {

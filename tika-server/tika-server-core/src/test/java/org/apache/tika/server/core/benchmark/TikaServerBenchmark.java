@@ -339,7 +339,6 @@ public class TikaServerBenchmark {
                     .uri(URI.create(baseUrl + "/rmeta"))
                     .header("Content-Type", "application/mock+xml")
                     .header("Accept", "application/json")
-                    .header("writeLimit", "-1")
                     .PUT(HttpRequest.BodyPublishers.ofString(testXml))
                     .timeout(Duration.ofSeconds(10))
                     .build();

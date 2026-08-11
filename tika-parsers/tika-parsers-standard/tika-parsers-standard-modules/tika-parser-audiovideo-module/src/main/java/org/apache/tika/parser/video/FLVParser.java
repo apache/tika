@@ -96,7 +96,24 @@ public class FLVParser implements Parser {
         return uint;
     }
 
-    private Object readAMFData(DataInputStream input, int type) throws IOException {
+    //AMF objects/arrays nest recursively; cap the depth so a crafted metadata
+    //blob of deeply nested containers cannot overflow the stack (an uncaught Error)
+    private static final int MAX_AMF_DEPTH = 64;
+
+    //cap the declared element count of an AMF array: it is a 32-bit field (up to
+    //~4 billion), and each element grows a collection, so a crafted count backed by
+    //cheap 1-byte elements would exhaust memory before EOF. Legitimate onMetaData
+    //arrays are tiny; this only bounds the crafted case (a short read still throws).
+    private static final int MAX_AMF_ELEMENTS = 100_000;
+
+    Object readAMFData(DataInputStream input, int type) throws IOException {
+        return readAMFData(input, type, 0);
+    }
+
+    private Object readAMFData(DataInputStream input, int type, int depth) throws IOException {
+        if (depth > MAX_AMF_DEPTH) {
+            throw new IOException("AMF nesting exceeds the maximum depth of " + MAX_AMF_DEPTH);
+        }
         if (type == -1) {
             type = input.readUnsignedByte();
         }
@@ -108,11 +125,11 @@ public class FLVParser implements Parser {
             case 2:
                 return readAMFString(input);
             case 3:
-                return readAMFObject(input);
+                return readAMFObject(input, depth);
             case 8:
-                return readAMFEcmaArray(input);
+                return readAMFEcmaArray(input, depth);
             case 10:
-                return readAMFStrictArray(input);
+                return readAMFStrictArray(input, depth);
             case 11:
                 final Date date = new Date((long) input.readDouble());
                 input.readShort(); // time zone
@@ -124,11 +141,15 @@ public class FLVParser implements Parser {
         }
     }
 
-    private Object readAMFStrictArray(DataInputStream input) throws IOException {
+    private Object readAMFStrictArray(DataInputStream input, int depth) throws IOException {
         long count = readUInt32(input);
+        if (count > MAX_AMF_ELEMENTS) {
+            throw new IOException("AMF array count " + count + " exceeds the maximum of "
+                    + MAX_AMF_ELEMENTS);
+        }
         ArrayList<Object> list = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            list.add(readAMFData(input, -1));
+            list.add(readAMFData(input, -1, depth + 1));
         }
         return list;
     }
@@ -141,26 +162,36 @@ public class FLVParser implements Parser {
         return new String(chars, UTF_8);
     }
 
-    private Object readAMFObject(DataInputStream input) throws IOException {
+    private Object readAMFObject(DataInputStream input, int depth) throws IOException {
         HashMap<String, Object> array = new HashMap<>();
-        while (true) {
+        //an object has no declared count (it runs to the type-9 end marker), so bound the
+        //entry count too, or a crafted flat object of cheap entries would exhaust memory
+        for (int i = 0; ; i++) {
             String key = readAMFString(input);
             int dataType = input.read();
             if (dataType == 9) { // object end marker
                 break;
             }
-            array.put(key, readAMFData(input, dataType));
+            if (i >= MAX_AMF_ELEMENTS) {
+                throw new IOException("AMF object exceeds the maximum of " + MAX_AMF_ELEMENTS
+                        + " entries");
+            }
+            array.put(key, readAMFData(input, dataType, depth + 1));
         }
         return array;
     }
 
-    private Object readAMFEcmaArray(DataInputStream input) throws IOException {
+    private Object readAMFEcmaArray(DataInputStream input, int depth) throws IOException {
         long size = readUInt32(input);
+        if (size > MAX_AMF_ELEMENTS) {
+            throw new IOException("AMF array size " + size + " exceeds the maximum of "
+                    + MAX_AMF_ELEMENTS);
+        }
         HashMap<String, Object> array = new HashMap<>();
         for (int i = 0; i < size; i++) {
             String key = readAMFString(input);
             int dataType = input.read();
-            array.put(key, readAMFData(input, dataType));
+            array.put(key, readAMFData(input, dataType, depth + 1));
         }
         return array;
     }

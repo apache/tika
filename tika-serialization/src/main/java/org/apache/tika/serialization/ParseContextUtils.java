@@ -126,11 +126,11 @@ public class ParseContextUtils {
             // Try to find this friendly name in any registered component registry
             var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
             if (optionalInfo.isEmpty()) {
-                // Not a registered component -- ignored (not applied). WARN so a typo'd config key
-                // is visible rather than silently dropped.
-                LOG.warn("Ignoring unrecognized parse-context entry '{}' (not a registered "
-                        + "component); check for a typo", friendlyName);
-                continue;
+                // Fail rather than warn: parse-context is where the DoS limits live
+                // (timeout-limits, embedded-limits, output-limits), so a typo'd name
+                // silently reverts to defaults an operator believes they overrode.
+                throw new TikaConfigException("Unrecognized parse-context entry '" + friendlyName
+                        + "'. Check for a typo; it does not match any registered component.");
             }
 
             ComponentInfo info = optionalInfo.get();

@@ -29,7 +29,7 @@ import org.apache.tika.parser.ParseContext;
  *       any embedded documents it recurses into
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
- *       catches infinite loops and hung processes (default: 60,000 ms = 1 minute)</li>
+ *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes)</li>
  * </ul>
  * <p>
  * These compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
@@ -59,7 +59,7 @@ public class TimeoutLimits implements Serializable {
     private static final long serialVersionUID = 2L;
 
     public static final long DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
-    public static final long DEFAULT_PROGRESS_TIMEOUT_MILLIS = 60_000L;
+    public static final long DEFAULT_PROGRESS_TIMEOUT_MILLIS = 120_000L;
 
     private long totalTaskTimeoutMillis = DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS;
     private long progressTimeoutMillis = DEFAULT_PROGRESS_TIMEOUT_MILLIS;

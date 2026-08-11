@@ -467,6 +467,28 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals(null, metadata.get("channels"));
     }
 
+    @Test
+    public void testId3v2TruncatedFrameHeader() throws Exception {
+        //an ID3v2.3 tag with a valid TIT2 frame followed by a partial frame header
+        //("TI"): now that the tag body is no longer zero-padded (TIKA-4812), the
+        //RawTag walk must stop at the short tail instead of reading past it and
+        //throwing ArrayIndexOutOfBoundsException out of the handler constructor.
+        ByteArrayOutputStream tag = new ByteArrayOutputStream();
+        tag.write(new byte[]{'I', 'D', '3', 3, 0, 0}); //ID3v2.3, no flags
+        tag.write(new byte[]{0, 0, 0, 18});            //synchsafe body size = 18
+        tag.write("TIT2".getBytes(StandardCharsets.ISO_8859_1));
+        tag.write(new byte[]{0, 0, 0, 6});             //frame size = 6 (plain int, v2.3)
+        tag.write(new byte[]{0, 0});                   //frame flags
+        tag.write(new byte[]{0});                      //ISO-8859-1 encoding
+        tag.write("Hello".getBytes(StandardCharsets.ISO_8859_1));
+        tag.write("TI".getBytes(StandardCharsets.ISO_8859_1)); //truncated next frame header
+
+        ID3v2Frame frame = (ID3v2Frame) ID3v2Frame.createFrameIfPresent(
+                TikaInputStream.get(tag.toByteArray()));
+        ID3v23Handler handler = new ID3v23Handler(frame);
+        assertEquals("Hello", handler.getTitle());
+    }
+
     // TIKA-1024
     @Test
     public void testNakedUTF16BOM() throws Exception {

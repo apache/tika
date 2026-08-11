@@ -47,7 +47,12 @@ import org.apache.tika.server.core.HTMLHelper;
  */
 @Path("/")
 public class TikaWelcome {
-    private static final String DOCS_URL = "https://wiki.apache.org/tika/TikaJAXRS";
+    private static final String DOCS_URL =
+            "https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS";
+
+    /** Matches {@code {name : regex}} in a JAX-RS path, capturing the parameter name. */
+    private static final Pattern PATH_TEMPLATE_REGEX =
+            Pattern.compile("\\{\\s*(\\w+)\\s*:[^}]*}");
 
     private static final Map<Class<? extends Annotation>, String> HTTP_METHODS = new HashMap<>();
 
@@ -164,13 +169,21 @@ public class TikaWelcome {
 
         h.append("<ul>\n");
         for (Endpoint e : identifyEndpoints()) {
+            String displayPath = simplifyPathTemplate(e.path);
             h.append("<li><b>");
             h.append(e.httpMethod);
-            h.append("</b> <i><a href=\"");
-            h.append(e.path);
-            h.append("\">");
-            h.append(e.path);
-            h.append("</a></i><br />");
+            h.append("</b> <i>");
+            // Only linkify concrete paths; one with a {param} is not fetchable as written.
+            if (displayPath.indexOf('{') < 0) {
+                h.append("<a href=\"");
+                h.append(displayPath);
+                h.append("\">");
+                h.append(displayPath);
+                h.append("</a>");
+            } else {
+                h.append(displayPath);
+            }
+            h.append("</i><br />");
             h.append("Class: ");
             h.append(e.className);
             h.append("<br />Method: ");
@@ -211,6 +224,17 @@ public class TikaWelcome {
         }
 
         return text.toString();
+    }
+
+    /**
+     * Strips the regex from a JAX-RS path template so {@code /rmeta/{handler : (\w+)?}}
+     * renders as {@code /rmeta/{handler}}.
+     */
+    static String simplifyPathTemplate(String path) {
+        if (path == null || path.indexOf('{') < 0) {
+            return path;
+        }
+        return PATH_TEMPLATE_REGEX.matcher(path).replaceAll("{$1}");
     }
 
     protected static class Endpoint {
