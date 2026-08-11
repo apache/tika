@@ -362,6 +362,40 @@ public class Metadata
     }
 
     /**
+     * Copies every key from {@code other} into this Metadata: for each name in
+     * {@code other}, this Metadata's values for that name are replaced wholesale with
+     * {@code other}'s values, in order (multi-values preserved); names absent from
+     * {@code other} are left untouched. Each value is written via
+     * {@link #reconstruct(String, String, boolean)}, so reserved {@code tk:} keys copy
+     * through their trusted route rather than the String-guarded route.
+     * <p>
+     * This is the supported replacement for a manual
+     * {@code for (String n : src.names()) dest.set(n, src.get(n))} copy loop, which
+     * silently collapses multi-valued keys to a single value today and throws on
+     * {@code tk:}-prefixed keys once the reserved-key guard is flipped from drop to throw.
+     *
+     * @param other the Metadata to copy from; {@code other == this} is a no-op
+     * @throws NullPointerException if other is null
+     * @since Apache Tika 4.0
+     */
+    public void putAll(Metadata other) {
+        Objects.requireNonNull(other, "other must not be null");
+        if (other == this) {
+            return;
+        }
+        for (String n : other.names()) {
+            String[] vals = other.getValues(n);
+            if (vals.length == 0) {
+                continue;
+            }
+            reconstruct(n, vals[0], false);
+            for (int i = 1; i < vals.length; i++) {
+                reconstruct(n, vals[i], true);
+            }
+        }
+    }
+
+    /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
      *
