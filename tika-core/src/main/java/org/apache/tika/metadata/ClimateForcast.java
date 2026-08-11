@@ -18,38 +18,40 @@ package org.apache.tika.metadata;
 
 /**
  * Met keys from NCAR CCSM files in the <a
- * href="http://cf-pcmdi.llnl.gov/">Climate Forecast Convention</a>.
+ * href="http://cf-pcmdi.llnl.gov/">Climate Forecast Convention</a>. Key spellings are the
+ * external convention's own attribute names, verbatim (not Tika-coined) — some contain
+ * underscores per that convention.
  */
 public interface ClimateForcast {
 
-    String PROGRAM_ID = "prg_ID";
+    Property PROGRAM_ID = Property.externalText("prg_ID");
 
-    String COMMAND_LINE = "cmd_ln";
+    Property COMMAND_LINE = Property.externalText("cmd_ln");
 
-    String HISTORY = "history";
+    Property HISTORY = Property.externalText("history");
 
-    String TABLE_ID = "table_id";
+    Property TABLE_ID = Property.externalText("table_id");
 
-    String INSTITUTION = "institution";
+    Property INSTITUTION = Property.externalText("institution");
 
-    String SOURCE = "source";
+    Property SOURCE = Property.externalText("source");
 
-    String CONTACT = "contact";
+    Property CONTACT = Property.externalText("contact");
 
-    String PROJECT_ID = "project_id";
+    Property PROJECT_ID = Property.externalText("project_id");
 
-    String CONVENTIONS = "Conventions";
+    Property CONVENTIONS = Property.externalText("Conventions");
 
-    String REFERENCES = "references";
+    Property REFERENCES = Property.externalText("references");
 
-    String ACKNOWLEDGEMENT = "acknowledgement";
+    Property ACKNOWLEDGEMENT = Property.externalText("acknowledgement");
 
-    String REALIZATION = "realization";
+    Property REALIZATION = Property.externalText("realization");
 
-    String EXPERIMENT_ID = "experiment_id";
+    Property EXPERIMENT_ID = Property.externalText("experiment_id");
 
-    String COMMENT = "comment";
+    Property COMMENT = Property.externalText("comment");
 
-    String MODEL_NAME_ENGLISH = "model_name_english";
+    Property MODEL_NAME_ENGLISH = Property.externalText("model_name_english");
 
 }

@@ -23,10 +23,10 @@ package org.apache.tika.metadata;
  */
 public interface CreativeCommons {
 
-    String LICENSE_URL = "License-Url";
+    Property LICENSE_URL = Property.externalText("License-Url");
 
-    String LICENSE_LOCATION = "License-Location";
+    Property LICENSE_LOCATION = Property.externalText("License-Location");
 
-    String WORK_TYPE = "Work-Type";
+    Property WORK_TYPE = Property.externalText("Work-Type");
 
 }

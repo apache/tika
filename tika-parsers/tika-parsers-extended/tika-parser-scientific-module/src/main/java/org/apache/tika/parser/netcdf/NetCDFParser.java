@@ -21,7 +21,10 @@ package org.apache.tika.parser.netcdf;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -36,6 +39,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -133,18 +137,23 @@ public class NetCDFParser implements Parser {
         }
     }
 
-    private static final Set<String> CF_GLOBAL_ATTRIBUTES = Set.of(
-            ClimateForcast.PROGRAM_ID, ClimateForcast.COMMAND_LINE, ClimateForcast.HISTORY,
-            ClimateForcast.TABLE_ID, ClimateForcast.INSTITUTION, ClimateForcast.SOURCE,
-            ClimateForcast.CONTACT, ClimateForcast.PROJECT_ID, ClimateForcast.CONVENTIONS,
-            ClimateForcast.REFERENCES, ClimateForcast.ACKNOWLEDGEMENT, ClimateForcast.REALIZATION,
-            ClimateForcast.EXPERIMENT_ID, ClimateForcast.COMMENT, ClimateForcast.MODEL_NAME_ENGLISH);
+    private static final Map<String, Property> CF_GLOBAL_ATTRIBUTES = Stream.of(
+                    ClimateForcast.PROGRAM_ID, ClimateForcast.COMMAND_LINE, ClimateForcast.HISTORY,
+                    ClimateForcast.TABLE_ID, ClimateForcast.INSTITUTION, ClimateForcast.SOURCE,
+                    ClimateForcast.CONTACT, ClimateForcast.PROJECT_ID, ClimateForcast.CONVENTIONS,
+                    ClimateForcast.REFERENCES, ClimateForcast.ACKNOWLEDGEMENT,
+                    ClimateForcast.REALIZATION, ClimateForcast.EXPERIMENT_ID, ClimateForcast.COMMENT,
+                    ClimateForcast.MODEL_NAME_ENGLISH)
+            .collect(Collectors.toMap(Property::getName, p -> p));
 
     private static void addGlobalAttribute(Metadata metadata, String name, String value) {
         if ("title".equals(name)) {
             metadata.add(TikaCoreProperties.TITLE, value);
-        } else if (CF_GLOBAL_ATTRIBUTES.contains(name)) {
-            metadata.add(name, value);
+            return;
+        }
+        Property cfProperty = CF_GLOBAL_ATTRIBUTES.get(name);
+        if (cfProperty != null) {
+            metadata.add(cfProperty, value);
         } else {
             metadata.add(NETCDF.key(name), value);
         }

@@ -27,7 +27,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
@@ -118,36 +117,6 @@ public class TestMetadata extends TikaTest {
         assertEquals(2, values.length);
         assertEquals("new value 1", values[0]);
         assertEquals("new value 2", values[1]);
-    }
-
-    /**
-     * Test for <code>setAll(Properties)</code> method.
-     */
-    @Test
-    public void testSetProperties() {
-        String[] values = null;
-        Metadata meta = new Metadata();
-        Properties props = new Properties();
-
-        meta.setAll(props);
-        assertEquals(0, meta.size());
-
-        props.setProperty("name-one", "value1.1");
-        meta.setAll(props);
-        assertEquals(1, meta.size());
-        values = meta.getValues("name-one");
-        assertEquals(1, values.length);
-        assertEquals("value1.1", values[0]);
-
-        props.setProperty("name-two", "value2.1");
-        meta.setAll(props);
-        assertEquals(2, meta.size());
-        values = meta.getValues("name-one");
-        assertEquals(1, values.length);
-        assertEquals("value1.1", values[0]);
-        values = meta.getValues("name-two");
-        assertEquals(1, values.length);
-        assertEquals("value2.1", values[0]);
     }
 
     /**

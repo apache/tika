@@ -25,13 +25,11 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -48,7 +46,7 @@ import org.apache.tika.utils.DateUtils;
  */
 public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
-        TikaMimeKeys, Serializable {
+        Serializable {
 
     private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
@@ -445,20 +443,6 @@ public class Metadata
                             property.getName() + " : " + property.getPropertyType());
                 }
             }
-        }
-    }
-
-    /**
-     * Copy All key-value pairs from properties.
-     *
-     * @param properties properties to copy from
-     */
-    @SuppressWarnings("unchecked")
-    public void setAll(Properties properties) {
-        Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
-        while (names.hasMoreElements()) {
-            String name = names.nextElement();
-            metadata.put(name, new String[]{properties.getProperty(name)});
         }
     }
 
