@@ -34,7 +34,6 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
@@ -199,16 +198,12 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         byte[] fileBytes = readFully(tis);
         String base64Data = Base64.getEncoder().encodeToString(fileBytes);
 
-        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                parseContext, config.getTimeoutSeconds() * 1000L);
-        int timeoutSeconds = (int) (timeoutMillis / 1000L);
-
         HttpCall call = buildHttpCall(config, base64Data, mimeType);
 
         String responseText;
         try {
             String responseBody = httpClient.postJson(
-                    call.url(), call.json(), call.headers(), timeoutSeconds);
+                    call.url(), call.json(), call.headers(), config.getTimeoutSeconds(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
             TikaProgressTracker.update(parseContext);
         } catch (TikaException e) {

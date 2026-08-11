@@ -43,16 +43,18 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -165,12 +167,13 @@ public class Tess4JParser implements Parser, Initializable {
         xhtml.startDocument();
 
         Tesseract tesseract = null;
-        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                parseContext, config.getTimeoutSeconds() * 1000L);
+        long requestedMillis = config.getTimeoutSeconds() * 1000L;
+        long timeoutMillis = ParseTimeout.getOrCreate(parseContext).budgetFor(requestedMillis);
         try {
-            tesseract = borrowTesseract(timeoutMillis);
+            tesseract = borrowTesseract(parseContext, timeoutMillis);
             if (tesseract == null) {
-                throw new TikaException("Timed out waiting for a Tesseract instance from the pool");
+                throw new TikaTimeoutException("Timed out waiting for a Tesseract instance from the pool",
+                        requestedMillis, timeoutMillis);
             }
 
             // Apply per-request config if different from defaults
@@ -313,15 +316,33 @@ public class Tess4JParser implements Parser, Initializable {
     }
 
     /**
-     * Borrows a {@link Tesseract} instance from the pool, waiting up to the
-     * specified timeout.
+     * Borrows a {@link Tesseract} instance from the pool, waiting up to the specified
+     * timeout. Polls in {@link ProcessUtils#HEARTBEAT_INTERVAL_MILLIS} increments,
+     * checkpointing {@code parseContext}'s {@link ParseTimeout} between polls, so a busy
+     * pool doesn't trip the stall detector while a worker is still legitimately in use.
      *
+     * @param parseContext  may be null, in which case no checkpoint is recorded
      * @param timeoutMillis maximum time to wait in milliseconds
      * @return a Tesseract instance, or null if the timeout elapsed
      * @throws InterruptedException if the thread was interrupted while waiting
      */
-    private Tesseract borrowTesseract(long timeoutMillis) throws InterruptedException {
-        return pool.poll(timeoutMillis, TimeUnit.MILLISECONDS);
+    private Tesseract borrowTesseract(ParseContext parseContext, long timeoutMillis)
+            throws InterruptedException {
+        long now = System.currentTimeMillis();
+        long deadline = (timeoutMillis >= Long.MAX_VALUE - now) ? Long.MAX_VALUE : now + timeoutMillis;
+        while (true) {
+            long remaining = deadline - System.currentTimeMillis();
+            long pollMillis = remaining <= 0 ? 0 :
+                    Math.min(remaining, ProcessUtils.HEARTBEAT_INTERVAL_MILLIS);
+            Tesseract tesseract = pool.poll(pollMillis, TimeUnit.MILLISECONDS);
+            if (tesseract != null) {
+                return tesseract;
+            }
+            if (remaining <= 0) {
+                return null;
+            }
+            ParseTimeout.checkpoint(parseContext);
+        }
     }
 
     /**

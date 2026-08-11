@@ -99,16 +99,16 @@ public class FileCommandDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
         //spool the full file to disk, if there is no underlying file
-        return detectOnPath(tis.getPath(), metadata);
+        return detectOnPath(tis.getPath(), metadata, parseContext);
     }
 
-    private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
+    private MediaType detectOnPath(Path path, Metadata metadata, ParseContext parseContext) throws IOException {
 
         String[] args =
                 new String[]{ProcessUtils.escapeCommandLine(fileCommandPath), "-b", "--mime-type",
                         ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, timeoutMs, 10000, 10000);
+        FileProcessResult result = ProcessUtils.execute(builder, parseContext, timeoutMs, 10000, 10000);
         if (result.isTimeout()) {
             metadata.set(ExternalProcess.IS_TIMEOUT, true);
             return MediaType.OCTET_STREAM;

@@ -25,16 +25,19 @@ import org.apache.tika.parser.ParseContext;
  * Configuration for the two-tier task timeout system.
  * <p>
  * <ul>
- *   <li>{@code totalTaskTimeoutMillis} — bounds entire task wall-clock time
+ *   <li>{@code totalTaskTimeoutMillis} — bounds entire task wall-clock time, including
+ *       any embedded documents it recurses into
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
  *       catches infinite loops and hung processes (default: 60,000 ms = 1 minute)</li>
  * </ul>
  * <p>
- * Parsers that never call {@link TikaProgressTracker#update()} effectively get
- * {@code progressTimeoutMillis} as their total timeout (same as the old single-timeout
- * behavior). Parsers that <em>do</em> update progress can run up to
- * {@code totalTaskTimeoutMillis}.
+ * These compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
+ * parser's own timeout is honored, but no operation gets more than what remains of
+ * {@code totalTaskTimeoutMillis}. A bounded external call reports its own progress, so a
+ * legitimately long call (e.g. a multi-minute external process) doesn't need
+ * {@code progressTimeoutMillis} raised to accommodate it — see
+ * {@link org.apache.tika.utils.ProcessUtils#execute}.
  * <p>
  * Example configuration:
  * <pre>
@@ -60,6 +63,7 @@ public class TimeoutLimits implements Serializable {
 
     private long totalTaskTimeoutMillis = DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS;
     private long progressTimeoutMillis = DEFAULT_PROGRESS_TIMEOUT_MILLIS;
+    private boolean throwOnDeadline = false;
 
     /**
      * No-arg constructor for Jackson deserialization.
@@ -117,6 +121,19 @@ public class TimeoutLimits implements Serializable {
     }
 
     /**
+     * Whether to throw when the task's total timeout is exhausted mid-parse, instead of
+     * skipping remaining embedded documents and returning content extracted so far.
+     * Default: {@code false}.
+     */
+    public boolean isThrowOnDeadline() {
+        return throwOnDeadline;
+    }
+
+    public void setThrowOnDeadline(boolean throwOnDeadline) {
+        this.throwOnDeadline = throwOnDeadline;
+    }
+
+    /**
      * Helper method to get TimeoutLimits from ParseContext with defaults.
      *
      * @param context the ParseContext (may be null)
@@ -130,34 +147,12 @@ public class TimeoutLimits implements Serializable {
         return limits != null ? limits : new TimeoutLimits();
     }
 
-    /**
-     * Returns the per-process timeout to use for external process execution.
-     * <p>
-     * This checks for {@link TimeoutLimits} in the ParseContext and returns
-     * {@code max(0, progressTimeoutMillis - 100)} to give the monitoring loop
-     * a small window to detect the timeout before the process itself times out.
-     * Falls back to {@code defaultMs} if no TimeoutLimits is found.
-     *
-     * @param context   the ParseContext (may be null)
-     * @param defaultMs default timeout if no TimeoutLimits in context
-     * @return timeout in milliseconds for external process execution
-     */
-    public static long getProcessTimeoutMillis(ParseContext context, long defaultMs) {
-        if (context == null) {
-            return defaultMs;
-        }
-        TimeoutLimits limits = context.get(TimeoutLimits.class);
-        if (limits == null) {
-            return defaultMs;
-        }
-        return Math.max(0, limits.progressTimeoutMillis - 100);
-    }
-
     @Override
     public String toString() {
         return "TimeoutLimits{" +
                 "totalTaskTimeoutMillis=" + totalTaskTimeoutMillis +
                 ", progressTimeoutMillis=" + progressTimeoutMillis +
+                ", throwOnDeadline=" + throwOnDeadline +
                 '}';
     }
 
@@ -171,11 +166,12 @@ public class TimeoutLimits implements Serializable {
         }
         TimeoutLimits that = (TimeoutLimits) o;
         return totalTaskTimeoutMillis == that.totalTaskTimeoutMillis &&
-                progressTimeoutMillis == that.progressTimeoutMillis;
+                progressTimeoutMillis == that.progressTimeoutMillis &&
+                throwOnDeadline == that.throwOnDeadline;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(totalTaskTimeoutMillis, progressTimeoutMillis);
+        return Objects.hash(totalTaskTimeoutMillis, progressTimeoutMillis, throwOnDeadline);
     }
 }

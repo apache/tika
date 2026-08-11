@@ -29,24 +29,36 @@ public class EmbeddedLimitReachedException extends RuntimeException {
 
     public enum LimitType {
         MAX_DEPTH,
-        MAX_COUNT
+        MAX_COUNT,
+        /** The task's total timeout was exhausted; see {@code ParseRecord#isTaskDeadlineReached()}. */
+        DEADLINE
     }
 
     private final LimitType limitType;
-    private final int limit;
+    private final long limit;
 
     public EmbeddedLimitReachedException(LimitType limitType, int limit) {
+        this(limitType, (long) limit);
+    }
+
+    /**
+     * @param limit the configured limit -- for {@link LimitType#DEADLINE} this is
+     *              {@code totalTaskTimeoutMillis}, not a count or depth
+     */
+    public EmbeddedLimitReachedException(LimitType limitType, long limit) {
         super(buildMessage(limitType, limit));
         this.limitType = limitType;
         this.limit = limit;
     }
 
-    private static String buildMessage(LimitType limitType, int limit) {
+    private static String buildMessage(LimitType limitType, long limit) {
         switch (limitType) {
             case MAX_DEPTH:
                 return "Max embedded depth reached: " + limit;
             case MAX_COUNT:
                 return "Max embedded count reached: " + limit;
+            case DEADLINE:
+                return "Task deadline reached: totalTaskTimeoutMillis=" + limit;
             default:
                 return "Embedded limit reached: " + limit;
         }
@@ -56,7 +68,19 @@ public class EmbeddedLimitReachedException extends RuntimeException {
         return limitType;
     }
 
+    /**
+     * @return the configured limit as an int -- for {@link LimitType#DEADLINE}, prefer
+     * {@link #getLimitMillis()} since a millisecond timeout may exceed int range
+     */
     public int getLimit() {
+        return (int) limit;
+    }
+
+    /**
+     * @return the configured limit, e.g. {@code totalTaskTimeoutMillis} for
+     * {@link LimitType#DEADLINE}
+     */
+    public long getLimitMillis() {
         return limit;
     }
 }

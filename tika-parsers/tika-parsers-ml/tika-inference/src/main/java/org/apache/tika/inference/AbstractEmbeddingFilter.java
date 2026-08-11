@@ -77,12 +77,15 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
      * Implementations should set {@link Chunk#setVector(float[])} on
      * each chunk in the list.
      *
-     * @param chunks the text chunks to embed
-     * @param config the resolved config for this call
+     * @param chunks       the text chunks to embed
+     * @param config       the resolved config for this call
+     * @param parseContext the task's ParseContext -- pass to
+     *                     {@link org.apache.tika.http.TikaHttpClient} calls to bound the
+     *                     request by the task's remaining budget and checkpoint while waiting
      * @throws IOException   on HTTP errors
      * @throws TikaException on API-level errors
      */
-    protected abstract void embed(List<Chunk> chunks, InferenceConfig config)
+    protected abstract void embed(List<Chunk> chunks, InferenceConfig config, ParseContext parseContext)
             throws IOException, TikaException;
 
     @Override
@@ -92,11 +95,11 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
             return;
         }
         for (Metadata metadata : metadataList) {
-            processOne(metadata);
+            processOne(metadata, parseContext);
         }
     }
 
-    private void processOne(Metadata metadata) throws TikaException {
+    private void processOne(Metadata metadata, ParseContext parseContext) throws TikaException {
         String content = metadata.get(defaultConfig.getContentField());
         if (content == null) {
             LOG.debug("No content found at field '{}'; skipping embedding. "
@@ -141,7 +144,7 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
             for (int i = 0; i < chunks.size(); i += batchSize) {
                 List<Chunk> batch = chunks.subList(
                         i, Math.min(i + batchSize, chunks.size()));
-                embed(batch, defaultConfig);
+                embed(batch, defaultConfig, parseContext);
             }
             ChunkSerializer.mergeInto(metadata, chunks, defaultConfig.getOutputField());
         } catch (IOException e) {

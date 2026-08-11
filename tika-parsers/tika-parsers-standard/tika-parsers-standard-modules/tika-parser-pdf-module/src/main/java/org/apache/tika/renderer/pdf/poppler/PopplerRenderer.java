@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -151,8 +152,11 @@ public class PopplerRenderer implements Renderer {
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(args);
         FileProcessResult result = ProcessUtils.execute(
-                builder, timeoutMs, 10, 1000);
-        if (result.getExitValue() != 0) {
+                builder, parseContext, timeoutMs, 10, 1000);
+        if (result.isTimeout()) {
+            throw new TikaTimeoutException("pdftoppm timed out",
+                    result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
+        } else if (result.getExitValue() != 0) {
             throw new TikaException(
                     "pdftoppm failed (exit " + result.getExitValue()
                             + "): " + result.getStderr());

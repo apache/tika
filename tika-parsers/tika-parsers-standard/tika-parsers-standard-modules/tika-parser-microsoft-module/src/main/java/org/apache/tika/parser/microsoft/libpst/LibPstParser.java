@@ -36,6 +36,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -94,11 +95,13 @@ public class LibPstParser implements Parser, Initializable {
         try {
             ProcessBuilder pb = getProcessBuilder(pst, activeConfig, outDir, debugFile);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata, parseContext);
-            FileProcessResult fileProcessResult = ProcessUtils.execute(pb, activeConfig.getTimeoutSeconds() * 1000l, MAX_STDOUT, MAX_STDERR);
+            FileProcessResult fileProcessResult = ProcessUtils.execute(pb, parseContext,
+                    activeConfig.getTimeoutSeconds() * 1000L, MAX_STDOUT, MAX_STDERR);
             xhtml.startDocument();
             processContents(outDir, activeConfig, xhtml, metadata, parseContext);
             if (fileProcessResult.isTimeout()) {
-                throw new TikaException("Timeout exception: " + fileProcessResult.getProcessTimeMillis());
+                throw new TikaTimeoutException("readpst timed out",
+                        fileProcessResult.getRequestedTimeoutMillis(), fileProcessResult.getGrantedTimeoutMillis());
             }
             if (fileProcessResult.getExitValue() != 0) {
                 LOGGER.warn("libpst bad exit value {}", fileProcessResult.getExitValue());

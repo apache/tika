@@ -167,6 +167,10 @@ public interface TikaCoreProperties {
     Property EMBEDDED_DEPTH_LIMIT_REACHED =
             Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded-depth-limit-reached");
 
+    //total timeout exhausted mid-parse; remaining embedded docs were skipped, not attempted
+    Property TASK_DEADLINE_REACHED =
+            Property.internalBoolean(TIKA_META_EXCEPTION_PREFIX + "task-deadline-reached");
+
     /**
      * Use this to store exceptions caught during a parse that are
      * non-fatal, e.g. if a parser is in lenient mode and more

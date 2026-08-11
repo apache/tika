@@ -218,14 +218,14 @@ public class MagikaDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
         //spool the full file to disk if there is no underlying file
-        return detectOnPath(tis.getPath(), metadata);
+        return detectOnPath(tis.getPath(), metadata, parseContext);
     }
 
     public Config getDefaultConfig() {
         return defaultConfig;
     }
 
-    private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
+    private MediaType detectOnPath(Path path, Metadata metadata, ParseContext parseContext) throws IOException {
 
         String[] args = new String[]{
                 ProcessUtils.escapeCommandLine(defaultConfig.getMagikaPath()),
@@ -233,7 +233,7 @@ public class MagikaDetector implements Detector {
                 "--json"
         };
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, defaultConfig.getTimeoutMs(), 10000000, 1000);
+        FileProcessResult result = ProcessUtils.execute(builder, parseContext, defaultConfig.getTimeoutMs(), 10000000, 1000);
         return processResult(result, metadata, defaultConfig.isUseMime());
     }
 

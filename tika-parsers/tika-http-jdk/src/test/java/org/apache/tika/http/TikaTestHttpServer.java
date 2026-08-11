@@ -54,7 +54,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TikaTestHttpServer implements Closeable {
 
     /** A pre-programmed response to return for the next incoming request. */
-    public record MockResponse(int status, String body) {}
+    public record MockResponse(int status, String body, long delayMillis) {
+        public MockResponse(int status, String body) {
+            this(status, body, 0);
+        }
+    }
 
     /** A captured incoming HTTP request. */
     public record RecordedRequest(String method, String path,
@@ -163,6 +167,15 @@ public class TikaTestHttpServer implements Closeable {
             MockResponse resp = responses.poll();
             if (resp == null) {
                 resp = new MockResponse(500, "{\"error\":\"no response queued\"}");
+            }
+
+            if (resp.delayMillis() > 0) {
+                try {
+                    Thread.sleep(resp.delayMillis());
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
             }
 
             byte[] responseBytes = resp.body().getBytes(StandardCharsets.UTF_8);

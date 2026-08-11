@@ -29,6 +29,7 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
@@ -287,6 +288,9 @@ public class CompositeParser implements Parser {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
         }
+        // Installed once per top-level task; embedded/recursive parses share the same
+        // ParseContext, so remaining budget is one pool across the whole task.
+        ParseTimeout.getOrCreate(context);
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
@@ -340,6 +344,9 @@ public class CompositeParser implements Parser {
         }
         if (record.isEmbeddedDepthLimitReached()) {
             metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+        }
+        if (record.isTaskDeadlineReached()) {
+            metadata.set(TikaCoreProperties.TASK_DEADLINE_REACHED, true);
         }
 
         for (Metadata m : record.getMetadataList()) {

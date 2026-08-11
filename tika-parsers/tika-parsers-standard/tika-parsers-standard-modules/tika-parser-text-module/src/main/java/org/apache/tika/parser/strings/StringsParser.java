@@ -26,8 +26,6 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.io.IOUtils;
@@ -38,11 +36,12 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -206,15 +205,16 @@ public class StringsParser implements Parser, Initializable {
         // Reads content printed out by "strings" command
         Thread gobbler = logStream(out, xhtml, totalBytes);
         gobbler.start();
+        long requestedMillis = config.getTimeoutSeconds() * 1000L;
         try {
-            long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, config.getTimeoutSeconds() * 1000L);
-            boolean completed = process.waitFor(timeoutMillis, TimeUnit.MILLISECONDS);
+            long timeoutMillis = ParseTimeout.getOrCreate(context).budgetFor(requestedMillis);
+            boolean completed = ProcessUtils.waitForWithHeartbeat(process, context, timeoutMillis);
             if (!completed) {
-                throw new TimeoutException("timed out");
+                throw new TikaTimeoutException("strings process timed out", requestedMillis, timeoutMillis);
             }
             gobbler.join(10000);
             TikaProgressTracker.update(context);
-        } catch (InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
             throw new TikaException("strings process failed", e);
         } finally {
             process.destroyForcibly();

@@ -728,9 +728,10 @@ public class TikaCLI {
             config.setParseMode(ParseMode.CONCATENATE);
         }
 
-        // Set timeout
+        // --fork-timeout maps to totalTaskTimeoutMillis; progressTimeoutMillis (stall
+        // detector) is a separate concept and keeps its own default.
         config.setTimeoutLimits(new TimeoutLimits(
-                TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, forkTimeout));
+                forkTimeout, TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS));
 
         // Set JVM args if provided
         if (forkJvmArgs != null && !forkJvmArgs.isEmpty()) {

@@ -49,6 +49,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -122,7 +123,7 @@ public class DWGReadParser extends AbstractDWGParser {
                     tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
             ProcessBuilder pb = new ProcessBuilder().command(command);
             LOG.debug("About to call DWGRead: {}", command);
-            FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 10000, 10000);
+            FileProcessResult fpr = ProcessUtils.execute(pb, context, dwgc.getDwgReadTimeout(), 10000, 10000);
             LOG.debug("DWGRead Exit code is: {}", fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
@@ -165,8 +166,8 @@ public class DWGReadParser extends AbstractDWGParser {
                             + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
             } else if (fpr.isTimeout()) {
-                throw new TikaException(
-                        "DWGRead Failed - Timeout setting exceeded current setting of " + dwgc.getDwgReadTimeout() );
+                throw new TikaTimeoutException("DWGRead timed out",
+                        fpr.getRequestedTimeoutMillis(), fpr.getGrantedTimeoutMillis());
             }
             else {
                 throw new TikaException(
