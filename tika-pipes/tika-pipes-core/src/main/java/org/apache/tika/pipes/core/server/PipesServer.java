@@ -572,7 +572,26 @@ public class PipesServer implements AutoCloseable {
         LOG.info("watching parent pid {} for exit", parentPid);
     }
 
+    /** Below this, ordinary documents -- not just pathological ones -- start OOMing. */
+    private static final long MIN_USABLE_HEAP_BYTES = 256L * 1024 * 1024;
+
+    /** Checked here, not in the parent: the parent sizes forks by percentage and has no
+     *  portable way to resolve that to bytes. The child knows what it actually got. */
+    private static void checkUsableHeap() {
+        long maxHeapMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        LOG.info("forked JVM max heap: {} MB", maxHeapMb);
+        if (maxHeapMb < MIN_USABLE_HEAP_BYTES / (1024 * 1024)) {
+            LOG.warn("forked JVM max heap is {} MB, below the {} MB needed to parse " +
+                            "reliably. Lower pipes.numClients, raise the container memory " +
+                            "limit, or set -Xmx explicitly in forkedJvmArgs; otherwise " +
+                            "ordinary documents will fail with OOM.",
+                    maxHeapMb, MIN_USABLE_HEAP_BYTES / (1024 * 1024));
+        }
+    }
+
     protected void initializeResources() throws TikaException, IOException, SAXException {
+
+        checkUsableHeap();
 
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);

@@ -69,6 +69,7 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     private boolean allowPerRequestConfig = false;
     private String cors = "";
     private boolean returnStackTrace = false;
+    private long maxRequestSizeBytes = -1;
     private String id = UUID
             .randomUUID()
             .toString();
@@ -238,6 +239,18 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     @com.fasterxml.jackson.annotation.JsonIgnore
     public void setConfigPath(String path) {
         this.configPath = Paths.get(path);
+    }
+
+    /**
+     * Maximum request body in bytes. Negative (the default) means no limit; tika-server
+     * spools uploads to disk, so an unbounded value lets a caller fill the temp directory.
+     */
+    public long getMaxRequestSizeBytes() {
+        return maxRequestSizeBytes;
+    }
+
+    public void setMaxRequestSizeBytes(long maxRequestSizeBytes) {
+        this.maxRequestSizeBytes = maxRequestSizeBytes;
     }
 
     public boolean isReturnStackTrace() {
