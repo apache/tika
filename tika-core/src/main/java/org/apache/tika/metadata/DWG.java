@@ -23,8 +23,8 @@ public interface DWG {
 
     String DWG_PREFIX = "dwg" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    PassthroughPrefix RAW_FIELD =
-            PassthroughPrefix.file(DWG_PREFIX, "DWGRead JSON header/summary field names");
+    KeyPrefix RAW_FIELD =
+            KeyPrefix.file(DWG_PREFIX, "DWGRead JSON header/summary field names");
 
     Property APPLICATION_NAME = Property.externalText(DWG_PREFIX + "application-name");
 

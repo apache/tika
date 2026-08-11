@@ -23,16 +23,16 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 class NumbersContentHandler extends DefaultHandler {
 
-    private static final PassthroughPrefix NUMBERS_METADATA =
-            PassthroughPrefix.file("numbers:", "iWork Numbers document metadata element names");
+    private static final KeyPrefix NUMBERS_METADATA =
+            KeyPrefix.file("numbers:", "iWork Numbers document metadata element names");
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;

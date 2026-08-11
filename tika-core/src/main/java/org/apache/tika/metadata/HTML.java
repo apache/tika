@@ -19,7 +19,7 @@ package org.apache.tika.metadata;
 public interface HTML {
     String PREFIX_HTML_META = "html" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    PassthroughPrefix SCRAPED_META = PassthroughPrefix.file(PREFIX_HTML_META,
+    KeyPrefix SCRAPED_META = KeyPrefix.file(PREFIX_HTML_META,
             "scraped <meta>/http-equiv/OpenGraph names not mapped to a Property");
 
 

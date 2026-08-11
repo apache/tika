@@ -26,7 +26,7 @@ public interface RTFMetadata {
     String RTF_PICT_META_PREFIX = "rtf:pict:";
 
     /** Open (file-controlled) RTF embedded-object property names built off {@link #RTF_PICT_META_PREFIX}. */
-    PassthroughPrefix PICT = PassthroughPrefix.file(RTF_PICT_META_PREFIX,
+    KeyPrefix PICT = KeyPrefix.file(RTF_PICT_META_PREFIX,
             "RTF embedded picture-object property pairs (sn/sv); file-controlled names");
 
     /**

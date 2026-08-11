@@ -16,7 +16,7 @@
 = Adding a Metadata Key
 
 Every metadata key Tika can emit is a `Property` constant (or, for runtime-minted names like scraped
-HTML `<meta>` tags, a `PassthroughPrefix`) — there are no bare `String` keys. That closed/open key
+HTML `<meta>` tags, a `KeyPrefix`) — there are no bare `String` keys. That closed/open key
 space is tracked in a generated, build-gated registry, so adding a key involves one extra step beyond
 writing the Java.
 
@@ -40,10 +40,10 @@ Naming conventions (frozen for 4.0):
 
 The registry — three JSON files under `tika-metadata-schema/src/main/resources/`, listing every
 declared key, every open-namespace prefix, and a field-provenance table — is generated from the live
-`Property`/`PassthroughPrefix` declarations, never hand-edited. A committed copy is the reviewable
+`Property`/`KeyPrefix` declarations, never hand-edited. A committed copy is the reviewable
 audit trail (a rename or dropped key shows up as a diff), and CI fails if it's stale.
 
-Run this after adding, renaming, or removing a `Property` or `PassthroughPrefix`:
+Run this after adding, renaming, or removing a `Property` or `KeyPrefix`:
 
 [source,bash]
 ----

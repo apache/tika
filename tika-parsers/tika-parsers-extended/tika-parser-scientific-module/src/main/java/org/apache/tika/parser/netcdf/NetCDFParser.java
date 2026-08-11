@@ -34,8 +34,8 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ClimateForcast;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -57,8 +57,8 @@ public class NetCDFParser implements Parser {
      */
     private static final long serialVersionUID = -5940938274907708665L;
 
-    public static final PassthroughPrefix NETCDF =
-            PassthroughPrefix.file("netcdf:", "NetCDF global attribute names");
+    public static final KeyPrefix NETCDF =
+            KeyPrefix.file("netcdf:", "NetCDF global attribute names");
 
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-netcdf"));

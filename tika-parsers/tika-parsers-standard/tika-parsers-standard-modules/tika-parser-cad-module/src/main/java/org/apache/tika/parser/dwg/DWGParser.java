@@ -31,8 +31,8 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -61,8 +61,8 @@ public class DWGParser extends AbstractDWGParser {
     }
 
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
-    public static final PassthroughPrefix DWG_CUSTOM =
-            PassthroughPrefix.file(DWG_CUSTOM_META_PREFIX, "DWG custom document properties");
+    public static final KeyPrefix DWG_CUSTOM =
+            KeyPrefix.file(DWG_CUSTOM_META_PREFIX, "DWG custom document properties");
     /**
      * Serial version UID
      */
