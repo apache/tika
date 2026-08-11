@@ -71,7 +71,6 @@ import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
@@ -86,8 +85,10 @@ public abstract class ProfilerBase {
     protected static final AtomicInteger ID = new AtomicInteger();
     static final long NON_EXISTENT_FILE_LENGTH = -1l;
     final static int FILE_PATH_MAX_LEN = 1024;//max len for varchar for file_path
-    //Container exception key from the 1.x branch
-    private static final Property CONTAINER_EXCEPTION_1X = Property.externalText("X-TIKA" + ":EXCEPTION:runtime");
+    //Container exception key from the 1.x branch. Read-only lookup against legacy extract
+    //JSON, so a plain String key suffices -- Metadata.get(Property) is just get(name) anyway,
+    //and X-TIKA: is reserved: only org.apache.tika.metadata may mint a Property for it.
+    private static final String CONTAINER_EXCEPTION_1X = "X-TIKA" + ":EXCEPTION:runtime";
     private static final Logger LOG = LoggerFactory.getLogger(ProfilerBase.class);
     private static final String[] EXTRACT_EXTENSIONS = {".json", ".txt", ""};
     private static final String[] COMPRESSION_EXTENSIONS = {"", ".bz2", ".gzip", ".zip",};

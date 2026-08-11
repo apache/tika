@@ -137,6 +137,34 @@ public final class Property implements Comparable<Property> {
     }
 
     /**
+     * Guards the public factories: a {@code tk:}/{@code X-TIKA:} name can never be minted
+     * through them. Curated reserved constants go through the package-private
+     * {@code reservedInternal*}/{@code reservedExternal*} family below instead, so any live
+     * {@code Property} carrying a reserved name is, by construction, curated.
+     */
+    private static void requireNotReserved(String name) {
+        if (ReservedNamespaces.isTikaNative(name)) {
+            throw new IllegalArgumentException("'" + name + "' is in the reserved Tika-native "
+                    + "namespace (tk:/X-TIKA:); it cannot be minted via a public Property "
+                    + "factory. Curated tk: constants belong in org.apache.tika.metadata and "
+                    + "mint via the package-private reserved* factories.");
+        }
+    }
+
+    /**
+     * Mirror image of {@link #requireNotReserved(String)} for the reserved factories below:
+     * fail loud (rather than silently minting a non-reserved Property through the reserved
+     * path) if fed a name that isn't actually reserved.
+     */
+    private static void requireReserved(String name) {
+        if (!ReservedNamespaces.isTikaNative(name)) {
+            throw new IllegalArgumentException("'" + name + "' is not in the reserved "
+                    + "Tika-native namespace (tk:/X-TIKA:); use a public Property factory "
+                    + "instead of the package-private reserved* path.");
+        }
+    }
+
+    /**
      * Get the type of a property
      *
      * @param key name of the property
@@ -175,90 +203,229 @@ public final class Property implements Comparable<Property> {
     }
 
     public static Property internalBoolean(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.BOOLEAN);
     }
 
     public static Property internalClosedChoise(String name, String... choices) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.CLOSED_CHOICE, choices);
     }
 
     public static Property internalDate(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.DATE);
     }
 
     public static Property internalDateBag(String name) {
+        requireNotReserved(name);
         return new Property(name, true, PropertyType.BAG, ValueType.DATE);
     }
 
     public static Property internalInteger(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.INTEGER);
     }
 
     public static Property internalIntegerSequence(String name) {
+        requireNotReserved(name);
         return new Property(name, true, PropertyType.SEQ, ValueType.INTEGER);
     }
 
     public static Property internalRational(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.RATIONAL);
     }
 
     public static Property internalOpenChoise(String name, String... choices) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.OPEN_CHOICE, choices);
     }
 
     public static Property internalReal(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.REAL);
     }
 
     public static Property internalText(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.TEXT);
     }
 
     public static Property internalTextBag(String name) {
+        requireNotReserved(name);
         return new Property(name, true, PropertyType.BAG, ValueType.TEXT);
     }
 
     public static Property internalURI(String name) {
+        requireNotReserved(name);
         return new Property(name, true, ValueType.URI);
     }
 
     public static Property externalClosedChoise(String name, String... choices) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.CLOSED_CHOICE, choices);
     }
 
     public static Property externalOpenChoise(String name, String... choices) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.OPEN_CHOICE, choices);
     }
 
     public static Property externalDate(String name) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.DATE);
     }
 
     public static Property externalReal(String name) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.REAL);
     }
 
     public static Property externalRealSeq(String name) {
+        requireNotReserved(name);
         return new Property(name, false, PropertyType.SEQ, ValueType.REAL);
     }
 
     public static Property externalInteger(String name) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.INTEGER);
     }
 
     public static Property externalBoolean(String name) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.BOOLEAN);
     }
 
     public static Property externalBooleanSeq(String name) {
+        requireNotReserved(name);
         return new Property(name, false, PropertyType.SEQ, ValueType.BOOLEAN);
     }
 
     public static Property externalText(String name) {
+        requireNotReserved(name);
         return new Property(name, false, ValueType.TEXT);
     }
 
     public static Property externalTextBag(String name) {
+        requireNotReserved(name);
+        return new Property(name, false, PropertyType.BAG, ValueType.TEXT);
+    }
+
+    // ---- Package-private mirrors for curated tk:/X-TIKA: constants -------------------
+    // Same shapes as the public factories above, but (a) assert the name IS reserved
+    // (b) still register (curated constants must stay resolvable via Property.get /
+    // Metadata.reconstruct). Callers: TikaCoreProperties, TikaPagedText, Rendering — all
+    // in-package. Not for document-derived names; those mint unregistered (see
+    // mintUnregistered) via KeyPrefix (stage 3+).
+
+    static Property reservedInternalBoolean(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.BOOLEAN);
+    }
+
+    static Property reservedInternalClosedChoise(String name, String... choices) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.CLOSED_CHOICE, choices);
+    }
+
+    static Property reservedInternalDate(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.DATE);
+    }
+
+    static Property reservedInternalDateBag(String name) {
+        requireReserved(name);
+        return new Property(name, true, PropertyType.BAG, ValueType.DATE);
+    }
+
+    static Property reservedInternalInteger(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.INTEGER);
+    }
+
+    static Property reservedInternalIntegerSequence(String name) {
+        requireReserved(name);
+        return new Property(name, true, PropertyType.SEQ, ValueType.INTEGER);
+    }
+
+    static Property reservedInternalRational(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.RATIONAL);
+    }
+
+    static Property reservedInternalOpenChoise(String name, String... choices) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.OPEN_CHOICE, choices);
+    }
+
+    static Property reservedInternalReal(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.REAL);
+    }
+
+    static Property reservedInternalText(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.TEXT);
+    }
+
+    static Property reservedInternalTextBag(String name) {
+        requireReserved(name);
+        return new Property(name, true, PropertyType.BAG, ValueType.TEXT);
+    }
+
+    static Property reservedInternalURI(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.URI);
+    }
+
+    static Property reservedExternalClosedChoise(String name, String... choices) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.CLOSED_CHOICE, choices);
+    }
+
+    static Property reservedExternalOpenChoise(String name, String... choices) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.OPEN_CHOICE, choices);
+    }
+
+    static Property reservedExternalDate(String name) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.DATE);
+    }
+
+    static Property reservedExternalReal(String name) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.REAL);
+    }
+
+    static Property reservedExternalRealSeq(String name) {
+        requireReserved(name);
+        return new Property(name, false, PropertyType.SEQ, ValueType.REAL);
+    }
+
+    static Property reservedExternalInteger(String name) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.INTEGER);
+    }
+
+    static Property reservedExternalBoolean(String name) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.BOOLEAN);
+    }
+
+    static Property reservedExternalBooleanSeq(String name) {
+        requireReserved(name);
+        return new Property(name, false, PropertyType.SEQ, ValueType.BOOLEAN);
+    }
+
+    static Property reservedExternalText(String name) {
+        requireReserved(name);
+        return new Property(name, false, ValueType.TEXT);
+    }
+
+    static Property reservedExternalTextBag(String name) {
+        requireReserved(name);
         return new Property(name, false, PropertyType.BAG, ValueType.TEXT);
     }
 
@@ -267,6 +434,10 @@ public final class Property implements Comparable<Property> {
      * <p>
      * Note that name of the composite property is taken from its primary property,
      * and primary and secondary properties must not be composite properties themselves.
+     * <p>
+     * No reserved-name check here: {@code primaryProperty} was already validated (or
+     * asserted reserved) at its own mint, and composites never register (see the
+     * constructor), so there is nothing new to forge or intern.
      *
      * @param primaryProperty
      * @param secondaryExtractProperties
