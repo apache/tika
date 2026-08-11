@@ -72,8 +72,8 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -93,10 +93,10 @@ public class ImageMetadataExtractor {
 
     public static final String UNKNOWN_IMG_NS = "img" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     public static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static final PassthroughPrefix UNKNOWN_IMG =
-            PassthroughPrefix.file(UNKNOWN_IMG_NS, "unrecognized image tag names");
-    public static final PassthroughPrefix ICC =
-            PassthroughPrefix.file(ICC_NS, "unrecognized ICC profile tag names");
+    public static final KeyPrefix UNKNOWN_IMG =
+            KeyPrefix.file(UNKNOWN_IMG_NS, "unrecognized image tag names");
+    public static final KeyPrefix ICC =
+            KeyPrefix.file(ICC_NS, "unrecognized ICC profile tag names");
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;

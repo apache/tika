@@ -51,8 +51,8 @@ public interface PDF {
     String PDF_DOC_INFO_CUSTOM_PREFIX =
             PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    PassthroughPrefix DOC_INFO_CUSTOM =
-            PassthroughPrefix.file(PDF_DOC_INFO_CUSTOM_PREFIX, "PDF Info-dict custom keys");
+    KeyPrefix DOC_INFO_CUSTOM =
+            KeyPrefix.file(PDF_DOC_INFO_CUSTOM_PREFIX, "PDF Info-dict custom keys");
 
     Property DOC_INFO_CREATED = Property.internalDate(PDF_DOC_INFO_PREFIX + "created");
 

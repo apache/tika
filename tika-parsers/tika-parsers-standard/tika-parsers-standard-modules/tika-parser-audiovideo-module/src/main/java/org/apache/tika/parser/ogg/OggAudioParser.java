@@ -41,8 +41,8 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -59,8 +59,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
 
-    private static final PassthroughPrefix VORBIS =
-            PassthroughPrefix.file("vorbis:", "Vorbis comment field names");
+    private static final KeyPrefix VORBIS =
+            KeyPrefix.file("vorbis:", "Vorbis comment field names");
 
     /**
      * Comment holding an embedded picture (e.g. cover art) as a base64

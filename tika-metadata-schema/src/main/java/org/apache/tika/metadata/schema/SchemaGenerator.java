@@ -32,7 +32,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.tika.digest.DigestDef;
-import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Property;
 
 /**
@@ -54,8 +54,8 @@ public final class SchemaGenerator {
     // Field/parameter descriptors in a .class constant pool: a class referencing one is force-loaded.
     private static final byte[] PROP_DESC =
             "Lorg/apache/tika/metadata/Property;".getBytes(StandardCharsets.ISO_8859_1);
-    private static final byte[] PASSTHROUGH_DESC =
-            "Lorg/apache/tika/metadata/PassthroughPrefix;".getBytes(StandardCharsets.ISO_8859_1);
+    private static final byte[] KEY_PREFIX_DESC =
+            "Lorg/apache/tika/metadata/KeyPrefix;".getBytes(StandardCharsets.ISO_8859_1);
 
     private SchemaGenerator() {
     }
@@ -118,7 +118,7 @@ public final class SchemaGenerator {
         return fieldTableJson(rows);
     }
 
-    /** Scans the classpath, force-loads every Property/PassthroughPrefix-bearing class (static init
+    /** Scans the classpath, force-loads every Property/KeyPrefix-bearing class (static init
      * registers the constants), and returns the loaded class names. */
     private static List<String> scanClasspath(ClassLoader cl) throws IOException {
         List<String> loaded = new ArrayList<>();
@@ -160,7 +160,7 @@ public final class SchemaGenerator {
 
     private static void maybeLoad(String classPath, byte[] bytes, ClassLoader cl, List<String> loaded) {
         if (!classPath.startsWith("org/apache/tika/")
-                || (!contains(bytes, PROP_DESC) && !contains(bytes, PASSTHROUGH_DESC))) {
+                || (!contains(bytes, PROP_DESC) && !contains(bytes, KEY_PREFIX_DESC))) {
             return;
         }
         String cn = classPath.substring(0, classPath.length() - 6).replace('/', '.');
@@ -222,7 +222,7 @@ public final class SchemaGenerator {
     /** Declared passthrough prefixes as stable JSON. Call after {@link #generate()} has loaded classes. */
     public static String passthroughJson() {
         TreeMap<String, String[]> m = new TreeMap<>();
-        for (PassthroughPrefix p : PassthroughPrefix.registered()) {
+        for (KeyPrefix p : KeyPrefix.registered()) {
             m.put(p.prefix(), new String[]{p.provenance().name(), p.description()});
         }
         StringBuilder sb = new StringBuilder("[\n");

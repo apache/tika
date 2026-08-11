@@ -44,8 +44,8 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -67,8 +67,8 @@ public class IWork13PackageParser implements Parser {
             Property.externalText(IWORKS_PREFIX + "document-id");
     public static final Property IWORKS_BUILD_VERSION_HISTORY =
             Property.externalTextBag(IWORKS_PREFIX + "build-version-history");
-    public static final PassthroughPrefix IWORKS_PROPERTIES =
-            PassthroughPrefix.file(IWORKS_PREFIX, "iWork '13 plist document properties");
+    public static final KeyPrefix IWORKS_PROPERTIES =
+            KeyPrefix.file(IWORKS_PREFIX, "iWork '13 plist document properties");
 
 
     private final static Set<MediaType> supportedTypes = Collections.unmodifiableSet(

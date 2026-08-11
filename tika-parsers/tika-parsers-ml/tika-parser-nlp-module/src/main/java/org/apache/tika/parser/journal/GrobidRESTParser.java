@@ -34,8 +34,8 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -47,8 +47,8 @@ public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
 
-    public static final PassthroughPrefix GROBID_HEADER =
-            PassthroughPrefix.tool("grobid:header_", "GROBID-inferred header fields");
+    public static final KeyPrefix GROBID_HEADER =
+            KeyPrefix.tool("grobid:header_", "GROBID-inferred header fields");
 
     private static final String GROBID_REST_HOST = "http://localhost:8070";
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";

@@ -36,7 +36,7 @@ declare a `Property` field, force-loads them, reads the global `Property` table,
 sorted JSON. `MetadataSchemaTest` regenerates in-memory and asserts it matches the committed file, so
 the registry can never drift from the declarations.
 
-Regenerate after adding/changing a `Property` **or** a `PassthroughPrefix` (writes all three files):
+Regenerate after adding/changing a `Property` **or** a `KeyPrefix` (writes all three files):
 ```
 tika-metadata-schema/regen.sh
 ```
@@ -50,8 +50,8 @@ The **prefixes** under which parsers mint file-controlled key names at runtime â
 `html:`, OOXML `custom:`, email `Message:Raw-Header:`, Access `MDB_PROP:`, Vorbis comments, FLV
 attributes, unmapped image/XMP tags, â€¦). Each record: `{ prefix, provenance, description }`.
 
-**Generated from the `PassthroughPrefix` declarations, never hand-edited.** Every such prefix is a
-registered `PassthroughPrefix` constant; `SchemaGenerator` reads that registry the same way it reads
+**Generated from the `KeyPrefix` declarations, never hand-edited.** Every such prefix is a
+registered `KeyPrefix` constant; `SchemaGenerator` reads that registry the same way it reads
 the `Property` table, and `MetadataSchemaTest` gates it identically. Adding a passthrough prefix in a
 parser and forgetting to regenerate fails the build.
 

@@ -37,8 +37,8 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -62,8 +62,8 @@ public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";
-    public static final PassthroughPrefix NER =
-            PassthroughPrefix.tool(MD_KEY_PREFIX, "named-entity types");
+    public static final KeyPrefix NER =
+            KeyPrefix.tool(MD_KEY_PREFIX, "named-entity types");
     public static final String DEFAULT_NER_IMPL =
             OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
