@@ -245,7 +245,7 @@ public class PipesParsingHelper {
         }
         for (int i = 0; i < suffix.length(); i++) {
             char c = suffix.charAt(i);
-            if (c == '/' || c == '\\' || c == ' ' || Character.isISOControl(c)) {
+            if (c == '/' || c == '\\' || c == '\0' || Character.isISOControl(c)) {
                 return false;
             }
         }
