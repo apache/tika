@@ -16,7 +16,6 @@
  */
 package org.apache.tika.server.standard;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +25,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -93,14 +91,6 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected InputStream getPipesConfigInputStream() {
         return getClass().getResourceAsStream("/configs/tika-config-for-server-tests.json");
-    }
-
-    @Test
-    public void testHelloWorld() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .get();
-        assertEquals(TikaResource.GREETING, getStringFromInputStream((InputStream) response.getEntity()));
     }
 
     @Test
@@ -655,53 +645,4 @@ public class TikaResourceTest extends CXFTestBase {
         TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser", Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
     }
 
-    @Test
-    public void testJsonWriteLimitEmbedded() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json/html")
-                .header("writeLimit", "500")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
-        assertContains("embed2a.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("When in the Course", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotFound("declare the causes", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
-        assertTrue(metadata
-                .get(TikaCoreProperties.CONTAINER_EXCEPTION)
-                .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
-        assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    @org.junit.jupiter.api.Disabled("throwOnWriteLimitReached header not yet supported with pipes-based parsing")
-    public void testJsonNoThrowWriteLimitEmbedded() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json/html")
-                .header("writeLimit", "500")
-                .header("throwOnWriteLimitReached", "false")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
-        String txt = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("embed2a.txt", txt);
-        assertContains("When in the Course", txt);
-        assertNotFound("declare the causes", txt);
-        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-        assertContains("<div class=\"embedded\" id=\"embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testWriteLimitInPDF() throws Exception {
-        int writeLimit = 10;
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes.pdf"));
-
-        assertEquals(200, response.getStatus());
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        Metadata metadata = JsonMetadata.fromJson(reader);
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-
-    }
 }

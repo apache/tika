@@ -169,7 +169,7 @@ report `autoCap=user-set in forkedJvmArgs`.
 A reasonable starting point is **~2 GB of heap per forked worker** (passed via `-Xmx2g` in `forkedJvmArgs`). The number falls out of three independent constraints any of which can dominate:
 
 * **Worst-case PDF parsing.** A handful of pathological PDFs in any reasonably large corpus will allocate hundreds of MB of intermediate object data per document — large image streams, deeply nested form fields, big embedded fonts. Smaller heaps OOM on those documents; larger heaps just let GC clean up between docs.
-* **Embedded-document explosion.** A zip-bomb-shaped office document with thousands of embedded objects multiplies per-doc allocation by the embedding count. The `maxEmbeddedResources` setting caps the count, but each retained object still lives in the heap until the whole tree finishes parsing.
+* **Embedded-document explosion.** A zip-bomb-shaped office document with thousands of embedded objects multiplies per-doc allocation by the embedding count. The `parse-context.embedded-limits.maxCount` setting caps the count, but each retained object still lives in the heap until the whole tree finishes parsing.
 * **GC headroom.** G1GC behaves poorly above ~85% occupancy. A `-Xmx2g` worker comfortably handles documents that allocate up to ~1.5 GB of live data; below that you start trading throughput for memory.
 
 This is a default — not a tuning recommendation. To right-size for your specific corpus:

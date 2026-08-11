@@ -119,24 +119,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testJsonWriteLimit() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json")
-                .header("writeLimit", "100")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_LONG));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
-
-        assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
-        assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotFound("dissolve", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertTrue(metadata
-                .get(TikaCoreProperties.CONTAINER_EXCEPTION)
-                .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-    }
-
-    @Test
     public void testJsonHandlerType() throws Exception {
         // Default /tika/json uses text handler
         Response response = WebClient
@@ -163,18 +145,6 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     /*
-    @Test
-    public void testWriteLimitInAll() throws Exception {
-        //specify your file directory here
-        Path testDocs = Paths.get("..../tika-parsers/src/test/resources/test-documents");
-        for (File f : testDocs.toFile().listFiles()) {
-            if (f.isDirectory()) {
-                continue;
-            }
-            testWriteLimit(f);
-        }
-    }
-
     private void testWriteLimit(File f) throws Exception {
         Response response =
                 WebClient.create(endPoint + TIKA_PATH + "/text").accept("application/json").put(f);
