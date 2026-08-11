@@ -31,8 +31,11 @@ import org.apache.tika.parser.ParserDecorator;
  */
 public class ParserUtils {
 
-    public final static Property EMBEDDED_PARSER = Property.internalText(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded-parser");
+    /**
+     * @see TikaCoreProperties#EMBEDDED_PARSER the curated Property this aliases; {@code tk:}
+     * Properties mint only in org.apache.tika.metadata (see Property mint-time validation)
+     */
+    public final static Property EMBEDDED_PARSER = TikaCoreProperties.EMBEDDED_PARSER;
 
 
     /**
