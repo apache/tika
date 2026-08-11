@@ -308,6 +308,10 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`false`
 |Include parser stack traces in error responses. Useful in dev, dangerous in production (leaks internals).
 
+|`maxRequestSizeBytes`
+|`-1` (no limit)
+|Maximum request body in bytes; larger requests are rejected with `413`. Enforced for chunked uploads too, not just those declaring a `Content-Length`. Uploads are spooled to disk, so leaving this unset lets a caller fill the temp directory.
+
 |`logLevel`
 |_inherited_
 |`debug` or `info` to override the runtime log level.

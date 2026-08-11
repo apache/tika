@@ -190,19 +190,44 @@ public class PipesParsingHelper {
         }
     }
 
+    /** Longest suffix carried over from a client filename; keeps well clear of NAME_MAX. */
+    private static final int MAX_SUFFIX_LENGTH = 20;
+
     /**
-     * Extracts file suffix from metadata (resource name or content-type).
+     * Extracts a file suffix from the resource name for the spool file.
+     * <p>
+     * The resource name is client-supplied ({@code Content-Disposition} / {@code File-Name}),
+     * so the suffix is sanitized here rather than left for {@code Files.createTempFile} to
+     * reject: a suffix containing a path separator makes it throw {@code IllegalArgumentException}
+     * — not a traversal, since the JDK refuses it, but an uncaught 500 driven by a request
+     * header. An over-long suffix likewise fails at the filesystem. The suffix is a parser
+     * hint, so anything unusable is simply dropped in favour of {@code .tmp}.
      */
     private String getSuffix(Metadata metadata) {
         String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         if (resourceName != null) {
             int lastDot = resourceName.lastIndexOf('.');
             if (lastDot > 0 && lastDot < resourceName.length() - 1) {
-                return resourceName.substring(lastDot);
+                String suffix = resourceName.substring(lastDot);
+                if (isUsableSuffix(suffix)) {
+                    return suffix;
+                }
             }
         }
-        // Default suffix
         return ".tmp";
+    }
+
+    private static boolean isUsableSuffix(String suffix) {
+        if (suffix.length() > MAX_SUFFIX_LENGTH) {
+            return false;
+        }
+        for (int i = 0; i < suffix.length(); i++) {
+            char c = suffix.charAt(i);
+            if (c == '/' || c == '\\' || c == ' ' || Character.isISOControl(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
