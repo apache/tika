@@ -423,12 +423,13 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
-     * Poll slice used before the intermediate result has been written. The parsing modes add
-     * theirs immediately and then block on the latch released below, so this is short-lived --
-     * but NO_PARSE never produces one at all, and a long slice here was costing every such
-     * request the full wait before completion was even checked.
+     * Poll slice used before the intermediate result has been written. NO_PARSE never produces
+     * one, so this is the floor on every such request; the parsing modes add theirs immediately
+     * and then block on the latch released below, so they spin here only while pre-parse
+     * (digest + detect) runs. Kept short deliberately -- at 5ms /detect measured 14.6ms per
+     * request against 10.3ms here.
      */
-    private static final long PRE_INTERMEDIATE_POLL_MS = 5;
+    private static final long PRE_INTERMEDIATE_POLL_MS = 1;
 
     /** Steady-state slice once the intermediate result is out of the way. */
     private static final long COMPLETION_POLL_MS = 100;
