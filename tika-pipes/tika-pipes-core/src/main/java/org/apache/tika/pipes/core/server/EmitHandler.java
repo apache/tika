@@ -68,6 +68,26 @@ class EmitHandler {
     }
 
     public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
+        PipesResult result = emitParseDataInternal(t, parseData, parseContext);
+        // Deadline exhaustion is a document-level fact, independent of which SUCCESS
+        // variant (parsed-only, emitted, passed back...) the rest of this class chose --
+        // relabel any of them uniformly rather than special-casing every return site
+        // above. Never relabels a non-SUCCESS category: a genuine failure stays a failure.
+        if (result.getCategory() == PipesResult.CATEGORY.SUCCESS
+                && isTaskDeadlineReached(parseData.getMetadataList())) {
+            return new PipesResult(PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT, result.emitData(), result.message());
+        }
+        return result;
+    }
+
+    private static boolean isTaskDeadlineReached(List<Metadata> metadataList) {
+        if (metadataIsEmpty(metadataList)) {
+            return false;
+        }
+        return "true".equals(metadataList.get(0).get(TikaCoreProperties.TASK_DEADLINE_REACHED));
+    }
+
+    private PipesResult emitParseDataInternal(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
         //we need to apply the metadata filter after we pull out the stacktrace

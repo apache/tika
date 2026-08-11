@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -278,5 +280,57 @@ public class AsyncProcessorTest extends TikaTest {
         }, "Should throw PipesException when offering after application error");
 
         processor.close();
+    }
+
+    @Test
+    public void testPartialTimeoutContentIsEmitted() throws Exception {
+        // totalTaskTimeoutMillis=0 makes ParseTimeout deterministically "already exhausted"
+        // (remainingMillis() always 0), so the embedded doc is skipped immediately and the
+        // result becomes PARTIAL_TIMEOUT -- reliably ahead of the server's separate hard
+        // totalTaskTimeoutMillis watchdog (same threshold, polled every ~100-200ms). A
+        // non-zero "tight" value raced unreliably against both that watchdog and machine speed.
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">main_content</write>" +
+                "<embedded filename=\"embed1.xml\" content-type=\"application/mock+xml\">" +
+                "&lt;mock&gt;&lt;metadata action=\"add\" name=\"dc:creator\"&gt;embeddedAuthor&lt;/metadata&gt;" +
+                "&lt;write element=\"p\"&gt;some_embedded_content&lt;/write&gt;&lt;/mock&gt;" +
+                "</embedded>" +
+                "</mock>";
+        Path mockFile = inputDir.resolve("mock-partial-timeout.xml");
+        Files.write(mockFile, mockContent.getBytes(StandardCharsets.UTF_8));
+
+        AsyncProcessor processor = AsyncProcessor.load(configDir.resolve("tika-config.json"));
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.RMETA);
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(0, 10000));
+        FetchEmitTuple t = new FetchEmitTuple("partial-timeout-1",
+                new FetchKey("fsf", "mock-partial-timeout.xml"),
+                new EmitKey("fse-json", "emit-partial-timeout"), new Metadata(), parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+
+        processor.offer(t, 1000);
+        for (int i = 0; i < 10; i++) {
+            processor.offer(PipesIterator.COMPLETED_SEMAPHORE, 1000);
+        }
+        while (processor.checkActive()) {
+            Thread.sleep(100);
+        }
+        processor.close();
+
+        Path emitted = jsonOutputDir.resolve("emit-partial-timeout");
+        assertTrue(Files.exists(emitted),
+                "PARTIAL_TIMEOUT result must still be emitted, not silently dropped: " + emitted);
+        List<Metadata> metadataList;
+        try (BufferedReader reader = Files.newBufferedReader(emitted)) {
+            metadataList = JsonMetadataList.fromJson(reader);
+        }
+        assertFalse(metadataList.isEmpty(), "container metadata must be present");
+        // markdown output escapes underscores
+        assertContains("main", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("content", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("true", metadataList.get(0).get(TikaCoreProperties.TASK_DEADLINE_REACHED),
+                "container metadata should record that the task deadline was reached");
     }
 }

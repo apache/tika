@@ -261,7 +261,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         get.setHeader(headerKey, headerValue);
     }
 
-    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
+    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength)
+            throws IOException, TikaTimeoutException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
@@ -466,7 +467,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
             httpClientFactory.setRequestTimeoutMillis(httpFetcherConfig.getRequestTimeoutMillis());
         }
         if (httpFetcherConfig.getConnectTimeoutMillis() != null) {
-            httpClientFactory.setSocketTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
+            httpClientFactory.setConnectTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
         }
         if (httpFetcherConfig.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(httpFetcherConfig.getMaxConnections());

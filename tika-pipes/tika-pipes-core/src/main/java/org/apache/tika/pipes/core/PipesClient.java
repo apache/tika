@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -40,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -334,6 +331,17 @@ public class PipesClient implements Closeable {
         PipesMessage.newRequest(bytes).write(tuple.output);
     }
 
+    /**
+     * Waits for the server to finish processing {@code t}.
+     * <p>
+     * The client has no visibility into per-parser timeouts (enforced entirely inside
+     * the forked server, whose plugins may not even be on the client's classpath), so it
+     * doesn't duplicate deadline tracking here. Instead it relies on the socket's own
+     * {@code SO_TIMEOUT} ({@link PipesConfig#getSocketTimeoutMs()}): the server sends a
+     * {@code WORKING} heartbeat while alive and making progress, so a healthy-but-slow
+     * parse never starves this blocking read -- only a dead or wedged server lets it
+     * time out.
+     */
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
         // Snapshot the volatile once; a concurrent close() may null the field, but the
         // local stays valid and its blocking read unblocks via socket close (IOException).
@@ -342,35 +350,10 @@ public class PipesClient implements Closeable {
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH,
                     intermediateResult.get());
         }
-        TimeoutLimits limits = TimeoutLimits.get(t.getParseContext());
-        long progressTimeoutMillis = limits.getProgressTimeoutMillis();
-        long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
-        Instant start = Instant.now();
-        Instant lastUpdate = start;
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
-            }
-            Instant now = Instant.now();
-            long totalElapsed = Duration.between(start, now).toMillis();
-            if (totalElapsed > totalTaskTimeoutMillis) {
-                LOG.warn("clientId={}: total task timeout: id={} elapsed={}ms limit={}ms",
-                        pipesClientId, t.getId(), totalElapsed, totalTaskTimeoutMillis);
-                // Mark for restart - server is stuck on current request and needs to be restarted
-                serverManager.markServerForRestart();
-                closeConnection();
-                return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.TIMEOUT,
-                        intermediateResult.get());
-            }
-            long timeSinceUpdate = Duration.between(lastUpdate, now).toMillis();
-            if (timeSinceUpdate > progressTimeoutMillis) {
-                LOG.warn("clientId={}: progress timeout: id={} timeSinceUpdate={}ms limit={}ms",
-                        pipesClientId, t.getId(), timeSinceUpdate, progressTimeoutMillis);
-                serverManager.markServerForRestart();
-                closeConnection();
-                return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.TIMEOUT,
-                        intermediateResult.get());
             }
             try {
                 PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
@@ -402,10 +385,10 @@ public class PipesClient implements Closeable {
                                 intermediateResult.get(), crashMsg);
                     case INTERMEDIATE_RESULT:
                         intermediateResult.set(JsonPipesIpc.fromBytes(msg.payload(), Metadata.class));
-                        lastUpdate = Instant.now();
                         break;
                     case WORKING:
-                        lastUpdate = Instant.ofEpochMilli(msg.lastProgressMillis());
+                        // No-op: receiving anything at all -- including this heartbeat --
+                        // is what keeps the blocking read below from hitting SO_TIMEOUT.
                         break;
                     case FINISHED:
                         PipesResult result = JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class);

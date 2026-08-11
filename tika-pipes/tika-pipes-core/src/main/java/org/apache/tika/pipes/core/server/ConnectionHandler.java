@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -166,14 +166,16 @@ public class ConnectionHandler implements Runnable, Closeable {
                             mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
-                            TikaProgressTracker tracker = new TikaProgressTracker();
-                            mergedContext.set(TikaProgressTracker.class, tracker);
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
 
                             PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
                                     mergedContext, countDownLatch);
                             executorCompletionService.submit(pipesWorker);
 
-                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, tracker);
+                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, parseTimeout);
                         } catch (TikaConfigException e) {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -236,7 +238,7 @@ public class ConnectionHandler implements Runnable, Closeable {
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ArrayBlockingQueue<Metadata> intermediateResult,
                                CountDownLatch countDownLatch,
-                               TikaProgressTracker tracker) throws InterruptedException, IOException {
+                               ParseTimeout parseTimeout) throws InterruptedException, IOException {
         Instant start = Instant.now();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
@@ -286,7 +288,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
             if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
                 LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
-                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+                PipesMessage.working(parseTimeout.getLastProgressMillis()).write(output);
                 heartbeatCounter++;
             }
 
@@ -294,7 +296,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
-            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
@@ -313,8 +315,8 @@ public class ConnectionHandler implements Runnable, Closeable {
         return false;
     }
 
-    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+    private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = System.currentTimeMillis() - parseTimeout.getLastProgressMillis();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));

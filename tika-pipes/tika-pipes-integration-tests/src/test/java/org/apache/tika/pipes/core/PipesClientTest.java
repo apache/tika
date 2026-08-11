@@ -235,6 +235,41 @@ public class PipesClientTest {
     }
 
     @Test
+    public void testWatchdogHonorsCheckpointsDuringLongExternalCall(@TempDir Path tmp) throws Exception {
+        // A long "external call" (checkpointedSleep, standing in for e.g. Tesseract's
+        // ProcessUtils.execute wait) reports progress every 300ms over its 4s run, under
+        // a progressTimeoutMillis (1000ms) shorter than that but a totalTaskTimeoutMillis
+        // with plenty of room. If the watchdog reads stale progress instead of live
+        // checkpoints, this times out well before the sleep completes.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">main_content</write>" +
+                "<checkpointedSleep millis=\"4000\" intervalMillis=\"300\"/>" +
+                "</mock>";
+        String testFile = "mock-checkpointed-sleep-4s.xml";
+        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TimeoutLimits.class, new TimeoutLimits(15000, 1000));
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            PipesResult result = pipesClient.process(
+                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, result.status(),
+                    "A 4s checkpointing wait must not trip a 1000ms progress timeout");
+        }
+    }
+
+    @Test
     public void testStartupFailure(@TempDir Path tmp) throws Exception {
         // Create a config that references a non-existent fetcher plugin
         // This should cause PipesServer to fail during initialization

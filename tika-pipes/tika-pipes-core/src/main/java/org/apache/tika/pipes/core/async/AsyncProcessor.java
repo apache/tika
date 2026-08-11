@@ -464,7 +464,8 @@ public class AsyncProcessor implements Closeable {
         private boolean shouldEmit(PipesResult result) {
 
             if (result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
-                    result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
+                    result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION ||
+                    result.status() == PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT) {
                 return true;
             }
             // Emit intermediate results on any non-success if configured
