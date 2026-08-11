@@ -139,4 +139,41 @@ public class MetadataInternalKeyGuardTest {
         assertArrayEquals(new String[] {"p1", "p2"},
                 metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY));
     }
+
+    @Test
+    public void testReconstructNonReservedRoutesThroughStringPath() {
+        Metadata metadata = new Metadata();
+        metadata.reconstruct("my:customKey", "v1", false);
+        assertEquals("v1", metadata.get("my:customKey"));
+
+        metadata.reconstruct("my:customKey", "v2", true);
+        assertArrayEquals(new String[] {"v1", "v2"}, metadata.getValues("my:customKey"));
+    }
+
+    /**
+     * Design doc "Honest framing": {@code reconstruct} is a deliberately trusted route,
+     * not subject to the String-route guard -- for both a reserved name with a registered
+     * curated Property and one with none. Contrasts directly against the drop asserted by
+     * {@link #testStringWriteToInternalKeyIsDropped()} /
+     * {@link #testReconstructPreservesUnregisteredReservedKey()} on the same names, so a
+     * regression that made {@code reconstruct} start dropping (or the guard start
+     * exempting it) would be caught here either way.
+     */
+    @Test
+    public void testReconstructIsNotSubjectToReservedKeyDrop() {
+        Metadata metadata = new Metadata();
+
+        // registered curated Property
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), "dropped-by-guard");
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CONTENT));
+        metadata.reconstruct(TikaCoreProperties.TIKA_CONTENT.getName(), "lands-via-reconstruct", false);
+        assertEquals("lands-via-reconstruct", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+
+        // reserved but unregistered
+        String unregistered = TikaCoreProperties.TIKA_META_PREFIX + "noSuchRegisteredProperty2";
+        metadata.set(unregistered, "dropped-by-guard");
+        assertNull(metadata.get(unregistered));
+        metadata.reconstruct(unregistered, "lands-via-reconstruct", false);
+        assertEquals("lands-via-reconstruct", metadata.get(unregistered));
+    }
 }

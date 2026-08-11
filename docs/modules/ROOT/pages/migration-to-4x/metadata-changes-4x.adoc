@@ -347,6 +347,47 @@ String value = metadata.get("meta:some-property");
 String value = metadata.get("office:some-property");
 ----
 
+== Write API Changes (reserved-key guard)
+
+The `tk:` namespace isn't just renamed in 4.0.0 -- writing to it changed shape. In 3.x, a
+`String` write to a reserved key (`X-TIKA:*`) simply succeeded: a document-controlled
+custom property literally named `X-TIKA:Parsed-By` could overwrite Tika's own computed
+value. In 4.0.0 that write throws instead, so the failure is loud rather than a silent
+security gap.
+
+=== For parser authors
+
+* Document-derived key names (scraped from the file: HTML `<meta>` names, custom
+  document properties, CSV headers, ...) must go through a `KeyPrefix`'s typed factory
+  methods (`text`, `textBag`, `date`, `integer`, `real`, `bool`) rather than a raw
+  `String` key. See xref:developers/metadata-keys.adoc[Adding a Metadata Key].
+* `Metadata#set(String, String)` / `#add(String, String)` throw `IllegalArgumentException`
+  in 4.0.0 when the name is a reserved `tk:` (or legacy `X-TIKA:`) key. In 3.x this write
+  succeeded; there was no guard.
+* `Property`'s public factories (`Property.externalText(...)`, `internalText(...)`, etc.)
+  throw `IllegalArgumentException` at construction if given a reserved name -- a curated
+  `tk:` `Property` can only be built from Tika's own package-private factories.
+* The throw is a `RuntimeException` (`IllegalArgumentException`), not a `TikaException`.
+  A harness that narrowly catches `TikaException` around a parse will see this as a new,
+  uncaught failure mode when an unmigrated parser hits a crafted file.
+
+=== For integrators
+
+* `metadata.set("tk:...", value)` -- and any other map-style write to a reserved key --
+  throws `IllegalArgumentException` in 4.0.0.
+* A manual copy loop (`for (String n : src.names()) dest.set(n, src.get(n))`) both
+  collapses multi-valued keys to their last value *and* throws on every `tk:` key that
+  every parse output already contains (`tk:parsed-by`, `tk:content`, ...). Replace it with
+  `Metadata#putAll(Metadata)`, which preserves multi-values and copies reserved keys
+  through their trusted route.
+* `Metadata#setAll(Properties)` is removed; there is no replacement -- it wrote a raw
+  map directly into `Metadata`, bypassing both the limiter and the reserved-key guard.
+  Use `putAll(Metadata)` or individual `set`/`add` calls instead.
+* `/pipes` and `/async` `userMetadata` behavior is unchanged: a request's own `tk:`-named
+  entries still land in that request's output. This is deliberate (the deserializer uses
+  `Metadata`'s trusted reconstruction route, not the guarded `String` route) and is
+  bounded to the requester's own request; it is not affected by the guard changes above.
+
 == Rationale
 
 The namespacing of metadata keys provides several benefits:
