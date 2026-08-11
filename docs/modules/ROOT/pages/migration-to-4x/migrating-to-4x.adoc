@@ -180,10 +180,11 @@ complete documentation of all available options.
 == Metadata Key Changes
 
 Tika 4.x prefixes all "user generated" metadata keys to prevent overwrites and improve
-namespace clarity.
+namespace clarity. Writing to a reserved `tk:` key by `String` name also changed: it
+silently succeeded in 3.x and now throws.
 
 See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x] for complete details, including
-a full table of changes and code migration examples.
+a full table of changes, the write-API/reserved-key-guard changes, and code migration examples.
 
 == API Changes
 
@@ -244,6 +245,9 @@ for details.
 == Deprecations and Removals
 
 * `TikaConfig` -- replaced by `TikaLoader`
+* `Metadata#setAll(Properties)` -- raw map write that bypassed the reserved-key guard;
+  use `Metadata#putAll(Metadata)` instead (see
+  xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x])
 * `CompositeExternalParser` -- external parsers now require explicit JSON configuration
 * `ExternalParsersFactory` and XML-based external parser auto-discovery
 * DOM-based OOXML extractors (`XWPFWordExtractorDecorator`, `XSLFPowerPointExtractorDecorator`)
