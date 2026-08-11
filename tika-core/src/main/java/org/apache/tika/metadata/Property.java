@@ -25,6 +25,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * XMP property definition. Each instance of this class defines a single
  * metadata property like "dc:format". In addition to the property name,
@@ -36,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class Property implements Comparable<Property> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Property.class);
     private static final Map<String, Property> PROPERTIES = new ConcurrentHashMap<>();
     private final String name;
     private final boolean internal;
@@ -51,6 +55,20 @@ public final class Property implements Comparable<Property> {
     private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
                      String[] choices, Property primaryProperty,
                      Property[] secondaryExtractProperties) {
+        this(name, internal, propertyType, valueType, choices, primaryProperty,
+                secondaryExtractProperties, true);
+    }
+
+    /**
+     * @param register whether to intern this Property in the static registry. Composites
+     *                  (non-null primaryProperty) never register, regardless. Non-composite
+     *                  registration is first-wins: a name collision keeps the
+     *                  earlier-registered Property and this one is not stored; a
+     *                  same-name-different-shape collision also logs a WARN.
+     */
+    private Property(String name, boolean internal, PropertyType propertyType, ValueType valueType,
+                     String[] choices, Property primaryProperty,
+                     Property[] secondaryExtractProperties, boolean register) {
         this.name = name;
         this.internal = internal;
         this.propertyType = propertyType;
@@ -70,8 +88,20 @@ public final class Property implements Comparable<Property> {
             this.secondaryExtractProperties = null;
 
             // Only store primary properties for lookup, not composites
-            synchronized (PROPERTIES) {
-                PROPERTIES.put(name, this);
+            if (register) {
+                synchronized (PROPERTIES) {
+                    Property incumbent = PROPERTIES.putIfAbsent(name, this);
+                    // same-shape re-mints (e.g. class re-init) stay quiet; a shape mismatch
+                    // is a real bug (two differently-typed Properties claim the same name)
+                    if (incumbent != null && (incumbent.propertyType != propertyType
+                            || incumbent.valueType != valueType)) {
+                        LOG.warn(
+                                "Property registration collision for '{}': keeping {}/{}, " +
+                                        "dropping {}/{}",
+                                name, incumbent.propertyType, incumbent.valueType, propertyType,
+                                valueType);
+                    }
+                }
             }
         }
     }
@@ -92,6 +122,18 @@ public final class Property implements Comparable<Property> {
     private Property(String name, boolean internal, PropertyType propertyType,
                      ValueType valueType) {
         this(name, internal, propertyType, valueType, null);
+    }
+
+    /**
+     * Package-private, non-registering, lock-free minting path: skips {@code PROPERTIES}
+     * entirely, no interning and no lock. For call sites that construct Properties per-call
+     * from runtime/document-derived names, where interning would grow the static registry
+     * without bound (e.g. future {@code KeyPrefix} mints, a digest-template factory).
+     * Never composite.
+     */
+    static Property mintUnregistered(String name, boolean internal, PropertyType propertyType,
+                                     ValueType valueType, String[] choices) {
+        return new Property(name, internal, propertyType, valueType, choices, null, null, false);
     }
 
     /**
