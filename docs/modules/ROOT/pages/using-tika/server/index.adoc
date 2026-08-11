@@ -188,9 +188,10 @@ one worker.
 
 `/language` caps detection at the first 100,000 characters, since accuracy saturates well
 before that. That bounds the CPU per request, but *not* the memory: the request body is read
-into the server's heap before the cap applies, and the server has no maximum request size. A
-caller can still exhaust the heap with a large enough body, or with enough concurrent ones.
-Treat it as available only to trusted callers, the same as the rest of the server — see
+into the server's heap before the cap applies. Bounding the body itself is what
+`maxRequestSizeBytes` is for, and it is unset by default — with no limit configured, a caller
+can exhaust the heap with a large enough body, or with enough concurrent ones. Treat it as
+available only to trusted callers, the same as the rest of the server — see
 xref:security.adoc[the security model]. If you do not need it, omit it from `endpoints`.
 
 NOTE: `/detect` runs in a forked pipes worker like the parsing endpoints. Detection opens

@@ -61,9 +61,8 @@ public class LanguageResource {
      * callers who legitimately post whole documents.
      * <p>
      * This bounds the detection, not the request. This endpoint holds the text in the
-     * server's own heap instead of a pipes child, so a large enough body still costs
-     * memory before this class sees it. Bounding the body itself needs a request-size
-     * limit, which the server does not currently have. See the DoS note in the server docs.
+     * server's own heap instead of a pipes child, so a large enough body still costs memory
+     * before this class sees it; bounding the body itself is maxRequestSizeBytes' job.
      */
     public static final int MAX_DETECT_CHARS = 100_000;
 
