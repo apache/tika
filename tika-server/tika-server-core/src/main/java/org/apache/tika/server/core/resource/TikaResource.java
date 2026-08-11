@@ -448,10 +448,13 @@ public class TikaResource {
     @Produces("text/xml")
     public Response getXhtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
+        }
     }
 
     /**
@@ -463,12 +466,13 @@ public class TikaResource {
     @Path("text")
     public Response getText(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        // "body", not "text": 3.x served this from BodyContentHandler, so TEXT (whole XHTML
-        // document, title included as characters) was a 4.x regression.
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "body");
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "body");
+        }
     }
 
     /**
@@ -480,10 +484,13 @@ public class TikaResource {
     @Path("html")
     public Response getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "html");
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "html");
+        }
     }
 
     /**
@@ -495,10 +502,13 @@ public class TikaResource {
     @Path("xml")
     public Response getXml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
+        }
     }
 
     /**
@@ -510,10 +520,13 @@ public class TikaResource {
     @Path("md")
     public Response getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
+        }
     }
 
     /**
@@ -525,11 +538,13 @@ public class TikaResource {
     @Path("json")
     public Metadata getJsonDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        // null, not "text": no handler was named, so this takes DEFAULT_HANDLER_TYPE.
-        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), null);
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), null);
+        }
     }
 
     /**
@@ -544,10 +559,13 @@ public class TikaResource {
     public Metadata getJson(final InputStream is, @Context HttpHeaders httpHeaders,
                             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException {
-        TikaInputStream tis = TikaInputStream.get(is);
-        tis.getPath(); // Spool to temp file for pipes-based parsing
-        ParseContext context = createParseContext();
-        return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), handlerTypeName);
+        // try-with-resources: the spooled temp file must be deleted even if
+        // context setup or metadata filling throws before the parse begins.
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
+            ParseContext context = createParseContext();
+            return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), handlerTypeName);
+        }
     }
 
     // ==================== POST endpoints (multipart with optional config) ====================
@@ -742,12 +760,8 @@ public class TikaResource {
 
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
         // EmitHandler will strip everything except tk:content
-        List<Metadata> metadataList;
-        try {
-            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);
-        } finally {
-            tis.close();
-        }
+        List<Metadata> metadataList =
+                parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);
 
         LOG.debug("produceRawOutput: parseWithPipes returned {} metadata objects", metadataList.size());
 
@@ -826,12 +840,8 @@ public class TikaResource {
         // Ensure content handler factory is set (config may have set it)
         setupContentHandlerFactoryIfNeeded(context, handlerTypeName);
 
-        List<Metadata> metadataList;
-        try {
-            metadataList = parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
-        } finally {
-            tis.close();
-        }
+        List<Metadata> metadataList =
+                parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
 
         if (metadataList.isEmpty()) {
             return Metadata.newInstance(context);

@@ -32,7 +32,23 @@ public class PipesConfig {
 
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
 
-    public static final int DEFAULT_NUM_CLIENTS = 4;
+    /** Past this, worker count becomes a memory decision, and memory is not visible here. */
+    public static final int MAX_AUTO_NUM_CLIENTS = 4;
+
+    private static final int PARENT_RESERVED_CORES = 2;
+    private static final int MIN_CORES_PER_CLIENT = 2;
+
+    /**
+     * Worker count when the operator has not chosen one. CPU-derived, so the default
+     * satisfies Tika's own sizing rule on any host; a fixed 4 needs 10 cores and would
+     * warn about itself on smaller ones. Memory cannot participate -- no Java SE API
+     * exposes container memory -- so each fork checks its own heap at startup instead.
+     */
+    public static int defaultNumClients() {
+        int hostCores = Runtime.getRuntime().availableProcessors();
+        int byCores = (hostCores - PARENT_RESERVED_CORES) / MIN_CORES_PER_CLIENT;
+        return Math.max(1, Math.min(byCores, MAX_AUTO_NUM_CLIENTS));
+    }
 
     public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
 
@@ -66,7 +82,7 @@ public class PipesConfig {
     private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
 
     private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
-    private int numClients = DEFAULT_NUM_CLIENTS;
+    private int numClients = defaultNumClients();
 
     private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MS;
     private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
