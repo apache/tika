@@ -21,8 +21,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import org.apache.tika.utils.ExceptionUtils;
-
 public class EvalExceptionUtils {
 
     //these remove runtime info from the stacktraces so
@@ -30,14 +28,27 @@ public class EvalExceptionUtils {
     private final static Pattern CAUSED_BY_SNIPPER =
             Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
+    //strips the exception message off the first line, so that the same cause with
+    //differing runtime detail collapses to one entry. Was ExceptionUtils.trimMessage in
+    //tika-core; moved here, its only consumer, when tika-server stopped parsing traces.
+    private final static Pattern MSG_PATTERN = Pattern.compile(":[^\\r\\n]+");
+
     public static String normalize(String stacktrace) {
         if (StringUtils.isBlank(stacktrace)) {
             return "";
         }
-        String sortTrace = ExceptionUtils.trimMessage(stacktrace);
+        String sortTrace = trimMessage(stacktrace);
 
         Matcher matcher = CAUSED_BY_SNIPPER.matcher(sortTrace);
         sortTrace = matcher.replaceAll("$1");
         return sortTrace.replaceAll("org.apache.tika.", "o.a.t.");
+    }
+
+    private static String trimMessage(String trace) {
+        Matcher msgMatcher = MSG_PATTERN.matcher(trace);
+        if (msgMatcher.find()) {
+            return msgMatcher.replaceFirst("");
+        }
+        return trace;
     }
 }
