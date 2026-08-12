@@ -139,15 +139,10 @@ public class ServerProtocolIO {
     }
 
     /**
-     * Trust boundary: caps request-supplied {@link TimeoutLimits} at the operator-set
-     * {@code pipes.maxTotalTaskTimeoutMillis}, so a client cannot disable the forked
-     * server's self-termination by requesting an enormous timeout. Limits from the
-     * server's own tika-config are trusted and never clamped -- this only fires when the
-     * request itself carried TimeoutLimits (typed or as an unresolved {@code
-     * timeout-limits} JSON config). Must run <em>after</em>
-     * {@link org.apache.tika.serialization.ParseContextUtils#resolveAll} (so the merged
-     * value is the resolved one) and <em>before</em> the task's {@code ParseTimeout} is
-     * armed.
+     * Trust boundary: caps request-supplied {@link TimeoutLimits} (typed or unresolved
+     * {@code timeout-limits} JSON) at {@code pipes.maxTotalTaskTimeoutMillis}; the
+     * server's own tika-config limits are never clamped. Must run after
+     * {@code ParseContextUtils.resolveAll} and before {@code ParseTimeout} is armed.
      */
     public static void clampRequestTimeoutLimits(ParseContext requestContext,
             ParseContext mergedContext, long maxMillis) {

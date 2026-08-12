@@ -169,11 +169,9 @@ public class Tess4JParser implements Parser, Initializable {
         xhtml.startDocument();
 
         Tesseract tesseract = null;
-        // True only while doOCRWithTimeout's background thread genuinely owns the instance.
-        // Starting false (rather than the old pessimistic true) means any exception during
-        // setup -- borrow, pixel-count check, image decode -- leaves this false, so the
-        // instance is returned promptly in the finally below instead of leaking; that setup
-        // work never touches a second thread, so there's nothing to still be "busy".
+        // True only while doOCRWithTimeout's background thread owns the instance. Setup
+        // (borrow, pixel check, image decode) is single-threaded, so a setup failure leaves
+        // this false and the finally below returns the instance instead of leaking it.
         boolean tesseractStillBusy = false;
         long requestedMillis = config.getTimeoutMillis();
         long timeoutMillis = ParseTimeout.getOrCreate(parseContext).budgetFor(requestedMillis);
@@ -211,9 +209,8 @@ public class Tess4JParser implements Parser, Initializable {
                 return;
             }
 
-            // From here on, a timeout from doOCRWithTimeout means the native call is still
-            // running on its own background thread -- see that method for how ownership of
-            // returning the instance to the pool is handed off in that case.
+            // On timeout the native call is still running on its background thread; see
+            // doOCRWithTimeout for how pool-return ownership is handed off in that case.
             tesseractStillBusy = true;
             String ocrResult = doOCRWithTimeout(tesseract, image, requestedMillis, parseContext);
             tesseractStillBusy = false;
@@ -229,9 +226,7 @@ public class Tess4JParser implements Parser, Initializable {
             xhtml.endElement(XHTML, "div", "div");
 
         } catch (TesseractException e) {
-            // doOCR itself completed (successfully or not) before we got here -- the
-            // instance is idle again, regardless of how doOCRWithTimeout got the exception
-            // to us -- so it's ours to return.
+            // doOCR completed (the worker finished), so the instance is idle and ours to return
             tesseractStillBusy = false;
             throw new TikaException("Tess4J OCR failed", e);
         } catch (InterruptedException e) {
@@ -374,37 +369,27 @@ public class Tess4JParser implements Parser, Initializable {
 
     /**
      * Runs {@code tesseract.doOCR(image)} on a background thread and waits for it,
-     * checkpointing {@link ParseTimeout} every {@link ProcessUtils#HEARTBEAT_INTERVAL_MILLIS}
-     * -- mirrors {@link #borrowTesseract}'s own bounded wait. Without this, doOCR (a
-     * synchronous native call that can run for the full duration of a large/complex
-     * image) never checkpoints, so the server's progress-stall watchdog kills the whole
-     * forked JVM on any OCR call slower than {@code progressTimeoutMillis} -- the exact
-     * failure mode this timeout model exists to prevent.
+     * checkpointing {@link ParseTimeout} every {@link ProcessUtils#HEARTBEAT_INTERVAL_MILLIS}.
+     * doOCR is a synchronous native call that never checkpoints on its own, so without this
+     * the server's stall watchdog would kill the whole forked JVM on any OCR call slower
+     * than {@code progressTimeoutMillis}.
      * <p>
-     * The native call itself cannot be cancelled once started (JNA/native calls don't
-     * respond to {@link Thread#interrupt()}): on timeout or interrupt, this method gives
-     * up waiting and throws, but the background thread -- and the {@code tesseract}
-     * instance it's still using -- keeps running until the native call eventually returns
-     * on its own. {@code settled} arbitrates who returns {@code tesseract} to the pool in
-     * that case: both this method (on giving up) and the worker thread (on finishing)
-     * race to flip it from {@code false} to {@code true}; whichever one loses the race --
-     * i.e. finds it already {@code true} -- is the second to arrive and does the
-     * returning, so the instance goes back exactly once no matter how close the timing is.
-     * If this method returns normally, or throws {@link TesseractException}, the worker
-     * finished before either side touched {@code settled} (this method never gave up), so
-     * the caller retains ownership and returns {@code tesseract} itself, same as before
-     * this method was ever called.
+     * The native call cannot be cancelled (JNA calls ignore {@link Thread#interrupt()}): on
+     * timeout or interrupt this method throws, but the worker thread keeps using
+     * {@code tesseract} until doOCR returns on its own. {@code settled} arbitrates the pool
+     * return in that case: giver-upper and worker race to CAS it {@code false -> true}, and
+     * the loser -- the second to arrive -- returns the instance, so it goes back exactly
+     * once. On a normal return or {@link TesseractException} the worker already finished,
+     * neither side touched {@code settled}, and the caller retains ownership.
      */
     private String doOCRWithTimeout(Tesseract tesseract, BufferedImage image, long requestedMillis,
                                     ParseContext parseContext)
             throws TesseractException, TikaTimeoutException {
-        // Re-budget here rather than reusing the caller's borrow budget: time spent
-        // waiting for the pool and decoding the image has already been burned.
+        // Re-budget: pool wait and image decode already burned part of the budget.
         long budgetMillis = ParseTimeout.getOrCreate(parseContext).budgetFor(requestedMillis);
         if (budgetMillis <= 0) {
-            // Nothing async ever starts here, but the caller already flipped
-            // tesseractStillBusy to true before calling us, so it won't return the
-            // instance itself -- do it here or it's stuck in limbo forever.
+            // no worker ever starts, and the caller (tesseractStillBusy already true)
+            // won't return the instance -- return it here or it leaks
             returnTesseract(tesseract);
             throw new TikaTimeoutException("Tesseract OCR call not attempted", requestedMillis,
                     budgetMillis);

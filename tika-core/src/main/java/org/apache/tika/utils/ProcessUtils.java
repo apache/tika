@@ -184,8 +184,7 @@ public class ProcessUtils {
                     }
                 }
             } catch (InterruptedException e) {
-                // restore the flag so the caller (e.g. an executor being shut down) still
-                // sees the interrupt; without this it's misread as a subprocess timeout
+                // restore the flag or the interrupt is misread as a subprocess timeout
                 Thread.currentThread().interrupt();
                 exitValue = -1000;
             } finally {

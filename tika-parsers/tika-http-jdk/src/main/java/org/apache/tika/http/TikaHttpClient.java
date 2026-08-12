@@ -199,16 +199,12 @@ public class TikaHttpClient implements Closeable {
     }
 
     /**
-     * Resolves the requested timeout (millis) against the task's remaining budget. Unlike
-     * the old seconds-floored-at-1 version, this can legitimately return 0 -- see
-     * {@link #failFastIfExhausted}, which is always called right after this.
-     * <p>
-     * A null context has no task to clip against -- {@code ParseTimeout.getOrCreate(null)}
-     * would otherwise hand back a detached ParseTimeout built from *default* TimeoutLimits
-     * (1 hour), silently capping any request above that and re-firing budgetFor's
-     * once-per-task warnings on every call, since a fresh detached instance is created each
-     * time (see {@code ProcessUtils.execute}'s null-context handling for the same
-     * rationale). Package-private (rather than private) so it can be unit tested directly.
+     * Resolves the requested timeout (millis) against the task's remaining budget; can
+     * legitimately return 0 -- see {@link #failFastIfExhausted}, always called right after.
+     * A null context grants the request unclipped: {@code ParseTimeout.getOrCreate(null)}
+     * would build a fresh detached instance from default TimeoutLimits, silently capping
+     * anything above one hour and re-firing budgetFor's once-per-task warnings on every
+     * call. Package-private for direct unit testing.
      */
     long grantedMillis(long requestedMillis, ParseContext context) {
         return context == null ? requestedMillis : ParseTimeout.getOrCreate(context).budgetFor(requestedMillis);

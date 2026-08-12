@@ -381,11 +381,8 @@ public class PipesServer implements AutoCloseable {
                         ParseContext mergedContext;
                         ParseTimeout parseTimeout;
                         try {
-                            // Create merged ParseContext: defaults from tika-config + request overrides
                             mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                            // Resolve friendly-named configs in ParseContext to actual objects
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                            // Validate the effective (merged + resolved) context
                             ServerProtocolIO.validateParseContext(mergedContext);
                             ServerProtocolIO.clampRequestTimeoutLimits(
                                     fetchEmitTuple.getParseContext(), mergedContext,
@@ -395,8 +392,7 @@ public class PipesServer implements AutoCloseable {
                             // sees this instance rather than racing to install its own.
                             parseTimeout = ParseTimeout.getOrCreate(mergedContext);
                         } catch (Exception e) {
-                            // e.g. an invalid per-request config; write the reason to the client
-                            // instead of dying with a bare exit code
+                            // write the reason to the client instead of a bare exit code
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
@@ -510,17 +506,12 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
-     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not exactly at
-     * {@code totalTaskTimeoutMillis}. The cooperative deadline path
-     * (ParsingEmbeddedDocumentExtractor skipping remaining embedded docs, then
-     * EmitHandler filtering/emitting a PARTIAL_TIMEOUT result) only starts once
-     * ParseTimeout's own deadline -- anchored at the same start, same
-     * totalTaskTimeoutMillis -- is reached, so killing the JVM at that identical instant
-     * leaves no time for that wind-down to run. The grace window is bounded by the
-     * ordinary stall detector: {@link #checkProgressTimeout} still fires independently on
-     * its own schedule, so a wind-down that hangs (rather than progressing to
-     * completion) is still caught, just via the stall path instead of the total-timeout
-     * path.
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
      */
     private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
         long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;

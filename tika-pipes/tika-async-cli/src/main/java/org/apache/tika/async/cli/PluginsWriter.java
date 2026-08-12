@@ -164,9 +164,7 @@ public class PluginsWriter {
                         "onExists", simpleAsyncConfig.getOnExists());
             }
 
-            // -T caps the whole task, so it maps to totalTaskTimeoutMillis; merge into any
-            // configured timeout-limits rather than replacing the node, so other fields
-            // (progressTimeoutMillis, throwOnDeadline) survive.
+            // merge, don't replace: other configured timeout-limits fields must survive
             if (simpleAsyncConfig.getTimeoutMillis() != null) {
                 ObjectNode parseContext = root.has("parse-context")
                         ? (ObjectNode) root.get("parse-context")

@@ -181,8 +181,8 @@ public class ConnectionHandler implements Runnable, Closeable {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
-                            // Without a crash response the client blocks until its socket
-                            // timeout and then restarts a healthy server.
+                            // respond, or the client blocks until socket timeout and
+                            // restarts a healthy server
                             LOG.error("handlerId={}: error processing request", handlerId, t);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
                         } finally {
@@ -308,17 +308,12 @@ public class ConnectionHandler implements Runnable, Closeable {
     }
 
     /**
-     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not exactly at
-     * {@code totalTaskTimeoutMillis}. The cooperative deadline path
-     * (ParsingEmbeddedDocumentExtractor skipping remaining embedded docs, then
-     * EmitHandler filtering/emitting a PARTIAL_TIMEOUT result) only starts once
-     * ParseTimeout's own deadline -- anchored at the same start, same
-     * totalTaskTimeoutMillis -- is reached, so killing the JVM at that identical instant
-     * leaves no time for that wind-down to run. The grace window is bounded by the
-     * ordinary stall detector: {@link #checkProgressTimeout} still fires independently on
-     * its own schedule, so a wind-down that hangs (rather than progressing to
-     * completion) is still caught, just via the stall path instead of the total-timeout
-     * path.
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
      */
     private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
         long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;

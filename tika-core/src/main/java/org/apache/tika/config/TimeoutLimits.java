@@ -86,8 +86,7 @@ public class TimeoutLimits implements Serializable {
         setProgressTimeoutMillis(progressTimeoutMillis);
     }
 
-    // Validating here (rather than only in ParseTimeout.start) turns a bad configured
-    // value into a config-load failure: Jackson invokes these setters.
+    // Jackson invokes setters, so this turns a bad value into a config-load failure.
     private static long checkNonNegative(long millis, String name) {
         if (millis < 0) {
             throw new IllegalArgumentException(name + " must be >= 0, was " + millis +
@@ -151,8 +150,7 @@ public class TimeoutLimits implements Serializable {
 
     /**
      * Returns this instance if both timeouts are within {@code maxMillis}, otherwise a
-     * copy with each offending timeout reduced to {@code maxMillis}. Used at trust
-     * boundaries to cap request-supplied limits at an operator-set maximum.
+     * copy with each offending timeout reduced to {@code maxMillis}.
      */
     public TimeoutLimits clampedTo(long maxMillis) {
         if (totalTaskTimeoutMillis <= maxMillis && progressTimeoutMillis <= maxMillis) {

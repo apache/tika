@@ -110,8 +110,7 @@ public class Tess4JOCRTimeoutTest {
         assertTrue(elapsed < 2500,
                 "must time out near the 500ms budget, not wait for the 3s doOCR call to " +
                         "finish naturally; took " + elapsed + "ms");
-        // If no checkpoint fired while waiting, millisSinceLastProgress() would be >= the
-        // full ~500-2500ms this test just spent; a mid-wait checkpoint resets it back down.
+        // without a mid-wait checkpoint, millisSinceLastProgress() would be >= elapsed
         assertTrue(parseTimeout.millisSinceLastProgress() < elapsed,
                 "expected at least one checkpoint to have fired while waiting");
     }
@@ -149,15 +148,10 @@ public class Tess4JOCRTimeoutTest {
     }
 
     /**
-     * TIKA-4813 follow-up: {@code tesseractStillBusy} used to start {@code true} and only
-     * flip to {@code false} on a handful of enumerated paths, so any *other* exception
-     * between borrow and doOCR -- e.g. an ImageIO failure decoding the image -- leaked the
-     * pooled instance forever even though it was never handed to the native OCR call.
-     * <p>
-     * Forces {@code initialized=true} and seeds a single fake instance directly into the
-     * pool (bypassing {@code initialize()}'s native-library probe entirely) so this doesn't
-     * need a real Tesseract installation -- {@code doOCR} is never reached here, only
-     * {@code applyConfig}'s plain setters and the image-decode path are exercised.
+     * Pins the leak fix: {@code tesseractStillBusy} used to start {@code true}, so an
+     * exception between borrow and doOCR (e.g. an ImageIO decode failure) leaked the
+     * pooled instance forever. Seeds a fake instance directly into the pool with
+     * {@code initialized=true}, so no native Tesseract library is needed.
      */
     @Test
     public void testImageIOFailureDoesNotShrinkThePool() throws Exception {
@@ -174,10 +168,8 @@ public class Tess4JOCRTimeoutTest {
         pool.add(fake);
         setPool(parser, pool);
 
-        // A valid PNG signature followed immediately by a truncated IHDR chunk: enough for
-        // the PNG reader to commit to decoding (unlike unrecognizable bytes, which ImageIO
-        // just reports as "no reader found" -- a null return, not a thrown exception, and
-        // not what this test is after), but not enough data to finish, so it throws.
+        // Valid PNG signature + truncated IHDR: enough for the PNG reader to commit and
+        // then throw -- unrecognizable bytes would just make ImageIO return null instead.
         byte[] truncatedPng = {
                 (byte) 0x89, 'P', 'N', 'G', 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
                 0x00, 0x00, 0x00, 0x0D, 'I', 'H', 'D', 'R'          // IHDR chunk header, then EOF
@@ -203,11 +195,9 @@ public class Tess4JOCRTimeoutTest {
     }
 
     /**
-     * TIKA-4813 follow-up: after a doOCRWithTimeout timeout, the instance used to be leaked
-     * forever even though the background {@code tess4j-ocr-worker} thread eventually
-     * finishes the native call and could return it. Verifies the handoff: once the waiter
-     * gives up, the worker itself returns the instance to the pool when {@code doOCR}
-     * finally completes.
+     * Pins the timeout-path handoff: once the waiter gives up, the worker thread itself
+     * must return the instance to the pool when the slow {@code doOCR} finally completes
+     * (it used to leak forever).
      */
     @Test
     public void testInstanceReturnedToPoolAfterSlowOCREventuallyCompletes() throws Exception {
@@ -249,7 +239,6 @@ public class Tess4JOCRTimeoutTest {
         assertEquals(0, pool.size(),
                 "must not be returned while the OCR call is genuinely still in flight");
 
-        // Let the slow OCR call actually finish now.
         releaseWorker.countDown();
 
         Tesseract returned = pool.poll(5, TimeUnit.SECONDS);

@@ -57,8 +57,7 @@ public class ProcessUtilsTest {
             // the process's 6s completion, for slack against jitter under a loaded test run.
             Thread.sleep(3000);
 
-            // If no checkpoint fired during the sleep, millisSinceLastProgress() would be
-            // >= the full 3000ms; a mid-wait checkpoint resets it back down.
+            // without a mid-wait checkpoint, millisSinceLastProgress() would be >= 3000
             assertTrue(parseTimeout.millisSinceLastProgress() < 3000,
                     "expected a checkpoint to have fired while the process was still running");
         } finally {

@@ -54,9 +54,8 @@ public class ParseTimeout {
     private static final Logger LOG = LoggerFactory.getLogger(ParseTimeout.class);
 
     private final long startNanos;
-    // Long.MAX_VALUE means unbounded. Kept in millis (not converted to a nanos deadline) so
-    // remainingMillis() only ever subtracts a small elapsed value from it -- never adds to it --
-    // which sidesteps overflow without needing a special case.
+    // Long.MAX_VALUE means unbounded. Kept in millis rather than a nanos deadline:
+    // remainingMillis() only ever subtracts from it, never adds, so overflow can't happen.
     private final long totalTimeoutMillis;
     private final long progressTimeoutMillis;
     private final AtomicLong lastProgressNanos;

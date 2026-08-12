@@ -153,10 +153,9 @@ public class CompositeParserTest {
     }
 
     /**
-     * Pipes' ParseHandler pre-installs a fresh ParseRecord (and PipesServer a
-     * ParseTimeout its watchdog holds a reference to) before the parse. Replacing
-     * either would orphan the watchdog's reference, so its stall detector never
-     * sees another checkpoint and kills a healthy parse.
+     * A caller-pre-installed ParseRecord/ParseTimeout (as pipes does) must survive the
+     * parse: replacing the ParseTimeout orphans the watchdog's reference and a healthy
+     * parse gets killed as stalled.
      */
     @Test
     public void testPreInstalledRecordAndTimeoutSurviveFirstParse() throws Exception {

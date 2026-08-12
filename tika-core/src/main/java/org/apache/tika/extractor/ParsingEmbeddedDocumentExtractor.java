@@ -113,9 +113,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         ParseTimeout timeout = context.get(ParseTimeout.class);
         if (parseRecord.isTaskDeadlineReached()) {
             // Already recorded by an earlier embedded doc in this task. throwOnDeadline
-            // means every embedded doc from here on must throw, not just the first one
-            // to notice -- without this, only the very first sibling to hit the deadline
-            // threw; every later sibling silently took the skip path instead.
+            // means every embedded doc from here on must throw, not just the first one to notice.
             if (parseRecord.isThrowOnDeadline()) {
                 throw new EmbeddedLimitReachedException(EmbeddedLimitReachedException.LimitType.DEADLINE,
                         timeout == null ? 0 : timeout.getTotalTimeoutMillis());

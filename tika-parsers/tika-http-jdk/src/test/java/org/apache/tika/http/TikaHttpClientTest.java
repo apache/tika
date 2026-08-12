@@ -56,8 +56,7 @@ public class TikaHttpClientTest {
                 // the server's 6s delay, for slack against jitter under a loaded test run.
                 Thread.sleep(3000);
 
-                // If no checkpoint fired during the sleep, millisSinceLastProgress() would be
-                // >= the full 3000ms; a mid-wait checkpoint resets it back down.
+                // without a mid-wait checkpoint, millisSinceLastProgress() would be >= 3000
                 assertTrue(parseTimeout.millisSinceLastProgress() < 3000,
                         "expected a checkpoint to have fired while the request was still in flight");
             } finally {
@@ -79,13 +78,9 @@ public class TikaHttpClientTest {
     }
 
     /**
-     * TIKA-4813 follow-up: a null context has no task to clip against, but
-     * {@code ParseTimeout.getOrCreate(null)} used to hand back a detached ParseTimeout built
-     * from *default* TimeoutLimits (1 hour) -- silently capping any request above that and
-     * contradicting the "granted unclipped" contract the javadoc on the no-context overloads
-     * promises. Exercises the package-private {@code grantedMillis} directly rather than
-     * waiting out a real request, since proving "not clipped to 1 hour" via actual elapsed
-     * time isn't practical in a unit test.
+     * A null context must grant the requested timeout unclipped --
+     * {@code ParseTimeout.getOrCreate(null)} used to clip it against a detached
+     * default-TimeoutLimits (1 hour) budget. Exercises {@code grantedMillis} directly.
      */
     @Test
     public void testNullContextGrantsRequestUnclippedEvenAboveDefaultOneHour() throws Exception {

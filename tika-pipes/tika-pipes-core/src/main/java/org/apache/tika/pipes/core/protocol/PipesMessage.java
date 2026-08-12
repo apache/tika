@@ -138,9 +138,8 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     }
 
     /**
-     * Creates a WORKING heartbeat. Empty payload -- the client treats WORKING as a pure
-     * liveness signal (see {@code PipesClient.waitForServer}'s WORKING case) and never reads
-     * a timestamp back out of it.
+     * Creates a WORKING heartbeat. Empty payload: the client treats WORKING as a pure
+     * liveness signal and never reads anything from it.
      */
     public static PipesMessage working() {
         return new PipesMessage(PipesMessageType.WORKING, EMPTY);

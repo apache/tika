@@ -90,10 +90,9 @@ public class PipesConfig {
     public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
 
     /**
-     * Ceiling for request-supplied {@code TimeoutLimits}: a request may lower its
-     * timeouts freely but can never raise total or progress above this, so a client
-     * cannot disable the forked server's self-termination. Limits set in the server's
-     * own tika-config {@code parse-context} are trusted and not subject to this cap.
+     * Ceiling for request-supplied {@code TimeoutLimits}, so a client cannot disable the
+     * forked server's self-termination. Limits in the server's own tika-config
+     * {@code parse-context} are trusted and not capped.
      */
     private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
 
@@ -183,10 +182,8 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
-        // PipesClient's wall-clock backstop must mirror the limits the forked server
-        // enforces (config default unless the request overrides), so carry the config
-        // default to the client side without a full parse-context resolution -- the
-        // client JVM may not have the plugin classes that resolution needs.
+        // Carry the config-default limits to the client (for its backstop) without full
+        // parse-context resolution -- the client JVM may lack the plugin classes it needs.
         JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
         if (!limitsNode.isMissingNode()) {
             try {

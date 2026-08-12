@@ -285,18 +285,15 @@ public class CompositeParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
-        // Never replace a pre-installed ParseRecord/ParseTimeout: pipes pre-installs both,
-        // and the watchdog holds a reference to the ParseTimeout -- a replacement would
-        // orphan it, so checkpoints never reach the instance the watchdog checks.
+        // Never replace pre-installed state: the pipes watchdog holds a reference to the
+        // ParseTimeout; a replacement would orphan it and checkpoints would never reach it.
         if (parserRecord == null) {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
         }
         ParseTimeout.getOrCreate(context);
-        // Every parse -- top-level or embedded, any mode or extractor -- funnels through
-        // here, making this the one boundary where document progress is guaranteed to be
-        // visible: without it, a container of many fast in-JVM children never checkpoints
-        // and reads as a stall to the pipes watchdog.
+        // The one boundary every parse (any mode/extractor) crosses; without this, many
+        // fast in-JVM embedded children read as a stall to the pipes watchdog.
         ParseTimeout.checkpoint(context);
         try {
             TaggedContentHandler taggedHandler =
@@ -320,14 +317,9 @@ public class CompositeParser implements Parser {
                 }
                 throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
             } catch (EmbeddedLimitReachedException e) {
-                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean the caller wants
-                // this to surface as a hard failure all the way to the top-level caller,
-                // not be recorded and swallowed by whichever embedded-document extractor
-                // is supervising a shallower level of nesting -- which is exactly what
-                // wrapping it in a checked TikaException here would cause: it would then
-                // match a plain catch(TikaException), the same handling as any ordinary
-                // per-document failure. Rethrow unwrapped so it keeps propagating as a
-                // RuntimeException past every intermediate catch(TikaException).
+                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean this must surface to
+                // the top-level caller. Rethrow unwrapped: wrapped in TikaException it would
+                // be swallowed by an intermediate catch(TikaException) like any per-document failure.
                 throw e;
             } catch (RuntimeException e) {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
