@@ -131,6 +131,7 @@ public class TikaServerProcess {
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
             startServer(serverDetails);
+            registerOrderedShutdown(serverDetails);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -151,7 +152,7 @@ public class TikaServerProcess {
     private static void startServer(ServerDetails serverDetails) {
         try {
             //start the server
-            Server server = serverDetails.sf.create();
+            serverDetails.server = serverDetails.sf.create();
         } catch (ServiceConstructionException e) {
             LOG.warn("exception starting server", e);
             if (isBindException(e)) {
@@ -160,6 +161,27 @@ public class TikaServerProcess {
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
+    }
+
+    /**
+     * One ordered shutdown: stop the HTTP endpoint first so no new request can arrive, then
+     * tear down the pipes workers and delete their temp directories. Replaces the previously
+     * separate, unordered cleanup hook, so in-flight requests are not killed mid-parse by the
+     * teardown.
+     */
+    private static void registerOrderedShutdown(ServerDetails serverDetails) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (serverDetails.server != null) {
+                try {
+                    serverDetails.server.stop();
+                } catch (Exception e) {
+                    LOG.warn("Error stopping HTTP server", e);
+                }
+            }
+            if (serverDetails.pipesParsingHelper != null) {
+                serverDetails.pipesParsingHelper.shutdown();
+            }
+        }));
     }
 
     /**
@@ -260,6 +282,7 @@ public class TikaServerProcess {
         details.url = url;
         details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
+        details.pipesParsingHelper = pipesParsingHelper;
         return details;
     }
 
@@ -569,42 +592,9 @@ public class TikaServerProcess {
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
                 inputTempDirectory, unpackTempDirectory);
 
-        // Register shutdown hook to clean up PipesParser and temp directories
-        final Path inputDirToClean = inputTempDirectory;
-        final Path unpackDirToClean = unpackTempDirectory;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                LOG.info("Shutting down PipesParser");
-                pipesParser.close();
-            } catch (Exception e) {
-                LOG.warn("Error closing PipesParser", e);
-            }
-            // Clean up temp directories
-            cleanupTempDirectory(inputDirToClean);
-            if (unpackDirToClean != null) {
-                cleanupTempDirectory(unpackDirToClean);
-            }
-        }));
-
+        // Temp-dir cleanup and PipesParser teardown happen in the server's ordered shutdown
+        // (registerOrderedShutdown), after the HTTP endpoint has stopped -- see helper.shutdown().
         return helper;
-    }
-
-    private static void cleanupTempDirectory(Path tempDir) {
-        try {
-            if (Files.exists(tempDir)) {
-                Files.walk(tempDir)
-                        .sorted((a, b) -> -a.compareTo(b)) // Delete files before directories
-                        .forEach(p -> {
-                            try {
-                                Files.deleteIfExists(p);
-                            } catch (IOException e) {
-                                LOG.warn("Failed to delete: {}", p);
-                            }
-                        });
-            }
-        } catch (IOException e) {
-            LOG.warn("Error cleaning up temp directory: {}", tempDir, e);
-        }
     }
 
     private static final String DEFAULT_PLUGINS_DIR = "plugins";
@@ -697,8 +687,10 @@ public class TikaServerProcess {
 
     private static class ServerDetails {
         JAXRSServerFactoryBean sf;
+        Server server;
         String serverId;
         String url;
         ServerStatus serverStatus;
+        PipesParsingHelper pipesParsingHelper;
     }
 }

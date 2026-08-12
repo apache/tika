@@ -102,6 +102,57 @@ public class PipesParsingHelper {
     }
 
     /**
+     * Closes the shared PipesParser (destroying its forked workers) and deletes the input
+     * and unpack temp directories. Invoked from the server's ordered shutdown sequence,
+     * after the HTTP endpoint has stopped -- so workers are torn down only once no new
+     * request can arrive.
+     */
+    public void shutdown() {
+        try {
+            pipesParser.close();
+        } catch (Exception e) {
+            LOG.warn("Error closing PipesParser", e);
+        }
+        deleteTempDirectory(inputTempDirectory);
+        deleteTempDirectory(unpackEmitterBasePath);
+    }
+
+    private static void deleteTempDirectory(Path tempDir) {
+        if (tempDir == null) {
+            return;
+        }
+        try {
+            if (!Files.exists(tempDir)) {
+                return;
+            }
+            Files.walk(tempDir)
+                    .sorted((a, b) -> -a.compareTo(b)) // children before their parent
+                    .forEach(PipesParsingHelper::deleteWithRetry);
+        } catch (IOException e) {
+            LOG.warn("Error cleaning up temp directory: {}", tempDir, e);
+        }
+    }
+
+    private static void deleteWithRetry(Path p) {
+        // On Windows a forked child that outlived destroyForcibly may still hold a handle;
+        // a short retry gives its exit time to release the lock before we give up (TIKA-4740).
+        for (int attempt = 0; attempt < 5; attempt++) {
+            try {
+                Files.deleteIfExists(p);
+                return;
+            } catch (IOException e) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+        LOG.warn("Failed to delete temp path after retries: {}", p);
+    }
+
+    /**
      * Parses content using pipes-based parsing with process isolation.
      * <p>
      * This method spools the input to the dedicated temp directory and uses a relative
