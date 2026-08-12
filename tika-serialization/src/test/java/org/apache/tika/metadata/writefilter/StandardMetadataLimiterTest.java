@@ -287,6 +287,81 @@ public class StandardMetadataLimiterTest extends TikaTest {
     }
 
     @Test
+    public void testEmbeddedExceptionAddRetainsAllValues() throws Exception {
+        //EMBEDDED_EXCEPTION is bag-typed and in ALWAYS_ADD_FIELDS: N adds must retain
+        //N values, in order, even under an active limiter
+        Metadata metadata = filter(100, 10000, 10000, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 1");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 2");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 3");
+
+        assertArrayEquals(new String[]{"exception 1", "exception 2", "exception 3"},
+                metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testEmbeddedExceptionSetStillReplaces() throws Exception {
+        //set() must still replace, even though add() now appends
+        Metadata metadata = filter(100, 10000, 10000, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 1");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 2");
+        metadata.set(TikaCoreProperties.EMBEDDED_EXCEPTION, "replacement");
+
+        assertArrayEquals(new String[]{"replacement"},
+                metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testEmbeddedExceptionPerValueTruncation() throws Exception {
+        //per-value truncation and the truncated-metadata marker must still apply,
+        //without erasing values already added
+        Metadata metadata = filter(100, 10, 100000, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "short");
+        //800 utf-16 bytes, over the 300-byte always-field floor
+        String longValue = "x".repeat(400);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, longValue);
+
+        String[] values = metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION);
+        assertEquals(2, values.length);
+        assertEquals("short", values[0]);
+        //truncated to the 300-byte (utf-16) always-field floor = 150 chars
+        assertEquals(150, values[1].length());
+        assertTruncated(metadata);
+    }
+
+    @Test
+    public void testEmbeddedExceptionSurvivesOverBudget() throws Exception {
+        //always-add fields must not be dropped even once the overall budget is exhausted
+        Metadata metadata = filter(100, 1, 1, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "e1");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "e2");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "e3");
+
+        assertArrayEquals(new String[]{"e1", "e2", "e3"},
+                metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testSimpleAlwaysSetFieldStillReplacesOnAdd() throws Exception {
+        //CONTAINER_EXCEPTION is SIMPLE (not bag) and stays in ALWAYS_SET_FIELDS:
+        //the limiter's add() dispatch must keep replacing, as before this fix.
+        //Use addTrusted() to reach the limiter directly: Metadata.add(Property,..) itself
+        //already throws PropertyTypeException on a 2nd add to a SIMPLE property, so that
+        //typed path can't otherwise exercise the limiter's repeated-add behavior.
+        Metadata metadata = filter(100, 10000, 10000, 100,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.addTrusted(TikaCoreProperties.CONTAINER_EXCEPTION.getName(), "container exception 1");
+        metadata.addTrusted(TikaCoreProperties.CONTAINER_EXCEPTION.getName(), "container exception 2");
+
+        assertArrayEquals(new String[]{"container exception 2"},
+                metadata.getValues(TikaCoreProperties.CONTAINER_EXCEPTION));
+    }
+
+    @Test
     public void testExclude() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3695-exclude.json"));
         Parser parser = loader.loadAutoDetectParser();

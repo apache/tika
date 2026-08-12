@@ -82,12 +82,13 @@ public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializab
         ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
         ALWAYS_SET_FIELDS.add(Metadata.CONTENT_DISPOSITION.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTAINER_EXCEPTION.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.EMBEDDED_EXCEPTION.getName());
         //Metadata.CONTENT_LOCATION? used by the html parser
     }
 
     static {
         ALWAYS_ADD_FIELDS.add(TikaCoreProperties.TIKA_PARSED_BY.getName());
+        //bag-typed: one embedded-file failure per add() call must not clobber prior ones
+        ALWAYS_ADD_FIELDS.add(TikaCoreProperties.EMBEDDED_EXCEPTION.getName());
     }
 
     private static final String METADATA_TRUNCATED_KEY =
