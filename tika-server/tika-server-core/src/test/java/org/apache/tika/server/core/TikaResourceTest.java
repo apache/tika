@@ -58,6 +58,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -239,6 +240,10 @@ public class TikaResourceTest extends CXFTestBase {
                 .create(endPoint + TIKA_PATH + "/json/txet")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
         assertEquals(400, response.getStatus());
+        // The actionable message must reach the client, not just the server log (TIKA-4809).
+        String body = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("Valid types", body);
+        assertContains("txet", body);
     }
 
     private String jsonContent(String path, String doc) throws Exception {

@@ -23,8 +23,10 @@ import java.io.Writer;
 import java.util.List;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -34,6 +36,9 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 public class JsonFetchEmitTupleList {
+
+    /** Envelope key: the request body may be {"tuples":[...]} or a bare array. */
+    public static final String TUPLES = "tuples";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -48,7 +53,14 @@ public class JsonFetchEmitTupleList {
     }
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {
-        return OBJECT_MAPPER.readValue(reader, new TypeReference<List<FetchEmitTuple>>() {});
+        // The request body is an object {"tuples":[...]}; the envelope leaves room for future
+        // batch-level fields. A bare top-level array is no longer accepted (4.0.0).
+        JsonNode root = OBJECT_MAPPER.readTree(reader);
+        JsonNode tuples = root == null ? null : root.get(TUPLES);
+        if (tuples == null || !tuples.isArray()) {
+            throw new IOException("Expected a JSON object with a \"" + TUPLES + "\" array");
+        }
+        return OBJECT_MAPPER.convertValue(tuples, new TypeReference<List<FetchEmitTuple>>() {});
     }
 
     public static String toJson(List<FetchEmitTuple> list) throws IOException {
@@ -58,6 +70,8 @@ public class JsonFetchEmitTupleList {
     }
 
     public static void toJson(List<FetchEmitTuple> list, Writer writer) throws IOException {
-        OBJECT_MAPPER.writeValue(writer, list);
+        ObjectNode root = OBJECT_MAPPER.createObjectNode();
+        root.set(TUPLES, OBJECT_MAPPER.valueToTree(list));
+        OBJECT_MAPPER.writeValue(writer, root);
     }
 }

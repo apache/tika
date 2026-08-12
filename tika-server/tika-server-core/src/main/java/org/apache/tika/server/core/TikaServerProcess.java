@@ -337,6 +337,7 @@ public class TikaServerProcess {
         writers.add(new TextMessageBodyWriter());
         writers.addAll(loadWriterServices());
         writers.add(new TikaServerParseExceptionMapper());
+        writers.add(new BadRequestExceptionMapper());
         writers.add(new JSONObjWriter());
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints

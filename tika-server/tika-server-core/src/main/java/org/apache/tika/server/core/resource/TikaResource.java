@@ -300,17 +300,30 @@ public class TikaResource {
         // This ensures the data is captured before any other processing
         // and TikaInputStream handles temp file cleanup automatically.
         TikaInputStream tis = TikaInputStream.get(fileAtt.getObject(InputStream.class));
-        tis.getPath(); // Spool to temp file for pipes-based parsing
+        boolean handedOff = false;
+        try {
+            tis.getPath(); // Spool to temp file for pipes-based parsing
 
-        // Process config JSON if provided
-        if (configAtt != null) {
-            String configJson = new String(configAtt.getObject(InputStream.class).readAllBytes(),
-                    StandardCharsets.UTF_8);
-            LOG.debug("setupMultipartConfig: processing config JSON of length {}", configJson.length());
-            mergeParseContextFromConfig(configJson, context);
+            // Process config JSON if provided
+            if (configAtt != null) {
+                String configJson = new String(configAtt.getObject(InputStream.class).readAllBytes(),
+                        StandardCharsets.UTF_8);
+                LOG.debug("setupMultipartConfig: processing config JSON of length {}", configJson.length());
+                mergeParseContextFromConfig(configJson, context);
+            }
+            handedOff = true;
+            return tis;
+        } finally {
+            // A bad config part must not leak the already-spooled temp file: the caller
+            // only closes the stream it receives, and on a throw it receives nothing.
+            if (!handedOff) {
+                try {
+                    tis.close();
+                } catch (IOException e) {
+                    LOG.warn("Failed to close spooled input after a config error", e);
+                }
+            }
         }
-
-        return tis;
     }
 
     /**
@@ -590,9 +603,10 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        // Default to Markdown if no handler specified in config
-        return produceRawOutput(tis, metadata, context, "md");
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            // Default to Markdown if no handler specified in config
+            return produceRawOutput(tis, metadata, context, "md");
+        }
     }
 
     /**
@@ -613,8 +627,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceRawOutput(tis, metadata, context, "body");
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceRawOutput(tis, metadata, context, "body");
+        }
     }
 
     /**
@@ -635,8 +650,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceRawOutput(tis, metadata, context, "html");
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceRawOutput(tis, metadata, context, "html");
+        }
     }
 
     /**
@@ -657,8 +673,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceRawOutput(tis, metadata, context, "xml");
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceRawOutput(tis, metadata, context, "xml");
+        }
     }
 
     /**
@@ -679,8 +696,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceRawOutput(tis, metadata, context, "md");
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceRawOutput(tis, metadata, context, "md");
+        }
     }
 
     /**
@@ -690,7 +708,7 @@ public class TikaResource {
      * - "file" part (required): the document to parse
      * - "config" part (optional): JSON configuration for parser settings and handler type
      * <p>
-     * Default handler is text. Use config to specify different handler type.
+     * Default handler is markdown. Use config to specify different handler type.
      * <p>
      * This endpoint is gated behind allowPerRequestConfig=true because per-request
      * configuration could enable dangerous operations.
@@ -703,8 +721,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceJson(tis, metadata, context, null);
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceJson(tis, metadata, context, null);
+        }
     }
 
     /**
@@ -723,8 +742,9 @@ public class TikaResource {
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
-        TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        return produceJson(tis, metadata, context, handlerTypeName);
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceJson(tis, metadata, context, handlerTypeName);
+        }
     }
 
     // ==================== Internal methods ====================

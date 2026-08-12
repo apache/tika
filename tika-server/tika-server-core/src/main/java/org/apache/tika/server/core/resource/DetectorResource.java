@@ -37,6 +37,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.server.core.ServerStatus;
+import org.apache.tika.server.core.TikaServerParseException;
 
 @Path("/detect")
 public class DetectorResource {
@@ -72,8 +73,10 @@ public class DetectorResource {
                     ? null : metadataList.get(0).get(Metadata.CONTENT_TYPE);
             return detected == null ? MediaType.OCTET_STREAM.toString() : detected;
         } catch (IOException e) {
+            // A failure reading/spooling the bytes is a server-side error, not a confident
+            // "application/octet-stream" detection -- surface it as 500 rather than masking it.
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
-            return MediaType.OCTET_STREAM.toString();
+            throw new TikaServerParseException(e);
         } finally {
             serverStatus.complete(taskId);
         }

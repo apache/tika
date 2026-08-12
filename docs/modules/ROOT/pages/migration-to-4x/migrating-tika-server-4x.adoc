@@ -172,6 +172,21 @@ structured exception.
 that branch only on HTTP status code should account for the `429`/`400`/`413` mappings
 above and stop treating `UNSPECIFIED_CRASH` as `500`.
 
+=== `/pipes` and `/async` Wire Formats
+
+**`/pipes` response body.** `/pipes` now returns the same JSON body as `/tika`, `/rmeta`,
+and `/unpack` -- `{"status":"<RESULT_STATUS>","message":"..."}` -- where `status` is the
+`PipesResult` status enum (`EMIT_SUCCESS`, `EMIT_SUCCESS_PARSE_EXCEPTION`,
+`PARSE_EXCEPTION_NO_EMIT`, `TIMEOUT`, `OOM`, `FETCHER_NOT_FOUND`, ...) and `message` carries
+the exception when there is one. It previously used a `/pipes`-only shape
+(`{"status":"ok"|"process_crash"|"application_error", ...}` with `type`, `parse_exception`,
+and a stringified `emitted`). A parse that threw is now reported by its status enum, not as
+`"ok"`.
+
+**`/async` request body.** `POST /async` now requires an object envelope,
+`{"tuples":[ ... ]}`, instead of a bare JSON array; the envelope leaves room for future
+batch-level fields. A bare array (or any body without a `tuples` array) is rejected with `400`.
+
 === `/meta` Is Now Pipes-Backed
 
 `/meta` previously parsed in-process, in the request-handling JVM, with no crash

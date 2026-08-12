@@ -22,6 +22,13 @@ Release 4.0.0 - ???
    * The http-fetcher now verifies TLS certificates and hostnames by default;
      set verifySsl:false to opt out (TIKA-4809).
 
+   * tika-server: /pipes returns the same JSON body as /tika/rmeta/unpack --
+     {"status":<RESULT_STATUS>,"message":...} -- instead of a /pipes-only
+     {"status":"ok"|"process_crash",...} shape (TIKA-4809).
+
+   * tika-server: POST /async requires an object body {"tuples":[...]} instead of
+     a bare JSON array (TIKA-4809).
+
   NEW FEATURES
 
    * Content-based detection of ASN.1/DER crypto containers at parse time. An

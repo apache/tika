@@ -19,8 +19,6 @@ package org.apache.tika.server.core;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -272,14 +270,9 @@ public class TikaPipesTest extends CXFTestBase {
         try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse
-                .get("parse_exception")
-                .asText();
-        assertNotNull(parseException);
-        assertContains("NullPointerException", parseException);
-        assertTrue(jsonResponse
-                .get("emitted")
-                .asBoolean());
+        assertEquals("EMIT_SUCCESS_PARSE_EXCEPTION", jsonResponse.get("status").asText());
+        String message = jsonResponse.get("message").asText();
+        assertContains("NullPointerException", message);
         List<Metadata> metadataList;
         try (Reader reader = Files.newBufferedReader(tmpOutputDir.resolve("null_pointer.xml.json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
@@ -311,14 +304,9 @@ public class TikaPipesTest extends CXFTestBase {
         try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse
-                .get("parse_exception")
-                .asText();
-        assertNotNull(parseException);
-        assertContains("NullPointerException", parseException);
-        assertFalse(jsonResponse
-                .get("emitted")
-                .asBoolean());
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", jsonResponse.get("status").asText());
+        String message = jsonResponse.get("message").asText();
+        assertContains("NullPointerException", message);
         assertFalse(Files.isRegularFile(tmpNpeOutputFile));
     }
     /**

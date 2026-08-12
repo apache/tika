@@ -109,21 +109,10 @@ public class PipesResource {
             parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
         }
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
-        Map<String, String> body;
-        if (pipesResult.isProcessCrash()) {
-            body = returnProcessCrash(pipesResult.status().toString());
-        } else if (!pipesResult.isSuccess()) {
-            // Handle fatal errors, initialization failures, and task exceptions
-            body = returnApplicationError(pipesResult
-                    .status()
-                    .toString());
-        } else {
-            body = switch (pipesResult.status()) {
-                case EMIT_SUCCESS_PARSE_EXCEPTION -> parseException(pipesResult.message(), true);
-                case PARSE_EXCEPTION_NO_EMIT -> parseException(pipesResult.message(), false);
-                default -> returnSuccess();
-            };
-        }
+        // One body shape for every outcome -- {"status":<RESULT_STATUS>,"message":...} --
+        // matching /tika, /rmeta, and /unpack. status is always the real enum, so a parse
+        // that threw is never reported as "ok".
+        Map<String, String> body = statusBody(pipesResult);
         // Same status mapping /tika+/rmeta+/unpack use (PipesParsingHelper) -- e.g. 429 for
         // CLIENT_UNAVAILABLE_WITHIN_MS, 503 for TIMEOUT/OOM/UNSPECIFIED_CRASH -- rather than
         // always 200 with the failure only visible in the body.
@@ -133,31 +122,13 @@ public class PipesResource {
                 .build();
     }
 
-    private Map<String, String> parseException(String msg, boolean emitted) {
+    private Map<String, String> statusBody(PipesResult pipesResult) {
         Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "ok");
-        statusMap.put("parse_exception", msg);
-        statusMap.put("emitted", Boolean.toString(emitted));
-        return statusMap;
-    }
-
-    private Map<String, String> returnSuccess() {
-        Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "ok");
-        return statusMap;
-    }
-
-    private Map<String, String> returnProcessCrash(String type) {
-        Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "process_crash");
-        statusMap.put("type", type);
-        return statusMap;
-    }
-
-    private Map<String, String> returnApplicationError(String type) {
-        Map<String, String> statusMap = new HashMap<>();
-        statusMap.put("status", "application_error");
-        statusMap.put("type", type);
+        statusMap.put("status", pipesResult.status().name());
+        String message = pipesResult.message();
+        if (message != null && !message.isBlank()) {
+            statusMap.put("message", message);
+        }
         return statusMap;
     }
 }

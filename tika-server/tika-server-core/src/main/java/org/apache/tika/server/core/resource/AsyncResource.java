@@ -198,6 +198,9 @@ public class AsyncResource {
     private AsyncRequest deserializeASyncRequest(InputStream is) throws IOException {
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             return new AsyncRequest(JsonFetchEmitTupleList.fromJson(reader));
+        } catch (IOException e) {
+            // A malformed body is the caller's error, not a server fault -- 400 with the reason.
+            throw new BadRequestException("Could not parse the /async request body: " + e.getMessage());
         }
     }
 
