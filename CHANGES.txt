@@ -29,6 +29,8 @@ Release 4.0.0 - ???
    * tika-server: POST /async requires an object body {"tuples":[...]} instead of
      a bare JSON array (TIKA-4809).
 
+   * tika-server: the tika-server-client module has been removed (TIKA-4809).
+
   NEW FEATURES
 
    * Content-based detection of ASN.1/DER crypto containers at parse time. An

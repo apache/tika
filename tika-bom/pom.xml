@@ -103,12 +103,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-server-client</artifactId>
-        <version>${revision}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>org.apache.tika</groupId>
         <artifactId>tika-eval-core</artifactId>
         <version>${revision}</version>
       </dependency>
