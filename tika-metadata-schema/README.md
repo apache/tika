@@ -19,12 +19,13 @@
 A machine-readable schema of Apache Tika's metadata keys, plus a registry-driven validator
 (`MetadataKeyValidator`) that classifies any key as CLOSED / OPEN / TEMPLATE / UNKNOWN.
 
-**Scope: `tika-core` + the standard parser bundle.** The heavier/optional parser families
-(scientific, sqlite3, nlp, vlm) are *not* scanned — pulling their runtime deps (netcdf, grib,
-opennlp, DL4J, sqlite-jdbc) into a build-time schema module isn't worth it. Their keys are the only
-ones absent (e.g. `sqlite3:`, `vlm:`, `grib:`, `netcdf:`, `ctakes:`, `NER_`). `MetadataCoverageTest`
-enforces this: any module declaring keys that is neither scanned nor on its explicit out-of-scope
-list fails the build, so nothing escapes *silently*.
+**Scope: `tika-core` + the standard parser bundle + the extended/optional families
+(scientific, sqlite3, nlp, vlm; TIKA-4816 stage 5a).** All are on the (test-scope, for the
+heavier ones) classpath, so `sqlite3:`, `vlm:`, `grib:`, `netcdf:`, `envi:`, `ctakes:`, `ner:`,
+`grobid:header:` are all in the registry. `MetadataCoverageTest` enforces completeness: any
+module declaring keys that is neither scanned nor on its explicit out-of-scope list fails the
+build, so nothing escapes *silently*. `OUT_OF_SCOPE` is currently empty; it stays as the documented
+mechanism for excluding a future heavy/optional family.
 
 ## `metadata-keys.json` — the closed set (generated + gated)
 Every key Tika declares as a `Property` constant, plus the bounded digest cross-product

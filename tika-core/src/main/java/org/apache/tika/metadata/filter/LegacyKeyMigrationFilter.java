@@ -43,8 +43,14 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * <ul>
  *   <li><b>flat renames</b> — the enumerated key-for-key changes (the bulk);</li>
  *   <li><b>drops</b> — 3.x keys 4.x no longer emits (only relevant on ingest);</li>
- *   <li><b>prefix rules</b> — the open families whose suffix also transforms
- *       ({@code tk:exception:}/{@code tk:warn:} snake&harr;kebab, {@code tk:digest:} algorithm names).</li>
+ *   <li><b>prefix rules</b> — the open families whose suffix also transforms or is unbounded, so no
+ *       flat table row can enumerate them: {@code tk:exception:}/{@code tk:warn:} snake&harr;kebab,
+ *       {@code tk:digest:} algorithm names, and (TIKA-4816 stage 5a) the {@code KeyPrefix} renames
+ *       {@code NER_}&harr;{@code ner:}, {@code grobid:header_}&harr;{@code grobid:header:},
+ *       {@code envi.}&harr;{@code envi:} — these are open vocabularies (entity types, TEI field
+ *       names, ENVI header fields), so the field-identity join that builds the flat table can never
+ *       see them (it only ever sees {@code Property} fields, and these are {@code KeyPrefix}
+ *       declarations with no enumerable suffix set); the suffix is carried through verbatim.</li>
  * </ul>
  * Unmapped keys pass through unchanged (this is a compatibility bridge, not an allow-list).
  *
@@ -110,10 +116,15 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
                 }
             }
         }
-        // Digest keys have no declaring field, so they aren't in the flat table -- rewrite them by
-        // prefix rule instead. (Exception/warn keys ARE enumerated in the table.)
+        // Digest keys and the stage-5a KeyPrefix renames have no declaring Property field (digests
+        // are synthesized; the others are open-vocabulary KeyPrefix families), so none of them are
+        // in the flat table -- rewrite them by prefix rule instead. (Exception/warn keys ARE
+        // enumerated in the table: they're Property fields, not open KeyPrefix vocabularies.)
         this.prefixRules = new ArrayList<>();
         this.prefixRules.add(digestRule(direction));
+        this.prefixRules.add(prefixSwapRule(direction, "ner:", "NER_"));
+        this.prefixRules.add(prefixSwapRule(direction, "grobid:header:", "grobid:header_"));
+        this.prefixRules.add(prefixSwapRule(direction, "envi:", "envi."));
     }
 
     @Override
@@ -162,6 +173,19 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
 
     private static String unescape(String s) {
         return s.replace("\\\"", "\"").replace("\\\\", "\\");
+    }
+
+    /**
+     * A {@code KeyPrefix} rename (TIKA-4816 stage 5a): swaps a fixed prefix, carrying the
+     * (unbounded, document/tool-derived) suffix through unchanged -- {@code v4Prefix + suffix}
+     * &harr; {@code v3Prefix + suffix}.
+     */
+    private static UnaryOperator<String> prefixSwapRule(Direction direction, String v4Prefix,
+            String v3Prefix) {
+        boolean egress = direction == Direction.V4_TO_V3;
+        String fromPrefix = egress ? v4Prefix : v3Prefix;
+        String toPrefix = egress ? v3Prefix : v4Prefix;
+        return name -> name.startsWith(fromPrefix) ? toPrefix + name.substring(fromPrefix.length()) : null;
     }
 
     /** {@code tk:digest:<jca-alg>[:enc]} &harr; {@code X-TIKA:digest:<enum-alg>[:enc]} (encoding kept). */

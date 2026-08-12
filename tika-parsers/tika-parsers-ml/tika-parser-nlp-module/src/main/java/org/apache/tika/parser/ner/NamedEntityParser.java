@@ -49,7 +49,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * This implementation of {@link org.apache.tika.parser.Parser} extracts
  * entity names from text content and adds it to the metadata.
- * <p>All the metadata keys will have a common suffix {@value #MD_KEY_PREFIX}</p>
+ * <p>All the metadata keys will have a common prefix {@value #MD_KEY_PREFIX} (the entity-type
+ * spelling from the recogniser -- e.g. {@code PERSON}, {@code WEEK_DAY} -- is kept verbatim
+ * after the prefix)</p>
  * <p>The Named Entity recogniser implementation can be changed by setting the
  * system property {@value #SYS_PROP_NER_IMPL} value to a name of class that
  * implements {@link NERecogniser} contract</p>
@@ -61,7 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
-    public static final String MD_KEY_PREFIX = "NER_";
+    public static final String MD_KEY_PREFIX = "ner:";
     public static final KeyPrefix NER =
             KeyPrefix.tool(MD_KEY_PREFIX, "named-entity types");
     public static final String DEFAULT_NER_IMPL =

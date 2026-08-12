@@ -46,7 +46,7 @@ public class NLTKNERecogniserTest extends TikaTest {
                 TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
 
-        Set<String> names = new HashSet<>(Arrays.asList(md.getValues("NER_NAMES")));
+        Set<String> names = new HashSet<>(Arrays.asList(md.getValues("ner:NAMES")));
         if (names.size() != 0) {
             assertTrue(names.contains("America"));
             assertTrue(names.size() == 1);

@@ -67,9 +67,10 @@ public class KeyPrefixTest {
 
     @Test
     public void testAcceptsAllCurrentlyUsedTrailingDelimiters() {
-        // ':' '.' '-' '_' -- the population enumerated pre-implementation (netcdf: envi.
-        // grobid:header_ MboxParser- etc). A later stage normalizes these to ':'; stage 3 must
-        // not break the still-live population.
+        // ':' '.' '-' '_' -- kept loose even though stage 5a normalized the underscore/dot
+        // outliers it found (NER_ -> ner:, grobid:header_ -> grobid:header:, envi. -> envi:):
+        // MboxParser- (dash) is still live, and the constructor doesn't police convention, only
+        // structure (see the class javadoc).
         for (char delim : new char[]{':', '.', '-', '_'}) {
             String prefix = uniquePrefix("delim-" + delim) + delim;
             KeyPrefix.file(prefix, "d"); // must not throw

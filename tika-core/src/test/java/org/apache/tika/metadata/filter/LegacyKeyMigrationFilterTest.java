@@ -137,4 +137,70 @@ public class LegacyKeyMigrationFilterTest {
         assertEquals("z", m.get("tk:digest:SHA3-512"));
         assertNull(m.get("X-TIKA:digest:SHA3_512"));
     }
+
+    // TIKA-4816 stage 5a: NER_/grobid:header_/envi. -> ner:/grobid:header:/envi: are open
+    // KeyPrefix vocabularies (unbounded suffix), so they're rewritten by prefix rule, not the flat
+    // table -- same shape as the digest rule above, verbatim suffix carried through.
+
+    @Test
+    public void nerPrefixRuleEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("ner:PERSON", "John McKay");
+        m.set("ner:WEEK_DAY", "Sunday");   // the entity type's own underscore, kept verbatim
+        apply(f, m);
+        assertEquals("John McKay", m.get("NER_PERSON"));
+        assertEquals("Sunday", m.get("NER_WEEK_DAY"));
+        assertNull(m.get("ner:PERSON"));
+    }
+
+    @Test
+    public void nerPrefixRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.set("NER_LOCATION", "Los Angeles");
+        apply(f, m);
+        assertEquals("Los Angeles", m.get("ner:LOCATION"));
+        assertNull(m.get("NER_LOCATION"));
+    }
+
+    @Test
+    public void grobidHeaderPrefixRuleEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("grobid:header:Title", "A Paper");
+        apply(f, m);
+        assertEquals("A Paper", m.get("grobid:header_Title"));
+        assertNull(m.get("grobid:header:Title"));
+    }
+
+    @Test
+    public void grobidHeaderPrefixRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.set("grobid:header_Title", "A Paper");
+        apply(f, m);
+        assertEquals("A Paper", m.get("grobid:header:Title"));
+        assertNull(m.get("grobid:header_Title"));
+    }
+
+    @Test
+    public void enviPrefixRuleEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("envi:lat/lon", "36.79, -108.48");
+        apply(f, m);
+        assertEquals("36.79, -108.48", m.get("envi.lat/lon"));
+        assertNull(m.get("envi:lat/lon"));
+    }
+
+    @Test
+    public void enviPrefixRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.set("envi.samples", "2400");
+        apply(f, m);
+        assertEquals("2400", m.get("envi:samples"));
+        assertNull(m.get("envi.samples"));
+    }
 }

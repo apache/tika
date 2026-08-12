@@ -39,7 +39,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * GROBID header fields are namespaced under {@code grobid:header_*} rather than mapped to standard
+ * GROBID header fields are namespaced under {@code grobid:header:*} rather than mapped to standard
  * properties (e.g. {@code dc:title}): they are model inferences, not what the file asserts about itself.
  */
 @TikaComponent
@@ -48,7 +48,7 @@ public class GrobidRESTParser {
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
 
     public static final KeyPrefix GROBID_HEADER =
-            KeyPrefix.tool("grobid:header_", "GROBID-inferred header fields");
+            KeyPrefix.tool("grobid:header:", "GROBID-inferred header fields");
 
     private static final String GROBID_REST_HOST = "http://localhost:8070";
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";

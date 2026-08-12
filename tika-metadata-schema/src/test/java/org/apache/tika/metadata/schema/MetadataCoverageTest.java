@@ -42,13 +42,11 @@ import org.junit.jupiter.api.Test;
  */
 public class MetadataCoverageTest {
 
-    /** Parser families intentionally excluded from the standard-scoped registry (heavy/optional
-     * deps). Adding a module here is a conscious scope decision; see README. */
-    private static final Set<String> OUT_OF_SCOPE = Set.of(
-            "tika-parser-scientific-module",   // envi. grib: netcdf:
-            "tika-parser-sqlite3-module",      // sqlite3:
-            "tika-parser-nlp-module",          // ctakes: grobid:header_ NER_
-            "tika-vlm");                       // vlm:
+    /** Parser families intentionally excluded from the registry (heavy/optional deps). Adding a
+     * module here is a conscious scope decision; see README. TIKA-4816 stage 5a brought the
+     * scientific/sqlite3/nlp/vlm families into scope (test-scope deps of tika-metadata-schema), so
+     * this set is currently empty; kept as the documented mechanism for the next exclusion. */
+    private static final Set<String> OUT_OF_SCOPE = Set.of();
 
     // Source markers for an actual key declaration (a factory call), not a mere type reference.
     private static final String[] DECL_MARKERS = {

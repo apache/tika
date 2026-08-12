@@ -45,7 +45,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     public static final String ENVI_MIME_TYPE = "application/envi.hdr";
     public static final KeyPrefix ENVI =
-            KeyPrefix.file("envi.", "ENVI header field names");
+            KeyPrefix.file("envi:", "ENVI header field names");
     private static final long serialVersionUID = -1479368523072408091L;
     private static final Logger LOG = LoggerFactory.getLogger(EnviHeaderParser.class);
     private static final Set<MediaType> SUPPORTED_TYPES =

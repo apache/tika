@@ -40,10 +40,16 @@ public class MetadataNoUnderscoreTest {
      * Climate Forecast convention (http://cf-pcmdi.llnl.gov/) attribute names as-is; 6 of
      * them carry the convention's own underscores. These are not Tika-coined, so renaming
      * them is out of scope here (it would also change the keys Tika has emitted since 0.x).
+     *
+     * <p>TIKA-4816 stage 5a (registry scope expansion) adds {@code sqlite3:application_id}
+     * and {@code sqlite3:user_version} ({@code SQLite3Parser}): these are SQLite's own PRAGMA
+     * names verbatim (sqlite.org/pragma.html#pragma_application_id,
+     * #pragma_user_version) -- same "external standard's own spelling" category as
+     * {@code ClimateForcast}, not Tika-coined.
      */
     private static final Set<String> ALLOWLIST = Set.of(
             "prg_ID", "cmd_ln", "table_id", "project_id", "experiment_id",
-            "model_name_english");
+            "model_name_english", "sqlite3:application_id", "sqlite3:user_version");
 
     @Test
     public void noUnderscoreInTikaCoinedKeys() throws Exception {
