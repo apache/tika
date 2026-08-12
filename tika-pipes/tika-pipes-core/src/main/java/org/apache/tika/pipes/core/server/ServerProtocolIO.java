@@ -16,9 +16,11 @@
  */
 package org.apache.tika.pipes.core.server;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Locale;
 
 import org.slf4j.Logger;
@@ -30,7 +32,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
@@ -52,11 +53,42 @@ public class ServerProtocolIO {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServerProtocolIO.class);
 
+    /**
+     * Pre-serialized fallback payload (Smile-encoded {@code PAYLOAD_LIMIT_EXCEEDED} result).
+     * Private to prevent external mutation of the array contents — {@code static final}
+     * prevents reference reassignment but not element writes.
+     */
+    private static final byte[] FALLBACK_PAYLOAD_BYTES;
+
+    /**
+     * The minimum value accepted for {@code maxPayloadBytes} in the constructor and in
+     * {@link org.apache.tika.pipes.core.PipesConfig#setMaxIpcPayloadBytes(int)}: the
+     * serialized byte length of {@link #FALLBACK_PAYLOAD_BYTES}.
+     * Any configured limit smaller than this cannot carry even the fallback frame.
+     */
+    public static final int MIN_FALLBACK_PAYLOAD_BYTES;
+
+    static {
+        try {
+            FALLBACK_PAYLOAD_BYTES = JsonPipesIpc.toBytes(
+                    new PipesResult(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                            "payload_limit_exceeded"));
+            MIN_FALLBACK_PAYLOAD_BYTES = FALLBACK_PAYLOAD_BYTES.length;
+        } catch (IOException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
     private final DataInputStream input;
     private final DataOutputStream output;
     private final int maxIpcPayloadBytes;
 
     public ServerProtocolIO(DataInputStream input, DataOutputStream output, int maxIpcPayloadBytes) {
+        if (maxIpcPayloadBytes < MIN_FALLBACK_PAYLOAD_BYTES) {
+            throw new IllegalArgumentException(String.format(Locale.ROOT,
+                    "maxIpcPayloadBytes %d is below the minimum %d required to carry a PAYLOAD_LIMIT_EXCEEDED response",
+                    maxIpcPayloadBytes, MIN_FALLBACK_PAYLOAD_BYTES));
+        }
         this.input = input;
         this.output = output;
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
@@ -65,88 +97,78 @@ public class ServerProtocolIO {
     /**
      * Writes a FINISHED message with the serialized result and waits for ACK.
      * <p>
-     * Three-layer protection against oversized payloads:
-     * <ol>
-     *   <li>Pre-check: if the estimated content size already exceeds the limit, skip
-     *       serialization entirely (prevents OOM for very large documents).</li>
-     *   <li>OOM catch: if serialization exhausts heap despite the pre-check (e.g. when
-     *       the limit is uncapped or the estimate is imprecise), the error is caught and
-     *       a lightweight PAYLOAD_LIMIT_EXCEEDED result is returned instead of crashing.</li>
-     *   <li>Post-check: if the serialized byte count exceeds the limit, the oversized
-     *       bytes are discarded before touching the wire, avoiding stream desynchronization
-     *       on the client side.</li>
-     * </ol>
+     * Serialization is streamed into a {@link BoundedOutputStream} capped at
+     * {@code maxIpcPayloadBytes}. If the payload overflows the cap, the stream aborts
+     * before any bytes are sent to the client and a pre-computed
+     * {@code PAYLOAD_LIMIT_EXCEEDED} frame is sent instead. This keeps the original
+     * result status intact when the payload fits, avoids unbounded heap allocation,
+     * and prevents wire desynchronization on the client side.
      *
      * @throws ShutDownReceivedException if SHUT_DOWN is received instead of ACK
      * @throws IOException on serialization or I/O errors
      */
     public void writeFinished(PipesResult pipesResult) throws IOException {
-        // Pre-check: avoid allocating a huge byte[] when content is obviously over-limit.
-        // estimateSizeInBytes() uses string.length() bytes (≈ UTF-8 Smile bytes for ASCII),
-        // so this is a lower-bound estimate — safe to use as an early-exit gate.
-        if (pipesResult.emitData() instanceof EmitDataImpl emitData) {
-            long estimated = emitData.getEstimatedSizeBytes();
-            if (estimated > maxIpcPayloadBytes) {
-                LOG.warn("Skipping serialization: estimated payload {} bytes exceeds maxIpcPayloadBytes {}",
-                        estimated, maxIpcPayloadBytes);
-                doWritePayloadLimitExceeded(String.format(Locale.ROOT,
-                        "Estimated content size %d bytes exceeds IPC limit %d bytes", estimated, maxIpcPayloadBytes));
+        BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
+        try {
+            JsonPipesIpc.toStream(pipesResult, bos);
+        } catch (IOException e) {
+            if (bos.overflowed()) {
+                LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
+                        maxIpcPayloadBytes);
+                doWritePayloadLimitExceeded();
                 return;
             }
+            throw e;
         }
-
-        byte[] bytes;
-        try {
-            bytes = JsonPipesIpc.toBytes(pipesResult);
-        } catch (OutOfMemoryError oom) {
-            // The large byte-builder segments are now GC-eligible; the tiny error result below
-            // should serialize cleanly even on a depleted heap.
-            LOG.error("OOM during result serialization; returning PAYLOAD_LIMIT_EXCEEDED", oom);
-            doWritePayloadLimitExceeded("OOM during result serialization: " + oom.getMessage());
-            return;
-        }
-
-        // Post-check: serialized size may exceed the limit when content is Unicode-heavy
-        // (the pre-check uses a 1 byte/char estimate; CJK chars use 3 bytes in UTF-8 Smile).
-        if (bytes.length > maxIpcPayloadBytes) {
-            LOG.warn("Serialized payload {} bytes exceeds maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
-                    bytes.length, maxIpcPayloadBytes);
-            doWritePayloadLimitExceeded(String.format(Locale.ROOT,
-                    "Serialized payload %d bytes exceeds IPC limit %d bytes", bytes.length, maxIpcPayloadBytes));
-            return;
-        }
-
-        PipesMessage.finished(bytes).write(output);
+        PipesMessage.finished(bos.toByteArray()).write(output);
         awaitAck();
     }
 
-    private void doWritePayloadLimitExceeded(String message) throws IOException {
-        byte[] bytes = JsonPipesIpc.toBytes(
-                new PipesResult(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, message));
-        PipesMessage.finished(bytes).write(output);
+    private void doWritePayloadLimitExceeded() throws IOException {
+        // FALLBACK_PAYLOAD_BYTES is pre-computed at class load and guaranteed to be smaller
+        // than maxIpcPayloadBytes (enforced by the constructor), so the client always accepts it.
+        PipesMessage.finished(FALLBACK_PAYLOAD_BYTES).write(output);
         awaitAck();
     }
 
     /**
      * Writes an INTERMEDIATE_RESULT message with the serialized metadata and waits for ACK.
+     * If the metadata exceeds {@code maxIpcPayloadBytes}, the intermediate is silently skipped
+     * (the FINISHED message will still follow with the full result).
      *
      * @throws ShutDownReceivedException if SHUT_DOWN is received instead of ACK
      * @throws IOException on serialization or I/O errors
      */
     public void writeIntermediate(Metadata metadata) throws IOException {
-        byte[] bytes = JsonPipesIpc.toBytes(metadata);
-        PipesMessage.intermediateResult(bytes).write(output);
+        BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
+        try {
+            JsonPipesIpc.toStream(metadata, bos);
+        } catch (IOException e) {
+            if (bos.overflowed()) {
+                LOG.warn("Intermediate result payload exceeded maxIpcPayloadBytes {}; skipping intermediate",
+                        maxIpcPayloadBytes);
+                return;
+            }
+            throw e;
+        }
+        PipesMessage.intermediateResult(bos.toByteArray()).write(output);
         awaitAck();
     }
 
     /**
      * Writes a crash message (OOM, TIMEOUT, or UNSPECIFIED_CRASH) with the
-     * serialized stack trace and waits for ACK.
+     * serialized stack trace and waits for ACK. If the stack trace exceeds
+     * {@code maxIpcPayloadBytes / 2} chars it is truncated so the encoded frame
+     * always fits within the limit.
      *
      * @throws IOException on serialization, I/O, or unexpected ACK response
      */
     public void writeCrash(PipesMessageType crashType, Throwable t) throws IOException {
         String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
+        int maxChars = maxIpcPayloadBytes / 2;
+        if (msg.length() > maxChars) {
+            msg = msg.substring(0, maxChars) + "\n[truncated]";
+        }
         byte[] bytes = JsonPipesIpc.toBytes(msg);
         PipesMessage.crash(crashType, bytes).write(output);
         awaitAck();
@@ -220,6 +242,50 @@ public class ServerProtocolIO {
             LOG.warn("request-supplied {} exceeds pipes.maxTotalTaskTimeoutMillis ({}); clamping",
                     merged, maxMillis);
             mergedContext.set(TimeoutLimits.class, clamped);
+        }
+    }
+
+    /**
+     * An {@link OutputStream} backed by a {@link ByteArrayOutputStream} that aborts
+     * with an {@link IOException} the moment accumulated bytes would exceed {@code limit}.
+     * The caller distinguishes an overflow abort from genuine I/O errors via
+     * {@link #overflowed()}.
+     */
+    private static final class BoundedOutputStream extends OutputStream {
+
+        private final int limit;
+        private final ByteArrayOutputStream buf;
+        private boolean overflowed = false;
+
+        BoundedOutputStream(int limit) {
+            this.limit = limit;
+            this.buf = new ByteArrayOutputStream(Math.min(limit, 8192));
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            if (buf.size() >= limit) {
+                overflowed = true;
+                throw new IOException("payload_overflow");
+            }
+            buf.write(b);
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            if (buf.size() + len > limit) {
+                overflowed = true;
+                throw new IOException("payload_overflow");
+            }
+            buf.write(b, off, len);
+        }
+
+        boolean overflowed() {
+            return overflowed;
+        }
+
+        byte[] toByteArray() {
+            return buf.toByteArray();
         }
     }
 }

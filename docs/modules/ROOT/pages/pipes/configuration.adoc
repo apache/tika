@@ -146,6 +146,17 @@ These settings control how parsed results are batched before sending to emitters
 |When `false`, only successfully-parsed tuples reach the emitter — files that crash, time out, or otherwise fail are dropped from the output. When `true`, every tuple is emitted, including failures (the metadata carries the exception). Turn this on if you need a complete record of what was attempted (audit, retry logic, chaos-monkey tests).
 |===
 
+== IPC Payload Limit
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`maxIpcPayloadBytes`
+|`104857600` (100 MB)
+|Maximum size in bytes of a single IPC message between the client and the forked server. This limit is *bidirectional*: it applies both to parse results returned from the server (FINISHED) and to requests sent from the client (NEW_REQUEST). Raising it lets very large documents pass over IPC; lower the forked JVM `-Xmx` to approximately 3× this value to keep heap usage under control. Setting it too small (below the size of a typical `FetchEmitTuple`) will cause requests to be rejected silently as `UNSPECIFIED_CRASH`. The minimum accepted value is the serialized size of a `PAYLOAD_LIMIT_EXCEEDED` response (a few dozen bytes); values below that are rejected at config load time.
+|===
+
 == Emit Strategy
 
 `emitStrategy` controls whether parsed extracts are emitted directly from the forked PipesServer or passed back to the parent process first. The default is balanced for typical workloads — tune only if you have a memory or throughput problem.

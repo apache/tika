@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -38,6 +39,10 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 
+/**
+ * Unit tests for payload-size protection in {@link ServerProtocolIO#writeFinished}
+ * and timeout-limit clamping in {@link ServerProtocolIO#clampRequestTimeoutLimits}.
+ */
 class ServerProtocolIOTest {
 
     private static final long MAX = 3_600_000L;
@@ -83,6 +88,12 @@ class ServerProtocolIOTest {
 
     // ---- payload guard tests ----
 
+    /**
+     * Runs a writeFinished() call through a pair of piped streams, acting as the
+     * "client" in a background thread: reads the FINISHED message using the same
+     * {@code maxPayloadBytes} limit the server uses, sends ACK, and returns the
+     * deserialized PipesResult.
+     */
     private PipesResult exchange(PipesResult toWrite, int maxPayloadBytes) throws Exception {
         PipedOutputStream serverOutPipe = new PipedOutputStream();
         PipedInputStream clientInPipe = new PipedInputStream(serverOutPipe, 1024 * 1024);
@@ -96,7 +107,9 @@ class ServerProtocolIOTest {
             try {
                 DataInputStream clientDis = new DataInputStream(clientInPipe);
                 DataOutputStream clientDos = new DataOutputStream(clientOutPipe);
-                PipesMessage msg = PipesMessage.read(clientDis, Integer.MAX_VALUE);
+
+                // Read with the same limit the server uses — mirrors production PipesClient behaviour.
+                PipesMessage msg = PipesMessage.read(clientDis, maxPayloadBytes);
                 assertEquals(PipesMessageType.FINISHED, msg.type());
                 received.set(JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class));
                 PipesMessage.ack().write(clientDos);
@@ -122,6 +135,10 @@ class ServerProtocolIOTest {
         return received.get();
     }
 
+    /**
+     * A result whose serialized size is under the configured limit passes through
+     * unchanged — original status is preserved.
+     */
     @Test
     void testSmallResultPassesThrough() throws Exception {
         PipesResult original = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
@@ -132,8 +149,13 @@ class ServerProtocolIOTest {
         assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, returned.status());
     }
 
+    /**
+     * When the serialized payload is one byte over the configured limit the
+     * BoundedOutputStream aborts serialization mid-stream and the server returns
+     * PAYLOAD_LIMIT_EXCEEDED instead of writing the oversized frame.
+     */
     @Test
-    void testPostCheckReturnPayloadLimitExceeded() throws Exception {
+    void testPayloadOneByteTooLargeReturnPayloadLimitExceeded() throws Exception {
         Metadata m = new Metadata();
         m.add("content", "a".repeat(500));
         PipesResult big = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
@@ -147,21 +169,31 @@ class ServerProtocolIOTest {
         assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
     }
 
+    /**
+     * A result whose serialized size clearly exceeds the configured limit triggers
+     * PAYLOAD_LIMIT_EXCEEDED. Uses a fixed small limit so the test is independent of
+     * the estimate formula.
+     */
     @Test
-    void testPreCheckReturnPayloadLimitExceeded() throws Exception {
+    void testLargePayloadReturnPayloadLimitExceeded() throws Exception {
         Metadata m = new Metadata();
         m.add("content", "x".repeat(10_000));
-        EmitDataImpl emitData = new EmitDataImpl("key", List.of(m));
-        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS, emitData);
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(m)));
 
-        long estimated = emitData.getEstimatedSizeBytes();
-        int limit = (int) (estimated / 2);
+        // The 10,000-char content serializes to ~10 KB; pick a limit well below that.
+        int limit = 512;
+        assertTrue(JsonPipesIpc.toBytes(result).length > limit,
+                "test setup: serialized content must exceed limit");
 
         PipesResult returned = exchange(result, limit);
 
         assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
     }
 
+    /**
+     * Status-only results (no emitData) always pass through unchanged.
+     */
     @Test
     void testStatusOnlyResultPassesThrough() throws Exception {
         PipesResult statusOnly = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
@@ -170,6 +202,26 @@ class ServerProtocolIOTest {
         PipesResult returned = exchange(statusOnly, 1024);
 
         assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status());
+    }
+
+    /**
+     * Regression for the "fallback-too-big" bug: when the configured limit equals
+     * MIN_FALLBACK_PAYLOAD_BYTES (the tightest limit the constructor accepts), the
+     * fallback PAYLOAD_LIMIT_EXCEEDED frame must still fit within that limit so the
+     * client can read it with the same configured limit.
+     */
+    @Test
+    void testFallbackFitsWithinMinimumConfiguredLimit() throws Exception {
+        int limit = ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES;
+
+        Metadata m = new Metadata();
+        m.add("content", "x".repeat(10_000));
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(m)));
+
+        PipesResult returned = exchange(result, limit);
+
+        assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
     }
 
     @SuppressWarnings("unused")

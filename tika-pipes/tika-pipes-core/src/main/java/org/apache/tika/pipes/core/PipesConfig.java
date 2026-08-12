@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.server.ServerProtocolIO;
 
 public class PipesConfig {
 
@@ -562,18 +563,26 @@ public class PipesConfig {
     }
 
     /**
-     * Sets the maximum IPC payload size in bytes. Must be a positive value.
-     * This bounds the size of a message the client will accept back from the
-     * forked server (chiefly the FINISHED result). Request payloads
-     * (client to server) are small and use the built-in default.
+     * Sets the maximum IPC payload size in bytes. This limit is <em>bidirectional</em>:
+     * it controls both the largest result the client will accept back from the forked server
+     * (the FINISHED payload) and the largest request the server will accept from the client
+     * (the NEW_REQUEST payload). Lowering this value below the size of a typical
+     * {@link org.apache.tika.pipes.api.FetchEmitTuple} will cause requests to be rejected
+     * on the server side and reported as undiagnosable {@code UNSPECIFIED_CRASH} errors.
+     * <p>
+     * The value must be at least {@link org.apache.tika.pipes.core.server.ServerProtocolIO#MIN_FALLBACK_PAYLOAD_BYTES}
+     * so that the server can always write a {@code PAYLOAD_LIMIT_EXCEEDED} response
+     * that the client will accept.
      *
-     * @param maxIpcPayloadBytes positive payload limit in bytes
-     * @throws IllegalArgumentException if the value is not positive
+     * @param maxIpcPayloadBytes payload limit in bytes (must be &ge; {@code ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES})
+     * @throws IllegalArgumentException if the value is below the minimum
      */
     public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
-        if (maxIpcPayloadBytes <= 0) {
+        if (maxIpcPayloadBytes < ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(
-                    "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
+                    "maxIpcPayloadBytes must be at least " +
+                    ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES +
+                    " (minimum to carry a PAYLOAD_LIMIT_EXCEEDED response), got: " + maxIpcPayloadBytes);
         }
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
     }
