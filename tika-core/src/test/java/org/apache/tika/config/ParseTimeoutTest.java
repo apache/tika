@@ -33,26 +33,27 @@ import org.apache.tika.parser.ParseContext;
 public class ParseTimeoutTest {
 
     @Test
-    public void testInitialTimestamp() {
-        long before = System.currentTimeMillis();
+    public void testInitialElapsedIsNearZero() {
         ParseTimeout timeout = ParseTimeout.start(new TimeoutLimits());
-        long after = System.currentTimeMillis();
 
-        assertTrue(timeout.getLastProgressMillis() >= before);
-        assertTrue(timeout.getLastProgressMillis() <= after);
-        assertTrue(timeout.getStartMillis() >= before);
-        assertTrue(timeout.getStartMillis() <= after);
+        // Generous upper bound for slack against jitter under a loaded test run -- the
+        // point is "close to zero right after start", not an exact value.
+        assertTrue(timeout.elapsedMillis() >= 0);
+        assertTrue(timeout.elapsedMillis() < 5000);
+        assertTrue(timeout.millisSinceLastProgress() >= 0);
+        assertTrue(timeout.millisSinceLastProgress() < 5000);
     }
 
     @Test
-    public void testCheckpointAdvancesTimestamp() throws Exception {
+    public void testCheckpointResetsMillisSinceLastProgress() throws Exception {
         ParseTimeout timeout = ParseTimeout.start(new TimeoutLimits());
-        long initial = timeout.getLastProgressMillis();
 
         Thread.sleep(20);
-        timeout.checkpoint();
+        long beforeCheckpoint = timeout.millisSinceLastProgress();
+        assertTrue(beforeCheckpoint >= 20);
 
-        assertTrue(timeout.getLastProgressMillis() > initial);
+        timeout.checkpoint();
+        assertTrue(timeout.millisSinceLastProgress() < beforeCheckpoint);
     }
 
     @Test
@@ -79,7 +80,7 @@ public class ParseTimeoutTest {
 
         startLatch.countDown();
         assertTrue(doneLatch.await(5, TimeUnit.SECONDS));
-        assertTrue(timeout.getLastProgressMillis() > 0);
+        assertTrue(timeout.millisSinceLastProgress() >= 0);
     }
 
     @Test
@@ -119,7 +120,7 @@ public class ParseTimeoutTest {
         // A huge or MAX_VALUE total must not wrap the deadline negative and expire
         // the task immediately.
         ParseTimeout timeout = ParseTimeout.start(new TimeoutLimits(Long.MAX_VALUE, 60_000L));
-        assertEquals(Long.MAX_VALUE, timeout.getHardDeadlineMillis());
+        assertEquals(Long.MAX_VALUE, timeout.getTotalTimeoutMillis());
         assertEquals(Long.MAX_VALUE, timeout.remainingMillis());
         assertTrue(timeout.budgetFor(60_000L) == 60_000L);
     }
@@ -163,12 +164,14 @@ public class ParseTimeoutTest {
     public void testCheckpointStaticUpdatesInstalledTimeout() throws Exception {
         ParseContext context = new ParseContext();
         ParseTimeout timeout = ParseTimeout.getOrCreate(context);
-        long initial = timeout.getLastProgressMillis();
 
         Thread.sleep(20);
+        long beforeCheckpoint = timeout.millisSinceLastProgress();
+        assertTrue(beforeCheckpoint >= 20);
+
         ParseTimeout.checkpoint(context);
 
-        assertTrue(timeout.getLastProgressMillis() > initial);
+        assertTrue(timeout.millisSinceLastProgress() < beforeCheckpoint);
     }
 
     // ---- misconfiguration validation (design doc §9) ----------------------------------

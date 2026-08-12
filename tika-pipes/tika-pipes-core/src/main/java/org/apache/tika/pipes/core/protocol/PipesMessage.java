@@ -20,8 +20,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**
@@ -140,16 +138,12 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     }
 
     /**
-     * Creates a WORKING heartbeat with the last-progress timestamp in the payload.
-     *
-     * @param lastProgressMillis epoch millis of the last progress update
+     * Creates a WORKING heartbeat. Empty payload -- the client treats WORKING as a pure
+     * liveness signal (see {@code PipesClient.waitForServer}'s WORKING case) and never reads
+     * a timestamp back out of it.
      */
-    public static PipesMessage working(long lastProgressMillis) {
-        byte[] payload = ByteBuffer.allocate(Long.BYTES)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putLong(lastProgressMillis)
-                .array();
-        return new PipesMessage(PipesMessageType.WORKING, payload);
+    public static PipesMessage working() {
+        return new PipesMessage(PipesMessageType.WORKING, EMPTY);
     }
 
     public static PipesMessage newRequest(byte[] payload) {
@@ -170,19 +164,5 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
 
     public static PipesMessage crash(PipesMessageType crashType, byte[] payload) {
         return new PipesMessage(crashType, payload);
-    }
-
-    /**
-     * Extracts the last-progress timestamp from a WORKING message payload.
-     *
-     * @return epoch millis of the last progress update reported by the server
-     */
-    public long lastProgressMillis() {
-        if (type != PipesMessageType.WORKING) {
-            throw new IllegalStateException("lastProgressMillis() only valid for WORKING messages");
-        }
-        return ByteBuffer.wrap(payload)
-                .order(ByteOrder.BIG_ENDIAN)
-                .getLong();
     }
 }

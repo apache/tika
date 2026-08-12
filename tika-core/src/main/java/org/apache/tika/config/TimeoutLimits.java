@@ -22,7 +22,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Configuration for the two-tier task timeout system.
+ * Configuration for the task timeout system.
  * <p>
  * <ul>
  *   <li>{@code totalTaskTimeoutMillis} — bounds entire task wall-clock time, including
@@ -30,9 +30,13 @@ import org.apache.tika.parser.ParseContext;
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
  *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes)</li>
+ *   <li>{@code throwOnDeadline} — whether reaching the total timeout mid-parse throws
+ *       (via {@link org.apache.tika.exception.EmbeddedLimitReachedException}) instead of
+ *       skipping remaining embedded documents and returning content extracted so far
+ *       (default: {@code false})</li>
  * </ul>
  * <p>
- * These compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
+ * The first two compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
  * parser's own timeout is honored, but no operation gets more than what remains of
  * {@code totalTaskTimeoutMillis}. A bounded external call reports its own progress, so a
  * legitimately long call (e.g. a multi-minute external process) doesn't need

@@ -420,10 +420,10 @@ public class ProcessUtils {
      */
     public static boolean waitForWithHeartbeat(Process p, ParseContext context, long timeoutMillis)
             throws InterruptedException {
-        long now = System.currentTimeMillis();
-        long deadline = (timeoutMillis >= Long.MAX_VALUE - now) ? Long.MAX_VALUE : now + timeoutMillis;
+        long startNanos = System.nanoTime();
         while (true) {
-            long remaining = deadline - System.currentTimeMillis();
+            long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
+            long remaining = timeoutMillis - elapsedMillis;
             long pollMillis = remaining <= 0 ? 0 : Math.min(remaining, HEARTBEAT_INTERVAL_MILLIS);
             if (p.waitFor(pollMillis, TimeUnit.MILLISECONDS)) {
                 return true;

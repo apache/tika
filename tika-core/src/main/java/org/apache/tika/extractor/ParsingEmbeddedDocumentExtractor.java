@@ -118,7 +118,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             // threw; every later sibling silently took the skip path instead.
             if (parseRecord.isThrowOnDeadline()) {
                 throw new EmbeddedLimitReachedException(EmbeddedLimitReachedException.LimitType.DEADLINE,
-                        timeout == null ? 0 : timeout.getHardDeadlineMillis() - timeout.getStartMillis());
+                        timeout == null ? 0 : timeout.getTotalTimeoutMillis());
             }
             return false;
         }
@@ -126,7 +126,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             parseRecord.setTaskDeadlineReached(true);
             if (parseRecord.isThrowOnDeadline()) {
                 throw new EmbeddedLimitReachedException(
-                        EmbeddedLimitReachedException.LimitType.DEADLINE, timeout.getHardDeadlineMillis() - timeout.getStartMillis());
+                        EmbeddedLimitReachedException.LimitType.DEADLINE, timeout.getTotalTimeoutMillis());
             }
             return false;
         }

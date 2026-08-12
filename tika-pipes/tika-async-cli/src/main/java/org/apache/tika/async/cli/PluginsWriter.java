@@ -165,12 +165,12 @@ public class PluginsWriter {
             }
 
             // Write timeout limits to parse-context if configured on CLI
-            if (simpleAsyncConfig.getTimeoutMs() != null) {
+            if (simpleAsyncConfig.getTimeoutMillis() != null) {
                 ObjectNode parseContext = root.has("parse-context")
                         ? (ObjectNode) root.get("parse-context")
                         : objectMapper.createObjectNode();
                 ObjectNode timeoutNode = objectMapper.createObjectNode();
-                timeoutNode.put("progressTimeoutMillis", simpleAsyncConfig.getTimeoutMs());
+                timeoutNode.put("progressTimeoutMillis", simpleAsyncConfig.getTimeoutMillis());
                 parseContext.set("timeout-limits", timeoutNode);
                 root.set("parse-context", parseContext);
             }

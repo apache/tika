@@ -204,7 +204,7 @@ public class SharedServerManager implements ServerManager {
     }
 
     @Override
-    public Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException {
+    public Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException {
         int port;
         byte[] token;
         synchronized (lock) {
@@ -219,7 +219,7 @@ public class SharedServerManager implements ServerManager {
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), SOCKET_CONNECT_TIMEOUT_MS);
-            socket.setSoTimeout(socketTimeoutMs);
+            socket.setSoTimeout(socketTimeoutMillis);
             socket.setTcpNoDelay(true);
             // Send auth token before any protocol messages
             socket.getOutputStream().write(token);

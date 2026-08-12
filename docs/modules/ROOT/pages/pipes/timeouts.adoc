@@ -41,6 +41,10 @@ The three do not interfere with each other:
   genuine silence (in-JVM hangs, wedged kills).
 * Budgets compose recursively. A PDF inside a zip inside an email draws all of its
   operations from the same document budget, at any nesting depth.
+* All three are measured against the JVM's own monotonic clock, not calendar time -- a
+  system clock adjustment (NTP step, DST change, manual change) during a parse never
+  affects them, and time the JVM spends suspended (e.g. a laptop sleeping mid-parse) does
+  not count against a task's budget.
 
 == Configuration
 
@@ -221,7 +225,7 @@ builds).
 The OS OOM-killer takes the forked JVM mid-parse.
 
 * *What happens:* all messages from the worker stop. The client's socket read times out
-  (`pipes.socketTimeoutMs`, default 60 s) and the client restarts the worker.
+  (`pipes.socketTimeoutMillis`, default 60 s) and the client restarts the worker.
 * *What you see:* status `TIMEOUT` with a client-side socket timeout stack trace and no
   server diagnostic (the server is gone).
 * *What to change:* infrastructure -- typically raise `-Xmx` in `pipes.forkedJvmArgs` or
@@ -261,7 +265,7 @@ the rest are safe by construction.
 
 * Negative values for `totalTaskTimeoutMillis` or `progressTimeoutMillis` (zero is
   accepted -- see below).
-* `pipes.socketTimeoutMs` less than or equal to `pipes.heartbeatIntervalMs` -- the client
+* `pipes.socketTimeoutMillis` less than or equal to `pipes.heartbeatIntervalMillis` -- the client
   would kill a healthy server between heartbeats.
 * Unknown or renamed configuration fields (including pre-4.0 `timeoutSeconds` names) --
   configuration parsing fails on unknown properties rather than silently ignoring them.
@@ -295,9 +299,9 @@ the rest are safe by construction.
 
 == Upgrading from Tika 3.x
 
-Three behavioral changes in 4.0 are easy to miss -- none of them shows up as a compile
-error or a config validation failure. They change what already-written code and
-already-tuned configs actually do.
+Several behavioral and configuration changes in 4.0 are easy to miss -- none of them shows
+up as a compile error, and most don't show up as a config validation failure either. They
+change what already-written code and already-tuned configs actually do.
 
 `TikaTimeoutException` is now checked, not a `RuntimeException`. It extends
 `TikaException` so a single embedded document's timeout is recorded and its siblings
@@ -318,6 +322,27 @@ Overview): a bounded external call that reports progress no longer needs a large
 timeout (e.g. `tesseract-ocr-parser.timeoutMillis`) or `totalTaskTimeoutMillis`. If your
 only lever was `progressTimeoutMillis`, raise the actual per-parser timeout instead --
 see Scenario 2.
+
+WARNING: `tess4j-parser.timeoutSeconds` is now `tess4j-parser.timeoutMillis` -- and unlike
+every other rename in this section, this one is not just a key rename, it also changes the
+unit. A mechanical find-and-replace of the key name alone (`"timeoutSeconds": 120` ->
+`"timeoutMillis": 120`) leaves the *value* unconverted, silently producing a **120
+millisecond** timeout instead of the intended 120 seconds -- Tess4J will then fail to
+borrow a pooled `Tesseract` instance almost immediately. The value must be multiplied by
+1000 along with the key rename: `"timeoutMillis": 120000`. See
+xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Configuration].
+
+Several other pre-4.0 `*TimeoutSeconds`/`*TimeoutMs` fields were renamed to the
+`*TimeoutMillis` convention as part of this same cleanup -- `PipesConfig`'s
+`socketTimeoutMs`/`startupTimeoutMs`/`heartbeatIntervalMs` (now `socketTimeoutMillis` /
+`startupTimeoutMillis` / `heartbeatIntervalMillis`), the async/pipes CLI's `--timeoutMs`
+flag (now `--timeoutMillis`), and `ExternalParser`'s `timeoutMs` (now `timeoutMillis`, a
+rename that landed in 4.0 itself so this doc previously lagged the code). Unlike Tess4J's
+field above, none of these changed units -- only the name -- so a plain key rename with the
+existing value is correct for all of them. Fields that are genuinely seconds-based and
+stayed that way (e.g. `staleFetcherTimeoutSeconds`, JDBC's `queryTimeoutSeconds`, which
+feeds `java.sql.Statement.setQueryTimeout(int seconds)` directly) were deliberately left
+alone.
 
 `ProcessUtils.checkCommand()` -- used by several detectors and parsers
 (`FileCommandDetector`, `GDALParser`, etc.) to probe whether an external binary is
@@ -367,7 +392,12 @@ java -jar tika-app.jar --fork --task-timeout=600000 --progress-timeout=60000 doc
 NOTE: The pre-4.0 `--fork-timeout` flag was removed because its meaning was ambiguous --
 it conflated the total per-file budget with the stall detector. Passing it now is a hard
 error naming `--task-timeout` and `--progress-timeout` as the replacements, rather than
-silently mapping to one or the other.
+silently mapping to one or the other. `--fork-timeout` defaulted to `60000` (60 s) and, as
+the sole knob, acted as an effective hard kill for the whole parse. That single default is
+now split: `--task-timeout` (total per-file budget) defaults to `3600000` (1 hour) and
+`--progress-timeout` (stall detector) defaults to `120000` (2 minutes) -- so a fork-mode
+file that previously died around 60 s of inactivity now runs up to 2 minutes before the
+stall detector fires, and up to an hour overall.
 
 === Pipes mode (`-i` / `-o`)
 
@@ -403,6 +433,6 @@ java -jar tika-app.jar --config=tika-config.json -i /input -o /output
 == Living Code Reference
 
 * link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/config/TimeoutLimits.java[`TimeoutLimits.java`] -- Configuration class with defaults and helper methods
-* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/config/TikaProgressTracker.java[`TikaProgressTracker.java`] -- Progress tracking for parsers
+* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/config/ParseTimeout.java[`ParseTimeout.java`] -- Per-task timeout/progress state (budgeting, checkpointing)
 * link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/utils/ProcessUtils.java[`ProcessUtils.java`] -- Bounded external-process execution
 * link:https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/java/org/apache/tika/pipes/core/PipesClientTest.java[`PipesClientTest.java`] -- Integration tests including timeout behavior

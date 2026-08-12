@@ -70,7 +70,7 @@ public class TikaAsyncCLI {
         options.addOption("n", "numClients", true, "number of forked clients");
         options.addOption(null, "Xmx", true, "heap for the forked clients, e.g. --Xmx 1g");
         options.addOption(null, "help", false, "this help message");
-        options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
+        options.addOption("T", "timeoutMillis", true, "timeout for each parse in milliseconds");
         options.addOption(null, "handler", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore (default: m)");
         options.addOption("p", "pluginsDir", true, "plugins directory");
         options.addOption("l", "fileList", true,
@@ -179,7 +179,7 @@ public class TikaAsyncCLI {
         String inputDir = null;
         String outputDir = null;
         String xmx = null;
-        Long timeoutMs = null;
+        Long timeoutMillis = null;
         Integer numClients = null;
         String fileList = null;
         String tikaConfig = null;
@@ -197,7 +197,7 @@ public class TikaAsyncCLI {
             xmx = line.getOptionValue("Xmx");
         }
         if (line.hasOption("T")) {
-            timeoutMs = Long.parseLong(line.getOptionValue("T"));
+            timeoutMillis = Long.parseLong(line.getOptionValue("T"));
         }
         if (line.hasOption("n")) {
             numClients = Integer.parseInt(line.getOptionValue("n"));
@@ -299,7 +299,7 @@ public class TikaAsyncCLI {
         }
 
         SimpleAsyncConfig config = new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
+                numClients, timeoutMillis, xmx, fileList, tikaConfig, handlerType,
                 extractBytesMode, pluginsDir, concatenate, contentOnly,
                 unpackFormat, unpackMode, unpackIncludeMetadata);
         config.setOnExists(onExists);

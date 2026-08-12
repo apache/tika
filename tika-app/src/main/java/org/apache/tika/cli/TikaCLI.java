@@ -962,7 +962,7 @@ public class TikaCLI {
         out.println("    -o, --output=<dir>         Output directory");
         out.println("    -n, --numClients           Number of forked processes");
         out.println("    -X                         -Xmx in the forked processes");
-        out.println("    -T, --timeoutMs            Timeout for each parse in milliseconds");
+        out.println("    -T, --timeoutMillis        Timeout for each parse in milliseconds");
         out.println("    -c, --config=<file>        Tika config file (--config=<file> also accepted)");
         out.println("    -p, --pluginsDir           Plugins directory");
         out.println("    --fileList                 File list (one path per line, relative to -i or absolute)");

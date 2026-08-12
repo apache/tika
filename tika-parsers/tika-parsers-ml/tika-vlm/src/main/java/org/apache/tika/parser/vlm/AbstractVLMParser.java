@@ -33,7 +33,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
@@ -205,7 +205,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             String responseBody = httpClient.postJson(
                     call.url(), call.json(), call.headers(), config.getTimeoutMillis(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
-            TikaProgressTracker.update(parseContext);
+            ParseTimeout.checkpoint(parseContext);
         } catch (TikaException e) {
             throw e;
         } catch (IOException e) {

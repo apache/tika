@@ -181,9 +181,9 @@ libraries. Prepended to `jna.library.path` at initialization time.
 threads that will call the parser concurrently. Each instance consumes
 native memory.
 
-|`timeoutSeconds`
-|`120`
-|Maximum time (seconds) to wait for a pooled `Tesseract` instance before
+|`timeoutMillis`
+|`120000`
+|Maximum time (milliseconds) to wait for a pooled `Tesseract` instance before
 throwing an exception.
 
 |`dpi`

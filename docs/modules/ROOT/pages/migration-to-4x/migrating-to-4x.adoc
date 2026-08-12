@@ -241,6 +241,17 @@ External parsers must now be explicitly configured via JSON. See
 xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
 for details.
 
+== Timeout Model Changes
+
+4.x replaces the previous ad hoc, per-parser timeout handling with a single unified model
+(`TimeoutLimits` / `ParseTimeout`) shared across library use, `tika-app --fork`, and Tika
+Pipes. This affects error handling (`TikaTimeoutException` is now a checked exception),
+CLI flags (`tika-app --fork-timeout` was removed), and several parser/pipes config field
+names (`*TimeoutSeconds`/`*TimeoutMs` -> `*TimeoutMillis`, including a unit change for
+Tess4J specifically). See
+xref:pipes/timeouts.adoc#_upgrading_from_tika_3_x[Timeouts: Upgrading from Tika 3.x] for
+the full list of behavioral changes and required config edits.
+
 == Deprecations and Removals
 
 * `TikaConfig` -- replaced by `TikaLoader`
