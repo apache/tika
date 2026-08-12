@@ -47,24 +47,9 @@
     </properties>
 
     <modules>
+        <module>tika-grpc</module>
         <module>tika-server</module>
     </modules>
-
-    <!--
-      tika-grpc is opt-in via -Pe2e-grpc rather than part of -Pe2e. Its tests currently
-      fail on the allowComponentManagement gate, and while they do, a plain
-      "mvn install -Pe2e" cannot complete. That also took the REST server e2e down with
-      it, since grpc builds first. Kept as a module so it can still be run deliberately
-      (-Pe2e -Pe2e-grpc) rather than being deleted or disabled.
-    -->
-    <profiles>
-        <profile>
-            <id>e2e-grpc</id>
-            <modules>
-                <module>tika-grpc</module>
-            </modules>
-        </profile>
-    </profiles>
 
     <dependencyManagement>
         <dependencies>

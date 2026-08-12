@@ -65,8 +65,7 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'maven'
       - name: Run E2E Tests
-        # -pl must name the leaf module: tika-e2e-tests is an aggregator pom, and Maven
+        # -pl must name the leaf modules: tika-e2e-tests is an aggregator pom, and Maven
         # does not pull in a selected aggregator's children, so this job built two pom-only
         # modules and ran zero tests while reporting green.
-        # grpc e2e is not run here; it is opt-in behind -Pe2e-grpc (see tika-e2e-tests/pom.xml).
-        run: mvn -pl :tika-e2e-tests-server -am clean verify -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn -pl :tika-e2e-tests-server,:tika-grpc-e2e-test -am clean verify -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
