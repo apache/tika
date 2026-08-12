@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -100,14 +99,6 @@ public class PipesParsingHelper {
                     "inputTempDirectory must be a valid directory: " + inputTempDirectory);
         }
         LOG.info("PipesParsingHelper initialized with inputTempDirectory: {}", inputTempDirectory);
-    }
-
-    /**
-     * Gets the input temp directory path.
-     * @return the input temp directory
-     */
-    public Path getInputTempDirectory() {
-        return inputTempDirectory;
     }
 
     /**
@@ -655,17 +646,6 @@ public class PipesParsingHelper {
             Path zipFile,
             List<Metadata> metadataList
     ) {
-        /**
-         * Returns an InputStream for the zip file.
-         * Caller must close the stream and delete the file when done.
-         */
-        public InputStream getZipInputStream() throws IOException {
-            if (zipFile == null) {
-                return null;
-            }
-            return Files.newInputStream(zipFile);
-        }
-
         /**
          * Deletes the zip file. Call this after streaming is complete.
          */

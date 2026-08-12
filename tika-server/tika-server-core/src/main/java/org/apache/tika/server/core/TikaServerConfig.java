@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
@@ -50,21 +49,6 @@ public class TikaServerConfig {
      */
     private static final Set<String> ENDPOINTS_REQUIRING_PIPES =
             new HashSet<>(Arrays.asList("pipes", "async"));
-    private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
-    /*
-TODO: integrate these settings:
- * Number of milliseconds to wait to start forked process.
-public static final long DEFAULT_FORKED_PROCESS_STARTUP_MILLIS = 60000;
-
- * Maximum number of milliseconds to wait to shutdown forked process to allow
- * for current parses to complete.
-public static final long DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS = 30000;
-
-private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
-
-private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
-
- */
     /**
      * Default request-body cap: 1 GiB. Generous enough for essentially any single-document
      * upload, bounded so one request cannot fill the temp directory. Operators who genuinely
@@ -302,10 +286,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    private void addEndPoints(List<String> endPoints) {
-        this.endpoints.addAll(endPoints);
     }
 
 }

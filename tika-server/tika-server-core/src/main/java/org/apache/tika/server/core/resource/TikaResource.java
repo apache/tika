@@ -47,19 +47,13 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.cxf.attachment.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.impl.MetadataMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -71,7 +65,6 @@ import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 import org.apache.tika.server.core.ServerStatus;
-import org.apache.tika.server.core.TikaServerParseException;
 
 @Path("/tika")
 public class TikaResource {
@@ -130,11 +123,6 @@ public class TikaResource {
         }
     }
 
-
-    @SuppressWarnings("serial")
-    public Parser createParser() throws TikaConfigException, IOException {
-        return tikaLoader.loadAutoDetectParser();
-    }
 
     public TikaLoader getTikaLoader() {
         return tikaLoader;
@@ -323,51 +311,6 @@ public class TikaResource {
                     LOG.warn("Failed to close spooled input after a config error", e);
                 }
             }
-        }
-    }
-
-    /**
-     * Use this to call a parser and unify exception handling.
-     * NOTE: This call to parse closes the TikaInputStream. DO NOT surround
-     * the call in an auto-close block.
-     * <p>
-     * This method is used by endpoints that don't yet use pipes-based parsing
-     * (UnpackerResource, MetadataResource). For /tika and /rmeta endpoints,
-     * use parseWithPipes() instead.
-     *
-     * @param parser       parser to use
-     * @param logger       logger to use
-     * @param path         file path
-     * @param inputStream  TikaInputStream (which is closed by this call!)
-     * @param handler      handler to use
-     * @param metadata     metadata
-     * @param parseContext parse context
-     * @throws IOException wrapper for all exceptions
-     */
-    public void parse(Parser parser, Logger logger, String path, TikaInputStream inputStream,
-                             ContentHandler handler, Metadata metadata, ParseContext parseContext)
-            throws IOException {
-
-        String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        long taskId = serverStatus.start(ServerStatus.TASK.PARSE, fileName);
-        try {
-            parser.parse(inputStream, handler, metadata, parseContext);
-        } catch (SAXException e) {
-            throw new TikaServerParseException(e);
-        } catch (EncryptedDocumentException e) {
-            logger.warn("{}: Encrypted document ({})", path, fileName, e);
-            throw new TikaServerParseException(e);
-        } catch (Exception e) {
-            if (!WriteLimitReachedException.isWriteLimitReached(e)) {
-                logger.warn("{}: Text extraction failed ({})", path, fileName, e);
-            }
-            throw new TikaServerParseException(e);
-        } catch (OutOfMemoryError e) {
-            logger.warn("{}: OOM ({})", path, fileName, e);
-            throw new TikaServerParseException(new TikaException("Out of memory", e));
-        } finally {
-            serverStatus.complete(taskId);
-            inputStream.close();
         }
     }
 
@@ -867,45 +810,6 @@ public class TikaResource {
             return Metadata.newInstance(context);
         }
         return metadataList.get(0);
-    }
-
-    /**
-     * Prepares a multivalued map, combining attachment headers and request headers.
-     * For multipart requests, the attachment's Content-Type takes priority over the
-     * request's Content-Type (which is multipart/form-data).
-     *
-     * @param att         the attachment.
-     * @param httpHeaders the http headers, fetched from context.
-     * @return the case insensitive MetadataMap containing combined headers.
-     */
-    public static MetadataMap<String, String> preparePostHeaderMap(Attachment att, HttpHeaders httpHeaders) {
-        if (att == null && httpHeaders == null) {
-            return null;
-        }
-        MetadataMap<String, String> finalHeaders = new MetadataMap<>(false, true);
-        if (httpHeaders != null && httpHeaders.getRequestHeaders() != null) {
-            finalHeaders.putAll(httpHeaders.getRequestHeaders());
-        }
-        if (att != null && att.getHeaders() != null) {
-            finalHeaders.putAll(att.getHeaders());
-        }
-        // For multipart, get the attachment's Content-Type which overrides the request's
-        // multipart/form-data Content-Type. Check multiple sources:
-        if (att != null) {
-            String attachmentContentType = null;
-            // First try getContentType() which returns the MediaType set via constructor
-            if (att.getContentType() != null) {
-                attachmentContentType = att.getContentType().toString();
-            }
-            // Also check the attachment's headers directly
-            if (attachmentContentType == null && att.getHeaders() != null) {
-                attachmentContentType = att.getHeaders().getFirst(HttpHeaders.CONTENT_TYPE);
-            }
-            if (attachmentContentType != null && !attachmentContentType.startsWith("multipart/")) {
-                finalHeaders.putSingle(HttpHeaders.CONTENT_TYPE, attachmentContentType);
-            }
-        }
-        return finalHeaders;
     }
 
 }

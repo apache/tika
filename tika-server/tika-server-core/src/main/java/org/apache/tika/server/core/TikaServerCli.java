@@ -31,11 +31,6 @@ import org.slf4j.LoggerFactory;
 public class TikaServerCli {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
-    /**
-     * This value is set to the server's id in the forked process.
-     */
-    public static String TIKA_SERVER_ID_ENV = "tika.server.id";
-
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
