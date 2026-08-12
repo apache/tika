@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -134,6 +135,39 @@ public class ServerProtocolIO {
                     + "UnpackConfig will be ignored. "
                     + "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.",
                     unpackConfig.getEmitter(), parseMode);
+        }
+    }
+
+    /**
+     * Trust boundary: caps request-supplied {@link TimeoutLimits} at the operator-set
+     * {@code pipes.maxTotalTaskTimeoutMillis}, so a client cannot disable the forked
+     * server's self-termination by requesting an enormous timeout. Limits from the
+     * server's own tika-config are trusted and never clamped -- this only fires when the
+     * request itself carried TimeoutLimits (typed or as an unresolved {@code
+     * timeout-limits} JSON config). Must run <em>after</em>
+     * {@link org.apache.tika.serialization.ParseContextUtils#resolveAll} (so the merged
+     * value is the resolved one) and <em>before</em> the task's {@code ParseTimeout} is
+     * armed.
+     */
+    public static void clampRequestTimeoutLimits(ParseContext requestContext,
+            ParseContext mergedContext, long maxMillis) {
+        if (requestContext == null) {
+            return;
+        }
+        boolean requestSupplied = requestContext.get(TimeoutLimits.class) != null
+                || requestContext.hasJsonConfig("timeout-limits");
+        if (!requestSupplied) {
+            return;
+        }
+        TimeoutLimits merged = mergedContext.get(TimeoutLimits.class);
+        if (merged == null) {
+            return;
+        }
+        TimeoutLimits clamped = merged.clampedTo(maxMillis);
+        if (clamped != merged) {
+            LOG.warn("request-supplied {} exceeds pipes.maxTotalTaskTimeoutMillis ({}); clamping",
+                    merged, maxMillis);
+            mergedContext.set(TimeoutLimits.class, clamped);
         }
     }
 }

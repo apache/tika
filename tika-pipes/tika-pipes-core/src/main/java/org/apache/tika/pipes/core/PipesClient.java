@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -365,15 +363,23 @@ public class PipesClient implements Closeable {
                     intermediateResult.get());
         }
 
-        TimeoutLimits limits = TimeoutLimits.get(t.getParseContext());
+        // Mirror the server's merge: request limits win, else the config-level default the
+        // server enforces -- backstopping with built-in defaults would kill a healthy
+        // server whose operator raised the total only in tika-config.
+        TimeoutLimits limits = t.getParseContext() == null
+                ? null : t.getParseContext().get(TimeoutLimits.class);
+        if (limits == null) {
+            limits = pipesConfig.getDefaultTimeoutLimits();
+        }
         long clientBackstopMillis = clientBackstopMillis(limits);
-        Instant start = Instant.now();
+        // nanoTime: the backstop must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
             }
-            long totalElapsed = Duration.between(start, Instant.now()).toMillis();
+            long totalElapsed = (System.nanoTime() - startNanos) / 1_000_000L;
             if (totalElapsed > clientBackstopMillis) {
                 LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
                                 "-- server should have self-terminated well before this", pipesClientId,

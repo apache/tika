@@ -19,6 +19,12 @@ package org.apache.tika.pipes.core;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -80,6 +86,16 @@ public class PipesConfig {
     private long socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
     private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
     private long heartbeatIntervalMillis = DEFAULT_HEARTBEAT_INTERVAL_MILLIS;
+
+    public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
+
+    /**
+     * Ceiling for request-supplied {@code TimeoutLimits}: a request may lower its
+     * timeouts freely but can never raise total or progress above this, so a client
+     * cannot disable the forked server's self-termination. Limits set in the server's
+     * own tika-config {@code parse-context} are trusted and not subject to this cap.
+     */
+    private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
 
     private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
     private int numClients = defaultNumClients();
@@ -167,7 +183,31 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
+        // PipesClient's wall-clock backstop must mirror the limits the forked server
+        // enforces (config default unless the request overrides), so carry the config
+        // default to the client side without a full parse-context resolution -- the
+        // client JVM may not have the plugin classes that resolution needs.
+        JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
+        if (!limitsNode.isMissingNode()) {
+            try {
+                config.defaultTimeoutLimits =
+                        new ObjectMapper().treeToValue(limitsNode, TimeoutLimits.class);
+            } catch (JsonProcessingException e) {
+                throw new TikaConfigException("problem parsing parse-context.timeout-limits", e);
+            }
+        }
         return config;
+    }
+
+    private TimeoutLimits defaultTimeoutLimits = new TimeoutLimits();
+
+    /**
+     * The config-level {@code parse-context.timeout-limits} defaults -- what the forked
+     * server enforces when a request carries no {@link TimeoutLimits} of its own.
+     */
+    @JsonIgnore
+    public TimeoutLimits getDefaultTimeoutLimits() {
+        return defaultTimeoutLimits;
     }
 
     public long getSocketTimeoutMillis() {
@@ -183,6 +223,18 @@ public class PipesConfig {
      */
     public void setSocketTimeoutMillis(long socketTimeoutMillis) {
         this.socketTimeoutMillis = socketTimeoutMillis;
+    }
+
+    public long getMaxTotalTaskTimeoutMillis() {
+        return maxTotalTaskTimeoutMillis;
+    }
+
+    public void setMaxTotalTaskTimeoutMillis(long maxTotalTaskTimeoutMillis) {
+        if (maxTotalTaskTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("maxTotalTaskTimeoutMillis must be > 0, was " +
+                    maxTotalTaskTimeoutMillis + "; use Long.MAX_VALUE for no cap");
+        }
+        this.maxTotalTaskTimeoutMillis = maxTotalTaskTimeoutMillis;
     }
 
     public long getStartupTimeoutMillis() {

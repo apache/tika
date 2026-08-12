@@ -406,7 +406,9 @@ This processes all files in the input directory and writes JSON metadata
 |`-Xmx` size for the forked processes (e.g. `-X512m`).
 
 |`-T` or `--timeoutMillis=<ms>`
-|Timeout for each parse in milliseconds.
+|Total task timeout per input file in milliseconds. Sets
+`parse-context.timeout-limits.totalTaskTimeoutMillis`, merging into any
+`timeout-limits` already in the config.
 |===
 
 ==== Configuration

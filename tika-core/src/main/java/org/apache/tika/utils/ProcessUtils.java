@@ -184,6 +184,9 @@ public class ProcessUtils {
                     }
                 }
             } catch (InterruptedException e) {
+                // restore the flag so the caller (e.g. an executor being shut down) still
+                // sees the interrupt; without this it's misread as a subprocess timeout
+                Thread.currentThread().interrupt();
                 exitValue = -1000;
             } finally {
                 outThread.interrupt();
@@ -284,6 +287,7 @@ public class ProcessUtils {
                     errThread.join(1000);
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 exitValue = -1000;
             }
             FileProcessResult result = new FileProcessResult();
@@ -384,7 +388,11 @@ public class ProcessUtils {
                 }
             }
             return true;
-        } catch (IOException | InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.debug("interrupted trying to run " + checkCmd[0], e);
+            return false;
+        } catch (IOException | TimeoutException e) {
             LOG.debug("exception trying to run " + checkCmd[0], e);
             return false;
         } catch (SecurityException se) {

@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -166,6 +164,9 @@ public class ConnectionHandler implements Runnable, Closeable {
                             mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
                             // Installed here, before submit, so the worker thread's own
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.
@@ -180,7 +181,10 @@ public class ConnectionHandler implements Runnable, Closeable {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
+                            // Without a crash response the client blocks until its socket
+                            // timeout and then restarts a healthy server.
                             LOG.error("handlerId={}: error processing request", handlerId, t);
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
                         } finally {
                             if (mergedContext != null) {
                                 MetadataFilter requestFilter = mergedContext.get(MetadataFilter.class);
@@ -239,7 +243,8 @@ public class ConnectionHandler implements Runnable, Closeable {
                                ArrayBlockingQueue<Metadata> intermediateResult,
                                CountDownLatch countDownLatch,
                                ParseTimeout parseTimeout) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
@@ -285,7 +290,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             }
 
             // Send fire-and-forget heartbeat
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
             if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
                 PipesMessage.working().write(output);
@@ -293,7 +298,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             }
 
             // Check timeouts
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
             if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
@@ -315,8 +320,8 @@ public class ConnectionHandler implements Runnable, Closeable {
      * completion) is still caught, just via the stall path instead of the total-timeout
      * path.
      */
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
         long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
                 ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
         if (elapsed > graceDeadline) {

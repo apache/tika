@@ -30,7 +30,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -286,25 +285,19 @@ public class CompositeParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
-        // A non-null ParseRecord already back at depth 0 proves a previous top-level parse
-        // on this same (legitimately reused, e.g. across a batch of files) ParseContext has
-        // already finished -- never true for a nested embedded-document call mid-parse,
-        // since depth is only 0 between top-level parses. Only in that proven case do we
-        // reset -- NOT merely because ParseRecord is absent: some callers (e.g. PipesServer)
-        // pre-install ParseTimeout via ParseTimeout.getOrCreate before ParseRecord exists,
-        // for their own external watchdog to hold a reference to; reinstalling ParseTimeout
-        // here on first use would orphan that reference, leaving the watchdog checking a
-        // stale copy no in-progress checkpoint ever reaches.
-        boolean priorTopLevelParseFinished = parserRecord != null && parserRecord.getDepth() == 0;
+        // Never replace a pre-installed ParseRecord/ParseTimeout: pipes pre-installs both,
+        // and the watchdog holds a reference to the ParseTimeout -- a replacement would
+        // orphan it, so checkpoints never reach the instance the watchdog checks.
         if (parserRecord == null) {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
-        } else if (priorTopLevelParseFinished) {
-            parserRecord = ParseRecord.newInstance(context);
-            context.set(ParseRecord.class, parserRecord);
-            context.set(ParseTimeout.class, ParseTimeout.start(TimeoutLimits.get(context)));
         }
         ParseTimeout.getOrCreate(context);
+        // Every parse -- top-level or embedded, any mode or extractor -- funnels through
+        // here, making this the one boundary where document progress is guaranteed to be
+        // visible: without it, a container of many fast in-JVM children never checkpoints
+        // and reads as a stall to the pipes watchdog.
+        ParseTimeout.checkpoint(context);
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;

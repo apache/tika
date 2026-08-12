@@ -82,8 +82,18 @@ public class TimeoutLimits implements Serializable {
      * @param progressTimeoutMillis  maximum time between progress updates
      */
     public TimeoutLimits(long totalTaskTimeoutMillis, long progressTimeoutMillis) {
-        this.totalTaskTimeoutMillis = totalTaskTimeoutMillis;
-        this.progressTimeoutMillis = progressTimeoutMillis;
+        setTotalTaskTimeoutMillis(totalTaskTimeoutMillis);
+        setProgressTimeoutMillis(progressTimeoutMillis);
+    }
+
+    // Validating here (rather than only in ParseTimeout.start) turns a bad configured
+    // value into a config-load failure: Jackson invokes these setters.
+    private static long checkNonNegative(long millis, String name) {
+        if (millis < 0) {
+            throw new IllegalArgumentException(name + " must be >= 0, was " + millis +
+                    "; use Long.MAX_VALUE for unbounded");
+        }
+        return millis;
     }
 
     /**
@@ -101,7 +111,8 @@ public class TimeoutLimits implements Serializable {
      * @param totalTaskTimeoutMillis total task timeout in milliseconds
      */
     public void setTotalTaskTimeoutMillis(long totalTaskTimeoutMillis) {
-        this.totalTaskTimeoutMillis = totalTaskTimeoutMillis;
+        this.totalTaskTimeoutMillis =
+                checkNonNegative(totalTaskTimeoutMillis, "totalTaskTimeoutMillis");
     }
 
     /**
@@ -121,7 +132,8 @@ public class TimeoutLimits implements Serializable {
      * @param progressTimeoutMillis progress timeout in milliseconds
      */
     public void setProgressTimeoutMillis(long progressTimeoutMillis) {
-        this.progressTimeoutMillis = progressTimeoutMillis;
+        this.progressTimeoutMillis =
+                checkNonNegative(progressTimeoutMillis, "progressTimeoutMillis");
     }
 
     /**
@@ -135,6 +147,22 @@ public class TimeoutLimits implements Serializable {
 
     public void setThrowOnDeadline(boolean throwOnDeadline) {
         this.throwOnDeadline = throwOnDeadline;
+    }
+
+    /**
+     * Returns this instance if both timeouts are within {@code maxMillis}, otherwise a
+     * copy with each offending timeout reduced to {@code maxMillis}. Used at trust
+     * boundaries to cap request-supplied limits at an operator-set maximum.
+     */
+    public TimeoutLimits clampedTo(long maxMillis) {
+        if (totalTaskTimeoutMillis <= maxMillis && progressTimeoutMillis <= maxMillis) {
+            return this;
+        }
+        TimeoutLimits clamped = new TimeoutLimits(
+                Math.min(totalTaskTimeoutMillis, maxMillis),
+                Math.min(progressTimeoutMillis, maxMillis));
+        clamped.throwOnDeadline = throwOnDeadline;
+        return clamped;
     }
 
     /**

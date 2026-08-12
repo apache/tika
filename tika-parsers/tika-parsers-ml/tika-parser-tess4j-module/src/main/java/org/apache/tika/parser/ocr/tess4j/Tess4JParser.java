@@ -215,7 +215,7 @@ public class Tess4JParser implements Parser, Initializable {
             // running on its own background thread -- see that method for how ownership of
             // returning the instance to the pool is handed off in that case.
             tesseractStillBusy = true;
-            String ocrResult = doOCRWithTimeout(tesseract, image, parseContext);
+            String ocrResult = doOCRWithTimeout(tesseract, image, requestedMillis, parseContext);
             tesseractStillBusy = false;
             ParseTimeout.checkpoint(parseContext);
 
@@ -395,15 +395,19 @@ public class Tess4JParser implements Parser, Initializable {
      * the caller retains ownership and returns {@code tesseract} itself, same as before
      * this method was ever called.
      */
-    private String doOCRWithTimeout(Tesseract tesseract, BufferedImage image, ParseContext parseContext)
+    private String doOCRWithTimeout(Tesseract tesseract, BufferedImage image, long requestedMillis,
+                                    ParseContext parseContext)
             throws TesseractException, TikaTimeoutException {
-        long budgetMillis = ParseTimeout.getOrCreate(parseContext).remainingMillis();
+        // Re-budget here rather than reusing the caller's borrow budget: time spent
+        // waiting for the pool and decoding the image has already been burned.
+        long budgetMillis = ParseTimeout.getOrCreate(parseContext).budgetFor(requestedMillis);
         if (budgetMillis <= 0) {
             // Nothing async ever starts here, but the caller already flipped
             // tesseractStillBusy to true before calling us, so it won't return the
             // instance itself -- do it here or it's stuck in limbo forever.
             returnTesseract(tesseract);
-            throw new TikaTimeoutException("Tesseract OCR call not attempted", budgetMillis, budgetMillis);
+            throw new TikaTimeoutException("Tesseract OCR call not attempted", requestedMillis,
+                    budgetMillis);
         }
 
         AtomicReference<String> result = new AtomicReference<>();
@@ -441,7 +445,7 @@ public class Tess4JParser implements Parser, Initializable {
                     returnTesseract(tesseract);
                 }
                 throw new TikaTimeoutException("interrupted while waiting for Tesseract OCR",
-                        budgetMillis, budgetMillis);
+                        requestedMillis, budgetMillis);
             }
             if (finished) {
                 break;
@@ -450,7 +454,8 @@ public class Tess4JParser implements Parser, Initializable {
                 if (!settled.compareAndSet(false, true)) {
                     returnTesseract(tesseract);
                 }
-                throw new TikaTimeoutException("Tesseract OCR call timed out", budgetMillis, budgetMillis);
+                throw new TikaTimeoutException("Tesseract OCR call timed out", requestedMillis,
+                        budgetMillis);
             }
             ParseTimeout.checkpoint(parseContext);
         }

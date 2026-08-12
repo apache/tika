@@ -453,8 +453,29 @@ public class XmlToJsonConfigConverter {
                 }
             }
         }
-
+        remapLegacyTimeoutParams(params);
         return params;
+    }
+
+    /**
+     * 4.x renamed every per-component timeout to {@code timeoutMillis}. A verbatim copy
+     * of the old key fails config load, and a hand-renamed {@code timeoutSeconds} value
+     * left un-multiplied silently becomes a millisecond value -- so convert both key and
+     * unit here. {@code timeoutMs} (ExternalParser) and {@code dwgReadTimeout} (DWGParser)
+     * were already millis; rename only.
+     */
+    private static void remapLegacyTimeoutParams(Map<String, Object> params) {
+        Object seconds = params.remove("timeoutSeconds");
+        if (seconds != null) {
+            Object millis = seconds instanceof Number n ? n.longValue() * 1000 : seconds;
+            params.putIfAbsent("timeoutMillis", millis);
+        }
+        for (String renameOnly : new String[]{"timeoutMs", "dwgReadTimeout"}) {
+            Object value = params.remove(renameOnly);
+            if (value != null) {
+                params.putIfAbsent("timeoutMillis", value);
+            }
+        }
     }
 
     /**

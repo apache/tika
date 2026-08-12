@@ -33,6 +33,35 @@ import org.apache.tika.parser.ParseContext;
 public class ParseTimeoutTest {
 
     @Test
+    public void testTimeoutLimitsRejectNegatives() {
+        assertThrows(IllegalArgumentException.class, () -> new TimeoutLimits(-1, 1000));
+        assertThrows(IllegalArgumentException.class, () -> new TimeoutLimits(1000, -1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TimeoutLimits().setTotalTaskTimeoutMillis(-1));
+        assertThrows(IllegalArgumentException.class,
+                () -> new TimeoutLimits().setProgressTimeoutMillis(-1));
+    }
+
+    @Test
+    public void testTimeoutLimitsClampedTo() {
+        TimeoutLimits within = new TimeoutLimits(1000, 500);
+        assertSame(within, within.clampedTo(3_600_000L), "within-cap limits pass through");
+
+        TimeoutLimits over = new TimeoutLimits(Long.MAX_VALUE, Long.MAX_VALUE);
+        over.setThrowOnDeadline(true);
+        TimeoutLimits clamped = over.clampedTo(3_600_000L);
+        assertEquals(3_600_000L, clamped.getTotalTaskTimeoutMillis());
+        assertEquals(3_600_000L, clamped.getProgressTimeoutMillis());
+        assertTrue(clamped.isThrowOnDeadline(), "clamping must preserve throwOnDeadline");
+
+        TimeoutLimits mixed = new TimeoutLimits(7_200_000L, 1000);
+        TimeoutLimits mixedClamped = mixed.clampedTo(3_600_000L);
+        assertEquals(3_600_000L, mixedClamped.getTotalTaskTimeoutMillis());
+        assertEquals(1000, mixedClamped.getProgressTimeoutMillis(),
+                "only the offending timeout is reduced");
+    }
+
+    @Test
     public void testInitialElapsedIsNearZero() {
         ParseTimeout timeout = ParseTimeout.start(new TimeoutLimits());
 

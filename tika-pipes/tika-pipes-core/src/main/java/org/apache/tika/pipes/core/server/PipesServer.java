@@ -29,8 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -380,16 +378,28 @@ public class PipesServer implements AutoCloseable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
-                        // Create merged ParseContext: defaults from tika-config + request overrides
-                        ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                        // Resolve friendly-named configs in ParseContext to actual objects
-                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                        // Validate the effective (merged + resolved) context
-                        ServerProtocolIO.validateParseContext(mergedContext);
-                        // Installed here, before submit, so the worker thread's own
-                        // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
-                        // sees this instance rather than racing to install its own.
-                        ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        ParseContext mergedContext;
+                        ParseTimeout parseTimeout;
+                        try {
+                            // Create merged ParseContext: defaults from tika-config + request overrides
+                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            // Resolve friendly-named configs in ParseContext to actual objects
+                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            // Validate the effective (merged + resolved) context
+                            ServerProtocolIO.validateParseContext(mergedContext);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        } catch (Exception e) {
+                            // e.g. an invalid per-request config; write the reason to the client
+                            // instead of dying with a bare exit code
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
+                            break; // unreachable after handleCrash/exit, but needed for compilation
+                        }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
@@ -439,7 +449,8 @@ public class PipesServer implements AutoCloseable {
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
                                ParseTimeout parseTimeout) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
@@ -482,13 +493,13 @@ public class PipesServer implements AutoCloseable {
             }
 
             // Send fire-and-forget heartbeat if we've waited long enough
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
             if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 PipesMessage.working().write(output);
                 heartbeatCounter++;
             }
 
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
             }
             if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
@@ -511,8 +522,8 @@ public class PipesServer implements AutoCloseable {
      * completion) is still caught, just via the stall path instead of the total-timeout
      * path.
      */
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
         long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
                 ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
         if (elapsed > graceDeadline) {

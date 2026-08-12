@@ -183,8 +183,9 @@ native memory.
 
 |`timeoutMillis`
 |`120000`
-|Maximum time (milliseconds) to wait for a pooled `Tesseract` instance before
-throwing an exception.
+|Timeout (milliseconds) applied both to waiting for a pooled `Tesseract`
+instance and to each image's OCR call. Each is budgeted separately up to this
+value, clipped to whatever remains of the task's total budget.
 
 |`dpi`
 |`300`

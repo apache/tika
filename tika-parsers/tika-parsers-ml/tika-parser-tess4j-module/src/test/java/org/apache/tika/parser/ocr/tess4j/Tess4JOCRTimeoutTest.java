@@ -48,8 +48,9 @@ import org.apache.tika.sax.BodyContentHandler;
 /**
  * TIKA-4813 follow-up: {@code Tess4JParser#doOCRWithTimeout} runs the blocking, native
  * {@code Tesseract.doOCR} call on a background thread and checkpoints {@link ParseTimeout}
- * while waiting, so a slow OCR call is bounded by the task's remaining budget instead of
- * running unchecked until the server's stall watchdog kills the whole forked JVM. Tested
+ * while waiting, so a slow OCR call is bounded by the per-call timeout clipped to the
+ * task's remaining budget instead of running unchecked until the server's stall watchdog
+ * kills the whole forked JVM. Tested
  * via reflection against the private method directly, using a {@link Tesseract} subclass
  * that overrides the {@code doOCR(BufferedImage)} default method -- no native Tesseract
  * library is exercised, so this doesn't need {@code tess4jAvailable} gating.
@@ -58,7 +59,7 @@ public class Tess4JOCRTimeoutTest {
 
     private static Method doOCRWithTimeoutMethod() throws NoSuchMethodException {
         Method m = Tess4JParser.class.getDeclaredMethod("doOCRWithTimeout",
-                Tesseract.class, BufferedImage.class, ParseContext.class);
+                Tesseract.class, BufferedImage.class, long.class, ParseContext.class);
         m.setAccessible(true);
         return m;
     }
@@ -88,15 +89,17 @@ public class Tess4JOCRTimeoutTest {
             }
         };
 
+        // Large task budget, small per-call timeout: the per-call value must bound the
+        // OCR call on its own, not just the task's remaining total.
         ParseContext context = new ParseContext();
-        context.set(TimeoutLimits.class, new TimeoutLimits(500, 500));
+        context.set(TimeoutLimits.class, new TimeoutLimits(60_000, 60_000));
         ParseTimeout parseTimeout = ParseTimeout.getOrCreate(context);
 
         BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_GRAY);
 
         long start = System.currentTimeMillis();
         try {
-            doOCRWithTimeout.invoke(parser, slow, image, context);
+            doOCRWithTimeout.invoke(parser, slow, image, 500L, context);
             fail("expected the 500ms budget to be exceeded by the 3s doOCR call");
         } catch (InvocationTargetException e) {
             assertInstanceOf(TikaTimeoutException.class, e.getCause(),
@@ -129,7 +132,7 @@ public class Tess4JOCRTimeoutTest {
         context.set(TimeoutLimits.class, new TimeoutLimits(60_000, 60_000));
         BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_GRAY);
 
-        Object result = doOCRWithTimeout.invoke(parser, fast, image, context);
+        Object result = doOCRWithTimeout.invoke(parser, fast, image, 60_000L, context);
         assertEquals("fast OCR result", result);
     }
 
@@ -233,7 +236,8 @@ public class Tess4JOCRTimeoutTest {
         BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_BYTE_GRAY);
 
         try {
-            doOCRWithTimeout.invoke(parser, slow, image, context);
+            // requested exceeds the 300ms task budget -- budgetFor clips to remaining
+            doOCRWithTimeout.invoke(parser, slow, image, 60_000L, context);
             fail("expected the 300ms budget to be exceeded by the still-blocked doOCR call");
         } catch (InvocationTargetException e) {
             assertInstanceOf(TikaTimeoutException.class, e.getCause(),

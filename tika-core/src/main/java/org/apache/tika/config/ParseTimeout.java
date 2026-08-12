@@ -97,6 +97,14 @@ public class ParseTimeout {
             LOG.warn("progressTimeoutMillis ({}) >= totalTaskTimeoutMillis ({}) -- the stall " +
                     "detector can never fire before the total deadline does", progress, total);
         }
+        if (total > 0 && total < 1000) {
+            LOG.warn("totalTaskTimeoutMillis ({}) is under one second -- this is often a " +
+                    "seconds-vs-milliseconds mistake in the configuration", total);
+        }
+        if (progress > 0 && progress < 1000) {
+            LOG.warn("progressTimeoutMillis ({}) is under one second -- this is often a " +
+                    "seconds-vs-milliseconds mistake in the configuration", progress);
+        }
         return new ParseTimeout(System.nanoTime(), total, progress);
     }
 
