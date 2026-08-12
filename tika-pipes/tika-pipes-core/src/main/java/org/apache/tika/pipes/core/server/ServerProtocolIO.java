@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core.server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.Locale;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
@@ -62,12 +64,65 @@ public class ServerProtocolIO {
 
     /**
      * Writes a FINISHED message with the serialized result and waits for ACK.
+     * <p>
+     * Three-layer protection against oversized payloads:
+     * <ol>
+     *   <li>Pre-check: if the estimated content size already exceeds the limit, skip
+     *       serialization entirely (prevents OOM for very large documents).</li>
+     *   <li>OOM catch: if serialization exhausts heap despite the pre-check (e.g. when
+     *       the limit is uncapped or the estimate is imprecise), the error is caught and
+     *       a lightweight PAYLOAD_LIMIT_EXCEEDED result is returned instead of crashing.</li>
+     *   <li>Post-check: if the serialized byte count exceeds the limit, the oversized
+     *       bytes are discarded before touching the wire, avoiding stream desynchronization
+     *       on the client side.</li>
+     * </ol>
      *
      * @throws ShutDownReceivedException if SHUT_DOWN is received instead of ACK
      * @throws IOException on serialization or I/O errors
      */
     public void writeFinished(PipesResult pipesResult) throws IOException {
-        byte[] bytes = JsonPipesIpc.toBytes(pipesResult);
+        // Pre-check: avoid allocating a huge byte[] when content is obviously over-limit.
+        // estimateSizeInBytes() uses string.length() bytes (≈ UTF-8 Smile bytes for ASCII),
+        // so this is a lower-bound estimate — safe to use as an early-exit gate.
+        if (pipesResult.emitData() instanceof EmitDataImpl emitData) {
+            long estimated = emitData.getEstimatedSizeBytes();
+            if (estimated > maxIpcPayloadBytes) {
+                LOG.warn("Skipping serialization: estimated payload {} bytes exceeds maxIpcPayloadBytes {}",
+                        estimated, maxIpcPayloadBytes);
+                doWritePayloadLimitExceeded(String.format(Locale.ROOT,
+                        "Estimated content size %d bytes exceeds IPC limit %d bytes", estimated, maxIpcPayloadBytes));
+                return;
+            }
+        }
+
+        byte[] bytes;
+        try {
+            bytes = JsonPipesIpc.toBytes(pipesResult);
+        } catch (OutOfMemoryError oom) {
+            // The large byte-builder segments are now GC-eligible; the tiny error result below
+            // should serialize cleanly even on a depleted heap.
+            LOG.error("OOM during result serialization; returning PAYLOAD_LIMIT_EXCEEDED", oom);
+            doWritePayloadLimitExceeded("OOM during result serialization: " + oom.getMessage());
+            return;
+        }
+
+        // Post-check: serialized size may exceed the limit when content is Unicode-heavy
+        // (the pre-check uses a 1 byte/char estimate; CJK chars use 3 bytes in UTF-8 Smile).
+        if (bytes.length > maxIpcPayloadBytes) {
+            LOG.warn("Serialized payload {} bytes exceeds maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
+                    bytes.length, maxIpcPayloadBytes);
+            doWritePayloadLimitExceeded(String.format(Locale.ROOT,
+                    "Serialized payload %d bytes exceeds IPC limit %d bytes", bytes.length, maxIpcPayloadBytes));
+            return;
+        }
+
+        PipesMessage.finished(bytes).write(output);
+        awaitAck();
+    }
+
+    private void doWritePayloadLimitExceeded(String message) throws IOException {
+        byte[] bytes = JsonPipesIpc.toBytes(
+                new PipesResult(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, message));
         PipesMessage.finished(bytes).write(output);
         awaitAck();
     }

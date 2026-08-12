@@ -77,13 +77,19 @@ public class EmitDataImpl implements EmitData {
 
     private static long estimateSizeInBytes(String id, List<Metadata> metadataList,
                                             String containerStackTrace) {
-        long sz = 36 + id.length() * 2;
-        sz += 36 + containerStackTrace.length() * 2;
+        // Estimate Smile wire bytes: 1 byte per char (accurate for ASCII metadata keys/values
+        // such as file paths, checksums, MIME types; up to 3x underestimate for CJK content).
+        // Using the Java-heap cost (length*2 for UTF-16) overstates the wire size by 2x for
+        // ASCII-heavy content (e.g. compressed-archive metadata) and biases the DYNAMIC emit
+        // strategy toward unnecessary direct-emit.  The server-side writeFinished() post-check
+        // catches the CJK case where actual Smile bytes exceed the configured limit.
+        long sz = 16 + id.length();
+        sz += 16 + containerStackTrace.length();
         for (Metadata m : metadataList) {
             for (String n : m.names()) {
-                sz += 36 + n.length() * 2;
+                sz += 16 + n.length();
                 for (String v : m.getValues(n)) {
-                    sz += 36 + v.length() * 2;
+                    sz += 16 + v.length();
                 }
             }
         }
