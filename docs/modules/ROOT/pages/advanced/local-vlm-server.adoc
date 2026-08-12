@@ -335,14 +335,14 @@ Point the `OpenAIVLMParser` at your local server:
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
         "model": "jinaai/jina-vlm",
-        "timeoutSeconds": 600
+        "timeoutMillis": 600000
       }
     }
   ]
 }
 ----
 
-A generous `timeoutSeconds` is recommended — local inference on Apple
+A generous `timeoutMillis` is recommended — local inference on Apple
 Silicon takes 10-60 seconds per page depending on model size and image
 resolution.
 
@@ -434,7 +434,7 @@ Safe to ignore.
 * Jina VLM (2.4B) on M3 Max: ~15-30 seconds per page image
 * Model loading at startup: ~20-30 seconds
 * Keeping the server running avoids reloading the model per request
-* Consider `timeoutSeconds: 600` or higher in the Tika config for large
+* Consider `timeoutMillis: 600000` or higher in the Tika config for large
   or complex images
 
 == Licensing

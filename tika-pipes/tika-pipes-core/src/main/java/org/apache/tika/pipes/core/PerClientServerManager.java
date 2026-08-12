@@ -236,7 +236,7 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException {
+    public Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException {
         if (serverSocket == null) {
             throw new IllegalStateException("Server not started. Call ensureRunning() first.");
         }
@@ -248,7 +248,7 @@ public class PerClientServerManager implements ServerManager {
         while (true) {
             try {
                 Socket socket = serverSocket.accept();
-                socket.setSoTimeout(socketTimeoutMs);
+                socket.setSoTimeout(socketTimeoutMillis);
                 socket.setTcpNoDelay(true);
                 LOG.debug("clientId={}: accepted connection from server", clientId);
                 return socket;

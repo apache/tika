@@ -16,6 +16,8 @@
  */
 package org.apache.tika.detect;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
@@ -73,6 +76,29 @@ public class FileCommandDetectorTest extends TikaTest {
                         MediaType.application("xml").equals(answer),
                         "Expected text/xml or application/xml but got: " + answer);
             }
+        }
+    }
+
+    /**
+     * TIKA-4813 follow-up: unlike every other ProcessUtils-backed detector/parser
+     * (MagikaDetector, SiegfriedDetector, GDALParser, ExternalParser), this detector only
+     * used to set ExternalProcess.IS_TIMEOUT on the timeout path, leaving it absent (not
+     * "false") on a normal, non-timed-out run -- inconsistent with the property being
+     * present-and-explicit everywhere else in the codebase.
+     */
+    @Test
+    public void testIsTimeoutIsExplicitlyFalseOnSuccess() throws Exception {
+        assumeTrue(FileCommandDetector.checkHasFile());
+
+        FileCommandDetector fileDetector = new FileCommandDetector();
+        try (TikaInputStream tis = TikaInputStream.get(getClass().getResourceAsStream(TEST_FILE))) {
+            Metadata metadata = new Metadata();
+            fileDetector.detect(tis, metadata, new ParseContext());
+
+            assertNotNull(metadata.get(ExternalProcess.IS_TIMEOUT),
+                    "IS_TIMEOUT must be explicitly recorded even on a successful run, "
+                            + "matching every other ProcessUtils-backed detector/parser");
+            assertFalse(Boolean.parseBoolean(metadata.get(ExternalProcess.IS_TIMEOUT)));
         }
     }
 }

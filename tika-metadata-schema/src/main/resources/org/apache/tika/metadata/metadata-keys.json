@@ -578,6 +578,7 @@
   {"key":"tk:exception:embedded-resource-limit-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:exception:embedded-stream-exception","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"tk:exception:embedded-warning","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
+  {"key":"tk:exception:task-deadline-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:exception:warn","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"tk:exception:write-limit-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:final-embedded-resource-path","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},

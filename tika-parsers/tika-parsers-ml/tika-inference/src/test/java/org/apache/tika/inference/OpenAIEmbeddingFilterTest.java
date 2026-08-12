@@ -53,7 +53,7 @@ public class OpenAIEmbeddingFilterTest {
         config.setModel("text-embedding-3-small");
         config.setMaxChunkChars(500);
         config.setOverlapChars(0);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         filter = new OpenAIEmbeddingFilter(config);
     }

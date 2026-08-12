@@ -8,7 +8,7 @@
         "resize": 300,
         "minFileSizeToOcr": 1,
         "maxFileSizeToOcr": 2000000,
-        "timeoutSeconds": 240,
+        "timeoutMillis": 240000,
         "outputType": "hocr",
         "filter": "box",
         "applyRotation": true,

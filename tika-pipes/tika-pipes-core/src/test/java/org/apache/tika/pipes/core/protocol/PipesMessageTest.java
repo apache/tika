@@ -68,10 +68,10 @@ class PipesMessageTest {
 
     @Test
     void testWorkingMessageRoundTrip() throws IOException {
-        PipesMessage original = PipesMessage.working(42L);
+        PipesMessage original = PipesMessage.working();
         PipesMessage roundTripped = roundTrip(original);
         assertEquals(PipesMessageType.WORKING, roundTripped.type());
-        assertEquals(42L, roundTripped.lastProgressMillis());
+        assertEquals(0, roundTripped.payload().length);
     }
 
     @Test

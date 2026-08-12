@@ -38,7 +38,7 @@ public class DWGParserConfig implements Serializable, Initializable {
     private boolean cleanDwgReadOutput = true;
     private int cleanDwgReadOutputBatchSize = 10000000;
     // default to 5 minutes, some large DWG's do take a while...
-    private long dwgReadTimeout = 300000;
+    private long timeoutMillis = 300000;
     // we need to remove non UTF chars and Nan's (dwgread outputs these as nan)
     private String cleanDwgReadRegexToReplace = "[^\\x20-\\x7e]";
     private String cleanDwgReadReplaceWith = "";
@@ -80,8 +80,8 @@ public class DWGParserConfig implements Serializable, Initializable {
         return cleanDwgReadOutputBatchSize;
     }
 
-    public long getDwgReadTimeout() {
-        return dwgReadTimeout;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public String getCleanDwgReadRegexToReplace() {
@@ -112,8 +112,8 @@ public class DWGParserConfig implements Serializable, Initializable {
         this.cleanDwgReadOutputBatchSize = cleanDwgReadOutputBatchSize;
     }
 
-    public void setDwgReadTimeout(long dwgReadTimeout) {
-        this.dwgReadTimeout = dwgReadTimeout;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public void setCleanDwgReadRegexToReplace(String cleanDwgReadRegexToReplace) {

@@ -29,6 +29,8 @@ import java.util.Set;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
@@ -283,10 +285,16 @@ public class CompositeParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
+        // Never replace pre-installed state: the pipes watchdog holds a reference to the
+        // ParseTimeout; a replacement would orphan it and checkpoints would never reach it.
         if (parserRecord == null) {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
         }
+        ParseTimeout.getOrCreate(context);
+        // The one boundary every parse (any mode/extractor) crosses; without this, many
+        // fast in-JVM embedded children read as a stall to the pipes watchdog.
+        ParseTimeout.checkpoint(context);
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
@@ -308,6 +316,11 @@ public class CompositeParser implements Parser {
                     taggedHandler.throwIfCauseOf(e);
                 }
                 throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
+            } catch (EmbeddedLimitReachedException e) {
+                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean this must surface to
+                // the top-level caller. Rethrow unwrapped: wrapped in TikaException it would
+                // be swallowed by an intermediate catch(TikaException) like any per-document failure.
+                throw e;
             } catch (RuntimeException e) {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
@@ -340,6 +353,9 @@ public class CompositeParser implements Parser {
         }
         if (record.isEmbeddedDepthLimitReached()) {
             metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+        }
+        if (record.isTaskDeadlineReached()) {
+            metadata.set(TikaCoreProperties.TASK_DEADLINE_REACHED, true);
         }
 
         for (Metadata m : record.getMetadataList()) {

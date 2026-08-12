@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -64,6 +65,8 @@ public class ParseRecord {
     private boolean throwOnMaxCount = false;
     private boolean embeddedDepthLimitReached = false;
     private boolean embeddedCountLimitReached = false;
+    private boolean throwOnDeadline = false;
+    private boolean taskDeadlineReached = false;
 
     /**
      * Creates a new ParseRecord configured from EmbeddedLimits in the ParseContext.
@@ -81,6 +84,7 @@ public class ParseRecord {
         record.maxEmbeddedCount = limits.getMaxCount();
         record.throwOnMaxDepth = limits.isThrowOnMaxDepth();
         record.throwOnMaxCount = limits.isThrowOnMaxCount();
+        record.throwOnDeadline = TimeoutLimits.get(context).isThrowOnDeadline();
         return record;
     }
 
@@ -254,5 +258,31 @@ public class ParseRecord {
      */
     public boolean isEmbeddedCountLimitReached() {
         return embeddedCountLimitReached;
+    }
+
+    /**
+     * Sets whether an exception should be thrown when the task's total timeout is
+     * exhausted, rather than skipping remaining embedded documents cleanly.
+     */
+    public void setThrowOnDeadline(boolean throwOnDeadline) {
+        this.throwOnDeadline = throwOnDeadline;
+    }
+
+    public boolean isThrowOnDeadline() {
+        return throwOnDeadline;
+    }
+
+    /**
+     * Sets the flag indicating the task's total timeout was exhausted -- a document-level
+     * fact (unlike a single embedded document timing out, recorded per-child via
+     * {@link #addException(Exception)}): once set, any not-yet-started embedded document
+     * is skipped rather than attempted.
+     */
+    public void setTaskDeadlineReached(boolean taskDeadlineReached) {
+        this.taskDeadlineReached = taskDeadlineReached;
+    }
+
+    public boolean isTaskDeadlineReached() {
+        return taskDeadlineReached;
     }
 }

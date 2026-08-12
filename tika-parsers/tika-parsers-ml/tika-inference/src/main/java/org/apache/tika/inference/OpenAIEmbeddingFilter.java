@@ -27,8 +27,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -77,7 +79,7 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
     }
 
     @Override
-    protected void embed(List<Chunk> chunks, InferenceConfig config)
+    protected void embed(List<Chunk> chunks, InferenceConfig config, ParseContext parseContext)
             throws IOException, TikaException {
 
         if (chunks.isEmpty()) {
@@ -93,7 +95,8 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
         }
 
         String responseBody = httpClient.postJson(url, requestJson, headers,
-                config.getTimeoutSeconds());
+                config.getTimeoutMillis(), parseContext);
+        ParseTimeout.checkpoint(parseContext);
         parseResponse(responseBody, chunks);
     }
 

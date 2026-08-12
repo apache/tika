@@ -18,6 +18,8 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -146,5 +150,51 @@ public class CompositeParserTest {
         both.parse(TikaInputStream.get(new byte[0]), handler, metadata, new ParseContext());
         assertEquals("True", metadata.get("BMP"));
         assertEquals("True", metadata.get("Alias"));
+    }
+
+    /**
+     * A caller-pre-installed ParseRecord/ParseTimeout (as pipes does) must survive the
+     * parse: replacing the ParseTimeout orphans the watchdog's reference and a healthy
+     * parse gets killed as stalled.
+     */
+    @Test
+    public void testPreInstalledRecordAndTimeoutSurviveFirstParse() throws Exception {
+        Parser checkpointingParser = new EmptyParser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(MediaType.TEXT_PLAIN);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) {
+                ParseTimeout.checkpoint(context);
+            }
+        };
+        CompositeParser composite =
+                new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), checkpointingParser);
+
+        ParseContext context = new ParseContext();
+        context.set(TimeoutLimits.class, new TimeoutLimits(100_000, 100_000));
+        // caller pre-installs, as PipesServer/ParseHandler do
+        ParseTimeout watchdogHeld = ParseTimeout.getOrCreate(context);
+        context.set(ParseRecord.class, ParseRecord.newInstance(context));
+        ParseRecord preInstalledRecord = context.get(ParseRecord.class);
+
+        long silentBefore = watchdogHeld.millisSinceLastProgress();
+        Thread.sleep(20);
+
+        Metadata metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_TYPE, MediaType.TEXT_PLAIN.toString());
+        composite.parse(TikaInputStream.get(new byte[0]), new BodyContentHandler(), metadata,
+                context);
+
+        assertSame(watchdogHeld, context.get(ParseTimeout.class),
+                "first parse must not replace a pre-installed ParseTimeout -- an external " +
+                        "watchdog holds a reference to it");
+        assertSame(preInstalledRecord, context.get(ParseRecord.class),
+                "first parse must not replace a pre-installed, never-used ParseRecord");
+        assertTrue(watchdogHeld.millisSinceLastProgress() < silentBefore + 20,
+                "the parser's checkpoint must reach the watchdog-held ParseTimeout instance");
     }
 }

@@ -97,7 +97,7 @@ configured, the raw bytes are written as text.
 |`boolean`
 |Store raw stderr in metadata. Default: `true`.
 
-|`timeoutMs`
+|`timeoutMillis`
 |`long`
 |Process timeout in milliseconds. Default: `60000`.
 

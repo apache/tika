@@ -11,6 +11,10 @@ Release 4.0.0 - ???
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
 
+   * tika-grpc's fetchAndParseServerSideStreaming now completes the call
+     after delivering its reply, instead of leaving the client waiting
+     for a terminal signal that never came (TIKA-4804).
+
 
 Release 4.0.0-beta-1 - 6/29/2026
 

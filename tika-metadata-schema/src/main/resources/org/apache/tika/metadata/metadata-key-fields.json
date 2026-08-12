@@ -541,6 +541,7 @@
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"SOURCE","key":"dc:source"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"SOURCE_PATH","key":"tk:source-path"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"SUBJECT","key":"dc:subject"},
+  {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"TASK_DEADLINE_REACHED","key":"tk:exception:task-deadline-reached"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"TIKA_CHUNKS","key":"tk:chunks"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"TIKA_CONTENT","key":"tk:content"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"TIKA_CONTENT_HANDLER","key":"tk:content-handler"},
@@ -762,7 +763,5 @@
   {"class":"org.apache.tika.parser.xml.XMLProfiler","field":"ROOT_ENTITY","key":"xmlprofiler:root-entity"},
   {"class":"org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer","field":"PDFBOX_IMAGE_WRITING_TIME_MS","key":"tk:rendering:pdfbox-image-writing-ms"},
   {"class":"org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer","field":"PDFBOX_RENDERING_TIME_MS","key":"tk:rendering:pdfbox-rendering-ms"},
-  {"class":"org.apache.tika.sax.AbstractRecursiveParserWrapperHandler","field":"EMBEDDED_DEPTH_LIMIT_REACHED","key":"tk:exception:embedded-depth-limit-reached"},
-  {"class":"org.apache.tika.sax.AbstractRecursiveParserWrapperHandler","field":"EMBEDDED_RESOURCE_LIMIT_REACHED","key":"tk:exception:embedded-resource-limit-reached"},
   {"class":"org.apache.tika.utils.ParserUtils","field":"EMBEDDED_PARSER","key":"tk:exception:embedded-parser"}
 ]

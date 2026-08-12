@@ -39,8 +39,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -80,7 +79,7 @@ public class GDALParser implements Parser {
     private static final long serialVersionUID = -3869130527323941401L;
     private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);
 
-    public static final long DEFAULT_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
 
     // gdalinfo output keys from extractMetFromOutput's "key=value" lines (open-ended).
     private static final KeyPrefix GDAL = KeyPrefix.file("gdal:", "gdalinfo output keys");
@@ -166,7 +165,7 @@ public class GDALParser implements Parser {
 
     private int maxStdOut = 100000;
 
-    private long timeoutMs = DEFAULT_TIMEOUT_MS;
+    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
     public GDALParser() {
         setCommand("gdalinfo ${INPUT_FILE}");
@@ -212,13 +211,12 @@ public class GDALParser implements Parser {
 
         String[] runCommand = processCommand(tis).split("\\s+", -1);
 
-        long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, timeoutMs);
-        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
-                localTimeoutMillis, maxStdOut, maxStdErr);
+        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand), context,
+                timeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
-        TikaProgressTracker.update(context);
+        ParseTimeout.checkpoint(context);
         metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
         metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED, result.isStdoutTruncated());
         metadata.set(ExternalProcess.STD_ERR_LENGTH, result.getStderrLength());
@@ -352,8 +350,12 @@ public class GDALParser implements Parser {
 
     }
 
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public void setMaxStdErr(int maxStdErr) {

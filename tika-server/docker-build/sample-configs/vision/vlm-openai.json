@@ -12,7 +12,7 @@
       "openai-vlm-parser": {
         "baseUrl": "http://vlm-server:8000",
         "model": "jinaai/jina-vlm",
-        "timeoutSeconds": 300
+        "timeoutMillis": 300000
       }
     }
   ]

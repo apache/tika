@@ -38,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.asarkar.grpc.test.GrpcCleanupExtension;
 import com.asarkar.grpc.test.Resources;
@@ -375,6 +376,76 @@ public class TikaGrpcServerTest {
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
         return TikaGrpc.newBlockingStub(channel);
+    }
+
+    /**
+     * TIKA-4804: the server-streaming variant must close the call. With the in-process
+     * transport and a direct executor the whole handler runs inside the stub call, so
+     * the observer counts are final when it returns and nothing here needs to wait.
+     */
+    @Test
+    public void testServerSideStreamingSendsTerminalSignal(Resources resources) throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString()))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+        TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
+
+        // The fetcher must come from the config file: one saved at runtime through
+        // saveFetcher is not visible to the forked worker, and the fetch would fail.
+        String fetcherId = createFetcherId(1);
+        String fetchKey = "tika4804-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
+
+        List<FetchAndParseReply> replies = Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger errors = new AtomicInteger();
+        AtomicInteger completions = new AtomicInteger();
+        StreamObserver<FetchAndParseReply> observer = new StreamObserver<>() {
+            @Override
+            public void onNext(FetchAndParseReply reply) {
+                replies.add(reply);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                errors.incrementAndGet();
+            }
+
+            @Override
+            public void onCompleted() {
+                completions.incrementAndGet();
+            }
+        };
+
+        try {
+            tikaStub.fetchAndParseServerSideStreaming(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), observer);
+
+            assertEquals(1, replies.size(), "one reply for one fetch key");
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(),
+                    replies.get(0).getStatus(),
+                    "the fixture must actually parse, or this test proves nothing");
+            assertEquals(0, errors.get(), "no error on the happy path");
+            assertEquals(1, completions.get(),
+                    "server streaming must send a terminal signal");
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
     }
 
     @Test

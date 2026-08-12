@@ -25,7 +25,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 {
   "pipes": {
     "numClients": 4,
-    "socketTimeoutMs": 60000,
+    "socketTimeoutMillis": 60000,
     "maxFilesProcessedPerProcess": 10000,
     "parseMode": "RMETA",
     "onParseException": "EMIT",
@@ -69,13 +69,17 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |===
 |Field |Default |Description
 
-|`socketTimeoutMs`
+|`socketTimeoutMillis`
 |`60000`
 |Maximum time (ms) to wait for data from a forked process. If no heartbeat or result is received within this window, the parse is considered hung.
 
-|`heartbeatIntervalMs`
+|`heartbeatIntervalMillis`
 |`1000`
-|Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMs`.
+|Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMillis`.
+
+|`maxTotalTaskTimeoutMillis`
+|`3600000`
+|Ceiling for *request-supplied* timeout limits: a per-request `timeout-limits` override may lower its timeouts freely but can never raise `totalTaskTimeoutMillis` or `progressTimeoutMillis` above this value (values over the cap are clamped with a warning). Limits set in the server's own `parse-context` are trusted and not subject to this cap.
 
 |`shutdownClientAfterMillis`
 |`300000`

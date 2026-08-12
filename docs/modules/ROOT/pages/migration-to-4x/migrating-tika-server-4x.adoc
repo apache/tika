@@ -172,7 +172,17 @@ The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit pa
 
 The following `TikaServerConfig` options have been removed:
 
-* `taskTimeoutMillis` - Now configured via `parse-context.timeout-limits.progressTimeoutMillis` (and optionally `totalTaskTimeoutMillis`); see xref:pipes/timeouts.adoc[Timeouts].
+* `taskTimeoutMillis` - Was the total time allowed per task before the forked process was
+  killed; that is now `parse-context.timeout-limits.totalTaskTimeoutMillis` (same
+  meaning, new home). **The default changed**: 3.x `taskTimeoutMillis` defaulted to
+  `300000` (5 minutes), while `totalTaskTimeoutMillis` defaults to `3600000` (1 hour) --
+  an upgrader who never set the 3.x value gets a much larger worst-case per-document
+  bound. Set `totalTaskTimeoutMillis: 300000` to keep the 3.x behavior. 4.x also adds a
+  second, independent axis with no pre-4.0
+  equivalent -- `progressTimeoutMillis`, a stall detector that kills the task only after
+  a period of genuine silence, not merely after `totalTaskTimeoutMillis` of wall-clock
+  time -- worth setting deliberately rather than leaving at its default. See
+  xref:pipes/timeouts.adoc[Timeouts].
 * `taskPulseMillis` - No longer needed
 * `minimumTimeoutMillis` - No longer needed
 
