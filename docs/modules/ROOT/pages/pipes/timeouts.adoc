@@ -201,7 +201,7 @@ perfectly healthy text-only PDFs.
   documents, correlated with document size rather than reproducing at one fixed spot the
   way a true hang (scenario 4) does.
 * *What to change:* raise `progressTimeoutMillis` back to at least the longest honest
-  in-process stretch in your corpus. The 60 s default exists for this reason.
+  in-process stretch in your corpus. The 120 s (2-minute) default exists for this reason.
 
 === 6. An unkillable child process
 
@@ -221,7 +221,7 @@ builds).
 The OS OOM-killer takes the forked JVM mid-parse.
 
 * *What happens:* all messages from the worker stop. The client's socket read times out
-  (`pipes.socketTimeoutMs`, default 60 s) and the client restarts the worker.
+  (`pipes.socketTimeoutMillis`, default 60 s) and the client restarts the worker.
 * *What you see:* status `TIMEOUT` with a client-side socket timeout stack trace and no
   server diagnostic (the server is gone).
 * *What to change:* infrastructure -- typically raise `-Xmx` in `pipes.forkedJvmArgs` or
@@ -261,7 +261,7 @@ the rest are safe by construction.
 
 * Negative values for `totalTaskTimeoutMillis` or `progressTimeoutMillis` (zero is
   accepted -- see below).
-* `pipes.socketTimeoutMs` less than or equal to `pipes.heartbeatIntervalMs` -- the client
+* `pipes.socketTimeoutMillis` less than or equal to `pipes.heartbeatIntervalMillis` -- the client
   would kill a healthy server between heartbeats.
 * Unknown or renamed configuration fields (including pre-4.0 `timeoutSeconds` names) --
   configuration parsing fails on unknown properties rather than silently ignoring them.

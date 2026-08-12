@@ -118,6 +118,16 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testDefaultAcceptIsJson() {
+        // With no Accept header, /meta defaults to JSON, not CSV (TIKA-4809).
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        assertEquals("json", response.getMediaType().getSubtype());
+    }
+
+    @Test
     public void testPasswordProtected() throws Exception {
         // Test 1: No password - should fail
         ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");

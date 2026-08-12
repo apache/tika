@@ -70,7 +70,7 @@ public class PipesClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
     private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
-    public static final int SOCKET_TIMEOUT_MS = 60000;
+    public static final int SOCKET_TIMEOUT_MILLIS = 60000;
 
     private final PipesConfig pipesConfig;
     private final int maxIpcPayloadBytes;
@@ -310,8 +310,8 @@ public class PipesClient implements Closeable {
 
         // Connect to server. Use the generous startup timeout as the read SO_TIMEOUT so the
         // server's post-connect initialization and READY handshake aren't bounded by the
-        // (possibly tight) per-request socketTimeoutMs.
-        Socket socket = serverManager.connect((int) pipesConfig.getStartupTimeoutMs());
+        // (possibly tight) per-request socketTimeoutMillis.
+        Socket socket = serverManager.connect((int) pipesConfig.getStartupTimeoutMillis());
 
         synchronized (connectionLock) {
             connectionTuple = new ConnectionTuple(socket,
@@ -321,7 +321,7 @@ public class PipesClient implements Closeable {
 
         waitForStartup();
         // Server is ready; subsequent reads use the normal per-request socket timeout.
-        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
     }
 
     private void writeTask(FetchEmitTuple t) throws IOException {
@@ -340,7 +340,7 @@ public class PipesClient implements Closeable {
      * The client has no visibility into per-parser timeouts (enforced entirely inside
      * the forked server, whose plugins may not even be on the client's classpath), so it
      * doesn't duplicate deadline tracking here. Instead it relies on the socket's own
-     * {@code SO_TIMEOUT} ({@link PipesConfig#getSocketTimeoutMs()}): the server sends a
+     * {@code SO_TIMEOUT} ({@link PipesConfig#getSocketTimeoutMillis()}): the server sends a
      * {@code WORKING} heartbeat while alive and making progress, so a healthy-but-slow
      * parse never starves this blocking read -- only a dead or wedged server lets it
      * time out.

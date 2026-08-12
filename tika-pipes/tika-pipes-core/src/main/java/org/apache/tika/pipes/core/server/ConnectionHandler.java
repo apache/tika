@@ -80,7 +80,7 @@ public class ConnectionHandler implements Runnable, Closeable {
     private final DataOutputStream output;
     private final SharedServerResources resources;
     private final PipesConfig pipesConfig;
-    private final long heartbeatIntervalMs;
+    private final long heartbeatIntervalMillis;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService =
@@ -105,7 +105,7 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         this.resources = resources;
         this.pipesConfig = pipesConfig;
-        this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
+        this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
         this.protocolIO = new ServerProtocolIO(input, output);
     }
 
@@ -286,7 +286,7 @@ public class ConnectionHandler implements Runnable, Closeable {
 
             // Send fire-and-forget heartbeat
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
+            if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
                 PipesMessage.working(parseTimeout.getLastProgressMillis()).write(output);
                 heartbeatCounter++;

@@ -105,7 +105,7 @@ public class PipesServer implements AutoCloseable {
      *  tell the difference between "I crashed" and "my parent went away". */
     public static final int PARENT_GONE_EXIT_CODE = 23;
 
-    private final long heartbeatIntervalMs;
+    private final long heartbeatIntervalMillis;
     private final String pipesClientId;
 
     private Detector detector;
@@ -144,7 +144,7 @@ public class PipesServer implements AutoCloseable {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
             // Set socket timeout from config after loading PipesConfig
-            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
             socket.setTcpNoDelay(true);
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
@@ -187,7 +187,7 @@ public class PipesServer implements AutoCloseable {
         this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
-        this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
+        this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
         validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
@@ -234,18 +234,18 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
-     * Fails fast if heartbeatIntervalMs >= socketTimeoutMs: the client's liveness check
+     * Fails fast if heartbeatIntervalMillis >= socketTimeoutMillis: the client's liveness check
      * ({@code PipesClient#waitForServer}) relies solely on the socket's own
      * {@code SO_TIMEOUT}, so a too-slow heartbeat makes a healthy server look dead.
      * Checked once at startup rather than left as a violable javadoc warning.
      */
     private static void validateHeartbeatInterval(PipesConfig pipesConfig) throws TikaConfigException {
-        long heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-        long socketTimeoutMs = pipesConfig.getSocketTimeoutMs();
-        if (heartbeatIntervalMs >= socketTimeoutMs) {
+        long heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        long socketTimeoutMillis = pipesConfig.getSocketTimeoutMillis();
+        if (heartbeatIntervalMillis >= socketTimeoutMillis) {
             String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
                     "This configuration will cause socket timeouts during normal processing.",
-                    heartbeatIntervalMs, socketTimeoutMs);
+                    heartbeatIntervalMillis, socketTimeoutMillis);
 
             // Allow override for testing only
             if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
@@ -292,7 +292,7 @@ public class PipesServer implements AutoCloseable {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     java.net.Socket clientSocket = serverSocket.accept();
-                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
                     clientSocket.setTcpNoDelay(true);
 
                     // Validate auth token before creating handler
@@ -498,7 +498,7 @@ public class PipesServer implements AutoCloseable {
 
             // Send fire-and-forget heartbeat if we've waited long enough
             long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
+            if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 PipesMessage.working(parseTimeout.getLastProgressMillis()).write(output);
                 heartbeatCounter++;
             }
@@ -581,7 +581,7 @@ public class PipesServer implements AutoCloseable {
      * self-terminates promptly if its parent disappears. Without this, an
      * orphaned PipesServer would only notice the parent is gone when the
      * next socket read fails -- which can take up to
-     * {@code socketTimeoutMs} (default 60s) and doesn't fire at all while
+     * {@code socketTimeoutMillis} (default 60s) and doesn't fire at all while
      * the server is mid-parse. {@code System.exit} here lets the
      * {@code AbstractExternalProcessParser} shutdown hook run, killing any
      * in-flight external subprocess (e.g. tesseract) cleanly.

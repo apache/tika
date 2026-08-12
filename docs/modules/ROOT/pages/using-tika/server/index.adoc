@@ -115,7 +115,7 @@ Simple PUT — the entire request body is the document, no metadata:
 
 [source,bash]
 ----
-# Default: raw XHTML
+# Default: raw Markdown
 curl -T document.pdf http://localhost:9998/tika
 
 # Explicit handler
@@ -129,16 +129,16 @@ POST with multipart for custom per-request configuration:
 
 [source,bash]
 ----
-curl -X POST http://localhost:9998/tika/json \
+curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
   -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
 ----
 
-Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json`. For
-the JSON variant, you can also nest a handler — `/tika/json/text`,
-`/tika/json/html`, etc. — to choose the content-field format inside the JSON
-envelope; that nested handler accepts the full set (`text`, `html`, `xml`,
-`md`, `markdown`, `body`, `ignore`).
+Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json` (bare
+`/tika` returns Markdown). For the JSON variant, you can also nest a handler —
+`/tika/json/text`, `/tika/json/html`, etc. — to choose the content-field format
+inside the JSON envelope; that nested handler accepts the full set (`text`,
+`txt`, `html`, `xml`, `md`, `markdown`, `body`, `ignore`).
 
 === Recursive Metadata (`/rmeta`)
 
@@ -159,9 +159,13 @@ curl -T document.pdf http://localhost:9998/rmeta/ignore     # metadata only
 
 Returns container-document metadata only (no recursive embedded list, no content):
 
+With no `Accept` header, `/meta` returns JSON; request `text/csv` or
+`application/rdf+xml` for the other representations.
+
 [source,bash]
 ----
-curl -T document.pdf http://localhost:9998/meta
+curl -T document.pdf http://localhost:9998/meta                # default: JSON
+curl -T document.pdf -H 'Accept: text/csv' http://localhost:9998/meta
 curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 ----
 
@@ -189,10 +193,11 @@ one worker.
 `/language` caps detection at the first 100,000 characters, since accuracy saturates well
 before that. That bounds the CPU per request, but *not* the memory: the request body is read
 into the server's heap before the cap applies. Bounding the body itself is what
-`maxRequestSizeBytes` is for, and it is unset by default — with no limit configured, a caller
-can exhaust the heap with a large enough body, or with enough concurrent ones. Treat it as
+`maxRequestSizeBytes` is for; it defaults to 1 GiB, so one request cannot fill the temp
+directory or the heap with a small body, though enough concurrent large ones still can. Raise
+it for larger documents, or set a negative value to remove the limit. Treat the server as
 available only to trusted callers, the same as the rest of the server — see
-xref:security.adoc[the security model]. If you do not need it, omit it from `endpoints`.
+xref:security.adoc[the security model]. If you do not need `/language`, omit it from `endpoints`.
 
 NOTE: `/detect` runs in a forked pipes worker like the parsing endpoints. Detection opens
 containers — zip, OPC, POIFS — over caller-supplied bytes, so it gets the same isolation,
@@ -226,19 +231,28 @@ included when one is available, and often contains a server-side stack trace, e.
 |`503 Service Unavailable`
 |`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`
 |The forked parse process actually failed (crashed, OOM'd, or exceeded its timeout).
-The server is still healthy; the client may retry.
+The server is still healthy; the response carries a `Retry-After` header and the client may retry.
 
 |`429 Too Many Requests`
 |`CLIENT_UNAVAILABLE_WITHIN_MS`
 |Nothing failed — no parse client became available within the configured wait time
 (deliberate backpressure, not a bug; see <<_endpoints_and_forked_process_groups,Endpoints
-and Forked-Process Groups>>). Distinct from `503` above on purpose: a `429` spike means
-"raise `numClients` or add capacity," a `503` spike means "something is actually
-crashing" — you can tell them apart from the status code alone.
+and Forked-Process Groups>>). The response carries a `Retry-After` header. Distinct from
+`503` above on purpose: a `429` spike means "raise `numClients` or add capacity," a `503`
+spike means "something is actually crashing" — you can tell them apart from the status code alone.
+
+|`400 Bad Request`
+|`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`
+|The request named a fetcher or emitter that does not exist, or one reserved for the
+server's internal use. The request is permanently malformed — retrying it unchanged will
+not help; fix the fetcher/emitter id.
+
+|`413 Payload Too Large`
+|`PAYLOAD_LIMIT_EXCEEDED`
+|The request body exceeded `maxRequestSizeBytes`.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
-`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`,
 `FETCHER_INITIALIZATION_EXCEPTION`, `EMITTER_INITIALIZATION_EXCEPTION`
 |Server misconfiguration or a task-level infrastructure error. Retrying the same
 document on the same server is unlikely to succeed without a configuration fix.
@@ -267,11 +281,11 @@ within an `/rmeta` list), alongside whatever content and metadata were captured.
 Partial success is meaningful here — a batch/list response, or a structured object
 with room for an extra field.
 
-|`/tika`'s raw endpoints (`text`, `html`, `xml`, `md`)
+|the bare `/tika` and its raw endpoints (`text`, `html`, `xml`, `md`)
 |`422 Unprocessable Entity`
 |A raw byte-stream response has no field to embed the exception in, so the status
-itself signals the failure — but the body still carries whatever content was
-actually extracted, not an empty or generic error body.
+itself signals the failure. The body carries the extracted content only — the
+exception is not appended to it; use `/rmeta` for the structured exception.
 
 |`/meta/\{field}`
 |`422 Unprocessable Entity`
@@ -345,10 +359,16 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`*` to allow any origin, or an explicit origin string. Empty disables CORS.
 
 |`maxRequestSizeBytes`
-|`-1` (no limit)
-|Maximum request body in bytes; larger requests are rejected with `413`. Enforced for chunked uploads too, not just those declaring a `Content-Length`. Uploads are spooled to disk, so leaving this unset lets a caller fill the temp directory.|`logLevel`
-|_inherited_
-|`debug` or `info` to override the runtime log level.
+|`1 GiB`
+|Maximum request body in bytes; larger requests are rejected with `413`. Uploads are spooled to disk, so this bounds how much one request can write. Raise it for larger documents, or set a negative value to disable the limit.
+
+|`maxQueuePauseMillis`
+|`60000`
+|How long a POST to `/async` blocks when the queue is full before it is rejected with `429` (`Retry-After`).
+
+|`requestLogLevel`
+|_empty (off)_
+|`debug` or `info` to log each request URI at that level. Empty (the default) disables request logging and does not change any other log level. A config using the old `logLevel` key fails to start.
 
 |`id`
 |random UUID
@@ -367,8 +387,8 @@ xref:migration-to-4x/migrating-tika-server-4x.adoc#_configuration_changes[Config
 
 Two independent forked-process groups exist:
 
-* **`/tika` + `/rmeta` + `/unpack` + `/meta` + `/pipes`** share one group —
-all five go through the same `PipesParsingHelper`/`PipesParser`, sized by
+* **`/tika` + `/rmeta` + `/unpack` + `/meta` + `/detect` + `/pipes`** share one group —
+all six go through the same `PipesParsingHelper`/`PipesParser`, sized by
 `pipes.numClients`. `/pipes` still requires `allowPipes` to actually start
 (the server refuses to start if it's listed without that flag) even though it
 shares its parser with the always-on endpoints; the others don't require

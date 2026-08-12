@@ -218,7 +218,7 @@ public class PipesParsingHelper {
     /**
      * Extracts a file suffix from the resource name for the spool file.
      * <p>
-     * The resource name is client-supplied ({@code Content-Disposition} / {@code File-Name}),
+     * The resource name is client-supplied ({@code Content-Disposition}),
      * so the suffix is sanitized here rather than left for {@code Files.createTempFile} to
      * reject: a suffix containing a path separator makes it throw {@code IllegalArgumentException}
      * — not a traversal, since the JDK refuses it, but an uncaught 500 driven by a request
@@ -467,6 +467,11 @@ public class PipesParsingHelper {
         String requestId = UUID.randomUUID().toString();
         Path tempFile = null;
         String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        // The child emits the zip during parse, before we know whether the request
+        // succeeds. Unless we hand it off to the caller (who streams then deletes it),
+        // any failure path below must delete it -- otherwise it lingers in the unpack
+        // temp dir until the JVM shutdown hook, filling disk under a stream of failures.
+        boolean handedOff = false;
 
         try {
             // Spool input to our dedicated temp directory with proper suffix
@@ -572,6 +577,7 @@ public class PipesParsingHelper {
             Path zipFile = getEmittedZipPath(requestId, isFrictionless);
 
             stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
+            handedOff = true;
             return new UnpackResult(zipFile, metadataList);
         } finally {
             // Clean up temp file
@@ -581,6 +587,34 @@ public class PipesParsingHelper {
                 } catch (IOException e) {
                     LOG.warn("Failed to delete temp file: {}", tempFile, e);
                 }
+            }
+            if (!handedOff) {
+                deleteEmittedZips(requestId);
+            }
+        }
+    }
+
+    /**
+     * Deletes any zip the child may have emitted for this request, across both output
+     * formats, when the request fails before the zip is handed to the caller.
+     */
+    private void deleteEmittedZips(String requestId) {
+        if (unpackEmitterBasePath == null) {
+            return;
+        }
+        Path base = unpackEmitterBasePath.normalize();
+        for (String suffix : new String[] {"-embedded.zip", "-frictionless.zip"}) {
+            Path zip = base.resolve(requestId + suffix).normalize();
+            // requestId is a server-generated UUID, so this cannot escape today; the
+            // containment check keeps the delete in-tree if that ever changes.
+            if (!zip.startsWith(base)) {
+                LOG.warn("Refusing to delete out-of-tree unpack path: {}", zip);
+                continue;
+            }
+            try {
+                Files.deleteIfExists(zip);
+            } catch (IOException e) {
+                LOG.warn("Failed to delete orphaned unpack zip: {}", zip, e);
             }
         }
     }

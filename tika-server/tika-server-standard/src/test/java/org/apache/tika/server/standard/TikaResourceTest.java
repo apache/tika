@@ -171,6 +171,21 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testBareTikaDefaultsToMarkdown() throws Exception {
+        // The bare /tika endpoint returns Markdown by default (was XHTML pre-4.0).
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("test"));
+        // Markdown, not XHTML: no HTML/XML tags
+        assertFalse(responseMsg.contains("<html"));
+        assertFalse(responseMsg.contains("<body"));
+        assertFalse(responseMsg.contains("<p>"));
+    }
+
+    @Test
     public void testSimpleWordHTML() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/html")

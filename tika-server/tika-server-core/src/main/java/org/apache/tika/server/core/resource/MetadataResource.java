@@ -69,7 +69,7 @@ public class MetadataResource {
 
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
         ParseContext context = tikaResource.createParseContext();
@@ -87,7 +87,7 @@ public class MetadataResource {
      */
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv"})
     @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
@@ -107,7 +107,7 @@ public class MetadataResource {
     }
 
     @PUT
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
@@ -142,7 +142,7 @@ public class MetadataResource {
      */
     @PUT
     @Path("{field}")
-    @Produces({"text/csv", "application/json", "text/plain"})
+    @Produces({"application/json", "text/csv", "text/plain"})
     public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
         ParseContext context = tikaResource.createParseContext();
         Metadata metadata;

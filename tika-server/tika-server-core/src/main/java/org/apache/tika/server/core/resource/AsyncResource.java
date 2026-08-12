@@ -61,7 +61,7 @@ public class AsyncResource {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
     private final AsyncProcessor asyncProcessor;
     private final EmitterManager emitterManager;
-    long maxQueuePauseMs = 60000;
+    long maxQueuePauseMillis = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
@@ -69,6 +69,11 @@ public class AsyncResource {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
         this.emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);
+    }
+
+    /** How long a full /async queue blocks a POST before returning 429; see TikaServerConfig. */
+    public void setMaxQueuePauseMillis(long maxQueuePauseMillis) {
+        this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
@@ -131,7 +136,7 @@ public class AsyncResource {
         }
         //Instant start = Instant.now();
         try {
-            boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMs);
+            boolean offered = asyncProcessor.offer(request.getTuples(), maxQueuePauseMillis);
             if (offered) {
                 LOG.debug("accepted {} tuples, capacity={}", request
                         .getTuples()
@@ -165,19 +170,19 @@ public class AsyncResource {
     }
 
     /**
-     * 429, not 200. The queue was full for the whole {@code maxQueuePauseMs} wait, so nothing
+     * 429, not 200. The queue was full for the whole {@code maxQueuePauseMillis} wait, so nothing
      * was accepted -- a 200 made a rejected batch indistinguishable from an accepted one to
      * any client that checks status rather than parsing the body, and there are such clients.
      */
     private Response throttle(int requestSize) {
         Map<String, Object> map = new HashMap<>();
         map.put("status", "throttled");
-        map.put("msg", "not able to receive request of size " + requestSize + " at this time");
+        map.put("message", "not able to receive request of size " + requestSize + " at this time");
         map.put("capacity", asyncProcessor.getCapacity());
         return Response
                 .status(Response.Status.TOO_MANY_REQUESTS)
                 .header(HttpHeaders.RETRY_AFTER,
-                        Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxQueuePauseMs)))
+                        Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxQueuePauseMillis)))
                 .entity(map)
                 .build();
     }

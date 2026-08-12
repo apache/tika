@@ -18,12 +18,12 @@
 -->
 # Apache Tika Server
 
-https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS
+See the [Apache Tika documentation](https://tika.apache.org/docs) (Using Tika &gt; Tika Server) for full usage.
 
 Running
 -------
 ```
-$ java -jar tika-server/target/tika-server.jar --help
+$ java -jar tika-server/tika-server-standard/target/tika-server-standard-<version>.jar --help
    usage: tikaserver
     -?,--help           this help message
     -c,--config <arg>   tika-config file
@@ -73,13 +73,13 @@ Usage
 -----
 Usage examples from command line with `curl` utility:
 
-* Extract XHTML:  
+* Extract Markdown (the default output of bare `/tika`):  
 `curl -T price.xls http://localhost:9998/tika`
 
 * Extract plain text:  
 `curl -T price.xls http://localhost:9998/tika/text`
 
-* Extract XHTML with mime-type hint:  
+* Extract Markdown with mime-type hint:  
 `curl -v -H "Content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" -T document.docx http://localhost:9998/tika`
 
 * Get all document attachments as ZIP-file:  
@@ -96,8 +96,9 @@ HTTP Return Codes
 -----------------
 `200` - Ok  
 `204` - No content (for example when we are unpacking file without attachments)  
+`400` - Bad request (unknown or invalid handler type, or a reserved/unknown fetcher or emitter was named)  
 `403` - Forbidden (per-request configuration was supplied but `allowPerRequestConfig` is off)  
-`415` - Unknown file type  
+`413` - Payload too large (the request body exceeds `maxRequestSizeBytes`, or a pipes payload limit was exceeded)  
 `422` - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)  
 `429` - Too many requests (all forked workers were busy for longer than `maxWaitForClientMillis`; retry with backoff)  
 `500` - Internal error  

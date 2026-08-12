@@ -25,7 +25,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 {
   "pipes": {
     "numClients": 4,
-    "socketTimeoutMs": 60000,
+    "socketTimeoutMillis": 60000,
     "maxFilesProcessedPerProcess": 10000,
     "parseMode": "RMETA",
     "onParseException": "EMIT",
@@ -41,8 +41,8 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 |Field |Default |Description
 
 |`numClients`
-|`4`
-|Number of parallel forked JVM processes. Each processes one document at a time. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for guidance on choosing this value relative to host CPU count.
+|_CPU-derived_
+|Number of parallel forked JVM processes. Each processes one document at a time. Defaults to `max(1, min((cores - 2) / 2, 4))` -- roughly half the host's cores, capped at 4. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for guidance on choosing this value relative to host CPU count.
 
 |`forkedJvmArgs`
 |`[]`
@@ -69,13 +69,13 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |===
 |Field |Default |Description
 
-|`socketTimeoutMs`
+|`socketTimeoutMillis`
 |`60000`
 |Maximum time (ms) to wait for data from a forked process. If no heartbeat or result is received within this window, the parse is considered hung.
 
-|`heartbeatIntervalMs`
+|`heartbeatIntervalMillis`
 |`1000`
-|Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMs`.
+|Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMillis`.
 
 |`shutdownClientAfterMillis`
 |`300000`
@@ -84,14 +84,6 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |`maxWaitForClientMillis`
 |`60000`
 |Maximum time (ms) to wait for an available forked process when all are busy.
-
-|`staleFetcherTimeoutSeconds`
-|`600`
-|How long (seconds) a fetcher-emitter pairing can sit idle in the cache before it is eligible for eviction. Increase if your pipeline has long quiet periods between tuples that reuse the same fetcher/emitter.
-
-|`staleFetcherDelaySeconds`
-|`60`
-|How often (seconds) the stale-fetcher reaper runs.
 |===
 
 == Parse Behavior

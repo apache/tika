@@ -155,8 +155,7 @@ public class TikaResource {
             }
         }
 
-        // this really should not be used, since it's not an official field
-        return httpHeaders.getFirst("File-Name");
+        return null;
     }
 
     /**
@@ -441,19 +440,20 @@ public class TikaResource {
     // ==================== PUT endpoints (raw bytes) ====================
 
     /**
-     * Parse document and return XHTML content.
+     * Parse document and return Markdown content. This is the default output of the bare
+     * /tika endpoint; use /tika/xml, /tika/html, /tika/text for the other formats.
      */
     @PUT
     @Consumes("*/*")
-    @Produces("text/xml")
-    public Response getXhtml(final InputStream is, @Context HttpHeaders httpHeaders)
+    @Produces("text/plain")
+    public Response getDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         // try-with-resources: the spooled temp file must be deleted even if
         // context setup or metadata filling throws before the parse begins.
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             tis.getPath(); // Spool to temp file for pipes-based parsing
             ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
+            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
         }
     }
 
@@ -584,15 +584,15 @@ public class TikaResource {
      */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/xml")
+    @Produces("text/plain")
     @Path("config")
     public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
         ParseContext context = createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         TikaInputStream tis = setupMultipartConfig(attachments, metadata, context);
-        // Default to xml (XHTML) if no handler specified in config
-        return produceRawOutput(tis, metadata, context, "xml");
+        // Default to Markdown if no handler specified in config
+        return produceRawOutput(tis, metadata, context, "md");
     }
 
     /**
@@ -782,10 +782,10 @@ public class TikaResource {
                 LOG.debug("produceRawOutput: parse exception: {}", exceptionMessage);
             }
         }
-        // No separate field for the exception here, unlike JSON bodies -- append it,
-        if (hasException) {
-            content = content.isEmpty() ? exceptionMessage : content + "\n" + exceptionMessage;
-        }
+        // Raw endpoints have no envelope for the exception (unlike the JSON bodies), so the
+        // 422 status signals the partial parse and the body carries the extracted content
+        // only -- never the server-side exception/stack trace. Clients that need the
+        // container exception should use /rmeta.
         final String finalContent = content;
 
         StreamingOutput streamingOutput = outputStream -> {

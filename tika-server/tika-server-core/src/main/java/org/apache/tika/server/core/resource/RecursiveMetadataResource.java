@@ -90,7 +90,7 @@ public class RecursiveMetadataResource {
      * <p>
      * Specify the handler for the content (xml, html, text, markdown, ignore)
      * in the path:<br/>
-     * /rmeta/form (default: xml)<br/>
+     * /rmeta/form (default: markdown)<br/>
      * /rmeta/form/xml      (store the content as xml)<br/>
      * /rmeta/form/text     (store the content as text)<br/>
      * /rmeta/form/markdown (store the content as markdown)<br/>
@@ -119,7 +119,7 @@ public class RecursiveMetadataResource {
     /**
      * Multipart endpoint with per-request ParseContext configuration.
      * Accepts two parts: "file" (the document) and "config" (JSON configuration with parseContext).
-     * Uses the default handler type (XML).
+     * Uses the default handler type (Markdown).
      */
     @POST
     @Consumes("multipart/form-data")
@@ -163,7 +163,7 @@ public class RecursiveMetadataResource {
      * <p>
      * Specify the handler for the content (xml, html, text, markdown, ignore)
      * in the path:<br/>
-     * /rmeta (default: xml)<br/>
+     * /rmeta (default: markdown)<br/>
      * /rmeta/xml      (store the content as xml)<br/>
      * /rmeta/text     (store the content as text)<br/>
      * /rmeta/markdown (store the content as markdown)<br/>

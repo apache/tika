@@ -438,6 +438,7 @@ public class TikaServerProcess {
 
         if (addAsyncResource) {
             final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
+            localAsyncResource.setMaxQueuePauseMillis(tikaServerConfig.getMaxQueuePauseMillis());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {

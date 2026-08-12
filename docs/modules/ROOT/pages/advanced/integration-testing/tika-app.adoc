@@ -244,7 +244,7 @@ Create `/tmp/tika-app-test/my-config.json`:
     "basic-content-handler-factory": {
       "type": "TEXT",
       "writeLimit": 100000,
-      "throwOnWriteLimitReached": false
+      "throwOnWriteLimit": false
     }
   },
   "parsers": [

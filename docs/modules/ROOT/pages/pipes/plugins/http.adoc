@@ -155,8 +155,7 @@ to `false` on the fetcher:
 {
   "fetchers": {
     "my-http-fetcher": {
-      "plugin": "http-fetcher",
-      "config": { "verifySsl": false }
+      "http-fetcher": { "verifySsl": false }
     }
   }
 }
@@ -166,12 +165,10 @@ That installs an accept-everything trust strategy and `NoopHostnameVerifier`: an
 certificate from any host is accepted, so anything on the network path can read and
 alter what is fetched. Prefer adding your CA to the JVM truststore over turning this off.
 
-* **The redirect host allowlist is inert, and would not be trustworthy if it were not.**
-  `CustomRedirectStrategy` refuses a redirect to a host outside `allowedHostsForRedirect`,
-  but that set is never populated from any configuration path, and the check is skipped
-  when the set is empty. It also allows the redirect outright when the `Location` header
-  fails to parse as a URI, so the allowlist would have a bypass even once populated. Do
-  not rely on it to contain redirects.
+* **There is no redirect host allowlist.** Redirects are followed up to `maxRedirects`
+  regardless of the target host -- a redirect can send the fetch to any host the server
+  can reach, including loopback, link-local, or RFC1918 addresses. Set `maxRedirects` to
+  `0` (the default) to follow no redirects at all.
 
 [#notes]
 == Notes

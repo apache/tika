@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.DELETE;
@@ -47,8 +46,7 @@ import org.apache.tika.server.core.HTMLHelper;
  */
 @Path("/")
 public class TikaWelcome {
-    private static final String DOCS_URL =
-            "https://cwiki.apache.org/confluence/display/TIKA/TikaJAXRS";
+    private static final String DOCS_URL = "https://tika.apache.org/";
 
     /** Matches {@code {name : regex}} in a JAX-RS path, capturing the parameter name. */
     private static final Pattern PATH_TEMPLATE_REGEX =
@@ -149,22 +147,6 @@ public class TikaWelcome {
         h.append("\">");
         h.append(DOCS_URL);
         h.append("</a>");
-
-        // TIKA-1269 -- Miredot documentation
-        // As the SNAPSHOT endpoints are updated, please update the website by running
-        // the server tests and doing step 12.6 of https://wiki.apache.org/tika/ReleaseProcess.
-        Pattern p = Pattern.compile("\\d+\\.\\d+");
-        Matcher m = p.matcher(tikaVersion);
-        if (m.find()) {
-            String versionNumber = m.group();
-            String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
-            h
-                    .append(" and <a href=\"")
-                    .append(miredot)
-                    .append("\">")
-                    .append(miredot)
-                    .append("</a>");
-        }
         h.append("</p>\n");
 
         h.append("<ul>\n");
