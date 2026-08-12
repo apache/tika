@@ -41,7 +41,6 @@ public class TikaHttpClientTest {
             ParseContext context = new ParseContext();
             context.set(TimeoutLimits.class, new TimeoutLimits(60_000, 60_000));
             ParseTimeout parseTimeout = ParseTimeout.getOrCreate(context);
-            long initialProgress = parseTimeout.getLastProgressMillis();
 
             Thread requester = new Thread(() -> {
                 try {
@@ -56,9 +55,9 @@ public class TikaHttpClientTest {
                 // Wait a generous multiple of HEARTBEAT_INTERVAL_MILLIS (~1000ms), well short of
                 // the server's 6s delay, for slack against jitter under a loaded test run.
                 Thread.sleep(3000);
-                long midProgress = parseTimeout.getLastProgressMillis();
 
-                assertTrue(midProgress > initialProgress,
+                // without a mid-wait checkpoint, millisSinceLastProgress() would be >= 3000
+                assertTrue(parseTimeout.millisSinceLastProgress() < 3000,
                         "expected a checkpoint to have fired while the request was still in flight");
             } finally {
                 requester.join(10_000);
@@ -75,6 +74,21 @@ public class TikaHttpClientTest {
             String body = client.get(server.url(), Map.of(), 5_000);
 
             assertEquals("{\"ok\":true}", body);
+        }
+    }
+
+    /**
+     * A null context must grant the requested timeout unclipped --
+     * {@code ParseTimeout.getOrCreate(null)} used to clip it against a detached
+     * default-TimeoutLimits (1 hour) budget. Exercises {@code grantedMillis} directly.
+     */
+    @Test
+    public void testNullContextGrantsRequestUnclippedEvenAboveDefaultOneHour() throws Exception {
+        try (TikaHttpClient client = TikaHttpClient.build(30)) {
+            long requestedTimeoutMillis = TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS + 60_000;
+
+            assertEquals(requestedTimeoutMillis, client.grantedMillis(requestedTimeoutMillis, null),
+                    "a null context must not silently clip the request against a default-TimeoutLimits budget");
         }
     }
 

@@ -65,12 +65,12 @@ public interface ServerManager extends Closeable {
      * <p>
      * This method should be called after {@link #ensureRunning()}.
      *
-     * @param socketTimeoutMs the socket timeout in milliseconds
+     * @param socketTimeoutMillis the socket timeout in milliseconds
      * @return a connected Socket ready for communication
      * @throws IOException if connection fails
      * @throws ServerInitializationException if the server died before connecting
      */
-    Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException;
+    Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException;
 
     /**
      * Shuts down the server process and cleans up resources.

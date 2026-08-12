@@ -407,7 +407,7 @@ public class PipesClientTest {
     @Test
     public void testSocketTimeout(@TempDir Path tmp) throws Exception {
         // Test socket timeout when heartbeats are sent too slowly
-        // Config has heartbeatIntervalMs=10000 (10 seconds) but socketTimeoutMs=3000 (3 seconds)
+        // Config has heartbeatIntervalMillis=10000 (10 seconds) but socketTimeoutMillis=3000 (3 seconds)
         // This simulates a server that appears unresponsive (different from parse timeout)
         // NOTE: This is an invalid configuration that would never be used in production,
         // but we allow it for testing via system property
@@ -430,9 +430,9 @@ public class PipesClientTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         // Verify the misconfiguration that triggers socket timeout
-        assertEquals(3000, pipesConfig.getSocketTimeoutMs(), "Socket timeout should be 3 seconds");
-        assertEquals(10000, pipesConfig.getHeartbeatIntervalMs(), "Heartbeat interval should be 10 seconds");
-        assertTrue(pipesConfig.getHeartbeatIntervalMs() > pipesConfig.getSocketTimeoutMs(),
+        assertEquals(3000, pipesConfig.getSocketTimeoutMillis(), "Socket timeout should be 3 seconds");
+        assertEquals(10000, pipesConfig.getHeartbeatIntervalMillis(), "Heartbeat interval should be 10 seconds");
+        assertTrue(pipesConfig.getHeartbeatIntervalMillis() > pipesConfig.getSocketTimeoutMillis(),
                 "Test requires heartbeat > socket timeout to trigger timeout");
 
         // The config file includes -Dtika.pipes.allowInvalidHeartbeat=true in forkedJvmArgs
@@ -447,8 +447,8 @@ public class PipesClientTest {
             PipesResult pipesResult = pipesClient.process(tuple);
             long elapsed = System.currentTimeMillis() - startTime;
 
-            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMs).
-            // Startup/handshake is bounded by startupTimeoutMs (not socketTimeoutMs), so a slow
+            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMillis).
+            // Startup/handshake is bounded by startupTimeoutMillis (not socketTimeoutMillis), so a slow
             // fork cold-start no longer misfires here as FAILED_TO_INITIALIZE.
             assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, pipesResult.status(),
                     "Should timeout when socket times out");
@@ -745,7 +745,7 @@ public class PipesClientTest {
         // Modify config to add very short heartbeat interval
         configContent = configContent.replace(
                 "\"pipes\": {",
-                "\"pipes\": {\n    \"heartbeatIntervalMs\": 100,"
+                "\"pipes\": {\n    \"heartbeatIntervalMillis\": 100,"
         );
         Files.writeString(tikaConfigPath, configContent, StandardCharsets.UTF_8);
 
@@ -1003,7 +1003,7 @@ public class PipesClientTest {
                 PipesMessage.ready().write(out);
                 PipesMessage.read(in); // NEW_REQUEST -- ignored, this fake never parses anything
                 while (!socket.isClosed()) {
-                    PipesMessage.working(System.currentTimeMillis()).write(out);
+                    PipesMessage.working().write(out);
                     Thread.sleep(200);
                 }
             } catch (Exception e) {
@@ -1022,10 +1022,10 @@ public class PipesClientTest {
         }
 
         @Override
-        public Socket connect(int socketTimeoutMs) throws IOException {
+        public Socket connect(int socketTimeoutMillis) throws IOException {
             Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), getPort()), socketTimeoutMs);
-            socket.setSoTimeout(socketTimeoutMs);
+            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), getPort()), socketTimeoutMillis);
+            socket.setSoTimeout(socketTimeoutMillis);
             return socket;
         }
 

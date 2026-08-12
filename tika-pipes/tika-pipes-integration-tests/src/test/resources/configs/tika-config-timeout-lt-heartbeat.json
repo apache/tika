@@ -18,8 +18,8 @@
   },
   "pipes": {
     "numClients": 1,
-    "socketTimeoutMs": 3000,
-    "heartbeatIntervalMs": 10000,
+    "socketTimeoutMillis": 3000,
+    "heartbeatIntervalMillis": 10000,
     "forkedJvmArgs": [
       "-Xmx256m",
       "-Dtika.pipes.allowInvalidHeartbeat=true"

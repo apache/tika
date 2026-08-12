@@ -37,10 +37,6 @@ public class EmbeddedLimitReachedException extends RuntimeException {
     private final LimitType limitType;
     private final long limit;
 
-    public EmbeddedLimitReachedException(LimitType limitType, int limit) {
-        this(limitType, (long) limit);
-    }
-
     /**
      * @param limit the configured limit -- for {@link LimitType#DEADLINE} this is
      *              {@code totalTaskTimeoutMillis}, not a count or depth
@@ -69,18 +65,10 @@ public class EmbeddedLimitReachedException extends RuntimeException {
     }
 
     /**
-     * @return the configured limit as an int -- for {@link LimitType#DEADLINE}, prefer
-     * {@link #getLimitMillis()} since a millisecond timeout may exceed int range
-     */
-    public int getLimit() {
-        return (int) limit;
-    }
-
-    /**
      * @return the configured limit, e.g. {@code totalTaskTimeoutMillis} for
      * {@link LimitType#DEADLINE}
      */
-    public long getLimitMillis() {
+    public long getLimit() {
         return limit;
     }
 }

@@ -262,8 +262,10 @@ budget, no matter how it is itself configured.
 
 |`progressTimeoutMillis`
 |120000 (2 minutes)
-|Maximum time in milliseconds the task may go silent before it is considered hung and
-killed. Catches infinite loops and hung processes.
+|Maximum time in milliseconds the task may go silent before it is considered hung.
+Catches infinite loops and hung processes. Enforced (the task actually killed) only
+when the parse runs in a forked JVM -- Pipes mode or tika-app `--fork`; in plain
+in-process library use nothing kills the parsing thread.
 
 |`throwOnDeadline`
 |false

@@ -183,9 +183,9 @@ All three parsers share the same configuration POJO (`VLMOCRConfig`):
 |`4096`
 |Maximum tokens the model may generate.
 
-|`timeoutSeconds`
-|`300`
-|HTTP read timeout in seconds.
+|`timeoutMillis`
+|`120000`
+|HTTP read timeout in milliseconds.
 
 |`apiKey`
 |`""` (empty)

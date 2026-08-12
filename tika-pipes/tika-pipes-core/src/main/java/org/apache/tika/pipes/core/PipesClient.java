@@ -29,8 +29,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -310,8 +308,8 @@ public class PipesClient implements Closeable {
 
         // Connect to server. Use the generous startup timeout as the read SO_TIMEOUT so the
         // server's post-connect initialization and READY handshake aren't bounded by the
-        // (possibly tight) per-request socketTimeoutMs.
-        Socket socket = serverManager.connect((int) pipesConfig.getStartupTimeoutMs());
+        // (possibly tight) per-request socketTimeoutMillis.
+        Socket socket = serverManager.connect((int) pipesConfig.getStartupTimeoutMillis());
 
         synchronized (connectionLock) {
             connectionTuple = new ConnectionTuple(socket,
@@ -321,7 +319,7 @@ public class PipesClient implements Closeable {
 
         waitForStartup();
         // Server is ready; subsequent reads use the normal per-request socket timeout.
-        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
     }
 
     private void writeTask(FetchEmitTuple t) throws IOException {
@@ -337,24 +335,17 @@ public class PipesClient implements Closeable {
     /**
      * Waits for the server to finish processing {@code t}.
      * <p>
-     * The client has no visibility into per-parser timeouts (enforced entirely inside
-     * the forked server, whose plugins may not even be on the client's classpath), so it
-     * doesn't duplicate deadline tracking here. Instead it relies on the socket's own
-     * {@code SO_TIMEOUT} ({@link PipesConfig#getSocketTimeoutMs()}): the server sends a
-     * {@code WORKING} heartbeat while alive and making progress, so a healthy-but-slow
-     * parse never starves this blocking read -- only a dead or wedged server lets it
-     * time out.
+     * Per-parser timeouts are enforced entirely inside the forked server (whose plugins
+     * may not even be on this classpath), so the client doesn't duplicate deadline
+     * tracking; it relies on the socket's {@code SO_TIMEOUT}
+     * ({@link PipesConfig#getSocketTimeoutMillis()}) plus the server's {@code WORKING}
+     * heartbeat -- only a dead or wedged server lets the blocking read time out.
      * <p>
-     * That heartbeat is a liveness signal only, not a deadline in itself: SO_TIMEOUT
-     * resets on <i>any</i> received message, so nothing here bounds total wall-clock time
-     * against a server that keeps emitting well-formed messages (heartbeats or otherwise)
-     * indefinitely without ever finishing -- whether from a bug or from a compromised
-     * worker process (the forked server parses untrusted documents, so it is exactly the
-     * kind of component that can end up doing something unexpected). This method adds a
-     * client-side wall-clock backstop for that case, using the task's own
-     * {@link TimeoutLimits} -- the same config the server itself enforces -- and timing
-     * every check from message-receipt time on this side, never from anything the server
-     * claims about its own progress.
+     * The heartbeat is liveness only: SO_TIMEOUT resets on <i>any</i> message, so a buggy
+     * or compromised server (it parses untrusted documents) that keeps emitting messages
+     * without ever finishing is unbounded. Hence the client-side wall-clock backstop
+     * below, using the task's own {@link TimeoutLimits} and timed entirely on this side
+     * -- never from anything the server claims about its own progress.
      */
     private PipesResult waitForServer(FetchEmitTuple t, IntermediateResult intermediateResult) throws InterruptedException {
         // Snapshot the volatile once; a concurrent close() may null the field, but the
@@ -365,15 +356,22 @@ public class PipesClient implements Closeable {
                     intermediateResult.get());
         }
 
-        TimeoutLimits limits = TimeoutLimits.get(t.getParseContext());
+        // Mirror the server's merge (request wins, else config default): built-in defaults
+        // here would kill a healthy server whose operator raised the total in tika-config.
+        TimeoutLimits limits = t.getParseContext() == null
+                ? null : t.getParseContext().get(TimeoutLimits.class);
+        if (limits == null) {
+            limits = pipesConfig.getDefaultTimeoutLimits();
+        }
         long clientBackstopMillis = clientBackstopMillis(limits);
-        Instant start = Instant.now();
+        // nanoTime: the backstop must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("thread interrupt");
             }
-            long totalElapsed = Duration.between(start, Instant.now()).toMillis();
+            long totalElapsed = (System.nanoTime() - startNanos) / 1_000_000L;
             if (totalElapsed > clientBackstopMillis) {
                 LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
                                 "-- server should have self-terminated well before this", pipesClientId,
@@ -461,14 +459,11 @@ public class PipesClient implements Closeable {
     }
 
     /**
-     * The server's own hard watchdog (see PipesServer/ConnectionHandler#checkTotalTimeout)
-     * self-terminates at {@code totalTaskTimeoutMillis + progressTimeoutMillis} rather than
-     * exactly at {@code totalTaskTimeoutMillis}, to leave room for the cooperative
-     * skip-remaining-and-emit wind-down once the deadline is reached. The client must wait
-     * at least that long before giving up on its own copy of the same limits, or it would
-     * routinely restart a server that's still in that legitimate wind-down window. The
-     * extra {@code progressTimeoutMillis} of margin on top covers the server's own exit
-     * plus socket teardown actually propagating back to this side as a read failure.
+     * The server's watchdog (PipesServer/ConnectionHandler#checkTotalTimeout) self-terminates
+     * at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, so the client must wait at
+     * least that long or it would restart a server still in its legitimate wind-down window.
+     * One more {@code progressTimeoutMillis} covers the server's exit and socket teardown
+     * propagating back as a read failure.
      */
     private static long clientBackstopMillis(TimeoutLimits limits) {
         long total = limits.getTotalTaskTimeoutMillis();
