@@ -43,6 +43,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -61,6 +62,23 @@ public abstract class OggAudioParser extends AbstractParser {
 
     private static final KeyPrefix VORBIS =
             KeyPrefix.file("vorbis:", "Vorbis comment field names");
+
+    /**
+     * The Vorbis comment header vendor string (encoder library identification), also
+     * captured under {@link org.apache.tika.metadata.XMP#CREATOR_TOOL}; kept under its
+     * own name too since some consumers look for the raw vorbis: field.
+     */
+    private static final Property VORBIS_VENDOR = Property.internalText("vorbis:vendor");
+
+    /**
+     * Codec bitstream/library version string (e.g. "Theora 3.2.1"), distinct from the
+     * vendor/encoder tool captured under {@link org.apache.tika.metadata.XMP#CREATOR_TOOL}.
+     * Shared by the Ogg codec parsers (Theora, Opus, Vorbis, Speex, Flac): none of them has
+     * an existing curated Property match. Namespaced (TIKA-4816): Mp3Parser's VERSION also used
+     * the bare "version" name for a different concept (MPEG version/layer string), so the two
+     * needed disambiguating namespaces, not one shared bare key.
+     */
+    protected static final Property CODEC_VERSION = Property.internalText("ogg:codec-version");
 
     /**
      * Comment holding an embedded picture (e.g. cover art) as a base64
@@ -116,7 +134,7 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.GENRE, comments.getGenre());
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
-        metadata.add("vorbis:vendor", comments.getVendor());
+        metadata.add(VORBIS_VENDOR, comments.getVendor());
 
         //xmpDM:copyright is single-valued, so map the first comment; like
         //vendor, the raw comments also stay available under the vorbis: name
@@ -126,7 +144,7 @@ public abstract class OggAudioParser extends AbstractParser {
         }
 
         for (String comment : comments.getComments("comment")) {
-            metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
+            metadata.add(XMPDM.LOG_COMMENT, comment);
         }
 
         // Grab the rest just in case; the pictures become embedded
@@ -137,10 +155,13 @@ public abstract class OggAudioParser extends AbstractParser {
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
                 "vendor", "comment", METADATA_BLOCK_PICTURE
         );
+        // Bag (TIKA-4816): a Vorbis comment field can legitimately repeat (that's exactly what
+        // the inner loop below iterates over) -- SIMPLE throws PropertyTypeException the moment
+        // one does, confirmed by OggAudioParserTest.testAdditionalCopyrightCommentsAreKept.
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(VORBIS.key(key), value);
+                    metadata.add(VORBIS.textBag(key), value);
                 }
             }
         }

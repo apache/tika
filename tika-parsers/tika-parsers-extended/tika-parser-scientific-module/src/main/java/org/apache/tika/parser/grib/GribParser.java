@@ -146,7 +146,7 @@ public class GribParser implements Parser {
         if (cfProperty != null) {
             metadata.add(cfProperty, value);
         } else {
-            metadata.add(GRIB.key(name), value);
+            metadata.add(GRIB.text(name), value);
         }
     }
 

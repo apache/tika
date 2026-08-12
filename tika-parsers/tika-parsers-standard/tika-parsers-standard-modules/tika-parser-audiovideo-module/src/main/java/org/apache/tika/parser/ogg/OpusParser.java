@@ -88,7 +88,8 @@ public class OpusParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, OpusInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Opus " + info.getMajorVersion() + "." + info.getMinorVersion());
+        metadata.add(CODEC_VERSION,
+                "Opus " + info.getMajorVersion() + "." + info.getMinorVersion());
 
         extractChannelInfo(metadata, info);
     }

@@ -73,15 +73,15 @@ public class GeoParserTest extends TikaTest {
             geoparser.parse(tis, new BodyContentHandler(), metadata, context);
         }
 
-        assertNotNull(metadata.get("Geographic_NAME"));
-        assertNotNull(metadata.get("Geographic_LONGITUDE"));
-        assertNotNull(metadata.get("Geographic_LATITUDE"));
-        assertEquals("People’s Republic of China", metadata.get("Geographic_NAME"));
-        assertEquals("United States", metadata.get("Optional_NAME1"));
-        assertEquals("35.0", metadata.get("Geographic_LATITUDE"));
-        assertEquals("105.0", metadata.get("Geographic_LONGITUDE"));
-        assertEquals("39.76", metadata.get("Optional_LATITUDE1"));
-        assertEquals("-98.5", metadata.get("Optional_LONGITUDE1"));
+        assertNotNull(metadata.get("geotopic:name"));
+        assertNotNull(metadata.get("geotopic:longitude"));
+        assertNotNull(metadata.get("geotopic:latitude"));
+        assertEquals("People’s Republic of China", metadata.get("geotopic:name"));
+        assertEquals("United States", metadata.get("geotopic:alt-name1"));
+        assertEquals("35.0", metadata.get("geotopic:latitude"));
+        assertEquals("105.0", metadata.get("geotopic:longitude"));
+        assertEquals("39.76", metadata.get("geotopic:alt-latitude1"));
+        assertEquals("-98.5", metadata.get("geotopic:alt-longitude1"));
 
     }
 
@@ -96,9 +96,9 @@ public class GeoParserTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(text.getBytes(UTF_8))) {
             geoparser.parse(tis, new BodyContentHandler(), metadata, context);
         }
-        assertNull(metadata.get("Geographic_NAME"));
-        assertNull(metadata.get("Geographic_LONGITUDE"));
-        assertNull(metadata.get("Geographic_LATITUDE"));
+        assertNull(metadata.get("geotopic:name"));
+        assertNull(metadata.get("geotopic:longitude"));
+        assertNull(metadata.get("geotopic:latitude"));
 
     }
 

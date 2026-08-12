@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
@@ -47,10 +48,20 @@ import org.apache.tika.metadata.TikaCoreProperties;
  *       flat table row can enumerate them: {@code tk:exception:}/{@code tk:warn:} snake&harr;kebab,
  *       {@code tk:digest:} algorithm names, and (TIKA-4816 stage 5a) the {@code KeyPrefix} renames
  *       {@code NER_}&harr;{@code ner:}, {@code grobid:header_}&harr;{@code grobid:header:},
- *       {@code envi.}&harr;{@code envi:} — these are open vocabularies (entity types, TEI field
- *       names, ENVI header fields), so the field-identity join that builds the flat table can never
- *       see them (it only ever sees {@code Property} fields, and these are {@code KeyPrefix}
- *       declarations with no enumerable suffix set); the suffix is carried through verbatim.</li>
+ *       {@code envi.}&harr;{@code envi:}, and (post stage-5a, same rename batch)
+ *       {@code streams-}&harr;{@code ogg:streams-} and the ISO19139 {@code Keywords }/
+ *       {@code KeywordsType }/{@code ThesaurusNameTitle }/{@code ThesaurusNameAlternativeTitle }
+ *       space-delimited 3.x families &harr; their {@code iso19115:keywords:}/
+ *       {@code iso19115:keywords-type:}/{@code iso19115:thesaurus-name-title:}/
+ *       {@code iso19115:thesaurus-name-alternative-title:} {@code KeyPrefix} spellings (one hop
+ *       straight from the 3.x spelling, TIKA-4816 rename batch) —
+ *       these are open vocabularies (entity types, TEI field names, ENVI header fields, stream
+ *       kinds, indexed keyword groups), so the field-identity join that builds the flat table can
+ *       never see them (it only ever sees {@code Property} fields, and these are {@code KeyPrefix}
+ *       declarations with no enumerable suffix set); the suffix is carried through verbatim. One
+ *       family isn't verbatim-suffix: GeoParser's alternate-location fields also lower-cased the
+ *       field word ({@code Optional_NAME1}&harr;{@code geotopic:alt-name1}), so it gets its own
+ *       small lookup ({@link #geotopicAlternateLocationRule}) instead of {@link #prefixSwapRule}.</li>
  * </ul>
  * Unmapped keys pass through unchanged (this is a compatibility bridge, not an allow-list).
  *
@@ -125,6 +136,22 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
         this.prefixRules.add(prefixSwapRule(direction, "ner:", "NER_"));
         this.prefixRules.add(prefixSwapRule(direction, "grobid:header:", "grobid:header_"));
         this.prefixRules.add(prefixSwapRule(direction, "envi:", "envi."));
+        // TIKA-4816 rename batch (post stage-5a): more open-vocabulary KeyPrefix families, same
+        // shape as the three above -- verbatim suffix, prefix only.
+        this.prefixRules.add(prefixSwapRule(direction, "ogg:streams-", "streams-"));
+        // TIKA-4816 rename batch: v4Prefix is the FINAL 4.x spelling (iso19115:*), v3Prefix is
+        // unchanged from the original 3.x spelling -- one hop, not a chain through the
+        // intermediate "Keywords:"-shaped spelling these families used before this batch.
+        this.prefixRules.add(prefixSwapRule(direction, "iso19115:keywords:", "Keywords "));
+        this.prefixRules.add(prefixSwapRule(direction, "iso19115:keywords-type:", "KeywordsType "));
+        this.prefixRules.add(
+                prefixSwapRule(direction, "iso19115:thesaurus-name-title:", "ThesaurusNameTitle "));
+        this.prefixRules.add(prefixSwapRule(direction, "iso19115:thesaurus-name-alternative-title:",
+                "ThesaurusNameAlternativeTitle "));
+        // GeoParser's alternate-location family isn't a verbatim-suffix swap: the old shape
+        // upper-cased the field word and had no "alt-" marker ("Optional_NAME1"), the new shape
+        // lower-cases it under a KeyPrefix ("geotopic:alt-name1") -- see geotopicAlternateLocationRule.
+        this.prefixRules.add(geotopicAlternateLocationRule(direction));
     }
 
     @Override
@@ -186,6 +213,42 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
         String fromPrefix = egress ? v4Prefix : v3Prefix;
         String toPrefix = egress ? v3Prefix : v4Prefix;
         return name -> name.startsWith(fromPrefix) ? toPrefix + name.substring(fromPrefix.length()) : null;
+    }
+
+    // GeoParser's alternate-location word vocabulary is bounded (3 words) even though the trailing
+    // index is not -- v4Word is what geotopic:alt- is followed by, v3Word is the pre-rename
+    // upper-cased suffix word ("Optional_" + v3Word + index).
+    private static final Map<String, String> GEOTOPIC_ALT_WORDS_V4_TO_V3 =
+            Map.of("name", "NAME", "longitude", "LONGITUDE", "latitude", "LATITUDE");
+    private static final Pattern GEOTOPIC_ALT_V4 =
+            Pattern.compile("^geotopic:alt-(name|longitude|latitude)(\\d+)$");
+    private static final Pattern GEOTOPIC_ALT_V3 =
+            Pattern.compile("^Optional_(NAME|LONGITUDE|LATITUDE)(\\d+)$");
+
+    /**
+     * {@code geotopic:alt-<word><n>} &harr; {@code Optional_<WORD><n>} (GeoParser's
+     * alternate-location fields, TIKA-4816). Not a verbatim-suffix {@link #prefixSwapRule}: the
+     * rename also lower-cased the field word and inserted a delimiter ("Optional_NAME1" -&gt;
+     * "geotopic:alt-name1"), so the word itself needs a (bounded, 3-entry) lookup; only the
+     * trailing index is unbounded and carried through verbatim.
+     */
+    private static UnaryOperator<String> geotopicAlternateLocationRule(Direction direction) {
+        boolean egress = direction == Direction.V4_TO_V3;
+        return name -> {
+            if (egress) {
+                Matcher m = GEOTOPIC_ALT_V4.matcher(name);
+                if (!m.matches()) {
+                    return null;
+                }
+                return "Optional_" + GEOTOPIC_ALT_WORDS_V4_TO_V3.get(m.group(1)) + m.group(2);
+            } else {
+                Matcher m = GEOTOPIC_ALT_V3.matcher(name);
+                if (!m.matches()) {
+                    return null;
+                }
+                return "geotopic:alt-" + m.group(1).toLowerCase(Locale.ROOT) + m.group(2);
+            }
+        };
     }
 
     /** {@code tk:digest:<jca-alg>[:enc]} &harr; {@code X-TIKA:digest:<enum-alg>[:enc]} (encoding kept). */

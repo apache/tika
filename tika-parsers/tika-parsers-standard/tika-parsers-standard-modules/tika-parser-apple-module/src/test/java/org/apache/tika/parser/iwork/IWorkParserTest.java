@@ -181,6 +181,9 @@ public class IWorkParserTest extends TikaTest {
         assertEquals("2010-05-09T23:50:36+0200", metadata.get(TikaCoreProperties.MODIFIED));
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("2", metadata.get(Office.PAGE_COUNT));
+        // sf:copyright has no mapped Property, so PagesContentHandler routes it through the
+        // pages: KeyPrefix (TIKA-4816).
+        assertEquals("(c)", metadata.get("pages:copyright"));
 
         // text on page 1
         assertContains("Sample pages document", content);

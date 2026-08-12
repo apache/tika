@@ -34,21 +34,19 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * GROBID header fields are namespaced under {@code grobid:header:*} rather than mapped to standard
- * properties (e.g. {@code dc:title}): they are model inferences, not what the file asserts about itself.
+ * GROBID header fields are namespaced under {@code grobid:tei:*} (curated on {@link TEIDOMParser})
+ * rather than mapped to standard properties (e.g. {@code dc:title}): they are model inferences, not
+ * what the file asserts about itself.
  */
 @TikaComponent
 public class GrobidRESTParser {
 
     private static final Logger LOG = LoggerFactory.getLogger(GrobidRESTParser.class);
-
-    public static final KeyPrefix GROBID_HEADER =
-            KeyPrefix.tool("grobid:header:", "GROBID-inferred header fields");
 
     private static final String GROBID_REST_HOST = "http://localhost:8070";
     private static final String GROBID_ISALIVE_PATH = "/api/isalive";
@@ -113,8 +111,17 @@ public class GrobidRESTParser {
 
             String resp = response.readEntity(String.class);
             Metadata teiMet = new TEIDOMParser().parse(resp, context);
+            // teiMet's keys are already TEIDOMParser's curated grobid:tei:* Properties -- forward
+            // verbatim (Property.get resolves the registered constant; the curated-Property write
+            // route needs no further re-keying, and stays off the banned String-key routes).
             for (String key : teiMet.names()) {
-                metadata.add(GROBID_HEADER.key(key), teiMet.get(key));
+                Property property = Property.get(key);
+                if (property == null) {
+                    continue;
+                }
+                for (String value : teiMet.getValues(key)) {
+                    metadata.add(property, value);
+                }
             }
         } catch (Exception e) {
             LOG.warn("Couldn't read response", e);

@@ -33,6 +33,7 @@ import com.drew.metadata.mp4.Mp4Context;
 import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mp4.boxes.ISO6709;
@@ -47,6 +48,12 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     private static final int QT_UINT_BE_TYPE = 22;
     private static final int QT_FLOAT32_TYPE = 23;
     private static final int QT_FLOAT64_TYPE = 24;
+
+    //QuickTime 'keys' box entries: key names read verbatim from attacker-controlled file
+    //bytes (see processQuickTimeKeys below) -- the one genuinely attacker-facing site in
+    //this class, so every such key is routed through this prefix rather than used raw.
+    private static final KeyPrefix MP4 =
+            KeyPrefix.file("mp4:", "QuickTime 'keys' box item names, read verbatim from file bytes");
 
     //QuickTime stores location as an ISO 6709 string (e.g. +32.4720-084.9952+073.827/)
     private static final String QT_LOCATION_ISO6709 = "com.apple.quicktime.location.ISO6709";
@@ -210,7 +217,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
                         String key = quickTimeMetadataKeys.get(index - 1);
                         String value = decodeValue(payload, data + 16, valueLength, valueType);
                         if (value != null) {
-                            tikaMetadata.add(key, value);
+                            tikaMetadata.add(MP4.text(key), value);
                             if (key.equals(QT_LOCATION_ISO6709)) {
                                 addLocation(value);
                             }

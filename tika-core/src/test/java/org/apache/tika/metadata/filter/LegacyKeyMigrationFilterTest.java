@@ -203,4 +203,75 @@ public class LegacyKeyMigrationFilterTest {
         assertEquals("2400", m.get("envi:samples"));
         assertNull(m.get("envi.samples"));
     }
+
+    // TIKA-4816 rename batch (post stage-5a): more open-vocabulary prefix rules, same shape as
+    // NER_/grobid:header_/envi. above, plus GeoParser's non-verbatim alternate-location rule.
+
+    @Test
+    public void oggStreamsPrefixRuleEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.add("ogg:streams-total", "2");
+        apply(f, m);
+        assertEquals("2", m.get("streams-total"));
+        assertNull(m.get("ogg:streams-total"));
+    }
+
+    @Test
+    public void oggStreamsPrefixRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.add("streams-vorbis", "1");
+        apply(f, m);
+        assertEquals("1", m.get("ogg:streams-vorbis"));
+        assertNull(m.get("streams-vorbis"));
+    }
+
+    @Test
+    public void geoInfoKeywordsFamilyPrefixRulesEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.add("iso19115:keywords:2", "climate");
+        m.add("iso19115:keywords-type:2", "theme");
+        m.add("iso19115:thesaurus-name-title:2", "GCMD");
+        m.add("iso19115:thesaurus-name-alternative-title:2", "GCMD Keywords");
+        apply(f, m);
+        assertEquals("climate", m.get("Keywords 2"));
+        assertEquals("theme", m.get("KeywordsType 2"));
+        assertEquals("GCMD", m.get("ThesaurusNameTitle 2"));
+        assertEquals("GCMD Keywords", m.get("ThesaurusNameAlternativeTitle 2"));
+        assertNull(m.get("iso19115:keywords:2"));
+    }
+
+    @Test
+    public void geoInfoKeywordsFamilyPrefixRulesIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.add("Keywords 3", "ocean");
+        apply(f, m);
+        assertEquals("ocean", m.get("iso19115:keywords:3"));
+        assertNull(m.get("Keywords 3"));
+    }
+
+    @Test
+    public void geotopicAlternateLocationRuleEgress() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("geotopic:alt-name1", "United States");
+        m.set("geotopic:alt-longitude12", "-98.5");
+        apply(f, m);
+        assertEquals("United States", m.get("Optional_NAME1"));
+        assertEquals("-98.5", m.get("Optional_LONGITUDE12"));
+        assertNull(m.get("geotopic:alt-name1"));
+    }
+
+    @Test
+    public void geotopicAlternateLocationRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.set("Optional_LATITUDE1", "39.76");
+        apply(f, m);
+        assertEquals("39.76", m.get("geotopic:alt-latitude1"));
+        assertNull(m.get("Optional_LATITUDE1"));
+    }
 }

@@ -87,7 +87,7 @@ public class VorbisParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, VorbisInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Vorbis " + info.getVersion());
+        metadata.add(CODEC_VERSION, "Vorbis " + info.getVersion());
 
         int upper = info.getBitrateUpper();
         int nominal = info.getBitrateNominal();

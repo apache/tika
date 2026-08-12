@@ -92,8 +92,9 @@ public class FlacParser extends AbstractParser {
         extractInfo(metadata, flac.getInfo());
         if (flac instanceof FlacOggFile) {
             FlacOggFile ogg = (FlacOggFile) flac;
-            metadata.add("version", "Flac " + ogg.getFirstPacket().getMajorVersion() +
-                    "." + ogg.getFirstPacket().getMinorVersion());
+            metadata.add(OggAudioParser.CODEC_VERSION,
+                    "Flac " + ogg.getFirstPacket().getMajorVersion() +
+                            "." + ogg.getFirstPacket().getMinorVersion());
             metadata.set(Metadata.CONTENT_TYPE, OGG_FLAC.toString());
         } else {
             metadata.set(Metadata.CONTENT_TYPE, NATIVE_FLAC.toString());

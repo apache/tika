@@ -29,6 +29,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -80,7 +81,7 @@ class ContentAndMetadataExtractor {
 
             // Get Spread Metadata
             if ("Spread".equals(localName) || "MasterSpread".equals(localName)) {
-                metadata.add("PageCount", attributes.getValue("PageCount"));
+                metadata.add(Office.PAGE_COUNT, attributes.getValue("PageCount"));
             }
 
             // Trigger processing of content from Spread or Stories

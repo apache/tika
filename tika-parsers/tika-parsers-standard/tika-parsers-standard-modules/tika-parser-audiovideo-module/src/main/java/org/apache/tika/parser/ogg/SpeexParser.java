@@ -88,7 +88,8 @@ public class SpeexParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, SpeexInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Speex " + info.getVersionId() + " - " + info.getVersionString());
+        metadata.add(CODEC_VERSION,
+                "Speex " + info.getVersionId() + " - " + info.getVersionString());
 
         extractChannelInfo(metadata, info);
     }

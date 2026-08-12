@@ -36,11 +36,18 @@ import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class ISATabUtils {
+
+    // Field names come verbatim from ISA-Tab CSV records. Package-visible: ISArchiveParser
+    // reads back a few of these same keys (investigation/study identifiers, assay file names)
+    // and must use the identical prefixed form.
+    static final KeyPrefix ISATAB =
+            KeyPrefix.file("isatab:", "ISA-Tab investigation/study/assay field names");
 
     /**
      * INVESTIGATION
@@ -212,19 +219,23 @@ public class ISATabUtils {
         }
     }
 
+    // Bag (TIKA-4816): a field name legitimately repeats across the trailing columns of one
+    // record (addMetadata's loop) and across records/files sharing the same field (e.g. multiple
+    // "Term Source Name" columns) -- a SIMPLE mint throws PropertyTypeException the moment that
+    // happens, confirmed by ISArchiveParserTest.testParseArchive.
     private static void addMetadata(String field, CSVRecord record, Metadata metadata) {
         if ((record == null) || (record.size() <= 1)) {
             return;
         }
 
         for (int i = 1; i < record.size(); i++) {
-            metadata.add(field, record.get(i));
+            metadata.add(ISATAB.textBag(field), record.get(i));
         }
     }
 
     private static void mapStudyToMetadata(Map<String, String> map, Metadata metadata) {
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            metadata.add(entry.getKey(), entry.getValue());
+            metadata.add(ISATAB.textBag(entry.getKey()), entry.getValue());
         }
     }
 }

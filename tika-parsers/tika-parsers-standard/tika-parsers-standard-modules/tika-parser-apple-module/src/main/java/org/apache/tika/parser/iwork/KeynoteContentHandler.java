@@ -22,13 +22,17 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 class KeynoteContentHandler extends DefaultHandler {
 
-    public final static String PRESENTATION_WIDTH = "slides-width";
-    public final static String PRESENTATION_HEIGHT = "slides-height";
+    // TIKA-4816: namespaced to match "pages:"/"numbers:"/"iworks:" elsewhere in this module
+    // (was bare "slides-width"/"slides-height"; LegacyKeyMigrationFilter bridges the two).
+    public static final Property PRESENTATION_WIDTH = Property.externalText("keynote:slides-width");
+    public static final Property PRESENTATION_HEIGHT =
+            Property.externalText("keynote:slides-height");
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;

@@ -37,7 +37,9 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -45,9 +47,13 @@ import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
 /**
- * Locations here are inferred from the text (NER + gazetteer), so they are stored under
- * {@code Geographic_*} keys rather than the standard {@code Geographic} coordinate properties, which
- * denote coordinates the file asserts about itself.
+ * Locations here are inferred from the text (NER + gazetteer), so they are stored under a
+ * {@code geotopic:} namespace (TIKA-4816 rename batch; formerly {@code geo:}). That cleanly
+ * separates them from the standard {@code Geographic} coordinate properties ({@code geo:lat}/
+ * {@code geo:long}/{@code geo:alt}/{@code geo:timestamp}, W3C Geo Vocabulary), which denote
+ * coordinates the file asserts about itself (FILE provenance) rather than a location this parser
+ * inferred from free text (TOOL provenance) -- the two namespaces no longer share a prefix, so the
+ * former disjoint-suffix bookkeeping is moot.
  */
 @TikaComponent
 public class GeoParser implements Parser {
@@ -55,6 +61,17 @@ public class GeoParser implements Parser {
     private static final Logger LOG = LoggerFactory.getLogger(GeoParser.class);
     private static final MediaType MEDIA_TYPE = MediaType.application("geotopic");
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
+    // Fixed, bounded vocabulary: the best-match location's fields.
+    private static final Property GEOGRAPHIC_NAME = Property.externalText("geotopic:name");
+    private static final Property GEOGRAPHIC_LONGITUDE = Property.externalText("geotopic:longitude");
+    private static final Property GEOGRAPHIC_LATITUDE = Property.externalText("geotopic:latitude");
+    // Alternate-location fields are index-suffixed per alternative (unbounded count), so they
+    // mint per call rather than as fixed constants; "geotopic:alt-" + text("name1") replaces the
+    // pre-existing "Optional_NAME1" key shape (LegacyKeyMigrationFilter bridges the two -- see
+    // its geotopicAlternateLocationRule).
+    private static final KeyPrefix ALTERNATE =
+            KeyPrefix.tool("geotopic:alt-", "GeoParser alternate-location index keys");
 
     private GeoParserConfig defaultConfig = new GeoParserConfig();
     private GeoGazetteerClient gazetteerClient;
@@ -152,14 +169,14 @@ public class GeoParser implements Parser {
 
         /* add resolved entities in metadata */
 
-        metadata.add("Geographic_NAME", geotag.location.getName());
-        metadata.add("Geographic_LONGITUDE", geotag.location.getLongitude());
-        metadata.add("Geographic_LATITUDE", geotag.location.getLatitude());
+        metadata.add(GEOGRAPHIC_NAME, geotag.location.getName());
+        metadata.add(GEOGRAPHIC_LONGITUDE, geotag.location.getLongitude());
+        metadata.add(GEOGRAPHIC_LATITUDE, geotag.location.getLatitude());
         for (int i = 0; i < geotag.alternatives.size(); ++i) {
             GeoTag alter = (GeoTag) geotag.alternatives.get(i);
-            metadata.add("Optional_NAME" + (i + 1), alter.location.getName());
-            metadata.add("Optional_LONGITUDE" + (i + 1), alter.location.getLongitude());
-            metadata.add("Optional_LATITUDE" + (i + 1), alter.location.getLatitude());
+            metadata.add(ALTERNATE.text("name" + (i + 1)), alter.location.getName());
+            metadata.add(ALTERNATE.text("longitude" + (i + 1)), alter.location.getLongitude());
+            metadata.add(ALTERNATE.text("latitude" + (i + 1)), alter.location.getLatitude());
         }
     }
 

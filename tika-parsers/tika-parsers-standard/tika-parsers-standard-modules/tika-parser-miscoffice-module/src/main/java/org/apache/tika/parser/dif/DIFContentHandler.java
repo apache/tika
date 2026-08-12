@@ -24,13 +24,20 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 
+/**
+ * The sole live implementation -- {@code tika-core}'s {@code org.apache.tika.sax.DIFContentHandler}
+ * was an unused duplicate (no callers anywhere in the repo) and was removed rather than kept in
+ * sync; see TIKA-4816.
+ */
 public class DIFContentHandler extends DefaultHandler {
 
     private static final char[] NEWLINE = new char[]{'\n'};
     private static final char[] TABSPACE = new char[]{'\t'};
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+    private static final KeyPrefix DIF = KeyPrefix.file("dif:", "DIF XML element-name paths");
     private final ContentHandler delegate;
     private Stack<String> treeStack;
     private Stack<String> dataStack;
@@ -124,7 +131,7 @@ public class DIFContentHandler extends DefaultHandler {
                 }
             }
             String value = this.dataStack.peek();
-            this.metadata.add(key.toString(), value);
+            this.metadata.add(DIF.textBag(key.toString()), value);
             this.isLeaf = false;
         }
         this.treeStack.pop();

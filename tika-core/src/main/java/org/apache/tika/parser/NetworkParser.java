@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOSupplier;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -36,6 +37,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TaggedContentHandler;
@@ -44,6 +46,12 @@ import org.apache.tika.utils.XMLReaderUtils;
 
 
 public class NetworkParser implements Parser {
+
+    // meta/@name in the remote parse service's XML response: naming a service's own inferred
+    // field is tool provenance, not file provenance (contrast dif:/gdal:/hdf:, which read names
+    // straight out of the file being parsed).
+    private static final KeyPrefix NETWORK =
+            KeyPrefix.tool("network:", "meta/@name from a remote parse service's XML response");
 
     private final URI uri;
 
@@ -71,17 +79,23 @@ public class NetworkParser implements Parser {
                     public void close() throws IOException {
                         socket.shutdownOutput();
                     }
-                }).parse(socket.getInputStream(), handler, metadata, context);
+                }).parse(socket::getInputStream, handler, metadata, context);
             }
         } else {
             URL url = uri.toURL();
             URLConnection connection = url.openConnection();
             connection.setDoOutput(true);
             connection.connect();
-            try (InputStream input = connection.getInputStream()) {
-                new ParsingTask(tis, connection.getOutputStream())
-                        .parse(CloseShieldInputStream.wrap(input), handler, metadata, context);
-            }
+            // getOutputStream() must be obtained up front, but getInputStream() must NOT be
+            // called until the writer thread (below) is actively copying to it:
+            // HttpURLConnection only sends the request -- and so only lets getInputStream()
+            // return a response -- once the output stream has been written and closed. Calling
+            // getInputStream() first (as this used to) deadlocks/fails outright, since nothing
+            // has been written yet and never will be. ParsingTask.parse() defers the
+            // getInputStream() call until after its writer thread has started.
+            OutputStream output = connection.getOutputStream();
+            new ParsingTask(tis, output)
+                    .parse(connection::getInputStream, handler, metadata, context);
         }
 
     }
@@ -99,17 +113,26 @@ public class NetworkParser implements Parser {
             this.output = output;
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata,
-                          ParseContext context) throws IOException, SAXException, TikaException {
+        /**
+         * @param streamSupplier opens the response stream -- called only after the writer
+         *                       thread has started, so a supplier that blocks until the request
+         *                       is fully sent (e.g. {@code URLConnection#getInputStream}) doesn't
+         *                       deadlock waiting on a write that hasn't begun yet
+         */
+        public void parse(IOSupplier<InputStream> streamSupplier, ContentHandler handler,
+                          Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
             Thread thread = new Thread(this, "Tika network parser");
             thread.start();
 
             TaggedContentHandler tagged =
                     new TaggedContentHandler(handler);
-            try {
+            // shield the real stream from the SAX parser's own close(); the try-with-resources
+            // below is what actually closes it, once parsing is done.
+            try (InputStream stream = streamSupplier.get()) {
                 XMLReaderUtils
-                        .parseSAX(stream, new TeeContentHandler(tagged, new MetaHandler(metadata)),
-                                context);
+                        .parseSAX(CloseShieldInputStream.wrap(stream),
+                                new TeeContentHandler(tagged, new MetaHandler(metadata)), context);
             } catch (SAXException e) {
                 tagged.throwIfCauseOf(e);
                 throw new TikaException("Invalid network parser output", e);
@@ -160,7 +183,7 @@ public class NetworkParser implements Parser {
                 String name = attributes.getValue("", "name");
                 String content = attributes.getValue("", "content");
                 if (name != null && content != null) {
-                    metadata.add(name, content);
+                    metadata.add(NETWORK.key(name), content);
                 }
             }
         }

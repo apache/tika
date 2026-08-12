@@ -64,6 +64,9 @@ public class NetCDFParser implements Parser {
     public static final KeyPrefix NETCDF =
             KeyPrefix.file("netcdf:", "NetCDF global attribute names");
 
+    private static final Property FILE_TYPE_DESCRIPTION =
+            Property.externalText("netcdf:file-type-description");
+
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-netcdf"));
 
@@ -89,7 +92,7 @@ public class NetCDFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         try (NetcdfFile ncFile = NetcdfFile.open(tis.getFile().getAbsolutePath())) {
-            metadata.set(NETCDF.key("File-Type-Description"), ncFile.getFileTypeDescription());
+            metadata.set(FILE_TYPE_DESCRIPTION, ncFile.getFileTypeDescription());
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
                 if (attr.getDataType().isString()) {
@@ -155,7 +158,7 @@ public class NetCDFParser implements Parser {
         if (cfProperty != null) {
             metadata.add(cfProperty, value);
         } else {
-            metadata.add(NETCDF.key(name), value);
+            metadata.add(NETCDF.text(name), value);
         }
     }
 }

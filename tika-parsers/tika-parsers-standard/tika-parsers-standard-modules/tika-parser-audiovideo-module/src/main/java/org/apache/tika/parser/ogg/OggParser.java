@@ -38,6 +38,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.ogg.OggDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -77,6 +78,11 @@ public class OggParser extends AbstractParser {
             MediaType.parse(OggStreamIdentifier.OGG_RGB.mimetype);
     protected static final MediaType OGG_PCM =
             MediaType.parse(OggStreamIdentifier.OGG_PCM.mimetype);
+
+    // Per-stream-type/kind counts; the suffix comes from the gagravarr-ogg library's own
+    // stream classification, not a bounded Tika vocabulary.
+    private static final KeyPrefix STREAMS = KeyPrefix.tool("ogg:streams-",
+            "Ogg per-stream-type/kind counts");
 
     private static List<MediaType> TYPES = Arrays.asList(
             // General ones
@@ -133,7 +139,7 @@ public class OggParser extends AbstractParser {
         }
 
         // Report about the streams
-        metadata.add("streams-total", Integer.toString(totalStreams));
+        metadata.add(STREAMS.integer("total"), Integer.toString(totalStreams));
         for (OggStreamType type : streams.keySet()) {
             String key = type.mimetype.substring(type.mimetype.indexOf('/') + 1);
             if (key.startsWith("x-")) {
@@ -142,11 +148,11 @@ public class OggParser extends AbstractParser {
             if (type == OggStreamIdentifier.UNKNOWN) {
                 key = "unknown";
             }
-            metadata.add("streams-" + key, Integer.toString(streams.get(type)));
+            metadata.add(STREAMS.integer(key), Integer.toString(streams.get(type)));
         }
         for (OggStreamType.Kind kind : streamKinds.keySet()) {
             String key = kind.name().toLowerCase(Locale.ROOT);
-            metadata.add("streams-" + key, Integer.toString(streamKinds.get(kind)));
+            metadata.add(STREAMS.integer(key), Integer.toString(streamKinds.get(kind)));
         }
 
         // Finish

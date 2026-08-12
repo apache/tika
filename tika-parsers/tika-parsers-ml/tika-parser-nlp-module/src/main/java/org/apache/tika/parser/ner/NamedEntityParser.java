@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -142,9 +143,9 @@ public class NamedEntityParser implements Parser {
             if (names != null) {
                 for (Map.Entry<String, Set<String>> entry : names.entrySet()) {
                     if (entry.getValue() != null) {
-                        String mdKey = NER.key(entry.getKey());
+                        Property mdProperty = NER.textBag(entry.getKey());
                         for (String name : entry.getValue()) {
-                            metadata.add(mdKey, name);
+                            metadata.add(mdProperty, name);
                         }
                     }
                 }

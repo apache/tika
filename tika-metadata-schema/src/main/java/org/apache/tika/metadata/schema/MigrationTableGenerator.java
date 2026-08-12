@@ -35,30 +35,51 @@ import java.util.regex.Pattern;
  *   <li>fields the join can't bridge (moves/drops, or fields renamed on both sides) -&gt; taken from the
  *       adjudicated {@code migration-overlay.tsv} ({@code v4 == DROPPED} = 4.x no longer emits it).</li>
  * </ul>
- * Core scope only ({@code org.apache.tika.metadata.*}) until the 3.x table is widened past its v1.
+ * The auto-join is core scope only ({@code org.apache.tika.metadata.*}) until the 3.x table is
+ * widened past its v1 (the 3.x snapshot only has core-declared fields, so widening the join side
+ * would never find extra matches). Overlay-target validation is <strong>not</strong> core-restricted
+ * (TIKA-4816 rename batch): an adjudicated row may rename a bare/legacy key to a Property declared
+ * in a parser module (e.g. {@code geotopic:name} in {@code GeoParser}, {@code grobid:tei:title} in
+ * {@code TEIDOMParser}).
+ *
+ * <p>Overlay targets validate against {@code metadata-keys.json} (the closed-key registry), not the
+ * field table (TIKA-4816 rename batch): {@code SchemaGenerator.fieldTable()}'s per-class field
+ * discovery is reflection-based ({@code Class#getDeclaredFields()}), which eagerly resolves every
+ * declared field's type -- a class with any OTHER field typed on a not-transitively-visible
+ * dependency (e.g. a {@code provided}-scope one, as with {@code CTAKESContentHandler}'s UIMA
+ * {@code AnalysisEngine} field) throws {@code NoClassDefFoundError} and drops the WHOLE class,
+ * including its perfectly-resolvable {@code Property} fields (this silently emptied the field table
+ * for {@code GeoParser}, whose {@code NameFinderME} field pulls in {@code opennlp-tools} only via
+ * the {@code provided}-scope {@code ctakes-core} dependency). The closed-key registry has no such
+ * gap: it is built by fully loading each class (running its static initializers), which needs none
+ * of a class's non-static field types to be resolvable.
  *
  * <p>Dependency-free by design: tika-core carries the filter and must stay Jackson-free, so both this
  * generator and the filter emit/parse the flat JSON by hand. {@code MetadataMigrationTableTest}
  * regenerates in-memory and asserts the committed tika-core copy has not drifted.
  *
  * <pre>
- *   java ... MigrationTableGenerator &lt;3x-fields.json&gt; &lt;4x-fields.json&gt; &lt;overlay.tsv&gt; &lt;out.json&gt;
+ *   java ... MigrationTableGenerator &lt;3x-fields.json&gt; &lt;4x-fields.json&gt; &lt;4x-keys.json&gt; &lt;overlay.tsv&gt; &lt;out.json&gt;
  * </pre>
  */
 public final class MigrationTableGenerator {
 
     private static final Pattern ROW = Pattern.compile(
             "\\{\"class\":\"(.*?)\",\"field\":\"(.*?)\",\"key\":\"((?:[^\"\\\\]|\\\\.)*)\"}");
+    // metadata-keys.json rows: {"key":"...","namespace":"...","valueType":"...", ...}; only the
+    // leading "key" field is needed here.
+    private static final Pattern KEY_ROW = Pattern.compile("\\{\"key\":\"((?:[^\"\\\\]|\\\\.)*)\"");
     private static final String CORE = "org.apache.tika.metadata.";
 
     private MigrationTableGenerator() {
     }
 
-    /** Build the sorted {@code v3 -> v4} migration JSON from the three input contents. */
-    public static String generate(String threeFieldsJson, String fourFieldsJson, String overlayTsv) {
-        Map<String, String> three = readFields(threeFieldsJson);   // class#field -> key
-        Map<String, String> four = readFields(fourFieldsJson);
-        Set<String> v4keys = new HashSet<>(four.values());
+    /** Build the sorted {@code v3 -> v4} migration JSON from the four input contents. */
+    public static String generate(String threeFieldsJson, String fourFieldsJson, String fourKeysJson,
+            String overlayTsv) {
+        Map<String, String> three = readFields(threeFieldsJson, true);    // class#field -> key (core only)
+        Map<String, String> four = readFields(fourFieldsJson, true);      // class#field -> key (core only)
+        Set<String> v4keys = readKeys(fourKeysJson);                      // the full closed-key registry
 
         TreeMap<String, String> table = new TreeMap<>();           // v3 -> v4 (or "DROPPED")
         for (Map.Entry<String, String> e : three.entrySet()) {     // auto-renames by field identity
@@ -68,12 +89,16 @@ public final class MigrationTableGenerator {
             }
         }
         for (String line : overlayTsv.split("\n")) {               // adjudicated moves/drops; overlay wins
-            String t = line.strip();
-            int tab = t.indexOf('\t');
-            if (t.isEmpty() || t.startsWith("#") || tab < 0) {
+            String stripped = line.strip();
+            int tab = line.indexOf('\t');
+            if (stripped.isEmpty() || stripped.startsWith("#") || tab < 0) {
                 continue;
             }
-            table.put(t.substring(0, tab).strip(), t.substring(tab + 1).strip());
+            // v3 is taken verbatim (not stripped): a handful of ISO19115 keys (TIKA-4816) carry a
+            // meaningful trailing space that must survive into the migration bridge. v4 is a
+            // freshly-authored key with no such literal, so trimming stray line-end whitespace there
+            // (including a trailing \r) is safe.
+            table.put(line.substring(0, tab), line.substring(tab + 1).strip());
         }
         for (Map.Entry<String, String> e : table.entrySet()) {     // every target must be a real 4.x key
             if (!"DROPPED".equals(e.getValue()) && !v4keys.contains(e.getValue())) {
@@ -92,16 +117,26 @@ public final class MigrationTableGenerator {
         return sb.append("]\n").toString();
     }
 
-    /** Core-scoped {@code class#field -> key} from a {class,field,key} table. */
-    private static Map<String, String> readFields(String json) {
+    /** {@code class#field -> key} from a {class,field,key} table, optionally restricted to core. */
+    private static Map<String, String> readFields(String json, boolean coreOnly) {
         Map<String, String> m = new LinkedHashMap<>();
         Matcher mt = ROW.matcher(json);
         while (mt.find()) {
-            if (mt.group(1).startsWith(CORE)) {
+            if (!coreOnly || mt.group(1).startsWith(CORE)) {
                 m.put(mt.group(1) + "#" + mt.group(2), unescape(mt.group(3)));
             }
         }
         return m;
+    }
+
+    /** Every declared key from a {@code metadata-keys.json}-shaped closed-key registry. */
+    private static Set<String> readKeys(String json) {
+        Set<String> keys = new HashSet<>();
+        Matcher mt = KEY_ROW.matcher(json);
+        while (mt.find()) {
+            keys.add(unescape(mt.group(1)));
+        }
+        return keys;
     }
 
     private static String esc(String s) {
@@ -114,9 +149,9 @@ public final class MigrationTableGenerator {
 
     public static void main(String[] args) throws Exception {
         String json = generate(Files.readString(Path.of(args[0])), Files.readString(Path.of(args[1])),
-                Files.readString(Path.of(args[2])));
-        Files.writeString(Path.of(args[3]), json);
-        System.out.println("wrote " + args[3] + "  rows="
+                Files.readString(Path.of(args[2])), Files.readString(Path.of(args[3])));
+        Files.writeString(Path.of(args[4]), json);
+        System.out.println("wrote " + args[4] + "  rows="
                 + json.lines().filter(l -> l.startsWith("{\"v3\"")).count());
     }
 }

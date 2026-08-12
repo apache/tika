@@ -83,4 +83,43 @@ public interface Audio {
      * Audio sample size in bits (e.g. 16). A per-stream value, see {@link #BITRATE}.
      */
     Property BITS_PER_SAMPLE = Property.internalInteger("audio:bits-per-sample");
+
+    /**
+     * The raw javax.sound encoding name (e.g. "PCM_SIGNED"), as reported by {@code
+     * AudioFormat#getEncoding()} (AudioParser). Distinct from {@link XMPDM#AUDIO_SAMPLE_TYPE}
+     * (bit depth) and {@link XMPDM#AUDIO_COMPRESSOR} (codec name).
+     */
+    Property ENCODING = Property.internalText("audio:encoding");
+
+    // javax.sound SPI standard properties (AudioParser, TIKA-4816): the keys documented by
+    // javax.sound.sampled.AudioFileFormat#properties()/AudioFormat#properties(), promoted from
+    // an ad-hoc String key to a curated Property. Tika's built-in providers (WAV/AIFF/AU/basic)
+    // populate none of these -- they are only ever non-empty when a third-party javax.sound SPI
+    // is on the classpath. Values are stored verbatim (Object#toString()), not reinterpreted
+    // into another property's unit or format (e.g. NOT folded into XMPDM#DURATION, which is
+    // seconds, not the SPI's microseconds). "bitrate"/"vbr" are format-compatible with the
+    // existing #BITRATE/#IS_VARIABLE_BITRATE and reuse them instead of duplicating. Any SPI
+    // property name outside this stock vocabulary is residual and goes through AudioParser's
+    // own `audio:` KeyPrefix.
+
+    /** Stock "duration": playback duration in microseconds (java.lang.Long). */
+    Property SPI_DURATION = Property.internalText("audio:spi-duration");
+
+    /** Stock "author": name of the file's author. */
+    Property SPI_AUTHOR = Property.internalText("audio:spi-author");
+
+    /** Stock "title": title of the file. */
+    Property SPI_TITLE = Property.internalText("audio:spi-title");
+
+    /** Stock "copyright": copyright message. */
+    Property SPI_COPYRIGHT = Property.internalText("audio:spi-copyright");
+
+    /** Stock "date": date of the recording or release (java.util.Date#toString() form). */
+    Property SPI_DATE = Property.internalText("audio:spi-date");
+
+    /** Stock "comment": arbitrary text. */
+    Property SPI_COMMENT = Property.internalText("audio:spi-comment");
+
+    /** Stock "quality": encoding/conversion quality, 1..100. */
+    Property SPI_QUALITY = Property.internalInteger("audio:spi-quality");
 }

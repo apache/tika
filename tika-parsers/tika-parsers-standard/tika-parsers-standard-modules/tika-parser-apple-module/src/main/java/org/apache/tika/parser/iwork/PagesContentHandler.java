@@ -25,14 +25,16 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 class PagesContentHandler extends DefaultHandler {
 
+    private static final KeyPrefix PAGES =
+            KeyPrefix.file("pages:", "Pages metadata element names with no mapped Property");
     private static String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
@@ -73,12 +75,7 @@ class PagesContentHandler extends DefaultHandler {
         if (parseProperty) {
             String value = parsePrimitiveElementValue(qName, attributes);
             if (value != null) {
-                Object metaDataKey = resolveMetaDataKey(metaDataLocalName);
-                if (metaDataKey instanceof Property) {
-                    metadata.set((Property) metaDataKey, value);
-                } else {
-                    metadata.add((String) metaDataKey, value);
-                }
+                writeMetaData(metaDataLocalName, value);
             }
         }
 
@@ -285,27 +282,29 @@ class PagesContentHandler extends DefaultHandler {
     }
 
     /**
-     * Returns a resolved key that is common in other document types or
-     * returns the specified metaDataLocalName if no common key could be found.
-     * The key could be a simple String key, or could be a {@link Property}
+     * Writes a metadata value under a common Property if the current element
+     * (tracked via {@code metaDataQName}) maps to one; otherwise mints a
+     * {@code pages:}-prefixed Property for the element's local name and
+     * accumulates into it, preserving the pre-migration add (not set) semantics
+     * for the unmapped, potentially-repeating case.
      *
      * @param metaDataLocalName The localname of the element containing metadata
-     * @return a resolved key that is common in other document types
+     * @param value             The metadata value to write
      */
-    private Object resolveMetaDataKey(String metaDataLocalName) {
-        Object metaDataKey = "pages:" + metaDataLocalName;
+    private void writeMetaData(String metaDataLocalName, String value) {
         if ("sf:authors".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.CREATOR;
+            metadata.set(TikaCoreProperties.CREATOR, value);
         } else if ("sf:title".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.TITLE;
+            metadata.set(TikaCoreProperties.TITLE, value);
         } else if ("sl:SLCreationDateProperty".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.CREATED;
+            metadata.set(TikaCoreProperties.CREATED, value);
         } else if ("sl:SLLastModifiedDateProperty".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.MODIFIED;
+            metadata.set(TikaCoreProperties.MODIFIED, value);
         } else if ("sl:language".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.LANGUAGE;
+            metadata.set(TikaCoreProperties.LANGUAGE, value);
+        } else {
+            metadata.add(PAGES.textBag(metaDataLocalName), value);
         }
-        return metaDataKey;
     }
 
     /**

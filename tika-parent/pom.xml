@@ -313,6 +313,10 @@
     <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
+    <!-- TIKA-4816: Metadata#set/add(String,String) etc. ban for migrated parser modules;
+         opted into per-module via a "forbiddenapis-check" execution override (main sources
+         only: see that execution's id in the forbiddenapis plugin below). -->
+    <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.71.0</google.cloud.version>
@@ -1422,9 +1426,19 @@
           </bundledSignatures>
         </configuration>
         <executions>
+          <!-- Split into id'd executions (was one execution running both goals) so that
+               individual modules can layer additional main-only signaturesFiles onto
+               "forbiddenapis-check" (matching execution id merges config) without also
+               applying them to test sources via "forbiddenapis-testcheck". -->
           <execution>
+            <id>forbiddenapis-check</id>
             <goals>
               <goal>check</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>forbiddenapis-testcheck</id>
+            <goals>
               <goal>testCheck</goal>
             </goals>
           </execution>
@@ -1753,6 +1767,7 @@
         <!-- use session.executionRootDirectory in ci -->
         <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
         <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
+        <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
       </properties>
     </profile>
     <!-- Fast profile: ./mvnw install -Pfast -T1C -->

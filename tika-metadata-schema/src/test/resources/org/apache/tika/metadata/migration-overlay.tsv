@@ -37,3 +37,126 @@ rtf_meta:emb_app_version	rtf:embedded-app-version
 rtf_meta:emb_class	rtf:embedded-class
 rtf_meta:emb_item	rtf:embedded-item
 rtf_meta:emb_topic	rtf:embedded-topic
+#
+# TIKA-4816 rename batch (post stage-5a). These fields are declared outside org.apache.tika.metadata
+# (parser modules), so the field-identity join -- core-scoped by design (see
+# MigrationTableGenerator's javadoc) -- can never auto-detect them; every row here is adjudicated.
+# The unbounded-suffix families in this same batch (GeoParser Optional_/geotopic:alt-, Ogg streams-/
+# ogg:streams-, and the ISO19139 Keywords/KeywordsType/ThesaurusNameTitle/
+# ThesaurusNameAlternativeTitle -> iso19115:keywords:/iso19115:keywords-type:/
+# iso19115:thesaurus-name-title:/iso19115:thesaurus-name-alternative-title: families) are NOT here
+# -- they're prefix rules in LegacyKeyMigrationFilter instead (flat rows can't express an
+# unbounded suffix).
+#
+# GeoParser (tika-parser-nlp-module): the best-match location's fixed fields. geo: -> geotopic:
+# (TIKA-4816 rename batch) to cleanly separate from the W3C Geo Vocabulary's geo: namespace.
+Geographic_NAME	geotopic:name
+Geographic_LONGITUDE	geotopic:longitude
+Geographic_LATITUDE	geotopic:latitude
+#
+# TEIDOMParser (tika-parser-nlp-module): namespaced under grobid:tei: + kebab-case; GrobidRESTParser
+# used to re-key these again under grobid:header:* (a separate, still-live stage-5a delimiter rename,
+# grobid:header_ <-> grobid:header:) -- that re-keying step is retired now that TEIDOMParser's own
+# keys are final, so these bare names are the correct v3 side (what a pre-this-batch TEIDOMParser
+# standalone Metadata, or GrobidRESTParser's now-removed re-keying step, actually carried).
+Class	grobid:tei:class
+TEIXMLSource	grobid:tei:xml-source
+Language	grobid:tei:language
+Title	grobid:tei:title
+Address	grobid:tei:address
+Affiliation	grobid:tei:affiliation
+Authors	grobid:tei:authors
+FullAffiliations	grobid:tei:full-affiliations
+Error	grobid:tei:error
+Abstract	grobid:tei:abstract
+Keyword	grobid:tei:keyword
+#
+# KeynoteContentHandler (tika-parser-apple-module): namespaced to match pages:/numbers:/iworks:
+# elsewhere in the module.
+slides-width	keynote:slides-width
+slides-height	keynote:slides-height
+#
+# IDML/MIF (tika-parser-miscoffice-module; interfaces relocated into tika-core this batch).
+SpreadPageCount	idml:spread-page-count
+MasterSpreadPageCount	idml:master-spread-page-count
+MasterPageCount	mif:master-page-count
+ReferencePageCount	mif:reference-page-count
+TotalPageCount	mif:total-page-count
+#
+# Audio addendum (tika-parser-audiovideo-module): AudioParser/Mp3Parser's bare "channels"/"bits"
+# unified onto the pre-existing curated Audio.CHANNELS/Audio.BITS_PER_SAMPLE; AudioParser's bare
+# "encoding" promoted to a new curated Audio constant; MidiParser's MIDI-sequence fields namespaced.
+# NOT bridged: Mp3Parser's bare "version" (MPEG version/layer string) and OggAudioParser's bare
+# "version" (CODEC_VERSION, e.g. "Theora 3.2.1") both used the identical bare key "version" pre-batch
+# and now diverge to mp3:version vs ogg:codec-version -- a flat v3->v4 row can't disambiguate by
+# source parser, and picking one target would silently mis-map the other family's values on ingest/
+# egress, which is worse than no bridge. Left unmapped; see MigrationTableGenerator/regen report.
+channels	audio:channels
+bits	audio:bits-per-sample
+encoding	audio:encoding
+tracks	midi:tracks
+patches	midi:patches
+divisionType	midi:division-type
+#
+# GDALParser (tika-parser-scientific-module): gdalinfo's small fixed-vocabulary patterns, now
+# namespaced to gdal: + kebab-case (previously bare, matching gdalinfo's own literal output text --
+# see GDALParser.addPatternWithColon()/addPatternWithIs()/addBoundingBoxPattern(), which now take
+# that literal text as a separate label parameter so the rename doesn't break the match).
+Driver	gdal:driver
+Files	gdal:files
+Size	gdal:size
+Coordinate System	gdal:coordinate-system
+Upper Left	gdal:upper-left
+Lower Left	gdal:lower-left
+Upper Right	gdal:upper-right
+Lower Right	gdal:lower-right
+#
+# HDFParser/NetCDFParser/NumbersContentHandler (tika-parser-scientific-module,
+# tika-parser-apple-module): fixed single keys, kebab-cased.
+hdf:File-Type-Description	hdf:file-type-description
+netcdf:File-Type-Description	netcdf:file-type-description
+numbers:sheetNames	numbers:sheet-names
+#
+# ISO19115 (tika-core; extracted by GeographicInformationParser, tika-parser-scientific-module):
+# 35 ad hoc PascalCase/space-delimited coinages (several with a stray trailing space, one with a
+# trailing hyphen, one with a trailing "-->", and one with an upstream typo -- AccessContraints)
+# get honest iso19115: + kebab-case spellings. Not core-declared in the 3.x snapshot (the class
+# didn't exist as a curated Property source until this batch), so field-identity can't auto-bridge
+# any of these -- every row here is adjudicated. Old spellings copied character-exact from the
+# pre-rename ISO19115.java; trailing spaces are meaningful and preserved by this row (v3 is taken
+# verbatim by MigrationTableGenerator, not trimmed).
+CharacterSet	iso19115:character-set
+ContactRole	iso19115:contact-role
+ContactPartyName-	iso19115:contact-party-name
+CitationDate 	iso19115:citation-date
+CitedResponsiblePartyRole 	iso19115:cited-responsible-party-role
+CitedResponsiblePartyName 	iso19115:cited-responsible-party-name
+CitedResponsiblePartyOrganizationName 	iso19115:cited-responsible-party-organization-name
+CitedResponsiblePartyPositionName 	iso19115:cited-responsible-party-position-name
+CitedResponsiblePartyEMail 	iso19115:cited-responsible-party-email
+IdentificationInfoStatus 	iso19115:identification-info-status
+ResourceFormatSpecificationAlternativeTitle 	iso19115:resource-format-specification-alternative-title
+IdentificationInfoTopicCategory-->	iso19115:identification-info-topic-category
+ThesaurusNameDate 	iso19115:thesaurus-name-date
+AccessContraints 	iso19115:access-constraints
+OtherConstraints 	iso19115:other-constraints
+UserConstraints 	iso19115:user-constraints
+GeographicIdentifierCode 	iso19115:geographic-identifier-code
+GeographicIdentifierAuthorityTitle 	iso19115:geographic-identifier-authority-title
+GeographicIdentifierAuthorityAlternativeTitle 	iso19115:geographic-identifier-authority-alternative-title
+GeographicIdentifierAuthorityDate 	iso19115:geographic-identifier-authority-date
+DistributionFormatSpecificationAlternativeTitle 	iso19115:distribution-format-specification-alternative-title
+Distributor Contact 	iso19115:distributor-contact
+Distributor Organization Name 	iso19115:distributor-organization-name
+TransferOptionsOnlineLinkage 	iso19115:transfer-options-online-linkage
+TransferOptionsOnlineProtocol 	iso19115:transfer-options-online-protocol
+TransferOptionsOnlineProfile 	iso19115:transfer-options-online-profile
+TransferOptionsOnlineName 	iso19115:transfer-options-online-name
+TransferOptionsOnlineDescription 	iso19115:transfer-options-online-description
+TransferOptionsOnlineFunction 	iso19115:transfer-options-online-function
+DateInfo 	iso19115:date-info
+MetaDataResourceScope 	iso19115:metadata-resource-scope
+ParentMetaDataTitle	iso19115:parent-metadata-title
+MetaDataIdentifierCode	iso19115:metadata-identifier-code
+MetaDataStandardTitle 	iso19115:metadata-standard-title
+MetaDataStandardEdition 	iso19115:metadata-standard-edition

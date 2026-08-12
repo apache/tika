@@ -48,6 +48,6 @@ public class JournalParserTest extends TikaTest {
             fail(e.getMessage());
         }
 
-        assertNotNull(metadata.get("grobid:header:Title"));
+        assertNotNull(metadata.get("grobid:tei:title"));
     }
 }

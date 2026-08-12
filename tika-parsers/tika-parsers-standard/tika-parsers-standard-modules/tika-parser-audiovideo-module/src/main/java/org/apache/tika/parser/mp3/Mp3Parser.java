@@ -34,6 +34,7 @@ import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -62,6 +63,12 @@ public class Mp3Parser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.audio("mpeg"));
+
+    // MPEG version/layer string (e.g. "MPEG 3 Layer III Version 1"); no existing curated
+    // Property match. Namespaced (TIKA-4816): OggAudioParser's CODEC_VERSION also used the bare
+    // "version" name for a different concept (codec bitstream version), so the two needed
+    // disambiguating namespaces, not one shared bare key.
+    private static final Property VERSION = Property.internalText("mp3:version");
 
     /**
      * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
@@ -191,8 +198,8 @@ public class Mp3Parser implements Parser {
             metadata.set(Audio.IS_VARIABLE_BITRATE, audioAndTags.variableBitRate);
         }
         if (audioAndTags.audio != null) {
-            metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
-            metadata.set("version", audioAndTags.audio.getVersion());
+            metadata.set(Audio.CHANNELS, audioAndTags.audio.getChannels());
+            metadata.set(VERSION, audioAndTags.audio.getVersion());
 
             metadata.set(XMPDM.AUDIO_SAMPLE_RATE,
                     Integer.toString(audioAndTags.audio.getSampleRate()));
@@ -241,7 +248,7 @@ public class Mp3Parser implements Parser {
                 }
 
                 comments.add(cmt.toString());
-                metadata.add(XMPDM.LOG_COMMENT.getName(), cmt.toString());
+                metadata.add(XMPDM.LOG_COMMENT, cmt.toString());
             }
 
             // ID3v1.1 Track addition

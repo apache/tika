@@ -31,9 +31,9 @@ public class MidiParserTest {
                 new Tika().parseToString(MidiParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/midi", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("2", metadata.get("tracks"));
-        assertEquals("0", metadata.get("patches"));
-        assertEquals("PPQ", metadata.get("divisionType"));
+        assertEquals("2", metadata.get("midi:tracks"));
+        assertEquals("0", metadata.get("midi:patches"));
+        assertEquals("PPQ", metadata.get("midi:division-type"));
 
         assertContains("Untitled", content);
     }

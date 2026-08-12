@@ -150,9 +150,14 @@ public interface XMPDM {
 //     */
 //    Property INTRO_TIME = "xmpDM:introTime";
     /**
-     * "User's log comments."
+     * "User's log comments." BAG (TIKA-4816): audio containers can carry more than one comment
+     * (multiple ID3v2 COMM frames, multiple Vorbis "comment" fields) -- a SIMPLE cardinality
+     * throws {@code PropertyTypeException} the moment a file has more than one, confirmed once
+     * the audiovideo module's Mp3Parser/OggAudioParser moved off the (cardinality-unchecked)
+     * String-keyed write route onto the typed {@code Property} route. Only used within
+     * tika-parser-audiovideo-module.
      */
-    Property LOG_COMMENT = Property.externalText("xmpDM:logComment");
+    Property LOG_COMMENT = Property.externalTextBag("xmpDM:logComment");
     /**
      * "When true, the clip can be looped seamlessly."
      */

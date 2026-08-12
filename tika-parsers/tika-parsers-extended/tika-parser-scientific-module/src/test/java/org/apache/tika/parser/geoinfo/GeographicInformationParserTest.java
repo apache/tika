@@ -30,10 +30,10 @@ public class GeographicInformationParserTest extends TikaTest {
     public void testISO19139() throws Exception {
         XMLResult r = getXML("sampleFile.iso19139", new GeographicInformationParser());
         assertEquals("text/iso19139+xml", r.metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("UTF-8", r.metadata.get("CharacterSet"));
-        assertEquals("https", r.metadata.get("TransferOptionsOnlineProtocol "));
-        assertEquals("browser", r.metadata.get("TransferOptionsOnlineProfile "));
-        assertEquals("Barrow Atqasuk ARCSS Plant", r.metadata.get("TransferOptionsOnlineName "));
+        assertEquals("UTF-8", r.metadata.get("iso19115:character-set"));
+        assertEquals("https", r.metadata.get("iso19115:transfer-options-online-protocol"));
+        assertEquals("browser", r.metadata.get("iso19115:transfer-options-online-profile"));
+        assertEquals("Barrow Atqasuk ARCSS Plant", r.metadata.get("iso19115:transfer-options-online-name"));
 
         assertContains("Barrow Atqasuk ARCSS Plant", r.xml);
         assertContains("<td>GeographicElementWestBoundLatitude</td>\t<td>-157.24</td>", r.xml);

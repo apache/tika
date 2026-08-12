@@ -90,6 +90,6 @@ public class TheoraParser extends AbstractParser {
     }
 
     protected void extractInfo(Metadata metadata, TheoraInfo info) throws TikaException {
-        metadata.add("version", "Theora " + info.getVersion());
+        metadata.add(OggAudioParser.CODEC_VERSION, "Theora " + info.getVersion());
     }
 }
