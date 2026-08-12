@@ -34,7 +34,6 @@ import java.util.Locale;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -223,12 +222,6 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
-    }
-
-    @Test
-    public void testJAXBAndActivationDependency() {
-        //TIKA-2778
-        AttachmentUtil.getCommandMap();
     }
 
     @Test

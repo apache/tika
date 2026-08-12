@@ -39,8 +39,6 @@ import org.apache.tika.server.core.writer.ZipWriter;
 public class LanguageResourceTest extends CXFTestBase {
 
     private static final String LANG_PATH = "/language";
-    private static final String LANG_STREAM_PATH = LANG_PATH;
-    private static final String LANG_STRING_PATH = LANG_PATH;
     private static final String ENGLISH_STRING = "This is English!";
     private static final String FRENCH_STRING = "c'est comme ci comme ça";
 
@@ -63,7 +61,7 @@ public class LanguageResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectEnglishString() throws Exception {
-        String url = endPoint + LANG_STRING_PATH;
+        String url = endPoint + LANG_PATH;
         Response response = WebClient
                 .create(url)
                 .type("text/plain")
@@ -76,7 +74,7 @@ public class LanguageResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectFrenchString() throws Exception {
-        String url = endPoint + LANG_STRING_PATH;
+        String url = endPoint + LANG_PATH;
         Response response = WebClient
                 .create(url)
                 .type("text/plain")
@@ -89,7 +87,7 @@ public class LanguageResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectEnglishFile() throws Exception {
-        String url = endPoint + LANG_STREAM_PATH;
+        String url = endPoint + LANG_PATH;
         Response response = WebClient
                 .create(url)
                 .type("text/plain")
@@ -102,7 +100,7 @@ public class LanguageResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectFrenchFile() throws Exception {
-        String url = endPoint + LANG_STREAM_PATH;
+        String url = endPoint + LANG_PATH;
         Response response = WebClient
                 .create(url)
                 .type("text/plain")
@@ -127,7 +125,7 @@ public class LanguageResourceTest extends CXFTestBase {
         assertTrue(oversize.length() > LanguageResource.MAX_DETECT_CHARS);
 
         Response stringResponse = WebClient
-                .create(endPoint + LANG_STRING_PATH)
+                .create(endPoint + LANG_PATH)
                 .type("text/plain")
                 .accept("text/plain")
                 .put(oversize);
@@ -135,7 +133,7 @@ public class LanguageResourceTest extends CXFTestBase {
         assertEquals("en", getStringFromInputStream((InputStream) stringResponse.getEntity()));
 
         Response streamResponse = WebClient
-                .create(endPoint + LANG_STREAM_PATH)
+                .create(endPoint + LANG_PATH)
                 .type("text/plain")
                 .accept("text/plain")
                 .put(new ByteArrayInputStream(oversize.getBytes(StandardCharsets.UTF_8)));

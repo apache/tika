@@ -39,7 +39,6 @@ import org.apache.tika.server.core.writer.ZipWriter;
 public class DetectorResourceTest extends CXFTestBase {
 
     private static final String DETECT_PATH = "/detect";
-    private static final String DETECT_STREAM_PATH = DETECT_PATH;
     private static final String FOO_CSV = "test-documents/foo.csv";
     private static final String CDEC_CSV_NO_EXT = "test-documents/CDEC_WEATHER_2010_03_02";
 
@@ -62,9 +61,8 @@ public class DetectorResourceTest extends CXFTestBase {
 
     @Test
     public void testDetectCsvWithExt() throws Exception {
-        String url = endPoint + DETECT_STREAM_PATH;
         Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + FOO_CSV)
@@ -79,7 +77,7 @@ public class DetectorResourceTest extends CXFTestBase {
     public void testDetectCsvNoExt() throws Exception {
 
         Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT)
@@ -90,7 +88,7 @@ public class DetectorResourceTest extends CXFTestBase {
 
         // now trick it by adding .csv to the end
         response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT + ".csv")
