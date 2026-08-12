@@ -32,9 +32,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TimeZone;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
@@ -47,8 +44,6 @@ import org.apache.tika.utils.DateUtils;
 public class Metadata
         implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
         Serializable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
@@ -304,11 +299,11 @@ public class Metadata
      *
      * @param name  the metadata name.
      * @param value the metadata value.
+     * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
+     * ({@code tk:}) key; use its {@link Property} or {@link #addTrusted}.
      */
     public void add(final String name, final String value) {
-        if (blockReservedKeyWrite(name)) {
-            return;
-        }
+        checkNotReserved(name);
         addTrusted(name, value);
     }
 
@@ -322,13 +317,18 @@ public class Metadata
         writeLimiter.add(name, value, metadata);
     }
 
-    /** Drop String writes to reserved Tika-native keys; use their Property or {@link #addTrusted}/{@link #setTrusted(String, String)}. */
-    private boolean blockReservedKeyWrite(String name) {
+    /**
+     * Reject String writes to reserved Tika-native keys; use their Property or
+     * {@link #addTrusted}/{@link #setTrusted(String, String)}.
+     */
+    private void checkNotReserved(String name) {
         if (ReservedNamespaces.isTikaNative(name)) {
-            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
-            return true;
+            throw new IllegalArgumentException(
+                    "Writing reserved key '" + name + "' via the String API is not allowed: " +
+                            "Tika-computed keys are set internally via curated Properties, and " +
+                            "document-derived key names must go through a KeyPrefix; see the " +
+                            "4.x migration guide.");
         }
-        return false;
     }
 
     /**
@@ -454,11 +454,11 @@ public class Metadata
      *
      * @param name  the metadata name.
      * @param value the metadata value, or <code>null</code>
+     * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
+     * ({@code tk:}) key; use its {@link Property} or {@link #setTrusted}.
      */
     public void set(String name, String value) {
-        if (blockReservedKeyWrite(name)) {
-            return;
-        }
+        checkNotReserved(name);
         setTrusted(name, value);
     }
 
