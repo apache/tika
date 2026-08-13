@@ -28,6 +28,16 @@ limitations under the License.
 
 Guidelines and checklist for developing against the Apache Tika codebase.
 
+## Question the direction, not just the code
+
+Before optimizing a change — yours or a PR's — ask whether it should exist:
+does it belong in Tika, is the complexity proportional to the need, would
+config, an existing mechanism, a plugin, or documentation serve the use case
+more cheaply?  Every merged feature is surface the project maintains for
+decades.  Steelman the use case first and question the vehicle, not the goal;
+pushback must name a concrete cost or a simpler path — never taste alone, and
+never no for the sake of no.  "The direction is right" is a valid conclusion.
+
 ## Git Policy (default — personally overridable)
 
 Never run `git commit` or `git push` — no commits of any kind, including

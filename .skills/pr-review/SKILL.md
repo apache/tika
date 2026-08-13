@@ -78,7 +78,11 @@ One background agent per dimension, launched in a single batch:
    code — not for code a couple of fixed cases fully cover.
 4. **API / compatibility** — public surface changes, changed defaults/units,
    deprecation policy, `Serializable`/wire-protocol compat, behavior an
-   upgrader silently inherits.
+   upgrader silently inherits. The baseline is the **last released tag**,
+   named explicitly in the prompt — not the merge base: two agents comparing
+   against different baselines will both report "verified" and disagree.
+   Any table or doc claiming an old spelling/default gets checked against
+   that tag.
 5. **Usability** — walk the config surface cold as an upgrading user: map the
    knobs and how they compose; enumerate wrong-config scenarios and classify
    each fail-fast / warn / silent, with the cheapest fix for silent ones.
@@ -100,6 +104,17 @@ Parser/extraction changes → also recommend `.skills/tika-eval-compare/SKILL.md
 
 **Thorough mode** (on request): skeptic agents try to refute each significant
 finding; report survivors, mark the refuted with reasons.
+
+**Direction reviewer** (conditional): when the PR adds public API, a
+dependency, a module, or new config surface, or is large or complex —
+regardless of what it adds — or on request, add a devil's-advocate reviewer
+asking whether the change should exist at all:
+does it belong in Tika, is the complexity proportional to the need, would
+config/an existing mechanism/a plugin/docs serve the use case more cheaply?
+Steelman the author's use case first; question the vehicle, not the goal.
+Its output is a recommendation (proceed / narrow / redirect) with concrete
+costs and alternatives — not findings — and "the direction is right" is a
+valid, complete answer. Skip it for bugfix/cleanup PRs.
 
 **Release-gating PRs**: when the PR is the last merge window before a major
 release (or the user says "last chance"), add a missed-opportunities
@@ -131,6 +146,12 @@ ranked by severity; also list what was checked and found clean; the settled
 decisions from the design doc/user, pasted in with "deviations are findings,
 decisions are not" — this is what keeps N agents from re-litigating accepted
 trade-offs; report as text — no edits, commits, or GitHub writes.
+
+Budgeting: correctness is the expensive dimension (~3x the others on a large
+PR) — spend there first. An agent that delegates verification to its own
+sub-agent must say so in a status line; a parent that goes silent for minutes
+while a hidden child works is indistinguishable from a hang. Prefer
+sequential self-verification unless the dimension is genuinely too large.
 
 Reviewers are read-only/static-trace by default: concurrent `clean` builds in
 one working tree delete each other's `target/` and race on the shared local
