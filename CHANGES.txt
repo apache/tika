@@ -111,6 +111,9 @@ Release 4.0.0 - ???
 
   OTHER CHANGES
 
+   * OneNote extraction now follows document order, omits superseded page
+     revisions, and extracts embedded object BLOBs (TIKA-4814).
+
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
 
