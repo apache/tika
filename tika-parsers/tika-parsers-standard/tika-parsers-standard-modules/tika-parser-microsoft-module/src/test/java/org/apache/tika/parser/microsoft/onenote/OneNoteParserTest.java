@@ -19,18 +19,26 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.ToTextContentHandler;
 
 public class OneNoteParserTest extends TikaTest {
 
@@ -223,6 +231,31 @@ public class OneNoteParserTest extends TikaTest {
                         ml.get("Content-Type"))));
     }
 
+    @Test
+    public void testOneNoteEmbeddedImage() throws Exception {
+        List<byte[]> embedded = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) throws IOException {
+                embedded.add(stream.readAllBytes());
+            }
+        });
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNoteEmbeddedImage.one")) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
+        }
+
+        assertFalse(embedded.isEmpty());
+        assertTrue(embedded.stream().anyMatch(bytes -> bytes.length > 1000));
+    }
+
     /**
      * Test a document pulled from Office 365 which stores the MS-ONESTORE document using the MS-FSSHTTPB
      * protocol.
@@ -232,6 +265,8 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNoteFromOffice365.one", metadata);
 
+        // only the authors of the current content count - authors that only appear in
+        // older page version snapshots are not reported
         assertEquals(1, metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors").length);
 
         assertEquals(Instant.ofEpochSecond(1636621406),
@@ -241,6 +276,8 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(Instant.ofEpochSecond(1636621448),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(TikaCoreProperties.MODIFIED))));
         assertContains("Section1Page1Content", txt);
+        // content from revisions other than each cell's current revision manifest
+        assertContains("Section1Page2Content", txt);
     }
 
     /**
@@ -260,12 +297,14 @@ public class OneNoteParserTest extends TikaTest {
 
         assertEquals(Instant.ofEpochSecond(1591712300),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
-        assertEquals(Instant.ofEpochMilli(1623252330000L),
+        assertEquals(Instant.ofEpochMilli(1623597638000L),
                 Instant.ofEpochMilli(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "lastModifiedTimestamp"))));
         assertEquals(Instant.ofEpochSecond(1623597587),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(TikaCoreProperties.MODIFIED))));
 
         assertContains("Section1Page1Content", txt);
+        // content from revisions other than each cell's current revision manifest
+        assertContains("Section1Page2Content", txt);
     }
 
     private void assertNoJunk(String txt) {

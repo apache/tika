@@ -16,27 +16,22 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
-/**
- * This class is used to represent the file data.
- */
-public class FileDataObject {
-    public ObjectGroupObjectBLOBDataDeclaration objectDataBLOBDeclaration;
-    public ObjectGroupObjectDataBLOBReference objectDataBLOBReference;
-    public DataElement objectDataBLOBDataElement;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
+
+/**
+ * The revision store content of a single cell (object space), together with the root object
+ * declarations of its current revision. The object groups are ordered from the oldest revision
+ * to the newest.
+ */
+public class RevisionStoreCell {
+    public CellID cellID;
+    public List<RevisionStoreObjectGroup> objectGroups = new ArrayList<>();
     /**
-     * @return the opaque binary data of this file data object, or null if it could not be
-     * resolved.
+     * The effective root object declarations of the cell's current revision, i.e. for each
+     * root role the declaration made by the most recent revision in the base revision chain.
      */
-    public byte[] getData() {
-        if (objectDataBLOBDataElement != null &&
-                objectDataBLOBDataElement.data instanceof ObjectDataBLOBDataElementData) {
-            ObjectDataBLOBDataElementData blobData =
-                    (ObjectDataBLOBDataElementData) objectDataBLOBDataElement.data;
-            if (blobData.objectDataBLOB != null) {
-                return blobData.objectDataBLOB.getData();
-            }
-        }
-        return null;
-    }
+    public List<RevisionManifestRootDeclare> rootDeclares = new ArrayList<>();
 }

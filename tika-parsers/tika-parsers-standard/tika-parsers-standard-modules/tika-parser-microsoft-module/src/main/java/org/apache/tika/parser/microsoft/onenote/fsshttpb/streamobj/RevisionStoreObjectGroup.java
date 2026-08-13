@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,14 @@ public class RevisionStoreObjectGroup {
     public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
                                                           ObjectGroupDataElementData dataObject,
                                                           boolean isEncryption) throws IOException {
+        return createInstance(objectGroupId, dataObject, isEncryption, Collections.emptyMap());
+    }
+
+    public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
+                                                          ObjectGroupDataElementData dataObject,
+                                                          boolean isEncryption,
+                                                          Map<ExGuid, DataElement> blobElements)
+            throws IOException {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
         Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
         if (!isEncryption) {
@@ -63,10 +72,11 @@ public class RevisionStoreObjectGroup {
                 } else if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     revisionObject.propertySet =
                             new PropertySetObject(objectDeclaration, objectData);
-                    if (revisionObject.jcid.jcid.isFileData != 0) {
-                        revisionObject.referencedObjectID = objectData.objectExGUIDArray;
-                        revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
-                    }
+                    // the object extended GUID array lists the objects referenced by this
+                    // object, in the same order as the CompactIDs in the OID stream of the
+                    // ObjectSpaceObjectPropSet - see MS-ONESTORE section 2.7.8
+                    revisionObject.referencedObjectID = objectData.objectExGUIDArray;
+                    revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
                 }
             }
 
@@ -87,11 +97,15 @@ public class RevisionStoreObjectGroup {
                             objectDict.get(objectGroupObjectBLOBDataDeclaration.objectExGUID);
                 }
                 if (objectGroupObjectBLOBDataDeclaration.objectPartitionID.getDecodedValue() == 2) {
+                    revisionObject.objectID = objectGroupObjectBLOBDataDeclaration.objectExGUID;
+                    revisionObject.objectGroupID = objectGroupId;
                     revisionObject.fileDataObject = new FileDataObject();
                     revisionObject.fileDataObject.objectDataBLOBDeclaration =
                             objectGroupObjectBLOBDataDeclaration;
                     revisionObject.fileDataObject.objectDataBLOBReference =
                             objectGroupObjectDataBLOBReference;
+                    revisionObject.fileDataObject.objectDataBLOBDataElement = blobElements.get(
+                            objectGroupObjectDataBLOBReference.blobExtendedGUID);
                 }
             }
             objectGroup.objects.addAll(objectDict.values());
