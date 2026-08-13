@@ -18,6 +18,7 @@ package org.apache.tika.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
@@ -39,6 +41,7 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
 import org.apache.tika.utils.DateUtils;
 
 //Junit imports
@@ -490,6 +493,124 @@ public class TestMetadata extends TikaTest {
         Metadata m = new Metadata();
         m.add("key", "value1");
         assertEquals("key=value1", m.toString());
+    }
+
+    /**
+     * Two Metadata instances that differ only in a value under the same key
+     * must not be equal, so value-distinct metadata are never collapsed.
+     */
+    @Test
+    public void testValueDistinctMetadataNotEqual() {
+        Metadata m1 = new Metadata();
+        m1.add("k1", "v1");
+        Metadata m2 = new Metadata();
+        m2.add("k1", "v2");
+        assertNotEquals(m1, m2);
+    }
+
+    /**
+     * Reserved keys must be ignored when written to an untrusted Metadata
+     * instance (the default), so untrusted callers cannot inject them.
+     */
+    @Test
+    public void testReservedKeyBlockedOnUntrustedMetadata() {
+        String reservedKey = TikaCoreProperties.TIKA_META_PREFIX + "reserved";
+        Metadata m = new Metadata();
+        m.add(reservedKey, "value");
+        assertNull(m.get(reservedKey));
+    }
+
+    /**
+     * Once a Metadata instance is marked trusted, reserved keys are accepted.
+     */
+    @Test
+    public void testReservedKeyAllowedOnTrustedMetadata() {
+        String reservedKey = TikaCoreProperties.TIKA_META_PREFIX + "reserved";
+        Metadata m = new Metadata();
+        m.setTrusted(true);
+        m.add(reservedKey, "value");
+        assertEquals("value", m.get(reservedKey));
+    }
+
+    /**
+     * A write limiter that drops everything must prevent {@code set} from
+     * persisting a value, so persistence stays under the limiter's control.
+     */
+    @Test
+    public void testWriteLimiterBlocksSet() {
+        Metadata m = new Metadata(blockingLimiter());
+        m.set("key", "value");
+        assertNull(m.get("key"));
+    }
+
+    /**
+     * {@code set(String, String)} must delegate to the limiter with the exact
+     * field and value it was given.
+     */
+    @Test
+    public void testWriteLimiterInvokedOnSet() {
+        RecordingLimiter limiter = new RecordingLimiter();
+        Metadata m = new Metadata(limiter);
+        m.set("key", "value");
+        assertTrue(limiter.setCalled);
+        assertEquals("key", limiter.lastSetField);
+        assertEquals("value", limiter.lastSetValue);
+    }
+
+    /**
+     * The {@code set(Property, String)} overload must delegate to the limiter
+     * using the property's name and the given value.
+     */
+    @Test
+    public void testWriteLimiterInvokedOnSetProperty() {
+        RecordingLimiter limiter = new RecordingLimiter();
+        Metadata m = new Metadata(limiter);
+        m.set(TikaCoreProperties.TITLE, "title");
+        assertTrue(limiter.setCalled);
+        assertEquals(TikaCoreProperties.TITLE.getName(), limiter.lastSetField);
+        assertEquals("title", limiter.lastSetValue);
+    }
+
+    /**
+     * A write limiter that ignores every field, so nothing is persisted.
+     */
+    private static MetadataWriteLimiter blockingLimiter() {
+        return new MetadataWriteLimiter() {
+            @Override
+            public void add(String field, String value, Map<String, String[]> data) {
+            }
+
+            @Override
+            public void set(String field, String value, Map<String, String[]> data) {
+            }
+        };
+    }
+
+    /**
+     * A spy limiter that records the field and value it was invoked with on
+     * {@code set} and writes the value through to the backing map.
+     */
+    private static final class RecordingLimiter implements MetadataWriteLimiter {
+        private boolean setCalled;
+        private String lastSetField;
+        private String lastSetValue;
+
+        @Override
+        public void add(String field, String value, Map<String, String[]> data) {
+            if (value != null) {
+                data.put(field, new String[]{value});
+            }
+        }
+
+        @Override
+        public void set(String field, String value, Map<String, String[]> data) {
+            setCalled = true;
+            lastSetField = field;
+            lastSetValue = value;
+            if (value != null) {
+                data.put(field, new String[]{value});
+            }
+        }
     }
 
     private static class MetadataDateAdder implements Callable<Integer> {
