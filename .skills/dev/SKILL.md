@@ -47,10 +47,10 @@ is project policy: personal configuration does not override it.
 
 ## Session Start Checklist
 
-1. **Local Maven repo** — Ask the user if they want to use an in-repo
-   `.local_m2_repo` (via `-Dmaven.repo.local=$(pwd)/.local_m2_repo`).
-   This isolates builds from the system `~/.m2/repository` and avoids
-   polluting or being affected by other projects.
+1. **Local Maven repo** — Default to an in-repo `.local_m2_repo`
+   (via `-Dmaven.repo.local=$(pwd)/.local_m2_repo`) unless the user says
+   otherwise.  This isolates builds from the shared `~/.m2/repository` and
+   avoids polluting or being affected by other projects.
 
 2. **Maven wrapper** — Use `./mvnw`; fall back to a system Maven (3.9+)
    only if the wrapper is absent.
