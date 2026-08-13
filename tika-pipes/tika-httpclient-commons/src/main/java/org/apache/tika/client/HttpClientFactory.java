@@ -80,8 +80,8 @@ import org.apache.tika.utils.StringUtils;
 /**
  * This holds quite a bit of state and is not thread safe.  Beware!
  * <p>
- * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
- * if you need robust SSL.
+ * TLS certificate/hostname verification is off unless {@link #setVerifySsl(boolean)}
+ * is called with {@code true} (the http-fetcher does so by default).
  */
 public class HttpClientFactory {
 
@@ -264,8 +264,8 @@ public class HttpClientFactory {
             sslsf = new SSLConnectionSocketFactory(sslContext,
                     SSLConnectionSocketFactory.getDefaultHostnameVerifier());
         } else {
-            LOG.warn("http client does not verify ssl at this point.  " +
-                    "If you need that, please open a ticket.");
+            LOG.warn("http client does not verify TLS certificates or hostnames; " +
+                    "set verifySsl=true to enable verification");
             TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
             try {
                 sslContext =

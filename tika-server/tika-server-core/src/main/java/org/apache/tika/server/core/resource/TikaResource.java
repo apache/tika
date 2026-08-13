@@ -292,7 +292,6 @@ public class TikaResource {
         TikaInputStream tis = TikaInputStream.get(fileAtt.getObject(InputStream.class));
         boolean handedOff = false;
         try {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
 
             // Process config JSON if provided
             if (configAtt != null) {
@@ -397,6 +396,27 @@ public class TikaResource {
 
     // ==================== PUT endpoints (raw bytes) ====================
 
+    // try-with-resources in the helpers: the spooled temp file must be deleted even
+    // if context setup or metadata filling throws before the parse begins.
+
+    private Response putRaw(InputStream is, HttpHeaders httpHeaders, String handlerTypeName)
+            throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            ParseContext context = createParseContext();
+            return produceRawOutput(tis, Metadata.newInstance(context),
+                    httpHeaders.getRequestHeaders(), handlerTypeName);
+        }
+    }
+
+    private Metadata putJson(InputStream is, HttpHeaders httpHeaders, String handlerTypeName)
+            throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            ParseContext context = createParseContext();
+            return produceJson(tis, Metadata.newInstance(context),
+                    httpHeaders.getRequestHeaders(), handlerTypeName);
+        }
+    }
+
     /**
      * Parse document and return Markdown content. This is the default output of the bare
      * /tika endpoint; use /tika/xml, /tika/html, /tika/text for the other formats.
@@ -406,109 +426,63 @@ public class TikaResource {
     @Produces("text/plain")
     public Response getDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
-        }
+        return putRaw(is, httpHeaders, "md");
     }
 
-    /**
-     * Parse document and return plain text content.
-     */
+    /** Parse document and return body-only plain text. */
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
     @Path("text")
     public Response getText(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "body");
-        }
+        return putRaw(is, httpHeaders, "body");
     }
 
-    /**
-     * Parse document and return HTML content.
-     */
+    /** Parse document and return HTML content. */
     @PUT
     @Consumes("*/*")
     @Produces("text/html")
     @Path("html")
     public Response getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "html");
-        }
+        return putRaw(is, httpHeaders, "html");
     }
 
-    /**
-     * Parse document and return XML content.
-     */
+    /** Parse document and return XML content. */
     @PUT
     @Consumes("*/*")
     @Produces("text/xml")
     @Path("xml")
     public Response getXml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "xml");
-        }
+        return putRaw(is, httpHeaders, "xml");
     }
 
-    /**
-     * Parse document and return Markdown content.
-     */
+    /** Parse document and return Markdown content. */
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
     @Path("md")
     public Response getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), "md");
-        }
+        return putRaw(is, httpHeaders, "md");
     }
 
-    /**
-     * Parse document and return JSON with metadata and text content.
-     */
+    /** Parse document and return JSON with metadata and Markdown content (the default handler). */
     @PUT
     @Consumes("*/*")
     @Produces("application/json")
     @Path("json")
     public Metadata getJsonDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), null);
-        }
+        return putJson(is, httpHeaders, null);
     }
 
     /**
-     * Parse document and return JSON with metadata and specified content type.
+     * Parse document and return JSON with metadata and the named handler's content.
      *
-     * @param handlerTypeName content handler type: text, html, or xml
+     * @param handlerTypeName content handler type: text, html, xml, body, markdown, ignore
      */
     @PUT
     @Consumes("*/*")
@@ -517,158 +491,93 @@ public class TikaResource {
     public Metadata getJson(final InputStream is, @Context HttpHeaders httpHeaders,
                             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException {
-        // try-with-resources: the spooled temp file must be deleted even if
-        // context setup or metadata filling throws before the parse begins.
-        try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            ParseContext context = createParseContext();
-            return produceJson(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), handlerTypeName);
-        }
+        return putJson(is, httpHeaders, handlerTypeName);
     }
 
     // ==================== POST endpoints (multipart with optional config) ====================
 
-    /**
-     * Parse multipart document with optional config, return XHTML output.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings and handler type
-     * <p>
-     * Returns XHTML by default. Use /tika/config/text, /tika/config/html, or /tika/config/xml for other formats.
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    // All /tika/config* endpoints take a required "file" part and an optional "config"
+    // part (JSON parser settings and handler type). They are gated behind
+    // allowPerRequestConfig=true because per-request configuration could enable
+    // dangerous operations. try-with-resources in the helpers: the spooled file part
+    // must be deleted even when config processing or the parse throws.
+
+    private Response postConfigured(List<Attachment> attachments, String handlerTypeName)
+            throws IOException, TikaConfigException {
+        ParseContext context = createParseContext();
+        Metadata metadata = Metadata.newInstance(context);
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceRawOutput(tis, metadata, context, handlerTypeName);
+        }
+    }
+
+    private Metadata postConfiguredJson(List<Attachment> attachments, String handlerTypeName)
+            throws IOException, TikaConfigException {
+        ParseContext context = createParseContext();
+        Metadata metadata = Metadata.newInstance(context);
+        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            return produceJson(tis, metadata, context, handlerTypeName);
+        }
+    }
+
+    /** Multipart document with optional config; returns Markdown unless the config names a handler. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("config")
     public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            // Default to Markdown if no handler specified in config
-            return produceRawOutput(tis, metadata, context, "md");
-        }
+        return postConfigured(attachments, "md");
     }
 
-    /**
-     * Parse multipart document with optional config, return plain text.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    /** Multipart document with optional config; returns body-only plain text. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("config/text")
     public Response postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceRawOutput(tis, metadata, context, "body");
-        }
+        return postConfigured(attachments, "body");
     }
 
-    /**
-     * Parse multipart document with optional config, return HTML.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    /** Multipart document with optional config; returns HTML. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/html")
     @Path("config/html")
     public Response postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceRawOutput(tis, metadata, context, "html");
-        }
+        return postConfigured(attachments, "html");
     }
 
-    /**
-     * Parse multipart document with optional config, return XML.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    /** Multipart document with optional config; returns XML. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/xml")
     @Path("config/xml")
     public Response postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceRawOutput(tis, metadata, context, "xml");
-        }
+        return postConfigured(attachments, "xml");
     }
 
-    /**
-     * Parse multipart document with optional config, return Markdown.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    /** Multipart document with optional config; returns Markdown. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("text/plain")
     @Path("config/md")
     public Response postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceRawOutput(tis, metadata, context, "md");
-        }
+        return postConfigured(attachments, "md");
     }
 
-    /**
-     * Parse multipart document with optional config, return JSON.
-     * <p>
-     * Accepts multipart with:
-     * - "file" part (required): the document to parse
-     * - "config" part (optional): JSON configuration for parser settings and handler type
-     * <p>
-     * Default handler is markdown. Use config to specify different handler type.
-     * <p>
-     * This endpoint is gated behind allowPerRequestConfig=true because per-request
-     * configuration could enable dangerous operations.
-     */
+    /** Multipart document with optional config; returns JSON with the default (markdown) handler. */
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/json")
     @Path("config/json")
     public Metadata postJson(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceJson(tis, metadata, context, null);
-        }
+        return postConfiguredJson(attachments, null);
     }
 
     /**
@@ -685,11 +594,7 @@ public class TikaResource {
     public Metadata postJsonWithHandler(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
                                         @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            return produceJson(tis, metadata, context, handlerTypeName);
-        }
+        return postConfiguredJson(attachments, handlerTypeName);
     }
 
     // ==================== Internal methods ====================

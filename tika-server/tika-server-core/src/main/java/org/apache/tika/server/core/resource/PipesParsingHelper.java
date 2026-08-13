@@ -179,7 +179,9 @@ public class PipesParsingHelper {
             // Spool input to our dedicated temp directory with proper suffix
             String suffix = getSuffix(metadata);
             tempFile = Files.createTempFile(inputTempDirectory, "tika-", suffix);
-            Files.copy(tis, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            // getPath() spools once via Tika's TemporaryResources; copying file->file
+            // avoids re-reading the stream (which would decode the spool a second time).
+            Files.copy(tis.getPath(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
             String relativeName = tempFile.getFileName().toString();
             LOG.debug("parse: spooled to {} ({} bytes)", relativeName, Files.size(tempFile));
@@ -338,7 +340,7 @@ public class PipesParsingHelper {
 
         if (result.isFatal() || result.isInitializationFailure()) {
             // Initialization/fatal error — JSON status body, HTTP status per mapStatusToHttpResponse
-            // (500, or 503 for CLIENT_UNAVAILABLE_WITHIN_MS)
+            // (500, or 429 for CLIENT_UNAVAILABLE_WITHIN_MS)
             LOG.error("Parse initialization/fatal error: {} - {}",
                     result.status(), result.message());
             throw new WebApplicationException(buildProcessFailureResponse(result));
@@ -375,9 +377,10 @@ public class PipesParsingHelper {
 
 
     /**
-     * Maps PipesResult status to HTTP response status.
+     * Maps PipesResult status to HTTP response status. Private so no caller can map a
+     * status without the Retry-After headers {@link #responseBuilder} attaches.
      */
-    public static Response.Status mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
+    private static Response.Status mapStatusToHttpResponse(PipesResult.RESULT_STATUS status) {
         return switch (status) {
             case PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, EMPTY_OUTPUT,
                  EMIT_SUCCESS, EMIT_SUCCESS_PARSE_EXCEPTION, EMIT_SUCCESS_PASSBACK,
@@ -419,12 +422,16 @@ public class PipesParsingHelper {
         Response.ResponseBuilder builder = Response.status(httpStatus);
         if (httpStatus == Response.Status.TOO_MANY_REQUESTS) {
             // The pool was already full for this long, so a faster retry just re-queues.
-            builder.header(HttpHeaders.RETRY_AFTER,
-                    Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxWaitForClientMillis)));
+            builder.header(HttpHeaders.RETRY_AFTER, retryAfterSeconds(maxWaitForClientMillis));
         } else if (httpStatus == Response.Status.SERVICE_UNAVAILABLE) {
             builder.header(HttpHeaders.RETRY_AFTER, CRASH_RETRY_AFTER_SECONDS);
         }
         return builder;
+    }
+
+    /** Retry-After is whole seconds; clamp to >= 1 so a short wait doesn't round to 0. */
+    static long retryAfterSeconds(long millis) {
+        return Math.max(1, TimeUnit.MILLISECONDS.toSeconds(millis));
     }
 
     /**
@@ -519,7 +526,9 @@ public class PipesParsingHelper {
             // Spool input to our dedicated temp directory with proper suffix
             String suffix = getSuffix(metadata);
             tempFile = Files.createTempFile(inputTempDirectory, "tika-unpack-", suffix);
-            Files.copy(tis, tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            // getPath() spools once via Tika's TemporaryResources; copying file->file
+            // avoids re-reading the stream (which would decode the spool a second time).
+            Files.copy(tis.getPath(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
             String relativeName = tempFile.getFileName().toString();
             LOG.debug("parseUnpack: spooled to {} ({} bytes), requestId={}",

@@ -52,12 +52,8 @@ public class HttpFetcherConfig {
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
     /**
-     * Verify server certificates and hostnames. Defaults to true, matching the Solr
-     * plugins; previously there was no field at all, so the factory's setting could not
-     * be reached from any config and verification could not be turned on.
-     * <p>
-     * Set to false to accept any certificate from any host -- needed for self-signed
-     * internal certs, and the only supported way to opt out.
+     * Verify server certificates and hostnames; false accepts any cert from any host
+     * (the opt-out for self-signed internal certs).
      */
     private boolean verifySsl = true;
     private List<String> httpHeaders = new ArrayList<>();

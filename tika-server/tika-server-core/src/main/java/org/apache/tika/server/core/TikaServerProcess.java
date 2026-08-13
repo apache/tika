@@ -117,7 +117,7 @@ public class TikaServerProcess {
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
-        options.addOption("i", "id", true, "id to use for server in server status endpoint");
+        options.addOption("i", "id", true, "id for this server, written to the startup log");
         options.addOption("?", "help", false, "this help message");
         return options;
     }

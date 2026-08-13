@@ -63,7 +63,6 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
 
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             // NO_PARSE: the child detects (and digests, if configured) without parsing.
             // Detection still opens containers -- zip, OPC, POIFS -- over caller-supplied
             // bytes, so it belongs in the forked worker for the same reason parsing does.

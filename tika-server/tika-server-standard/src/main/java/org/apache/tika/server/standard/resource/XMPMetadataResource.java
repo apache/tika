@@ -73,7 +73,6 @@ public class XMPMetadataResource extends MetadataResource implements TikaResourc
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
         ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
                     .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), context))
                     .build();
@@ -86,7 +85,6 @@ public class XMPMetadataResource extends MetadataResource implements TikaResourc
         ParseContext context = new ParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
                     .build();

@@ -221,9 +221,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                              ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        // Same RequestConfig and headers as the whole-document fetch above. Without the
-        // config this used client defaults, which leave redirects ENABLED -- so
-        // maxRedirects: 0 did not stop redirects on a range fetch.
+        // Same RequestConfig as the whole-document fetch: maxRedirects must bind range fetches too.
         get.setConfig(buildRequestConfig());
         setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
@@ -483,8 +481,6 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         if (httpFetcherConfig.getMaxConnectionsPerRoute() != null) {
             httpClientFactory.setMaxConnectionsPerRoute(httpFetcherConfig.getMaxConnectionsPerRoute());
         }
-        // Unreachable before: the factory had the setter, but nothing carried a config value
-        // to it, so TLS verification could not be turned on from any config.
         httpClientFactory.setVerifySsl(httpFetcherConfig.isVerifySsl());
         if (!StringUtils.isBlank(httpFetcherConfig.getAuthScheme())) {
             httpClientFactory.setUserName(httpFetcherConfig.getUserName());

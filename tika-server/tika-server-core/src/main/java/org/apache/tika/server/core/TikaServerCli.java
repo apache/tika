@@ -38,7 +38,7 @@ public class TikaServerCli {
                 "listen port (default = 9998)\n");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
-        options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
+        options.addOption("i", "id", true, "id for this server, written to the startup log");
         return options;
     }
 

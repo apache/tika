@@ -109,7 +109,6 @@ public class RecursiveMetadataResource {
     public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         ParseContext context = tikaResource.createParseContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(),
                     handlerTypeName);
             return Response.ok(new MetadataList(metadataList)).build();
@@ -181,7 +180,6 @@ public class RecursiveMetadataResource {
         ParseContext context = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             List<Metadata> metadataList = parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(),
                     handlerTypeName);
             return Response.ok(new MetadataList(metadataList)).build();

@@ -60,9 +60,6 @@ class FetchHandler {
         try {
             return new FetcherOrResult(fetcherManager.getFetcher(t.getFetchKey().getFetcherId()), null);
         } catch (FetcherNotFoundException e) {
-            // Was IllegalArgumentException, which FetcherManager never throws -- so an unknown
-            // fetcher id fell through to the initialization branch below and every caller saw
-            // FETCHER_INITIALIZATION_EXCEPTION (a server-side 500) instead of FETCHER_NOT_FOUND.
             String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
             LOG.warn(noFetcherMsg);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));

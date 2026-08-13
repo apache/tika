@@ -29,8 +29,7 @@ public class EvalExceptionUtils {
             Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
     //strips the exception message off the first line, so that the same cause with
-    //differing runtime detail collapses to one entry. Was ExceptionUtils.trimMessage in
-    //tika-core; moved here, its only consumer, when tika-server stopped parsing traces.
+    //differing runtime detail collapses to one entry
     private final static Pattern MSG_PATTERN = Pattern.compile(":[^\\r\\n]+");
 
     public static String normalize(String stacktrace) {

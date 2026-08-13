@@ -24,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
@@ -55,6 +54,7 @@ import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.server.core.TikaServerConfig;
 
 @Path("/async")
 public class AsyncResource {
@@ -63,7 +63,7 @@ public class AsyncResource {
     private final AsyncProcessor asyncProcessor;
     private final EmitterManager emitterManager;
     private final FetcherManager fetcherManager;
-    long maxQueuePauseMillis = 60000;
+    long maxQueuePauseMillis = TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
@@ -194,8 +194,7 @@ public class AsyncResource {
         map.put("capacity", asyncProcessor.getCapacity());
         return Response
                 .status(Response.Status.TOO_MANY_REQUESTS)
-                .header(HttpHeaders.RETRY_AFTER,
-                        Math.max(1, TimeUnit.MILLISECONDS.toSeconds(maxQueuePauseMillis)))
+                .header(HttpHeaders.RETRY_AFTER, PipesParsingHelper.retryAfterSeconds(maxQueuePauseMillis))
                 .entity(map)
                 .build();
     }

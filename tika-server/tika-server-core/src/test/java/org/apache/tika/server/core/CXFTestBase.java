@@ -377,11 +377,6 @@ public abstract class CXFTestBase {
         return false;
     }
 
-    /**
-     * Mirrors TikaServerConfig.; defaults to false (production
-     * default). Override in tests that exercise exception-detail visibility.
-     */
-
     protected InputStream getPipesConfigInputStream() throws IOException {
         if (getPipesInputPath() == null) {
             return null;

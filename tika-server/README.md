@@ -28,7 +28,7 @@ $ java -jar tika-server/tika-server-standard/target/tika-server-standard-<versio
     -?,--help           this help message
     -c,--config <arg>   tika-config file
     -h,--host <arg>     host name (default = localhost, use * for all)
-    -i,--id <arg>       id to use for the server in the status endpoint and logging
+    -i,--id <arg>       id for this server, written to the startup log
     -p,--port <arg>     listen port (default = 9998)
 ```
 
