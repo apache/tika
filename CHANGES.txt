@@ -9,7 +9,10 @@ Release 4.0.0 - ???
      be built from Tika's own package-private factories.
      Metadata#setAll(Properties) is removed with no replacement; use
      putAll(Metadata) or individual set/add calls. PassthroughPrefix is
-     renamed to KeyPrefix. A batch of open-namespace
+     renamed to KeyPrefix, and document/tool-derived names are written via the
+     new Metadata#add(KeyPrefix, String, String) route (append-only, with
+     built-in skip-and-WARN bounds on hostile names) or its Instant overload
+     for source-typed dates. A batch of open-namespace
      prefixes was also renamed (audio:, ner:, envi:, ogg:streams-, grobid:,
      iso19115:, gdal:, geotopic:, mif:, idml:, and GeoParser's Optional_NAME<n>
      fields); see the metadata key migration guide (metadata-changes-4x.adoc)

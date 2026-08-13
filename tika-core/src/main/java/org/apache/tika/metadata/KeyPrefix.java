@@ -22,15 +22,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.Property.ValueType;
-
 /**
  * A Tika-owned prefix under which keys are passed through from the source: the prefix is fixed, but
  * each key name comes verbatim from the document or tool, so keys are unbounded and can't be
  * {@link Property} constants. Declaring one self-registers it, so the open set is enumerable (as
  * {@link Property} makes the closed set) and lintable: a String write is legitimate iff its key is a
  * registered {@link Property} or its prefix is a registered {@code KeyPrefix}.
+ *
+ * <p>Writes under a prefix go through {@link Metadata#add(KeyPrefix, String, String)} (or its
+ * {@code Instant} overload for source-typed dates) — append-only, with built-in skip-and-WARN
+ * handling of blank, over-length, or flooding source-derived names.</p>
  *
  * <p><strong>{@code KeyPrefix} instances are declaration-time constants.</strong> Declare one as a
  * {@code static final} field, the same way a curated {@link Property} constant is declared — never
@@ -143,56 +144,9 @@ public final class KeyPrefix {
         return Collections.unmodifiableCollection(REGISTRY.values());
     }
 
-    // ---- Typed minting factories -----------------------------------------------------
-    // Each mints an UNREGISTERED Property (Property.mintUnregistered) named prefix + name,
-    // shaped like the corresponding external* Property factory. Mint per call for doc-derived
-    // names: minted Properties are cheap, unregistered value objects, GC'd with the parse.
-    // A bounded, known vocabulary belongs in a curated Property constant instead (that IS the
-    // cache, with registry/CI coverage) — never build a name-keyed static cache here, that
-    // recreates the registry-growth leak this design avoids.
-
     private static void requireNonEmptyName(String name) {
         if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException("KeyPrefix-minted Property name must not be null "
-                    + "or empty");
+            throw new IllegalArgumentException("KeyPrefix key suffix must not be null or empty");
         }
-    }
-
-    /** Mints an unregistered SIMPLE/TEXT Property, like {@link Property#externalText}. */
-    public Property text(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.SIMPLE, ValueType.TEXT, null);
-    }
-
-    /** Mints an unregistered BAG/TEXT Property, like {@link Property#externalTextBag}. */
-    public Property textBag(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.BAG, ValueType.TEXT, null);
-    }
-
-    /** Mints an unregistered SIMPLE/DATE Property, like {@link Property#externalDate}. */
-    public Property date(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.SIMPLE, ValueType.DATE, null);
-    }
-
-    /** Mints an unregistered SIMPLE/INTEGER Property, like {@link Property#externalInteger}. */
-    public Property integer(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.SIMPLE, ValueType.INTEGER,
-                null);
-    }
-
-    /** Mints an unregistered SIMPLE/REAL Property, like {@link Property#externalReal}. */
-    public Property real(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.SIMPLE, ValueType.REAL, null);
-    }
-
-    /** Mints an unregistered SIMPLE/BOOLEAN Property, like {@link Property#externalBoolean}. */
-    public Property bool(String name) {
-        requireNonEmptyName(name);
-        return Property.mintUnregistered(key(name), false, PropertyType.SIMPLE, ValueType.BOOLEAN,
-                null);
     }
 }

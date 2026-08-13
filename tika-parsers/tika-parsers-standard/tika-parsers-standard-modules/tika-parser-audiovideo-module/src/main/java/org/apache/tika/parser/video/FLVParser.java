@@ -283,7 +283,7 @@ public class FLVParser implements Parser {
                             if (entry.getValue() == null) {
                                 continue;
                             }
-                            metadata.set(FLV.text(entry.getKey()), entry.getValue().toString());
+                            metadata.add(FLV, entry.getKey(), entry.getValue().toString());
                         }
                     }
                 }

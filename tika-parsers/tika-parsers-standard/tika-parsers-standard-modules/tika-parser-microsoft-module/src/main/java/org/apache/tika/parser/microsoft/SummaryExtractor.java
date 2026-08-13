@@ -193,21 +193,22 @@ public class SummaryExtractor {
         if (customProperties != null) {
             for (String name : customProperties.nameSet()) {
                 // Get, convert and save property value. Custom property names are
-                // document-controlled, so mint via the unregistered KeyPrefix route
+                // document-controlled, so write via the KeyPrefix route
                 // (Property.external* would register+intern one Property per name forever).
                 Object value = customProperties.get(name);
                 if (value instanceof String) {
-                    set(Office.USER_DEFINED.text(name), (String) value);
+                    metadata.add(Office.USER_DEFINED, name, (String) value);
                 } else if (value instanceof Date) {
-                    metadata.set(Office.USER_DEFINED.date(name), (Date) value);
+                    metadata.add(Office.USER_DEFINED, name, ((Date) value).toInstant());
                 } else if (value instanceof Boolean) {
-                    metadata.set(Office.USER_DEFINED.bool(name), value.toString());
+                    metadata.add(Office.USER_DEFINED, name, value.toString());
                 } else if (value instanceof Long) {
-                    metadata.set(Office.USER_DEFINED.integer(name), ((Long) value).intValue());
+                    metadata.add(Office.USER_DEFINED, name,
+                            String.valueOf(((Long) value).intValue()));
                 } else if (value instanceof Double) {
-                    metadata.set(Office.USER_DEFINED.real(name), (Double) value);
+                    metadata.add(Office.USER_DEFINED, name, String.valueOf((Double) value));
                 } else if (value instanceof Integer) {
-                    metadata.set(Office.USER_DEFINED.integer(name), (Integer) value);
+                    metadata.add(Office.USER_DEFINED, name, String.valueOf((Integer) value));
                 }
             }
         }

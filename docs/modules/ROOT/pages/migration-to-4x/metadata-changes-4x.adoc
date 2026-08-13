@@ -413,14 +413,22 @@ security gap.
 
 === For parser authors
 
-* Document-derived key names (scraped from the file: HTML `<meta>` names, custom
-  document properties, CSV headers, ...) must go through a `KeyPrefix` -- its typed
-  factory methods (`text`, `textBag`, `date`, `integer`, `real`, `bool`) to mint a
-  `Property`, or `KeyPrefix#key(String)` where a raw string suffix is unavoidable --
-  rather than an un-prefixed `String` key. Modules that write document-derived
-  metadata enforce this with a forbiddenapis ban on `Metadata.set/add(String, String)`
-  (`metadata.forbiddenapis.signaturesFile`, opt-in per module `pom.xml`). See
-  xref:developers/metadata-keys.adoc[Adding a Metadata Key].
+* Document-derived key names (HTML `<meta>` names, custom document properties, CSV
+  headers, ...) go through a declared `KeyPrefix` and
+  `Metadata#add(KeyPrefix, String, String)` -- the single write route for names Tika
+  does not control. See xref:developers/metadata-keys.adoc[Adding a Metadata Key].
+** Append-only: a repeated name accumulates values.
+** Never throws on hostile input: blank, over-length, or flooding names are skipped
+   with a WARN.
+** Source-typed dates (OLE `VT_DATE`, OOXML `vt:filetime`): use the
+   `add(KeyPrefix, String, Instant)` overload -- stores canonical ISO-8601. If the
+   source's date fails to parse, keep the raw text via the String overload.
+** Known, bounded vocabularies belong in curated `Property` constants instead.
+* Parser modules enforce the route with a forbiddenapis ban on
+  `Metadata.set/add(String, String)` (`metadata.forbiddenapis.signaturesFile`, opt-in
+  per module `pom.xml`).
+* Parsing untrusted files at scale? Configure a `StandardMetadataLimiter`: it bounds
+  key size, value size, values-per-field, and total metadata size per parse.
 * `Metadata#set(String, String)` / `#add(String, String)` throw `IllegalArgumentException`
   in 4.0.0 when the name is a reserved `tk:` (or legacy `X-TIKA:`) key. In 3.x this write
   succeeded; there was no guard.

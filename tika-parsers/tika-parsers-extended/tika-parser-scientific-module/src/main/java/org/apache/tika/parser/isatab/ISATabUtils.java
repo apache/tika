@@ -219,21 +219,22 @@ public class ISATabUtils {
         }
     }
 
-    // BAG: a field name legitimately repeats across the trailing columns of one record and
-    // across records/files sharing the same field (e.g. multiple "Term Source Name" columns).
+    // a field name legitimately repeats across the trailing columns of one record and
+    // across records/files sharing the same field (e.g. multiple "Term Source Name" columns),
+    // so values accumulate
     private static void addMetadata(String field, CSVRecord record, Metadata metadata) {
         if ((record == null) || (record.size() <= 1)) {
             return;
         }
 
         for (int i = 1; i < record.size(); i++) {
-            metadata.add(ISATAB.textBag(field), record.get(i));
+            metadata.add(ISATAB, field, record.get(i));
         }
     }
 
     private static void mapStudyToMetadata(Map<String, String> map, Metadata metadata) {
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            metadata.add(ISATAB.textBag(entry.getKey()), entry.getValue());
+            metadata.add(ISATAB, entry.getKey(), entry.getValue());
         }
     }
 }

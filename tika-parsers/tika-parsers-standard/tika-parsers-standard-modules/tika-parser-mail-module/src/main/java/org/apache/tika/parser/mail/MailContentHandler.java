@@ -371,8 +371,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.set(Message.MULTIPART_BOUNDARY,
                             contentType.getParameters().get("boundary"));
                 } else {
-                    metadata.add(Message.RAW_HEADER.textBag(parsedField.getName()),
-                            field.getBody());
+                    metadata.add(Message.RAW_HEADER, parsedField.getName(), field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 String dateBody = parsedField.getBody();
@@ -386,8 +385,7 @@ class MailContentHandler implements ContentHandler {
                     //swallow
                 }
             } else {
-                metadata.add(Message.RAW_HEADER.textBag(parsedField.getName()),
-                        field.getBody());
+                metadata.add(Message.RAW_HEADER, parsedField.getName(), field.getBody());
             }
         } catch (RuntimeException me) {
             if (strictParsing) {

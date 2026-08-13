@@ -18,6 +18,9 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -406,7 +409,7 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                 "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
 
         //plain name->value staging, not Metadata/Property: names are document-controlled,
-        //so applyTo() mints via the unregistered KeyPrefix route, never registering one
+        //so applyTo() writes via the KeyPrefix route, never registering a Property
         private final Map<String, String> customValues = new LinkedHashMap<>();
         private final Set<String> dateValueNames = new HashSet<>();
         private String currentPropertyName;
@@ -518,9 +521,19 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
             for (Map.Entry<String, String> entry : customValues.entrySet()) {
                 String name = entry.getKey();
                 if (dateValueNames.contains(name)) {
-                    metadata.set(Office.USER_DEFINED.date(name), entry.getValue());
+                    Instant instant = null;
+                    try {
+                        instant = OffsetDateTime.parse(entry.getValue()).toInstant();
+                    } catch (DateTimeParseException e) {
+                        //fall through: keep the raw text
+                    }
+                    if (instant == null) {
+                        metadata.add(Office.USER_DEFINED, name, entry.getValue());
+                    } else {
+                        metadata.add(Office.USER_DEFINED, name, instant);
+                    }
                 } else {
-                    metadata.set(Office.USER_DEFINED.text(name), entry.getValue());
+                    metadata.add(Office.USER_DEFINED, name, entry.getValue());
                 }
             }
         }

@@ -270,9 +270,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         for (Map.Entry<String, String[]> e : headers.entrySet()) {
             String headerKey = e.getKey();
-            Property rawHeader = Message.RAW_HEADER.textBag(headerKey);
             for (String headerValue : e.getValue()) {
-                parentMetadata.add(rawHeader, headerValue);
+                parentMetadata.add(Message.RAW_HEADER, headerKey, headerValue);
             }
         }
 

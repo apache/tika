@@ -215,7 +215,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
                         String key = quickTimeMetadataKeys.get(index - 1);
                         String value = decodeValue(payload, data + 16, valueLength, valueType);
                         if (value != null) {
-                            tikaMetadata.add(MP4.text(key), value);
+                            tikaMetadata.add(MP4, key, value);
                             if (key.equals(QT_LOCATION_ISO6709)) {
                                 addLocation(value);
                             }

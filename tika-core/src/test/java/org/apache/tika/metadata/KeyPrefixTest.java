@@ -17,20 +17,14 @@
 package org.apache.tika.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.List;
-import java.util.function.BiFunction;
-
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.Property.ValueType;
-
-/** Constructor validation and the typed unregistered-Property minting factories for
- * {@link KeyPrefix}. */
+/** Constructor validation and key composition for {@link KeyPrefix}. The write route itself
+ * ({@code Metadata#add(KeyPrefix, String, String)}) is covered in
+ * {@code MetadataKeyPrefixRouteTest}. */
 public class KeyPrefixTest {
 
     // Every registered prefix is a unique, unrepeatable static registration -- give each test
@@ -39,20 +33,6 @@ public class KeyPrefixTest {
     private static String uniquePrefix(String label) {
         return "keyprefix-test-" + label + "-" + System.nanoTime() + ":";
     }
-
-    private record Shape(String label, BiFunction<KeyPrefix, String, Property> factory,
-                         PropertyType propertyType, ValueType valueType) {
-    }
-
-    // One entry per typed minting factory -- table-driven so the shape and empty-name checks
-    // below cover all of them without a near-identical test method each.
-    private static final List<Shape> SHAPES = List.of(
-            new Shape("text", KeyPrefix::text, PropertyType.SIMPLE, ValueType.TEXT),
-            new Shape("textBag", KeyPrefix::textBag, PropertyType.BAG, ValueType.TEXT),
-            new Shape("date", KeyPrefix::date, PropertyType.SIMPLE, ValueType.DATE),
-            new Shape("integer", KeyPrefix::integer, PropertyType.SIMPLE, ValueType.INTEGER),
-            new Shape("real", KeyPrefix::real, PropertyType.SIMPLE, ValueType.REAL),
-            new Shape("bool", KeyPrefix::bool, PropertyType.SIMPLE, ValueType.BOOLEAN));
 
     @Test
     public void testRejectsNullPrefix() {
@@ -82,10 +62,8 @@ public class KeyPrefixTest {
 
     @Test
     public void testAcceptsAllCurrentlyUsedTrailingDelimiters() {
-        // ':' '.' '-' '_' -- kept loose even though stage 5a normalized the underscore/dot
-        // outliers it found (NER_ -> ner:, grobid:header_ -> grobid:header:, envi. -> envi:):
-        // MboxParser- (dash) is still live, and the constructor doesn't police convention, only
-        // structure (see the class javadoc).
+        // ':' and '-' are the live delimiters (geotopic:alt-, ogg:streams-); '.' and '_' stay
+        // accepted for now -- the constructor polices structure, not convention.
         for (char delim : new char[]{':', '.', '-', '_'}) {
             String prefix = uniquePrefix("delim-" + delim) + delim;
             KeyPrefix.file(prefix, "d"); // must not throw
@@ -122,29 +100,6 @@ public class KeyPrefixTest {
     public void testToolProvenancePreserved() {
         KeyPrefix kp = KeyPrefix.tool(uniquePrefix("prov-tool"), "d");
         assertEquals(KeyPrefix.Provenance.TOOL, kp.provenance());
-    }
-
-    @Test
-    public void testFactoryShapes() {
-        for (Shape shape : SHAPES) {
-            KeyPrefix kp = KeyPrefix.file(uniquePrefix(shape.label()), "d");
-            Property p = shape.factory().apply(kp, "name");
-            assertEquals(kp.prefix() + "name", p.getName(), shape.label());
-            assertEquals(shape.propertyType(), p.getPropertyType(), shape.label());
-            assertEquals(shape.valueType(), p.getValueType(), shape.label());
-            assertNull(Property.get(p.getName()), shape.label() + ": minted Property must not register");
-        }
-    }
-
-    @Test
-    public void testFactoriesRejectEmptyOrNullName() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("empty-name"), "d");
-        for (Shape shape : SHAPES) {
-            assertThrows(IllegalArgumentException.class, () -> shape.factory().apply(kp, ""),
-                    shape.label());
-            assertThrows(IllegalArgumentException.class, () -> shape.factory().apply(kp, null),
-                    shape.label());
-        }
     }
 
     @Test

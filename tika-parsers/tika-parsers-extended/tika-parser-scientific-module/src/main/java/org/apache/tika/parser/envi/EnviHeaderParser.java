@@ -122,7 +122,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 if (keyValue[0].trim().equals("map info")) {
                     String[] mapInfoValues = parseMapInfoContents(keyValue[1]);
                     if (mapInfoValues[0].equals("UTM")) {
-                        metadata.set(ENVI.text(keyValue[0].trim().replace(" ", ".")),
+                        metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                                 keyValue[1].trim());
                         String[] latLonStringArray =
                                 convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
@@ -132,11 +132,11 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                         xhtml.characters(xhtmlLatLongLine);
                         xhtml.endElement("p");
                     } else {
-                        metadata.set(ENVI.text(keyValue[0].trim().replace(" ", ".")),
+                        metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                                 keyValue[1].trim());
                     }
                 } else {
-                    metadata.set(ENVI.text(keyValue[0].trim().replace(" ", ".")),
+                    metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                             keyValue[1].trim());
                 }
             }
@@ -215,7 +215,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double zoneCM = (zone > 0) ? 6 * zone - 183.0 : 3.0;
         double latitude = 180.0 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
         double longitude = zoneCM - _a3;
-        metadata.set(ENVI.text("lat/lon"), latitude + ", " + longitude);
+        metadata.add(ENVI, "lat/lon", latitude + ", " + longitude);
 
         return new String[]{Double.toString(latitude), Double.toString(longitude)};
     }

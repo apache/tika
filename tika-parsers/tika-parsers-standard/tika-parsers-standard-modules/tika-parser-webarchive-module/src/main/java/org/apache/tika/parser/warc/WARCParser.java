@@ -165,9 +165,8 @@ public class WARCParser implements Parser {
 
     private void processWarcMetadata(WarcResponse warcResponse, Metadata metadata) {
         for (Map.Entry<String, List<String>> e : warcResponse.headers().map().entrySet()) {
-            Property header = WARC_HEADER.textBag(e.getKey());
             for (String val : e.getValue()) {
-                metadata.add(header, val);
+                metadata.add(WARC_HEADER, e.getKey(), val);
             }
         }
     }
@@ -178,9 +177,8 @@ public class WARCParser implements Parser {
             metadata.set(Property.externalText(WARC_HTTP_STATUS_REASON), http.reason());
         }
         for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
-            Property header = WARC_HTTP_HEADER.textBag(e.getKey());
             for (String val : e.getValue()) {
-                metadata.add(header, val);
+                metadata.add(WARC_HTTP_HEADER, e.getKey(), val);
             }
         }
     }

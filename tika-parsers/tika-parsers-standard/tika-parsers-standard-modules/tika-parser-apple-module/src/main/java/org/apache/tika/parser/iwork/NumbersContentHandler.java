@@ -234,7 +234,7 @@ class NumbersContentHandler extends DefaultHandler {
         } else if ("comment".equals(localName)) {
             metadata.add(TikaCoreProperties.COMMENTS, value);
         } else {
-            metadata.add(NUMBERS_METADATA.textBag(localName), value);
+            metadata.add(NUMBERS_METADATA, localName, value);
         }
     }
 }

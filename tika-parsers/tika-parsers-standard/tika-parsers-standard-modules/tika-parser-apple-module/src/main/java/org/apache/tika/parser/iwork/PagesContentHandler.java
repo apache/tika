@@ -283,10 +283,9 @@ class PagesContentHandler extends DefaultHandler {
 
     /**
      * Writes a metadata value under a common Property if the current element
-     * (tracked via {@code metaDataQName}) maps to one; otherwise mints a
-     * {@code pages:}-prefixed Property for the element's local name and
-     * accumulates into it, preserving the pre-migration add (not set) semantics
-     * for the unmapped, potentially-repeating case.
+     * (tracked via {@code metaDataQName}) maps to one; otherwise appends it
+     * under the {@code pages:} prefix keyed by the element's local name,
+     * accumulating for the unmapped, potentially-repeating case.
      *
      * @param metaDataLocalName The localname of the element containing metadata
      * @param value             The metadata value to write
@@ -303,7 +302,7 @@ class PagesContentHandler extends DefaultHandler {
         } else if ("sl:language".equals(metaDataQName)) {
             metadata.set(TikaCoreProperties.LANGUAGE, value);
         } else {
-            metadata.add(PAGES.textBag(metaDataLocalName), value);
+            metadata.add(PAGES, metaDataLocalName, value);
         }
     }
 

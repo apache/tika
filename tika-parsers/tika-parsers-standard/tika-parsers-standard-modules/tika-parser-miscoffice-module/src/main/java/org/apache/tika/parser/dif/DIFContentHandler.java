@@ -131,7 +131,7 @@ public class DIFContentHandler extends DefaultHandler {
                 }
             }
             String value = this.dataStack.peek();
-            this.metadata.add(DIF.textBag(key.toString()), value);
+            this.metadata.add(DIF, key.toString(), value);
             this.isLeaf = false;
         }
         this.treeStack.pop();

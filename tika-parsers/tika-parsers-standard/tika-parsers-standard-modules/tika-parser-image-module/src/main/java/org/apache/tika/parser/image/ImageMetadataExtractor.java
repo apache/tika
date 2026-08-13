@@ -265,10 +265,10 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     if (directory instanceof ExifDirectoryBase) {
-                        metadata.set(UNKNOWN_IMG.text(directory.getName() + ":" + tag.getTagName()),
+                        metadata.add(UNKNOWN_IMG, directory.getName() + ":" + tag.getTagName(),
                                 tag.getDescription());
                     } else {
-                        metadata.set(UNKNOWN_IMG.text(tag.getTagName()), tag.getDescription());
+                        metadata.add(UNKNOWN_IMG, tag.getTagName(), tag.getDescription());
                     }
                 }
             }
@@ -297,11 +297,11 @@ public class ImageMetadataExtractor {
                             value = Boolean.FALSE.toString();
                         }
                         if (directory instanceof ExifDirectoryBase) {
-                            metadata.set(UNKNOWN_IMG.text(directory.getName() + ":" + name), value);
+                            metadata.add(UNKNOWN_IMG, directory.getName() + ":" + name, value);
                         } else if (directory instanceof IccDirectory) {
-                            metadata.set(ICC.text(name), value);
+                            metadata.add(ICC, name, value);
                         } else {
-                            metadata.set(UNKNOWN_IMG.text(name), value);
+                            metadata.add(UNKNOWN_IMG, name, value);
                         }
                     }
                 }

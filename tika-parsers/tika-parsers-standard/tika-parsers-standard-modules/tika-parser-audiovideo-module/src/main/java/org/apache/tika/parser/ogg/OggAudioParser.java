@@ -153,7 +153,7 @@ public abstract class OggAudioParser extends AbstractParser {
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(VORBIS.textBag(key), value);
+                    metadata.add(VORBIS, key, value);
                 }
             }
         }

@@ -133,9 +133,14 @@ public class GribParser implements Parser {
         }
         Property cfProperty = ClimateForecast.byName(name);
         if (cfProperty != null) {
-            metadata.add(cfProperty, value);
+            if (cfProperty.isMultiValuePermitted()) {
+                metadata.add(cfProperty, value);
+            } else {
+                // malformed files can repeat attribute names; SIMPLE CF keys take last-wins, not a throw
+                metadata.set(cfProperty, value);
+            }
         } else {
-            metadata.add(GRIB.text(name), value);
+            metadata.add(GRIB, name, value);
         }
     }
 

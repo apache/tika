@@ -106,13 +106,13 @@ public class ImageParser extends AbstractImageParser {
             parents += node.getNodeName();
         }
         NamedNodeMap map = node.getAttributes();
-        //a bare root node (parents=="") carries no meaningful field name; KeyPrefix mints
-        //require a non-empty suffix
+        //a bare root node (parents=="") carries no meaningful field name; skip it
+        //rather than let the prefix route WARN on a blank name
         if (map != null && !parents.isEmpty()) {
 
             int length = map.getLength();
             if (length == 1) {
-                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG.textBag(parents),
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG, parents,
                         normalize(map.item(0).getNodeValue()));
             } else if (length > 1) {
                 StringBuilder value = new StringBuilder();
@@ -125,7 +125,7 @@ public class ImageParser extends AbstractImageParser {
                     value.append("=");
                     value.append(normalize(attr.getNodeValue()));
                 }
-                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG.textBag(parents), value.toString());
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG, parents, value.toString());
             }
         }
 
@@ -182,8 +182,8 @@ public class ImageParser extends AbstractImageParser {
                         }
                         metadata.set(TIFF.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
                         metadata.set(TIFF.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG.text("height"), Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG.text("width"), Integer.toString(reader.getWidth(0)));
+                        metadata.add(ImageMetadataExtractor.UNKNOWN_IMG, "height", Integer.toString(reader.getHeight(0)));
+                        metadata.add(ImageMetadataExtractor.UNKNOWN_IMG, "width", Integer.toString(reader.getWidth(0)));
 
                         loadMetadata(reader.getImageMetadata(0), metadata);
                     }

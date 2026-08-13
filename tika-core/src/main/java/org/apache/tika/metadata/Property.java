@@ -130,10 +130,10 @@ public final class Property implements Comparable<Property> {
 
     /**
      * Package-private, non-registering, lock-free minting path: skips {@code PROPERTIES}
-     * entirely, no interning and no lock. For call sites that construct Properties per-call
-     * from runtime/document-derived names, where interning would grow the static registry
-     * without bound (e.g. future {@code KeyPrefix} mints, a digest-template factory).
-     * Never composite.
+     * entirely, no interning and no lock. For call sites that must construct Properties
+     * from runtime-supplied names, where interning would grow the static registry without
+     * bound. Never composite. Document-derived names normally take
+     * {@link Metadata#add(KeyPrefix, String, String)} instead of any Property at all.
      */
     static Property mintUnregistered(String name, boolean internal, PropertyType propertyType,
                                      ValueType valueType, String[] choices) {
@@ -182,9 +182,10 @@ public final class Property implements Comparable<Property> {
 
     /**
      * Retrieve the property object that corresponds to the given key. Only registered
-     * Properties resolve here: a {@code KeyPrefix}-minted Property is never interned (see
-     * {@code Property#mintUnregistered}), so this always returns {@code null} for a
-     * document-derived key, even one that was previously written. This is load-bearing for
+     * Properties resolve here: document-derived keys (written via
+     * {@link Metadata#add(KeyPrefix, String, String)} or minted through
+     * {@code Property#mintUnregistered}) are never interned, so this always returns
+     * {@code null} for them, even after a write. This is load-bearing for
      * {@link Metadata#reconstruct}, which falls back to the trusted String path when lookup
      * misses.
      *
@@ -324,8 +325,8 @@ public final class Property implements Comparable<Property> {
     // Same shapes as the public factories above, but (a) assert the name IS reserved
     // (b) still register (curated constants must stay resolvable via Property.get /
     // Metadata.reconstruct). Callers: TikaCoreProperties, TikaPagedText, Rendering — all
-    // in-package. Not for document-derived names; those mint unregistered (see
-    // mintUnregistered) via KeyPrefix (stage 3+).
+    // in-package. Not for document-derived names; those go through
+    // Metadata#add(KeyPrefix, String, String) with no Property at all.
 
     static Property reservedInternalBoolean(String name) {
         requireReserved(name);

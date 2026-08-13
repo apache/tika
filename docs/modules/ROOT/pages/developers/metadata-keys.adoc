@@ -49,6 +49,26 @@ Naming conventions (frozen for 4.0):
   `cp:`, `extended-properties:`).
 * HTTP headers stay bare — no `http:` namespace (`Content-Type`, `Content-Encoding`, `Location`).
 
+== Document-derived names: declare a KeyPrefix
+
+When the key *names* come from the document or an external tool (custom document properties,
+format-specific attribute names, NER labels), they can't be constants. Declare a `KeyPrefix`
+once, as a `static final` field — never per-parse, never from document text — and write through
+`Metadata#add(KeyPrefix, String, String)`:
+
+[source,java]
+----
+static final KeyPrefix MYFORMAT = KeyPrefix.file("myformat:", "myformat's own header fields");
+...
+metadata.add(MYFORMAT, nameFromDocument, value);              // String value
+metadata.add(MYFORMAT, nameFromDocument, date.toInstant());   // source-typed date
+----
+
+The route is append-only (repeated names accumulate, losslessly transcribing the source) and
+never throws on hostile input: blank, over-length, or flooding names are skipped with a WARN.
+Use `KeyPrefix.file(...)` for names read out of the document, `KeyPrefix.tool(...)` for names
+coined by an external tool or service.
+
 == Regenerate the registry
 
 The registry — three JSON files under `tika-metadata-schema/src/main/resources/`, listing every

@@ -113,14 +113,14 @@ public class HDFParser implements Parser {
 
         // get file type
         met.set(FILE_TYPE_DESCRIPTION, ncFile.getFileTypeDescription());
-        // BAG: the same attribute name can recur across sibling/nested groups (recursed via
-        // group.getGroups() below).
+        // the same attribute name can recur across sibling/nested groups (recursed via
+        // group.getGroups() below), so values accumulate
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {
-                met.add(HDF.textBag(attribute.getFullName()), attribute.getStringValue());
+                met.add(HDF, attribute.getFullName(), attribute.getStringValue());
             } else {
                 // try and cast its value to a string
-                met.add(HDF.textBag(attribute.getFullName()),
+                met.add(HDF, attribute.getFullName(),
                         String.valueOf(attribute.getNumericValue()));
             }
         }

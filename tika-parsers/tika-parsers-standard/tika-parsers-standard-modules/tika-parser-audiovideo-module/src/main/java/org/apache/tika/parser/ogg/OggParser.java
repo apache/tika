@@ -139,7 +139,7 @@ public class OggParser extends AbstractParser {
         }
 
         // Report about the streams
-        metadata.add(STREAMS.integer("total"), Integer.toString(totalStreams));
+        metadata.add(STREAMS, "total", Integer.toString(totalStreams));
         for (OggStreamType type : streams.keySet()) {
             String key = type.mimetype.substring(type.mimetype.indexOf('/') + 1);
             if (key.startsWith("x-")) {
@@ -148,11 +148,11 @@ public class OggParser extends AbstractParser {
             if (type == OggStreamIdentifier.UNKNOWN) {
                 key = "unknown";
             }
-            metadata.add(STREAMS.integer(key), Integer.toString(streams.get(type)));
+            metadata.add(STREAMS, key, Integer.toString(streams.get(type)));
         }
         for (OggStreamType.Kind kind : streamKinds.keySet()) {
             String key = kind.name().toLowerCase(Locale.ROOT);
-            metadata.add(STREAMS.integer(key), Integer.toString(streamKinds.get(kind)));
+            metadata.add(STREAMS, key, Integer.toString(streamKinds.get(kind)));
         }
 
         // Finish

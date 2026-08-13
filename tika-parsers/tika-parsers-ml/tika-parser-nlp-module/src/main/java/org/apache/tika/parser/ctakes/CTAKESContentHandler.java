@@ -135,7 +135,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
             ae.process(jcas);
 
             // add annotations to metadata
-            metadata.add(CTAKES.text("schema"), config.getAnnotationPropsAsString());
+            metadata.add(CTAKES, "schema", config.getAnnotationPropsAsString());
             CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
             Collection<IdentifiedAnnotation> collection =
                     JCasUtil.select(jcas, IdentifiedAnnotation.class);
@@ -149,7 +149,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
                                 .append(CTAKESUtils.getAnnotationProperty(annotation, property));
                     }
                 }
-                metadata.add(CTAKES.textBag(annotation.getType().getShortName()),
+                metadata.add(CTAKES, annotation.getType().getShortName(),
                         annotationBuilder.toString());
             }
 

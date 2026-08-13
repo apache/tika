@@ -93,7 +93,7 @@ public class RTFEmbeddedHandler {
                 } else if (closingGroup.sp) {
                     //sn is document-controlled (RTF shape-property name); may repeat
                     //across multiple {\sp...} pairs in one \pict group
-                    metadata.add(RTFMetadata.PICT.textBag(sn), sv);
+                    metadata.add(RTFMetadata.PICT, sn, sv);
                 }
                 if (closingGroup.object) {
                     inObject = false;

@@ -173,7 +173,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2004String(tis);
             String propValue = read2004String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM.textBag(propName), propValue);
+                metadata.add(DWG_CUSTOM, propName, propValue);
             }
         }
     }
@@ -208,7 +208,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2007and2010String(tis);
             String propValue = read2007and2010String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM.textBag(propName), propValue);
+                metadata.add(DWG_CUSTOM, propName, propValue);
             }
         }
     }
@@ -259,7 +259,7 @@ public class DWGParser extends AbstractDWGParser {
                     if (splitAt > -1) {
                         String propName = val.substring(0, splitAt);
                         String propVal = val.substring(splitAt + 1);
-                        metadata.add(DWG_CUSTOM.textBag(propName), propVal);
+                        metadata.add(DWG_CUSTOM, propName, propVal);
                     }
                 }
             } else {

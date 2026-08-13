@@ -160,7 +160,7 @@ public class AudioParser implements Parser {
                 if (stock != null) {
                     metadata.set(stock, value.toString());
                 } else {
-                    metadata.set(AUDIO_SPI.text(entry.getKey()), value.toString());
+                    metadata.add(AUDIO_SPI, entry.getKey(), value.toString());
                 }
             }
         }

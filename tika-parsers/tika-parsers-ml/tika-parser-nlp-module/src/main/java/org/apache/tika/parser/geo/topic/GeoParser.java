@@ -170,9 +170,9 @@ public class GeoParser implements Parser {
         metadata.add(GEOGRAPHIC_LATITUDE, geotag.location.getLatitude());
         for (int i = 0; i < geotag.alternatives.size(); ++i) {
             GeoTag alter = (GeoTag) geotag.alternatives.get(i);
-            metadata.add(ALTERNATE.text("name" + (i + 1)), alter.location.getName());
-            metadata.add(ALTERNATE.text("longitude" + (i + 1)), alter.location.getLongitude());
-            metadata.add(ALTERNATE.text("latitude" + (i + 1)), alter.location.getLatitude());
+            metadata.add(ALTERNATE, "name" + (i + 1), alter.location.getName());
+            metadata.add(ALTERNATE, "longitude" + (i + 1), alter.location.getLongitude());
+            metadata.add(ALTERNATE, "latitude" + (i + 1), alter.location.getLatitude());
         }
     }
 

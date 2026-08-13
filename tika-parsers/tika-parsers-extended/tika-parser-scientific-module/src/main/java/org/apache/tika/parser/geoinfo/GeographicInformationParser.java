@@ -321,18 +321,18 @@ public class GeographicInformationParser implements Parser {
                 ArrayList<InternationalString> stringList =
                         (ArrayList<InternationalString>) k.getKeywords();
                 for (InternationalString s : stringList) {
-                    metadata.add(KEYWORDS.textBag(String.valueOf(j)), s.toString());
+                    metadata.add(KEYWORDS, String.valueOf(j), s.toString());
                 }
                 if (k.getType() != null) {
-                    metadata.add(KEYWORDS_TYPE.textBag(String.valueOf(j)), k.getType().name());
+                    metadata.add(KEYWORDS_TYPE, String.valueOf(j), k.getType().name());
                 }
                 if (k.getThesaurusName() != null && k.getThesaurusName().getTitle() != null) {
-                    metadata.add(THESAURUS_NAME_TITLE.textBag(String.valueOf(j)),
+                    metadata.add(THESAURUS_NAME_TITLE, String.valueOf(j),
                             k.getThesaurusName().getTitle().toString());
                 }
                 if (k.getThesaurusName() != null &&
                         k.getThesaurusName().getAlternateTitles() != null) {
-                    metadata.add(THESAURUS_NAME_ALTERNATIVE_TITLE.textBag(String.valueOf(j)),
+                    metadata.add(THESAURUS_NAME_ALTERNATIVE_TITLE, String.valueOf(j),
                             k.getThesaurusName().getAlternateTitles().toString());
                 }
 

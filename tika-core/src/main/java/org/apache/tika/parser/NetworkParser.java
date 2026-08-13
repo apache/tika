@@ -178,7 +178,7 @@ public class NetworkParser implements Parser {
                 String name = attributes.getValue("", "name");
                 String content = attributes.getValue("", "content");
                 if (name != null && content != null) {
-                    metadata.add(NETWORK.key(name), content);
+                    metadata.add(NETWORK, name, content);
                 }
             }
         }

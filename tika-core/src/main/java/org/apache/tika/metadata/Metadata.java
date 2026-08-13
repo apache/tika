@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -31,6 +32,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TimeZone;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
@@ -79,6 +83,21 @@ public class Metadata implements Serializable {
      * Serial version UID
      */
     private static final long serialVersionUID = 5623926545693153182L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
+
+    /**
+     * Safety net on {@link #add(KeyPrefix, String, String)}: a doc-derived name longer than
+     * this is skipped (with a WARN). Configurable policy belongs in a
+     * {@link org.apache.tika.metadata.writefilter.StandardMetadataLimiter}.
+     */
+    public static final int MAX_PREFIX_ROUTE_NAME_LENGTH = 1024;
+
+    /**
+     * Safety net on {@link #add(KeyPrefix, String, String)}: after this many distinct
+     * prefix-route names in one Metadata instance, further new names are skipped (WARN once).
+     */
+    public static final int MAX_PREFIX_ROUTE_NAMES = 10_000;
     /**
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.
@@ -91,6 +110,10 @@ public class Metadata implements Serializable {
 
 
     private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
+
+    /** Distinct names written via the KeyPrefix route; safety-net bound, resets on deserialize. */
+    private transient int prefixRouteNames;
+    private transient boolean prefixRouteFloodWarned;
     /**
      * Constructs a new, empty metadata.
      */
@@ -405,6 +428,79 @@ public class Metadata implements Serializable {
     }
 
     /**
+     * Appends a value under a document- or tool-derived name, keyed as
+     * {@code prefix + name}. This is <em>the</em> write route for names Tika does not
+     * control (custom document properties, format-specific attribute names, tool output):
+     * append-only (a repeated name accumulates values, losslessly transcribing the source),
+     * with a built-in safety net for hostile or malformed input — a null/blank name, a name
+     * longer than {@link #MAX_PREFIX_ROUTE_NAME_LENGTH}, or a new name arriving after
+     * {@link #MAX_PREFIX_ROUTE_NAMES} distinct prefix-route names is skipped with a WARN,
+     * never an exception. Known, bounded vocabularies belong in curated {@link Property}
+     * constants instead; deployment-tunable limits belong in a
+     * {@link org.apache.tika.metadata.writefilter.StandardMetadataLimiter}, which applies
+     * on top of this route.
+     *
+     * @param prefix the declared prefix for this source (never from document text)
+     * @param name   the source-derived name; skipped if null, blank, or over-length
+     * @param value  the value; a null value is skipped
+     * @throws NullPointerException if prefix is null
+     * @since Apache Tika 4.0.0
+     */
+    public void add(KeyPrefix prefix, String name, String value) {
+        Objects.requireNonNull(prefix, "prefix must not be null");
+        if (value == null) {
+            return;
+        }
+        if (name == null || name.isBlank()) {
+            LOG.warn("skipping '{}' write: blank source-derived name", prefix);
+            return;
+        }
+        if (name.length() > MAX_PREFIX_ROUTE_NAME_LENGTH) {
+            LOG.warn("skipping '{}' write: source-derived name length {} exceeds {}", prefix,
+                    name.length(), MAX_PREFIX_ROUTE_NAME_LENGTH);
+            return;
+        }
+        String key = prefix.key(name);
+        if (!metadata.containsKey(key)) {
+            if (prefixRouteNames >= MAX_PREFIX_ROUTE_NAMES) {
+                if (!prefixRouteFloodWarned) {
+                    prefixRouteFloodWarned = true;
+                    LOG.warn("skipping new prefix-route names: more than {} distinct names",
+                            MAX_PREFIX_ROUTE_NAMES);
+                }
+                return;
+            }
+            prefixRouteNames++;
+        }
+        add(key, value);
+    }
+
+    /**
+     * {@link #add(KeyPrefix, String, String)} for a source-typed date value (e.g. an OLE
+     * VT_DATE / OOXML {@code vt:filetime} custom property): the value is stored in Tika's
+     * canonical ISO-8601 form, identical to how curated date {@link Property} constants
+     * serialize. The date-typing travels with the value, not the key. An Instant too
+     * extreme to represent is skipped with a WARN. If the source's date field fails to
+     * parse in the first place, keep the raw text via the String overload instead.
+     *
+     * @since Apache Tika 4.0.0
+     */
+    public void add(KeyPrefix prefix, String name, Instant value) {
+        Objects.requireNonNull(prefix, "prefix must not be null");
+        if (value == null) {
+            return;
+        }
+        String formatted;
+        try {
+            formatted = formatDate(Date.from(value));
+        } catch (ArithmeticException | IllegalArgumentException e) {
+            LOG.warn("skipping '{}{}' write: unrepresentable instant", prefix, name);
+            return;
+        }
+        add(prefix, name, formatted);
+    }
+
+    /**
      * Reject String writes to reserved Tika-native keys; use their Property or
      * {@link #addTrusted}/{@link #setTrusted(String, String)}.
      */
@@ -412,9 +508,10 @@ public class Metadata implements Serializable {
         if (ReservedNamespaces.isTikaNative(name)) {
             throw new IllegalArgumentException(
                     "Writing reserved key '" + name + "' via the String API is not allowed: " +
-                            "use its Property constant (see TikaCoreProperties), #putAll to copy " +
-                            "another Metadata, or #setTrusted for intentional reconstruction; " +
-                            "see migration-to-4x/metadata-changes-4x in the docs.");
+                            "use its Property constant (see TikaCoreProperties), " +
+                            "#add(KeyPrefix,String,String) for document-derived names, #putAll " +
+                            "to copy another Metadata, or #setTrusted for intentional " +
+                            "reconstruction; see migration-to-4x/metadata-changes-4x in the docs.");
         }
     }
 

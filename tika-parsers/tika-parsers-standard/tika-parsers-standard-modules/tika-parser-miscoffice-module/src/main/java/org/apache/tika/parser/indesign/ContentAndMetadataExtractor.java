@@ -69,6 +69,8 @@ class ContentAndMetadataExtractor {
         private final ContentHandler handler;
         private final Metadata metadata;
         private boolean inContent = false;
+        private boolean seenSpread = false;
+        private int pageCount = 0;
 
         ContentAndMetadataHandler(ContentHandler handler, Metadata metadata) {
             this.handler = handler;
@@ -79,9 +81,17 @@ class ContentAndMetadataExtractor {
                 String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
 
-            // Get Spread Metadata
+            // Accumulate spread page counts; PAGE_COUNT is single-valued, set once at end
             if ("Spread".equals(localName) || "MasterSpread".equals(localName)) {
-                metadata.add(Office.PAGE_COUNT, attributes.getValue("PageCount"));
+                seenSpread = true;
+                String value = attributes.getValue("PageCount");
+                if (value != null) {
+                    try {
+                        pageCount += Integer.parseInt(value.trim());
+                    } catch (NumberFormatException e) {
+                        //ignore malformed PageCount
+                    }
+                }
             }
 
             // Trigger processing of content from Spread or Stories
@@ -103,6 +113,13 @@ class ContentAndMetadataExtractor {
             if ("Content".equals(localName)) {
                 inContent = false;
                 handler.endElement(XHTMLContentHandler.XHTML, "p", "p");
+            }
+        }
+
+        @Override
+        public void endDocument() throws SAXException {
+            if (seenSpread) {
+                metadata.set(Office.PAGE_COUNT, pageCount);
             }
         }
     }

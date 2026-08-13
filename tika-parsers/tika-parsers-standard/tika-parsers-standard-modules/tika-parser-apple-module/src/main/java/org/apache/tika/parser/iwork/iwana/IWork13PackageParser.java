@@ -240,7 +240,7 @@ public class IWork13PackageParser implements Parser {
                 NSDictionary dict = (NSDictionary)rootObj;
                 for (String k : dict.keySet()) {
                     String v = dict.get(k).toString();
-                    metadata.set(IWORKS_PROPERTIES.text(k), v);
+                    metadata.add(IWORKS_PROPERTIES, k, v);
                 }
             }
         } catch (SecurityException e) {

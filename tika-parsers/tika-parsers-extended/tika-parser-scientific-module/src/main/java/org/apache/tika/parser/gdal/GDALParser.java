@@ -282,7 +282,7 @@ public class GDALParser implements Parser {
                 if (line.contains("=") || hasHeadings(line, headings)) {
                     if (currentKey != null) {
                         // time to flush this key and met val
-                        met.add(GDAL.text(currentKey), metVal.toString());
+                        met.add(GDAL, currentKey, metVal.toString());
                     }
                     metVal.setLength(0);
 
@@ -324,7 +324,7 @@ public class GDALParser implements Parser {
                         if (property != null) {
                             metadata.add(property, m.group(1));
                         } else {
-                            metadata.add(GDAL.text(m.group(1)), m.group(2));
+                            metadata.add(GDAL, m.group(1), m.group(2));
                         }
                     }
                 }

@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
@@ -148,5 +149,34 @@ public class PDMetadataExtractor {
         else if (value != null && !(value instanceof COSDictionary)) {
             addMetadata(metadata, property, value.toString());
         }
+    }
+
+    /** Doc-derived custom docinfo names: same decode/dedup as above, prefix route. */
+    static void addMetadata(Metadata metadata, KeyPrefix prefix, String name, COSBase value) {
+        if (value instanceof COSArray) {
+            for (Object v : ((COSArray) value).toList()) {
+                addMetadata(metadata, prefix, name, ((COSBase) v));
+            }
+        } else if (value instanceof COSString) {
+            addMetadata(metadata, prefix, name, ((COSString) value).getString());
+        } else if (value != null && !(value instanceof COSDictionary)) {
+            addMetadata(metadata, prefix, name, value.toString());
+        }
+    }
+
+    static void addMetadata(Metadata metadata, KeyPrefix prefix, String name, String value) {
+        if (name == null || name.isBlank() || value == null || value.isBlank()) {
+            return;
+        }
+        String decoded = decode(value);
+        if (StringUtils.isBlank(decoded)) {
+            return;
+        }
+        for (String v : metadata.getValues(prefix.key(name))) {
+            if (v.equals(decoded)) {
+                return;
+            }
+        }
+        metadata.add(prefix, name, decoded);
     }
 }

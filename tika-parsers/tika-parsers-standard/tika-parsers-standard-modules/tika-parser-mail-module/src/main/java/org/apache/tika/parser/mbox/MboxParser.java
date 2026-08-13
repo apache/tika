@@ -110,7 +110,7 @@ public class MboxParser implements Parser {
                 if (curLine.startsWith(MBOX_RECORD_DIVIDER)) {
                     Metadata mailMetadata = Metadata.newInstance(context);
                     Queue<String> multiline = new LinkedList<>();
-                    mailMetadata.add(EMAIL_HEADER.text("from"),
+                    mailMetadata.add(EMAIL_HEADER, "from",
                             curLine.substring(MBOX_RECORD_DIVIDER.length()));
                     mailMetadata.set(HttpHeaders.CONTENT_TYPE, "message/rfc822");
                     mailMetadata
@@ -229,8 +229,8 @@ public class MboxParser implements Parser {
             metadata.set(HttpHeaders.CONTENT_TYPE, headerContent);
             metadata.set(TikaCoreProperties.FORMAT, headerContent);
         } else {
-            //textBag: header lines of the same type can legitimately repeat (e.g. Received)
-            metadata.add(EMAIL_HEADER.textBag(headerTag), headerContent);
+            //append-only: header lines of the same type can legitimately repeat (e.g. Received)
+            metadata.add(EMAIL_HEADER, headerTag, headerContent);
         }
     }
 }

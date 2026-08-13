@@ -667,7 +667,7 @@ public class PDFParser implements Parser, RenderingParser {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM.textBag(name),
+                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM, name,
                         info.getCOSObject().getDictionaryObject(key));
             }
         }
