@@ -68,4 +68,7 @@ jobs:
         # -pl must name the leaf modules: tika-e2e-tests is an aggregator pom, and Maven
         # does not pull in a selected aggregator's children, so this job built two pom-only
         # modules and ran zero tests while reporting green.
-        run: mvn -pl :tika-e2e-tests-server,:tika-grpc-e2e-test -am clean verify -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        # install, not verify: tika-async-cli test-depends on the tika-pipes-file-system
+        # plugin zip, which the assembly builds with attach=false (TIKA-4723) and only
+        # puts in the local repo via an install-phase install-file. verify stops short.
+        run: mvn -pl :tika-e2e-tests-server,:tika-grpc-e2e-test -am clean install -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
