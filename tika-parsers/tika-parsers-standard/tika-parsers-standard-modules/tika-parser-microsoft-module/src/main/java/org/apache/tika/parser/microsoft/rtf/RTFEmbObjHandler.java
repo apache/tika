@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -100,7 +101,6 @@ class RTFEmbObjHandler {
 
     protected void startSN() {
         sb.setLength(0);
-        sb.append(RTFMetadata.RTF_PICT_META_PREFIX);
     }
 
     protected void endSN() {
@@ -117,7 +117,9 @@ class RTFEmbObjHandler {
 
     //end metadata pair
     protected void endSP() {
-        metadata.add(sn, sv);
+        //sn is document-controlled (RTF shape-property name); may repeat
+        //across multiple {\sp...} pairs in one \pict group
+        metadata.add(RTFMetadata.PICT.textBag(sn), sv);
     }
 
     protected boolean getInObject() {
@@ -217,7 +219,7 @@ class RTFEmbObjHandler {
             return;
         }
 
-        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(bytes.length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(bytes.length));
 
         if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {

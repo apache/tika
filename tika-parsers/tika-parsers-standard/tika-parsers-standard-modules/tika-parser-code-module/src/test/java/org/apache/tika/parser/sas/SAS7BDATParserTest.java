@@ -52,7 +52,7 @@ public class SAS7BDATParserTest extends TikaTest {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
 
-        assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-sas-data", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("TESTING", metadata.get(TikaCoreProperties.TITLE));
 
         // Mon Jan 30 07:31:47 GMT 2017
@@ -87,7 +87,7 @@ public class SAS7BDATParserTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         }
 
-        assertEquals("application/x-sas-data", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-sas-data", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("TESTING", metadata.get(TikaCoreProperties.TITLE));
 
         assertEquals("2018-05-18T11:38:30Z", metadata.get(TikaCoreProperties.CREATED));

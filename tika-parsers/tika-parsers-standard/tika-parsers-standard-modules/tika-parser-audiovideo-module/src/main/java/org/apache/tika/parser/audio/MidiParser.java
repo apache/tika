@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
@@ -59,7 +60,7 @@ public class MidiParser implements Parser {
     // MIDI sequence properties with no existing curated Property match.
     private static final Property TRACKS = Property.internalInteger("midi:tracks");
     private static final Property PATCHES = Property.internalInteger("midi:patches");
-    private static final Property DIVISION_TYPE = Property.internalClosedChoise("midi:division-type",
+    private static final Property DIVISION_TYPE = Property.internalClosedChoice("midi:division-type",
             "PPQ", "SMPTE_24", "SMPTE_25", "SMPTE_30", "SMPTE_30DROP");
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -68,7 +69,7 @@ public class MidiParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "audio/midi");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();

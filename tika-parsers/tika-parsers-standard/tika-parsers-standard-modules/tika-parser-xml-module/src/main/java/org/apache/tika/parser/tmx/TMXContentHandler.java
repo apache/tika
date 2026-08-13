@@ -25,6 +25,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 
@@ -59,14 +60,18 @@ public class TMXContentHandler extends DefaultHandler {
         attributeVals.setAttributes(attributes);
 
         if ("header".equals(localName)) {
-            metadata.add("creation-tool", attributes.getValue("creationtool"));
-            metadata.add("creation-tool-version", attributes.getValue("creationtoolversion"));
-            metadata.add("segment-type", attributes.getValue("segtype"));
-            metadata.add("original-format-type", attributes.getValue("o-tmf"));
-            metadata.add("data-type", attributes.getValue("datatype"));
+            //externalTextBag: add() may fire more than once (e.g. malformed multi-header
+            //input); some of these key names are also add()-ed by XLIFF12ContentHandler,
+            //so the shape must match there too (Property registration is name-keyed, global)
+            metadata.add(Property.externalTextBag("creation-tool"), attributes.getValue("creationtool"));
+            metadata.add(Property.externalTextBag("creation-tool-version"),
+                    attributes.getValue("creationtoolversion"));
+            metadata.add(Property.externalTextBag("segment-type"), attributes.getValue("segtype"));
+            metadata.add(Property.externalTextBag("original-format-type"), attributes.getValue("o-tmf"));
+            metadata.add(Property.externalTextBag("data-type"), attributes.getValue("datatype"));
             sourceLang = attributes.getValue("srclang");
-            metadata.add("source-language", sourceLang);
-            metadata.add("admin-language", attributes.getValue("adminlang"));
+            metadata.add(Property.externalTextBag("source-language"), sourceLang);
+            metadata.add(Property.externalTextBag("admin-language"), attributes.getValue("adminlang"));
         }
 
         if ("tu".equals(localName)) {
@@ -154,9 +159,10 @@ public class TMXContentHandler extends DefaultHandler {
 
     @Override
     public void endDocument() {
-        targetLanguages.forEach(s -> metadata.add("target-language", s));
-        metadata.set("tu-count", String.valueOf(numberOfTUs));
-        metadata.set("tuv-count", String.valueOf(numberOfTUVs));
+        Property targetLanguage = Property.externalTextBag("target-language");
+        targetLanguages.forEach(s -> metadata.add(targetLanguage, s));
+        metadata.set(Property.externalText("tu-count"), String.valueOf(numberOfTUs));
+        metadata.set(Property.externalText("tuv-count"), String.valueOf(numberOfTUVs));
     }
 
 }

@@ -69,6 +69,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -125,8 +126,8 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
         try (AutoDetectReader reader = new AutoDetectReader(tis, metadata,
                 getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
-            metadata.set(Metadata.CONTENT_TYPE, new MediaType(MARKDOWN, charset).toString());
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+            metadata.set(HttpHeaders.CONTENT_TYPE, new MediaType(MARKDOWN, charset).toString());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
             document = COMMONMARK.parseReader(reader);
         } catch (StackOverflowError e) {
             //for reasons
@@ -401,7 +402,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             if (dataURIScheme.getMediaType() != null) {
-                m.set(Metadata.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
+                m.set(HttpHeaders.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
             }
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);

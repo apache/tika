@@ -41,10 +41,13 @@ public class MetadataHandler extends DefaultHandler {
 
     private final StringBuilder buffer = new StringBuilder();
 
+    /**
+     * String-keyed constructor: {@code name} must be a fixed, compile-time-known key
+     * name (never document-derived), so it is minted as a curated, registered Property,
+     * like {@link Property#externalText}.
+     */
     public MetadataHandler(Metadata metadata, String name) {
-        this.metadata = metadata;
-        this.property = null;
-        this.name = name;
+        this(metadata, Property.externalText(name));
     }
 
     public MetadataHandler(Metadata metadata, Property property) {
@@ -59,12 +62,7 @@ public class MetadataHandler extends DefaultHandler {
             if (previous != null && previous.length() > 0) {
                 value = previous + ", " + value;
             }
-
-            if (this.property != null) {
-                metadata.set(property, value);
-            } else {
-                metadata.set(name, value);
-            }
+            metadata.set(property, value);
         }
     }
 

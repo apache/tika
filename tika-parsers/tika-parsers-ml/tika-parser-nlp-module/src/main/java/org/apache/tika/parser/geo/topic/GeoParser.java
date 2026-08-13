@@ -47,13 +47,9 @@ import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
 import org.apache.tika.parser.geo.topic.gazetteer.Location;
 
 /**
- * Locations here are inferred from the text (NER + gazetteer), so they are stored under a
- * {@code geotopic:} namespace (TIKA-4816 rename batch; formerly {@code geo:}). That cleanly
- * separates them from the standard {@code Geographic} coordinate properties ({@code geo:lat}/
- * {@code geo:long}/{@code geo:alt}/{@code geo:timestamp}, W3C Geo Vocabulary), which denote
- * coordinates the file asserts about itself (FILE provenance) rather than a location this parser
- * inferred from free text (TOOL provenance) -- the two namespaces no longer share a prefix, so the
- * former disjoint-suffix bookkeeping is moot.
+ * Locations here are inferred from the text (NER + gazetteer) and stored under {@code geotopic:}
+ * (TOOL provenance) -- distinct from {@code Geographic}'s {@code geo:lat/long/alt/timestamp}
+ * (W3C Geo Vocabulary; FILE provenance, coordinates the file asserts about itself).
  */
 @TikaComponent
 public class GeoParser implements Parser {

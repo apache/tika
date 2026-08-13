@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
@@ -216,7 +217,7 @@ public class PipesForkParserTest {
 
             // Content type should be detected
             Metadata metadata = metadataList.get(0);
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             assertNotNull(contentType, "Content type should be detected");
             assertTrue(contentType.contains("text/plain"),
                     "Content type should be text/plain, got: " + contentType);
@@ -253,7 +254,7 @@ public class PipesForkParserTest {
 
             // Content type should be detected as zip
             Metadata metadata = metadataList.get(0);
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             assertNotNull(contentType, "Content type should be detected");
             assertTrue(contentType.contains("zip"),
                     "Content type should be zip, got: " + contentType);

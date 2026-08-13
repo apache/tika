@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -162,7 +163,7 @@ public class AutoDetectParserConfigTest extends TikaTest {
             List<Metadata> metadataList = getRecursiveMetadata(tmp, p, context, true);
             assertEquals("d41d8cd98f00b204e9800998ecf8427e",
                     metadataList.get(0).get("tk:digest:MD5"));
-            assertEquals("0", metadataList.get(0).get(Metadata.CONTENT_LENGTH));
+            assertEquals("0", metadataList.get(0).get(HttpHeaders.CONTENT_LENGTH));
         } finally {
             Files.delete(tmp);
         }

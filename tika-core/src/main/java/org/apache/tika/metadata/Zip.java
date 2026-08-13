@@ -19,7 +19,7 @@ package org.apache.tika.metadata;
 /**
  * ZIP file properties collection.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface Zip {
 

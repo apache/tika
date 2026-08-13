@@ -16,8 +16,6 @@
  */
 package org.apache.tika.metadata;
 
-import java.util.Date;
-
 /**
  * XMP Dynamic Media schema. This is a collection of
  * {@link Property property definition} constants for the dynamic media
@@ -78,14 +76,14 @@ public interface XMPDM {
      * "The audio sample type."
      */
     Property AUDIO_SAMPLE_TYPE =
-            Property.internalClosedChoise("xmpDM:audioSampleType", "8Int", "16Int", "32Int",
+            Property.internalClosedChoice("xmpDM:audioSampleType", "8Int", "16Int", "32Int",
                     "32Float");
 
     /**
      * "The audio channel type."
      */
     Property AUDIO_CHANNEL_TYPE =
-            Property.internalClosedChoise("xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
+            Property.internalClosedChoice("xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
     /**
      * "The audio compression used. For example, MP3."
      */
@@ -142,21 +140,15 @@ public interface XMPDM {
      * "The audio's musical key."
      */
     Property KEY =
-            Property.internalClosedChoise("xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#", "G",
+            Property.internalClosedChoice("xmpDM:key", "C", "C#", "D", "D#", "E", "F", "F#", "G",
                     "G#", "A", "A#", "B");
 
 //    /**
 //     * "The duration of lead time for queuing music."
 //     */
 //    Property INTRO_TIME = "xmpDM:introTime";
-    /**
-     * "User's log comments." BAG (TIKA-4816): audio containers can carry more than one comment
-     * (multiple ID3v2 COMM frames, multiple Vorbis "comment" fields) -- a SIMPLE cardinality
-     * throws {@code PropertyTypeException} the moment a file has more than one, confirmed once
-     * the audiovideo module's Mp3Parser/OggAudioParser moved off the (cardinality-unchecked)
-     * String-keyed write route onto the typed {@code Property} route. Only used within
-     * tika-parser-audiovideo-module.
-     */
+    /** "User's log comments." BAG: audio containers can carry more than one (multiple ID3v2
+     * COMM frames, multiple Vorbis "comment" fields). */
     Property LOG_COMMENT = Property.externalTextBag("xmpDM:logComment");
     /**
      * "When true, the clip can be looped seamlessly."
@@ -179,7 +171,7 @@ public interface XMPDM {
      * "The sampling phase of film to be converted to video (pull-down)."
      */
     Property PULL_DOWN =
-            Property.internalClosedChoise("xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS", "WWWSS",
+            Property.internalClosedChoice("xmpDM:pullDown", "WSSWW", "SSWWW", "SWWWS", "WWWSS",
                     "WWSSW", "WSSWW_24p", "SSWWW_24p", "SWWWS_24p", "WWWSS_24p", "WWSSW_24p");
 
 //    /**
@@ -211,7 +203,7 @@ public interface XMPDM {
      * for instruments with no associated scale, such as drums."
      */
     Property SCALE_TYPE =
-            Property.internalClosedChoise("xmpDM:scaleType", "Major", "Minor", "Both", "Neither");
+            Property.internalClosedChoice("xmpDM:scaleType", "Major", "Minor", "Both", "Neither");
 
 //    /**
 //     * "Additional parameters for Resample stretch mode."
@@ -245,7 +237,7 @@ public interface XMPDM {
      * "The audio stretch mode."
      */
     Property STRETCH_MODE =
-            Property.internalClosedChoise("xmpDM:stretchMode", "Fixed length", "Time-Scale",
+            Property.internalClosedChoice("xmpDM:stretchMode", "Fixed length", "Time-Scale",
                     "Resample", "Beat Splice", "Hybrid");
 
 //    /**
@@ -266,7 +258,7 @@ public interface XMPDM {
      * "The time signature of the music."
      */
     Property TIME_SIGNATURE =
-            Property.internalClosedChoise("xmpDM:timeSignature", "2/4", "3/4", "4/4", "5/4", "7/4",
+            Property.internalClosedChoice("xmpDM:timeSignature", "2/4", "3/4", "4/4", "5/4", "7/4",
                     "6/8", "9/8", "12/8", "other");
 
 //    /**
@@ -282,7 +274,7 @@ public interface XMPDM {
      * "The alpha mode."
      */
     Property VIDEO_ALPHA_MODE =
-            Property.externalClosedChoise("xmpDM:videoAlphaMode", "straight", "pre-multiplied");
+            Property.externalClosedChoice("xmpDM:videoAlphaMode", "straight", "pre-multiplied");
 
 //    /**
 //     * "An unordered list of tracks. A track is a named set of markers,
@@ -305,7 +297,7 @@ public interface XMPDM {
      * "The color space."
      */
     Property VIDEO_COLOR_SPACE =
-            Property.internalClosedChoise("xmpDM:videoColorSpace", "sRGB", "CCIR-601", "CCIR-709");
+            Property.internalClosedChoice("xmpDM:videoColorSpace", "sRGB", "CCIR-601", "CCIR-709");
     /**
      * "Video compression used. For example, jpeg."
      */
@@ -314,12 +306,12 @@ public interface XMPDM {
      * "The field order for video."
      */
     Property VIDEO_FIELD_ORDER =
-            Property.internalClosedChoise("xmpDM:videoFieldOrder", "Upper", "Lower", "Progressive");
+            Property.internalClosedChoice("xmpDM:videoFieldOrder", "Upper", "Lower", "Progressive");
     /**
      * "The video frame rate."
      */
     Property VIDEO_FRAME_RATE =
-            Property.internalOpenChoise("xmpDM:videoFrameRate", "24", "NTSC", "PAL");
+            Property.internalOpenChoice("xmpDM:videoFrameRate", "24", "NTSC", "PAL");
     /**
      * "The date and time when the video was last modified."
      */
@@ -334,62 +326,11 @@ public interface XMPDM {
      * Windows 32-bit pixels have 8 bits per component."
      */
     Property VIDEO_PIXEL_DEPTH =
-            Property.internalClosedChoise("xmpDM:videoPixelDepth", "8Int", "16Int", "32Int",
+            Property.internalClosedChoice("xmpDM:videoPixelDepth", "8Int", "16Int", "32Int",
                     "32Float");
     /**
      * "The aspect ratio, expressed as wd/ht. For example: '648/720' = 0.9"
      */
     Property VIDEO_PIXEL_ASPECT_RATIO = Property.internalRational("xmpDM:videoPixelAspectRatio");
-
-    /**
-     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE}
-     *
-     * @deprecated Experimental method, will change shortly
-     */
-    @Deprecated
-    class ChannelTypePropertyConverter {
-        private static final Property property = AUDIO_CHANNEL_TYPE;
-
-        /**
-         * How a standalone converter might work
-         */
-        public static String convert(Object value) {
-            if (value instanceof String) {
-                // Assume already done
-                return (String) value;
-            }
-            if (value instanceof Integer) {
-                int channelCount = (Integer) value;
-                if (channelCount == 1) {
-                    return "Mono";
-                } else if (channelCount == 2) {
-                    return "Stereo";
-                } else if (channelCount == 5) {
-                    return "5.1";
-                } else if (channelCount == 7) {
-                    return "7.1";
-                }
-            }
-            return null;
-        }
-
-        /**
-         * How convert+set might work
-         */
-        public static void convertAndSet(Metadata metadata, Object value) {
-            if (value instanceof Integer || value instanceof Long) {
-                metadata.set(property, convert(value));
-            }
-            if (value instanceof Date) {
-                // Won't happen in this case, just an example of already
-                //  converted to a type metadata.set(property) handles
-                metadata.set(property, (Date) value);
-            }
-            if (value instanceof String) {
-                // Already converted, or so we hope!
-                metadata.set(property, (String) value);
-            }
-        }
-    }
 
 }

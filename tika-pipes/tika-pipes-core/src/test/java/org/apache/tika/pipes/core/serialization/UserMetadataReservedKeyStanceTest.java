@@ -28,16 +28,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 
 /**
- * Pins the accepted stance from the metadata-key-api design doc's "Honest framing"
- * section: {@code FetchEmitTupleDeserializer} builds a tuple's userMetadata via
- * {@link Metadata#reconstruct}, a deliberately trusted, request-reachable route -- so a
- * requester CAN assert Tika's reserved {@code tk:} keys (e.g. {@code tk:content}) in
- * their own request's userMetadata, and that value survives deserialization verbatim.
- * This is accepted, not a bug: the requester only poisons their own request's output;
- * deployment-level authn/authz on who may submit tuples is the actual trust boundary,
- * not this deserializer (see design doc, "Honest framing"). If this test starts failing
- * because the reserved key silently drops instead of landing, that is a stance change
- * that must be re-approved, not "fixed."
+ * Pins the accepted stance: {@code FetchEmitTupleDeserializer} builds userMetadata via
+ * {@link Metadata#reconstruct}, a deliberately trusted route, so a requester can assert
+ * reserved {@code tk:} keys in their own request. Accepted, not a bug -- deployment-level
+ * authn/authz on who may submit tuples is the actual trust boundary, not this deserializer.
  */
 public class UserMetadataReservedKeyStanceTest {
 

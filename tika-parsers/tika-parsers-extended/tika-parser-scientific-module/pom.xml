@@ -139,11 +139,7 @@ May the gods of dependency management fix this in the future.
           </execution>
         </executions>
       </plugin>
-      <!-- TIKA-4816: parser code must route document-derived metadata keys through a
-           curated Property constant or a KeyPrefix mint, not Metadata's String-keyed write
-           routes. Main sources only: matches the "forbiddenapis-check" execution id
-           declared in tika-parent, so this config merges onto it; "forbiddenapis-testcheck"
-           (test sources) is untouched. -->
+      <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>

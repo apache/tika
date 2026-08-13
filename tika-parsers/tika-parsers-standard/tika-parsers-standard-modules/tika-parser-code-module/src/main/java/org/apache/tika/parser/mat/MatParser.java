@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -65,7 +66,7 @@ public class MatParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         //Set MIME type as Matlab
-        metadata.set(Metadata.CONTENT_TYPE, MATLAB_MIME_TYPE);
+        metadata.set(HttpHeaders.CONTENT_TYPE, MATLAB_MIME_TYPE);
 
         //Extract information from header file
         MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file

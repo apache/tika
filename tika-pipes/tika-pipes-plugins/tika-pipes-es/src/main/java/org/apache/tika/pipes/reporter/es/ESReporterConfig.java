@@ -40,12 +40,8 @@ public record ESReporterConfig(String esUrl, Set<String> includes, Set<String> e
             throw new TikaConfigException(
                     "Failed to parse ESReporterConfig from JSON", e);
         }
-        // TIKA-4816: keyPrefix is prepended to this reporter's own scratch-Metadata keys
-        // (parse_status/parse_time_ms/exit_value) via Metadata#set(String,String), which now
-        // throws on a reserved (tk:/X-TIKA:) key instead of silently dropping the write. Reject a
-        // reserved prefix at config load, before it can turn every report() call into a thrown
-        // exception -- isTikaNative is a startsWith check, so any key formed by appending a suffix
-        // to a reserved prefix is caught too, not just an exact "tk:"/"X-TIKA:" match.
+        // keyPrefix is prepended to this reporter's own scratch-Metadata keys (parse_status/
+        // parse_time_ms/exit_value); reject a reserved prefix here, before it fails every report() call.
         if (!StringUtils.isBlank(config.keyPrefix()) && ReservedNamespaces.isTikaNative(config.keyPrefix())) {
             throw new TikaConfigException("keyPrefix '" + config.keyPrefix() + "' is in the "
                     + "reserved Tika-native namespace (tk:/X-TIKA:); choose a different keyPrefix");

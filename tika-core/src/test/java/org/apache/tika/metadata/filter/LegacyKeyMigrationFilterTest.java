@@ -138,140 +138,54 @@ public class LegacyKeyMigrationFilterTest {
         assertNull(m.get("X-TIKA:digest:SHA3_512"));
     }
 
-    // TIKA-4816 stage 5a: NER_/grobid:header_/envi. -> ner:/grobid:header:/envi: are open
-    // KeyPrefix vocabularies (unbounded suffix), so they're rewritten by prefix rule, not the flat
-    // table -- same shape as the digest rule above, verbatim suffix carried through.
+    // Open-vocabulary KeyPrefix families (unbounded suffix), rewritten by prefix rule rather than
+    // the flat table; one representative row per family (plus a second NER row for the entity
+    // type's own underscore, kept verbatim through the rule).
+    private static final String[][] EGRESS_ROWS = {
+            // {v4 key, v3 key, sample value}
+            {"ner:PERSON", "NER_PERSON", "John McKay"},
+            {"ner:WEEK_DAY", "NER_WEEK_DAY", "Sunday"},
+            {"grobid:header:Title", "grobid:header_Title", "A Paper"},
+            {"envi:lat/lon", "envi.lat/lon", "36.79, -108.48"},
+            {"ogg:streams-total", "streams-total", "2"},
+            {"iso19115:keywords:2", "Keywords 2", "climate"},
+            {"iso19115:keywords-type:2", "KeywordsType 2", "theme"},
+            {"iso19115:thesaurus-name-title:2", "ThesaurusNameTitle 2", "GCMD"},
+            {"iso19115:thesaurus-name-alternative-title:2", "ThesaurusNameAlternativeTitle 2", "GCMD Keywords"},
+            {"geotopic:alt-name1", "Optional_NAME1", "United States"},
+            {"geotopic:alt-longitude12", "Optional_LONGITUDE12", "-98.5"},
+    };
+    private static final String[][] INGEST_ROWS = {
+            // {v3 key, v4 key, sample value}
+            {"NER_LOCATION", "ner:LOCATION", "Los Angeles"},
+            {"grobid:header_Title", "grobid:header:Title", "A Paper"},
+            {"envi.samples", "envi:samples", "2400"},
+            {"streams-vorbis", "ogg:streams-vorbis", "1"},
+            {"Keywords 3", "iso19115:keywords:3", "ocean"},
+            {"Optional_LATITUDE1", "geotopic:alt-latitude1", "39.76"},
+    };
 
     @Test
-    public void nerPrefixRuleEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
-        Metadata m = new Metadata();
-        m.set("ner:PERSON", "John McKay");
-        m.set("ner:WEEK_DAY", "Sunday");   // the entity type's own underscore, kept verbatim
-        apply(f, m);
-        assertEquals("John McKay", m.get("NER_PERSON"));
-        assertEquals("Sunday", m.get("NER_WEEK_DAY"));
-        assertNull(m.get("ner:PERSON"));
+    public void prefixRuleFamiliesEgress() throws Exception {
+        for (String[] row : EGRESS_ROWS) {
+            assertMigrates(Direction.V4_TO_V3, row[0], row[1], row[2]);
+        }
     }
 
     @Test
-    public void nerPrefixRuleIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.set("NER_LOCATION", "Los Angeles");
-        apply(f, m);
-        assertEquals("Los Angeles", m.get("ner:LOCATION"));
-        assertNull(m.get("NER_LOCATION"));
+    public void prefixRuleFamiliesIngest() throws Exception {
+        for (String[] row : INGEST_ROWS) {
+            assertMigrates(Direction.V3_TO_V4, row[0], row[1], row[2]);
+        }
     }
 
-    @Test
-    public void grobidHeaderPrefixRuleEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+    private static void assertMigrates(Direction direction, String from, String to, String value)
+            throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), direction);
         Metadata m = new Metadata();
-        m.set("grobid:header:Title", "A Paper");
+        m.set(from, value);
         apply(f, m);
-        assertEquals("A Paper", m.get("grobid:header_Title"));
-        assertNull(m.get("grobid:header:Title"));
-    }
-
-    @Test
-    public void grobidHeaderPrefixRuleIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.set("grobid:header_Title", "A Paper");
-        apply(f, m);
-        assertEquals("A Paper", m.get("grobid:header:Title"));
-        assertNull(m.get("grobid:header_Title"));
-    }
-
-    @Test
-    public void enviPrefixRuleEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
-        Metadata m = new Metadata();
-        m.set("envi:lat/lon", "36.79, -108.48");
-        apply(f, m);
-        assertEquals("36.79, -108.48", m.get("envi.lat/lon"));
-        assertNull(m.get("envi:lat/lon"));
-    }
-
-    @Test
-    public void enviPrefixRuleIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.set("envi.samples", "2400");
-        apply(f, m);
-        assertEquals("2400", m.get("envi:samples"));
-        assertNull(m.get("envi.samples"));
-    }
-
-    // TIKA-4816 rename batch (post stage-5a): more open-vocabulary prefix rules, same shape as
-    // NER_/grobid:header_/envi. above, plus GeoParser's non-verbatim alternate-location rule.
-
-    @Test
-    public void oggStreamsPrefixRuleEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
-        Metadata m = new Metadata();
-        m.add("ogg:streams-total", "2");
-        apply(f, m);
-        assertEquals("2", m.get("streams-total"));
-        assertNull(m.get("ogg:streams-total"));
-    }
-
-    @Test
-    public void oggStreamsPrefixRuleIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.add("streams-vorbis", "1");
-        apply(f, m);
-        assertEquals("1", m.get("ogg:streams-vorbis"));
-        assertNull(m.get("streams-vorbis"));
-    }
-
-    @Test
-    public void geoInfoKeywordsFamilyPrefixRulesEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
-        Metadata m = new Metadata();
-        m.add("iso19115:keywords:2", "climate");
-        m.add("iso19115:keywords-type:2", "theme");
-        m.add("iso19115:thesaurus-name-title:2", "GCMD");
-        m.add("iso19115:thesaurus-name-alternative-title:2", "GCMD Keywords");
-        apply(f, m);
-        assertEquals("climate", m.get("Keywords 2"));
-        assertEquals("theme", m.get("KeywordsType 2"));
-        assertEquals("GCMD", m.get("ThesaurusNameTitle 2"));
-        assertEquals("GCMD Keywords", m.get("ThesaurusNameAlternativeTitle 2"));
-        assertNull(m.get("iso19115:keywords:2"));
-    }
-
-    @Test
-    public void geoInfoKeywordsFamilyPrefixRulesIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.add("Keywords 3", "ocean");
-        apply(f, m);
-        assertEquals("ocean", m.get("iso19115:keywords:3"));
-        assertNull(m.get("Keywords 3"));
-    }
-
-    @Test
-    public void geotopicAlternateLocationRuleEgress() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
-        Metadata m = new Metadata();
-        m.set("geotopic:alt-name1", "United States");
-        m.set("geotopic:alt-longitude12", "-98.5");
-        apply(f, m);
-        assertEquals("United States", m.get("Optional_NAME1"));
-        assertEquals("-98.5", m.get("Optional_LONGITUDE12"));
-        assertNull(m.get("geotopic:alt-name1"));
-    }
-
-    @Test
-    public void geotopicAlternateLocationRuleIngest() throws Exception {
-        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
-        Metadata m = new Metadata();
-        m.set("Optional_LATITUDE1", "39.76");
-        apply(f, m);
-        assertEquals("39.76", m.get("geotopic:alt-latitude1"));
-        assertNull(m.get("Optional_LATITUDE1"));
+        assertEquals(value, m.get(to), from + " -> " + to);
+        assertNull(m.get(from), from + " should be removed");
     }
 }

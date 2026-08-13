@@ -28,7 +28,7 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 
 /**
- * Stage 2 mint-time validation: the public {@code Property} factories reject reserved
+ * Mint-time validation: the public {@code Property} factories reject reserved
  * ({@code tk:}/{@code X-TIKA:}) names, curated reserved constants mint through the
  * package-private path instead, and the digest template factory produces usable Properties.
  */
@@ -42,19 +42,19 @@ public class PropertyReservedNameTest {
     private static Map<String, Function<String, Property>> publicFactories() {
         Map<String, Function<String, Property>> m = new LinkedHashMap<>();
         m.put("internalBoolean", Property::internalBoolean);
-        m.put("internalClosedChoise", n -> Property.internalClosedChoise(n, "a", "b"));
+        m.put("internalClosedChoice", n -> Property.internalClosedChoice(n, "a", "b"));
         m.put("internalDate", Property::internalDate);
         m.put("internalDateBag", Property::internalDateBag);
         m.put("internalInteger", Property::internalInteger);
         m.put("internalIntegerSequence", Property::internalIntegerSequence);
         m.put("internalRational", Property::internalRational);
-        m.put("internalOpenChoise", n -> Property.internalOpenChoise(n, "a", "b"));
+        m.put("internalOpenChoice", n -> Property.internalOpenChoice(n, "a", "b"));
         m.put("internalReal", Property::internalReal);
         m.put("internalText", Property::internalText);
         m.put("internalTextBag", Property::internalTextBag);
         m.put("internalURI", Property::internalURI);
-        m.put("externalClosedChoise", n -> Property.externalClosedChoise(n, "a", "b"));
-        m.put("externalOpenChoise", n -> Property.externalOpenChoise(n, "a", "b"));
+        m.put("externalClosedChoice", n -> Property.externalClosedChoice(n, "a", "b"));
+        m.put("externalOpenChoice", n -> Property.externalOpenChoice(n, "a", "b"));
         m.put("externalDate", Property::externalDate);
         m.put("externalReal", Property::externalReal);
         m.put("externalRealSeq", Property::externalRealSeq);

@@ -34,6 +34,7 @@ import org.apache.tika.detect.EncodingProbeCache;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -666,7 +667,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 contentType = metadata.get(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED);
             }
             if (contentType == null) {
-                contentType = metadata.get(Metadata.CONTENT_TYPE);
+                contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             }
         }
         if (!shouldTryStrip(contentType)) {

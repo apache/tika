@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.IDML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -45,7 +46,7 @@ public class IDMLParserTest extends TikaTest {
         assertEquals("3", metadata.get(Office.PAGE_COUNT));
         assertEquals("2", metadata.get(IDML.MASTER_SPREAD_PAGE_COUNT));
         assertEquals("1", metadata.get(IDML.SPREAD_PAGE_COUNT));
-        assertEquals("application/vnd.adobe.indesign-idml-package", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.adobe.indesign-idml-package", metadata.get(HttpHeaders.CONTENT_TYPE));
         // failure below could be because of missing javax.xml.bind if xmpbox 2.* is used
         // check the swallowed throwable in XMPMetadataExtractor.parse()
         assertEquals("2020-09-20T20:07:44Z", metadata.get(XMP.CREATE_DATE));

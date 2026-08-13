@@ -32,6 +32,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadata;
@@ -91,7 +92,7 @@ public class TikaResourceTest extends CXFTestBase {
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 
@@ -107,7 +108,7 @@ public class TikaResourceTest extends CXFTestBase {
                 (InputStream) response.getEntity(), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         // returnStackTrace defaults to false here, so CONTAINER_EXCEPTION is trimmed to
         // the caught exception's own class + message -- the NPE detail underneath it is
@@ -125,7 +126,7 @@ public class TikaResourceTest extends CXFTestBase {
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         // /tika/json defaults to text handler, so no HTML tags
         assertNotFound("<p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
@@ -137,7 +138,7 @@ public class TikaResourceTest extends CXFTestBase {
         metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
 
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("Hello world", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertNotFound("<p>", metadata.get(TikaCoreProperties.TIKA_CONTENT));
     }

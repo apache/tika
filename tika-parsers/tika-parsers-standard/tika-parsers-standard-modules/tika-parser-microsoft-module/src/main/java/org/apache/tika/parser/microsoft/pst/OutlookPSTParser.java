@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PST;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -72,7 +73,7 @@ public class OutlookPSTParser implements Parser {
         EmbeddedDocumentExtractor embeddedExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        metadata.set(Metadata.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MS_OUTLOOK_PST_MIMETYPE.toString());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -81,7 +82,7 @@ public class OutlookPSTParser implements Parser {
         try {
             tis.setCloseShield();
             pstFile = new PSTFile(tis.getFile());
-            metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
             boolean isValid = pstFile.getFileHandle().getFD().valid();
             metadata.set(PST.IS_VALID, isValid);
             if (pstFile.getPSTFileType() == PSTFile.PST_TYPE_2013_UNICODE) {
@@ -115,7 +116,7 @@ public class OutlookPSTParser implements Parser {
             PSTMessage pstMail = (PSTMessage) pstFolder.getNextChild();
             while (pstMail != null) {
                 Metadata metadata = Metadata.newInstance(context);
-                metadata.set(Metadata.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                metadata.set(HttpHeaders.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 String resourceName = pstMail.getSubject() + ".msg";
                 String internalPath = folderPath.endsWith("/") ?

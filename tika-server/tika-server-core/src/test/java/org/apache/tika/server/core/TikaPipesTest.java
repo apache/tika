@@ -51,6 +51,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -208,7 +209,7 @@ public class TikaPipesTest extends CXFTestBase {
                 .trim());
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
         assertEquals("你好，世界", metadata.get("title"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
         assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
     }
@@ -286,7 +287,7 @@ public class TikaPipesTest extends CXFTestBase {
         }
         assertEquals(1, metadataList.size());
         Metadata metadata = metadataList.get(0);
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("my-value", metadata.get("my-key"));
         assertArrayEquals(VALUE_ARRAY, metadata.getValues("my-key-multi"));
         assertContains("NullPointerException", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));

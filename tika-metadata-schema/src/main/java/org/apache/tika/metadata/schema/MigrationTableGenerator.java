@@ -43,16 +43,12 @@ import java.util.regex.Pattern;
  * {@code TEIDOMParser}).
  *
  * <p>Overlay targets validate against {@code metadata-keys.json} (the closed-key registry), not the
- * field table (TIKA-4816 rename batch): {@code SchemaGenerator.fieldTable()}'s per-class field
- * discovery is reflection-based ({@code Class#getDeclaredFields()}), which eagerly resolves every
- * declared field's type -- a class with any OTHER field typed on a not-transitively-visible
- * dependency (e.g. a {@code provided}-scope one, as with {@code CTAKESContentHandler}'s UIMA
- * {@code AnalysisEngine} field) throws {@code NoClassDefFoundError} and drops the WHOLE class,
- * including its perfectly-resolvable {@code Property} fields (this silently emptied the field table
- * for {@code GeoParser}, whose {@code NameFinderME} field pulls in {@code opennlp-tools} only via
- * the {@code provided}-scope {@code ctakes-core} dependency). The closed-key registry has no such
- * gap: it is built by fully loading each class (running its static initializers), which needs none
- * of a class's non-static field types to be resolvable.
+ * field table: {@code fieldTable()}'s reflection-based field discovery eagerly resolves every
+ * declared field's type, so a class with any field typed on a not-transitively-visible dependency
+ * (e.g. GeoParser's {@code NameFinderME}, which pulls in {@code opennlp-tools} only via the
+ * {@code provided}-scope {@code ctakes-core}) throws {@code NoClassDefFoundError} and drops the
+ * WHOLE class. The closed-key registry has no such gap: it fully loads each class instead of just
+ * inspecting field types.
  *
  * <p>Dependency-free by design: tika-core carries the filter and must stay Jackson-free, so both this
  * generator and the filter emit/parse the flat JSON by hand. {@code MetadataMigrationTableTest}

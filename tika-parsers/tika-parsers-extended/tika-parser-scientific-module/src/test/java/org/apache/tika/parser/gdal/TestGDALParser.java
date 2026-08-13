@@ -66,22 +66,16 @@ public class TestGDALParser extends TikaTest {
         }
 
         assertNotNull(met);
-        assertNotNull(met.get("gdal:driver"));
         assertEquals(expectedDriver, met.get("gdal:driver"));
         assumeTrue(met.get("gdal:files") != null);
         //recent version of gdalinfo doesn't include "Coordinate System":
         // GDAL 3.7.1, released 2023/07/06
         //assertNotNull(met.get("gdal:coordinate-system"));
         //assertEquals(expectedCoordinateSystem, met.get("gdal:coordinate-system"));
-        assertNotNull(met.get("gdal:size"));
         assertEquals(expectedSize, met.get("gdal:size"));
-        assertNotNull(met.get("gdal:upper-right"));
         assertEquals(expectedUpperRight, met.get("gdal:upper-right"));
-        assertNotNull(met.get("gdal:upper-left"));
         assertEquals(expectedUpperLeft, met.get("gdal:upper-left"));
-        assertNotNull(met.get("gdal:upper-right"));
         assertEquals(expectedLowerRight, met.get("gdal:lower-right"));
-        assertNotNull(met.get("gdal:upper-right"));
         assertEquals(expectedLowerLeft, met.get("gdal:lower-left"));
 
     }
@@ -110,23 +104,14 @@ public class TestGDALParser extends TikaTest {
             // gdalinfo "key=value" output lines are doc-derived, so GDALParser routes them
             // through the gdal: KeyPrefix (TIKA-4816); the fixed-vocabulary "Driver"/"Size"/...
             // patterns tested in testParseBasicInfo are unaffected.
-            assertNotNull(met.get("gdal:NC_GLOBAL#institution"));
             assertEquals(expectedNcInst, met.get("gdal:NC_GLOBAL#institution"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#model_name_english"));
             assertEquals(expectedModelNameEnglish, met.get("gdal:NC_GLOBAL#model_name_english"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#prg_ID"));
             assertEquals(expectedProgramId, met.get("gdal:NC_GLOBAL#prg_ID"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#prg_ID"));
-            assertEquals(expectedProgramId, met.get("gdal:NC_GLOBAL#prg_ID"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#project_id"));
             assertEquals(expectedProjectId, met.get("gdal:NC_GLOBAL#project_id"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#realization"));
             assertEquals(expectedRealization, met.get("gdal:NC_GLOBAL#realization"));
-            assertNotNull(met.get("gdal:NC_GLOBAL#title"));
             assertEquals(expectedTitle, met.get("gdal:NC_GLOBAL#title"));
             assertNotNull(met.get("gdal:SUBDATASET_8_NAME"));
             assertTrue(met.get("gdal:SUBDATASET_8_NAME").endsWith(expectedSub8Name));
-            assertNotNull(met.get("gdal:SUBDATASET_8_DESC"));
             assertEquals(expectedSub8Desc, met.get("gdal:SUBDATASET_8_DESC"));
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,15 +143,10 @@ public class TestGDALParser extends TikaTest {
             parser.parse(tis, handler, met, new ParseContext());
             assertNotNull(met);
             // gdal: KeyPrefix, see testParseMetadata above.
-            assertNotNull(met.get("gdal:ALLG-MIN"));
             assertEquals(expectedAllgMin, met.get("gdal:ALLG-MIN"));
-            assertNotNull(met.get("gdal:ATODCORR"));
             assertEquals(expectedAtodcorr, met.get("gdal:ATODCORR"));
-            assertNotNull(met.get("gdal:ATODFILE"));
             assertEquals(expectedAtodfile, met.get("gdal:ATODFILE"));
-            assertNotNull(met.get("gdal:CAL_VER"));
             assertEquals(expectedCalVersion, met.get("gdal:CAL_VER"));
-            assertNotNull(met.get("gdal:CALIBDEF"));
             assertEquals(expectedCalibDef, met.get("gdal:CALIBDEF"));
 
         } catch (Exception e) {

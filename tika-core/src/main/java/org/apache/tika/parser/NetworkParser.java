@@ -86,13 +86,8 @@ public class NetworkParser implements Parser {
             URLConnection connection = url.openConnection();
             connection.setDoOutput(true);
             connection.connect();
-            // getOutputStream() must be obtained up front, but getInputStream() must NOT be
-            // called until the writer thread (below) is actively copying to it:
-            // HttpURLConnection only sends the request -- and so only lets getInputStream()
-            // return a response -- once the output stream has been written and closed. Calling
-            // getInputStream() first (as this used to) deadlocks/fails outright, since nothing
-            // has been written yet and never will be. ParsingTask.parse() defers the
-            // getInputStream() call until after its writer thread has started.
+            // getInputStream() must not be called until the request is written (see
+            // ParsingTask.parse() javadoc) -- get the output stream first.
             OutputStream output = connection.getOutputStream();
             new ParsingTask(tis, output)
                     .parse(connection::getInputStream, handler, metadata, context);

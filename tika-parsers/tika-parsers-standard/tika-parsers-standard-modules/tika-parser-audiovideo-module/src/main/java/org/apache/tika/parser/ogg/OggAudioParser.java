@@ -41,6 +41,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -70,14 +71,7 @@ public abstract class OggAudioParser extends AbstractParser {
      */
     private static final Property VORBIS_VENDOR = Property.internalText("vorbis:vendor");
 
-    /**
-     * Codec bitstream/library version string (e.g. "Theora 3.2.1"), distinct from the
-     * vendor/encoder tool captured under {@link org.apache.tika.metadata.XMP#CREATOR_TOOL}.
-     * Shared by the Ogg codec parsers (Theora, Opus, Vorbis, Speex, Flac): none of them has
-     * an existing curated Property match. Namespaced (TIKA-4816): Mp3Parser's VERSION also used
-     * the bare "version" name for a different concept (MPEG version/layer string), so the two
-     * needed disambiguating namespaces, not one shared bare key.
-     */
+    // Codec bitstream/library version string (e.g. "Theora 3.2.1"); distinct from the vendor/encoder tool under XMP#CREATOR_TOOL.
     protected static final Property CODEC_VERSION = Property.internalText("ogg:codec-version");
 
     /**
@@ -155,9 +149,7 @@ public abstract class OggAudioParser extends AbstractParser {
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
                 "vendor", "comment", METADATA_BLOCK_PICTURE
         );
-        // Bag (TIKA-4816): a Vorbis comment field can legitimately repeat (that's exactly what
-        // the inner loop below iterates over) -- SIMPLE throws PropertyTypeException the moment
-        // one does, confirmed by OggAudioParserTest.testAdditionalCopyrightCommentsAreKept.
+        // BAG: a Vorbis comment field can legitimately repeat.
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
@@ -292,7 +284,7 @@ public abstract class OggAudioParser extends AbstractParser {
         pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         if (!mimeType.isEmpty()) {
-            pictureMetadata.set(Metadata.CONTENT_TYPE, mimeType);
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, mimeType);
         }
         if (!description.isEmpty()) {
             pictureMetadata.set(TikaCoreProperties.TITLE, description);

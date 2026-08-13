@@ -485,10 +485,7 @@ public class XMPMetadata extends Metadata {
 
     /**
      * Sets all simple and array properties that have QName keys in registered namespaces.
-     * XMPMetadata-specific: no longer overrides a parent method (the raw-map
-     * {@code Metadata#setAll(Properties)} it used to override was removed as an
-     * unguarded write route; this method is a full reimplementation and never
-     * called {@code super}, so removal doesn't change its behavior).
+     * No longer overrides Metadata; the parent's unguarded setAll was removed.
      */
     public void setAll(Properties properties) {
         @SuppressWarnings("unchecked") Enumeration<String> names =

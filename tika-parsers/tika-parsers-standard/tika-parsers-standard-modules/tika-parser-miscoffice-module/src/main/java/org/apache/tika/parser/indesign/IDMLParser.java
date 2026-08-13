@@ -35,6 +35,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.IDML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -166,7 +167,7 @@ public class IDMLParser implements Parser {
 
         if (entry.getName().equals("mimetype")) {
             String type = IOUtils.toString(zip, UTF_8);
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
             try {
                 new XmpExtractor().extract(zip, metadata, context);

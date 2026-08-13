@@ -23,7 +23,7 @@ package org.apache.tika.metadata.writefilter;
  * by {@code Metadata.newInstance(ParseContext)} to create Metadata objects with
  * limits applied at creation time.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface MetadataWriteLimiterFactory {
     /**

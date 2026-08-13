@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -130,11 +131,11 @@ public class TestMetadataFilter extends TikaTest {
     @Test
     public void testMimeRemovingFilter() throws Exception {
         Metadata jpegMetadata = new Metadata();
-        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set(HttpHeaders.CONTENT_TYPE, MediaType.image("jpeg").toString());
         jpegMetadata.set("author", "author");
 
         Metadata plainMetadata = new Metadata();
-        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set(HttpHeaders.CONTENT_TYPE, MediaType.text("plain").toString());
         plainMetadata.set("author", "author");
 
         MetadataFilter filter = new RemoveByMimeMetadataFilter(set("image/jpeg", "application/pdf"));
@@ -159,11 +160,11 @@ public class TestMetadataFilter extends TikaTest {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-3137-mimes-uc.json"));
 
         Metadata jpegMetadata = new Metadata();
-        jpegMetadata.set(Metadata.CONTENT_TYPE, MediaType.image("jpeg").toString());
+        jpegMetadata.set(HttpHeaders.CONTENT_TYPE, MediaType.image("jpeg").toString());
         jpegMetadata.set("author", "author");
 
         Metadata plainMetadata = new Metadata();
-        plainMetadata.set(Metadata.CONTENT_TYPE, MediaType.text("plain").toString());
+        plainMetadata.set(HttpHeaders.CONTENT_TYPE, MediaType.text("plain").toString());
         plainMetadata.set("author", "author");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
@@ -218,7 +219,7 @@ public class TestMetadataFilter extends TikaTest {
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
@@ -232,7 +233,7 @@ public class TestMetadataFilter extends TikaTest {
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
-        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
@@ -246,22 +247,22 @@ public class TestMetadataFilter extends TikaTest {
 
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "quick brown fox");
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
         assertEquals("quick brown fox", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("text/html", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         // now test that a single match overwrites all the values
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
-        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "text/html; charset=UTF-8");
-        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "text/plain; charset=UTF-8");
-        metadata.add(TikaCoreProperties.TIKA_CONTENT.toString(), "application/pdf; charset=UTF-8");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.add(HttpHeaders.CONTENT_TYPE.getName(), "text/html; charset=UTF-8");
+        metadata.add(HttpHeaders.CONTENT_TYPE.getName(), "text/plain; charset=UTF-8");
+        metadata.add(HttpHeaders.CONTENT_TYPE.getName(), "application/pdf; charset=UTF-8");
 
         metadata = filterOne(filter, metadata);
-        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
-        assertEquals("text/html", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(1, metadata.getValues(HttpHeaders.CONTENT_TYPE).length);
+        assertEquals("text/html", metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -269,7 +270,7 @@ public class TestMetadataFilter extends TikaTest {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4261-clear-by-embedded-type.json"));
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.name());
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
 
         MetadataFilter filter = loader.get(MetadataFilter.class);
         metadata = filterOne(filter, metadata);
@@ -278,7 +279,7 @@ public class TestMetadataFilter extends TikaTest {
         metadata = new Metadata();
         metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ALTERNATE_FORMAT_CHUNK
                 .name());
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
         metadata = filterOne(filter, metadata);
         assertEquals(2, metadata.names().length);
     }

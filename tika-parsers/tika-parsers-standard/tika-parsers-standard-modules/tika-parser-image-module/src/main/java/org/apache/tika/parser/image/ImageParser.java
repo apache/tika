@@ -39,8 +39,10 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -104,11 +106,14 @@ public class ImageParser extends AbstractImageParser {
             parents += node.getNodeName();
         }
         NamedNodeMap map = node.getAttributes();
-        if (map != null) {
+        //a bare root node (parents=="") carries no meaningful field name; KeyPrefix mints
+        //require a non-empty suffix
+        if (map != null && !parents.isEmpty()) {
 
             int length = map.getLength();
             if (length == 1) {
-                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents, normalize(map.item(0).getNodeValue()));
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG.textBag(parents),
+                        normalize(map.item(0).getNodeValue()));
             } else if (length > 1) {
                 StringBuilder value = new StringBuilder();
                 for (int i = 0; i < length; i++) {
@@ -120,7 +125,7 @@ public class ImageParser extends AbstractImageParser {
                     value.append("=");
                     value.append(normalize(attr.getNodeValue()));
                 }
-                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG_NS + parents, value.toString());
+                metadata.add(ImageMetadataExtractor.UNKNOWN_IMG.textBag(parents), value.toString());
             }
         }
 
@@ -155,7 +160,7 @@ public class ImageParser extends AbstractImageParser {
     void extractMetadata(InputStream stream, ContentHandler contentHandler, Metadata metadata,
                          ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-        String type = metadata.get(Metadata.CONTENT_TYPE);
+        String type = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (type == null) {
             return;
         }
@@ -175,10 +180,10 @@ public class ImageParser extends AbstractImageParser {
                         } catch (IllegalStateException e) {
                             //ignore
                         }
-                        metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
-                        metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "height", Integer.toString(reader.getHeight(0)));
-                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG_NS + "width", Integer.toString(reader.getWidth(0)));
+                        metadata.set(TIFF.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
+                        metadata.set(TIFF.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG.text("height"), Integer.toString(reader.getHeight(0)));
+                        metadata.set(ImageMetadataExtractor.UNKNOWN_IMG.text("width"), Integer.toString(reader.getWidth(0)));
 
                         loadMetadata(reader.getImageMetadata(0), metadata);
                     }
@@ -192,7 +197,7 @@ public class ImageParser extends AbstractImageParser {
             setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "CommentExtensions CommentExtension",
                     TikaCoreProperties.COMMENTS);
             setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence com", TikaCoreProperties.COMMENTS);
-            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
+            setIfPresent(metadata, ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data BitsPerSample", TIFF.BITS_PER_SAMPLE);
         } catch (IIOException e) {
             // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
             //  which Tika will just ignore.

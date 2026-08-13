@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -90,7 +91,9 @@ public class RTFEmbeddedHandler {
                 } else if (closingGroup.sv) {
                     sv = metadataBuffer.toString();
                 } else if (closingGroup.sp) {
-                    metadata.add(sn, sv);
+                    //sn is document-controlled (RTF shape-property name); may repeat
+                    //across multiple {\sp...} pairs in one \pict group
+                    metadata.add(RTFMetadata.PICT.textBag(sn), sv);
                 }
                 if (closingGroup.object) {
                     inObject = false;
@@ -112,7 +115,6 @@ public class RTFEmbeddedHandler {
                         break;
                     case "sn":
                         metadataBuffer.setLength(0);
-                        metadataBuffer.append(RTFMetadata.RTF_PICT_META_PREFIX);
                         break;
                     case "sv":
                         metadataBuffer.setLength(0);
@@ -202,7 +204,7 @@ public class RTFEmbeddedHandler {
 
     private void extractObj(TikaInputStream tis, Metadata meta)
             throws SAXException, IOException, TikaException {
-        meta.set(Metadata.CONTENT_LENGTH, Long.toString(tis.getLength()));
+        meta.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
 
         if (embeddedDocumentUtil.shouldParseEmbedded(meta)) {
             if (meta.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {

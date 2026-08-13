@@ -261,7 +261,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         try {
             for (String recipientAddress : msg.getRecipientEmailAddressList()) {
                 if (recipientAddress != null) {
-                    parentMetadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
+                    parentMetadata.add(Message.MESSAGE_RECIPIENT_ADDRESS, recipientAddress);
                 }
             }
         } catch (ChunkNotFoundException e) {
@@ -270,8 +270,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
         for (Map.Entry<String, String[]> e : headers.entrySet()) {
             String headerKey = e.getKey();
+            Property rawHeader = Message.RAW_HEADER.textBag(headerKey);
             for (String headerValue : e.getValue()) {
-                parentMetadata.add(Metadata.MESSAGE_RAW_HEADER_PREFIX + headerKey, headerValue);
+                parentMetadata.add(rawHeader, headerValue);
             }
         }
 
@@ -715,10 +716,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             throws ChunkNotFoundException {
         String from = msg.getDisplayFrom();
         metadata.set(TikaCoreProperties.CREATOR, from);
-        metadata.set(Metadata.MESSAGE_FROM, from);
-        metadata.set(Metadata.MESSAGE_TO, msg.getDisplayTo());
-        metadata.set(Metadata.MESSAGE_CC, msg.getDisplayCC());
-        metadata.set(Metadata.MESSAGE_BCC, msg.getDisplayBCC());
+        metadata.set(Message.MESSAGE_FROM, from);
+        metadata.set(Message.MESSAGE_TO, msg.getDisplayTo());
+        metadata.set(Message.MESSAGE_CC, msg.getDisplayCC());
+        metadata.set(Message.MESSAGE_BCC, msg.getDisplayBCC());
 
 
         Chunks chunks = msg.getMainChunks();

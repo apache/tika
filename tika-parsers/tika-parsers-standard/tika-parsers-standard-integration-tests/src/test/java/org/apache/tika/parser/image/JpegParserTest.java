@@ -27,6 +27,7 @@ import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.parser.ParseContext;
@@ -53,8 +54,8 @@ public class JpegParserTest extends TikaTest {
         metadataFilter.filter(metadataList);
         Metadata metadata = metadataList.get(0);
         // Geo tags should be there with 5dp, and not rounded
-        assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
-        assertEquals("-1.567886", metadata.get(Metadata.LONGITUDE));
+        assertEquals("51.575762", metadata.get(Geographic.LATITUDE));
+        assertEquals("-1.567886", metadata.get(Geographic.LONGITUDE));
         assertEquals("51.575762,-1.567886", metadata.get("myGeoPoint"));
 
     }

@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -77,7 +78,7 @@ public class ImportContextImpl implements ImportContext {
 
         Metadata metadata = new Metadata();
         if (ctx != null && ctx.getContentType() != null) {
-            metadata.set(Metadata.CONTENT_TYPE, ctx.getContentType());
+            metadata.set(HttpHeaders.CONTENT_TYPE, ctx.getContentType());
         }
         if (systemId != null) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, systemId);

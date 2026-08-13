@@ -20,7 +20,7 @@ package org.apache.tika.metadata;
  *
  * Properties that typically appear in MSG/PST message format files.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface MAPI {
 

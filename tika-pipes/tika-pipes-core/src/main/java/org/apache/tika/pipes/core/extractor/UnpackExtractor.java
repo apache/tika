@@ -41,6 +41,7 @@ import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -185,7 +186,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         if (selector != null && !selector.select(metadata)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",
-                        metadata.get(Metadata.CONTENT_TYPE),
+                        metadata.get(HttpHeaders.CONTENT_TYPE),
                         metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
             }
             return;

@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -231,7 +232,16 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             if (!isUsed) {
                 String val = getString(i, rs);
                 if (!StringUtils.isBlank(val)) {
-                    metadata.set(headers.get(i - 1), val);
+                    String header = headers.get(i - 1);
+                    try {
+                        //header is the column-to-metadata-key contract; externalText preserves
+                        //the exact name (a KeyPrefix would add one) and still rejects reserved names
+                        metadata.set(Property.externalText(header), val);
+                    } catch (IllegalArgumentException e) {
+                        //column label collides with a reserved Tika-native key; skip this
+                        //column rather than aborting the whole row
+                        LOGGER.warn("skipping reserved-name column '{}': {}", header, e.getMessage());
+                    }
                 }
             }
         }

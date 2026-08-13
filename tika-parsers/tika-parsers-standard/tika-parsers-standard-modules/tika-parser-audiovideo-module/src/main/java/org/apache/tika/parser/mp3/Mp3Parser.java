@@ -33,6 +33,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -64,10 +65,7 @@ public class Mp3Parser implements Parser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.audio("mpeg"));
 
-    // MPEG version/layer string (e.g. "MPEG 3 Layer III Version 1"); no existing curated
-    // Property match. Namespaced (TIKA-4816): OggAudioParser's CODEC_VERSION also used the bare
-    // "version" name for a different concept (codec bitstream version), so the two needed
-    // disambiguating namespaces, not one shared bare key.
+    // MPEG version/layer string (e.g. "MPEG 3 Layer III Version 1"); no existing curated Property match.
     private static final Property VERSION = Property.internalText("mp3:version");
 
     /**
@@ -179,7 +177,7 @@ public class Mp3Parser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -326,7 +324,7 @@ public class Mp3Parser implements Parser {
                 pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
                 if (picture.getMimeType() != null) {
-                    pictureMetadata.set(Metadata.CONTENT_TYPE, picture.getMimeType());
+                    pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.getMimeType());
                 }
                 if (picture.getDescription() != null && !picture.getDescription().isEmpty()) {
                     pictureMetadata.set(TikaCoreProperties.TITLE, picture.getDescription());

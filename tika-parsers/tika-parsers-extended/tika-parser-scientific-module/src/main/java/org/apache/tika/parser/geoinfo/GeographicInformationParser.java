@@ -63,6 +63,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.ISO19115;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
@@ -81,20 +82,10 @@ public class GeographicInformationParser implements Parser {
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.text("iso19139+xml"));
 
-    // Indexed groups (one per Keywords/thesaurus entry within an IdentificationInfo) -- the
-    // index isn't document-derived, but the key as a whole still can't be a Property constant
-    // (unbounded distinct names), so it mints per call like a doc-derived KeyPrefix key would.
-    // BAG (TIKA-4816): KEYWORDS.text(j) is added once per InternationalString within a single
-    // keyword group (multiple keyword strings under one thesaurus are normal), so even one
-    // Keywords group throws PropertyTypeException under SIMPLE cardinality the moment it has more
-    // than one string. Separately, the per-Identification index `j` restarts at 1 for every
-    // Identification (see the loop below), so a document with more than one Identification that
-    // each carries keyword groups can also re-mint the same "iso19115:keywords:2"-shaped key
-    // across Identifications -- Bag makes both cases safe (values merge) instead of throwing.
-    // Merging across Identifications is a known limitation of the per-call index scheme, not
-    // fixed here.
-    // Namespaced to iso19115: (TIKA-4816 rename batch); LegacyKeyMigrationFilter bridges the 3.x
-    // space-delimited spellings ("Keywords 2", ...) straight to these, one hop.
+    // Indexed per Keywords/thesaurus entry; unbounded distinct names, so minted via KeyPrefix
+    // rather than a Property constant. BAG: a keyword group can hold multiple strings, and the
+    // per-Identification index restarts at 1, so the same key can recur and merge across
+    // Identifications (known limitation, not fixed here).
     private static final KeyPrefix KEYWORDS =
             KeyPrefix.file("iso19115:keywords:", "ISO19139 indexed identification keyword group");
 
@@ -117,7 +108,7 @@ public class GeographicInformationParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
+        metadata.set(HttpHeaders.CONTENT_TYPE, geoInfoType);
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata, parseContext);
 
         TemporaryResources tmp = null;

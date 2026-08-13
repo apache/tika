@@ -43,6 +43,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -86,7 +87,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testEXCEL.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -108,7 +109,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
 
         String content = getText("testEXCEL-formats.xlsx", metadata, context);
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
 
         // Number #,##0.00
         assertContains("1,599.99", content);
@@ -176,7 +177,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         String content = getText("testEXCEL.strict.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Sample Spreadsheet", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Nick Burch", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Spreadsheet for testing", metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -200,7 +201,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata metadata = getXML("protectedSheets.xlsx").metadata;
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
 
         assertEquals("true", metadata.get(Office.PROTECTED_WORKSHEET));
 
@@ -215,7 +216,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         XMLResult xmlResult = getXML("protectedFile.xlsx");
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
 
         assertEquals("true", xmlResult.metadata.get(Office.PROTECTED_WORKSHEET));
 
@@ -233,7 +234,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         getXML("testEXCEL_custom_props.xlsx", metadata, context);
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(null, metadata.get(TikaCoreProperties.CREATOR));
         assertEquals(null, metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATED));
@@ -321,7 +322,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         XMLResult xml = getXML("testEXCEL_headers_footers.xlsx");
 
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xml.metadata.get(Metadata.CONTENT_TYPE));
+                xml.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Internal spreadsheet", xml.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Aeham Abushwashi", xml.metadata.get(TikaCoreProperties.CREATOR));
 
@@ -424,7 +425,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         //test default is "don't extract macros"
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_macro.xlsm");
         for (Metadata metadata : metadataList) {
-            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+            if (metadata.get(HttpHeaders.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
@@ -439,7 +440,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         Metadata minExpected = new Metadata();
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Dirty()");
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "dirty dirt dirt");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
@@ -634,7 +635,7 @@ public class OOXMLParserTest extends MultiThreadedTikaTest {
         assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xlsx.get(Metadata.CONTENT_TYPE));
+                xlsx.get(HttpHeaders.CONTENT_TYPE));
     }
 
 

@@ -39,6 +39,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -150,7 +151,7 @@ public class WARCParser implements Parser {
         }
         WarcPayload payload = optionalPayload.get();
         metadata.set(WARC.WARC_RECORD_CONTENT_TYPE, payload.type().toString());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(payload.body().size()));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(payload.body().size()));
 
         if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
             //TODO check Content-Encoding on the warcResponse.http.headers and wrap the tis.
@@ -164,20 +165,22 @@ public class WARCParser implements Parser {
 
     private void processWarcMetadata(WarcResponse warcResponse, Metadata metadata) {
         for (Map.Entry<String, List<String>> e : warcResponse.headers().map().entrySet()) {
+            Property header = WARC_HEADER.textBag(e.getKey());
             for (String val : e.getValue()) {
-                metadata.add(WARC_HEADER.key(e.getKey()), val);
+                metadata.add(header, val);
             }
         }
     }
 
     private void processHttpResponseMetadata(HttpResponse http, Metadata metadata) {
-        metadata.set(WARC_HTTP_STATUS, Integer.toString(http.status()));
+        metadata.set(Property.externalText(WARC_HTTP_STATUS), Integer.toString(http.status()));
         if (!StringUtils.isBlank(http.reason())) {
-            metadata.set(WARC_HTTP_STATUS_REASON, http.reason());
+            metadata.set(Property.externalText(WARC_HTTP_STATUS_REASON), http.reason());
         }
         for (Map.Entry<String, List<String>> e : http.headers().map().entrySet()) {
+            Property header = WARC_HTTP_HEADER.textBag(e.getKey());
             for (String val : e.getValue()) {
-                metadata.add(WARC_HTTP_HEADER.key(e.getKey()), val);
+                metadata.add(header, val);
             }
         }
     }

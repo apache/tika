@@ -36,6 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -66,29 +67,29 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_EXIF.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Core EXIF/TIFF tags
-        assertEquals("3888", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("2592", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
-        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        assertEquals("3888", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("2592", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(TIFF.SAMPLES_PER_PIXEL));
 
-        assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
-        assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
-        assertEquals("false", metadata.get(Metadata.FLASH_FIRED));
-        assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
-        assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
-        assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));
-        assertEquals("Canon EOS 40D", metadata.get(Metadata.EQUIPMENT_MODEL));
-        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(Metadata.SOFTWARE));
-        assertEquals(null, metadata.get(Metadata.ORIENTATION)); // Not present
-        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
-        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
-        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        assertEquals("6.25E-4", metadata.get(TIFF.EXPOSURE_TIME)); // 1/1600
+        assertEquals("5.6", metadata.get(TIFF.F_NUMBER));
+        assertEquals("false", metadata.get(TIFF.FLASH_FIRED));
+        assertEquals("194.0", metadata.get(TIFF.FOCAL_LENGTH));
+        assertEquals("400", metadata.get(TIFF.ISO_SPEED_RATINGS));
+        assertEquals("Canon", metadata.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("Canon EOS 40D", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(TIFF.SOFTWARE));
+        assertEquals(null, metadata.get(TIFF.ORIENTATION)); // Not present
+        assertEquals("240.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
+        assertEquals("240.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(TIFF.RESOLUTION_UNIT));
 
         // Check that EXIF/TIFF tags come through with their raw values too
         // (This may be removed for Tika 1.0, as we support more of them
@@ -112,33 +113,33 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_GEO.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Geo tags
-        assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
-        assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
+        assertEquals("12.54321", metadata.get(Geographic.LATITUDE));
+        assertEquals("-54.1234", metadata.get(Geographic.LONGITUDE));
 
         // Core EXIF/TIFF tags
-        assertEquals("3888", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("2592", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
-        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        assertEquals("3888", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("2592", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(TIFF.SAMPLES_PER_PIXEL));
 
-        assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
-        assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
-        assertEquals("false", metadata.get(Metadata.FLASH_FIRED));
-        assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
-        assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
-        assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));
-        assertEquals("Canon EOS 40D", metadata.get(Metadata.EQUIPMENT_MODEL));
-        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(Metadata.SOFTWARE));
-        assertEquals(null, metadata.get(Metadata.ORIENTATION)); // Not present
-        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
-        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
-        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        assertEquals("6.25E-4", metadata.get(TIFF.EXPOSURE_TIME)); // 1/1600
+        assertEquals("5.6", metadata.get(TIFF.F_NUMBER));
+        assertEquals("false", metadata.get(TIFF.FLASH_FIRED));
+        assertEquals("194.0", metadata.get(TIFF.FOCAL_LENGTH));
+        assertEquals("400", metadata.get(TIFF.ISO_SPEED_RATINGS));
+        assertEquals("Canon", metadata.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("Canon EOS 40D", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(TIFF.SOFTWARE));
+        assertEquals(null, metadata.get(TIFF.ORIENTATION)); // Not present
+        assertEquals("240.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
+        assertEquals("240.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(TIFF.RESOLUTION_UNIT));
 
         // Common tags
         assertEquals("2009-08-11T09:09:45", metadata.get(TikaCoreProperties.CREATED),
@@ -159,14 +160,14 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGGeo2() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         // Geo tags should be there with 5dp, and not rounded
-        assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
-        assertEquals("-1.567886", metadata.get(Metadata.LONGITUDE));
+        assertEquals("51.575762", metadata.get(Geographic.LATITUDE));
+        assertEquals("-1.567886", metadata.get(Geographic.LONGITUDE));
 
         assertEquals("2012-02-20T16:44:22Z", metadata.get(Geographic.TIMESTAMP));
     }
@@ -174,7 +175,7 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGTitleAndDescription() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_commented.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -194,26 +195,26 @@ public class JpegParserTest extends TikaTest {
         assertTrue(keywords.contains("bird watching"));
 
         // Core EXIF/TIFF tags
-        assertEquals("103", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("77", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
-        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        assertEquals("103", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("77", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(TIFF.SAMPLES_PER_PIXEL));
 
-        assertEquals("1.0E-6", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1000000
-        assertEquals("2.8", metadata.get(Metadata.F_NUMBER));
-        assertEquals("4.6", metadata.get(Metadata.FOCAL_LENGTH));
-        assertEquals("114", metadata.get(Metadata.ISO_SPEED_RATINGS));
+        assertEquals("1.0E-6", metadata.get(TIFF.EXPOSURE_TIME)); // 1/1000000
+        assertEquals("2.8", metadata.get(TIFF.F_NUMBER));
+        assertEquals("4.6", metadata.get(TIFF.FOCAL_LENGTH));
+        assertEquals("114", metadata.get(TIFF.ISO_SPEED_RATINGS));
         // Make/Model now come from the promoted XMP tiff: schema; this file's binary EXIF has none.
-        assertEquals("Nokia", metadata.get(Metadata.EQUIPMENT_MAKE));
-        assertEquals("N78", metadata.get(Metadata.EQUIPMENT_MODEL));
-        assertEquals(null, metadata.get(Metadata.SOFTWARE));
-        assertEquals("1", metadata.get(Metadata.ORIENTATION)); // Not present
-        assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
-        assertEquals("300.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
-        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        assertEquals("Nokia", metadata.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("N78", metadata.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals(null, metadata.get(TIFF.SOFTWARE));
+        assertEquals("1", metadata.get(TIFF.ORIENTATION)); // Not present
+        assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
+        assertEquals("300.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(TIFF.RESOLUTION_UNIT));
 
         //ICC
-        assertEquals("IEC", metadata.get("ICC:Device manufacturer").trim());
+        assertEquals("IEC", metadata.get("icc:Device manufacturer").trim());
         assertNull(metadata.get("Device manufacturer"));
 
     }
@@ -221,7 +222,7 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -238,7 +239,7 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGTitleAndDescriptionXnviewmp() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -259,21 +260,21 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGoddTagComponent() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
         assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
         assertEquals(null, metadata.get(TikaCoreProperties.DESCRIPTION));
-        assertEquals("251", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("384", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("251", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("384", metadata.get(TIFF.IMAGE_LENGTH));
     }
 
     @Test
     public void testJPEGEmptyEXIFDateTime() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -284,7 +285,7 @@ public class JpegParserTest extends TikaTest {
     @Test
     public void testJPEGXMPMM() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }

@@ -30,6 +30,10 @@ meta:mapi-msg-client-submit-time	mapi:msg-client-submit-time
 # full item path, a SUPERSET. Not a 1:1 value, so the key-rename bridge can't reproduce the folder-only
 # value; document "folder path now part of tk:internal-path". Not bridgeable as a rename.
 pst:folderPath	DROPPED
+# DROPPED (TIKA-4816): TikaCoreProperties.TIKA_CONTENT_HANDLER (tk:content-handler) was deleted
+# pre-4.0.0; tk:content-handler-type covers the use case with a different value shape (enum name,
+# not handler simple class name), so the 3.x key is not remapped rather than remapped-wrong.
+X-TIKA:content_handler	DROPPED
 # RTF embedded-object fields: 4.x renamed the Java fields EMB_* -> EMBEDDED_* AND the keys
 # rtf_meta:emb_* -> rtf:embedded-*, so field-identity can't bridge them. Clean renames (targets
 # verified present in the 4.x closed set); fuzzy suggested each correctly.
@@ -37,6 +41,13 @@ rtf_meta:emb_app_version	rtf:embedded-app-version
 rtf_meta:emb_class	rtf:embedded-class
 rtf_meta:emb_item	rtf:embedded-item
 rtf_meta:emb_topic	rtf:embedded-topic
+#
+# TikaCoreProperties fields that were bare String constants (not Property) in 3.x, so the 3.x field
+# table -- which only captures static Property fields -- never recorded them; field-identity can't
+# join what was never a field of that type. Verified against the 3.3.2 tag: both keys shipped bare,
+# with no X-TIKA: prefix.
+resourceName	tk:resource-name
+embeddedRelationshipId	tk:embedded-relationship-id
 #
 # TIKA-4816 rename batch (post stage-5a). These fields are declared outside org.apache.tika.metadata
 # (parser modules), so the field-identity join -- core-scoped by design (see
@@ -116,6 +127,41 @@ Lower Right	gdal:lower-right
 hdf:File-Type-Description	hdf:file-type-description
 netcdf:File-Type-Description	netcdf:file-type-description
 numbers:sheetNames	numbers:sheet-names
+#
+# The rows below were found by MetadataChangesAdocDriftTest (TIKA-4816), not by the original
+# audit that seeded this file: each is a real 3.x key declared outside org.apache.tika.metadata
+# (parser modules), so -- same as the GeoParser/TEIDOMParser/GDAL rows above -- field-identity
+# can't auto-bridge it. Verified against the 3.3.2 tag.
+#
+# TesseractOCRParser (tika-parser-ocr-module): tess: kebab-cased.
+tess:page_number	tess:page-number
+tess:image_magick_processed	tess:image-magick-processed
+tess:orientation_confidence	tess:orientation-confidence
+tess:script_confidence	tess:script-confidence
+#
+# TextAndCSVParser (tika-parser-text-module): csv: kebab-cased.
+csv:num_columns	csv:num-columns
+csv:num_rows	csv:num-rows
+#
+# EMFParser (tika-parser-microsoft-module): emf: kebab-cased.
+emf:iconOnly	emf:icon-only
+emf:iconString	emf:icon-string
+#
+# XMLProfiler (tika-parser-xml-module): xmlprofiler: kebab-cased.
+xmlprofiler:root_entity	xmlprofiler:root-entity
+xmlprofiler:entity_uris	xmlprofiler:entity-uris
+xmlprofiler:entity_local_names	xmlprofiler:entity-local-names
+#
+# PDFBoxRenderer (tika-parser-pdf-module): these two timing fields moved onto the core Rendering
+# class this batch, so the 3.x side (still declared on PDFBoxRenderer, non-core) is out of the
+# join's core-only scope even though the key text itself is unchanged.
+rendering:pdfbox-image-writing-ms	tk:rendering:pdfbox-image-writing-ms
+rendering:pdfbox-rendering-ms	tk:rendering:pdfbox-rendering-ms
+#
+# TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID: a bare String constant in 3.x (not a Property, so
+# missing from the field table like resourceName/embeddedRelationshipId above), moved onto Office
+# this batch.
+embeddedStorageClassId	msoffice:embedded-storage-class-id
 #
 # ISO19115 (tika-core; extracted by GeographicInformationParser, tika-parser-scientific-module):
 # 35 ad hoc PascalCase/space-delimited coinages (several with a stray trailing space, one with a

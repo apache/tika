@@ -23,7 +23,9 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -36,7 +38,7 @@ public class ImageParserTest extends TikaTest {
     @Test
     public void testBMP() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/bmp");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/bmp");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testBMP.bmp")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -51,16 +53,16 @@ public class ImageParserTest extends TikaTest {
         assertEquals("BI_RGB", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Compression CompressionTypeName"));
         assertEquals("image/bmp", metadata.get("Content-Type"));
 
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8 8 8", metadata.get(TIFF.BITS_PER_SAMPLE));
         assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test
     public void testGIF() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/gif");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/gif");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testGIF.gif")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -92,8 +94,8 @@ public class ImageParserTest extends TikaTest {
         assertEquals("0", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Dimension VerticalPixelOffset"));
         assertEquals("image/gif", metadata.get("Content-Type"));
 
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(TIFF.IMAGE_LENGTH));
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
                         "more contributor license agreements.  See the NOTICE file distributed " +
                         "with this work for additional information regarding copyright ownership.",
@@ -104,7 +106,7 @@ public class ImageParserTest extends TikaTest {
     @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG.jpg")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -144,8 +146,8 @@ public class ImageParserTest extends TikaTest {
         assertEquals("process=0, samplePrecision=8, numLines=75, samplesPerLine=100, " +
                 "numFrameComponents=3", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "markerSequence sof"));
 
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(TIFF.IMAGE_LENGTH));
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
                         "more contributor license agreements.  See the NOTICE file distributed " +
                         "with this work for additional information regarding copyright ownership.",
@@ -156,7 +158,7 @@ public class ImageParserTest extends TikaTest {
     @Test
     public void testPNG() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testPNG.png")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -198,16 +200,16 @@ public class ImageParserTest extends TikaTest {
                 metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Document ImageModificationTime"));
         assertEquals("image/png", metadata.get("Content-Type"));
 
-        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8 8 8", metadata.get(TIFF.BITS_PER_SAMPLE));
         assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
     @Test // TIKA-2232
     public void testJBIG2() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/x-jbig2");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-jbig2");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testJBIG2.jb2")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -232,7 +234,7 @@ public class ImageParserTest extends TikaTest {
         }
 
         metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "unparseablegarbage");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "unparseablegarbage");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testBMP.bmp")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }

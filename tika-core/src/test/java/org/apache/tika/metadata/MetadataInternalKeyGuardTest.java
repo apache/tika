@@ -100,6 +100,16 @@ public class MetadataInternalKeyGuardTest {
     }
 
     @Test
+    public void testSetNullValueOnReservedKeyRemovesRatherThanThrows() {
+        Metadata metadata = new Metadata();
+        metadata.setTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "trusted");
+        // set(name, null) is the documented removal path -- it must not be blocked by the
+        // reserved-key guard, matching remove(name).
+        metadata.set(TikaCoreProperties.TIKA_CONTENT.getName(), (String) null);
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
     public void testReconstructPreservesRegisteredReservedKey() {
         Metadata metadata = new Metadata();
         metadata.reconstruct(TikaCoreProperties.TIKA_CONTENT.getName(), "the content", false);
@@ -159,13 +169,9 @@ public class MetadataInternalKeyGuardTest {
     }
 
     /**
-     * Design doc "Honest framing": {@code reconstruct} is a deliberately trusted route,
-     * not subject to the String-route guard -- for both a reserved name with a registered
-     * curated Property and one with none. Contrasts directly against the throw asserted by
-     * {@link #testStringWriteToInternalKeyThrows()} /
-     * {@link #testReconstructPreservesUnregisteredReservedKey()} on the same names, so a
-     * regression that made {@code reconstruct} start throwing (or the guard start
-     * exempting it) would be caught here either way.
+     * {@code reconstruct} is a deliberately trusted route, not subject to the String-route
+     * guard -- for both a registered curated Property and an unregistered reserved name,
+     * contrasted directly against the throw on the same names via the String route.
      */
     @Test
     public void testReconstructIsNotSubjectToReservedKeyGuard() {

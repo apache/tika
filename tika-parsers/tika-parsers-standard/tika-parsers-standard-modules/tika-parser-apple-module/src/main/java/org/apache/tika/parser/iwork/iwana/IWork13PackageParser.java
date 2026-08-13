@@ -44,6 +44,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -62,7 +63,7 @@ public class IWork13PackageParser implements Parser {
     public final static String IWORK13_COMMON_ENTRY = "Metadata/BuildVersionHistory.plist";
     public final static String IWORK13_MAIN_ENTRY = "Index/Document.iwa";
 
-    public static final String IWORKS_PREFIX = "iworks:";
+    public static final String IWORKS_PREFIX = "iwork:";
     public static final Property IWORKS_DOC_ID =
             Property.externalText(IWORKS_PREFIX + "document-id");
     public static final Property IWORKS_BUILD_VERSION_HISTORY =
@@ -110,7 +111,7 @@ public class IWork13PackageParser implements Parser {
             if (type == IWork13DocumentType.UNKNOWN13.getType()) {
                 type = guessTypeByExtension(metadata);
             }
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
         xhtml.endDocument();
 

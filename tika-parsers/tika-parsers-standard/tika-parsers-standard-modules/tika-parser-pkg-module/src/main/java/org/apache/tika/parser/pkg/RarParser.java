@@ -34,6 +34,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -64,7 +65,7 @@ public class RarParser implements Parser {
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        String mediaType = metadata.get(Metadata.CONTENT_TYPE);
+        String mediaType = metadata.get(HttpHeaders.CONTENT_TYPE);
 
         if (mediaType != null && mediaType.contains("version=5")) {
             throw new UnsupportedFormatException("Tika does not yet support rar version 5.");

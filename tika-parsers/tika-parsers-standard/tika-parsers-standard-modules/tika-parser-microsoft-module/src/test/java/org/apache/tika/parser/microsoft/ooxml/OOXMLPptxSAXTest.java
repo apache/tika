@@ -32,6 +32,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -69,7 +70,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
             try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
                 AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
 
-                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                assertEquals(mimeTypes[i], metadata.get(HttpHeaders.CONTENT_TYPE),
                         "Mime-type checking for " + filename);
                 assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                 assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
@@ -112,7 +113,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
             final int currentI = i;
             ContentHandler handler = new BodyContentHandler() {
                 public void startDocument() {
-                    assertEquals(mimeTypes[currentI], metadata.get(Metadata.CONTENT_TYPE),
+                    assertEquals(mimeTypes[currentI], metadata.get(HttpHeaders.CONTENT_TYPE),
                             "Mime-type checking for " + filename);
                     assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
                     assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
@@ -141,7 +142,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
 
             try (TikaInputStream tis = getResourceAsStream("/test-documents/" + filename)) {
                 AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
-                assertEquals(mimeTypes[i], metadata.get(Metadata.CONTENT_TYPE),
+                assertEquals(mimeTypes[i], metadata.get(HttpHeaders.CONTENT_TYPE),
                         "Mime-type checking for " + filename);
             }
         }
@@ -306,10 +307,10 @@ public class OOXMLPptxSAXTest extends TikaTest {
                 getRecursiveMetadata("testPPT_embeddedMP3.pptx");
         assertEquals(4, metadataList.size());
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("audio/mpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("image/png", metadataList.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(2).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("image/jpeg", metadataList.get(3).get(HttpHeaders.CONTENT_TYPE));
     }
 
     // ---- SAX-specific tests ----
@@ -369,7 +370,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
         Metadata metadata = new Metadata();
         getXML("testPPT_custom_props.pptx", metadata);
         assertEquals("application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
@@ -419,7 +420,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
                 getRecursiveMetadata("testPPT_macros.pptm");
 
         for (Metadata metadata : metadataList) {
-            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+            if (metadata.get(HttpHeaders.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
@@ -433,7 +434,7 @@ public class OOXMLPptxSAXTest extends TikaTest {
         Metadata minExpected = new Metadata();
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 

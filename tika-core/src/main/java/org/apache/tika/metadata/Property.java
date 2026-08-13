@@ -34,6 +34,10 @@ import org.slf4j.LoggerFactory;
  * the {@link ValueType value type} and category (internal or external)
  * of the property are included in the property definition. The available
  * choice values are also stored for open and closed choice value types.
+ * <p>
+ * Every public factory method below throws {@link IllegalArgumentException} if {@code name}
+ * is in the reserved Tika-native namespace ({@code tk:}/{@code X-TIKA:}); see
+ * {@link ReservedNamespaces}.
  *
  * @since Apache Tika 0.7
  */
@@ -147,15 +151,12 @@ public final class Property implements Comparable<Property> {
             throw new IllegalArgumentException("'" + name + "' is in the reserved Tika-native "
                     + "namespace (tk:/X-TIKA:); it cannot be minted via a public Property "
                     + "factory. Curated tk: constants belong in org.apache.tika.metadata and "
-                    + "mint via the package-private reserved* factories.");
+                    + "mint via the package-private reserved* factories. If you are declaring "
+                    + "your own Property constant, use your own namespace instead of tk:/X-TIKA:.");
         }
     }
 
-    /**
-     * Mirror image of {@link #requireNotReserved(String)} for the reserved factories below:
-     * fail loud (rather than silently minting a non-reserved Property through the reserved
-     * path) if fed a name that isn't actually reserved.
-     */
+    /** Fails loud if a reserved-path factory is fed a name that isn't actually reserved. */
     private static void requireReserved(String name) {
         if (!ReservedNamespaces.isTikaNative(name)) {
             throw new IllegalArgumentException("'" + name + "' is not in the reserved "
@@ -180,15 +181,22 @@ public final class Property implements Comparable<Property> {
     }
 
     /**
-     * Retrieve the property object that corresponds to the given key
+     * Retrieve the property object that corresponds to the given key. Only registered
+     * Properties resolve here: a {@code KeyPrefix}-minted Property is never interned (see
+     * {@code Property#mintUnregistered}), so this always returns {@code null} for a
+     * document-derived key, even one that was previously written. This is load-bearing for
+     * {@link Metadata#reconstruct}, which falls back to the trusted String path when lookup
+     * misses.
      *
      * @param key the property key or name
-     * @return the Property object
+     * @return the Property object, or {@code null} if unregistered
      */
     public static Property get(String key) {
         return PROPERTIES.get(key);
     }
 
+    /** Like {@link #get(String)}, registered Properties only: never returns a
+     * {@code KeyPrefix}-minted Property. */
     public static SortedSet<Property> getProperties(String prefix) {
         SortedSet<Property> set = new TreeSet<>();
         String p = prefix + ":";
@@ -207,7 +215,7 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.BOOLEAN);
     }
 
-    public static Property internalClosedChoise(String name, String... choices) {
+    public static Property internalClosedChoice(String name, String... choices) {
         requireNotReserved(name);
         return new Property(name, true, ValueType.CLOSED_CHOICE, choices);
     }
@@ -237,7 +245,7 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.RATIONAL);
     }
 
-    public static Property internalOpenChoise(String name, String... choices) {
+    public static Property internalOpenChoice(String name, String... choices) {
         requireNotReserved(name);
         return new Property(name, true, ValueType.OPEN_CHOICE, choices);
     }
@@ -262,12 +270,12 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.URI);
     }
 
-    public static Property externalClosedChoise(String name, String... choices) {
+    public static Property externalClosedChoice(String name, String... choices) {
         requireNotReserved(name);
         return new Property(name, false, ValueType.CLOSED_CHOICE, choices);
     }
 
-    public static Property externalOpenChoise(String name, String... choices) {
+    public static Property externalOpenChoice(String name, String... choices) {
         requireNotReserved(name);
         return new Property(name, false, ValueType.OPEN_CHOICE, choices);
     }
@@ -324,7 +332,7 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.BOOLEAN);
     }
 
-    static Property reservedInternalClosedChoise(String name, String... choices) {
+    static Property reservedInternalClosedChoice(String name, String... choices) {
         requireReserved(name);
         return new Property(name, true, ValueType.CLOSED_CHOICE, choices);
     }
@@ -354,16 +362,6 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.RATIONAL);
     }
 
-    static Property reservedInternalOpenChoise(String name, String... choices) {
-        requireReserved(name);
-        return new Property(name, true, ValueType.OPEN_CHOICE, choices);
-    }
-
-    static Property reservedInternalReal(String name) {
-        requireReserved(name);
-        return new Property(name, true, ValueType.REAL);
-    }
-
     static Property reservedInternalText(String name) {
         requireReserved(name);
         return new Property(name, true, ValueType.TEXT);
@@ -372,26 +370,6 @@ public final class Property implements Comparable<Property> {
     static Property reservedInternalTextBag(String name) {
         requireReserved(name);
         return new Property(name, true, PropertyType.BAG, ValueType.TEXT);
-    }
-
-    static Property reservedInternalURI(String name) {
-        requireReserved(name);
-        return new Property(name, true, ValueType.URI);
-    }
-
-    static Property reservedExternalClosedChoise(String name, String... choices) {
-        requireReserved(name);
-        return new Property(name, false, ValueType.CLOSED_CHOICE, choices);
-    }
-
-    static Property reservedExternalOpenChoise(String name, String... choices) {
-        requireReserved(name);
-        return new Property(name, false, ValueType.OPEN_CHOICE, choices);
-    }
-
-    static Property reservedExternalDate(String name) {
-        requireReserved(name);
-        return new Property(name, false, ValueType.DATE);
     }
 
     static Property reservedExternalReal(String name) {
@@ -414,11 +392,6 @@ public final class Property implements Comparable<Property> {
         return new Property(name, false, ValueType.BOOLEAN);
     }
 
-    static Property reservedExternalBooleanSeq(String name) {
-        requireReserved(name);
-        return new Property(name, false, PropertyType.SEQ, ValueType.BOOLEAN);
-    }
-
     static Property reservedExternalText(String name) {
         requireReserved(name);
         return new Property(name, false, ValueType.TEXT);
@@ -435,9 +408,7 @@ public final class Property implements Comparable<Property> {
      * Note that name of the composite property is taken from its primary property,
      * and primary and secondary properties must not be composite properties themselves.
      * <p>
-     * No reserved-name check here: {@code primaryProperty} was already validated (or
-     * asserted reserved) at its own mint, and composites never register (see the
-     * constructor), so there is nothing new to forge or intern.
+     * No reserved-name check here: {@code primaryProperty} was already validated at its own mint.
      *
      * @param primaryProperty
      * @param secondaryExtractProperties
@@ -546,11 +517,17 @@ public final class Property implements Comparable<Property> {
 
     //--------------------------------------------------------------< Object >
 
+    /** The property name, so a String→Property constant flip doesn't turn existing
+     * logging/concatenation into {@code Property@<hex>} with no compile signal. */
+    public String toString() {
+        return name;
+    }
+
     public enum PropertyType {
         /**
          * A single value
          */
-        SIMPLE, STRUCTURE,
+        SIMPLE,
         /**
          * An un-ordered array
          */
@@ -570,8 +547,8 @@ public final class Property implements Comparable<Property> {
     }
 
     public enum ValueType {
-        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE, MIME_TYPE, PROPER_NAME,
-        RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
+        BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER,
+        RATIONAL, REAL, TEXT, URI, PROPERTY
     }
 
 }

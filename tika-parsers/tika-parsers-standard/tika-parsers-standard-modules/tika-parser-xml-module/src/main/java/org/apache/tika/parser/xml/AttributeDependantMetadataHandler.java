@@ -19,41 +19,44 @@ package org.apache.tika.parser.xml;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 
 /**
  * This adds a Metadata entry for a given node.
  * The textual content of the node is used as the
- * value, and the Metadata name is taken from
- * an attribute, with a prefix if required.
+ * value, and the Metadata name is taken from an attribute, minted under the
+ * given {@link KeyPrefix} (the name is document-controlled, so it must not be
+ * a registered Property).
  */
 public class AttributeDependantMetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
 
     private final String nameHoldingAttribute;
-    private final String namePrefix;
+    private final KeyPrefix namePrefix;
     private final StringBuilder buffer = new StringBuilder();
-    private String name;
+    private Property property;
 
     public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute,
-                                             String namePrefix) {
+                                             KeyPrefix namePrefix) {
         this.metadata = metadata;
         this.nameHoldingAttribute = nameHoldingAttribute;
         this.namePrefix = namePrefix;
     }
 
     public void addMetadata(String value) {
-        if (name == null || name.isEmpty()) {
+        if (property == null) {
             // We didn't find the attribute which holds the name
             return;
         }
         if (value.length() > 0) {
-            String previous = metadata.get(name);
+            String previous = metadata.get(property);
             if (previous != null && previous.length() > 0) {
                 value = previous + ", " + value;
             }
-            metadata.set(name, value);
+            metadata.set(property, value);
         }
     }
 
@@ -65,11 +68,7 @@ public class AttributeDependantMetadataHandler extends DefaultHandler {
     public void startElement(String uri, String localName, String name, Attributes attributes) {
         String rawName = attributes.getValue(nameHoldingAttribute);
         if (rawName != null) {
-            if (namePrefix == null) {
-                this.name = rawName;
-            } else {
-                this.name = namePrefix + rawName;
-            }
+            this.property = namePrefix.text(rawName);
         }
         // All other attributes are ignored
     }

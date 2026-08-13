@@ -42,6 +42,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DWG;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.CompositeParser;
@@ -167,7 +168,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata,new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertEquals("The quick brown fox jumps over the lazy dog",
                     metadata.get(TikaCoreProperties.TITLE));
@@ -195,7 +196,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata,new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertNull(metadata.get(TikaCoreProperties.TITLE));
             assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -217,7 +218,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Test Subject", metadata.get(TikaCoreProperties.DESCRIPTION));

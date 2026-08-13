@@ -28,7 +28,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 class KeynoteContentHandler extends DefaultHandler {
 
-    // TIKA-4816: namespaced to match "pages:"/"numbers:"/"iworks:" elsewhere in this module
+    // TIKA-4816: namespaced to match "pages:"/"numbers:"/"iwork:" elsewhere in this module
     // (was bare "slides-width"/"slides-height"; LegacyKeyMigrationFilter bridges the two).
     public static final Property PRESENTATION_WIDTH = Property.externalText("keynote:slides-width");
     public static final Property PRESENTATION_HEIGHT =

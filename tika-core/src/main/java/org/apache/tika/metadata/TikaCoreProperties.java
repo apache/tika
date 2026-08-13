@@ -136,12 +136,6 @@ public interface TikaCoreProperties {
             Property.reservedInternalInteger(TIKA_META_PREFIX + "embedded-id");
 
     Property PARSE_TIME_MILLIS = Property.reservedInternalText(TIKA_META_PREFIX + "parse-time-millis");
-    /**
-     * Simple class name of the content handler.
-     * @deprecated Use {@link #TIKA_CONTENT_HANDLER_TYPE} for the handler type enum value.
-     */
-    @Deprecated
-    Property TIKA_CONTENT_HANDLER = Property.reservedInternalText(TIKA_META_PREFIX + "content-handler");
 
     /**
      * The handler type used to produce {@link #TIKA_CONTENT}.
@@ -273,6 +267,8 @@ public interface TikaCoreProperties {
 
     Property EMBEDDED_RELATIONSHIP_ID = Property.reservedInternalText(TIKA_META_PREFIX + "embedded-relationship-id");
 
+    /** The name backing {@link #EMBEDDED_RESOURCE_TYPE}, not a settable key on its own --
+     * {@code Metadata#set(EMBEDDED_RESOURCE_TYPE_KEY, ...)} throws (reserved namespace). */
     String EMBEDDED_RESOURCE_TYPE_KEY = "tk:embedded-resource-type";
     /**
      * Some file formats can store information about their original
@@ -386,8 +382,7 @@ public interface TikaCoreProperties {
     Property DESCRIPTION = DublinCore.DESCRIPTION;
     /**
      * {@link DublinCore#SUBJECT}; should include both subject and keywords
-     * if a document format has both.  See also {@link Office#KEYWORDS}
-     * and {@link OfficeOpenXMLCore#SUBJECT}.
+     * if a document format has both.  See also {@link Office#KEYWORDS}.
      */
     Property SUBJECT = DublinCore.SUBJECT;
     /**
@@ -444,7 +439,7 @@ public interface TikaCoreProperties {
     /**
      * Embedded resource type property
      */
-    Property EMBEDDED_RESOURCE_TYPE = Property.reservedInternalClosedChoise(EMBEDDED_RESOURCE_TYPE_KEY,
+    Property EMBEDDED_RESOURCE_TYPE = Property.reservedInternalClosedChoice(EMBEDDED_RESOURCE_TYPE_KEY,
             EmbeddedResourceType.ATTACHMENT.toString(), EmbeddedResourceType.INLINE.toString(),
             EmbeddedResourceType.METADATA.toString(), EmbeddedResourceType.MACRO.toString(),
             EmbeddedResourceType.THUMBNAIL.toString(), EmbeddedResourceType.RENDERING.toString());
@@ -462,7 +457,7 @@ public interface TikaCoreProperties {
 
     /**
      * When an EncodingDetector detects an encoding, the encoding should be stored in this field.
-     * This is different from {@link Metadata#CONTENT_ENCODING} because that is what a parser
+     * This is different from {@link HttpHeaders#CONTENT_ENCODING} because that is what a parser
      * chooses to use for processing a file. If an EncodingDetector returns "null", a parser
      * may choose to use a default encoding. We want to differentiate between a parser using a
      * default encoding and the output of an EncodingDetector.

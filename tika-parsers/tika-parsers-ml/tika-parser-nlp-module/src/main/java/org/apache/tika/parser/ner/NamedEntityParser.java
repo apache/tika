@@ -37,6 +37,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -131,7 +132,7 @@ public class NamedEntityParser implements Parser {
         }
 
         Reader reader =
-                MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE)) ?
+                MediaType.TEXT_PLAIN.toString().equals(metadata.get(HttpHeaders.CONTENT_TYPE)) ?
                         new InputStreamReader(tis, StandardCharsets.UTF_8) :
                         secondaryParser.parse(tis);
 

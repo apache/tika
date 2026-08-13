@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -60,7 +61,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testMP3id3v1.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -87,7 +88,7 @@ public class Mp3ParserTest extends TikaTest {
         String content = getText("testMP3id3v2.mp3", metadata);
 
         // Check core properties
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -140,10 +141,10 @@ public class Mp3ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testMP3_coverArt.mp3");
 
         assertEquals(2, metadataList.size());
-        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
 
         Metadata pictureMetadata = metadataList.get(1);
-        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
@@ -175,19 +176,19 @@ public class Mp3ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata(fileName);
 
         assertEquals(3, metadataList.size());
-        assertEquals("audio/mpeg", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
 
         //the 64x40 front cover comes first in the file,
         //the 30x30 back cover second
         Metadata front = metadataList.get(1);
-        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
 
         Metadata back = metadataList.get(2);
-        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
@@ -215,7 +216,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testMP3id3v1_v2.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -241,7 +242,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         getText("testMP3vbr.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("160000", metadata.get(Audio.BITRATE));
         assertEquals("true", metadata.get(Audio.IS_VARIABLE_BITRATE));
     }
@@ -257,7 +258,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         getText("testMP3cbrInfoTag.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("320000", metadata.get(Audio.BITRATE));
         assertEquals("false", metadata.get(Audio.IS_VARIABLE_BITRATE));
     }
@@ -271,7 +272,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testMP3id3v24.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -314,7 +315,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testMP3i18n.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist \u2468\u2460", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
@@ -339,7 +340,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testMP3i18n_truncated.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist \u2468\u2460", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
@@ -371,7 +372,7 @@ public class Mp3ParserTest extends TikaTest {
         assertEquals("192000", metadata.get(Audio.BITRATE));
         assertEquals("false", metadata.get(Audio.IS_VARIABLE_BITRATE));
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -428,7 +429,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("test2.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Plus loin vers l'ouest", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Merzhin", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -452,7 +453,7 @@ public class Mp3ParserTest extends TikaTest {
         String content = getText("testMP3truncated.mp3", metadata);
 
         // Check we could get the headers from the start
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Girl you have no faith in medicine", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("The White Stripes", metadata.get(TikaCoreProperties.CREATOR));
 
@@ -493,7 +494,7 @@ public class Mp3ParserTest extends TikaTest {
     @Test
     public void testNakedUTF16BOM() throws Exception {
         Metadata metadata = getXML("testNakedUTF16BOM.mp3").metadata;
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("", metadata.get(XMPDM.GENRE));
     }
 
@@ -513,7 +514,7 @@ public class Mp3ParserTest extends TikaTest {
             try (TikaInputStream tis = TikaInputStream.get(mp3WithFrame("COMM", body))) {
                 new Mp3Parser().parse(tis, new BodyContentHandler(-1), metadata, new ParseContext());
             }
-            assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE), name);
+            assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE), name);
             // audio behind the broken tag is still read
             assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE), name);
         }
@@ -558,7 +559,7 @@ public class Mp3ParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         getText("testMP3mpeg2.mp3", metadata);
 
-        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mpeg", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("MPEG 3 Layer III Version 2", metadata.get("mp3:version"));
         assertEquals("22050", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals(2.0637f, Float.parseFloat(metadata.get(XMPDM.DURATION)), 0.005f);

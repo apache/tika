@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -70,9 +71,9 @@ public class InputStreamDigester implements Digester {
     }
 
     private static void setContentLength(long length, Metadata metadata) {
-        if (StringUtils.isBlank(metadata.get(Metadata.CONTENT_LENGTH))) {
+        if (StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
             //only add it if it hasn't been populated already
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         }
     }
 

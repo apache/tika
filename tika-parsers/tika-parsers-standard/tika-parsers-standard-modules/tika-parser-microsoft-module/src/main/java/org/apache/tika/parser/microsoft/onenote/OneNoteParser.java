@@ -88,38 +88,38 @@ public class OneNoteParser implements Parser {
             OneNoteHeader header = oneNoteDocument.header;
 
             if (header.isMsOneStoreFormat()) {
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberCreated",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "buildNumberCreated"),
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberLastWroteToFile",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "buildNumberLastWroteToFile"),
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberNewestWritten",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "buildNumberNewestWritten"),
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberOldestWritten",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "buildNumberOldestWritten"),
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
-                metadata.set(ONE_NOTE_PREFIX + "cbExpectedFileLength",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "cbExpectedFileLength"),
                         "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
-                metadata.set(ONE_NOTE_PREFIX + "cbFreeSpaceInFreeChunkList",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "cbFreeSpaceInFreeChunkList"),
                         "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
-                metadata.set(ONE_NOTE_PREFIX + "cbLegacyExpectedFileLength",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "cbLegacyExpectedFileLength"),
                         "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
-                metadata.set(ONE_NOTE_PREFIX + "cbLegacyFreeSpaceInFreeChunkList", "0x" +
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "cbLegacyFreeSpaceInFreeChunkList"), "0x" +
                         Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
-                metadata.set(ONE_NOTE_PREFIX + "crcName", "0x" + Long.toHexString(oneNoteDocument.header.crcName));
-                metadata.set(ONE_NOTE_PREFIX + "cTransactionsInLog",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "crcName"), "0x" + Long.toHexString(oneNoteDocument.header.crcName));
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "cTransactionsInLog"),
                         "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
-                metadata.set(ONE_NOTE_PREFIX + "ffvLastCodeThatWroteToThisFile", "0x" +
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "ffvLastCodeThatWroteToThisFile"), "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvLastCodeThatWroteToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvNewestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "ffvNewestCodeThatHasWrittenToThisFile"), "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvNewestCodeThatHasWrittenToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatMayReadThisFile", "0x" +
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "ffvOldestCodeThatMayReadThisFile"), "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvOldestCodeThatMayReadThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "ffvOldestCodeThatHasWrittenToThisFile"), "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvOldestCodeThatHasWrittenToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "grfDebugLogFlags",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "grfDebugLogFlags"),
                         "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
-                metadata.set(ONE_NOTE_PREFIX + "nFileVersionGeneration",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "nFileVersionGeneration"),
                         "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
-                metadata.set(ONE_NOTE_PREFIX + "rgbPlaceholder",
+                metadata.set(Property.externalText(ONE_NOTE_PREFIX + "rgbPlaceholder"),
                         "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
 
                 Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
@@ -143,11 +143,11 @@ public class OneNoteParser implements Parser {
                 }
                 if (!Instant.MAX.equals(
                         Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
-                    metadata.set(ONE_NOTE_PREFIX + "creationTimestamp",
+                    metadata.set(Property.externalText(ONE_NOTE_PREFIX + "creationTimestamp"),
                             String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
                 }
                 if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                    metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp", String.valueOf(
+                    metadata.set(Property.externalText(ONE_NOTE_PREFIX + "lastModifiedTimestamp"), String.valueOf(
                             oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
                 }
                 if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {

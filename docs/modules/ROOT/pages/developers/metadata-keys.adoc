@@ -17,19 +17,29 @@
 
 Every metadata key Tika can emit is a `Property` constant (or, for runtime-minted names like scraped
 HTML `<meta>` tags, a `KeyPrefix`) — there are no bare `String` keys naming a population of writable
-metadata. (A handful of `String` constants remain, e.g. `IPTC`'s four `*_WRONG_CASE` fields and
-`TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY`; these are deprecated/internal building blocks that
-construct a real `Property`'s name — not independent keys — and are excluded from the registry's key
-count for that reason.) That closed/open key space is tracked in a generated, build-gated registry, so
-adding a key involves one extra step beyond writing the Java.
+metadata. (One `String` constant remains as an exception: `TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY`
+is an internal building block that constructs the `Property` name for `EMBEDDED_RESOURCE_TYPE` — not an
+independent key — and is excluded from the registry's key count for that reason.) That closed/open key
+space is tracked in a generated, build-gated registry, so adding a key involves one extra step beyond
+writing the Java.
 
 == Add the constant
 
-Add the `Property` to its interface as usual:
+A curated `tk:` key can only be minted from inside `org.apache.tika.metadata`, via the
+package-private `reserved*` factories -- a public `Property` factory rejects a `tk:`/`X-TIKA:`
+name at construction time. Add it to `TikaCoreProperties` (or another class in that package)
+as usual:
 
 [source,java]
 ----
-Property MY_NEW_KEY = Property.internalText(TIKA_META_PREFIX + "my-new-key");
+Property MY_NEW_KEY = Property.reservedInternalText(TIKA_META_PREFIX + "my-new-key");
+----
+
+A parser module coining its own key uses a public factory in its own namespace instead:
+
+[source,java]
+----
+Property MY_NEW_KEY = Property.internalText("myformat:my-new-key");
 ----
 
 Naming conventions (frozen for 4.0):

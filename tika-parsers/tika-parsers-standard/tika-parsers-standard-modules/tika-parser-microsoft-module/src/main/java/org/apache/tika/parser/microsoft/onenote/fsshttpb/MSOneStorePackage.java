@@ -180,7 +180,7 @@ public class MSOneStorePackage {
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
-                        metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
+                        metadata.set(Property.externalText(ONE_NOTE_PREFIX + "lastModifiedTimestamp"),
                                 String.valueOf(lastModifiedTimestamp.toEpochMilli()));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
@@ -190,7 +190,7 @@ public class MSOneStorePackage {
                         if (creationTs < creationTimestamp) {
                             creationTimestamp = creationTs;
                         }
-                        metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
+                        metadata.set(Property.externalText(ONE_NOTE_PREFIX + "creationTimestamp"), String.valueOf(creationTimestamp));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
                         // 1970

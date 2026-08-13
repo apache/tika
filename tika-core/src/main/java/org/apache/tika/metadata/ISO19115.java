@@ -24,14 +24,8 @@ package org.apache.tika.metadata;
  * hyphen, or a trailing {@code -->}) predating curated {@link Property} constants -- the old
  * literal spellings are bridged forward by {@code LegacyKeyMigrationFilter}'s migration table.
  *
- * <p>Cardinality (TIKA-4816): all but {@link #PARENT_METADATA_TITLE} and
- * {@link #METADATA_IDENTIFIER_CODE} are BAG -- {@code GeographicInformationParser} writes every
- * one of them from a loop over a repeatable ISO 19139 element (identifications, dates, cited
- * responsible parties, distributors, transfer options, constraints, geographic extents, ...), so
- * a SIMPLE cardinality throws {@code PropertyTypeException} the moment a real document has more
- * than one of that element -- confirmed by {@code GeographicInformationParserTest} once a fixture
- * exercised a multi-valued field. The two exceptions are read from a single object with no
- * enclosing loop.
+ * <p>All but {@link #PARENT_METADATA_TITLE} and {@link #METADATA_IDENTIFIER_CODE} are BAG: each
+ * is written from a loop over a repeatable ISO 19139 element, so these can legitimately repeat.
  */
 public interface ISO19115 {
 

@@ -20,6 +20,7 @@ import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.tika.Tika;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 public class MidiParserTest {
@@ -30,7 +31,7 @@ public class MidiParserTest {
         String content =
                 new Tika().parseToString(MidiParserTest.class.getResourceAsStream(path), metadata);
 
-        assertEquals("audio/midi", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/midi", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("2", metadata.get("midi:tracks"));
         assertEquals("0", metadata.get("midi:patches"));
         assertEquals("PPQ", metadata.get("midi:division-type"));

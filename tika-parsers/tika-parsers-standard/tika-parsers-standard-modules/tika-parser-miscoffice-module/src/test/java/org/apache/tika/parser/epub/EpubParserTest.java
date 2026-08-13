@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Epub;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -41,7 +42,7 @@ public class EpubParserTest extends TikaTest {
 
         XMLResult xmlResult = getXML("testEPUB.epub");
         assertEquals("2.0", xmlResult.metadata.get(Epub.VERSION));
-        assertEquals("application/epub+zip", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/epub+zip", xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("en", xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("This is an ePub test publication for Tika.",
                 xmlResult.metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -72,7 +73,7 @@ public class EpubParserTest extends TikaTest {
 
         //test attachments
         assertEquals(2, metadataList.size());
-        assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
         int ch1 = xml.indexOf("<h1>Chapter 1");

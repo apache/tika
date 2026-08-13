@@ -47,6 +47,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.QuickTime;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -92,7 +93,7 @@ public class MP4ParserTest extends TikaTest {
         String content = getText("testMP4.m4a", metadata);
 
         // Check core properties
-        assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("2012-01-28T18:39:18Z", metadata.get(TikaCoreProperties.CREATED));
@@ -159,10 +160,10 @@ public class MP4ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testMP4_coverArt.m4a");
 
         assertEquals(2, metadataList.size());
-        assertEquals("audio/mp4", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
 
         Metadata pictureMetadata = metadataList.get(1);
-        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
@@ -178,11 +179,11 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(3, metadataList.size());
         //a png data atom (well-known type 14) followed by a jpeg one (13)
         Metadata front = metadataList.get(1);
-        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         Metadata back = metadataList.get(2);
-        assertEquals("image/jpeg", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
@@ -193,7 +194,7 @@ public class MP4ParserTest extends TikaTest {
         // a 10 fps H.264 clip generated with ffmpeg (color source, 16x16, 1s);
         // libx264 also writes the average bitrate into the btrt BitRateBox
         XMLResult r = getXML("testMP4Video.mp4");
-        assertEquals("video/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
         assertEquals("6536", r.metadata.get(Video.BITRATE));
     }
@@ -202,7 +203,7 @@ public class MP4ParserTest extends TikaTest {
     @Timeout(30000)
     public void testInfiniteLoop() throws Exception {
         XMLResult r = getXML("testMP4_truncated.m4a");
-        assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
     }
 
@@ -211,7 +212,7 @@ public class MP4ParserTest extends TikaTest {
         final XMLResult xmlResult = getXML("testMP4AudioOnly.mp4");
         final Metadata metadata = xmlResult.metadata;
 
-        assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

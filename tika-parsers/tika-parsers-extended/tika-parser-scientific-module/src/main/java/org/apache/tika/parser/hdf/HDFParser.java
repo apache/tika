@@ -113,10 +113,8 @@ public class HDFParser implements Parser {
 
         // get file type
         met.set(FILE_TYPE_DESCRIPTION, ncFile.getFileTypeDescription());
-        // unravel its string attrs. Bag (TIKA-4816): the same attribute name can recur across
-        // sibling/nested groups (this method recurses over group.getGroups() below), and a SIMPLE
-        // mint throws PropertyTypeException the moment that happens -- confirmed by
-        // HDFParserTest.testParseGlobalMetadata.
+        // BAG: the same attribute name can recur across sibling/nested groups (recursed via
+        // group.getGroups() below).
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {
                 met.add(HDF.textBag(attribute.getFullName()), attribute.getStringValue());

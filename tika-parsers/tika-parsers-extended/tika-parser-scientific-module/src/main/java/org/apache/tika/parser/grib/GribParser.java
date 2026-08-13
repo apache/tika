@@ -21,10 +21,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.xml.sax.ContentHandler;
@@ -38,7 +35,7 @@ import ucar.nc2.dataset.NetcdfDataset;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.ClimateForcast;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -46,6 +43,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.climate.ClimateForecast;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 @TikaComponent
@@ -66,7 +64,7 @@ public class GribParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         //Set MIME type as grib2
-        metadata.set(Metadata.CONTENT_TYPE, GRIB_MIME_TYPE);
+        metadata.set(HttpHeaders.CONTENT_TYPE, GRIB_MIME_TYPE);
         //grib was not cleaning up its temp files no matter what we tried
         //this is a work around the creates a temp directory then copies the full input file
         //into that tmp directory.  We then delete the directory in the finally statement.
@@ -128,21 +126,12 @@ public class GribParser implements Parser {
         }
     }
 
-    private static final Map<String, Property> CF_GLOBAL_ATTRIBUTES = Stream.of(
-                    ClimateForcast.PROGRAM_ID, ClimateForcast.COMMAND_LINE, ClimateForcast.HISTORY,
-                    ClimateForcast.TABLE_ID, ClimateForcast.INSTITUTION, ClimateForcast.SOURCE,
-                    ClimateForcast.CONTACT, ClimateForcast.PROJECT_ID, ClimateForcast.CONVENTIONS,
-                    ClimateForcast.REFERENCES, ClimateForcast.ACKNOWLEDGEMENT,
-                    ClimateForcast.REALIZATION, ClimateForcast.EXPERIMENT_ID, ClimateForcast.COMMENT,
-                    ClimateForcast.MODEL_NAME_ENGLISH)
-            .collect(Collectors.toMap(Property::getName, p -> p));
-
     private static void addGlobalAttribute(Metadata metadata, String name, String value) {
         if ("title".equals(name)) {
             metadata.add(TikaCoreProperties.TITLE, value);
             return;
         }
-        Property cfProperty = CF_GLOBAL_ATTRIBUTES.get(name);
+        Property cfProperty = ClimateForecast.byName(name);
         if (cfProperty != null) {
             metadata.add(cfProperty, value);
         } else {

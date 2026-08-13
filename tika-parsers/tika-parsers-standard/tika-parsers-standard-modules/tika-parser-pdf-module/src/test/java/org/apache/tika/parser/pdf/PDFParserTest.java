@@ -56,9 +56,11 @@ import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
@@ -119,7 +121,7 @@ public class PDFParserTest extends TikaTest {
         XMLResult r = getXML("testPDF.pdf");
         Metadata metadata = r.metadata;
         String xml = r.xml;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
@@ -152,7 +154,7 @@ public class PDFParserTest extends TikaTest {
     public void testPdfParsingMetadataOnly() throws Exception {
 
         Metadata metadata = getXML("testPDF.pdf").metadata;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
@@ -163,7 +165,7 @@ public class PDFParserTest extends TikaTest {
 
         XMLResult r = getXML("testPDF-custommetadata.pdf");
         Metadata metadata = r.metadata;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
 
@@ -187,7 +189,7 @@ public class PDFParserTest extends TikaTest {
         XMLResult r = getXML("testPDF_protected.pdf");
         Metadata metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane",
                 metadata.get(TikaCoreProperties.SUBJECT));
@@ -214,7 +216,7 @@ public class PDFParserTest extends TikaTest {
         metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
 
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
         assertEquals(
@@ -243,7 +245,7 @@ public class PDFParserTest extends TikaTest {
             ex = true;
         }
         assertTrue(ex, "encryption exception");
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
         assertEquals(9, metadata.names().length, "very little metadata should be parsed");
@@ -1379,11 +1381,11 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", context);
         assertNull(context.get(MetadataOnlyParse.class));
         assertEquals(2, metadataList.size());
-        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals("/image-0.png",
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals(261, (int) metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
-        assertEquals(934, (int) metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
+        assertEquals(261, (int) metadataList.get(1).getInt(TIFF.IMAGE_LENGTH));
+        assertEquals(934, (int) metadataList.get(1).getInt(TIFF.IMAGE_WIDTH));
         assertEquals("image-0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
@@ -1408,9 +1410,9 @@ public class PDFParserTest extends TikaTest {
         assertNull(context.get(MetadataOnlyParse.class));
         assertEquals(2, metadataList.size());
         Metadata image = metadataList.get(1);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
-        assertEquals(261, (int) image.getInt(Metadata.IMAGE_LENGTH));
-        assertEquals(934, (int) image.getInt(Metadata.IMAGE_WIDTH));
+        assertEquals("image/png", image.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(261, (int) image.getInt(TIFF.IMAGE_LENGTH));
+        assertEquals(934, (int) image.getInt(TIFF.IMAGE_WIDTH));
         //the placeholder must not be dispatched to any content parser. Without the
         //fix it is (EmptyParser here; ImageParser+TesseractOCRParser when tesseract
         //is installed, which is what records the spurious embedded exception).
@@ -1460,9 +1462,9 @@ public class PDFParserTest extends TikaTest {
     public void testEmbeddedRichMedia() throws Exception {
         List<Metadata> metadata = getRecursiveMetadata("testFlashInPDF.pdf");
         assertEquals(2, metadata.size());
-        assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-shockwave-flash", metadata.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
+        assertEquals("15036", metadata.get(1).get(HttpHeaders.CONTENT_LENGTH));
         assertEquals("RichMedia", metadata.get(0).getValues(PDF.ANNOTATION_SUBTYPES)[0]);
         assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
@@ -1494,7 +1496,7 @@ public class PDFParserTest extends TikaTest {
         //I changed the extension to pdf to make sure that the detection is
         //coming from the structural chek we're now doing.
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_AdobeIllustrator.pdf");
-        assertEquals("application/illustrator", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/illustrator", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         //we should try to find a small illustrator file xmp and the structural
         //components we're looking for.
     }

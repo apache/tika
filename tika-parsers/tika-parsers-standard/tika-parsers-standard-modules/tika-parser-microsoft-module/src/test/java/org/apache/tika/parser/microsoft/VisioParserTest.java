@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -39,7 +40,7 @@ public class VisioParserTest {
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/vnd.visio", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/vnd.visio", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertNull(metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Hogwarts", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();

@@ -33,6 +33,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -76,7 +77,7 @@ public class GeminiVLMParserTest {
                 buildGeminiResponse("Hello from Gemini!", 80, 15)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         BodyContentHandler handler = new BodyContentHandler();
 
         try (TikaInputStream tis = TikaInputStream.get(
@@ -117,7 +118,7 @@ public class GeminiVLMParserTest {
                 buildGeminiResponse("PDF content extracted", 200, 50)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
         BodyContentHandler handler = new BodyContentHandler();
 
         byte[] fakePdf = "%PDF-1.4 fake content".getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -156,7 +157,7 @@ public class GeminiVLMParserTest {
                 buildGeminiResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{1, 2}))) {
@@ -176,7 +177,7 @@ public class GeminiVLMParserTest {
                 "{\"error\":{\"message\":\"internal\"}}"));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(
@@ -227,7 +228,7 @@ public class GeminiVLMParserTest {
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{1, 2}))) {
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.CONTENT_TYPE, "image/png");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
             parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
         }
 

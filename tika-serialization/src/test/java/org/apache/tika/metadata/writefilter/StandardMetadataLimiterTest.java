@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
@@ -200,8 +201,8 @@ public class StandardMetadataLimiterTest extends TikaTest {
                 Collections.EMPTY_SET, Collections.EMPTY_SET, true);
 
         String mime = getLongestMime().toString();
-        metadata.set(Metadata.CONTENT_TYPE, mime);
-        assertEquals(mime, metadata.get(Metadata.CONTENT_TYPE));
+        metadata.set(HttpHeaders.CONTENT_TYPE, mime);
+        assertEquals(mime, metadata.get(HttpHeaders.CONTENT_TYPE));
 
         //test that other fields are truncated
         metadata.set("dc:title", "abcdefghij");
@@ -343,6 +344,20 @@ public class StandardMetadataLimiterTest extends TikaTest {
 
         assertArrayEquals(new String[]{"e1", "e2", "e3"},
                 metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION));
+    }
+
+    @Test
+    public void testEmbeddedExceptionAddHonorsMaxValuesPerField() throws Exception {
+        //ALWAYS_ADD_FIELDS must still respect maxValuesPerField and flag truncation
+        Metadata metadata = filter(100, 10000, 10000, 2,
+                Collections.EMPTY_SET, Collections.EMPTY_SET, true);
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 1");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 2");
+        metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, "exception 3");
+
+        assertArrayEquals(new String[]{"exception 1", "exception 2"},
+                metadata.getValues(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertTruncated(metadata);
     }
 
     @Test

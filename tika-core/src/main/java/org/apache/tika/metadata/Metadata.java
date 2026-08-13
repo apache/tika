@@ -41,9 +41,7 @@ import org.apache.tika.utils.DateUtils;
 /**
  * A multi-valued metadata container.
  */
-public class Metadata
-        implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
-        Serializable {
+public class Metadata implements Serializable {
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
@@ -105,7 +103,7 @@ public class Metadata
      * The limiter will be applied to all subsequent writes.
      *
      * @param writeLimiter the limiter to apply to metadata writes, or null for no limits
-     * @since Apache Tika 4.0
+     * @since Apache Tika 4.0.0
      */
     public Metadata(MetadataWriteLimiter writeLimiter) {
         metadata = new HashMap<>();
@@ -124,7 +122,7 @@ public class Metadata
      *
      * @param context the ParseContext (may be null)
      * @return a new Metadata instance configured from the context
-     * @since Apache Tika 4.0
+     * @since Apache Tika 4.0.0
      */
     public static Metadata newInstance(ParseContext context) {
         if (context == null) {
@@ -266,6 +264,95 @@ public class Metadata
     }
 
     /**
+     * Returns the value of the identified Long based metadata property (INTEGER or REAL
+     * value type, mirroring {@link #set(Property, long)}). If many values are associated to
+     * the specified property, then the first one is returned.
+     *
+     * @param property simple integer or real property definition
+     * @return property value as a Long, or <code>null</code> if the property is not set, or
+     * not a valid Long
+     * @since Apache Tika 4.0.0
+     */
+    public Long getLong(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.INTEGER && valueType != Property.ValueType.REAL) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(v);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the value of the identified Boolean based metadata property. If many values are
+     * associated to the specified property, then the first one is returned.
+     *
+     * @param property simple boolean property definition
+     * @return property value as a Boolean, or <code>null</code> if the property is not set, or
+     * not a valid Boolean
+     * @since Apache Tika 4.0.0
+     */
+    public Boolean getBoolean(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.BOOLEAN) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        if ("true".equalsIgnoreCase(v)) {
+            return Boolean.TRUE;
+        } else if ("false".equalsIgnoreCase(v)) {
+            return Boolean.FALSE;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the value of the identified Double based metadata property (REAL or RATIONAL
+     * value type, mirroring {@link #set(Property, double)}). If many values are associated to
+     * the specified property, then the first one is returned.
+     *
+     * @param property simple real or rational property definition
+     * @return property value as a Double, or <code>null</code> if the property is not set, or
+     * not a valid Double
+     * @since Apache Tika 4.0.0
+     */
+    public Double getDouble(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.REAL && valueType != Property.ValueType.RATIONAL) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Double.valueOf(v);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
      * Get the values associated to a metadata name.
      *
      * @param property of the metadata.
@@ -325,9 +412,9 @@ public class Metadata
         if (ReservedNamespaces.isTikaNative(name)) {
             throw new IllegalArgumentException(
                     "Writing reserved key '" + name + "' via the String API is not allowed: " +
-                            "Tika-computed keys are set internally via curated Properties, and " +
-                            "document-derived key names must go through a KeyPrefix; see the " +
-                            "4.x migration guide.");
+                            "use its Property constant (see TikaCoreProperties), #putAll to copy " +
+                            "another Metadata, or #setTrusted for intentional reconstruction; " +
+                            "see migration-to-4x/metadata-changes-4x in the docs.");
         }
     }
 
@@ -367,14 +454,12 @@ public class Metadata
      * {@link #reconstruct(String, String, boolean)}, so reserved {@code tk:} keys copy
      * through their trusted route rather than the String-guarded route.
      * <p>
-     * This is the supported replacement for a manual
-     * {@code for (String n : src.names()) dest.set(n, src.get(n))} copy loop, which
-     * silently collapses multi-valued keys to a single value today and throws on
-     * {@code tk:}-prefixed keys once the reserved-key guard is flipped from drop to throw.
+     * Use this instead of a manual {@code for (String n : src.names()) dest.set(n, src.get(n))}
+     * copy loop, which collapses multi-valued keys and throws on {@code tk:}-prefixed keys.
      *
      * @param other the Metadata to copy from; {@code other == this} is a no-op
      * @throws NullPointerException if other is null
-     * @since Apache Tika 4.0
+     * @since Apache Tika 4.0.0
      */
     public void putAll(Metadata other) {
         Objects.requireNonNull(other, "other must not be null");
@@ -455,10 +540,14 @@ public class Metadata
      * @param name  the metadata name.
      * @param value the metadata value, or <code>null</code>
      * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
-     * ({@code tk:}) key; use its {@link Property} or {@link #setTrusted}.
+     * ({@code tk:}) key and {@code value} is non-null; use its {@link Property} or
+     * {@link #setTrusted}. A null value (removal) is always allowed, matching
+     * {@link #remove(String)}.
      */
     public void set(String name, String value) {
-        checkNotReserved(name);
+        if (value != null) {
+            checkNotReserved(name);
+        }
         setTrusted(name, value);
     }
 
@@ -549,9 +638,9 @@ public class Metadata
     }
 
     /**
-     * Sets the integer value of the identified metadata property.
+     * Sets the long value of the identified metadata property.
      *
-     * @param property simple integer property definition
+     * @param property simple integer or real property definition
      * @param value    property value
      * @since Apache Tika 0.8
      */
@@ -560,9 +649,9 @@ public class Metadata
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
                     property.getPrimaryProperty().getPropertyType());
         }
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.REAL && valueType != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.REAL, valueType);
         }
         set(property, Long.toString(value));
     }

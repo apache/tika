@@ -42,6 +42,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -148,7 +149,9 @@ public class ExtendedMetadataExtractor {
         if (!includeType(propertyValue)) {
             return;
         }
-        String key = MAPI.PROPERTY.key(pair.tikaMapiProperty.name);
+        //textBag: distinct raw MAPI properties can resolve to the same tikaMapiProperty
+        //name (e.g. multi-value MV_TIME entries), so this key must tolerate repeats
+        Property key = MAPI.PROPERTY.textBag(pair.tikaMapiProperty.name);
         Types.MAPIType type = propertyValue.getActualType();
         if (type == Types.TIME || type == Types.MV_TIME || type == Types.APP_TIME || type == Types.MV_APP_TIME) {
             Calendar calendar = (Calendar) propertyValue.getValue();

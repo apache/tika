@@ -36,6 +36,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
@@ -85,12 +86,12 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
         expectedKeys.add("Content-Type");
         for (Metadata m : metadataList) {
             if (m
-                    .get(Metadata.CONTENT_TYPE)
+                    .get(HttpHeaders.CONTENT_TYPE)
                     .equals("image/emf")) {
                 fail("emf should have been filtered out");
             }
             if (m
-                    .get(Metadata.CONTENT_TYPE)
+                    .get(HttpHeaders.CONTENT_TYPE)
                     .startsWith("text/plain")) {
                 fail("text/plain should have been filtered out");
             }

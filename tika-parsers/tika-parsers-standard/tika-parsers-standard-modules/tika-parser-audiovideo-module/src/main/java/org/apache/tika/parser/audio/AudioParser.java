@@ -39,6 +39,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -96,11 +97,11 @@ public class AudioParser implements Parser {
             AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(audioStream);
             Type type = fileFormat.getType();
             if (type == Type.AIFC || type == Type.AIFF) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/x-aiff");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/x-aiff");
             } else if (type == Type.AU || type == Type.SND) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/basic");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/basic");
             } else if (type == Type.WAVE) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/vnd.wave");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/vnd.wave");
             }
 
             AudioFormat audioFormat = fileFormat.getFormat();
@@ -147,9 +148,7 @@ public class AudioParser implements Parser {
         xhtml.endDocument();
     }
 
-    // package-private: unit-tested directly with a synthetic properties map, since Tika's own
-    // stock-provider test fixtures never populate javax.sound SPI properties (see class javadoc
-    // note above) and exercising the third-party-SPI path needs no audio bytes at all.
+    // package-private: unit-tested directly with a synthetic properties map.
     void addMetadata(Metadata metadata, Map<String, Object> properties) {
         if (properties != null) {
             for (Entry<String, Object> entry : properties.entrySet()) {

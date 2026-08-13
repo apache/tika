@@ -35,7 +35,8 @@ import org.apache.tika.metadata.Property.ValueType;
  * <p><strong>{@code KeyPrefix} instances are declaration-time constants.</strong> Declare one as a
  * {@code static final} field, the same way a curated {@link Property} constant is declared — never
  * construct one from document-derived text, and never construct one per-parse: the registry is
- * static and unbounded per-parse construction grows it forever (and now also throws, see below).
+ * static and unbounded, so per-parse construction grows it forever, and re-registering the same
+ * prefix throws {@link IllegalStateException}.
  *
  * @since Apache Tika 4.0.0
  */
@@ -87,16 +88,35 @@ public final class KeyPrefix {
         return false;
     }
 
+    /**
+     * Declares a FILE-provenance prefix: names read from the document itself.
+     *
+     * @throws IllegalArgumentException if {@code prefix} is null, empty, reserved, or lacks a
+     * trailing delimiter
+     * @throws IllegalStateException if {@code prefix} is already registered
+     */
     public static KeyPrefix file(String prefix, String description) {
         return new KeyPrefix(prefix, Provenance.FILE, description);
     }
 
+    /**
+     * Declares a TOOL-provenance prefix: names coined by an external tool or service.
+     *
+     * @throws IllegalArgumentException if {@code prefix} is null, empty, reserved, or lacks a
+     * trailing delimiter
+     * @throws IllegalStateException if {@code prefix} is already registered
+     */
     public static KeyPrefix tool(String prefix, String description) {
         return new KeyPrefix(prefix, Provenance.TOOL, description);
     }
 
-    /** The full key for a source-derived {@code suffix}. */
+    /**
+     * The full key for a source-derived {@code suffix}.
+     *
+     * @throws IllegalArgumentException if {@code suffix} is null or empty
+     */
     public String key(String suffix) {
+        requireNonEmptyName(suffix);
         return prefix + suffix;
     }
 
@@ -110,6 +130,12 @@ public final class KeyPrefix {
 
     public String description() {
         return description;
+    }
+
+    /** The prefix, so a String→KeyPrefix flip doesn't turn existing
+     * logging/concatenation into {@code KeyPrefix@<hex>} with no compile signal. */
+    public String toString() {
+        return prefix;
     }
 
     /** Declared prefixes, from loaded classes only. */

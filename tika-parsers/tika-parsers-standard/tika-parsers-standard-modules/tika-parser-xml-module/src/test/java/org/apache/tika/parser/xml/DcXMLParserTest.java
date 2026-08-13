@@ -26,6 +26,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -40,7 +41,7 @@ public class DcXMLParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DcXMLParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/xml", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertEquals("Tika test document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Rida Benjelloun", metadata.get(TikaCoreProperties.CREATOR));
 

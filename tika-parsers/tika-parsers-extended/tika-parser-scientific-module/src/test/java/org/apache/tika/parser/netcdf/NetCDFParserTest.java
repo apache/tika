@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.ClimateForecast;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -46,11 +47,11 @@ public class NetCDFParserTest {
         }
 
         assertEquals(metadata.get(TikaCoreProperties.TITLE), "model output prepared for IPCC AR4");
-        assertEquals(metadata.get(Metadata.CONTACT), "ccsm@ucar.edu");
-        assertEquals(metadata.get(Metadata.PROJECT_ID), "IPCC Fourth Assessment");
-        assertEquals(metadata.get(Metadata.CONVENTIONS), "CF-1.0");
-        assertEquals(metadata.get(Metadata.REALIZATION), "1");
-        assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
+        assertEquals(metadata.get(ClimateForecast.CONTACT), "ccsm@ucar.edu");
+        assertEquals(metadata.get(ClimateForecast.PROJECT_ID), "IPCC Fourth Assessment");
+        assertEquals(metadata.get(ClimateForecast.CONVENTIONS), "CF-1.0");
+        assertEquals(metadata.get(ClimateForecast.REALIZATION), "1");
+        assertEquals(metadata.get(ClimateForecast.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
         assertEquals(metadata.get("netcdf:file-type-description"), "NetCDF-3/CDM");
 

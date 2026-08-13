@@ -219,10 +219,8 @@ public class ISATabUtils {
         }
     }
 
-    // Bag (TIKA-4816): a field name legitimately repeats across the trailing columns of one
-    // record (addMetadata's loop) and across records/files sharing the same field (e.g. multiple
-    // "Term Source Name" columns) -- a SIMPLE mint throws PropertyTypeException the moment that
-    // happens, confirmed by ISArchiveParserTest.testParseArchive.
+    // BAG: a field name legitimately repeats across the trailing columns of one record and
+    // across records/files sharing the same field (e.g. multiple "Term Source Name" columns).
     private static void addMetadata(String field, CSVRecord record, Metadata metadata) {
         if ((record == null) || (record.size() <= 1)) {
             return;

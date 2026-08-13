@@ -83,27 +83,20 @@ detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type
 |===
 |3.x key |4.0.0 key
 
-|`tika:chunks` |`tk:chunks`
 |`X-TIKA:content` |`tk:content`
-|`X-TIKA:content_handler` |`tk:content-handler`
-|`X-TIKA:content_handler_type` |`tk:content-handler-type`
 |`Content-Type-Hint` |`tk:content-type-hint`
 |`Content-Type-Override` |`tk:content-type-override`
 |`Content-Type-Parser-Override` |`tk:content-type-parser-override`
-|`Content-Type-Magic-Detected` |`tk:content-type-magic-detected`
-|`X-TIKA:decodedCharset` |`tk:decoded-charset`
 |`X-TIKA:detectedEncoding` |`tk:detected-encoding`
 |`X-TIKA:detected_language` |`tk:detected-language`
 |`X-TIKA:detected_language_confidence` |`tk:detected-language-confidence`
 |`X-TIKA:detected_language_confidence_raw` |`tk:detected-language-confidence-raw`
-|`X-TIKA:detection_content_length` |`tk:detection-content-length`
 |`X-TIKA:embedded_depth` |`tk:embedded-depth`
 |`X-TIKA:embedded_id` |`tk:embedded-id`
 |`X-TIKA:embedded_id_path` |`tk:embedded-id-path`
-|`X-TIKA:embeddedRelationshipId` |`tk:embedded-relationship-id`
+|`embeddedRelationshipId` |`tk:embedded-relationship-id`
 |`X-TIKA:embedded_resource_path` |`tk:embedded-resource-path`
 |`embeddedResourceType` |`tk:embedded-resource-type`
-|`X-TIKA:encodingDetectionTrace` |`tk:encoding-detection-trace`
 |`X-TIKA:encodingDetector` |`tk:encoding-detector`
 |`X-TIKA:encrypted` |`tk:encrypted`
 |`X-TIKA:final_embedded_resource_path` |`tk:final-embedded-resource-path`
@@ -115,23 +108,18 @@ detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type
 |`X-TIKA:Parsed-By` |`tk:parsed-by`
 |`X-TIKA:Parsed-By-Full-Set` |`tk:parsed-by-full-set`
 |`X-TIKA:pipes_result` |`tk:pipes-result`
-|`X-TIKA:resourceName` |`tk:resource-name`
-|`X-TIKA:resourceNameExtensionInferred` |`tk:resource-name-extension-inferred`
+|`resourceName` |`tk:resource-name`
 |`X-TIKA:sourcePath` |`tk:source-path`
-|`X-TIKA:truncated_content_for_detection` |`tk:truncated-content-for-detection`
 |`X-TIKA:versionCount` |`tk:version-count`
 |`X-TIKA:versionNumber` |`tk:version-number`
 |`X-TIKA:EXCEPTION:container_exception` |`tk:exception:container-exception`
 |`X-TIKA:EXCEPTION:embedded_bytes_exception` |`tk:exception:embedded-bytes-exception`
-|`X-TIKA:EXCEPTION:embedded_depth_limit_reached` |`tk:exception:embedded-depth-limit-reached`
 |`X-TIKA:EXCEPTION:embedded_exception` |`tk:exception:embedded-exception`
-|`X-TIKA:EXCEPTION:embedded_resource_limit_reached` |`tk:exception:embedded-resource-limit-reached`
 |`X-TIKA:EXCEPTION:embedded_stream_exception` |`tk:exception:embedded-stream-exception`
 |`X-TIKA:EXCEPTION:embedded_warning` |`tk:exception:embedded-warning`
 |`X-TIKA:EXCEPTION:warn` |`tk:exception:warn`
 |`X-TIKA:EXCEPTION:write_limit_reached` |`tk:exception:write-limit-reached`
 |`tika_pg:page_number` |`tk:page:number`
-|`tika_pg:page_numbers` |`tk:page:numbers`
 |`tika_pg:page_rotation` |`tk:page:rotation`
 |`rendering:pdfbox-image-writing-ms` |`tk:rendering:pdfbox-image-writing-ms`
 |`rendering:pdfbox-rendering-ms` |`tk:rendering:pdfbox-rendering-ms`
@@ -145,6 +133,17 @@ detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type
 |`signature:reason` |`tk:signature:reason`
 |`X-TIKA:WARN:truncated_metadata` |`tk:warn:truncated-metadata`
 |===
+
+Dropped, not renamed: 3.x `X-TIKA:content_handler` (the handler's simple class name) has no 4.x
+equivalent; `tk:content-handler-type` covers the use case with a different value shape (the
+handler-type enum name), so the old key is not remapped.
+
+New in 4.0.0, with no 3.x predecessor: `tk:chunks`, `tk:content-handler-type`,
+`tk:content-type-magic-detected`, `tk:decoded-charset`, `tk:detection-content-length`,
+`tk:encoding-detection-trace`, `tk:resource-name-extension-inferred`,
+`tk:truncated-content-for-detection`, `tk:exception:embedded-depth-limit-reached`,
+`tk:exception:embedded-resource-limit-reached`, and `tk:page:numbers` (only the singular
+`tk:page:number` has a 3.x predecessor, `tika_pg:page_number`).
 
 Open key families migrate by prefix, suffix preserved verbatim (e.g. digest algorithm names):
 
@@ -194,13 +193,9 @@ independent of casing (the name's origin).
 |`database:column_name` |`database:column-name`
 |`database:row_count` |`database:row-count`
 |`database:table_name` |`database:table-name`
-|`dwg:applicationComment` |`dwg:application-comment`
-|`dwg:applicationName` |`dwg:application-name`
-|`dwg:applicationVersion` |`dwg:application-version`
-|`dwg:productInfo` |`dwg:product-info`
 |`extended-properties:HiddedSlides` |`extended-properties:HiddenSlides`
 |`extended-properties:DocSecurityString` |`extended-properties:doc-security-string`
-|`msoffice:embeddedStorageClassId` |`msoffice:embedded-storage-class-id`
+|`embeddedStorageClassId` |`msoffice:embedded-storage-class-id`
 |`msoffice:ocxName` |`msoffice:ocx-name`
 |`msoffice:progID` |`msoffice:prog-id`
 |`pdf:actionTrigger` |`pdf:action-trigger`
@@ -238,10 +233,10 @@ independent of casing (the name's origin).
 |`pdfa:PDFVersion` |`pdfa:pdf-version`
 |`pst:discriptorNodeId` |`pst:discriptor-node-id`
 |`pst:isValid` |`pst:is-valid`
-|`quattropro:Build` |`quattropro:build`
-|`quattropro:Id` |`quattropro:id`
-|`quattropro:LowestVersion` |`quattropro:lowest-version`
-|`quattropro:Version` |`quattropro:version`
+|`wordperfect:Build` |`quattropro:build`
+|`wordperfect:Id` |`quattropro:id`
+|`wordperfect:LowestVersion` |`quattropro:lowest-version`
+|`wordperfect:Version` |`quattropro:version`
 |`wordperfect:Encrypted` |`wordperfect:encrypted`
 |`wordperfect:FileId` |`wordperfect:file-id`
 |`wordperfect:FileSize` |`wordperfect:file-size`
@@ -249,17 +244,6 @@ independent of casing (the name's origin).
 |`wordperfect:MajorVersion` |`wordperfect:major-version`
 |`wordperfect:MinorVersion` |`wordperfect:minor-version`
 |`wordperfect:ProductType` |`wordperfect:product-type`
-|`zip:centralDirectoryOnlyEntries` |`zip:central-directory-only-entries`
-|`zip:compressedSize` |`zip:compressed-size`
-|`zip:compressionMethod` |`zip:compression-method`
-|`zip:detectorDataDescriptorRequired` |`zip:detector-data-descriptor-required`
-|`zip:detectorZipFileOpened` |`zip:detector-zip-file-opened`
-|`zip:duplicateEntryNames` |`zip:duplicate-entry-names`
-|`zip:integrityCheckResult` |`zip:integrity-check-result`
-|`zip:localHeaderOnlyEntries` |`zip:local-header-only-entries`
-|`zip:uncompressedSize` |`zip:uncompressed-size`
-|`zip:unixMode` |`zip:unix-mode`
-|`zip:versionMadeBy` |`zip:version-made-by`
 |`csv:num_columns` |`csv:num-columns`
 |`csv:num_rows` |`csv:num-rows`
 |`emf:iconOnly` |`emf:icon-only`
@@ -268,8 +252,6 @@ independent of casing (the name's origin).
 |`tess:image_magick_processed` |`tess:image-magick-processed`
 |`tess:orientation_confidence` |`tess:orientation-confidence`
 |`tess:script_confidence` |`tess:script-confidence`
-|`vlm:prompt_tokens` |`vlm:prompt-tokens`
-|`vlm:completion_tokens` |`vlm:completion-tokens`
 |`xmlprofiler:root_entity` |`xmlprofiler:root-entity`
 |`xmlprofiler:entity_uris` |`xmlprofiler:entity-uris`
 |`xmlprofiler:entity_local_names` |`xmlprofiler:entity-local-names`
@@ -279,6 +261,46 @@ independent of casing (the name's origin).
 |`MDB_USER_PROP:*` |`mdb-user-prop:*`
 |===
 
+Also new in 4.0.0, with no 3.x predecessor: the entire `zip:*` integrity-check family
+(`zip:central-directory-only-entries`, `zip:compressed-size`, `zip:compression-method`,
+`zip:detector-data-descriptor-required`, `zip:detector-zip-file-opened`,
+`zip:duplicate-entry-names`, `zip:integrity-check-result`, `zip:local-header-only-entries`,
+`zip:uncompressed-size`, `zip:unix-mode`, `zip:version-made-by`), and
+`vlm:prompt-tokens`/`vlm:completion-tokens` (the `tika-vlm` module is new in 4.x).
+
+NOTE: `dwg:applicationComment`/`applicationName`/`applicationVersion`/`productInfo` are
+omitted above: 3.x passed the raw field names from `dwgread` through unprefixed, and there
+is no verified 3.x-to-4.x mapping for these four fields.
+
+== Other Open-Namespace Prefix Renames
+
+A handful of open-vocabulary `KeyPrefix` families (document/tool-derived suffixes, so no
+flat key-for-key row can enumerate them) also moved prefix in this release:
+
+.3.x form -> 4.0.0 prefix
+[cols="2,1"]
+|===
+|3.x form |4.0.0 prefix
+
+|`NER_*` |`ner:*`
+|`envi.*` |`envi:*`
+|`streams-*` |`ogg:streams-*`
+|`grobid:header_*` |`grobid:header:*`
+|bare GROBID TEI field names (`Abstract`, `Address`, ...) |`grobid:tei:*`
+|bare ISO 19115 field names; the space-delimited `Keywords`, `KeywordsType`,
+`ThesaurusNameTitle`, `ThesaurusNameAlternativeTitle` families |`iso19115:*`
+|bare GDAL field names (`Driver`, `Size`, `Upper Left`, ...) |`gdal:*`
+|`Geographic_*`; `Optional_NAME<n>`/`Optional_LONGITUDE<n>`/`Optional_LATITUDE<n>`
+(word lower-cased, not a verbatim suffix) |`geotopic:*`
+|bare MIF field names |`mif:*`
+|bare IDML field names |`idml:*`
+|bare audio field names (`bits`, `channels`, `encoding`) |`audio:*`
+|===
+
+This table is a summary by prefix, not exhaustive. `metadata-migration-3x-4x.json`
+(bundled in `tika-core`, generated by the TIKA-4797 migration join) is the exhaustive,
+machine-readable, key-for-key list -- every row in every table on this page plus the
+individual field names each prefix above stands in for.
 
 == Migration Steps
 
@@ -347,6 +369,40 @@ String value = metadata.get("meta:some-property");
 String value = metadata.get("office:some-property");
 ----
 
+== Restoring 3.x Key Names (`LegacyKeyMigrationFilter`)
+
+Code that can't migrate to the new key names immediately doesn't have to fork Tika: the opt-in
+`LegacyKeyMigrationFilter` metadata filter rewrites keys at the emit edge, in either direction,
+using the same committed migration table as this document. Enable it via `parse-context`
+(see xref:developers/serialization.adoc[Serialization and Configuration] for how metadata
+filters are configured in general):
+
+[source,json]
+----
+{
+  "parse-context": {
+    "legacy-key-migration-filter": {}
+  }
+}
+----
+
+The default direction (`V4_TO_V3`) rewrites Tika's 4.x-shaped output back into 3.x key
+spellings, so an unmigrated consumer keeps working against 4.x's output. To rewrite in the
+other direction instead -- 3.x-shaped input names mapped forward to their 4.x spellings on the
+way in -- set `direction` to `V3_TO_V4`:
+
+[source,json]
+----
+{
+  "parse-context": {
+    "legacy-key-migration-filter": {"direction": "V3_TO_V4"}
+  }
+}
+----
+
+`table` overrides the bundled migration table with a custom one, same row shape
+(`{"v3": "...", "v4": "..."}`, `"v4": "DROPPED"` for a 3.x key with no 4.x successor).
+
 == Write API Changes (reserved-key guard)
 
 The `tk:` namespace isn't just renamed in 4.0.0 -- writing to it changed shape. In 3.x, a
@@ -358,9 +414,13 @@ security gap.
 === For parser authors
 
 * Document-derived key names (scraped from the file: HTML `<meta>` names, custom
-  document properties, CSV headers, ...) must go through a `KeyPrefix`'s typed factory
-  methods (`text`, `textBag`, `date`, `integer`, `real`, `bool`) rather than a raw
-  `String` key. See xref:developers/metadata-keys.adoc[Adding a Metadata Key].
+  document properties, CSV headers, ...) must go through a `KeyPrefix` -- its typed
+  factory methods (`text`, `textBag`, `date`, `integer`, `real`, `bool`) to mint a
+  `Property`, or `KeyPrefix#key(String)` where a raw string suffix is unavoidable --
+  rather than an un-prefixed `String` key. Modules that write document-derived
+  metadata enforce this with a forbiddenapis ban on `Metadata.set/add(String, String)`
+  (`metadata.forbiddenapis.signaturesFile`, opt-in per module `pom.xml`). See
+  xref:developers/metadata-keys.adoc[Adding a Metadata Key].
 * `Metadata#set(String, String)` / `#add(String, String)` throw `IllegalArgumentException`
   in 4.0.0 when the name is a reserved `tk:` (or legacy `X-TIKA:`) key. In 3.x this write
   succeeded; there was no guard.
@@ -370,6 +430,10 @@ security gap.
 * The throw is a `RuntimeException` (`IllegalArgumentException`), not a `TikaException`.
   A harness that narrowly catches `TikaException` around a parse will see this as a new,
   uncaught failure mode when an unmigrated parser hits a crafted file.
+* Some former `String` constants are now SIMPLE (single-valued) `Property` constants
+  instead of BAG. A second `add()` call on one throws `PropertyTypeException` (also an
+  `IllegalArgumentException`) instead of silently accumulating. Use `set()` if the field
+  is genuinely single-valued, or a BAG-typed key if it can legitimately repeat.
 
 === For integrators
 

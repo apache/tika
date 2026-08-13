@@ -155,10 +155,33 @@ public class TestJDBCPipesIterator {
         assertEquals(NUM_ROWS, cnt);
     }
 
+    @Test
+    public void testReservedNameColumnSkippedNotFatal() throws Exception {
+        //a column label that collides with the reserved tk: namespace must not
+        //abort the row -- just that column
+        JDBCPipesIterator pipesIterator = createIterator(
+                "select id as my_id, project as \"tk:reserved\", fetchKey as my_fetchKey " +
+                        "from fetchkeys where id = 'id0'");
+        List<FetchEmitTuple> tuples = new ArrayList<>();
+        for (FetchEmitTuple t : pipesIterator) {
+            tuples.add(t);
+        }
+        assertEquals(1, tuples.size());
+        FetchEmitTuple t = tuples.get(0);
+        assertEquals("id0", t.getId());
+        assertNull(t
+                .getMetadata()
+                .get("tk:reserved"));
+    }
+
     private JDBCPipesIterator createIterator() throws Exception {
+        return createIterator("select id as my_id, project as my_project, fetchKey as my_fetchKey from fetchkeys");
+    }
+
+    private JDBCPipesIterator createIterator(String select) throws Exception {
         ObjectNode jsonConfig = OBJECT_MAPPER.createObjectNode();
         jsonConfig.put("connection", "jdbc:h2:file:" + DB_DIR.toAbsolutePath() + "/" + db);
-        jsonConfig.put("select", "select id as my_id, project as my_project, fetchKey as my_fetchKey from fetchkeys");
+        jsonConfig.put("select", select);
         jsonConfig.put("idColumn", "my_id");
         jsonConfig.put("fetchKeyColumn", "my_fetchkey");
         jsonConfig.put("emitKeyColumn", "my_fetchkey");

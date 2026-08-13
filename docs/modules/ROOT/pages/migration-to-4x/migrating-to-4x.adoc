@@ -263,3 +263,15 @@ the full list of behavioral changes and required config edits.
 * `ExternalParsersFactory` and XML-based external parser auto-discovery
 * DOM-based OOXML extractors (`XWPFWordExtractorDecorator`, `XSLFPowerPointExtractorDecorator`)
   -- SAX-based extractors are now the only implementation
+* `TikaMimeKeys` -- `Metadata` no longer implements it
+* `Metadata` no longer implements `CreativeCommons`, `Geographic`, `HttpHeaders`, `Message`,
+  `ClimateForecast` (renamed from `ClimateForcast`), or `TIFF` -- reference the interface's
+  constants directly instead of the inherited `Metadata` constant (e.g. `Geographic.LATITUDE`)
+* `TikaCoreProperties.TIKA_CONTENT_HANDLER` -- use `TIKA_CONTENT_HANDLER_TYPE`
+* `OfficeOpenXMLCore.SUBJECT` -- use `DublinCore#SUBJECT`
+* `XMPDM.ChannelTypePropertyConverter` -- experimental, no replacement
+* 8 deprecated `IPTC` properties: `URGENCY`, `CATEGORY`, `SUPPLEMENTAL_CATEGORIES` (use the
+  `Photoshop` equivalents), `DIGITAL_SOURCE_FILE_TYPE` (IPTC no longer recommends the field),
+  and the four `*_WRONG_CASE` fields (use the correctly-cased sibling, e.g. `IMAGE_SUPPLIER_ID`)
+* `Property.PropertyType.STRUCTURE` and `Property.ValueType.{LOCALE, MIME_TYPE, PROPER_NAME,
+  URL, XPATH}` -- dead enum constants, never produced by any `Property` factory

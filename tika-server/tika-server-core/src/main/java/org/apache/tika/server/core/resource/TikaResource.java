@@ -215,12 +215,12 @@ public class TikaResource {
         }
 
         if (mediaType != null) {
-            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.set(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, mediaType.toString());
             metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
         }
 
         if (httpHeaders.containsKey("Content-Length")) {
-            metadata.set(Metadata.CONTENT_LENGTH, httpHeaders.getFirst("Content-Length"));
+            metadata.set(org.apache.tika.metadata.HttpHeaders.CONTENT_LENGTH, httpHeaders.getFirst("Content-Length"));
         }
     }
 
@@ -291,7 +291,7 @@ public class TikaResource {
             String contentType = fileAtt.getContentType().toString();
             if (contentType != null && !contentType.startsWith("multipart/") &&
                     !"application/octet-stream".equals(contentType)) {
-                metadata.set(Metadata.CONTENT_TYPE, contentType);
+                metadata.set(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, contentType);
                 metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, contentType);
             }
         }

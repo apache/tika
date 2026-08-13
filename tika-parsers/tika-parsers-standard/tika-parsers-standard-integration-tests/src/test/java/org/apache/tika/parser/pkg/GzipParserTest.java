@@ -23,6 +23,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -43,7 +44,7 @@ public class GzipParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/gzip", metadata.get(HttpHeaders.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("test-documents/testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);
@@ -74,7 +75,7 @@ public class GzipParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/gzip", metadata.get(HttpHeaders.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("Test SVG image", content);
     }

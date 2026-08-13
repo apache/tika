@@ -427,7 +427,7 @@ public class XmpExtractor {
             return;
         }
         // unmapped: namespaced raw passthrough; a trailing array index collapses to a multi-valued key
-        metadata.add(RAW.key(TRAILING_INDEX.matcher(p.path).replaceFirst("")), value);
+        metadata.add(RAW.textBag(TRAILING_INDEX.matcher(p.path).replaceFirst("")), value);
     }
 
     private void emit(Metadata metadata, Property prop, String value) {

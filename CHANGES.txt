@@ -1,5 +1,20 @@
 Release 4.0.0 - ???
 
+  BREAKING CHANGES
+
+   * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a real trust
+     boundary. A String write to a reserved key throws IllegalArgumentException
+     instead of 3.x's silent success or silent drop, and the public Property
+     factories reject reserved names outright -- a curated tk: constant can only
+     be built from Tika's own package-private factories.
+     Metadata#setAll(Properties) is removed with no replacement; use
+     putAll(Metadata) or individual set/add calls. PassthroughPrefix is
+     renamed to KeyPrefix. A batch of open-namespace
+     prefixes was also renamed (audio:, ner:, envi:, ogg:streams-, grobid:,
+     iso19115:, gdal:, geotopic:, mif:, idml:, and GeoParser's Optional_NAME<n>
+     fields); see the metadata key migration guide (metadata-changes-4x.adoc)
+     for the full renamed-key table (TIKA-4816).
+
   NEW FEATURES
 
    * Content-based detection of ASN.1/DER crypto containers at parse time. An

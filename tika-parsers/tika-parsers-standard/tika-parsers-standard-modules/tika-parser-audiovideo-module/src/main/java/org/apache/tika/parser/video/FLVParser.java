@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -231,7 +232,7 @@ public class FLVParser implements Parser {
             throw new TikaException("Unpexpected FLV first previous block size: " + sizePrev);
         }
 
-        metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "video/x-flv");
         metadata.set(HAS_VIDEO, (typeFlags & MASK_VIDEO) != 0);
         metadata.set(HAS_AUDIO, (typeFlags & MASK_AUDIO) != 0);
 

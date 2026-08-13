@@ -49,9 +49,7 @@ public class TikaMp4BoxHandler extends Mp4BoxHandler {
     private static final int QT_FLOAT32_TYPE = 23;
     private static final int QT_FLOAT64_TYPE = 24;
 
-    //QuickTime 'keys' box entries: key names read verbatim from attacker-controlled file
-    //bytes (see processQuickTimeKeys below) -- the one genuinely attacker-facing site in
-    //this class, so every such key is routed through this prefix rather than used raw.
+    //QuickTime 'keys' box entries: key names read verbatim from attacker-controlled file bytes.
     private static final KeyPrefix MP4 =
             KeyPrefix.file("mp4:", "QuickTime 'keys' box item names, read verbatim from file bytes");
 

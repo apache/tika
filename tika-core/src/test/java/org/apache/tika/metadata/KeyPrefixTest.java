@@ -21,15 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.List;
+import java.util.function.BiFunction;
+
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.Property.ValueType;
 
-/**
- * Stage 3: the {@code PassthroughPrefix} -> {@code KeyPrefix} rename, constructor validation,
- * and the typed unregistered-Property minting factories.
- */
+/** Constructor validation and the typed unregistered-Property minting factories for
+ * {@link KeyPrefix}. */
 public class KeyPrefixTest {
 
     // Every registered prefix is a unique, unrepeatable static registration -- give each test
@@ -38,6 +39,20 @@ public class KeyPrefixTest {
     private static String uniquePrefix(String label) {
         return "keyprefix-test-" + label + "-" + System.nanoTime() + ":";
     }
+
+    private record Shape(String label, BiFunction<KeyPrefix, String, Property> factory,
+                         PropertyType propertyType, ValueType valueType) {
+    }
+
+    // One entry per typed minting factory -- table-driven so the shape and empty-name checks
+    // below cover all of them without a near-identical test method each.
+    private static final List<Shape> SHAPES = List.of(
+            new Shape("text", KeyPrefix::text, PropertyType.SIMPLE, ValueType.TEXT),
+            new Shape("textBag", KeyPrefix::textBag, PropertyType.BAG, ValueType.TEXT),
+            new Shape("date", KeyPrefix::date, PropertyType.SIMPLE, ValueType.DATE),
+            new Shape("integer", KeyPrefix::integer, PropertyType.SIMPLE, ValueType.INTEGER),
+            new Shape("real", KeyPrefix::real, PropertyType.SIMPLE, ValueType.REAL),
+            new Shape("bool", KeyPrefix::bool, PropertyType.SIMPLE, ValueType.BOOLEAN));
 
     @Test
     public void testRejectsNullPrefix() {
@@ -91,6 +106,13 @@ public class KeyPrefixTest {
     }
 
     @Test
+    public void testKeyRejectsNullOrEmptySuffix() {
+        KeyPrefix kp = KeyPrefix.file(uniquePrefix("key-empty"), "d");
+        assertThrows(IllegalArgumentException.class, () -> kp.key(null));
+        assertThrows(IllegalArgumentException.class, () -> kp.key(""));
+    }
+
+    @Test
     public void testFileProvenancePreserved() {
         KeyPrefix kp = KeyPrefix.file(uniquePrefix("prov-file"), "d");
         assertEquals(KeyPrefix.Provenance.FILE, kp.provenance());
@@ -103,75 +125,26 @@ public class KeyPrefixTest {
     }
 
     @Test
-    public void testTextFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("text"), "d");
-        Property p = kp.text("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.SIMPLE, p.getPropertyType());
-        assertEquals(ValueType.TEXT, p.getValueType());
-        assertNull(Property.get(p.getName()), "minted Property must not register");
+    public void testFactoryShapes() {
+        for (Shape shape : SHAPES) {
+            KeyPrefix kp = KeyPrefix.file(uniquePrefix(shape.label()), "d");
+            Property p = shape.factory().apply(kp, "name");
+            assertEquals(kp.prefix() + "name", p.getName(), shape.label());
+            assertEquals(shape.propertyType(), p.getPropertyType(), shape.label());
+            assertEquals(shape.valueType(), p.getValueType(), shape.label());
+            assertNull(Property.get(p.getName()), shape.label() + ": minted Property must not register");
+        }
     }
 
     @Test
-    public void testTextBagFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("textbag"), "d");
-        Property p = kp.textBag("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.BAG, p.getPropertyType());
-        assertEquals(ValueType.TEXT, p.getValueType());
-        assertNull(Property.get(p.getName()));
-    }
-
-    @Test
-    public void testDateFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("date"), "d");
-        Property p = kp.date("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.SIMPLE, p.getPropertyType());
-        assertEquals(ValueType.DATE, p.getValueType());
-        assertNull(Property.get(p.getName()));
-    }
-
-    @Test
-    public void testIntegerFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("integer"), "d");
-        Property p = kp.integer("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.SIMPLE, p.getPropertyType());
-        assertEquals(ValueType.INTEGER, p.getValueType());
-        assertNull(Property.get(p.getName()));
-    }
-
-    @Test
-    public void testRealFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("real"), "d");
-        Property p = kp.real("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.SIMPLE, p.getPropertyType());
-        assertEquals(ValueType.REAL, p.getValueType());
-        assertNull(Property.get(p.getName()));
-    }
-
-    @Test
-    public void testBoolFactoryShape() {
-        KeyPrefix kp = KeyPrefix.file(uniquePrefix("bool"), "d");
-        Property p = kp.bool("name");
-        assertEquals(kp.prefix() + "name", p.getName());
-        assertEquals(PropertyType.SIMPLE, p.getPropertyType());
-        assertEquals(ValueType.BOOLEAN, p.getValueType());
-        assertNull(Property.get(p.getName()));
-    }
-
-    @Test
-    public void testFactoriesRejectEmptyName() {
+    public void testFactoriesRejectEmptyOrNullName() {
         KeyPrefix kp = KeyPrefix.file(uniquePrefix("empty-name"), "d");
-        assertThrows(IllegalArgumentException.class, () -> kp.text(""));
-        assertThrows(IllegalArgumentException.class, () -> kp.text(null));
-        assertThrows(IllegalArgumentException.class, () -> kp.textBag(""));
-        assertThrows(IllegalArgumentException.class, () -> kp.date(""));
-        assertThrows(IllegalArgumentException.class, () -> kp.integer(""));
-        assertThrows(IllegalArgumentException.class, () -> kp.real(""));
-        assertThrows(IllegalArgumentException.class, () -> kp.bool(""));
+        for (Shape shape : SHAPES) {
+            assertThrows(IllegalArgumentException.class, () -> shape.factory().apply(kp, ""),
+                    shape.label());
+            assertThrows(IllegalArgumentException.class, () -> shape.factory().apply(kp, null),
+                    shape.label());
+        }
     }
 
     @Test

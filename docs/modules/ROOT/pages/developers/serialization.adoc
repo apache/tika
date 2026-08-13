@@ -329,7 +329,10 @@ framework keys.
 
 == Creating a Custom Component
 
-Complete example of a custom metadata filter:
+Complete example of a custom metadata filter. `fieldName` is config-supplied, so it could
+legitimately name a reserved `tk:` key; use `setTrusted` rather than `set` -- filters run
+inside the trusted bracket of `MetadataFilter`, the sanctioned route for a write keyed by
+a name that isn't a compile-time constant:
 
 [source,java]
 ----
@@ -357,7 +360,7 @@ public class UpperCaseFilter implements MetadataFilter {
     public void filter(Metadata metadata) throws TikaException {
         String value = metadata.get(fieldName);
         if (value != null) {
-            metadata.set(fieldName, value.toUpperCase());
+            metadata.setTrusted(fieldName, value.toUpperCase());
         }
     }
 }

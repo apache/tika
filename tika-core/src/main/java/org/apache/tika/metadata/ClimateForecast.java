@@ -22,13 +22,15 @@ package org.apache.tika.metadata;
  * external convention's own attribute names, verbatim (not Tika-coined) — some contain
  * underscores per that convention.
  */
-public interface ClimateForcast {
+public interface ClimateForecast {
 
     Property PROGRAM_ID = Property.externalText("prg_ID");
 
     Property COMMAND_LINE = Property.externalText("cmd_ln");
 
-    Property HISTORY = Property.externalText("history");
+    // BAG: CF history is a provenance trail, appended once per processing step
+    // (NetCDFParser/GribParser addGlobalAttribute).
+    Property HISTORY = Property.externalTextBag("history");
 
     Property TABLE_ID = Property.externalText("table_id");
 

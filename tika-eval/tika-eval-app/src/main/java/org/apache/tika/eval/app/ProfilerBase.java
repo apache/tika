@@ -68,6 +68,7 @@ import org.apache.tika.eval.core.util.ContentTags;
 import org.apache.tika.eval.core.util.EvalExceptionUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
@@ -75,7 +76,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.ml.junkdetect.JunkDetector;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.quality.TextQualityScore;
-import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory.HANDLER_TYPE;
 import org.apache.tika.utils.StringUtils;
 
 public abstract class ProfilerBase {
@@ -85,9 +86,7 @@ public abstract class ProfilerBase {
     protected static final AtomicInteger ID = new AtomicInteger();
     static final long NON_EXISTENT_FILE_LENGTH = -1l;
     final static int FILE_PATH_MAX_LEN = 1024;//max len for varchar for file_path
-    //Container exception key from the 1.x branch. Read-only lookup against legacy extract
-    //JSON, so a plain String key suffices -- Metadata.get(Property) is just get(name) anyway,
-    //and X-TIKA: is reserved: only org.apache.tika.metadata may mint a Property for it.
+    //Container exception key from the 1.x branch; read-only lookup against legacy extract JSON, so a plain String key suffices.
     private static final String CONTAINER_EXCEPTION_1X = "X-TIKA" + ":EXCEPTION:runtime";
     private static final Logger LOG = LoggerFactory.getLogger(ProfilerBase.class);
     private static final String[] EXTRACT_EXTENSIONS = {".json", ".txt", ""};
@@ -272,7 +271,7 @@ public abstract class ProfilerBase {
             return ContentTags.EMPTY_CONTENT_TAGS;
         }
 
-        String handlerClass = metadata.get(TikaCoreProperties.TIKA_CONTENT_HANDLER);
+        String handlerType = metadata.get(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE);
         if (evalFilePaths
                 .getExtractFile()
                 .getFileName()
@@ -294,7 +293,7 @@ public abstract class ProfilerBase {
                 .getFileName()
                 .toString()
                 .toLowerCase(Locale.ENGLISH)
-                .endsWith(".xhtml") || (handlerClass != null && handlerClass.equals(ToXMLContentHandler.class.getSimpleName()))) {
+                .endsWith(".xhtml") || HANDLER_TYPE.XML.name().equals(handlerType)) {
             try {
                 return ContentTagParser.parseXML(s, UC_TAGS_OF_INTEREST.keySet());
             } catch (TikaException | IOException | SAXException e) {
@@ -733,7 +732,7 @@ public abstract class ProfilerBase {
         if (metadata == null) {
             return;
         }
-        String type = metadata.get(Metadata.CONTENT_TYPE);
+        String type = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (type == null) {
             return;
         }
@@ -838,7 +837,7 @@ public abstract class ProfilerBase {
     }
 
     long getSourceFileLength(Metadata m) {
-        String lenString = m.get(Metadata.CONTENT_LENGTH);
+        String lenString = m.get(HttpHeaders.CONTENT_LENGTH);
         if (lenString == null) {
             return NON_EXISTENT_FILE_LENGTH;
         }

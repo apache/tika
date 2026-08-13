@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.metadata.AccessPermissions;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -58,7 +59,7 @@ import org.apache.tika.utils.StringUtils;
  * <p>This class uses {@link #minimumMaxFieldSizeInAlwaysFields} to protect the
  * {@link #ALWAYS_ADD_FIELDS} and {@link #ALWAYS_SET_FIELDS}. If we didn't have this and a user
  * sets the {@link #maxFieldSize} to, say, 10 bytes, the internal parser behavior would be broken
- * because parsers rely on {@link Metadata#CONTENT_TYPE} to determine which parser to call.
+ * because parsers rely on {@link HttpHeaders#CONTENT_TYPE} to determine which parser to call.
  *
  * <p><b>NOTE:</b> as with {@link Metadata}, this object is not thread safe.
  *
@@ -70,9 +71,9 @@ public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializab
     public static final Set<String> ALWAYS_ADD_FIELDS = new HashSet<>();
 
     static {
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_LENGTH.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_TYPE.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_ENCODING.getName());
+        ALWAYS_SET_FIELDS.add(HttpHeaders.CONTENT_LENGTH.getName());
+        ALWAYS_SET_FIELDS.add(HttpHeaders.CONTENT_TYPE.getName());
+        ALWAYS_SET_FIELDS.add(HttpHeaders.CONTENT_ENCODING.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_HINT.getName());
@@ -80,9 +81,9 @@ public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializab
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
         ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_CONTENT.getName());
         ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_DISPOSITION.getName());
+        ALWAYS_SET_FIELDS.add(HttpHeaders.CONTENT_DISPOSITION.getName());
         ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTAINER_EXCEPTION.getName());
-        //Metadata.CONTENT_LOCATION? used by the html parser
+        //HttpHeaders.CONTENT_LOCATION? used by the html parser
     }
 
     static {
@@ -198,7 +199,11 @@ public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializab
             setAlwaysInclude(field, value, data);
             return;
         }
-        //TODO: should we limit the number of field values?
+        String[] existing = data.get(field);
+        if (existing.length >= maxValuesPerField) {
+            setTruncated(data);
+            return;
+        }
 
         int toAddSize = estimateSize(value);
         //if the maxFieldSize is < minimumMaxFieldSizeInAlwaysFields, use the minmax

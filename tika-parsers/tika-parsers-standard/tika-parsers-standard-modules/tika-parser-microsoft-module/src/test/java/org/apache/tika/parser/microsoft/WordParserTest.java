@@ -40,6 +40,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -57,7 +58,7 @@ public class WordParserTest extends TikaTest {
             Metadata metadata = new Metadata();
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertContains("Sample Word Document", handler.toString());
@@ -88,7 +89,7 @@ public class WordParserTest extends TikaTest {
         String xml = result.xml;
         Metadata metadata = result.metadata;
 
-        assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertTrue(xml.contains("Sample Word Document"));
@@ -180,7 +181,7 @@ public class WordParserTest extends TikaTest {
             Metadata metadata = new Metadata();
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertEquals("The quick brown fox jumps over the lazy dog",
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
@@ -340,7 +341,7 @@ public class WordParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, context);
         }
 
-        assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Etienne Jouvin", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
@@ -392,7 +393,7 @@ public class WordParserTest extends TikaTest {
         String xml = result.xml;
         Metadata metadata = result.metadata;
 
-        assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Lutz Theurer", metadata.get(TikaCoreProperties.CREATOR));
         assertContains("example.com", xml);
 
@@ -419,7 +420,7 @@ public class WordParserTest extends TikaTest {
         String xml = result.xml;
         Metadata metadata = result.metadata;
 
-        assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/msword", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         assertContains("<p><u>1. Organisering av vakten:</u></p>", xml);
 
@@ -589,7 +590,7 @@ public class WordParserTest extends TikaTest {
 
         //test default is "don't extract macros"
         for (Metadata metadata : getRecursiveMetadata("testWORD_macros.doc")) {
-            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+            if (metadata.get(HttpHeaders.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
@@ -604,7 +605,7 @@ public class WordParserTest extends TikaTest {
         Metadata minExpected = new Metadata();
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
         minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.add(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 

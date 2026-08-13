@@ -225,12 +225,12 @@ public class TestMetadata extends TikaTest {
         Metadata meta = new Metadata();
 
         // Isn't initially set, will get null back
-        assertEquals(null, meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        assertEquals(null, meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(TIFF.IMAGE_WIDTH));
 
         // Can only set as a single valued int
         try {
-            meta.set(Metadata.BITS_PER_SAMPLE, 1);
+            meta.set(TIFF.BITS_PER_SAMPLE, 1);
             fail("Shouldn't be able to set a multi valued property as an int");
         } catch (PropertyTypeException e) {
             //swallow
@@ -243,19 +243,19 @@ public class TestMetadata extends TikaTest {
         }
 
         // Can set it and retrieve it
-        meta.set(Metadata.IMAGE_WIDTH, 22);
-        assertEquals("22", meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
+        meta.set(TIFF.IMAGE_WIDTH, 22);
+        assertEquals("22", meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(22, meta.getInt(TIFF.IMAGE_WIDTH).intValue());
 
         // If you save a non int value, you get null
-        meta.set(Metadata.IMAGE_WIDTH, "INVALID");
-        assertEquals("INVALID", meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        meta.set(TIFF.IMAGE_WIDTH, "INVALID");
+        assertEquals("INVALID", meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(TIFF.IMAGE_WIDTH));
 
         // If you try to retrieve a non simple int value, you get null
-        meta.set(Metadata.IMAGE_WIDTH, 22);
-        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
-        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        meta.set(TIFF.IMAGE_WIDTH, 22);
+        assertEquals(22, meta.getInt(TIFF.IMAGE_WIDTH).intValue());
+        assertEquals(null, meta.getInt(TIFF.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
     }
 
@@ -274,13 +274,13 @@ public class TestMetadata extends TikaTest {
 
         // Can only set as a single valued date
         try {
-            meta.set(Metadata.BITS_PER_SAMPLE, new Date(1000));
+            meta.set(TIFF.BITS_PER_SAMPLE, new Date(1000));
             fail("Shouldn't be able to set a multi valued property as a date");
         } catch (PropertyTypeException e) {
             //swallow
         }
         try {
-            meta.set(Metadata.IMAGE_WIDTH, new Date(1000));
+            meta.set(TIFF.IMAGE_WIDTH, new Date(1000));
             fail("Shouldn't be able to set an int property as an date");
         } catch (PropertyTypeException e) {
             //swallow
@@ -299,7 +299,7 @@ public class TestMetadata extends TikaTest {
         // If you try to retrieve a non simple date value, you get null
         meta.set(TikaCoreProperties.CREATED, new Date(1000));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, meta.getInt(TIFF.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
 
         // Our format doesn't include milliseconds

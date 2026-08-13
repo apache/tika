@@ -50,6 +50,7 @@ import org.apache.tika.detect.zip.StreamingZipContainerDetector;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -599,7 +600,7 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOpenOfficeInAZip.zip");
         assertEquals(3, metadataList.size());
         assertEquals("application/vnd.oasis.opendocument.presentation",
-                metadataList.get(2).get(Metadata.CONTENT_TYPE));
+                metadataList.get(2).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

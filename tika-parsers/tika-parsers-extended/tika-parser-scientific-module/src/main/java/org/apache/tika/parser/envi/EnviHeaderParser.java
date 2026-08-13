@@ -33,6 +33,7 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -73,7 +74,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Only outputting the MIME type as metadata
-        metadata.set(Metadata.CONTENT_TYPE, ENVI_MIME_TYPE);
+        metadata.set(HttpHeaders.CONTENT_TYPE, ENVI_MIME_TYPE);
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
@@ -82,7 +83,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
             xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             readLines(reader, metadata);
