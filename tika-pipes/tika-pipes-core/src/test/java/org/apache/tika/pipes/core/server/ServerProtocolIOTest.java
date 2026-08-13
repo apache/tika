@@ -244,6 +244,48 @@ class ServerProtocolIOTest {
         assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK, returned.status());
     }
 
+    /**
+     * EMIT_SUCCESS_PARSE_EXCEPTION also means the content was already emitted server-side,
+     * so an overflow must not downgrade it to a failure status -- that would make the
+     * client record an emitted document as failed and a retry would emit it twice.
+     */
+    @Test
+    void testEmitSuccessParseExceptionStatusPreservedOnOverflow() throws Exception {
+        Metadata m = new Metadata();
+        m.add("content", "x".repeat(10_000));
+        PipesResult result =
+                new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION,
+                        new EmitDataImpl("key", List.of(m)));
+
+        int limit = 512;
+        assertTrue(JsonPipesIpc.toBytes(result).length > limit,
+                "test setup: serialized content must exceed limit");
+
+        PipesResult returned = exchange(result, limit);
+
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, returned.status());
+    }
+
+    /**
+     * The overflow can be the message itself -- EmitHandler accumulates parse-exception
+     * stacks into it -- so the status-preserving retry must replace the message, not
+     * carry it over.
+     */
+    @Test
+    void testOversizedMessageOnAlreadyEmittedStatusPreservesStatus() throws Exception {
+        PipesResult result =
+                new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION,
+                        "stack".repeat(5_000));
+
+        int limit = 512;
+        assertTrue(JsonPipesIpc.toBytes(result).length > limit,
+                "test setup: serialized message must exceed limit");
+
+        PipesResult returned = exchange(result, limit);
+
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION, returned.status());
+    }
+
     // ---- writeCrash tests ----
 
     /**

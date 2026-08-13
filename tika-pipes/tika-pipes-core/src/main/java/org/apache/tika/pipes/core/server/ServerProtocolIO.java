@@ -118,13 +118,14 @@ public class ServerProtocolIO {
             LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
                     maxIpcPayloadBytes);
             // If content was already emitted server-side, preserve that status so the
-            // client does not duplicate the emission on the passback path.
-            if (pipesResult.status() == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK) {
+            // client does not duplicate the emission on the passback path. The fixed
+            // message replaces the original, which may itself be the overflow source
+            // (an accumulated parse-exception stack).
+            if (alreadyEmitted(pipesResult.status())) {
                 BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
                 try {
                     JsonPipesIpc.toStream(
-                            new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK,
-                                    "payload_limit_exceeded"),
+                            new PipesResult(pipesResult.status(), "payload_limit_exceeded"),
                             fallbackBos);
                     PipesMessage.finished(fallbackBos.toByteArray()).write(output);
                     awaitAck();
@@ -133,8 +134,8 @@ public class ServerProtocolIO {
                     if (!fallbackBos.overflowed()) {
                         throw fallbackE;
                     }
-                    // Even status-only EMIT_SUCCESS_PASSBACK overflows — fall through to
-                    // the guaranteed-fit static fallback.
+                    // Even the status-only result overflows — fall through to the
+                    // guaranteed-fit static fallback.
                 }
             }
             doWritePayloadLimitExceeded();
@@ -142,6 +143,17 @@ public class ServerProtocolIO {
         }
         PipesMessage.finished(bos.toByteArray()).write(output);
         awaitAck();
+    }
+
+    /**
+     * True for statuses whose content the server already emitted. Replacing one of these
+     * with a failure status makes the client treat an emitted document as failed, so a
+     * retry emits it a second time.
+     */
+    private static boolean alreadyEmitted(PipesResult.RESULT_STATUS status) {
+        return status == PipesResult.RESULT_STATUS.EMIT_SUCCESS ||
+                status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK ||
+                status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION;
     }
 
     private void doWritePayloadLimitExceeded() throws IOException {
