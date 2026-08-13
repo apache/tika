@@ -1,5 +1,80 @@
 Release 4.0.0 - ???
 
+  BREAKING CHANGES
+
+   * tika-server: the /translate endpoints have been removed (TIKA-4809).
+
+   * tika-server: /detect/stream and /language/stream and /language/string have
+     been collapsed into /detect and /language (TIKA-4809).
+
+   * tika-server: caller errors now map to accurate HTTP status codes instead of
+     always returning 200 or 500. A saturated worker pool returns 429, a
+     crashed/timed-out/OOM worker returns 503, an unknown or reserved
+     fetcher/emitter or bad handler returns 400, and an over-limit body returns
+     413; the 429 and 503 responses carry a Retry-After header (TIKA-4809).
+
+   * tika-server: the bare /tika endpoint now returns Markdown too (was XHTML),
+     completing the Markdown default (TIKA-4663); use /tika/xml for XHTML (TIKA-4809).
+
+   * tika-server: request bodies are now capped by maxRequestSizeBytes,
+     defaulting to 1 GiB; larger requests are rejected with 413, including
+     over-limit chunked uploads, which previously surfaced as an empty 500
+     (TIKA-4809).
+
+   * tika-server: a /meta request with no Accept header now returns JSON;
+     3.x returned CSV. CSV is still available via Accept: text/csv (TIKA-4809).
+
+   * tika-server: the raw /tika family's 422 responses carry the extracted
+     content only; the exception is no longer appended to the body -- use
+     /rmeta for the structured exception (TIKA-4809).
+
+   * tika-server: /async validates fetcher/emitter ids at POST time (400),
+     rejects a batch larger than the queue's total capacity with 400 instead
+     of throttling it, and one bad tuple no longer stops the async workers
+     (TIKA-4809).
+
+   * tika-server: /pipes returns 400 with the reason for a malformed request
+     body and rejects emit strategies other than EMIT_ALL, whose passed-back
+     data the /pipes response cannot carry (TIKA-4809).
+
+   * tika-server: the 'endpoints' allowlist now also gates SPI-provided
+     resources; a discovered resource binds only when its root endpoint is
+     enabled (TIKA-4809).
+
+   * FetchEmitTuple JSON now names the per-tuple parse context "parse-context"
+     (was "parseContext") and rejects unknown tuple fields with an error naming
+     the field (TIKA-4809).
+
+   * The pipes config keys staleFetcherTimeoutSeconds and
+     staleFetcherDelaySeconds have been removed; a config still carrying them
+     fails startup (TIKA-4809).
+
+   * ExceptionUtils.trimMessage has been removed from tika-core; it moved into
+     tika-eval-core (TIKA-4809).
+
+   * BasicContentHandlerFactory.parseHandlerType now throws
+     IllegalArgumentException for an unrecognized handler name instead of
+     silently returning the supplied default (TIKA-4809).
+
+   * HttpClientFactory's inert redirect-host allowlist accessors
+     (get/setAllowedHostsForRedirect) have been removed (TIKA-4809).
+
+   * TimeoutLimits: progressTimeoutMillis of 0 combined with a positive
+     totalTaskTimeoutMillis is now rejected at config load; it would kill
+     every task immediately (TIKA-4809).
+
+   * The http-fetcher now verifies TLS certificates and hostnames by default;
+     set verifySsl:false to opt out (TIKA-4809).
+
+   * tika-server: /pipes returns the same JSON body as /tika/rmeta/unpack --
+     {"status":<RESULT_STATUS>,"message":...} -- instead of a /pipes-only
+     {"status":"ok"|"process_crash",...} shape (TIKA-4809).
+
+   * tika-server: POST /async requires an object body {"tuples":[...]} instead of
+     a bare JSON array (TIKA-4809).
+
+   * tika-server: the tika-server-client module has been removed (TIKA-4809).
+
   NEW FEATURES
 
    * Content-based detection of ASN.1/DER crypto containers at parse time. An
@@ -10,6 +85,13 @@ Release 4.0.0 - ???
 
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
+
+   * Unified timeout model across the library, pipes, and server: a total-task
+     budget plus a progress/stall timeout, composed recursively over embedded
+     documents (TIKA-4813).
+
+   * tika-server: /meta now runs through the same pipes-backed parser as the
+     other extraction endpoints (TIKA-4809).
 
    * tika-grpc's fetchAndParseServerSideStreaming now completes the call
      after delivering its reply, instead of leaving the client waiting

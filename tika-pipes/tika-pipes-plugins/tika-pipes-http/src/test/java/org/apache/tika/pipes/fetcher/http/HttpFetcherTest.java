@@ -17,7 +17,9 @@
 package org.apache.tika.pipes.fetcher.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -282,6 +284,28 @@ class HttpFetcherTest extends TikaTest {
         Path configPath = Paths.get(HttpFetcherTest.class.getResource("/configs/" + path).toURI());
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
         return FetcherManager.load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig);
+    }
+
+    /**
+     * The one-line factory hand-off is what makes verifySsl real: deleting it silently
+     * reverts to the factory's never-verify default this option was added to fix.
+     */
+    @Test
+    public void testVerifySslReachesClientFactory() throws Exception {
+        HttpFetcher fetcher = (HttpFetcher) getFetcherManager("tika-config-http.json")
+                .getFetcher("http-fetcher-1");
+        assertTrue(fetcher.getHttpFetcherConfig().isVerifySsl(), "config default must be verify-on");
+        assertTrue(new HttpFetcherConfig().isVerifySsl(), "bare config default must be verify-on");
+
+        HttpClientFactory factory = new HttpClientFactory();
+        assertFalse(factory.isVerifySsl(), "the bare factory defaults to no-verify");
+        fetcher.setHttpClientFactory(factory);
+        fetcher.initialize();
+        assertTrue(factory.isVerifySsl(), "the config default must reach the factory");
+
+        fetcher.getHttpFetcherConfig().setVerifySsl(false);
+        fetcher.initialize();
+        assertFalse(factory.isVerifySsl(), "the explicit opt-out must reach the factory");
     }
 
     private void mockClientResponse(final HttpResponse response) throws Exception {

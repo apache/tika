@@ -83,7 +83,7 @@ public class MetadataResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         // Needed by getMetadataField's TikaServerParseException throw.
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         providers.add(new MetadataListMessageBodyWriter());
@@ -115,6 +115,16 @@ public class MetadataResourceTest extends CXFTestBase {
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
 
         assertEquals("f8be45c34e8919eedba48cc8d207fbf0", metadata.get("tk:digest:MD5"), "tk:digest:MD5");
+    }
+
+    @Test
+    public void testDefaultAcceptIsJson() {
+        // With no Accept header, /meta defaults to JSON, not CSV (TIKA-4809).
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        assertEquals("json", response.getMediaType().getSubtype());
     }
 
     @Test

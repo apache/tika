@@ -47,9 +47,10 @@ public class MaxRequestSizeFilterTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new MaxRequestSizeFilter(MAX_BYTES));
+        providers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
         sf.setProviders(providers);
     }
 
@@ -107,8 +108,10 @@ public class MaxRequestSizeFilterTest extends CXFTestBase {
 
         Response response = client.put(new ByteArrayInputStream(body((int) MAX_BYTES * 4)));
 
-        assertNotEquals(200, response.getStatus(),
-                "an over-limit chunked body must not parse successfully");
+        assertEquals(413, response.getStatus(),
+                "an over-limit chunked body must get the same 413 as a declared one");
+        assertContains(MaxRequestSizeFilter.TOO_LARGE_MESSAGE,
+                getStringFromInputStream((java.io.InputStream) response.getEntity()));
     }
 
     private static byte[] body(int approxBytes) {

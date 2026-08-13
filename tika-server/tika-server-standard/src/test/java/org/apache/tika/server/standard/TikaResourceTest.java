@@ -34,7 +34,6 @@ import java.util.Locale;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -78,7 +77,7 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -171,6 +170,21 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testBareTikaDefaultsToMarkdown() throws Exception {
+        // The bare /tika endpoint returns Markdown by default (was XHTML pre-4.0).
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("test"));
+        // Markdown, not XHTML: no HTML/XML tags
+        assertFalse(responseMsg.contains("<html"));
+        assertFalse(responseMsg.contains("<body"));
+        assertFalse(responseMsg.contains("<p>"));
+    }
+
+    @Test
     public void testSimpleWordHTML() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/html")
@@ -208,12 +222,6 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
-    }
-
-    @Test
-    public void testJAXBAndActivationDependency() {
-        //TIKA-2778
-        AttachmentUtil.getCommandMap();
     }
 
     @Test
@@ -643,6 +651,30 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
         //test that embedded parsers are appearing in full set of "parsed bys"
         TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser", Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
+    }
+
+    /**
+     * 3.x served /tika/text from a BodyContentHandler. 4.x switched to TEXT, which runs over
+     * the whole XHTML document and emits the <title> as leading character data -- a 4.x
+     * regression, not a longstanding difference. Needs a real parser: the mock fixtures in
+     * tika-server-core never put a title in the XHTML, so TEXT and BODY are identical there.
+     */
+    @Test
+    public void testTextIsBodyOnly() throws Exception {
+        String text = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Test Indexation Html", text);
+        assertNotFound("Title : Test Indexation Html", text);
+
+        // the whole-document handler is still reachable explicitly, and still emits the title
+        String whole = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/json/text")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Title : Test Indexation Html", whole);
     }
 
 }

@@ -24,6 +24,7 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 /**
@@ -102,11 +103,36 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
             return read;
         }
 
-        private void add(int n) throws IOException {
+        private void add(int n) {
             count += n;
             if (count > limit) {
-                throw new IOException(TOO_LARGE_MESSAGE + " (" + limit + ")");
+                throw new RequestTooLargeException(TOO_LARGE_MESSAGE + " (" + limit + ")");
             }
+        }
+    }
+
+    /**
+     * Unchecked so it crosses whatever read path consumes the entity stream;
+     * {@link RequestTooLargeExceptionMapper} turns it into the same 413 the
+     * declared-Content-Length rejection produces. A plain IOException here
+     * surfaced as an empty 500 on chunked uploads.
+     */
+    public static final class RequestTooLargeException extends RuntimeException {
+        RequestTooLargeException(String message) {
+            super(message);
+        }
+    }
+
+    @Provider
+    public static final class RequestTooLargeExceptionMapper
+            implements ExceptionMapper<RequestTooLargeException> {
+        @Override
+        public Response toResponse(RequestTooLargeException e) {
+            return Response
+                    .status(Response.Status.REQUEST_ENTITY_TOO_LARGE)
+                    .entity(e.getMessage())
+                    .type(MediaType.TEXT_PLAIN)
+                    .build();
         }
     }
 }

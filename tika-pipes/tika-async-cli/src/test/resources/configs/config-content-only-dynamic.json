@@ -37,8 +37,6 @@
     "shutdownClientAfterMillis": 300000,
     "numClients": 2,
     "maxFilesProcessedPerProcess": 10000,
-    "staleFetcherTimeoutSeconds": 600,
-    "staleFetcherDelaySeconds": 60,
     "forkedJvmArgs": [
       "-Xmx1g",
       "-XX:+UseG1GC"

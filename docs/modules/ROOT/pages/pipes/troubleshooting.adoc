@@ -218,7 +218,7 @@ Root level defaults to `INFO`. The bundled configurations are the source of trut
 In order of increasing reach:
 
 . **`tika-app` `-v` / `--verbose`** — sets the root logger to `DEBUG` for the current invocation only. Cheapest knob if you just want a noisier one-off run.
-. **`tika-server` `logLevel` config field** — set `"server": {"logLevel": "debug"}` (or `"info"`) in `tika-config.json`. Applied at server startup.
+. **`tika-server` `requestLogLevel` config field** — set `"server": {"requestLogLevel": "debug"}` (or `"info"`) in `tika-config.json`. This does *not* change the global log level; it only enables logging of each incoming request's URI at the given level (empty, the default, disables request logging). Unknown keys under `server` fail startup, so spell it exactly `requestLogLevel`.
 . **Custom `log4j2.xml`** — for fine-grained control (per-logger levels, custom appenders, JSON output, file rotation), supply your own configuration via the standard Log4j 2 system property:
 +
 [source,bash]

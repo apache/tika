@@ -17,16 +17,20 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.server.core.resource.MetadataResource;
 
 public class TikaServerProcessTest {
 
@@ -61,5 +65,37 @@ public class TikaServerProcessTest {
         // hits IllegalStateException("Pipes-based parsing is not enabled").
         assertTrue(TikaServerProcess.needsPipesParsingHelper(config(false, "meta")));
         assertFalse(TikaServerProcess.needsPipesParsingHelper(config(false, "status")));
+    }
+
+    /** Mirrors XMPMetadataResource: subclass with no class-level @Path of its own. */
+    private static class InheritsMetaPath extends MetadataResource {
+        InheritsMetaPath() {
+            super();
+        }
+    }
+
+    @jakarta.ws.rs.Path("/my-plugin")
+    private static class CustomPathResource {
+    }
+
+    private static class NoPathResource {
+    }
+
+    @Test
+    public void resourcePathRootWalksSuperclasses() {
+        assertEquals("meta", TikaServerProcess.resourcePathRoot(MetadataResource.class));
+        assertEquals("meta", TikaServerProcess.resourcePathRoot(InheritsMetaPath.class));
+        assertEquals("my-plugin", TikaServerProcess.resourcePathRoot(CustomPathResource.class));
+        assertNull(TikaServerProcess.resourcePathRoot(NoPathResource.class));
+    }
+
+    @Test
+    public void spiResourcesHonorEndpointsAllowlist() {
+        // An SPI resource on a named endpoint binds only when that endpoint is enabled...
+        assertFalse(TikaServerProcess.spiResourceEnabled(InheritsMetaPath.class, Set.of("tika")));
+        assertTrue(TikaServerProcess.spiResourceEnabled(InheritsMetaPath.class, Set.of("tika", "meta")));
+        // ...while a custom path loads unconditionally: installing the jar is the opt-in.
+        assertTrue(TikaServerProcess.spiResourceEnabled(CustomPathResource.class, Set.of("tika")));
+        assertTrue(TikaServerProcess.spiResourceEnabled(NoPathResource.class, Set.of()));
     }
 }

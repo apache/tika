@@ -57,11 +57,11 @@ curl -s http://localhost:9998/version
 
 *Expected:* `Apache Tika X.X.X`
 
-=== Test 2: PUT /detect/stream
+=== Test 2: PUT /detect
 
 [source,bash]
 ----
-curl -s -X PUT -T testPDF.pdf http://localhost:9998/detect/stream
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/detect
 ----
 
 *Expected:* `application/pdf`
@@ -118,7 +118,8 @@ curl -s -X PUT -H "Accept: application/json" -T testPDF.pdf http://localhost:999
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/meta/Content-Type
 ----
 
-*Expected:* `Content-Type,application/pdf`
+*Expected:* JSON containing only the requested field: `{"Content-Type":"application/pdf"}`
+(the header-less default is JSON; add `-H "Accept: text/csv"` for `Content-Type,application/pdf`)
 
 === Test 9: PUT /rmeta
 
@@ -138,11 +139,11 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/rmeta/text
 
 *Expected:* JSON array with ToTextContentHandler content.
 
-=== Test 11: PUT /language/stream
+=== Test 11: PUT /language
 
 [source,bash]
 ----
-curl -s -X PUT -T testPDF.pdf http://localhost:9998/language/stream
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/language
 ----
 
 *Expected:* Two-letter language code (e.g., `en`, `th`).
@@ -155,7 +156,8 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all 
 unzip -l /tmp/unpack.zip
 ----
 
-*Expected:* ZIP file containing extracted embedded files plus `__TEXT__` and `__METADATA__` files.
+*Expected:* ZIP file containing the extracted embedded files, a `*.metadata.json` entry
+per file, and the original container document.
 
 === Test 13: GET /parsers
 
@@ -406,7 +408,7 @@ The following endpoints were tested and verified working:
 |Endpoint |Method |Status
 
 |`/version` |GET |PASS
-|`/detect/stream` |PUT |PASS
+|`/detect` |PUT |PASS
 |`/tika` |PUT |PASS
 |`/tika/text` |PUT |PASS
 |`/tika/html` |PUT |PASS
@@ -416,7 +418,7 @@ The following endpoints were tested and verified working:
 |`/meta/\{field}` |PUT |PASS
 |`/rmeta` |PUT |PASS
 |`/rmeta/text` |PUT |PASS
-|`/language/stream` |PUT |PASS
+|`/language` |PUT |PASS
 |`/unpack/all` |PUT |PASS
 |`/parsers` |GET |PASS
 |`/detectors` |GET |PASS
@@ -445,7 +447,7 @@ The following endpoints were tested and verified working:
 
 === Issue 1: Language Detection Accuracy
 
-Short texts may not be detected reliably. The `/language/stream` endpoint works best with substantial text content.
+Short texts may not be detected reliably. The `/language` endpoint works best with substantial text content.
 
 == Quick Reference
 
@@ -478,7 +480,7 @@ curl -X PUT -T file.docx http://localhost:9998/rmeta/text
 === Detection
 [source,bash]
 ----
-curl -X PUT -T file.pdf http://localhost:9998/detect/stream
+curl -X PUT -T file.pdf http://localhost:9998/detect
 ----
 
 === Extract Embedded Files

@@ -21,14 +21,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 
 public class ExceptionUtils {
-
-    private final static Pattern MSG_PATTERN = Pattern.compile(":[^\r\n]+");
 
     /**
      * Simple util to get stack trace.
@@ -69,23 +65,5 @@ public class ExceptionUtils {
             //swallow
         }
         return result.toString();
-    }
-
-    /**
-     * Utility method to trim the message from a stack trace
-     * string.
-     * <p>
-     * E.g. <code>java.lang.IllegalStateException: Potential loop detected </code>
-     * will be trimmed to <code>java.lang.IllegalStateException</code>
-     *
-     * @param trace string view of stack trace
-     * @return trimmed stack trace
-     */
-    public static String trimMessage(String trace) {
-        Matcher msgMatcher = MSG_PATTERN.matcher(trace);
-        if (msgMatcher.find()) {
-            return msgMatcher.replaceFirst("");
-        }
-        return trace;
     }
 }

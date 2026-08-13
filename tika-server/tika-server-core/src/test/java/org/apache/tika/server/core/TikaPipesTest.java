@@ -19,8 +19,6 @@ package org.apache.tika.server.core;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -153,7 +151,7 @@ public class TikaPipesTest extends CXFTestBase {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
             pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
-            pipesResource = new PipesResource(pipesParser, false);
+            pipesResource = new PipesResource(pipesParser, pipesConfig);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
@@ -164,7 +162,8 @@ public class TikaPipesTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(true));
+        providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONObjWriter());
         sf.setProviders(providers);
     }
@@ -272,14 +271,9 @@ public class TikaPipesTest extends CXFTestBase {
         try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse
-                .get("parse_exception")
-                .asText();
-        assertNotNull(parseException);
-        assertContains("NullPointerException", parseException);
-        assertTrue(jsonResponse
-                .get("emitted")
-                .asBoolean());
+        assertEquals("EMIT_SUCCESS_PARSE_EXCEPTION", jsonResponse.get("status").asText());
+        String message = jsonResponse.get("message").asText();
+        assertContains("NullPointerException", message);
         List<Metadata> metadataList;
         try (Reader reader = Files.newBufferedReader(tmpOutputDir.resolve("null_pointer.xml.json"))) {
             metadataList = JsonMetadataList.fromJson(reader);
@@ -311,14 +305,87 @@ public class TikaPipesTest extends CXFTestBase {
         try (Reader reader = new InputStreamReader((InputStream) response.getEntity(), StandardCharsets.UTF_8)) {
             jsonResponse = new ObjectMapper().readTree(reader);
         }
-        String parseException = jsonResponse
-                .get("parse_exception")
-                .asText();
-        assertNotNull(parseException);
-        assertContains("NullPointerException", parseException);
-        assertFalse(jsonResponse
-                .get("emitted")
-                .asBoolean());
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", jsonResponse.get("status").asText());
+        String message = jsonResponse.get("message").asText();
+        assertContains("NullPointerException", message);
         assertFalse(Files.isRegularFile(tmpNpeOutputFile));
     }
+    /**
+     * A fetcher or emitter this server does not have is a permanently malformed request:
+     * retrying it will never succeed, so it must not come back as a 5xx "try again".
+     */
+    @Test
+    public void testUnknownFetcherAndEmitterAre400() throws Exception {
+        FetchEmitTuple badFetcher = new FetchEmitTuple("badFetcher",
+                new FetchKey("no-such-fetcher", "hello_world.xml"),
+                new EmitKey(EMITTER_JSON_ID, ""), new Metadata());
+        assertEquals(400, postTuple(badFetcher).getStatus());
+
+        FetchEmitTuple badEmitter = new FetchEmitTuple("badEmitter",
+                new FetchKey(FETCHER_ID, "hello_world.xml"),
+                new EmitKey("no-such-emitter", ""), new Metadata());
+        assertEquals(400, postTuple(badEmitter).getStatus());
+    }
+
+    private Response postTuple(FetchEmitTuple t) throws Exception {
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTuple.toJson(t, writer);
+        return WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post(writer.toString());
+    }
+
+    /** Wiring pin: the reserved-id guard must actually run on /pipes, not just exist. */
+    @Test
+    public void testReservedFetcherIdIs400() throws Exception {
+        FetchEmitTuple t = new FetchEmitTuple("reserved",
+                new FetchKey(org.apache.tika.server.core.resource.PipesParsingHelper.DEFAULT_FETCHER_ID,
+                        "hello_world.xml"),
+                new EmitKey(EMITTER_JSON_ID, ""), new Metadata());
+        Response response = postTuple(t);
+        assertEquals(400, response.getStatus());
+        assertContains("reserved",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    /** The /pipes body carries only status: a passback strategy would silently drop data. */
+    @Test
+    public void testPassbackStrategyIs400() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+        FetchEmitTuple t = new FetchEmitTuple("passback",
+                new FetchKey(FETCHER_ID, "hello_world.xml"), new EmitKey(EMITTER_JSON_ID, ""),
+                new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        Response response = postTuple(t);
+        assertEquals(400, response.getStatus());
+        assertContains("PASSBACK_ALL",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    /** A malformed body is the caller's error: 400 with the reason, never an empty 500. */
+    @Test
+    public void testMalformedBodyIs400() throws Exception {
+        Response response = WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post("this is not json");
+        assertEquals(400, response.getStatus());
+        assertContains("/pipes request body",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    @Test
+    public void testUnknownTupleFieldIs400() throws Exception {
+        String body = "{\"id\":\"x\",\"fetcher\":\"" + FETCHER_ID + "\",\"fetchKey\":\"hello_world.xml\"," +
+                "\"emitter\":\"" + EMITTER_JSON_ID + "\",\"bogusField\":1}";
+        Response response = WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post(body);
+        assertEquals(400, response.getStatus());
+        assertContains("bogusField",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
 }

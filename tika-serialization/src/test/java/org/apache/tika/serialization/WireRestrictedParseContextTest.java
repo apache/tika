@@ -140,6 +140,20 @@ public class WireRestrictedParseContextTest {
         assertTrue(ctx.hasJsonConfig("timeout-limits"));
     }
 
+    /**
+     * Initializable cross-field validation must fire at resolution, so a bad pair fails
+     * config load / request admission rather than every task at runtime.
+     */
+    @Test
+    public void resolveRunsInitializableValidation() throws Exception {
+        String json = "{\"timeout-limits\":{\"progressTimeoutMillis\":0,\"totalTaskTimeoutMillis\":60000}}";
+        ParseContext ctx = restrictedMapper().readValue(json, ParseContext.class);
+        Exception e = assertThrows(Exception.class,
+                () -> ParseContextUtils.resolveAll(ctx, ParseContextUtils.class.getClassLoader()));
+        assertTrue(rootMessage(e).contains("would kill every task"),
+                "expected the cross-field timeout rejection, got: " + rootMessage(e));
+    }
+
     private static String rootMessage(Throwable t) {
         Throwable r = t;
         while (r.getCause() != null && r.getCause() != r) {
