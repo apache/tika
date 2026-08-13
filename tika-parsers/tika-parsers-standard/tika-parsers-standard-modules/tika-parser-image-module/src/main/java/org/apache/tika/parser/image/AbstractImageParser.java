@@ -28,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -67,7 +68,7 @@ public abstract class AbstractImageParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        String mediaTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         //note: mediaType can be null if mediaTypeString is null or
         //not parseable.
         MediaType mediaType = normalizeMediaType(MediaType.parse(mediaTypeString));
@@ -100,7 +101,7 @@ public abstract class AbstractImageParser implements Parser {
                 //specify ocr content type
                 String originalParserOverride =
                         metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
-                String originalContentType = metadata.get(Metadata.CONTENT_TYPE);
+                String originalContentType = metadata.get(HttpHeaders.CONTENT_TYPE);
                 metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
                         ocrMediaType.toString());
                 //need to use bodycontenthandler to filter out re-dumping of metadata
@@ -117,9 +118,9 @@ public abstract class AbstractImageParser implements Parser {
                                 originalParserOverride);
                     }
                     if (originalContentType == null) {
-                        metadata.remove(Metadata.CONTENT_TYPE);
+                        metadata.remove(HttpHeaders.CONTENT_TYPE);
                     } else {
-                        metadata.set(Metadata.CONTENT_TYPE, originalContentType);
+                        metadata.set(HttpHeaders.CONTENT_TYPE, originalContentType);
                     }
                 }
             }

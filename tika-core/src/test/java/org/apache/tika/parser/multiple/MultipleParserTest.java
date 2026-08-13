@@ -40,7 +40,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.multiple.AbstractMultipleParser.MetadataPolicy;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.utils.ParserUtils;
 
 public class MultipleParserTest {
     /**
@@ -106,8 +105,8 @@ public class MultipleParserTest {
 
         // Check we got an exception
         assertNotNull(metadata.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
-        assertNotNull(metadata.get(ParserUtils.EMBEDDED_PARSER));
-        assertEquals(ErrorParser.class.getName(), metadata.get(ParserUtils.EMBEDDED_PARSER));
+        assertNotNull(metadata.get(TikaCoreProperties.EMBEDDED_PARSER));
+        assertEquals(ErrorParser.class.getName(), metadata.get(TikaCoreProperties.EMBEDDED_PARSER));
 
 
         // Won't go past a working parser to a second one, stops after one works

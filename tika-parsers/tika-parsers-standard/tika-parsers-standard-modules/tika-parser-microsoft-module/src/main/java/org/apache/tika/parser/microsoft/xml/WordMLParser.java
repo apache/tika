@@ -37,6 +37,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -89,7 +90,7 @@ public class WordMLParser extends AbstractXML2003Parser {
 
     @Override
     public void setContentType(Metadata metadata) {
-        metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE.toString());
     }
 
     private static class WordMLHandler extends DefaultHandler {

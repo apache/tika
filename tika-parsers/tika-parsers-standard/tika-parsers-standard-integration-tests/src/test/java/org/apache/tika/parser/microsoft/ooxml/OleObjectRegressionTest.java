@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.digest.DigesterFactory;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -89,7 +90,7 @@ public class OleObjectRegressionTest extends TikaTest {
     private static void assertOleGraphPresent(List<Metadata> list) {
         List<String> contentTypes = list.stream()
                 .map(m -> m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH) + " -> "
-                        + m.get(Metadata.CONTENT_TYPE))
+                        + m.get(HttpHeaders.CONTENT_TYPE))
                 .collect(Collectors.toList());
 
         // testWPSAttachment.docx has three "raw OLE2" embeds at /oleObject{4,6,8}.bin
@@ -102,7 +103,7 @@ public class OleObjectRegressionTest extends TikaTest {
                     .findFirst()
                     .orElse(null);
             assertTrue(m != null, "expected " + n + " to be present; items=" + contentTypes);
-            String ct = m.get(Metadata.CONTENT_TYPE);
+            String ct = m.get(HttpHeaders.CONTENT_TYPE);
             assertTrue(ct != null
                             && !ct.toLowerCase(java.util.Locale.ROOT)
                                     .contains("openxmlformats-officedocument.oleobject"),

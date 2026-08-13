@@ -22,6 +22,7 @@ import java.util.Set;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackSelector;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -64,7 +65,7 @@ public class StandardUnpackSelector implements UnpackSelector {
             return true;
         }
 
-        String mime = metadata.get(Metadata.CONTENT_TYPE);
+        String mime = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mime == null) {
             mime = "";
         } else {

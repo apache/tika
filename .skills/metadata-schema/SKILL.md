@@ -35,19 +35,19 @@ this covers conventions, regeneration, and the traps.
 Under `tika-metadata-schema/src/main/resources/org/apache/tika/metadata/`:
 
 - `metadata-keys.json` — closed set: every `Property` constant + the synthesized `tk:digest:*` cross-product.
-- `metadata-open-namespaces.json` — `PassthroughPrefix` prefixes for runtime-minted names (`html:`, `message:raw-header:`, `mdb-prop:`).
+- `metadata-open-namespaces.json` — `KeyPrefix` prefixes for runtime-minted names (`html:`, `message:raw-header:`, `mdb-prop:`).
 - `metadata-key-fields.json` — TIKA-4797 `{class, field, key}` table for field-identity migration.
 
 Committed on purpose: they are the reviewable audit trail of the key space (a rename or a dropped key
 shows up as a diff). Don't switch to build-time-only generation — that loses the review signal.
 
-## Regenerate (after adding/changing a Property or PassthroughPrefix)
+## Regenerate (after adding/changing a Property or KeyPrefix)
 
 ```bash
 tika-metadata-schema/regen.sh
 ```
 
-This does the full sequence in one shot: `-am install` so newly added Property/PassthroughPrefix
+This does the full sequence in one shot: `-am install` so newly added Property/KeyPrefix
 classes are on the scan classpath, regenerate all three registries via the forked-exec profile, print
 a before/after key-count check (catches an incomplete classpath scan), `git diff --stat` the
 registries, then run the gate tests. Flags: `--skip-install` (only safe if nothing outside
@@ -91,6 +91,8 @@ Failures with stale `X-TIKA:`/underscore/`SHA256` keys usually mean *regenerate*
 ## Naming conventions (frozen for 4.0, TIKA-4794)
 
 - All keys are `Property` constants — no bare `String` keys (`metadata-string-keys.json` retired).
+  Sole exception: `TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY`, an internal building block
+  that constructs the `Property` name for `EMBEDDED_RESOURCE_TYPE` — not an independent key.
 - Tika-coined prefix is `tk:` (`X-TIKA:` is legacy); kebab-case, no underscores.
 - External-standard names verbatim, *including* the standard's prefix: `dc:`, `xmp:`, `cp:`, `extended-properties:`.
 - HTTP has no namespace → `Content-Type`, `Content-Encoding`, `Location` stay bare (no `http:`).

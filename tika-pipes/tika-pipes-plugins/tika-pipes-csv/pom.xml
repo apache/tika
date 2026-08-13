@@ -53,6 +53,7 @@
         <configuration>
           <inputExcludes>
             <inputExclude>src/test/resources/test-simple.csv</inputExclude>
+            <inputExclude>src/test/resources/test-reserved-header.csv</inputExclude>
           </inputExcludes>
         </configuration>
       </plugin>

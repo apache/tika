@@ -19,10 +19,12 @@ package org.apache.tika.pipes.es;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
 import org.apache.tika.pipes.emitter.es.ESEmitterConfig;
 import org.apache.tika.pipes.reporter.es.ESReporterConfig;
@@ -67,6 +69,22 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
         assertNotNull(config.includes());
         assertTrue(config.includes().contains("PARSE_SUCCESS"));
         assertNotNull(config.httpClientConfig());
+    }
+
+    @Test
+    public void testESReporterConfigRejectsReservedKeyPrefix() {
+        // TIKA-4816: an operator-supplied keyPrefix in the reserved tk:/X-TIKA: namespace must
+        // fail fast at config load, not on the first report() call (Metadata#set throws on a
+        // reserved key post-flip -- see ESReporterConfig#load).
+        String json = "{\"esUrl\":\"https://es.example.com:9200/tika-status\","
+                + "\"keyPrefix\":\"tk:\"}";
+        TikaConfigException ex =
+                assertThrows(TikaConfigException.class, () -> ESReporterConfig.load(json));
+        assertTrue(ex.getMessage().contains("tk:"), "message should name the offending prefix");
+
+        String legacyJson = "{\"esUrl\":\"https://es.example.com:9200/tika-status\","
+                + "\"keyPrefix\":\"X-TIKA:\"}";
+        assertThrows(TikaConfigException.class, () -> ESReporterConfig.load(legacyJson));
     }
 
     @Test

@@ -192,35 +192,25 @@ public class SummaryExtractor {
     private void parse(CustomProperties customProperties) {
         if (customProperties != null) {
             for (String name : customProperties.nameSet()) {
-                String key = Office.USER_DEFINED.key(name);
-
-                // Get, convert and save property value
+                // Get, convert and save property value. Custom property names are
+                // document-controlled, so write via the KeyPrefix route
+                // (Property.external* would register+intern one Property per name forever).
                 Object value = customProperties.get(name);
                 if (value instanceof String) {
-                    set(key, (String) value);
+                    metadata.add(Office.USER_DEFINED, name, (String) value);
                 } else if (value instanceof Date) {
-                    Property prop = Property.externalDate(key);
-                    metadata.set(prop, (Date) value);
+                    metadata.add(Office.USER_DEFINED, name, ((Date) value).toInstant());
                 } else if (value instanceof Boolean) {
-                    Property prop = Property.externalBoolean(key);
-                    metadata.set(prop, value.toString());
+                    metadata.add(Office.USER_DEFINED, name, value.toString());
                 } else if (value instanceof Long) {
-                    Property prop = Property.externalInteger(key);
-                    metadata.set(prop, ((Long) value).intValue());
+                    metadata.add(Office.USER_DEFINED, name,
+                            String.valueOf(((Long) value).intValue()));
                 } else if (value instanceof Double) {
-                    Property prop = Property.externalReal(key);
-                    metadata.set(prop, (Double) value);
+                    metadata.add(Office.USER_DEFINED, name, String.valueOf((Double) value));
                 } else if (value instanceof Integer) {
-                    Property prop = Property.externalInteger(key);
-                    metadata.set(prop, (Integer) value);
+                    metadata.add(Office.USER_DEFINED, name, String.valueOf((Integer) value));
                 }
             }
-        }
-    }
-
-    private void set(String name, String value) {
-        if (!StringUtils.isBlank(value)) {
-            metadata.set(name, value);
         }
     }
 
@@ -245,12 +235,6 @@ public class SummaryExtractor {
     private void set(Property property, int value) {
         if (value > 0) {
             metadata.set(property, value);
-        }
-    }
-
-    private void set(String name, long value) {
-        if (value > 0) {
-            metadata.set(name, Long.toString(value));
         }
     }
 

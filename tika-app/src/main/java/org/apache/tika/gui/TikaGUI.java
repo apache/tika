@@ -77,6 +77,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -596,7 +597,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      */
     private static class ImageDocumentSelector implements DocumentSelector {
         public boolean select(Metadata metadata) {
-            String type = metadata.get(Metadata.CONTENT_TYPE);
+            String type = metadata.get(HttpHeaders.CONTENT_TYPE);
             return type != null && type.startsWith("image/");
         }
     }

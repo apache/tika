@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -34,7 +35,7 @@ public class Pkcs7ParserTest {
                 Pkcs7ParserTest.class.getResourceAsStream("/test-documents/" + resource))) {
             new Pkcs7Parser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        return metadata.get(Metadata.CONTENT_TYPE);
+        return metadata.get(HttpHeaders.CONTENT_TYPE);
     }
 
     @Test

@@ -28,6 +28,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -42,7 +43,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                 getRecursiveMetadata(truncate("testWORD_various.docx", 13138), true);
         assertEquals(19, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-tika-ooxml", m.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -61,7 +62,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         */
         assertEquals(4, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-tika-ooxml", m.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

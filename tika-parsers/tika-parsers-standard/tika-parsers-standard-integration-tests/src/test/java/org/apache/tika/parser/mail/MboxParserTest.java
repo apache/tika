@@ -25,6 +25,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -61,6 +62,6 @@ public class MboxParserTest extends TikaTest {
         }
 
         Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
-        assertEquals("message/rfc822", firstMail.get(Metadata.CONTENT_TYPE));
+        assertEquals("message/rfc822", firstMail.get(HttpHeaders.CONTENT_TYPE));
     }
 }

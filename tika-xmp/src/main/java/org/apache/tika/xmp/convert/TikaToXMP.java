@@ -25,6 +25,7 @@ import com.adobe.internal.xmp.XMPMeta;
 import com.adobe.internal.xmp.XMPMetaFactory;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -59,7 +60,7 @@ public class TikaToXMP {
             throw new IllegalArgumentException("Metadata parameter must not be null");
         }
 
-        String mimetype = tikaMetadata.get(Metadata.CONTENT_TYPE);
+        String mimetype = tikaMetadata.get(HttpHeaders.CONTENT_TYPE);
         if (mimetype == null) {
             mimetype = tikaMetadata.get(TikaCoreProperties.FORMAT);
         }

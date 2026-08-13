@@ -33,6 +33,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -60,7 +61,7 @@ public class VorbisParser extends OggAudioParser {
     public void parse(TikaInputStream tis, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
-        metadata.set(Metadata.CONTENT_TYPE, OGG_VORBIS.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, OGG_VORBIS.toString());
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "Vorbis");
 
         // Open and process the files
@@ -87,7 +88,7 @@ public class VorbisParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, VorbisInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Vorbis " + info.getVersion());
+        metadata.add(CODEC_VERSION, "Vorbis " + info.getVersion());
 
         int upper = info.getBitrateUpper();
         int nominal = info.getBitrateNominal();

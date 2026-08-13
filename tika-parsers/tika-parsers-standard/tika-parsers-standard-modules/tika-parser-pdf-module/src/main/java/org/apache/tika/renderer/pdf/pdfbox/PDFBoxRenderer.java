@@ -64,17 +64,21 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
     /**
      * This is the amount of time it takes for PDFBox to render the page
      * to a BufferedImage
+     *
+     * @see Rendering#PDFBOX_RENDERING_TIME_MS the curated Property this aliases; {@code tk:}
+     * Properties mint only in org.apache.tika.metadata (see Property mint-time validation)
      */
-    public static Property PDFBOX_RENDERING_TIME_MS =
-            Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-rendering-ms");
+    public static final Property PDFBOX_RENDERING_TIME_MS = Rendering.PDFBOX_RENDERING_TIME_MS;
 
     /**
      * This is the amount of time it takes for PDFBox/java to write the image after
      * it has been rendered into a BufferedImage.  Some formats take much longer
      * to encode than others.
+     *
+     * @see Rendering#PDFBOX_IMAGE_WRITING_TIME_MS the curated Property this aliases
      */
-    public static Property PDFBOX_IMAGE_WRITING_TIME_MS =
-            Property.externalReal(Rendering.RENDERING_PREFIX + "pdfbox-image-writing-ms");
+    public static final Property PDFBOX_IMAGE_WRITING_TIME_MS =
+            Rendering.PDFBOX_IMAGE_WRITING_TIME_MS;
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

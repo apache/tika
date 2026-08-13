@@ -18,8 +18,15 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -401,7 +408,10 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
         private static final String VT_NS =
                 "http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes";
 
-        private final Metadata customMetadata = new Metadata();
+        //plain name->value staging, not Metadata/Property: names are document-controlled,
+        //so applyTo() writes via the KeyPrefix route, never registering a Property
+        private final Map<String, String> customValues = new LinkedHashMap<>();
+        private final Set<String> dateValueNames = new HashSet<>();
         private String currentPropertyName;
         private String currentValueType;
         private final StringBuilder textBuffer = new StringBuilder();
@@ -439,17 +449,16 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                 // strings, work with the trimmed form everywhere else.
                 String raw = textBuffer.toString();
                 String trimmed = raw.trim();
-                String propName = "custom:" + currentPropertyName;
                 switch (currentValueType) {
                     case "lpwstr":
                     case "lpstr":
                     case "bstr":
-                        customMetadata.set(propName, raw);
+                        customValues.put(currentPropertyName, raw);
                         break;
                     case "filetime":
                     case "date":
-                        Property tikaProp = Property.externalDate(propName);
-                        customMetadata.set(tikaProp, trimmed);
+                        dateValueNames.add(currentPropertyName);
+                        customValues.put(currentPropertyName, trimmed);
                         break;
                     case "bool":
                         // xs:boolean lexical space is {true,false,1,0}. Legacy POI
@@ -457,9 +466,9 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                         // doing "true".equals(...) never saw the 1/0 form. Anything
                         // outside the lexical space is dropped, not stored verbatim.
                         if ("1".equals(trimmed) || "true".equals(trimmed)) {
-                            customMetadata.set(propName, "true");
+                            customValues.put(currentPropertyName, "true");
                         } else if ("0".equals(trimmed) || "false".equals(trimmed)) {
-                            customMetadata.set(propName, "false");
+                            customValues.put(currentPropertyName, "false");
                         }
                         break;
                     case "i1":
@@ -468,17 +477,17 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                     case "int":
                     case "ui1":
                     case "ui2":
-                        customMetadata.set(propName, trimmed);
+                        customValues.put(currentPropertyName, trimmed);
                         break;
                     case "i8":
                     case "ui4":
                     case "ui8":
                     case "uint":
-                        customMetadata.set(propName, trimmed);
+                        customValues.put(currentPropertyName, trimmed);
                         break;
                     case "r4":
                     case "r8":
-                        customMetadata.set(propName, trimmed);
+                        customValues.put(currentPropertyName, trimmed);
                         break;
                     case "decimal":
                         // BigDecimal(String) is O(n²) on JDK 17; cap the input
@@ -490,7 +499,7 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
                         }
                         try {
                             BigDecimal d = new BigDecimal(trimmed);
-                            customMetadata.set(propName, d.toPlainString());
+                            customValues.put(currentPropertyName, d.toPlainString());
                         } catch (NumberFormatException e) {
                             //swallow
                         }
@@ -509,9 +518,22 @@ class SAXBasedMetadataExtractor extends MetadataExtractor {
         }
 
         void applyTo(Metadata metadata) {
-            for (String name : customMetadata.names()) {
-                for (String value : customMetadata.getValues(name)) {
-                    metadata.add(name, value);
+            for (Map.Entry<String, String> entry : customValues.entrySet()) {
+                String name = entry.getKey();
+                if (dateValueNames.contains(name)) {
+                    Instant instant = null;
+                    try {
+                        instant = OffsetDateTime.parse(entry.getValue()).toInstant();
+                    } catch (DateTimeParseException e) {
+                        //fall through: keep the raw text
+                    }
+                    if (instant == null) {
+                        metadata.add(Office.USER_DEFINED, name, entry.getValue());
+                    } else {
+                        metadata.add(Office.USER_DEFINED, name, instant);
+                    }
+                } else {
+                    metadata.add(Office.USER_DEFINED, name, entry.getValue());
                 }
             }
         }

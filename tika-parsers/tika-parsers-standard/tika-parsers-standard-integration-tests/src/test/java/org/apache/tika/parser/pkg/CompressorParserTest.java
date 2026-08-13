@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -32,7 +33,7 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testLZ4Framed() throws Exception {
         XMLResult r = getXML("testLZ4-framed.lz4");
-        assertEquals("application/x-lz4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-lz4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("0123456789", r.xml);
     }
 
@@ -45,7 +46,7 @@ public class CompressorParserTest extends TikaTest {
     @Test
     public void testSnappyFramed() throws Exception {
         XMLResult r = getXML("testSnappy-framed.sz");
-        assertEquals("application/x-snappy", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-snappy", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("Lorem ipsum dolor sit amet", r.xml);
     }
 

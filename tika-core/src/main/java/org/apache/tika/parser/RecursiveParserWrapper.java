@@ -33,6 +33,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -196,7 +197,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             objectName = EmbeddedDocumentUtil.generateResourceName(
                     EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
                     counter.incrementAndGet(),
-                    metadata.get(Metadata.CONTENT_TYPE));
+                    metadata.get(HttpHeaders.CONTENT_TYPE));
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
         //make sure that there isn't any path info in the objectName

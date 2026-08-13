@@ -21,7 +21,6 @@ import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
 import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -31,25 +30,12 @@ import org.apache.tika.parser.ParserDecorator;
  */
 public class ParserUtils {
 
-    public final static Property EMBEDDED_PARSER = Property.internalText(
-            TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded-parser");
-
-
     /**
      * Does a deep clone of a Metadata object.
      */
     public static Metadata cloneMetadata(Metadata m) {
         Metadata clone = new Metadata();
-
-        for (String n : m.names()) {
-            if (!m.isMultiValued(n)) {
-                clone.reconstruct(n, m.get(n), false);
-            } else {
-                for (String val : m.getValues(n)) {
-                    clone.reconstruct(n, val, true);
-                }
-            }
-        }
+        clone.putAll(m);
         return clone;
     }
 
@@ -99,6 +85,6 @@ public class ParserUtils {
     public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata) {
         String trace = ExceptionUtils.getStackTrace(failure);
         metadata.add(EMBEDDED_EXCEPTION, trace);
-        metadata.add(EMBEDDED_PARSER, getParserClassname(parser));
+        metadata.add(TikaCoreProperties.EMBEDDED_PARSER, getParserClassname(parser));
     }
 }

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -63,7 +64,7 @@ public class ProjectParserTest {
         ContentHandler handler = new BodyContentHandler();
         new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
-        assertEquals("application/vnd.ms-project", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-project", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         assertEquals("The quick brown fox jumps over the lazy dog",
                 metadata.get(TikaCoreProperties.TITLE));

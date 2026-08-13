@@ -35,8 +35,10 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -77,8 +79,10 @@ public class FLVParser implements Parser {
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
-    private static final PassthroughPrefix FLV =
-            PassthroughPrefix.file("flv:", "FLV onMetaData tag keys");
+    private static final KeyPrefix FLV =
+            KeyPrefix.file("flv:", "FLV onMetaData tag keys");
+    private static final Property HAS_VIDEO = Property.internalBoolean("flv:hasVideo");
+    private static final Property HAS_AUDIO = Property.internalBoolean("flv:hasAudio");
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -228,9 +232,9 @@ public class FLVParser implements Parser {
             throw new TikaException("Unpexpected FLV first previous block size: " + sizePrev);
         }
 
-        metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
-        metadata.set("flv:hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
-        metadata.set("flv:hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
+        metadata.set(HttpHeaders.CONTENT_TYPE, "video/x-flv");
+        metadata.set(HAS_VIDEO, (typeFlags & MASK_VIDEO) != 0);
+        metadata.set(HAS_AUDIO, (typeFlags & MASK_AUDIO) != 0);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -279,7 +283,7 @@ public class FLVParser implements Parser {
                             if (entry.getValue() == null) {
                                 continue;
                             }
-                            metadata.set(FLV.key(entry.getKey()), entry.getValue().toString());
+                            metadata.add(FLV, entry.getKey(), entry.getValue().toString());
                         }
                     }
                 }

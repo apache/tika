@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * The CI gate: regenerate both registries from the live {@link org.apache.tika.metadata.Property}
- * and {@link org.apache.tika.metadata.PassthroughPrefix} declarations and assert each matches its
+ * and {@link org.apache.tika.metadata.KeyPrefix} declarations and assert each matches its
  * committed file. If a declaration is added/changed/renamed without regenerating, this fails — the
  * registries cannot silently drift.
  */
@@ -44,7 +44,7 @@ public class MetadataSchemaTest {
 
     @Test
     public void committedOpenNamespacesMatchDeclarations() throws Exception {
-        // generate() first, so the classpath scan force-loads the PassthroughPrefix declarations.
+        // generate() first, so the classpath scan force-loads the KeyPrefix declarations.
         SchemaGenerator.generate();
         assertEquals(committed(OPEN), SchemaGenerator.passthroughJson(),
                 "metadata-open-namespaces.json is stale. Run tika-metadata-schema/regen.sh and "

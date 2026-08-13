@@ -577,10 +577,10 @@ public class TikaCLITest {
     @Test
     public void testMultiValuedMetadata() throws Exception {
         String content = getParamOutContent("-m", resourcePrefix + "testMultipleSheets.numbers");
-        assertTrue(content.contains("sheetNames: Checking"));
-        assertTrue(content.contains("sheetNames: Secon sheet"));
-        assertTrue(content.contains("sheetNames: Logical Sheet 3"));
-        assertTrue(content.contains("sheetNames: Sheet 4"));
+        assertTrue(content.contains("sheet-names: Checking"));
+        assertTrue(content.contains("sheet-names: Secon sheet"));
+        assertTrue(content.contains("sheet-names: Logical Sheet 3"));
+        assertTrue(content.contains("sheet-names: Sheet 4"));
     }
 
     // TIKA-1031

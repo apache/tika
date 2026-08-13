@@ -48,6 +48,7 @@ import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
@@ -270,7 +271,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
     }
 
     private String detectMimeType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/")) {

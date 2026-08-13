@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -85,7 +86,7 @@ public class CompressorParserTest extends TikaTest {
         //pack200 through the spool-to-file workaround so it unpacks cleanly.
         //testPACK200.pack is borrowed from Apache Commons Compress (HelloWorld.pack).
         List<Metadata> metadataList = getRecursiveMetadata("testPACK200.pack");
-        assertEquals("application/x-java-pack200", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-java-pack200", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION),
                 "pack200 should unpack without an exception");
         //the pack200 archive must have been unpacked into at least one embedded document

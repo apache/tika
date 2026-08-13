@@ -31,8 +31,9 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -61,8 +62,8 @@ public class DWGParser extends AbstractDWGParser {
     }
 
     public static String DWG_CUSTOM_META_PREFIX = "dwg-custom:";
-    public static final PassthroughPrefix DWG_CUSTOM =
-            PassthroughPrefix.file(DWG_CUSTOM_META_PREFIX, "DWG custom document properties");
+    public static final KeyPrefix DWG_CUSTOM =
+            KeyPrefix.file(DWG_CUSTOM_META_PREFIX, "DWG custom document properties");
     /**
      * Serial version UID
      */
@@ -127,13 +128,13 @@ public class DWGParser extends AbstractDWGParser {
 
             switch (version) {
                 case "AC1015":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
                     if (skipTo2000PropertyInfoSection(tis, header)) {
                         get2000Props(tis, metadata, xhtml);
                     }
                     break;
                 case "AC1018":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
                     if (skipToPropertyInfoSection(tis, header)) {
                         get2004Props(tis, metadata, xhtml);
                     }
@@ -142,7 +143,7 @@ public class DWGParser extends AbstractDWGParser {
                 case "AC1032":
                 case "AC1021":
                 case "AC1024":
-                    metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
                     if (skipToPropertyInfoSection(tis, header)) {
                         get2007and2010Props(tis, metadata, xhtml);
                     }
@@ -172,7 +173,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2004String(tis);
             String propValue = read2004String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM.key(propName), propValue);
+                metadata.add(DWG_CUSTOM, propName, propValue);
             }
         }
     }
@@ -207,7 +208,7 @@ public class DWGParser extends AbstractDWGParser {
             String propName = read2007and2010String(tis);
             String propValue = read2007and2010String(tis);
             if (propName.length() > 0 && propValue.length() > 0) {
-                metadata.add(DWG_CUSTOM.key(propName), propValue);
+                metadata.add(DWG_CUSTOM, propName, propValue);
             }
         }
     }
@@ -258,7 +259,7 @@ public class DWGParser extends AbstractDWGParser {
                     if (splitAt > -1) {
                         String propName = val.substring(0, splitAt);
                         String propVal = val.substring(splitAt + 1);
-                        metadata.add(DWG_CUSTOM.key(propName), propVal);
+                        metadata.add(DWG_CUSTOM, propName, propVal);
                     }
                 }
             } else {

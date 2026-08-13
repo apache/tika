@@ -37,7 +37,9 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -55,13 +57,19 @@ public class MidiParser implements Parser {
             new HashSet<>(
                     Arrays.asList(MediaType.application("x-midi"), MediaType.audio("midi"))));
 
+    // MIDI sequence properties with no existing curated Property match.
+    private static final Property TRACKS = Property.internalInteger("midi:tracks");
+    private static final Property PATCHES = Property.internalInteger("midi:patches");
+    private static final Property DIVISION_TYPE = Property.internalClosedChoice("midi:division-type",
+            "PPQ", "SMPTE_24", "SMPTE_25", "SMPTE_30", "SMPTE_30DROP");
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "audio/midi");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -71,23 +79,22 @@ public class MidiParser implements Parser {
             Sequence sequence = MidiSystem.getSequence(tis);
 
             Track[] tracks = sequence.getTracks();
-            metadata.set("tracks", String.valueOf(tracks.length));
-            // TODO: Use XMPDM.TRACKS?
+            metadata.set(TRACKS, tracks.length);
 
             Patch[] patches = sequence.getPatchList();
-            metadata.set("patches", String.valueOf(patches.length));
+            metadata.set(PATCHES, patches.length);
 
             float type = sequence.getDivisionType();
             if (type == Sequence.PPQ) {
-                metadata.set("divisionType", "PPQ");
+                metadata.set(DIVISION_TYPE, "PPQ");
             } else if (type == Sequence.SMPTE_24) {
-                metadata.set("divisionType", "SMPTE_24");
+                metadata.set(DIVISION_TYPE, "SMPTE_24");
             } else if (type == Sequence.SMPTE_25) {
-                metadata.set("divisionType", "SMPTE_25");
+                metadata.set(DIVISION_TYPE, "SMPTE_25");
             } else if (type == Sequence.SMPTE_30) {
-                metadata.set("divisionType", "SMPTE_30");
+                metadata.set(DIVISION_TYPE, "SMPTE_30");
             } else if (type == Sequence.SMPTE_30DROP) {
-                metadata.set("divisionType", "SMPTE_30DROP");
+                metadata.set(DIVISION_TYPE, "SMPTE_30DROP");
             }
 
             for (Track track : tracks) {

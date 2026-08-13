@@ -63,7 +63,7 @@ public interface XMPMM {
      * a derived rendition
      */
     Property RENDITION_CLASS =
-            Property.externalOpenChoise(PREFIX_ + "RenditionClass", "default", "draft", "low-res",
+            Property.externalOpenChoice(PREFIX_ + "RenditionClass", "default", "draft", "low-res",
                     "proof", "screen", "thumbnail");
 
     /**

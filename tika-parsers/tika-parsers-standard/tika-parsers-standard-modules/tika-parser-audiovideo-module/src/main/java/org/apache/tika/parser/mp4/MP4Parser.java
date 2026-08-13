@@ -45,8 +45,10 @@ import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.Video;
 import org.apache.tika.metadata.XMPDM;
@@ -144,7 +146,7 @@ public class MP4Parser implements Parser {
         // Despite the brand, if we ONLY have audio streams with no video
         if (isAudioOnly(mp4Directories)) {
             // Mark this as audio/mp4
-            metadata.set(Metadata.CONTENT_TYPE, AUDIO_MP4.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, AUDIO_MP4.toString());
         }
 
         for (String m : errorMessages) {
@@ -180,8 +182,8 @@ public class MP4Parser implements Parser {
     }
 
     private void processMp4VideoDirectory(Mp4VideoDirectory mp4Directory, Metadata metadata) {
-        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_HEIGHT, Metadata.IMAGE_LENGTH);
-        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_WIDTH, Metadata.IMAGE_WIDTH);
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_HEIGHT, TIFF.IMAGE_LENGTH);
+        addInt(mp4Directory, metadata, Mp4VideoDirectory.TAG_WIDTH, TIFF.IMAGE_WIDTH);
         if (mp4Directory.containsTag(Mp4VideoDirectory.TAG_COMPRESSOR_NAME)) {
             String compressor = mp4Directory.getString(Mp4VideoDirectory.TAG_COMPRESSOR_NAME);
             metadata.set(XMPDM.VIDEO_COMPRESSOR, compressor);
@@ -326,10 +328,10 @@ public class MP4Parser implements Parser {
             }
         }
         MediaType type = typeHolder.orElse(MediaType.application("mp4"));
-        if (metadata.getValues(Metadata.CONTENT_TYPE) == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        if (metadata.getValues(HttpHeaders.CONTENT_TYPE) == null) {
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         } else if (! type.equals(APPLICATION_MP4)) { //todo check for specialization?
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
         if (type.getType().equals("audio") && ! StringUtils.isBlank(majorBrand)) {
             metadata.set(XMPDM.AUDIO_COMPRESSOR, majorBrand.trim());

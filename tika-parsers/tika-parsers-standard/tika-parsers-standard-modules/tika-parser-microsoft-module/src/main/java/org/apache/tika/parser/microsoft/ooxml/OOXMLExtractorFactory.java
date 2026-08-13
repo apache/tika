@@ -37,6 +37,7 @@ import org.apache.tika.detect.microsoft.ooxml.OPCPackageDetector;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -98,7 +99,7 @@ public class OOXMLExtractorFactory {
             }
 
             MediaType type = null;
-            String mediaTypeString = metadata.get(Metadata.CONTENT_TYPE);
+            String mediaTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
             if (mediaTypeString != null) {
                 type = MediaType.parse(mediaTypeString);
             }
@@ -115,7 +116,7 @@ public class OOXMLExtractorFactory {
                 EmptyParser.INSTANCE.parse(tis, baseHandler, metadata, context);
                 return;
             }
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
 
             // Detect format and create the appropriate extractor
             String coreContentType = getCorePartContentType(pkg);

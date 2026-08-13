@@ -29,6 +29,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -153,7 +154,7 @@ public class HeicXmpTest {
         Files.write(file, heicWithXmp());
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/heic");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/heic");
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             new HeifParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -171,7 +172,7 @@ public class HeicXmpTest {
         Files.write(file, bareItemHeic());
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/heic");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/heic");
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             new HeifParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }

@@ -87,4 +87,14 @@ public class MetadataKeyValidatorTest {
         assertTrue(real.isLegitimate("dc:title:fr"));
         assertFalse(real.isLegitimate("totally:made:up:key"));
     }
+
+    @Test
+    public void moduleOfAttributesRealRegistryEntries() {
+        // TIKA-4816 stage 5a: module attribution, both a CLOSED key and an OPEN prefix instance,
+        // the latter from a family the scope expansion newly brought in (not tika-core/standard).
+        MetadataKeyValidator real = MetadataKeyValidator.fromClasspath();
+        assertEquals("tika-core", real.moduleOf("dc:title"));
+        assertEquals("tika-parser-scientific-module", real.moduleOf("netcdf:some-global-attribute"));
+        assertEquals("", real.moduleOf("totally:made:up:key"));   // UNKNOWN -> unattributed
+    }
 }

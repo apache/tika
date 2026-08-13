@@ -32,6 +32,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -67,7 +68,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         Metadata metadata = metadataList.get(0);
         assertEquals("Nikolai Lobachevsky", metadata.get("author"));
-        assertEquals("application/mock+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("some content", metadata.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("null pointer message", metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 

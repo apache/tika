@@ -40,6 +40,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -189,8 +190,8 @@ public class JDBCTableReader {
         m.set(Database.PREFIX + "IS_CLOB", "true");
         m.set(Database.PREFIX + "CLOB_LENGTH", Long.toString(clob.length()));
         m.set(Database.PREFIX + "IS_CLOB_TRUNCATED", Boolean.toString(truncated));
-        m.set(Metadata.CONTENT_TYPE, "text/plain; charset=UTF-8");
-        m.set(Metadata.CONTENT_LENGTH, Integer.toString(readSize));
+        m.set(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        m.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(readSize));
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                 //just in case something screwy is going on with the column name
                 FilenameUtils.normalize(FilenameUtils.getName(columnName + "_" + rowNum + ".txt")));

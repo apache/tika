@@ -31,6 +31,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.Property;
@@ -117,21 +118,6 @@ public class PDMetadataExtractor {
         //silently skip adding property that already exists if multiple values are not permitted
     }
 
-    static void addMetadata(Metadata metadata, String name, String value) {
-        if (value != null) {
-            String decoded = decode(value);
-            if (StringUtils.isBlank(decoded)) {
-                return;
-            }
-            for (String v : metadata.getValues(name)) {
-                if (v.equals(decoded)) {
-                    return;
-                }
-            }
-            metadata.add(name, decoded);
-        }
-    }
-
     static String decode(String value) {
         if (PDFEncodedStringDecoder.shouldDecode(value)) {
             PDFEncodedStringDecoder d = new PDFEncodedStringDecoder();
@@ -150,18 +136,47 @@ public class PDMetadataExtractor {
      * Used when processing custom metadata entries, as PDFBox won't do
      * the conversion for us in the way it does for the standard ones
      */
-    static void addMetadata(Metadata metadata, String name, COSBase value) {
+    static void addMetadata(Metadata metadata, Property property, COSBase value) {
         if (value instanceof COSArray) {
             for (Object v : ((COSArray) value).toList()) {
-                addMetadata(metadata, name, ((COSBase) v));
+                addMetadata(metadata, property, ((COSBase) v));
             }
         } else if (value instanceof COSString) {
-            addMetadata(metadata, name, ((COSString) value).getString());
+            addMetadata(metadata, property, ((COSString) value).getString());
         }
         // Avoid calling COSDictionary#toString, since it can lead to infinite
         // recursion. See TIKA-1038 and PDFBOX-1835.
         else if (value != null && !(value instanceof COSDictionary)) {
-            addMetadata(metadata, name, value.toString());
+            addMetadata(metadata, property, value.toString());
         }
+    }
+
+    /** Doc-derived custom docinfo names: same decode/dedup as above, prefix route. */
+    static void addMetadata(Metadata metadata, KeyPrefix prefix, String name, COSBase value) {
+        if (value instanceof COSArray) {
+            for (Object v : ((COSArray) value).toList()) {
+                addMetadata(metadata, prefix, name, ((COSBase) v));
+            }
+        } else if (value instanceof COSString) {
+            addMetadata(metadata, prefix, name, ((COSString) value).getString());
+        } else if (value != null && !(value instanceof COSDictionary)) {
+            addMetadata(metadata, prefix, name, value.toString());
+        }
+    }
+
+    static void addMetadata(Metadata metadata, KeyPrefix prefix, String name, String value) {
+        if (name == null || name.isBlank() || value == null || value.isBlank()) {
+            return;
+        }
+        String decoded = decode(value);
+        if (StringUtils.isBlank(decoded)) {
+            return;
+        }
+        for (String v : metadata.getValues(prefix.key(name))) {
+            if (v.equals(decoded)) {
+                return;
+            }
+        }
+        metadata.add(prefix, name, decoded);
     }
 }

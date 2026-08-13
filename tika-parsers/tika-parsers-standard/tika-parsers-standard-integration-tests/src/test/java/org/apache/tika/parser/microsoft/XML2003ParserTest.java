@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -63,7 +64,7 @@ public class XML2003ParserTest extends TikaTest {
         assertEquals("1", m.get(Office.PARAGRAPH_COUNT));
         assertEquals("Allison, Timothy B.", m.get(TikaCoreProperties.CREATOR));
         assertEquals("2016-04-27T17:49:00Z", m.get(TikaCoreProperties.CREATED));
-        assertEquals("application/vnd.ms-wordml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-wordml", m.get(HttpHeaders.CONTENT_TYPE));
 
         //make sure embedded docs were properly processed
         assertContains("moscow-birds",

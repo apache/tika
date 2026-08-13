@@ -28,6 +28,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -66,7 +67,7 @@ public class SpreadsheetMLParser extends AbstractXML2003Parser {
 
     @Override
     public void setContentType(Metadata metadata) {
-        metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE.toString());
     }
 
     private static class ExcelMLHandler extends DefaultHandler {

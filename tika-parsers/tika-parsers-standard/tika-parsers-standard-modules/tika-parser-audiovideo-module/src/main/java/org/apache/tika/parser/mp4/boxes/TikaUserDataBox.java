@@ -31,6 +31,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
@@ -240,11 +241,11 @@ public class TikaUserDataBox {
         //the data atom's well-known value type declares the image format;
         //for any other type leave the content type for auto-detection
         if (valueType == 13) {
-            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         } else if (valueType == 14) {
-            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/png");
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         } else if (valueType == 27) {
-            pictureMetadata.set(Metadata.CONTENT_TYPE, "image/bmp");
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/bmp");
         }
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);

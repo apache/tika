@@ -24,6 +24,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -67,7 +68,7 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
             entrydata.set(TikaCoreProperties.MODIFIED, modifiedAt);
         }
         if (size != null) {
-            entrydata.set(Metadata.CONTENT_LENGTH, Long.toString(size));
+            entrydata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
         }
         if (name != null && name.length() > 0) {
             name = name.replace("\\", "/");

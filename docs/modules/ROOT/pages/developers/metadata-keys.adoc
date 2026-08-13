@@ -16,17 +16,30 @@
 = Adding a Metadata Key
 
 Every metadata key Tika can emit is a `Property` constant (or, for runtime-minted names like scraped
-HTML `<meta>` tags, a `PassthroughPrefix`) — there are no bare `String` keys. That closed/open key
+HTML `<meta>` tags, a `KeyPrefix`) — there are no bare `String` keys naming a population of writable
+metadata. (One `String` constant remains as an exception: `TikaCoreProperties.EMBEDDED_RESOURCE_TYPE_KEY`
+is an internal building block that constructs the `Property` name for `EMBEDDED_RESOURCE_TYPE` — not an
+independent key — and is excluded from the registry's key count for that reason.) That closed/open key
 space is tracked in a generated, build-gated registry, so adding a key involves one extra step beyond
 writing the Java.
 
 == Add the constant
 
-Add the `Property` to its interface as usual:
+A curated `tk:` key can only be minted from inside `org.apache.tika.metadata`, via the
+package-private `reserved*` factories -- a public `Property` factory rejects a `tk:`/`X-TIKA:`
+name at construction time. Add it to `TikaCoreProperties` (or another class in that package)
+as usual:
 
 [source,java]
 ----
-Property MY_NEW_KEY = Property.internalText(TIKA_META_PREFIX + "my-new-key");
+Property MY_NEW_KEY = Property.reservedInternalText(TIKA_META_PREFIX + "my-new-key");
+----
+
+A parser module coining its own key uses a public factory in its own namespace instead:
+
+[source,java]
+----
+Property MY_NEW_KEY = Property.internalText("myformat:my-new-key");
 ----
 
 Naming conventions (frozen for 4.0):
@@ -36,14 +49,34 @@ Naming conventions (frozen for 4.0):
   `cp:`, `extended-properties:`).
 * HTTP headers stay bare — no `http:` namespace (`Content-Type`, `Content-Encoding`, `Location`).
 
+== Document-derived names: declare a KeyPrefix
+
+When the key *names* come from the document or an external tool (custom document properties,
+format-specific attribute names, NER labels), they can't be constants. Declare a `KeyPrefix`
+once, as a `static final` field — never per-parse, never from document text — and write through
+`Metadata#add(KeyPrefix, String, String)`:
+
+[source,java]
+----
+static final KeyPrefix MYFORMAT = KeyPrefix.file("myformat:", "myformat's own header fields");
+...
+metadata.add(MYFORMAT, nameFromDocument, value);              // String value
+metadata.add(MYFORMAT, nameFromDocument, date.toInstant());   // source-typed date
+----
+
+The route is append-only (repeated names accumulate, losslessly transcribing the source) and
+never throws on hostile input: blank, over-length, or flooding names are skipped with a WARN.
+Use `KeyPrefix.file(...)` for names read out of the document, `KeyPrefix.tool(...)` for names
+coined by an external tool or service.
+
 == Regenerate the registry
 
 The registry — three JSON files under `tika-metadata-schema/src/main/resources/`, listing every
 declared key, every open-namespace prefix, and a field-provenance table — is generated from the live
-`Property`/`PassthroughPrefix` declarations, never hand-edited. A committed copy is the reviewable
+`Property`/`KeyPrefix` declarations, never hand-edited. A committed copy is the reviewable
 audit trail (a rename or dropped key shows up as a diff), and CI fails if it's stale.
 
-Run this after adding, renaming, or removing a `Property` or `PassthroughPrefix`:
+Run this after adding, renaming, or removing a `Property` or `KeyPrefix`:
 
 [source,bash]
 ----

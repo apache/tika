@@ -231,7 +231,18 @@ public class JDBCPipesIterator extends PipesIteratorBase {
             if (!isUsed) {
                 String val = getString(i, rs);
                 if (!StringUtils.isBlank(val)) {
-                    metadata.set(headers.get(i - 1), val);
+                    String header = headers.get(i - 1);
+                    try {
+                        //map-style user metadata: the column label is kept verbatim; the String
+                        //route's guard rejects reserved names. No Property -- externalText here
+                        //interned every distinct label forever and could first-wins-shadow a
+                        //curated constant (a column named dc:creator).
+                        metadata.set(header, val);
+                    } catch (IllegalArgumentException e) {
+                        //column label collides with a reserved Tika-native key; skip this
+                        //column rather than aborting the whole row
+                        LOGGER.warn("skipping reserved-name column '{}': {}", header, e.getMessage());
+                    }
                 }
             }
         }
