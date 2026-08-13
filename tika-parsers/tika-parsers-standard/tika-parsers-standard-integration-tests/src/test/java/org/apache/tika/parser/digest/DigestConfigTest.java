@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -99,7 +100,7 @@ public class DigestConfigTest extends TikaTest {
         ParseContext context = loader.loadParseContext();
         List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p, context);
         for (Metadata m : metadataList) {
-            assertNotNull(m.get(Metadata.CONTENT_LENGTH));
+            assertNotNull(m.get(HttpHeaders.CONTENT_LENGTH));
         }
     }
 
@@ -178,7 +179,7 @@ public class DigestConfigTest extends TikaTest {
         ParseContext context = loader.loadParseContext();
         List<Metadata> metadataList = getRecursiveMetadata("test_recursive_embedded.docx", p, context);
         for (Metadata m : metadataList) {
-            assertNotNull(m.get(Metadata.CONTENT_LENGTH));
+            assertNotNull(m.get(HttpHeaders.CONTENT_LENGTH));
         }
     }
 }

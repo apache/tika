@@ -29,6 +29,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -61,7 +62,7 @@ public class ChmParser implements Parser {
         ChmExtractor chmExtractor = new ChmExtractor(tis);
 
         // metadata
-        metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
 
         // content
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

@@ -24,6 +24,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -48,9 +49,9 @@ public class HeifParserTest extends TikaTest {
             assertEquals("heic", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Major Brand"));
             assertEquals("512 pixels", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Width"));
             assertEquals("512 pixels", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Height"));
-            assertEquals("image/heic", metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("23.177917", metadata.get(Metadata.LATITUDE));
-            assertEquals("113.394317", metadata.get(Metadata.LONGITUDE));
+            assertEquals("image/heic", metadata.get(HttpHeaders.CONTENT_TYPE));
+            assertEquals("23.177917", metadata.get(Geographic.LATITUDE));
+            assertEquals("113.394317", metadata.get(Geographic.LONGITUDE));
             assertEquals("42.810337", metadata.get(Geographic.ALTITUDE));
 
             assertEquals("2018-02-05T07:11:43Z", metadata.get(Geographic.TIMESTAMP));

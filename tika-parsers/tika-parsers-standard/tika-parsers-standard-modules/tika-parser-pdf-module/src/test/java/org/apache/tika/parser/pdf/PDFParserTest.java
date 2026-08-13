@@ -19,12 +19,15 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -41,18 +44,23 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.metadata.XMP;
@@ -69,6 +77,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Test case for parsing pdf files.
@@ -111,7 +121,7 @@ public class PDFParserTest extends TikaTest {
         XMLResult r = getXML("testPDF.pdf");
         Metadata metadata = r.metadata;
         String xml = r.xml;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
@@ -144,7 +154,7 @@ public class PDFParserTest extends TikaTest {
     public void testPdfParsingMetadataOnly() throws Exception {
 
         Metadata metadata = getXML("testPDF.pdf").metadata;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
@@ -155,7 +165,7 @@ public class PDFParserTest extends TikaTest {
 
         XMLResult r = getXML("testPDF-custommetadata.pdf");
         Metadata metadata = r.metadata;
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
 
@@ -179,7 +189,7 @@ public class PDFParserTest extends TikaTest {
         XMLResult r = getXML("testPDF_protected.pdf");
         Metadata metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane",
                 metadata.get(TikaCoreProperties.SUBJECT));
@@ -206,7 +216,7 @@ public class PDFParserTest extends TikaTest {
         metadata = r.metadata;
         assertEquals("true", metadata.get("pdf:encrypted"));
 
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
         assertEquals(
@@ -235,7 +245,7 @@ public class PDFParserTest extends TikaTest {
             ex = true;
         }
         assertTrue(ex, "encryption exception");
-        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("true", metadata.get("pdf:encrypted"));
         //pdf:encrypted, X-Parsed-By and Content-Type
         assertEquals(9, metadata.names().length, "very little metadata should be parsed");
@@ -1371,11 +1381,11 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf", context);
         assertNull(context.get(MetadataOnlyParse.class));
         assertEquals(2, metadataList.size());
-        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals("/image-0.png",
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
-        assertEquals(261, (int) metadataList.get(1).getInt(Metadata.IMAGE_LENGTH));
-        assertEquals(934, (int) metadataList.get(1).getInt(Metadata.IMAGE_WIDTH));
+        assertEquals(261, (int) metadataList.get(1).getInt(TIFF.IMAGE_LENGTH));
+        assertEquals(934, (int) metadataList.get(1).getInt(TIFF.IMAGE_WIDTH));
         assertEquals("image-0.png", metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
@@ -1400,9 +1410,9 @@ public class PDFParserTest extends TikaTest {
         assertNull(context.get(MetadataOnlyParse.class));
         assertEquals(2, metadataList.size());
         Metadata image = metadataList.get(1);
-        assertEquals("image/png", image.get(Metadata.CONTENT_TYPE));
-        assertEquals(261, (int) image.getInt(Metadata.IMAGE_LENGTH));
-        assertEquals(934, (int) image.getInt(Metadata.IMAGE_WIDTH));
+        assertEquals("image/png", image.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(261, (int) image.getInt(TIFF.IMAGE_LENGTH));
+        assertEquals(934, (int) image.getInt(TIFF.IMAGE_WIDTH));
         //the placeholder must not be dispatched to any content parser. Without the
         //fix it is (EmptyParser here; ImageParser+TesseractOCRParser when tesseract
         //is installed, which is what records the spurious embedded exception).
@@ -1452,9 +1462,9 @@ public class PDFParserTest extends TikaTest {
     public void testEmbeddedRichMedia() throws Exception {
         List<Metadata> metadata = getRecursiveMetadata("testFlashInPDF.pdf");
         assertEquals(2, metadata.size());
-        assertEquals("application/x-shockwave-flash", metadata.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-shockwave-flash", metadata.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals("TestMovie02.swf", metadata.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals("15036", metadata.get(1).get(Metadata.CONTENT_LENGTH));
+        assertEquals("15036", metadata.get(1).get(HttpHeaders.CONTENT_LENGTH));
         assertEquals("RichMedia", metadata.get(0).getValues(PDF.ANNOTATION_SUBTYPES)[0]);
         assertEquals("RM1", metadata.get(0).getValues(PDF.ANNOTATION_TYPES)[0]);
     }
@@ -1486,7 +1496,7 @@ public class PDFParserTest extends TikaTest {
         //I changed the extension to pdf to make sure that the detection is
         //coming from the structural chek we're now doing.
         List<Metadata> metadataList = getRecursiveMetadata("testPDF_AdobeIllustrator.pdf");
-        assertEquals("application/illustrator", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/illustrator", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         //we should try to find a small illustrator file xmp and the structural
         //components we're looking for.
     }
@@ -1518,6 +1528,93 @@ public class PDFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testOCR.pdf");
         assertEquals(1, metadataList.size());
         assertEquals(1, metadataList.get(0).getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    /**
+     * TIKA-4813 follow-up: a single page's OCR call timing out must not abort the whole
+     * document -- earlier and later pages' content must still reach the handler, and the
+     * timeout must still be recorded (not silently swallowed) rather than the parse
+     * quietly reporting success as if nothing happened.
+     */
+    @Test
+    public void testOCRPageTimeoutDoesNotAbortWholeDocument() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new Parser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(
+                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException, TikaException {
+                OCRPageCounter counter = context.get(OCRPageCounter.class);
+                int currentPage = counter.getCount();
+                if (currentPage == 2) {
+                    throw new TikaTimeoutException("simulated OCR timeout on page 2", 1000, 1000);
+                }
+                // A raw handler.characters() call is silently dropped here: the caller
+                // wraps this parser's handler in a BodyContentHandler, which only passes
+                // through characters() between its own <body> start/end events -- a real
+                // OCR parser (Tesseract, etc.) always writes through XHTMLContentHandler,
+                // which emits that wrapper itself, so mirror that here too.
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.characters("OCR-PAGE-" + currentPage + "-TEXT");
+                xhtml.endDocument();
+            }
+        });
+
+        // Call PDFParser directly rather than going through RecursiveParserWrapper/
+        // AutoDetectParser (as getRecursiveMetadata does): RecursiveParserWrapper installs
+        // its own Parser.class entry in the ParseContext for its embedded-recursion
+        // bookkeeping, clobbering the mock set above before AbstractPDF2XHTML's
+        // constructor ever reads it.
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler xmlHandler = new ToXMLContentHandler();
+        TikaException thrown = null;
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            new PDFParser().parse(tis, xmlHandler, metadata, context);
+        } catch (TikaException e) {
+            thrown = e;
+        }
+        String xml = xmlHandler.toString();
+
+        // testPDF_bookmarks.pdf has 2 pages; OCR_ONLY forces OCR on every page regardless
+        // of real text content, so page 1 succeeds and page 2's mock throws.
+        assertContainsCount("<div class=\"page\">", xml, 1);
+        assertContainsCount("<div class=\"page\" />", xml, 1);
+        assertContains("OCR-PAGE-1-TEXT", xml);
+        assertNotContained("OCR-PAGE-2-TEXT", xml);
+        assertEquals(2, metadata.getInt(PDF.OCR_PAGE_COUNT),
+                "both pages must have been attempted, not just the one before the timeout");
+
+        assertNotNull(thrown,
+                "the recorded timeout must still surface as an overall parse failure once " +
+                        "every page has been attempted, not be silently swallowed");
+        boolean sawTikaTimeoutExceptionInChain = false;
+        for (Throwable t = thrown; t != null; t = t.getCause()) {
+            if (t instanceof TikaTimeoutException) {
+                sawTikaTimeoutExceptionInChain = true;
+                break;
+            }
+        }
+        assertTrue(sawTikaTimeoutExceptionInChain,
+                "the original TikaTimeoutException must be reachable in the cause chain");
+
+        boolean sawTimeoutWarning = false;
+        for (String warning : metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)) {
+            if (warning.contains("simulated OCR timeout on page 2")) {
+                sawTimeoutWarning = true;
+            }
+        }
+        assertTrue(sawTimeoutWarning,
+                "the timeout must be recorded, not silently dropped, once caught and continued past");
     }
     /**
      * TODO -- need to test signature extraction

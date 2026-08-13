@@ -41,14 +41,14 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
@@ -166,12 +166,8 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         String mimeType = detectMimeType(metadata);
         String base64Data = Base64.getEncoder().encodeToString(imageBytes);
 
-        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                parseContext, config.getTimeoutSeconds() * 1000L);
-        int timeoutSeconds = (int) (timeoutMillis / 1000L);
-
-        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, timeoutSeconds);
-        TikaProgressTracker.update(parseContext);
+        float[] vector = callEmbeddingEndpoint(config, mimeType, base64Data, config.getTimeoutMillis(), parseContext);
+        ParseTimeout.checkpoint(parseContext);
 
         Locators locators = buildLocators(metadata);
         Chunk chunk = new Chunk(null, locators);
@@ -196,7 +192,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     float[] callEmbeddingEndpoint(ImageEmbeddingConfig config,
                                   String mimeType, String base64Data,
-                                  int timeoutSeconds)
+                                  long timeoutMillis, ParseContext parseContext)
             throws IOException, TikaException {
 
         String requestJson = buildRequest(config, mimeType, base64Data);
@@ -207,7 +203,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             headers.put(apiKeyHeaderName, apiKeyPrefix + config.getApiKey());
         }
 
-        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutSeconds);
+        String responseBody = httpClient.postJson(url, requestJson, headers, timeoutMillis, parseContext);
         return parseResponse(responseBody);
     }
 
@@ -275,7 +271,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
     }
 
     private String detectMimeType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/")) {
@@ -339,12 +335,12 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         defaultConfig.setApiKey(apiKey);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public boolean isSkipEmbedding() {

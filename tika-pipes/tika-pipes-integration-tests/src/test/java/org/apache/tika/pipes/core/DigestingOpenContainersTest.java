@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -51,7 +52,7 @@ public class DigestingOpenContainersTest extends TikaTest {
                 autoDetectParser, parseContext);
         assertEquals(expectedSha, metadataList.get(2).get("tk:digest:SHA-256"));
         assertNull(metadataList.get(2).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
-        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(Metadata.CONTENT_LENGTH)));
+        assertEquals(2049290L, Long.parseLong(metadataList.get(2).get(HttpHeaders.CONTENT_LENGTH)));
     }
 
     private TikaLoader getLoader(String config) {

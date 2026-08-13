@@ -115,7 +115,7 @@ Simple PUT — the entire request body is the document, no metadata:
 
 [source,bash]
 ----
-# Default: raw XHTML
+# Default: raw Markdown
 curl -T document.pdf http://localhost:9998/tika
 
 # Explicit handler
@@ -129,16 +129,16 @@ POST with multipart for custom per-request configuration:
 
 [source,bash]
 ----
-curl -X POST http://localhost:9998/tika/json \
+curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
   -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
 ----
 
-Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json`. For
-the JSON variant, you can also nest a handler — `/tika/json/text`,
-`/tika/json/html`, etc. — to choose the content-field format inside the JSON
-envelope; that nested handler accepts the full set (`text`, `html`, `xml`,
-`md`, `markdown`, `body`, `ignore`).
+Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json` (bare
+`/tika` returns Markdown). For the JSON variant, you can also nest a handler —
+`/tika/json/text`, `/tika/json/html`, etc. — to choose the content-field format
+inside the JSON envelope; that nested handler accepts the full set (`text`,
+`txt`, `html`, `xml`, `md`, `markdown`, `body`, `ignore`).
 
 === Recursive Metadata (`/rmeta`)
 
@@ -159,9 +159,13 @@ curl -T document.pdf http://localhost:9998/rmeta/ignore     # metadata only
 
 Returns container-document metadata only (no recursive embedded list, no content):
 
+With no `Accept` header, `/meta` returns JSON; request `text/csv` or
+`application/rdf+xml` for the other representations.
+
 [source,bash]
 ----
-curl -T document.pdf http://localhost:9998/meta
+curl -T document.pdf http://localhost:9998/meta                # default: JSON
+curl -T document.pdf -H 'Accept: text/csv' http://localhost:9998/meta
 curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 ----
 
@@ -172,15 +176,31 @@ curl -T document.pdf http://localhost:9998/meta/Content-Type   # single field
 * `/parsers` and `/parsers/details` — registered parsers
 * `/detectors` — registered detectors
 * `/mime-types` — known MIME types
-* `/detect/stream` — type detection only (no parsing)
-* `/language/stream`, `/language/string` — language detection
-* `/translate/all/\{translator}/\{src}/\{dest}` — translation
+* `/detect` — type detection only (no parsing)
+* `/language` — language detection
 * `/pipes`, `/async` — Pipes-based bulk processing
 
 NOTE: `/pipes` and `/async` require `allowPipes` (they drive process-isolated fetching
 and parsing); selecting either without it causes the server to refuse to start. `/status`
 is a plain opt-in endpoint — enable it simply by listing it under `endpoints`. See
 <<_security_configuration,Security Configuration>>.
+
+WARNING: `/language` does its work *in the server's own JVM*, not in a forked pipes worker.
+It is therefore outside the process isolation that protects `/tika`, `/rmeta`, `/meta`,
+`/detect`, and `/unpack` — a crash or memory exhaustion takes the server with it rather than
+one worker.
+
+`/language` caps detection at the first 100,000 characters, since accuracy saturates well
+before that. It reads at most that much from the body without materializing the rest, so the
+cap bounds both the CPU and the heap used per request. `maxRequestSizeBytes` (default 1 GiB)
+still bounds what a request may send at all; raise it for larger documents, or set a negative
+value to remove the limit. Treat the server as available only to trusted callers, the same as
+the rest of the server — see xref:security.adoc[the security model]. If you do not need
+`/language`, omit it from `endpoints`.
+
+NOTE: `/detect` runs in a forked pipes worker like the parsing endpoints. Detection opens
+containers — zip, OPC, POIFS — over caller-supplied bytes, so it gets the same isolation,
+timeouts, and worker restart. It does not require `allowPipes`.
 
 == Error Responses
 
@@ -199,9 +219,8 @@ JSON body whose shape matches the `PipesResult` status:
 {"status": "TIMEOUT"}
 ----
 
-The `status` field is the `PipesResult.RESULT_STATUS` enum name. By default the body
-carries only the `status`. When the server is configured with `returnStackTrace=true`,
-a `message` field is also included (it often contains a server-side stack trace), e.g.
+The `status` field is the `PipesResult.RESULT_STATUS` enum name. A `message` field is
+included when one is available, and often contains a server-side stack trace, e.g.
 `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 [cols="1,1,3"]
@@ -211,19 +230,31 @@ a `message` field is also included (it often contains a server-side stack trace)
 |`503 Service Unavailable`
 |`TIMEOUT`, `OOM`, `UNSPECIFIED_CRASH`
 |The forked parse process actually failed (crashed, OOM'd, or exceeded its timeout).
-The server is still healthy; the client may retry.
+The server is still healthy; the response carries a `Retry-After` header and the client may retry.
 
 |`429 Too Many Requests`
 |`CLIENT_UNAVAILABLE_WITHIN_MS`
 |Nothing failed — no parse client became available within the configured wait time
 (deliberate backpressure, not a bug; see <<_endpoints_and_forked_process_groups,Endpoints
-and Forked-Process Groups>>). Distinct from `503` above on purpose: a `429` spike means
-"raise `numClients` or add capacity," a `503` spike means "something is actually
-crashing" — you can tell them apart from the status code alone.
+and Forked-Process Groups>>). The response carries a `Retry-After` header. Distinct from
+`503` above on purpose: a `429` spike means "raise `numClients` or add capacity," a `503`
+spike means "something is actually crashing" — you can tell them apart from the status code alone.
+
+|`400 Bad Request`
+|`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`
+|The request named a fetcher or emitter that does not exist, or one reserved for the
+server's internal use. The request is permanently malformed — retrying it unchanged will
+not help; fix the fetcher/emitter id.
+
+|`413 Payload Too Large`
+|`PAYLOAD_LIMIT_EXCEEDED`
+|The parse *result* was too large for the pipes IPC channel (`pipes.maxIpcPayloadBytes`).
+Distinct from a request *body* over `maxRequestSizeBytes`, which a request filter rejects
+with a plain-text `413` (declared `Content-Length` and chunked bodies alike) before any
+parsing starts.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
-`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`,
 `FETCHER_INITIALIZATION_EXCEPTION`, `EMITTER_INITIALIZATION_EXCEPTION`
 |Server misconfiguration or a task-level infrastructure error. Retrying the same
 document on the same server is unlikely to succeed without a configuration fix.
@@ -252,11 +283,11 @@ within an `/rmeta` list), alongside whatever content and metadata were captured.
 Partial success is meaningful here — a batch/list response, or a structured object
 with room for an extra field.
 
-|`/tika`'s raw endpoints (`text`, `html`, `xml`, `md`)
+|the bare `/tika` and its raw endpoints (`text`, `html`, `xml`, `md`)
 |`422 Unprocessable Entity`
 |A raw byte-stream response has no field to embed the exception in, so the status
-itself signals the failure — but the body still carries whatever content was
-actually extracted, not an empty or generic error body.
+itself signals the failure. The body carries the extracted content only — the
+exception is not appended to it; use `/rmeta` for the structured exception.
 
 |`/meta/\{field}`
 |`422 Unprocessable Entity`
@@ -270,13 +301,38 @@ any files already unpacked before the exception are discarded. This is a known
 gap, not yet addressed.
 |===
 
-By default (`returnStackTrace=false`), any exception text exposed this way is trimmed
-to just the exception's class and message — not the full stack trace, which can
-reveal internal file paths and library internals. For the `200 OK` family the
-trimmed field is still always present when a failure occurred, so callers can detect
-it either way; for the `422` family, the body carries no exception text at all unless
-`returnStackTrace=true`. Set `returnStackTrace=true` to get the full trace — useful
-in development, best left off in production.
+[IMPORTANT]
+====
+Exception detail is returned in full, and Tika does not redact it.
+
+Stack traces and their messages can contain the spooled file's path, the source
+filename, and fragments of the document. That detail appears in `tk:exception:*`
+metadata on **successful** parses as well as in error bodies — including inside the
+`*.metadata.json` entries of an `/unpack` zip — so there is no single switch that keeps
+it inside the server.
+
+A `returnStackTrace` setting previously suggested otherwise. It governed only the error
+body, left the metadata untouched, and has been removed rather than left in place
+implying a boundary it did not provide.
+
+If Tika's output is forwarded somewhere less trusted than the server itself, filter it
+on the way out: configure a `MetadataFilter` to drop the fields you do not want, and
+treat the whole response as potentially containing document-derived text.
+====
+
+=== Truncated results (`PARTIAL_TIMEOUT`)
+
+A third case is neither of the above: the worker is healthy, and no exception was
+caught, but the document's total task timeout (`totalTaskTimeoutMillis`) ran out
+partway through, so any not-yet-started embedded documents were skipped rather than
+attempted. This gets its own `PipesResult.RESULT_STATUS`, `PARTIAL_TIMEOUT`, which maps
+to `200 OK` on every endpoint (it is a success, just an incomplete one) alongside
+`PARSE_SUCCESS`, `PARSE_SUCCESS_WITH_EXCEPTION`, etc. The response carries
+`TikaCoreProperties.TASK_DEADLINE_REACHED = true` in its metadata and whatever content
+was extracted before the deadline hit. See
+xref:pipes/timeouts.adoc#_how_timeouts_are_reported[How Timeouts Are Reported] for the
+full mental model, including the pipes-mode `throwOnDeadline` option that trades this
+graceful truncation for a hard failure instead.
 
 == Configuration
 
@@ -304,13 +360,17 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 |`""` (off)
 |`*` to allow any origin, or an explicit origin string. Empty disables CORS.
 
-|`returnStackTrace`
-|`false`
-|Include parser stack traces in error responses. Useful in dev, dangerous in production (leaks internals).
+|`maxRequestSizeBytes`
+|`1 GiB`
+|Maximum request body in bytes; larger requests are rejected with `413`. Uploads are spooled to disk, so this bounds how much one request can write. Raise it for larger documents, or set a negative value to disable the limit.
 
-|`logLevel`
-|_inherited_
-|`debug` or `info` to override the runtime log level.
+|`maxQueuePauseMillis`
+|`60000`
+|How long a POST to `/async` blocks when the queue is full before it is rejected with `429` (`Retry-After`). A batch larger than the queue's total capacity is rejected immediately with `400` -- retrying cannot help; split the batch.
+
+|`requestLogLevel`
+|_empty (off)_
+|`debug` or `info` to log each request URI at that level. Empty (the default) disables request logging and does not change any other log level. A config using the old `logLevel` key fails to start.
 
 |`id`
 |random UUID
@@ -329,8 +389,8 @@ xref:migration-to-4x/migrating-tika-server-4x.adoc#_configuration_changes[Config
 
 Two independent forked-process groups exist:
 
-* **`/tika` + `/rmeta` + `/unpack` + `/meta` + `/pipes`** share one group —
-all five go through the same `PipesParsingHelper`/`PipesParser`, sized by
+* **`/tika` + `/rmeta` + `/unpack` + `/meta` + `/detect` + `/pipes`** share one group —
+all six go through the same `PipesParsingHelper`/`PipesParser`, sized by
 `pipes.numClients`. `/pipes` still requires `allowPipes` to actually start
 (the server refuses to start if it's listed without that flag) even though it
 shares its parser with the always-on endpoints; the others don't require
@@ -390,10 +450,12 @@ mitigation (scope `endpoints` to what you actually use, or set
 
 === Config Endpoint Protection
 
-By default, the `/config` family of endpoints that expose server configuration are
-disabled. These endpoints can reveal sensitive information about your server,
-including parser settings and system properties (see
-https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]).
+By default, the `/config` family of endpoints is disabled. These endpoints *accept*
+per-request configuration -- they do not reveal the server's own config -- and a
+caller-supplied config can enable dangerous operations, such as pointing parsers at
+attacker-chosen resources (see
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271] for the
+class of risk).
 
 Protected endpoints include:
 
@@ -418,9 +480,9 @@ your config file's `server` section:
 WARNING: Only enable `allowPerRequestConfig` if you have secured access to Tika
 Server through network controls (firewalls, private subnets), a reverse proxy
 (nginx, Apache httpd), or
-xref:using-tika/server/tls.adoc[2-way TLS authentication]. Exposing config endpoints
-to untrusted networks can help attackers identify vulnerabilities and craft
-targeted attacks.
+xref:using-tika/server/tls.adoc[2-way TLS authentication]. Per-request configuration
+lets callers change how documents are parsed, widening what anyone with access to the
+server can do.
 
 === Pipes and Async Endpoints
 

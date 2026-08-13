@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -40,10 +41,10 @@ public class FlacParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testFLAC_coverArt.flac");
 
         assertEquals(2, metadataList.size());
-        assertEquals("audio/x-flac", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/x-flac", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
 
         Metadata pictureMetadata = metadataList.get(1);
-        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
@@ -61,12 +62,12 @@ public class FlacParserTest extends TikaTest {
         assertEquals(3, metadataList.size());
 
         Metadata front = metadataList.get(1);
-        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
 
         Metadata back = metadataList.get(2);
-        assertEquals("image/png", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
     }

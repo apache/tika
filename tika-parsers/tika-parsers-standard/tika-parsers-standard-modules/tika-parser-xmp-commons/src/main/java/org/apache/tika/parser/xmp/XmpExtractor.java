@@ -35,11 +35,11 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Google;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
@@ -77,7 +77,7 @@ public class XmpExtractor {
     // tk: field. Best-effort discovery surface: keys use the document's prefix (not the URI)
     // and are non-contractual -- promote a field into TABLE when it needs a stable key.
     static final String RAW_PREFIX = "xmp-raw:";
-    static final PassthroughPrefix RAW = PassthroughPrefix.file(RAW_PREFIX, "unmapped XMP keys");
+    static final KeyPrefix RAW = KeyPrefix.file(RAW_PREFIX, "unmapped XMP keys");
     // strip a trailing array index so a raw bag/seq is one multi-valued key, not foo:Bag[1], foo:Bag[2]
     private static final Pattern TRAILING_INDEX = Pattern.compile("\\[\\d+\\]$");
 
@@ -427,7 +427,7 @@ public class XmpExtractor {
             return;
         }
         // unmapped: namespaced raw passthrough; a trailing array index collapses to a multi-valued key
-        metadata.add(RAW.key(TRAILING_INDEX.matcher(p.path).replaceFirst("")), value);
+        metadata.add(RAW, TRAILING_INDEX.matcher(p.path).replaceFirst(""), value);
     }
 
     private void emit(Metadata metadata, Property prop, String value) {

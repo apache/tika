@@ -29,6 +29,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -108,8 +109,8 @@ public class Icu4jEncodingDetector implements EncodingDetector {
 
         CharsetDetector detector = new CharsetDetector(config.markLimit);
 
-        String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
-        String incomingType = metadata.get(Metadata.CONTENT_TYPE);
+        String incomingCharset = metadata.get(HttpHeaders.CONTENT_ENCODING);
+        String incomingType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (incomingCharset == null && incomingType != null) {
             // TIKA-341: Use charset in content-type
             MediaType mt = MediaType.parse(incomingType);

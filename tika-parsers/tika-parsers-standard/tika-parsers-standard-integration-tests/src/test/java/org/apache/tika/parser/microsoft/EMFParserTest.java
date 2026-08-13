@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -32,12 +33,12 @@ public class EMFParserTest extends TikaTest {
     public void testTextExtractionWindows() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF_windows.xls");
         Metadata emfMetadata = metadataList.get(1);
-        assertEquals("image/emf", emfMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/emf", emfMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("<p>testPDF.pdf</p>", emfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
 
         //this is just the usual embedded pdf
         Metadata pdfMetadata = metadataList.get(2);
-        assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", pdfMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("is a toolkit for detecting",
                 pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
@@ -48,7 +49,7 @@ public class EMFParserTest extends TikaTest {
         //this pdf has to be extracted from within the EMF
         //it does not exist as a standalone pdf file inside the _mac.xls file.
         Metadata pdfMetadata = metadataList.get(1);
-        assertEquals("application/pdf", pdfMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", pdfMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("is a toolkit for detecting",
                 pdfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }

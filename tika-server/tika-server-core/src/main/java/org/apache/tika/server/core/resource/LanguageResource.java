@@ -20,6 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Locale;
 
 import jakarta.ws.rs.Consumes;
@@ -27,7 +29,6 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,46 +41,57 @@ public class LanguageResource {
 
     // TIKA-4510: handle @PUT and @POST separately to avoid nondeterministic failures
     @PUT
-    @Path("/stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detectPutStream(final InputStream is) throws IOException {
+    public String detectPut(final InputStream is) throws IOException {
         return detectStream(is);
     }
 
     @POST
-    @Path("/stream")
     @Consumes("*/*")
     @Produces("text/plain")
-    public String detectPostStream(final InputStream is) throws IOException {
+    public String detectPost(final InputStream is) throws IOException {
         return detectStream(is);
     }
 
-    @PUT
-    @Path("/string")
-    @Consumes("*/*")
-    @Produces("text/plain")
-    public String detectPutString(final String string) throws IOException {
-        return detectString(string);
-    }
-
-    @POST
-    @Path("/string")
-    @Consumes("*/*")
-    @Produces("text/plain")
-    public String detectPostString(final String string) throws IOException {
-        return detectString(string);
-    }
+    /**
+     * Detection accuracy saturates within the first few thousand characters, so anything
+     * past this only buys work whose size the caller chooses. Input beyond it is ignored
+     * rather than rejected: the answer is the same either way, and rejecting would break
+     * callers who legitimately post whole documents.
+     * <p>
+     * This bounds the detection, not the request. This endpoint holds the text in the
+     * server's own heap instead of a pipes child, so a large enough body still costs memory
+     * before this class sees it; bounding the body itself is maxRequestSizeBytes' job.
+     */
+    public static final int MAX_DETECT_CHARS = 100_000;
 
     private String detectStream(InputStream is) throws IOException {
-        String fileTxt = IOUtils.toString(is, UTF_8);
-        return detectString(fileTxt);
+        return detectString(readAtMost(is, MAX_DETECT_CHARS));
+    }
+
+    /** Reads up to maxChars without materializing the rest of the stream. */
+    private static String readAtMost(InputStream is, int maxChars) throws IOException {
+        Reader reader = new InputStreamReader(is, UTF_8);
+        char[] buffer = new char[Math.min(maxChars, 8192)];
+        StringBuilder sb = new StringBuilder();
+        int read;
+        while (sb.length() < maxChars
+                && (read = reader.read(buffer, 0, Math.min(buffer.length, maxChars - sb.length()))) != -1) {
+            sb.append(buffer, 0, read);
+        }
+        return sb.toString();
     }
 
     private String detectString(String string) throws IOException {
+        String text = string;
+        if (text != null && text.length() > MAX_DETECT_CHARS) {
+            LOG.debug("truncating {} chars to {} for language detection", text.length(), MAX_DETECT_CHARS);
+            text = text.substring(0, MAX_DETECT_CHARS);
+        }
         LanguageResult language = LanguageDetector.getDefaultLanguageDetector()
                 .loadModels()
-                .detect(string);
+                .detect(text);
         String detectedLang = toIso1(language.getLanguage());
         LOG.debug("Detecting language for incoming resource: [{}]", detectedLang);
         return detectedLang;

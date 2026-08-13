@@ -37,6 +37,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -58,7 +59,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
     public void testWord() throws Exception {
         XMLResult xmlResult = getXML("testWORD.docx");
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Sample Word Document", xmlResult.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", xmlResult.metadata.get(TikaCoreProperties.CREATOR));
         assertTrue(xmlResult.xml.contains("Sample Word Document"));
@@ -68,7 +69,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
     public void testWordFootnote() throws Exception {
         XMLResult xmlResult = getXML("footnotes.docx");
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertTrue(xmlResult.xml.contains("snoska"));
         assertContains("<div class=\"footnote\">", xmlResult.xml);
         assertNotContained("<p><div class=\"footnote\">", xmlResult.xml);
@@ -87,7 +88,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
         String xml = result.xml;
         Metadata metadata = result.metadata;
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
         assertTrue(xml.contains("Sample Word Document"));
@@ -123,7 +124,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
         Metadata m = metadataList.get(0);
         String mainContent = m.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                m.get(Metadata.CONTENT_TYPE));
+                m.get(HttpHeaders.CONTENT_TYPE));
         assertTrue(mainContent.contains("<img"));
     }
 
@@ -137,7 +138,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
     public void testMissingText() throws Exception {
         XMLResult xmlResult = getXML("testWORD_missing_text.docx");
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+                xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("BigCompany", xmlResult.xml);
         assertContains("Seasoned", xmlResult.xml);
         assertContains("Rich_text_in_cell", xmlResult.xml);
@@ -195,7 +196,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
     public void testWordCustomProperties() throws Exception {
         Metadata metadata = getXML("testWORD_custom_props.docx").metadata;
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Etienne Jouvin", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
@@ -726,7 +727,7 @@ public class OOXMLDocxSAXTest extends TikaTest {
         List<Metadata> metadataList =
                 getRecursiveMetadata("testWORD_macros.docm");
         for (Metadata metadata : metadataList) {
-            if (metadata.get(Metadata.CONTENT_TYPE).equals("text/x-vbasic")) {
+            if (metadata.get(HttpHeaders.CONTENT_TYPE).equals("text/x-vbasic")) {
                 fail("Shouldn't have extracted macros as default");
             }
         }
@@ -743,9 +744,9 @@ public class OOXMLDocxSAXTest extends TikaTest {
         assertContainsAtLeast(parsedBy, metadataList);
 
         Metadata minExpected = new Metadata();
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 

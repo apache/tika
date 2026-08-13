@@ -29,6 +29,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -102,7 +103,7 @@ public class MyFirstTika {
             Parser parser = tikaLoader.loadParsers();
             // Tell it what we think the content is
             MediaType type = detector.detect(tis, metadata, new ParseContext());
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             // Have the file parsed to get the content and metadata
             ContentHandler handler = new BodyContentHandler();
             parser.parse(tis, handler, metadata, new ParseContext());

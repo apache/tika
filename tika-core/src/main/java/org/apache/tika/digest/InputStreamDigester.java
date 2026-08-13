@@ -24,8 +24,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.StringUtils;
 
@@ -34,6 +36,9 @@ import org.apache.tika.utils.StringUtils;
  * to read the entire stream for digesting, then rewind for subsequent processing.
  */
 public class InputStreamDigester implements Digester {
+
+    private static final String DIGEST_KEY_PREFIX =
+            TikaCoreProperties.TIKA_META_PREFIX + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     private static final Map<String, Property> METADATA_KEY_PROPERTIES = new ConcurrentHashMap<>();
 
@@ -51,14 +56,24 @@ public class InputStreamDigester implements Digester {
     public InputStreamDigester(String algorithm, String metadataKey, Encoder encoder) {
         this.algorithm = algorithm;
         this.metadataProperty =
-                METADATA_KEY_PROPERTIES.computeIfAbsent(metadataKey, Property::internalText);
+                METADATA_KEY_PROPERTIES.computeIfAbsent(metadataKey, InputStreamDigester::mintProperty);
         this.encoder = encoder;
     }
 
+    // metadataKey is config-supplied (algorithm/encoding names), not document-derived; the
+    // usual tk:digest:* shape mints via the curated template factory (stays registered, so
+    // Metadata.reconstruct/Property.get resolve it), anything else keeps the public factory.
+    private static Property mintProperty(String metadataKey) {
+        if (metadataKey.startsWith(DIGEST_KEY_PREFIX)) {
+            return TikaCoreProperties.digestProperty(metadataKey.substring(DIGEST_KEY_PREFIX.length()));
+        }
+        return Property.internalText(metadataKey);
+    }
+
     private static void setContentLength(long length, Metadata metadata) {
-        if (StringUtils.isBlank(metadata.get(Metadata.CONTENT_LENGTH))) {
+        if (StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
             //only add it if it hasn't been populated already
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         }
     }
 

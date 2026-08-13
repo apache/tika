@@ -31,7 +31,9 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -128,16 +130,16 @@ public class ICNSParser implements Parser {
                     .append(")");
         }
 
-        metadata.set(Metadata.CONTENT_TYPE, ICNS_MIME_TYPE);
+        metadata.set(HttpHeaders.CONTENT_TYPE, ICNS_MIME_TYPE);
         if (!icon_details.toString().equals("")) {
-            metadata.set("Icon count", String.valueOf(icons.size()));
+            metadata.set(Property.externalText("Icon count"), String.valueOf(icons.size()));
             icon_details = new StringBuilder(icon_details.substring(2));
-            metadata.set("Icon details", icon_details.toString());
+            metadata.set(Property.externalText("Icon details"), icon_details.toString());
         }
         if (!iconmask_details.toString().equals("")) {
-            metadata.set("Masked icon count", String.valueOf(icon_masks.size()));
+            metadata.set(Property.externalText("Masked icon count"), String.valueOf(icon_masks.size()));
             iconmask_details = new StringBuilder(iconmask_details.substring(2));
-            metadata.set("Masked icon details", iconmask_details.toString());
+            metadata.set(Property.externalText("Masked icon details"), iconmask_details.toString());
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();

@@ -63,6 +63,9 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.ISO19115;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -79,6 +82,23 @@ public class GeographicInformationParser implements Parser {
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.text("iso19139+xml"));
 
+    // Indexed per Keywords/thesaurus entry; unbounded distinct names, so minted via KeyPrefix
+    // rather than a Property constant. BAG: a keyword group can hold multiple strings, and the
+    // per-Identification index restarts at 1, so the same key can recur and merge across
+    // Identifications (known limitation, not fixed here).
+    private static final KeyPrefix KEYWORDS =
+            KeyPrefix.file("iso19115:keywords:", "ISO19139 indexed identification keyword group");
+
+    private static final KeyPrefix KEYWORDS_TYPE = KeyPrefix.file("iso19115:keywords-type:",
+            "ISO19139 indexed identification keyword group type");
+
+    private static final KeyPrefix THESAURUS_NAME_TITLE =
+            KeyPrefix.file("iso19115:thesaurus-name-title:", "ISO19139 indexed thesaurus name title");
+
+    private static final KeyPrefix THESAURUS_NAME_ALTERNATIVE_TITLE = KeyPrefix.file(
+            "iso19115:thesaurus-name-alternative-title:",
+            "ISO19139 indexed thesaurus name alternative title");
+
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
@@ -88,7 +108,7 @@ public class GeographicInformationParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler contentHandler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, geoInfoType);
+        metadata.set(HttpHeaders.CONTENT_TYPE, geoInfoType);
         XHTMLContentHandler xhtmlContentHandler = new XHTMLContentHandler(contentHandler, metadata, parseContext);
 
         TemporaryResources tmp = null;
@@ -211,7 +231,7 @@ public class GeographicInformationParser implements Parser {
     private void getMetaDataCharacterSet(Metadata metadata, DefaultMetadata defaultMetaData) {
         Map<Locale, Charset> charsetMap = defaultMetaData.getLocalesAndCharsets();
         for (Charset c : charsetMap.values()) {
-            metadata.add("CharacterSet", c.name());
+            metadata.add(ISO19115.CHARACTER_SET, c.name());
         }
     }
 
@@ -221,10 +241,10 @@ public class GeographicInformationParser implements Parser {
                 (Collection<ResponsibleParty>) defaultMetaData.getContacts();
         for (ResponsibleParty rparty : contactSet) {
             if (rparty.getRole() != null) {
-                metadata.add("ContactRole", rparty.getRole().name());
+                metadata.add(ISO19115.CONTACT_ROLE, rparty.getRole().name());
             }
             if (rparty.getOrganisationName() != null) {
-                metadata.add("ContactPartyName-", rparty.getOrganisationName().toString());
+                metadata.add(ISO19115.CONTACT_PARTY_NAME, rparty.getOrganisationName().toString());
             }
         }
     }
@@ -244,30 +264,30 @@ public class GeographicInformationParser implements Parser {
             for (CitationDate d : dateArrayList) {
                 if (d.getDateType() != null) {
                     String date = DateUtils.formatDate(d.getDate());
-                    metadata.add("CitationDate ", d.getDateType().name() + "-->" + date);
+                    metadata.add(ISO19115.CITATION_DATE, d.getDateType().name() + "-->" + date);
                 }
             }
             ArrayList<ResponsibleParty> responsiblePartyArrayList =
                     (ArrayList<ResponsibleParty>) i.getCitation().getCitedResponsibleParties();
             for (ResponsibleParty r : responsiblePartyArrayList) {
                 if (r.getRole() != null) {
-                    metadata.add("CitedResponsiblePartyRole ", r.getRole().toString());
+                    metadata.add(ISO19115.CITED_RESPONSIBLE_PARTY_ROLE, r.getRole().toString());
                 }
                 if (r.getIndividualName() != null) {
-                    metadata.add("CitedResponsiblePartyName ", r.getIndividualName());
+                    metadata.add(ISO19115.CITED_RESPONSIBLE_PARTY_NAME, r.getIndividualName());
                 }
                 if (r.getOrganisationName() != null) {
-                    metadata.add("CitedResponsiblePartyOrganizationName ",
+                    metadata.add(ISO19115.CITED_RESPONSIBLE_PARTY_ORGANIZATION_NAME,
                             r.getOrganisationName().toString());
                 }
                 if (r.getPositionName() != null) {
-                    metadata.add("CitedResponsiblePartyPositionName ",
+                    metadata.add(ISO19115.CITED_RESPONSIBLE_PARTY_POSITION_NAME,
                             r.getPositionName().toString());
                 }
 
                 if (r.getContactInfo() != null) {
                     for (String s : r.getContactInfo().getAddress().getElectronicMailAddresses()) {
-                        metadata.add("CitedResponsiblePartyEMail ", s);
+                        metadata.add(ISO19115.CITED_RESPONSIBLE_PARTY_EMAIL, s);
                     }
                 }
             }
@@ -275,12 +295,12 @@ public class GeographicInformationParser implements Parser {
                 metadata.set(TikaCoreProperties.DESCRIPTION, i.getAbstract().toString());
             }
             for (Progress p : i.getStatus()) {
-                metadata.add("IdentificationInfoStatus ", p.name());
+                metadata.add(ISO19115.IDENTIFICATION_INFO_STATUS, p.name());
             }
             ArrayList<Format> formatArrayList = (ArrayList<Format>) i.getResourceFormats();
             for (Format f : formatArrayList) {
                 if (f.getName() != null) {
-                    metadata.add("ResourceFormatSpecificationAlternativeTitle ",
+                    metadata.add(ISO19115.RESOURCE_FORMAT_SPECIFICATION_ALTERNATIVE_TITLE,
                             f.getName().toString());
                 }
             }
@@ -292,7 +312,7 @@ public class GeographicInformationParser implements Parser {
             CodeListSet<TopicCategory> categoryList =
                     (CodeListSet<TopicCategory>) defaultDataIdentification.getTopicCategories();
             for (TopicCategory t : categoryList) {
-                metadata.add("IdentificationInfoTopicCategory-->", t.name());
+                metadata.add(ISO19115.IDENTIFICATION_INFO_TOPIC_CATEGORY, t.name());
             }
             ArrayList<Keywords> keywordList = (ArrayList<Keywords>) i.getDescriptiveKeywords();
             int j = 1;
@@ -301,18 +321,18 @@ public class GeographicInformationParser implements Parser {
                 ArrayList<InternationalString> stringList =
                         (ArrayList<InternationalString>) k.getKeywords();
                 for (InternationalString s : stringList) {
-                    metadata.add("Keywords " + j, s.toString());
+                    metadata.add(KEYWORDS, String.valueOf(j), s.toString());
                 }
                 if (k.getType() != null) {
-                    metadata.add("KeywordsType " + j, k.getType().name());
+                    metadata.add(KEYWORDS_TYPE, String.valueOf(j), k.getType().name());
                 }
                 if (k.getThesaurusName() != null && k.getThesaurusName().getTitle() != null) {
-                    metadata.add("ThesaurusNameTitle " + j,
+                    metadata.add(THESAURUS_NAME_TITLE, String.valueOf(j),
                             k.getThesaurusName().getTitle().toString());
                 }
                 if (k.getThesaurusName() != null &&
                         k.getThesaurusName().getAlternateTitles() != null) {
-                    metadata.add("ThesaurusNameAlternativeTitle " + j,
+                    metadata.add(THESAURUS_NAME_ALTERNATIVE_TITLE, String.valueOf(j),
                             k.getThesaurusName().getAlternateTitles().toString());
                 }
 
@@ -321,7 +341,8 @@ public class GeographicInformationParser implements Parser {
                 for (CitationDate cd : citationDates) {
                     if (cd.getDateType() != null) {
                         String date = DateUtils.formatDate(cd.getDate());
-                        metadata.add("ThesaurusNameDate ", cd.getDateType().name() + "-->" + date);
+                        metadata.add(ISO19115.THESAURUS_NAME_DATE,
+                                cd.getDateType().name() + "-->" + date);
                     }
                 }
             }
@@ -330,13 +351,13 @@ public class GeographicInformationParser implements Parser {
 
             for (DefaultLegalConstraints c : constraintList) {
                 for (Restriction r : c.getAccessConstraints()) {
-                    metadata.add("AccessContraints ", r.name());
+                    metadata.add(ISO19115.ACCESS_CONSTRAINTS, r.name());
                 }
                 for (InternationalString s : c.getOtherConstraints()) {
-                    metadata.add("OtherConstraints ", s.toString());
+                    metadata.add(ISO19115.OTHER_CONSTRAINTS, s.toString());
                 }
                 for (Restriction r : c.getUseConstraints()) {
-                    metadata.add("UserConstraints ", r.name());
+                    metadata.add(ISO19115.USER_CONSTRAINTS, r.name());
                 }
 
             }
@@ -350,7 +371,7 @@ public class GeographicInformationParser implements Parser {
                         if (((DefaultGeographicDescription) g).getGeographicIdentifier() != null &&
                                 ((DefaultGeographicDescription) g).getGeographicIdentifier()
                                         .getCode() != null) {
-                            metadata.add("GeographicIdentifierCode ",
+                            metadata.add(ISO19115.GEOGRAPHIC_IDENTIFIER_CODE,
                                     ((DefaultGeographicDescription) g).getGeographicIdentifier()
                                             .getCode());
                         }
@@ -359,21 +380,21 @@ public class GeographicInformationParser implements Parser {
                                         .getAuthority() != null &&
                                 ((DefaultGeographicDescription) g).getGeographicIdentifier()
                                         .getAuthority().getTitle() != null) {
-                            metadata.add("GeographicIdentifierAuthorityTitle ",
+                            metadata.add(ISO19115.GEOGRAPHIC_IDENTIFIER_AUTHORITY_TITLE,
                                     ((DefaultGeographicDescription) g).getGeographicIdentifier()
                                             .getAuthority().getTitle().toString());
                         }
 
                         for (InternationalString s : ((DefaultGeographicDescription) g)
                                 .getGeographicIdentifier().getAuthority().getAlternateTitles()) {
-                            metadata.add("GeographicIdentifierAuthorityAlternativeTitle ",
+                            metadata.add(ISO19115.GEOGRAPHIC_IDENTIFIER_AUTHORITY_ALTERNATIVE_TITLE,
                                     s.toString());
                         }
                         for (CitationDate cd : ((DefaultGeographicDescription) g)
                                 .getGeographicIdentifier().getAuthority().getDates()) {
                             if (cd.getDateType() != null && cd.getDate() != null) {
                                 String date = DateUtils.formatDate(cd.getDate());
-                                metadata.add("GeographicIdentifierAuthorityDate ",
+                                metadata.add(ISO19115.GEOGRAPHIC_IDENTIFIER_AUTHORITY_DATE,
                                         cd.getDateType().name() + " " + date);
                             }
                         }
@@ -389,7 +410,7 @@ public class GeographicInformationParser implements Parser {
                 (ArrayList<Format>) distribution.getDistributionFormats();
         for (Format f : distributionFormat) {
             if (f.getName() != null) {
-                metadata.add("DistributionFormatSpecificationAlternativeTitle ",
+                metadata.add(ISO19115.DISTRIBUTION_FORMAT_SPECIFICATION_ALTERNATIVE_TITLE,
                         f.getName().toString());
             }
         }
@@ -398,11 +419,11 @@ public class GeographicInformationParser implements Parser {
         for (Distributor d : distributorList) {
             if (d != null && d.getDistributorContact() != null &&
                     d.getDistributorContact().getRole() != null) {
-                metadata.add("Distributor Contact ", d.getDistributorContact().getRole().name());
+                metadata.add(ISO19115.DISTRIBUTOR_CONTACT, d.getDistributorContact().getRole().name());
             }
             if (d != null && d.getDistributorContact() != null &&
                     d.getDistributorContact().getOrganisationName() != null) {
-                metadata.add("Distributor Organization Name ",
+                metadata.add(ISO19115.DISTRIBUTOR_ORGANIZATION_NAME,
                         d.getDistributorContact().getOrganisationName().toString());
             }
         }
@@ -413,23 +434,23 @@ public class GeographicInformationParser implements Parser {
                     (ArrayList<OnlineResource>) d.getOnLines();
             for (OnlineResource or : onlineResourceList) {
                 if (or.getLinkage() != null) {
-                    metadata.add("TransferOptionsOnlineLinkage ", or.getLinkage().toString());
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_LINKAGE, or.getLinkage().toString());
                 }
                 if (or.getProtocol() != null) {
-                    metadata.add("TransferOptionsOnlineProtocol ", or.getProtocol());
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_PROTOCOL, or.getProtocol());
                 }
                 if (or.getApplicationProfile() != null) {
-                    metadata.add("TransferOptionsOnlineProfile ", or.getApplicationProfile());
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_PROFILE, or.getApplicationProfile());
                 }
                 if (or.getName() != null) {
-                    metadata.add("TransferOptionsOnlineName ", or.getName());
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_NAME, or.getName());
                 }
                 if (or.getDescription() != null) {
-                    metadata.add("TransferOptionsOnlineDescription ",
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_DESCRIPTION,
                             or.getDescription().toString());
                 }
                 if (or.getFunction() != null) {
-                    metadata.add("TransferOptionsOnlineFunction ", or.getFunction().name());
+                    metadata.add(ISO19115.TRANSFER_OPTIONS_ONLINE_FUNCTION, or.getFunction().name());
                 }
 
             }
@@ -442,7 +463,7 @@ public class GeographicInformationParser implements Parser {
         for (CitationDate c : citationDateList) {
             if (c.getDateType() != null) {
                 String date = DateUtils.formatDate(c.getDate());
-                metadata.add("DateInfo ", c.getDateType().name() + " " + date);
+                metadata.add(ISO19115.DATE_INFO, c.getDateType().name() + " " + date);
             }
         }
     }
@@ -452,7 +473,7 @@ public class GeographicInformationParser implements Parser {
                 (ArrayList<DefaultMetadataScope>) defaultMetaData.getMetadataScopes();
         for (DefaultMetadataScope d : scopeList) {
             if (d.getResourceScope() != null) {
-                metadata.add("MetaDataResourceScope ", d.getResourceScope().name());
+                metadata.add(ISO19115.METADATA_RESOURCE_SCOPE, d.getResourceScope().name());
             }
         }
     }
@@ -461,14 +482,14 @@ public class GeographicInformationParser implements Parser {
                                                 DefaultMetadata defaultMetaData) {
         Citation parentMetaData = defaultMetaData.getParentMetadata();
         if (parentMetaData != null && parentMetaData.getTitle() != null) {
-            metadata.add("ParentMetaDataTitle", parentMetaData.getTitle().toString());
+            metadata.add(ISO19115.PARENT_METADATA_TITLE, parentMetaData.getTitle().toString());
         }
     }
 
     private void getMetaDataIdetifierCode(Metadata metadata, DefaultMetadata defaultMetaData) {
         Identifier identifier = defaultMetaData.getMetadataIdentifier();
         if (identifier != null) {
-            metadata.add("MetaDataIdentifierCode", identifier.getCode());
+            metadata.add(ISO19115.METADATA_IDENTIFIER_CODE, identifier.getCode());
         }
     }
 
@@ -477,10 +498,10 @@ public class GeographicInformationParser implements Parser {
                 (ArrayList<Citation>) defaultMetaData.getMetadataStandards();
         for (Citation c : citationList) {
             if (c.getTitle() != null) {
-                metadata.add("MetaDataStandardTitle ", c.getTitle().toString());
+                metadata.add(ISO19115.METADATA_STANDARD_TITLE, c.getTitle().toString());
             }
             if (c.getEdition() != null) {
-                metadata.add("MetaDataStandardEdition ", c.getEdition().toString());
+                metadata.add(ISO19115.METADATA_STANDARD_EDITION, c.getEdition().toString());
             }
         }
     }

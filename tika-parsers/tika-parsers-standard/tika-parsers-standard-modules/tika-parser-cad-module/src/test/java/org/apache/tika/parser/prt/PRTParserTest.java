@@ -23,6 +23,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -39,7 +40,7 @@ public class PRTParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new PRTParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-prt", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             // This file has a date
             assertEquals("2011-06-20T16:54:00", metadata.get(TikaCoreProperties.CREATED));
@@ -73,7 +74,7 @@ public class PRTParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new PRTParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-prt", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             // File has both a date and a description
             assertEquals("1997-04-01T08:59:00", metadata.get(TikaCoreProperties.CREATED));

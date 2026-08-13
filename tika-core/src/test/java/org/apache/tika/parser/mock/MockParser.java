@@ -51,10 +51,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -157,6 +159,8 @@ public class MockParser implements Parser {
             hang(action);
         } else if ("fakeload".equals(name)) {
             fakeload(action);
+        } else if ("checkpointedSleep".equals(name)) {
+            checkpointedSleep(action, context);
         } else if ("oom".equals(name)) {
             kabOOM();
         } else if ("print_out".equals(name) || "print_err".equals(name)) {
@@ -238,6 +242,28 @@ public class MockParser implements Parser {
 
     }
 
+    /**
+     * Sleeps for {@code millis}, checkpointing {@link ParseTimeout} every
+     * {@code intervalMillis} -- simulates a bounded external call that reports progress
+     * while it waits, e.g. {@code ProcessUtils.execute}'s heartbeat loop.
+     */
+    private void checkpointedSleep(Node action, ParseContext context) {
+        NamedNodeMap attrs = action.getAttributes();
+        long millis = Long.parseLong(attrs.getNamedItem("millis").getNodeValue());
+        long intervalMillis = Long.parseLong(attrs.getNamedItem("intervalMillis").getNodeValue());
+        long deadline = System.currentTimeMillis() + millis;
+        long remaining;
+        while ((remaining = deadline - System.currentTimeMillis()) > 0) {
+            try {
+                Thread.sleep(Math.min(intervalMillis, remaining));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            ParseTimeout.checkpoint(context);
+        }
+    }
+
     private void throwIllegalChars() throws IOException {
         throw new IOException("Can't say \u0000 in xml or \u0001 or \u0002 or \u0003");
     }
@@ -264,7 +290,7 @@ public class MockParser implements Parser {
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         if (!"".equals(contentType)) {
-            m.set(Metadata.CONTENT_TYPE, contentType);
+            m.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
         // Check if we should parse this embedded document (respects EmbeddedLimits)
         if (!extractor.shouldParseEmbedded(m)) {

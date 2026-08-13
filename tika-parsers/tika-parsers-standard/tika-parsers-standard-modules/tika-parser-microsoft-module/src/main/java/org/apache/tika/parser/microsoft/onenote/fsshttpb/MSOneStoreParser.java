@@ -73,6 +73,7 @@ public class MSOneStoreParser {
     private Map<ExGuid, DataElement> objectBlOBElementsById;
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
+        storageIndexHashTab.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
 
         storageIndexDataElements = dataElementPackage.dataElements.stream()

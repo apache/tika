@@ -44,6 +44,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -60,7 +61,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * otherwise, it will treat the contents as text.
  * <p>
  * If there is a csv parse exception during detection, the parser sets
- * the {@link Metadata#CONTENT_TYPE} to {@link MediaType#TEXT_PLAIN}
+ * the {@link HttpHeaders#CONTENT_TYPE} to {@link MediaType#TEXT_PLAIN}
  * and treats the file as {@link MediaType#TEXT_PLAIN}.
  * </p>
  * <p>
@@ -250,7 +251,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
         // Automatically detect the character encoding
         //try to get detected content type; could be a subclass of text/plain
         //such as vcal, etc.
-        String incomingMime = metadata.get(Metadata.CONTENT_TYPE);
+        String incomingMime = metadata.get(HttpHeaders.CONTENT_TYPE);
         MediaType mediaType = MediaType.TEXT_PLAIN;
         if (incomingMime != null) {
             MediaType tmpMediaType = MediaType.parse(incomingMime);
@@ -259,9 +260,9 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             }
         }
         MediaType type = new MediaType(mediaType, charset);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         // deprecated, see TIKA-431
-        metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+        metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -273,7 +274,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                           ParseContext context) throws IOException, TikaException {
         //if the file was already identified as not .txt, .csv or .tsv
         //don't even try to csv or not
-        String mediaString = metadata.get(Metadata.CONTENT_TYPE);
+        String mediaString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mediaString != null) {
             MediaType mediaType = MediaType.parse(mediaString);
             if (!SUPPORTED_TYPES.contains(mediaType.getBaseType())) {
@@ -356,15 +357,15 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
                 mediaType = CSV;
             }
         } else {
-            if (metadata.get(Metadata.CONTENT_TYPE) != null) {
-                mediaType = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+            if (metadata.get(HttpHeaders.CONTENT_TYPE) != null) {
+                mediaType = MediaType.parse(metadata.get(HttpHeaders.CONTENT_TYPE));
             }
         }
         Map<String, String> attrs = new HashMap<>();
         if (params.getCharset() != null) {
             attrs.put(CHARSET, params.getCharset().name());
             // deprecated, see TIKA-431
-            metadata.set(Metadata.CONTENT_ENCODING, params.getCharset().name());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, params.getCharset().name());
         }
         if (!MediaType.TEXT_PLAIN.equals(mediaType) && params.getDelimiter() != null) {
             if (textAndCSVConfig.getDelimiterToNameMap().containsKey(params.getDelimiter())) {
@@ -374,7 +375,7 @@ public class TextAndCSVParser extends AbstractEncodingDetectorParser {
             }
         }
         MediaType type = new MediaType(mediaType, attrs);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
     }
 
 }

@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -91,12 +92,12 @@ public class AutoDetectParserTest extends TikaTest {
             }
             Metadata metadata = new Metadata();
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, tp.resourceStatedName);
-            metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
+            metadata.set(HttpHeaders.CONTENT_TYPE, tp.statedType);
             ContentHandler handler = new BodyContentHandler();
             ParseContext pc = new ParseContext();
             TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, pc);
 
-            String actualType = metadata.get(Metadata.CONTENT_TYPE);
+            String actualType = metadata.get(HttpHeaders.CONTENT_TYPE);
             // When tesseract is available, image types may get an "ocr-" prefix
             String ocrVariant = tp.realType.startsWith("image/") ?
                     tp.realType.replace("image/", "image/ocr-") : null;
@@ -343,7 +344,7 @@ public class AutoDetectParserTest extends TikaTest {
                 ContentHandler handler = new BodyContentHandler();
                 TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, new ParseContext());
 
-                assertEquals(mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE),
+                assertEquals(mediaTypes[i].toString(), metadata.get(HttpHeaders.CONTENT_TYPE),
                         "Incorrect content type for " + file);
 
                 // Check some of the common metadata
@@ -402,7 +403,7 @@ public class AutoDetectParserTest extends TikaTest {
             } catch (ZeroByteFileException e) {
                 //expected
             }
-            assertEquals(mimes[i], m.get(Metadata.CONTENT_TYPE));
+            assertEquals(mimes[i], m.get(HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -465,7 +466,7 @@ public class AutoDetectParserTest extends TikaTest {
         getXML("mock/embedded_to_parent_metadata.xml.gz",
                 AUTO_DETECT_PARSER, metadata);
         assertEquals("Nikolai Lobachevsky", metadata.get("embedded:dc:creator"));
-        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/gzip", metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
 

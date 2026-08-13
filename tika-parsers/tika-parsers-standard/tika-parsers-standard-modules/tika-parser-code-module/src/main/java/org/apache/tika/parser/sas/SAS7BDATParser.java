@@ -65,7 +65,7 @@ public class SAS7BDATParser implements Parser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, TYPE_SAS7BDAT.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, TYPE_SAS7BDAT.toString());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();

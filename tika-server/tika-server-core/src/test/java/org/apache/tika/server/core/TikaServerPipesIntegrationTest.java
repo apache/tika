@@ -107,9 +107,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("hello_world.xml", true);
-        assertEquals("ok", node
-                .get("status")
-                .asText());
+        assertEquals("EMIT_SUCCESS", node.get("status").asText());
 
     }
 
@@ -121,12 +119,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("null_pointer.xml", true);
-        assertEquals("ok", node
-                .get("status")
-                .asText());
-        assertContains("java.lang.NullPointerException", node
-                .get("parse_exception")
-                .asText());
+        assertEquals("EMIT_SUCCESS_PARSE_EXCEPTION", node.get("status").asText());
+        assertContains("java.lang.NullPointerException", node.get("message").asText());
     }
 
     @Test
@@ -137,12 +131,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("null_pointer.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
-        assertEquals("ok", node
-                .get("status")
-                .asText());
-        assertContains("java.lang.NullPointerException", node
-                .get("parse_exception")
-                .asText());
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", node.get("status").asText());
+        assertContains("java.lang.NullPointerException", node.get("message").asText());
     }
 
     @Test
@@ -152,12 +142,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("system_exit.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-        assertEquals("process_crash", node
-                .get("status")
-                .asText());
-        assertContains("UNSPECIFIED_CRASH", node
-                .get("type")
-                .asText());
+        assertEquals("UNSPECIFIED_CRASH", node.get("status").asText());
     }
 
     @Test
@@ -169,12 +154,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                     .toAbsolutePath()
                     .toString())});
             JsonNode node = testOne("fake_oom.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-            assertEquals("process_crash", node
-                    .get("status")
-                    .asText());
-            assertContains("OOM", node
-                    .get("type")
-                    .asText());
+            assertEquals("OOM", node.get("status").asText());
         } catch (ProcessingException e) {
             //depending on timing, there may be a connection exception --
             // TODO add more of a delay to server shutdown to ensure message is sent
@@ -189,12 +169,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOne("heavy_hang_30000.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-        assertEquals("process_crash", node
-                .get("status")
-                .asText());
-        assertContains("TIMEOUT", node
-                .get("type")
-                .asText());
+        assertEquals("TIMEOUT", node.get("status").asText());
     }
 
     @Test
@@ -207,12 +182,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toAbsolutePath()
                 .toString())});
         JsonNode node = testOneWithPerRequestTimeout("heavy_hang_30000.xml", 100, 503);
-        assertEquals("process_crash", node
-                .get("status")
-                .asText());
-        assertContains("TIMEOUT", node
-                .get("type")
-                .asText());
+        assertEquals("TIMEOUT", node.get("status").asText());
     }
 
     private JsonNode testOneWithPerRequestTimeout(String fileName, long timeoutMillis, int expectedStatus) throws Exception {

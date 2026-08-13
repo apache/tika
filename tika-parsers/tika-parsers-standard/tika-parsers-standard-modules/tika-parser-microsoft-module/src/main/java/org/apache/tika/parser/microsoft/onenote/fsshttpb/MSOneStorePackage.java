@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
-import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +42,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
@@ -91,11 +90,7 @@ public class MSOneStorePackage {
     private static final Pattern HYPERLINK_PATTERN =
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final String P = "p";
-    /**
-     * A visible separator emitted between pages so they can be told apart in plain text
-     * output.
-     */
-    private static final String PAGE_SEPARATOR = "----------------------------------------";
+    private static final int MAX_TRAVERSAL_DEPTH = 100;
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -151,7 +146,8 @@ public class MSOneStorePackage {
         StorageIndexCellMapping storageIndexCellMapping = null;
         if (this.storageIndex != null) {
             storageIndexCellMapping = this.storageIndex.storageIndexCellMappingList.stream()
-                    .filter(s -> s.cellID.equals(cellID)).findFirst().orElse(null);
+                    .filter(s -> s.cellID.equals(cellID)).findFirst()
+                    .orElse(new StorageIndexCellMapping());
         }
         return storageIndexCellMapping;
     }
@@ -168,7 +164,7 @@ public class MSOneStorePackage {
         if (this.storageIndex != null) {
             instance = this.storageIndex.storageIndexRevisionMappingList.stream()
                     .filter(r -> r.revisionExGuid.equals(revisionExtendedGUID)).findFirst()
-                    .orElse(null);
+                    .orElse(new StorageIndexRevisionMapping());
         }
 
         return instance;
@@ -216,14 +212,7 @@ public class MSOneStorePackage {
             List<RevisionStoreCell> pageCells = new ArrayList<>();
             List<RevisionStoreCell> otherCells = new ArrayList<>();
             splitCells(pageCells, otherCells);
-            boolean firstPage = true;
             for (RevisionStoreCell cell : pageCells) {
-                if (!firstPage) {
-                    xhtml.startElement(P);
-                    xhtml.characters(PAGE_SEPARATOR);
-                    xhtml.endElement(P);
-                }
-                firstPage = false;
                 xhtml.startElement("div", "class", "page");
                 walkCell(cell, options, metadata, xhtml);
                 xhtml.endElement("div");
@@ -238,7 +227,7 @@ public class MSOneStorePackage {
             for (RevisionStoreObjectGroup objectGroup : OtherFileNodeList) {
                 for (RevisionStoreObject object : objectGroup.objects) {
                     walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml);
+                            xhtml, 0);
                 }
             }
         }
@@ -246,11 +235,11 @@ public class MSOneStorePackage {
             metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
         }
         if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
+            metadata.set(OneNote.MOST_RECENT_AUTHORS,
                     mostRecentAuthors.toArray(new String[]{}));
         }
         if (!originalAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
+            metadata.set(OneNote.ORIGINAL_AUTHORS,
                     originalAuthors.toArray(new String[]{}));
         }
     }
@@ -262,7 +251,7 @@ public class MSOneStorePackage {
      * content is not emitted once per version snapshot.
      */
     private void splitCells(List<RevisionStoreCell> pageCells,
-                            List<RevisionStoreCell> otherCells) {
+                            List<RevisionStoreCell> otherCells) throws TikaException {
         List<CellID> orderedCellIds = collectSectionReferencedCells();
         if (orderedCellIds.isEmpty()) {
             // no page ordering information available - process the cells in storage order
@@ -294,7 +283,7 @@ public class MSOneStorePackage {
      * Walks the section object space (the data root cell) and collects the object space (cell)
      * references in document order - this is the order of the pages in the section.
      */
-    private List<CellID> collectSectionReferencedCells() {
+    private List<CellID> collectSectionReferencedCells() throws TikaException {
         List<CellID> orderedCellIds = new ArrayList<>();
         if (dataRootCell == null) {
             return orderedCellIds;
@@ -303,11 +292,11 @@ public class MSOneStorePackage {
         Set<ExGuid> visited = new HashSet<>();
         for (RevisionManifestRootDeclare rootDeclare : dataRootCell.rootDeclares) {
             collectReferencedCells(objectsById.get(rootDeclare.objectExGuid), objectsById, visited,
-                    orderedCellIds);
+                    orderedCellIds, 0);
         }
         for (RevisionStoreObjectGroup objectGroup : dataRootCell.objectGroups) {
             for (RevisionStoreObject object : objectGroup.objects) {
-                collectReferencedCells(object, objectsById, visited, orderedCellIds);
+                collectReferencedCells(object, objectsById, visited, orderedCellIds, 0);
             }
         }
         return orderedCellIds;
@@ -315,7 +304,11 @@ public class MSOneStorePackage {
 
     private void collectReferencedCells(RevisionStoreObject object,
                                         Map<ExGuid, RevisionStoreObject> objectsById,
-                                        Set<ExGuid> visited, List<CellID> out) {
+                                        Set<ExGuid> visited, List<CellID> out, int depth)
+            throws TikaException {
+        if (depth > MAX_TRAVERSAL_DEPTH) {
+            return;
+        }
         if (object == null || object.propertySet == null ||
                 object.propertySet.objectSpaceObjectPropSet == null) {
             return;
@@ -329,7 +322,7 @@ public class MSOneStorePackage {
                 out.add(action.spaceReference);
             } else if (action.isChildReference && action.childReference != null) {
                 collectReferencedCells(objectsById.get(action.childReference), objectsById,
-                        visited, out);
+                        visited, out, depth + 1);
             }
         }
     }
@@ -344,14 +337,14 @@ public class MSOneStorePackage {
         // of objects (under a different object ID); those are intentionally not walked.
         for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
             walkObject(objectsById.get(rootDeclare.objectExGuid), objectsById, visited,
-                    AuthorRole.NONE, options, metadata, xhtml);
+                    AuthorRole.NONE, options, metadata, xhtml, 0);
         }
         if (visited.isEmpty()) {
             // no root objects could be resolved - walk everything so no content is lost
             for (RevisionStoreObjectGroup objectGroup : cell.objectGroups) {
                 for (RevisionStoreObject object : objectGroup.objects) {
                     walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml);
+                            xhtml, 0);
                 }
             }
         }
@@ -377,8 +370,12 @@ public class MSOneStorePackage {
     private void walkObject(RevisionStoreObject object,
                             Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                            Metadata metadata, XHTMLContentHandler xhtml)
+                            Metadata metadata, XHTMLContentHandler xhtml, int depth)
             throws SAXException, TikaException, IOException {
+        if (depth > MAX_TRAVERSAL_DEPTH) {
+            throw new TikaException("OneNote object graph exceeds maximum depth of " +
+                    MAX_TRAVERSAL_DEPTH);
+        }
         if (object == null) {
             return;
         }
@@ -411,7 +408,8 @@ public class MSOneStorePackage {
         // text comes out in visual order.
         for (PropertyAction action : actions) {
             if (action.oneNotePropertyEnum == OneNotePropertyEnum.StructureElementChildNodes) {
-                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml);
+                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
+                        depth);
             }
         }
         for (PropertyAction action : actions) {
@@ -420,7 +418,8 @@ public class MSOneStorePackage {
                 continue;
             }
             if (action.oneNotePropertyEnum != OneNotePropertyEnum.StructureElementChildNodes) {
-                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml);
+                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
+                        depth);
             }
         }
     }
@@ -452,7 +451,8 @@ public class MSOneStorePackage {
     /**
      * Flattens the properties of an object, in order, into a list of actions.
      */
-    private List<PropertyAction> collectObjectActions(RevisionStoreObject object) {
+    private List<PropertyAction> collectObjectActions(RevisionStoreObject object)
+            throws TikaException {
         List<ExGuid> referencedObjects =
                 object.referencedObjectID == null || object.referencedObjectID.content == null ?
                         Collections.emptyList() : object.referencedObjectID.content;
@@ -461,7 +461,7 @@ public class MSOneStorePackage {
                 object.referencedObjectSpacesID.content;
         List<PropertyAction> actions = new ArrayList<>();
         collectActions(object.propertySet.objectSpaceObjectPropSet.body, referencedObjects,
-                new int[]{0}, referencedSpaces, new int[]{0}, actions);
+                new int[]{0}, referencedSpaces, new int[]{0}, actions, 0);
         return actions;
     }
 
@@ -475,7 +475,12 @@ public class MSOneStorePackage {
      */
     private void collectActions(PropertySet propertySet, List<ExGuid> referencedObjects,
                                 int[] referenceCursor, List<CellID> referencedSpaces,
-                                int[] spaceCursor, List<PropertyAction> actions) {
+                                int[] spaceCursor, List<PropertyAction> actions, int depth)
+            throws TikaException {
+        if (depth > MAX_TRAVERSAL_DEPTH) {
+            throw new TikaException("OneNote property graph exceeds maximum depth of " +
+                    MAX_TRAVERSAL_DEPTH);
+        }
         if (propertySet == null || propertySet.rgPrids == null || propertySet.rgData == null) {
             return;
         }
@@ -489,7 +494,9 @@ public class MSOneStorePackage {
                 actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum, true,
                         nextReference(referencedObjects, referenceCursor), null));
             } else if (propertyType == PropertyType.ArrayOfObjectIDs) {
-                int count = property instanceof ArrayNumber ? ((ArrayNumber) property).number : 0;
+                int count = property instanceof ArrayNumber ?
+                        Math.min(Math.max(0, ((ArrayNumber) property).number),
+                                referencedObjects.size() - referenceCursor[0]) : 0;
                 for (int j = 0; j < count; ++j) {
                     actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum,
                             true, nextReference(referencedObjects, referenceCursor), null));
@@ -498,7 +505,9 @@ public class MSOneStorePackage {
                 actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum, false,
                         null, nextSpaceReference(referencedSpaces, spaceCursor)));
             } else if (propertyType == PropertyType.ArrayOfObjectSpaceIDs) {
-                int count = property instanceof ArrayNumber ? ((ArrayNumber) property).number : 0;
+                int count = property instanceof ArrayNumber ?
+                        Math.min(Math.max(0, ((ArrayNumber) property).number),
+                                referencedSpaces.size() - spaceCursor[0]) : 0;
                 for (int j = 0; j < count; ++j) {
                     actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum,
                             false, null, nextSpaceReference(referencedSpaces, spaceCursor)));
@@ -506,14 +515,14 @@ public class MSOneStorePackage {
             } else if (propertyType == PropertyType.PropertySet) {
                 if (property instanceof PropertySet) {
                     collectActions((PropertySet) property, referencedObjects, referenceCursor,
-                            referencedSpaces, spaceCursor, actions);
+                            referencedSpaces, spaceCursor, actions, depth + 1);
                 }
             } else if (propertyType == PropertyType.ArrayOfPropertyValues) {
                 if (property instanceof PrtArrayOfPropertyValues &&
                         ((PrtArrayOfPropertyValues) property).data != null) {
                     for (PropertySet nested : ((PrtArrayOfPropertyValues) property).data) {
                         collectActions(nested, referencedObjects, referenceCursor,
-                                referencedSpaces, spaceCursor, actions);
+                                referencedSpaces, spaceCursor, actions, depth + 1);
                     }
                 }
             } else {
@@ -526,7 +535,7 @@ public class MSOneStorePackage {
     private void processAction(PropertyAction action,
                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
                                AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                               Metadata metadata, XHTMLContentHandler xhtml)
+                               Metadata metadata, XHTMLContentHandler xhtml, int depth)
             throws SAXException, TikaException, IOException {
         if (action.spaceReference != null) {
             // a reference to another object space (cell) - cells are walked separately
@@ -541,7 +550,7 @@ public class MSOneStorePackage {
             }
             walkObject(action.childReference == null ? null :
                             objectsById.get(action.childReference), objectsById, visited,
-                    childRole, options, metadata, xhtml);
+                    childRole, options, metadata, xhtml, depth + 1);
         } else {
             processPrimitiveProperty(action.property, action.propertyType,
                     action.oneNotePropertyEnum, authorRole, options, metadata, xhtml);
@@ -575,7 +584,7 @@ public class MSOneStorePackage {
             if (instant.isAfter(lastModifiedTimestamp)) {
                 lastModifiedTimestamp = instant;
             }
-            metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
+            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
                     String.valueOf(lastModifiedTimestamp.toEpochMilli()));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
             // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
@@ -585,7 +594,7 @@ public class MSOneStorePackage {
             if (creationTs < creationTimestamp) {
                 creationTimestamp = creationTs;
             }
-            metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
+            metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(creationTimestamp));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
             // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
             // 1970

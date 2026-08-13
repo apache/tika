@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -36,14 +37,14 @@ import org.apache.tika.parser.ParseContext;
  *
  * <p>Three metadata keys are consulted in order:
  * <ol>
- *   <li>{@link Metadata#CONTENT_TYPE} — the {@code charset} parameter of the
+ *   <li>{@link HttpHeaders#CONTENT_TYPE} — the {@code charset} parameter of the
  *       HTTP/MIME Content-Type header (e.g. {@code text/html; charset=UTF-8}).</li>
  *   <li>{@link TikaCoreProperties#CONTENT_TYPE_HINT} — the {@code charset} parameter
  *       of a content-type a source <em>claimed</em> for the bytes (e.g. an HTML
  *       {@code <meta>} tag, or a zip entry's UTF-8 (EFS) flag). A hint, not a verdict.
  *       This key is only consulted when {@link MetadataCharsetDetector} is included in
  *       the active {@link org.apache.tika.detect.EncodingDetector} chain.</li>
- *   <li>{@link Metadata#CONTENT_ENCODING} — a bare charset label set by parsers
+ *   <li>{@link HttpHeaders#CONTENT_ENCODING} — a bare charset label set by parsers
  *       such as {@code RFC822Parser}, which splits Content-Type into a bare
  *       media-type key and a separate charset key.</li>
  * </ol>
@@ -77,10 +78,10 @@ public class MetadataCharsetDetector implements EncodingDetector {
 
     /**
      * Returns the charset named in the {@code charset} parameter of the
-     * {@link Metadata#CONTENT_TYPE} value, or {@code null} if absent or unparseable.
+     * {@link HttpHeaders#CONTENT_TYPE} value, or {@code null} if absent or unparseable.
      */
     public static Charset charsetFromContentType(Metadata metadata) {
-        return charsetFromMediaType(metadata.get(Metadata.CONTENT_TYPE));
+        return charsetFromMediaType(metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     /**
@@ -105,14 +106,14 @@ public class MetadataCharsetDetector implements EncodingDetector {
     }
 
     /**
-     * Returns the charset named in {@link Metadata#CONTENT_ENCODING}, or
+     * Returns the charset named in {@link HttpHeaders#CONTENT_ENCODING}, or
      * {@code null} if absent or unparseable.  This key is used by
      * {@code RFC822Parser} to expose the charset declared in MIME body-part
      * headers when the bare media type is stored separately in
-     * {@link Metadata#CONTENT_TYPE}.
+     * {@link HttpHeaders#CONTENT_TYPE}.
      */
     public static Charset charsetFromContentEncoding(Metadata metadata) {
-        return parseCharset(metadata.get(Metadata.CONTENT_ENCODING));
+        return parseCharset(metadata.get(HttpHeaders.CONTENT_ENCODING));
     }
 
     private static Charset parseCharset(String label) {

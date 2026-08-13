@@ -27,13 +27,13 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 
 /**
  * Tests for EmbeddedLimits functionality in pipes-based parsing.
@@ -265,7 +265,7 @@ public class EmbeddedLimitsTest {
             
             // Check that the limit reached flag is set
             Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
-            String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+            String limitReached = containerMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertEquals("true", limitReached,
                     "Container metadata should have limit reached flag set");
         }
@@ -295,7 +295,7 @@ public class EmbeddedLimitsTest {
             
             // Check that the depth limit reached flag is set
             Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);
-            String limitReached = containerMetadata.get(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED);
+            String limitReached = containerMetadata.get(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED);
             assertEquals("true", limitReached,
                     "Container metadata should have depth limit reached flag set");
         }

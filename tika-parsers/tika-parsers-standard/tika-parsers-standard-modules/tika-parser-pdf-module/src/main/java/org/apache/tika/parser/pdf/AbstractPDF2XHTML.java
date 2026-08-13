@@ -101,12 +101,14 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -308,7 +310,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
             Metadata xfaMetadata = Metadata.newInstance(context);
-            xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
+            xfaMetadata.set(HttpHeaders.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
             xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
             if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) &&
@@ -334,7 +336,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         Metadata xmpMetadata = Metadata.newInstance(context);
-        xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
+        xmpMetadata.set(HttpHeaders.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
         xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
         xmpMetadata.set(PDF.XMP_LOCATION, location);
@@ -477,7 +479,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //if the stream is missing a size, -1 is returned
         long sz = pdEmbeddedFile.getSize();
         if (sz > -1) {
-            embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(sz));
+            embeddedMetadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(sz));
         }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
@@ -544,6 +546,33 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    /**
+     * Mirrors {@link #handleCatchableIOE(IOException)}'s policy (governed by the same
+     * {@code catchIntermediateIOExceptions} config flag) for a single page's OCR call
+     * timing out. Without this, a per-page OCR timeout previously propagated as a plain
+     * {@link IOException} out of {@link #endPage(PDPage)}, aborting the whole document
+     * parse and losing every page after it -- the flagship "one image times out, siblings
+     * continue" behavior this timeout model is built around didn't actually hold for the
+     * most common OCR path. Recording into {@code exceptions} (rather than swallowing
+     * outright) preserves the class's existing contract: remaining pages are still
+     * processed and their content still reaches the handler, but the caller
+     * (PDF2XHTML/OCR2XHTML/etc.) still surfaces a TikaException wrapping the first
+     * recorded failure once every page has been attempted -- exactly like any other
+     * per-page IOException already does via {@link #handleCatchableIOE}.
+     */
+    void handleCatchableTimeout(TikaTimeoutException e) throws TikaTimeoutException {
+        if (config.isCatchIntermediateIOExceptions()) {
+            String msg = e.getMessage();
+            if (msg == null) {
+                msg = "TikaTimeoutException, no message";
+            }
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            exceptions.add(new IOException(msg, e));
+        } else {
+            throw e;
+        }
+    }
+
     void doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
@@ -590,12 +619,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 // silently discarded when the renderMetadata goes out of scope.
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
                 if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
-                    // tk:chunks is reserved; this is Tika propagating its own native output
-                    metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(), renderChunks);
+                    metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
                 }
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
+        } catch (TikaTimeoutException e) {
+            handleCatchableTimeout(e);
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }
@@ -1117,7 +1147,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private Metadata getJavascriptMetadata(String trigger, String jsActionName, Charset charset) {
         Metadata m = Metadata.newInstance(context);
-        m.set(Metadata.CONTENT_TYPE, "application/javascript");
+        m.set(HttpHeaders.CONTENT_TYPE, "application/javascript");
         m.set(PDF.ACTION_TRIGGER, trigger);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.name());
@@ -1125,7 +1155,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             m.set(PDF.JS_NAME, jsActionName);
         }
         if (charset != null) {
-            m.set(Metadata.CONTENT_ENCODING, charset.toString());
+            m.set(HttpHeaders.CONTENT_ENCODING, charset.toString());
         }
         return m;
     }

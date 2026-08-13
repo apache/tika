@@ -169,7 +169,8 @@ Flags:
 * `-n` / `--numClients` — forked worker processes (default 4)
 * `-p` / `--pluginsDir` — explicit plugins directory (omit when
   running from the unzipped distribution — auto-discovery handles it)
-* `-T` / `--timeoutMs` — per-parse timeout
+* `-T` / `--timeoutMillis` — total task timeout per file (sets
+  `totalTaskTimeoutMillis`)
 
 Each run forks worker processes and produces one `.json` per input
 file under the output directory.  Run them sequentially or in

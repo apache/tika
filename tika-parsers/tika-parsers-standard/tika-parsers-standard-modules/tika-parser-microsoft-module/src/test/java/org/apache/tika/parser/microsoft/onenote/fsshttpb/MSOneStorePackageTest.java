@@ -87,7 +87,6 @@ public class MSOneStorePackageTest {
 
         String text = walk(pkg);
         assertTrue(text.indexOf("page one") < text.indexOf("page two"));
-        assertTrue(text.contains("----------------------------------------"));
         assertFalse(text.contains("old page one"));
         assertTrue(text.contains("unrelated"));
     }

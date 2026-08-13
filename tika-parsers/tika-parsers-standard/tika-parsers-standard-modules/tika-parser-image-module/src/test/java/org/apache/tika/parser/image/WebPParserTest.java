@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 
@@ -44,11 +45,11 @@ public class WebPParserTest extends TikaTest {
         assertEquals("400", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Width"));
         assertEquals("true", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Has Alpha"));
         assertEquals("false", metadata.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Is Animation"));
-        assertEquals("image/webp", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/webp", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         metadata = getXML("testWebp_Alpha_Lossless.webp").metadata;
         //unfortunately, there isn't much metadata in lossless
-        assertEquals("image/webp", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/webp", metadata.get(HttpHeaders.CONTENT_TYPE));
 
     }
 

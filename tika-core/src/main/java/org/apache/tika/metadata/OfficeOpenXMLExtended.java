@@ -73,7 +73,7 @@ public interface OfficeOpenXMLExtended {
             PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
 
     //Human readable string explaining doc security flag
-    Property DOC_SECURITY_STRING = Property.externalClosedChoise(
+    Property DOC_SECURITY_STRING = Property.externalClosedChoice(
             PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "doc-security-string",
             SECURITY_NONE, SECURITY_PASSWORD_PROTECTED, SECURITY_READ_ONLY_RECOMMENDED,
             SECURITY_READ_ONLY_ENFORCED, SECURITY_LOCKED_FOR_ANNOTATIONS, SECURITY_UNKNOWN);

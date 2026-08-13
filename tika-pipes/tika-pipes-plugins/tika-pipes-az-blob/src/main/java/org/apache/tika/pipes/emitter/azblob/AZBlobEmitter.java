@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
@@ -109,7 +110,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     @Override
     public void emit(String emitKey, InputStream inputStream, Metadata userMetadata, ParseContext parseContext) throws IOException {
-        String lengthString = userMetadata.get(Metadata.CONTENT_LENGTH);
+        String lengthString = userMetadata.get(HttpHeaders.CONTENT_LENGTH);
         long length = -1;
         if (lengthString != null) {
             try {
@@ -157,7 +158,7 @@ public class AZBlobEmitter extends AbstractStreamEmitter implements StreamEmitte
 
     private void updateMetadata(BlobClient blobClient, Metadata userMetadata) {
         for (String n : userMetadata.names()) {
-            if (n.equals(Metadata.CONTENT_LENGTH.getName())) {
+            if (n.equals(HttpHeaders.CONTENT_LENGTH.getName())) {
                 continue;
             }
             String[] vals = userMetadata.getValues(n);

@@ -28,6 +28,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -122,7 +123,7 @@ public class SourceCodeParserTest extends TikaTest {
     private Metadata createMetadata(String mimeType) {
         Metadata metadata = new Metadata();
         metadata.add(TikaCoreProperties.RESOURCE_NAME_KEY, "testFile");
-        metadata.add(Metadata.CONTENT_TYPE, mimeType);
+        metadata.add(HttpHeaders.CONTENT_TYPE, mimeType);
         return metadata;
     }
 

@@ -68,9 +68,11 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -373,7 +375,7 @@ public class PDFParser implements Parser, RenderingParser {
         if (privateDict == null) {
             return;
         }
-        metadata.set(Metadata.CONTENT_TYPE, MediaType.application("illustrator").toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MediaType.application("illustrator").toString());
         //TODO -- consider parsing the metadata
         //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
     }
@@ -594,7 +596,7 @@ public class PDFParser implements Parser, RenderingParser {
 
     private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context)
             throws TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE.toString());
 
         //first extract AccessPermissions
         AccessPermission ap = document.getCurrentAccessPermission();
@@ -665,7 +667,7 @@ public class PDFParser implements Parser, RenderingParser {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM.key(name),
+                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM, name,
                         info.getCOSObject().getDictionaryObject(key));
             }
         }
@@ -677,7 +679,7 @@ public class PDFParser implements Parser, RenderingParser {
         //    There are also three potential pdf specific version keys:
         //    pdf:pdf-version, pdfa:pdf-version, pdf:pdf-extension-version
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
-        metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
+        addFormat(metadata, MEDIA_TYPE.toString() + "; version=" +
                 Float.toString(document.getDocument().getVersion()));
 
 
@@ -700,20 +702,30 @@ public class PDFParser implements Parser, RenderingParser {
                         if (el != -1) {
                             metadata.set(PDF.PDF_EXTENSION_VERSION,
                                     baseVersion + " Adobe Extension Level " + el);
-                            metadata.add(TikaCoreProperties.FORMAT.getName(),
-                                    MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
-                                            " Adobe Extension Level " + el + "\"");
+                            addFormat(metadata, MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
+                                    " Adobe Extension Level " + el + "\"");
                         }
                     }
                 } else {
                     // WARN that there is an Extension, but it's not Adobe's, and so is a 'new'
                     // format'.
-                    metadata.set("pdf:found-non-adobe-extension-name", extName.getName());
+                    metadata.set(Property.externalText("pdf:found-non-adobe-extension-name"),
+                            extName.getName());
                 }
             }
         }
     }
 
+
+    //TikaCoreProperties.FORMAT is SIMPLE, but this site legitimately appends more than
+    //one value (base version + Adobe extension level); set(Property,String[]) bypasses
+    //the single-value enforcement that add(Property,String) would apply
+    private static void addFormat(Metadata metadata, String value) {
+        String[] existing = metadata.getValues(TikaCoreProperties.FORMAT);
+        String[] updated = Arrays.copyOf(existing, existing.length + 1);
+        updated[existing.length] = value;
+        metadata.set(TikaCoreProperties.FORMAT, updated);
+    }
 
     private boolean hasXFA(PDDocument pdDocument, Metadata metadata) {
         boolean hasXFA = pdDocument.getDocumentCatalog() != null &&

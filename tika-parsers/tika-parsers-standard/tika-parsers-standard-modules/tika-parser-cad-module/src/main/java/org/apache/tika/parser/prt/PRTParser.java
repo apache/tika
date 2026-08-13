@@ -32,6 +32,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -99,7 +100,7 @@ public class PRTParser implements Parser {
                 metadata.set(TikaCoreProperties.CREATED, formattedDate);
                 metadata.set(TikaCoreProperties.MODIFIED, formattedDate);
             }
-            metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
+            metadata.set(HttpHeaders.CONTENT_TYPE, PRT_MIME_TYPE);
 
             // The description, if set, is the next up-to-500 bytes
             byte[] desc = new byte[500];

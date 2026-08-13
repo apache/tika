@@ -31,6 +31,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -193,7 +194,7 @@ public class AsyncChaosMonkeyTest {
             assertEquals(64,
                     metadataList.get(0).get("tk:digest:SHA-256").trim().length());
             assertEquals("application/mock+xml",
-                    metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                    metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
             String val = metadataList.get(0).get(TikaCoreProperties.PIPES_RESULT);
             if (val == null) {
                 // Null means success (no crash status was set)

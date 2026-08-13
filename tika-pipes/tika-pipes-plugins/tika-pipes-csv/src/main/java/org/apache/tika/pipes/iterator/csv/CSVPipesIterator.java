@@ -172,7 +172,19 @@ public class CSVPipesIterator extends PipesIteratorBase {
             if (fetchEmitKeyIndices.shouldSkip(i)) {
                 continue;
             }
-            metadata.set(headers.get(i), record.get(i));
+            String header = headers.get(i);
+            try {
+                //map-style user metadata: the header is the column-to-metadata-key contract,
+                //kept verbatim; the String route's guard rejects reserved names. No Property --
+                //Property.externalText here interned every distinct header forever and could
+                //first-wins-shadow a curated constant (a column named dc:creator).
+                metadata.set(header, record.get(i));
+            } catch (IllegalArgumentException e) {
+                //header collides with a reserved Tika-native key; skip this column
+                //rather than aborting the whole row
+                LOGGER.warn("skipping reserved-name column '{}' in record {}: {}", header,
+                        record.getRecordNumber(), e.getMessage());
+            }
         }
         return metadata;
     }

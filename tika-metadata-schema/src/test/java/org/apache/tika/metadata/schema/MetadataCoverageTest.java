@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
  * Completeness backstop for the standard-scoped registry. {@link MetadataSchemaTest} proves the
  * registry matches the declarations it <em>scans</em>; this proves nothing <em>escapes</em> the
  * scan. It greps the source tree for every module declaring a {@code Property} or
- * {@code PassthroughPrefix} and fails if one is neither on the registry classpath nor an explicit
+ * {@code KeyPrefix} and fails if one is neither on the registry classpath nor an explicit
  * {@link #OUT_OF_SCOPE} family — so a new key-bearing parser cannot slip in silently.
  *
  * <p>Reads source (always present) for the declaring set and the runtime classpath for the scanned
@@ -42,18 +42,16 @@ import org.junit.jupiter.api.Test;
  */
 public class MetadataCoverageTest {
 
-    /** Parser families intentionally excluded from the standard-scoped registry (heavy/optional
-     * deps). Adding a module here is a conscious scope decision; see README. */
-    private static final Set<String> OUT_OF_SCOPE = Set.of(
-            "tika-parser-scientific-module",   // envi. grib: netcdf:
-            "tika-parser-sqlite3-module",      // sqlite3:
-            "tika-parser-nlp-module",          // ctakes: grobid:header_ NER_
-            "tika-vlm");                       // vlm:
+    /** Parser families intentionally excluded from the registry (heavy/optional deps). Adding a
+     * module here is a conscious scope decision; see README. TIKA-4816 stage 5a brought the
+     * scientific/sqlite3/nlp/vlm families into scope (test-scope deps of tika-metadata-schema), so
+     * this set is currently empty; kept as the documented mechanism for the next exclusion. */
+    private static final Set<String> OUT_OF_SCOPE = Set.of();
 
     // Source markers for an actual key declaration (a factory call), not a mere type reference.
     private static final String[] DECL_MARKERS = {
             "Property.internal", "Property.external", "Property.composite",
-            "PassthroughPrefix.file(", "PassthroughPrefix.tool("};
+            "KeyPrefix.file(", "KeyPrefix.tool("};
 
     private static final String SRC_MAIN = sep("src", "main") + File.separator + "java";
     private static final String SRC_TEST = sep("src", "test");

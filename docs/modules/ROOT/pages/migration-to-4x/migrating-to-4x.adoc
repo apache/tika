@@ -45,7 +45,7 @@ If you have build scripts or container images that drop in just the jar, update 
 In 3.x the default content handler produced XHTML/XML. In 4.x the default is **Markdown** everywhere:
 
 * `tika-app` outputs Markdown by default (was XHTML). Pass `-x`/`--xml`, `-h`/`--html`, or `-t`/`--text` to choose another format.
-* `tika-server` — the `/tika` and `/rmeta` endpoints return Markdown content by default (was XHTML/XML). Use an explicit handler path (`/tika/xml`, `/rmeta/xml`, ...) to choose another format.
+* `tika-server` -- the `/tika` and `/rmeta` endpoints return Markdown content by default. In 3.x, `/rmeta` returned XML content, and a bare `/tika` PUT routed among plain text, HTML, and XHTML by `Accept` header -- nondeterministically for `*/*`. Use an explicit handler path (`/tika/xml`, `/rmeta/xml`, ...) to choose another format.
 * The async/pipes CLI emits Markdown by default (was plain text). Use `--handler x` (etc.) to choose another format.
 
 If you parse the extracted content programmatically and expect XHTML/XML, request it explicitly as shown above (TIKA-4663).
@@ -180,10 +180,11 @@ complete documentation of all available options.
 == Metadata Key Changes
 
 Tika 4.x prefixes all "user generated" metadata keys to prevent overwrites and improve
-namespace clarity.
+namespace clarity. Writing to a reserved `tk:` key by `String` name also changed: it
+silently succeeded in 3.x and now throws.
 
 See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x] for complete details, including
-a full table of changes and code migration examples.
+a full table of changes, the write-API/reserved-key-guard changes, and code migration examples.
 
 == API Changes
 
@@ -241,10 +242,47 @@ External parsers must now be explicitly configured via JSON. See
 xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
 for details.
 
+== Timeout Model Changes
+
+4.x replaces the previous ad hoc, per-parser timeout handling with a single unified model
+(`TimeoutLimits` / `ParseTimeout`) shared across library use, `tika-app --fork`, and Tika
+Pipes. This affects error handling (`TikaTimeoutException` is now a checked exception),
+CLI flags (`tika-app --fork-timeout` was removed), and several parser/pipes config field
+names (`*TimeoutSeconds`/`*TimeoutMs` -> `*TimeoutMillis`, including a unit change for
+Tess4J specifically). See
+xref:pipes/timeouts.adoc#_upgrading_from_tika_3_x[Timeouts: Upgrading from Tika 3.x] for
+the full list of behavioral changes and required config edits.
+
 == Deprecations and Removals
 
 * `TikaConfig` -- replaced by `TikaLoader`
+* `Metadata#setAll(Properties)` -- raw map write that bypassed the reserved-key guard;
+  use `Metadata#putAll(Metadata)` instead (see
+  xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x])
 * `CompositeExternalParser` -- external parsers now require explicit JSON configuration
 * `ExternalParsersFactory` and XML-based external parser auto-discovery
 * DOM-based OOXML extractors (`XWPFWordExtractorDecorator`, `XSLFPowerPointExtractorDecorator`)
   -- SAX-based extractors are now the only implementation
+* `TikaMimeKeys` -- the interface is deleted outright, so direct references break too
+  (not just the constants formerly inherited by `Metadata`)
+* `Metadata` no longer implements `CreativeCommons`, `Geographic`, `HttpHeaders`, `Message`,
+  `ClimateForecast` (renamed from `ClimateForcast`), or `TIFF` -- reference the interface's
+  constants directly instead of the inherited `Metadata` constant (e.g. `Geographic.LATITUDE`)
+* `CreativeCommons` -- deleted outright: no parser ever produced its three keys
+  (`License-Url`, `License-Location`, `Work-Type`), and nothing consumed them
+* `ParserUtils.EMBEDDED_PARSER` -- use `TikaCoreProperties.EMBEDDED_PARSER` (it was a
+  same-Property alias)
+* package `org.apache.tika.metadata.writefilter` -> `org.apache.tika.metadata.writelimiter`
+  (the classes were renamed Filter -> Limiter earlier in 4.0.0; the package now matches)
+* `ClimateForecast` keys move under `cf:` (`cf:history`, `cf:comment`, ...; suffixes keep
+  the CF convention's verbatim spellings)
+* `TikaCoreProperties.TIKA_CONTENT_HANDLER` -- use `TIKA_CONTENT_HANDLER_TYPE`
+* `OfficeOpenXMLCore.SUBJECT` -- use `DublinCore#SUBJECT`
+* `XMPDM.ChannelTypePropertyConverter` -- experimental, no replacement
+* 8 deprecated `IPTC` properties: `URGENCY`, `CATEGORY`, `SUPPLEMENTAL_CATEGORIES` (use the
+  `Photoshop` equivalents), `DIGITAL_SOURCE_FILE_TYPE` (IPTC no longer recommends the field),
+  and the four `*_WRONG_CASE` fields (use the correctly-cased sibling, e.g. `IMAGE_SUPPLIER_ID`)
+* `Property.PropertyType.STRUCTURE` and `Property.ValueType.{LOCALE, MIME_TYPE, PROPER_NAME,
+  URL, XPATH}` -- dead enum constants, never produced by any `Property` factory
+* `Property.internalClosedChoise`/`internalOpenChoise`/`externalClosedChoise`/`externalOpenChoise`
+  -- renamed to `...Choice` (typo-fix rename, no forwarders)

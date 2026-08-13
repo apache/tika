@@ -41,8 +41,8 @@ public class StringsConfig implements Serializable {
     // Character encoding of the strings that are to be found
     private StringsEncoding encoding = StringsEncoding.SINGLE_7_BIT;
 
-    // Maximum time (seconds) to wait for the strings process termination
-    private int timeoutSeconds = 120;
+    // Maximum time (millis) to wait for the strings process termination
+    private long timeoutMillis = 120_000;
 
     /**
      * Returns the "strings" installation folder.
@@ -126,28 +126,28 @@ public class StringsConfig implements Serializable {
     }
 
     /**
-     * Returns the maximum time (in seconds) to wait for the "strings" command
+     * Returns the maximum time (in millis) to wait for the "strings" command
      * to terminate.
      *
-     * @return the maximum time (in seconds) to wait for the "strings" command
+     * @return the maximum time (in millis) to wait for the "strings" command
      * to terminate.
      */
-    public int getTimeoutSeconds() {
-        return this.timeoutSeconds;
+    public long getTimeoutMillis() {
+        return this.timeoutMillis;
     }
 
     /**
-     * Sets the maximum time (in seconds) to wait for the "strings" command to
+     * Sets the maximum time (in millis) to wait for the "strings" command to
      * terminate.
      *
-     * @param timeoutSeconds the maximum time (in seconds) to wait for the "strings"
-     *                       command to terminate.
+     * @param timeoutMillis the maximum time (in millis) to wait for the "strings"
+     *                      command to terminate.
      */
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        if (timeoutSeconds < 1) {
+    public void setTimeoutMillis(long timeoutMillis) {
+        if (timeoutMillis < 1) {
             throw new IllegalArgumentException("Invalid timeout");
         }
-        this.timeoutSeconds = timeoutSeconds;
+        this.timeoutMillis = timeoutMillis;
     }
 
     /**

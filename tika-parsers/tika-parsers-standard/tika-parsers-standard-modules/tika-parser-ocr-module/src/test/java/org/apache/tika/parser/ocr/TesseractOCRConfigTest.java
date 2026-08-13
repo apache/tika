@@ -39,7 +39,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("1", config.getPageSegMode(), "Invalid default pageSegMode value");
         assertEquals(0, config.getMinFileSizeToOcr(), "Invalid default minFileSizeToOcr value");
         assertEquals(Integer.MAX_VALUE, config.getMaxFileSizeToOcr(), "Invalid default maxFileSizeToOcr value");
-        assertEquals(120, config.getTimeoutSeconds(), "Invalid default timeout value");
+        assertEquals(120_000, config.getTimeoutMillis(), "Invalid default timeout value");
         assertEquals(300, config.getDensity(), "Invalid default density value");
         assertEquals(4, config.getDepth(), "Invalid default depth value");
         assertEquals("gray", config.getColorspace(), "Invalid default colorpsace value");
@@ -60,7 +60,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("1", config.getPageSegMode(), "Invalid default pageSegMode value");
         assertEquals(1, config.getMinFileSizeToOcr(), "Invalid overridden minFileSizeToOcr value");
         assertEquals(Integer.MAX_VALUE, config.getMaxFileSizeToOcr(), "Invalid default maxFileSizeToOcr value");
-        assertEquals(240, config.getTimeoutSeconds(), "Invalid overridden timeout value");
+        assertEquals(240_000, config.getTimeoutMillis(), "Invalid overridden timeout value");
         assertEquals(200, config.getDensity(), "Invalid overridden density value");
         assertEquals(8, config.getDepth(), "Invalid overridden depth value");
         assertEquals("box", config.getFilter(), "Invalid overridden filter value");
@@ -81,7 +81,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals(1, config.getMinFileSizeToOcr(), "Invalid overridden minFileSizeToOcr value");
         assertEquals(2000000, config.getMaxFileSizeToOcr(), "Invalid default maxFileSizeToOcr " +
                 "value");
-        assertEquals(240, config.getTimeoutSeconds(), "Invalid overridden timeout value");
+        assertEquals(240_000, config.getTimeoutMillis(), "Invalid overridden timeout value");
         assertEquals(200, config.getDensity(), "Invalid overridden density value");
         assertEquals(8, config.getDepth(), "Invalid overridden depth value");
         assertEquals("box", config.getFilter(), "Invalid overridden filter value");

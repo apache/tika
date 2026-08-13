@@ -81,7 +81,7 @@ public class SiegfriedDetector implements Detector {
     public static String ERRORS = "errors";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SiegfriedDetector.class);
-    private static final long DEFAULT_TIMEOUT_MS = 60000;
+    private static final long DEFAULT_TIMEOUT_MILLIS = 60000;
     private static final String DEFAULT_SIEGFRIED_PATH = "sf";
 
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -94,7 +94,7 @@ public class SiegfriedDetector implements Detector {
     public static class Config {
         private String siegfriedPath = DEFAULT_SIEGFRIED_PATH;
         private int maxBytes = 1_000_000;
-        private long timeoutMs = DEFAULT_TIMEOUT_MS;
+        private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
         private boolean useMime = false;
 
         public String getSiegfriedPath() {
@@ -113,12 +113,12 @@ public class SiegfriedDetector implements Detector {
             this.maxBytes = maxBytes;
         }
 
-        public long getTimeoutMs() {
-            return timeoutMs;
+        public long getTimeoutMillis() {
+            return timeoutMillis;
         }
 
-        public void setTimeoutMs(long timeoutMs) {
-            this.timeoutMs = timeoutMs;
+        public void setTimeoutMillis(long timeoutMillis) {
+            this.timeoutMillis = timeoutMillis;
         }
 
         public boolean isUseMime() {
@@ -193,19 +193,19 @@ public class SiegfriedDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
         //spool the full file to disk if there is no underlying file
-        return detectOnPath(tis.getPath(), metadata);
+        return detectOnPath(tis.getPath(), metadata, parseContext);
     }
 
     public Config getDefaultConfig() {
         return defaultConfig;
     }
 
-    private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
+    private MediaType detectOnPath(Path path, Metadata metadata, ParseContext parseContext) throws IOException {
 
         String[] args = new String[]{ProcessUtils.escapeCommandLine(defaultConfig.getSiegfriedPath()), "-json",
                 ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, defaultConfig.getTimeoutMs(), 1000000, 1000);
+        FileProcessResult result = ProcessUtils.execute(builder, parseContext, defaultConfig.getTimeoutMillis(), 1000000, 1000);
         return processResult(result, metadata, defaultConfig.isUseMime());
     }
 

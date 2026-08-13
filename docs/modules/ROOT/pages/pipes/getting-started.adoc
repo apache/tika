@@ -106,16 +106,17 @@ The `pipes` section controls the pipeline behavior:
 |Field |Default |Description
 
 |`numClients`
-|`4`
-|Number of parallel forked parse processes
+|_CPU-derived_
+|Number of parallel forked parse processes. Defaults to `max(1, min((cores - 2) / 2, 4))` -- roughly half the host's cores, capped at 4.
 
 |`parseMode`
 |`RMETA`
 |Output mode: `RMETA` (full recursive metadata), `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`
 
-|`socketTimeoutMs`
+|`socketTimeoutMillis`
 |`60000`
-|Maximum time (ms) for a single parse operation
+|Maximum time (ms) to wait for data (heartbeat or result) from a forked process
+before it is considered hung -- a transport/liveness bound, not a per-parse limit
 
 |`maxFilesProcessedPerProcess`
 |`10000`

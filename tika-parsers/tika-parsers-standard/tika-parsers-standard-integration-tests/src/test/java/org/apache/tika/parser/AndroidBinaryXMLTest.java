@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -98,15 +99,15 @@ public class AndroidBinaryXMLTest extends TikaTest {
         Metadata assetXml = byPathSuffix(metadataList, "province_data.xml");
 
         // The two compiled AXML entries: detected as AXML, NOT routed to the XML parser.
-        assertEquals(AXML, manifest.get(Metadata.CONTENT_TYPE));
-        assertEquals(AXML, resAnim.get(Metadata.CONTENT_TYPE));
+        assertEquals(AXML, manifest.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(AXML, resAnim.get(HttpHeaders.CONTENT_TYPE));
         assertNull(manifest.get(TikaCoreProperties.EMBEDDED_EXCEPTION),
                 "AXML manifest must not throw a parse exception");
         assertNull(resAnim.get(TikaCoreProperties.EMBEDDED_EXCEPTION),
                 "AXML resource must not throw a parse exception");
 
         // Control: a genuine text XML under assets/ is still detected and parsed as XML.
-        assertEquals("application/xml", assetXml.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/xml", assetXml.get(HttpHeaders.CONTENT_TYPE));
         assertNull(assetXml.get(TikaCoreProperties.EMBEDDED_EXCEPTION));
     }
 

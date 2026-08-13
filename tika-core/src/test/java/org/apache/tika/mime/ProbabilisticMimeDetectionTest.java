@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -176,7 +177,7 @@ public class ProbabilisticMimeDetectionTest {
         }
 
         Metadata typehint = new Metadata();
-        typehint.set(Metadata.CONTENT_TYPE, "text/plain");
+        typehint.set(HttpHeaders.CONTENT_TYPE, "text/plain");
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.TEXT_PLAIN,
                     proDetector.detect(tis, typehint, new ParseContext()));
@@ -246,7 +247,7 @@ public class ProbabilisticMimeDetectionTest {
     @Test
     public void testTIKA2237() throws IOException {
         Metadata metadata = new Metadata();
-        metadata.add(Metadata.CONTENT_TYPE, MediaType.text("javascript").toString());
+        metadata.add(HttpHeaders.CONTENT_TYPE, MediaType.text("javascript").toString());
         TikaInputStream tis = TikaInputStream.get(
                 ("function() {};\n" + "try {\n" + "    window.location = 'index.html';\n" +
                         "} catch (e) {\n" + "    console.log(e);\n" + "}")

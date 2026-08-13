@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -38,7 +39,7 @@ public class Pkcs7EndToEndTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("test.xml.p7m");
         // the container is refined from the coarse detected type to the CMS subtype
         assertEquals("application/pkcs7-mime; smime-type=signed-data",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         // the signed XML payload is unwrapped and extracted
         StringBuilder content = new StringBuilder();
         for (Metadata m : metadataList) {
@@ -56,9 +57,9 @@ public class Pkcs7EndToEndTest extends TikaTest {
     public void testCompressedContentIsExtracted() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPKCS7_compressed_def_long.p7z");
         assertEquals("application/pkcs7-mime; smime-type=compressed-data",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         boolean pdf = metadataList.stream()
-                .map(m -> m.get(Metadata.CONTENT_TYPE))
+                .map(m -> m.get(HttpHeaders.CONTENT_TYPE))
                 .anyMatch(ct -> ct != null && ct.startsWith("application/pdf"));
         assertTrue(pdf, "expected an embedded application/pdf inflated from the compressed payload");
     }

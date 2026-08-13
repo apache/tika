@@ -33,7 +33,9 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -80,33 +82,35 @@ public class TrueTypeParser implements Parser {
             }
 
             // Report the details of the font
-            metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
             metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated());
             metadata.set(TikaCoreProperties.MODIFIED, font.getHeader().getModified());
-            metadata.set(AdobeFontMetricParser.MET_DOC_VERSION,
+            metadata.set(Property.externalText(AdobeFontMetricParser.MET_DOC_VERSION),
                     Float.toString(font.getHeader().getVersion()));
 
             // Pull out the naming info
             NamingTable fontNaming = font.getNaming();
             for (NameRecord nr : fontNaming.getNameRecords()) {
                 if (nr.getNameId() == NameRecord.NAME_FONT_FAMILY_NAME) {
-                    metadata.set(AdobeFontMetricParser.MET_FONT_FAMILY_NAME, nr.getString());
+                    metadata.set(Property.externalText(AdobeFontMetricParser.MET_FONT_FAMILY_NAME),
+                            nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_FONT_SUB_FAMILY_NAME) {
-                    metadata.set(AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME, nr.getString());
+                    metadata.set(Property.externalText(AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME),
+                            nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_FULL_FONT_NAME) {
-                    metadata.set(AdobeFontMetricParser.MET_FONT_NAME, nr.getString());
+                    metadata.set(Property.externalText(AdobeFontMetricParser.MET_FONT_NAME), nr.getString());
                     metadata.set(TikaCoreProperties.TITLE, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_POSTSCRIPT_NAME) {
-                    metadata.set(AdobeFontMetricParser.MET_PS_NAME, nr.getString());
+                    metadata.set(Property.externalText(AdobeFontMetricParser.MET_PS_NAME), nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_COPYRIGHT) {
                     metadata.set(TikaCoreProperties.RIGHTS, nr.getString());
                 }
                 if (nr.getNameId() == NameRecord.NAME_TRADEMARK) {
-                    metadata.set("Trademark", nr.getString());
+                    metadata.set(Property.externalText("Trademark"), nr.getString());
                 }
             }
         } finally {

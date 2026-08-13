@@ -33,7 +33,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -88,38 +88,38 @@ public class OneNoteParser implements Parser {
             OneNoteHeader header = oneNoteDocument.header;
 
             if (header.isMsOneStoreFormat()) {
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberCreated",
+                metadata.set(OneNote.BUILD_NUMBER_CREATED,
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberCreated));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberLastWroteToFile",
+                metadata.set(OneNote.BUILD_NUMBER_LAST_WROTE_TO_FILE,
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberLastWroteToFile));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberNewestWritten",
+                metadata.set(OneNote.BUILD_NUMBER_NEWEST_WRITTEN,
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberNewestWritten));
-                metadata.set(ONE_NOTE_PREFIX + "buildNumberOldestWritten",
+                metadata.set(OneNote.BUILD_NUMBER_OLDEST_WRITTEN,
                         "0x" + Long.toHexString(oneNoteDocument.header.buildNumberOldestWritten));
-                metadata.set(ONE_NOTE_PREFIX + "cbExpectedFileLength",
+                metadata.set(OneNote.CB_EXPECTED_FILE_LENGTH,
                         "0x" + Long.toHexString(oneNoteDocument.header.cbExpectedFileLength));
-                metadata.set(ONE_NOTE_PREFIX + "cbFreeSpaceInFreeChunkList",
+                metadata.set(OneNote.CB_FREE_SPACE_IN_FREE_CHUNK_LIST,
                         "0x" + Long.toHexString(oneNoteDocument.header.cbFreeSpaceInFreeChunkList));
-                metadata.set(ONE_NOTE_PREFIX + "cbLegacyExpectedFileLength",
+                metadata.set(OneNote.CB_LEGACY_EXPECTED_FILE_LENGTH,
                         "0x" + Long.toHexString(oneNoteDocument.header.cbLegacyExpectedFileLength));
-                metadata.set(ONE_NOTE_PREFIX + "cbLegacyFreeSpaceInFreeChunkList", "0x" +
+                metadata.set(OneNote.CB_LEGACY_FREE_SPACE_IN_FREE_CHUNK_LIST, "0x" +
                         Long.toHexString(oneNoteDocument.header.cbLegacyFreeSpaceInFreeChunkList));
-                metadata.set(ONE_NOTE_PREFIX + "crcName", "0x" + Long.toHexString(oneNoteDocument.header.crcName));
-                metadata.set(ONE_NOTE_PREFIX + "cTransactionsInLog",
+                metadata.set(OneNote.CRC_NAME, "0x" + Long.toHexString(oneNoteDocument.header.crcName));
+                metadata.set(OneNote.C_TRANSACTIONS_IN_LOG,
                         "0x" + Long.toHexString(oneNoteDocument.header.cTransactionsInLog));
-                metadata.set(ONE_NOTE_PREFIX + "ffvLastCodeThatWroteToThisFile", "0x" +
+                metadata.set(OneNote.FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE, "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvLastCodeThatWroteToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvNewestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(OneNote.FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvNewestCodeThatHasWrittenToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatMayReadThisFile", "0x" +
+                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_MAY_READ_THIS_FILE, "0x" +
                         Long.toHexString(oneNoteDocument.header.ffvOldestCodeThatMayReadThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "ffvOldestCodeThatHasWrittenToThisFile", "0x" + Long.toHexString(
+                metadata.set(OneNote.FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE, "0x" + Long.toHexString(
                         oneNoteDocument.header.ffvOldestCodeThatHasWrittenToThisFile));
-                metadata.set(ONE_NOTE_PREFIX + "grfDebugLogFlags",
+                metadata.set(OneNote.GRF_DEBUG_LOG_FLAGS,
                         "0x" + Long.toHexString(oneNoteDocument.header.grfDebugLogFlags));
-                metadata.set(ONE_NOTE_PREFIX + "nFileVersionGeneration",
+                metadata.set(OneNote.N_FILE_VERSION_GENERATION,
                         "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
-                metadata.set(ONE_NOTE_PREFIX + "rgbPlaceholder",
+                metadata.set(OneNote.RGB_PLACEHOLDER,
                         "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
 
                 Pair<Long, ExtendedGUID> roleAndContext = Pair.of(1L, ExtendedGUID.nil());
@@ -134,20 +134,20 @@ public class OneNoteParser implements Parser {
                             oneNoteTreeWalker.getAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
-                    metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
+                    metadata.set(OneNote.MOST_RECENT_AUTHORS,
                             oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[]{}));
                 }
                 if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
-                    metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
+                    metadata.set(OneNote.ORIGINAL_AUTHORS,
                             oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
                 }
                 if (!Instant.MAX.equals(
                         Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
-                    metadata.set(ONE_NOTE_PREFIX + "creationTimestamp",
+                    metadata.set(OneNote.CREATION_TIMESTAMP,
                             String.valueOf(oneNoteTreeWalker.getCreationTimestamp()));
                 }
                 if (!Instant.MIN.equals(oneNoteTreeWalker.getLastModifiedTimestamp())) {
-                    metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp", String.valueOf(
+                    metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP, String.valueOf(
                             oneNoteTreeWalker.getLastModifiedTimestamp().toEpochMilli()));
                 }
                 if (oneNoteTreeWalker.getLastModified() > Long.MIN_VALUE) {

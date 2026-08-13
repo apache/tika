@@ -39,6 +39,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -50,7 +51,6 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
 import org.apache.tika.utils.ExceptionUtils;
@@ -153,7 +153,7 @@ class ParseHandler {
         parseContext.set(ParsingIntent.class, ParsingIntent.WILL_PARSE);
         try {
             MediaType mt = detector.detect(tis, metadata, parseContext);
-            metadata.set(Metadata.CONTENT_TYPE,
+            metadata.set(HttpHeaders.CONTENT_TYPE,
                     EmbeddedDocumentUtil.normalizeMediaType(mt.toString()));
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
         } catch (IOException e) {
@@ -277,10 +277,13 @@ class ParseHandler {
             }
             // Set limit reached flags from ParseRecord
             if (parseRecord.isEmbeddedCountLimitReached()) {
-                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
+                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED, true);
             }
             if (parseRecord.isEmbeddedDepthLimitReached()) {
-                metadata.set(AbstractRecursiveParserWrapperHandler.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+                metadata.set(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED, true);
+            }
+            if (parseRecord.isTaskDeadlineReached()) {
+                metadata.set(TikaCoreProperties.TASK_DEADLINE_REACHED, true);
             }
             if (LOG.isTraceEnabled()) {
                 LOG.trace("timer -- parse only time: {} ms", System.currentTimeMillis() - start);

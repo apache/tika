@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -34,9 +35,9 @@ public class UniversalExecutableParserTest extends TikaTest {
     public void testMachO() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testMacOS-x86_64-arm64");
         assertEquals(3, metadataList.size());
-        assertEquals("application/x-mach-o-universal", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-mach-o-universal", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         for (int i = 1; i < 3; i++) {
-            assertEquals("application/x-mach-o-executable", metadataList.get(i).get(Metadata.CONTENT_TYPE));
+            assertEquals("application/x-mach-o-executable", metadataList.get(i).get(HttpHeaders.CONTENT_TYPE));
         }
     }
 }

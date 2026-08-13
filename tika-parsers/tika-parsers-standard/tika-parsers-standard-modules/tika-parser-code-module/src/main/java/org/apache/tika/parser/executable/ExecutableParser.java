@@ -32,6 +32,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MachineMetadata;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -115,7 +116,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
      */
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
                         byte[] first4) throws TikaException, IOException {
-        metadata.set(Metadata.CONTENT_TYPE, PE_EXE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
         // Skip over the MS-DOS bit
@@ -350,23 +351,23 @@ public class ExecutableParser implements Parser, MachineMetadata {
         }
         switch (type) {
             case 1:
-                metadata.set(Metadata.CONTENT_TYPE, ELF_OBJECT.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, ELF_OBJECT.toString());
                 break;
 
             case 2:
-                metadata.set(Metadata.CONTENT_TYPE, ELF_EXECUTABLE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, ELF_EXECUTABLE.toString());
                 break;
 
             case 3:
-                metadata.set(Metadata.CONTENT_TYPE, ELF_SHAREDLIB.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, ELF_SHAREDLIB.toString());
                 break;
 
             case 4:
-                metadata.set(Metadata.CONTENT_TYPE, ELF_COREDUMP.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, ELF_COREDUMP.toString());
                 break;
 
             default:
-                metadata.set(Metadata.CONTENT_TYPE, ELF_GENERAL.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, ELF_GENERAL.toString());
                 break;
         }
 
@@ -493,40 +494,40 @@ public class ExecutableParser implements Parser, MachineMetadata {
                 : EndianUtils.readIntBE(tis);
         switch (fileType) {
             case 0x1:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_OBJECT.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_OBJECT.toString());
                 break;
             case 0x2:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_EXECUTABLE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_EXECUTABLE.toString());
                 break;
             case 0x3:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_FVMLIB.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_FVMLIB.toString());
                 break;
             case 0x4:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_CORE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_CORE.toString());
                 break;
             case 0x5:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_PRELOAD.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_PRELOAD.toString());
                 break;
             case 0x6:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_DYLIB.toString());
                 break;
             case 0x7:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLINKER.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_DYLINKER.toString());
                 break;
             case 0x8:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_BUNDLE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_BUNDLE.toString());
                 break;
             case 0x9:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DYLIB_STUB.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_DYLIB_STUB.toString());
                 break;
             case 0xa:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_DSYM.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_DSYM.toString());
                 break;
             case 0xb:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O_KEXT_BUNDLE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O_KEXT_BUNDLE.toString());
                 break;
             default:
-                metadata.set(Metadata.CONTENT_TYPE, MACH_O.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, MACH_O.toString());
                 break;
         }
     }

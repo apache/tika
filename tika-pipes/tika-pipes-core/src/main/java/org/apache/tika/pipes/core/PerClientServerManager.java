@@ -65,16 +65,35 @@ public class PerClientServerManager implements ServerManager {
      *  formula could otherwise produce slice=1. */
     private static final int MIN_AUTO_CAP_SLICE = 2;
 
+    /** Share of host/container memory the forks may collectively claim; the remainder is
+     *  left for the parent JVM, the OS, and page cache for spooled input. */
+    private static final int FORK_HEAP_BUDGET_PERCENT = 75;
+
+
+    private static boolean userSetHeap(List<String> args) {
+        return args.stream().anyMatch(a -> a.startsWith("-Xmx")
+                || a.startsWith("-XX:MaxRAMPercentage")
+                || a.startsWith("-XX:MaxRAMFraction"));
+    }
+
+    private static int forkHeapPercentage(int numClients) {
+        return Math.max(1, FORK_HEAP_BUDGET_PERCENT / numClients);
+    }
+
+
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
     private final int clientId;
 
-    private Process process;
-    private ServerSocket serverSocket;
-    private Path tmpDir;
-    private int port = -1;
+    private volatile Process process;
+    private volatile ServerSocket serverSocket;
+    private volatile Path tmpDir;
+    private volatile int port = -1;
     private long filesProcessed = 0;
-    private boolean pendingRestart = false;
+    private volatile boolean pendingRestart = false;
+    // Set once by shutdown()/close(); guards a request thread from starting a fresh
+    // process after the manager has been torn down (which would leak the child).
+    private volatile boolean closed = false;
 
     public PerClientServerManager(PipesConfig pipesConfig, Path tikaConfigPath, int clientId) {
         this.pipesConfig = pipesConfig;
@@ -134,8 +153,17 @@ public class PerClientServerManager implements ServerManager {
                     ? "slice=" + slice
                     : "skipped (slice<" + MIN_AUTO_CAP_SLICE + ")";
         }
+        String heapDecision;
+        if (userSetHeap(pipesConfig.getForkedJvmArgs())) {
+            heapDecision = "user-set in forkedJvmArgs";
+        } else if (numClients <= 1) {
+            heapDecision = "n/a (single fork; JVM default)";
+        } else {
+            heapDecision = "MaxRAMPercentage=" + forkHeapPercentage(numClients);
+        }
         LOG.info("pipes-cpu-sizing: hostCores={}, numClients={}, parentReserved={}, " +
-                "autoCap={}", hostCores, numClients, PARENT_RESERVED_CORES, capDecision);
+                "autoCap={}, heap={}", hostCores, numClients, PARENT_RESERVED_CORES,
+                capDecision, heapDecision);
     }
 
     @Override
@@ -202,7 +230,10 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public void ensureRunning() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
+    public synchronized void ensureRunning() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
+        if (closed) {
+            throw new IllegalStateException("PerClientServerManager is closed");
+        }
         // Check if server is running AND not marked for restart
         if (isRunning() && !pendingRestart) {
             return;
@@ -211,26 +242,33 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException {
-        if (serverSocket == null) {
+    public Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException {
+        // Capture the socket up front: shutdown() may null the field concurrently, but this
+        // request keeps using (and detects the close on) the instance it started with.
+        ServerSocket ss = serverSocket;
+        if (ss == null) {
             throw new IllegalStateException("Server not started. Call ensureRunning() first.");
         }
 
         // Accept incoming connection from the server process
-        serverSocket.setSoTimeout(1000); // 1 second timeout for each poll
+        ss.setSoTimeout(1000); // 1 second timeout for each poll
         long startTime = System.currentTimeMillis();
 
         while (true) {
             try {
-                Socket socket = serverSocket.accept();
-                socket.setSoTimeout(socketTimeoutMs);
+                Socket socket = ss.accept();
+                socket.setSoTimeout(socketTimeoutMillis);
                 socket.setTcpNoDelay(true);
                 LOG.debug("clientId={}: accepted connection from server", clientId);
                 return socket;
             } catch (SocketTimeoutException e) {
-                // Check if the process died before connecting
-                if (!process.isAlive()) {
-                    int exitValue = process.exitValue();
+                // Check if the process died (or the manager was shut down) before connecting.
+                Process p = process;
+                if (p == null) {
+                    throw new IOException("Server manager was shut down while connecting");
+                }
+                if (!p.isAlive()) {
+                    int exitValue = p.exitValue();
                     LOG.error("clientId={}: Process exited with code {} before connecting to socket",
                             clientId, exitValue);
                     ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
@@ -256,10 +294,14 @@ public class PerClientServerManager implements ServerManager {
         }
     }
 
-    private void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
-        // Clean up any previous server
+    private synchronized void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
+        if (closed) {
+            throw new IllegalStateException("PerClientServerManager is closed");
+        }
+        // Clean up any previous server (restart) -- teardown, not shutdown, so we do not
+        // mark the manager closed.
         if (process != null || serverSocket != null || tmpDir != null) {
-            shutdown();
+            teardown();
         }
 
         // Create new server socket to get a free port
@@ -323,8 +365,18 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public void shutdown() throws InterruptedException {
-        LOG.debug("clientId={}: shutting down server", clientId);
+    public synchronized void shutdown() throws InterruptedException {
+        closed = true;
+        teardown();
+    }
+
+    /**
+     * Tears down the current server process, socket, and temp dir without marking the manager
+     * closed -- shared by the final {@link #shutdown()} and by {@link #startServer()} on restart.
+     * Callers hold the monitor.
+     */
+    private void teardown() throws InterruptedException {
+        LOG.debug("clientId={}: tearing down server", clientId);
 
         if (serverSocket != null) {
             try {
@@ -440,6 +492,19 @@ public class PerClientServerManager implements ServerManager {
         if (!hasErrorFile) {
             configArgs.add("-XX:ErrorFile=" + tmpDir.resolve("hs_err_pid%p.log")
                     .toAbsolutePath());
+        }
+
+        // Heap gets the same treatment as CPU. Left alone, every fork independently
+        // takes the JVM's own default max heap (a fixed fraction of host/container
+        // memory), so numClients forks have a combined ceiling well above what the
+        // host has -- the same "each JVM thinks it owns the machine" problem the
+        // ActiveProcessorCount cap solves. Give each fork a slice of a fixed budget
+        // instead, leaving the remainder for the parent and the OS.
+        if (!userSetHeap(configArgs) && pipesConfig.getNumClients() > 1) {
+            int pct = forkHeapPercentage(pipesConfig.getNumClients());
+            configArgs.add("-XX:MaxRAMPercentage=" + pct);
+            LOG.debug("clientId={}: auto-injected -XX:MaxRAMPercentage={} (numClients={})",
+                    clientId, pct, pipesConfig.getNumClients());
         }
 
         // If the user hasn't explicitly set -XX:ActiveProcessorCount, size each

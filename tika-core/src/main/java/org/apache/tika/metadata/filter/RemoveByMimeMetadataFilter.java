@@ -25,6 +25,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -79,7 +80,7 @@ public class RemoveByMimeMetadataFilter extends MetadataFilter {
     }
 
     private boolean shouldRemove(Metadata metadata) {
-        String mimeString = metadata.get(Metadata.CONTENT_TYPE);
+        String mimeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mimeString == null) {
             return false;
         }

@@ -33,7 +33,9 @@ import ucar.nc2.NetcdfFile;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -58,6 +60,11 @@ public class HDFParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-hdf"));
+
+    private static final KeyPrefix HDF = KeyPrefix.file("hdf:", "HDF/NetCDF group attribute names");
+
+    private static final Property FILE_TYPE_DESCRIPTION =
+            Property.externalText("hdf:file-type-description");
 
     /*
      * (non-Javadoc)
@@ -105,14 +112,16 @@ public class HDFParser implements Parser {
         }
 
         // get file type
-        met.set("hdf:File-Type-Description", ncFile.getFileTypeDescription());
-        // unravel its string attrs
+        met.set(FILE_TYPE_DESCRIPTION, ncFile.getFileTypeDescription());
+        // the same attribute name can recur across sibling/nested groups (recursed via
+        // group.getGroups() below), so values accumulate
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {
-                met.add(attribute.getFullName(), attribute.getStringValue());
+                met.add(HDF, attribute.getFullName(), attribute.getStringValue());
             } else {
                 // try and cast its value to a string
-                met.add(attribute.getFullName(), String.valueOf(attribute.getNumericValue()));
+                met.add(HDF, attribute.getFullName(),
+                        String.valueOf(attribute.getNumericValue()));
             }
         }
 

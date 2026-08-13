@@ -53,6 +53,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PageAnchoring;
@@ -220,7 +221,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     handler.endElement(XHTML, "div", "div");
 
                     thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, thumbName);
-                    thumbnailMetadata.set(Metadata.CONTENT_TYPE, tPart.getContentType());
+                    thumbnailMetadata.set(HttpHeaders.CONTENT_TYPE, tPart.getContentType());
                     thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
                     thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
@@ -502,7 +503,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         updateResourceName(part, embeddedPartMetadata, metadata);
 
         // Get the content type
-        metadata.set(Metadata.CONTENT_TYPE, part.getContentType());
+        metadata.set(HttpHeaders.CONTENT_TYPE, part.getContentType());
 
         applyEmbeddedAnchorMetadata(part, metadata);
 

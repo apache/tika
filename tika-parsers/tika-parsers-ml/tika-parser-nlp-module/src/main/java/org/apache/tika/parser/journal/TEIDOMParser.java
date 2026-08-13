@@ -31,10 +31,27 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
 public class TEIDOMParser {
+
+    // Fixed, bounded vocabulary of this class's own field names, namespaced under grobid:tei:
+    // (TIKA-4816). GrobidRESTParser forwards this Metadata's entries verbatim by Property lookup
+    // (Property.get(key)) -- these are already the final, wire-visible keys, not re-keyed again.
+    private static final Property CLASS = Property.externalText("grobid:tei:class");
+    private static final Property TEI_XML_SOURCE = Property.externalText("grobid:tei:xml-source");
+    private static final Property LANGUAGE = Property.externalText("grobid:tei:language");
+    private static final Property TITLE = Property.externalText("grobid:tei:title");
+    private static final Property ADDRESS = Property.externalText("grobid:tei:address");
+    private static final Property AFFILIATION = Property.externalText("grobid:tei:affiliation");
+    private static final Property AUTHORS = Property.externalText("grobid:tei:authors");
+    private static final Property FULL_AFFILIATIONS =
+            Property.externalText("grobid:tei:full-affiliations");
+    private static final Property ERROR = Property.externalText("grobid:tei:error");
+    private static final Property ABSTRACT = Property.externalText("grobid:tei:abstract");
+    private static final Property KEYWORD = Property.externalTextBag("grobid:tei:keyword");
 
     public TEIDOMParser() {
     }
@@ -109,16 +126,16 @@ public class TEIDOMParser {
     }
 
     private void addStaticMet(String source, Element obj, Metadata metadata) {
-        metadata.add("Class", Metadata.class.getName());
+        metadata.add(CLASS, Metadata.class.getName());
         //no longer available after we got rid of json.org's and its .toJSONObject()
 //        metadata.add("TEIJSONSource", obj.toString());
-        metadata.add("TEIXMLSource", source);
+        metadata.add(TEI_XML_SOURCE, source);
     }
 
     private void parseText(Node text, Metadata metadata) {
         String lang = getFirstAttribute(text, "xml", "lang");
         if (lang != null) {
-            metadata.add("Language", lang);
+            metadata.add(LANGUAGE, lang);
         }
     }
 
@@ -140,7 +157,7 @@ public class TEIDOMParser {
         if (title != null) {
             String titleText = title.getTextContent();
             if (titleText != null) {
-                metadata.add("Title", titleText);
+                metadata.add(TITLE, titleText);
             }
         }
     }
@@ -162,14 +179,14 @@ public class TEIDOMParser {
                 parseAuthor(authorNode, authorList);
             }
 
-            metadata.add("Address", getMetadataAddresses(authorList));
-            metadata.add("Affiliation", getMetadataAffiliations(authorList));
-            metadata.add("Authors", getMetadataAuthors(authorList));
-            metadata.add("FullAffiliations", getMetadataFullAffiliations(authorList));
+            metadata.add(ADDRESS, getMetadataAddresses(authorList));
+            metadata.add(AFFILIATION, getMetadataAffiliations(authorList));
+            metadata.add(AUTHORS, getMetadataAuthors(authorList));
+            metadata.add(FULL_AFFILIATIONS, getMetadataFullAffiliations(authorList));
 
 
         } else {
-            metadata.add("Error", "Unable to parse: no analytic section in JSON");
+            metadata.add(ERROR, "Unable to parse: no analytic section in JSON");
         }
 
     }
@@ -396,7 +413,7 @@ public class TEIDOMParser {
         if (abstractNode != null) {
             Node pNode = getFirstChild(abstractNode.getChildNodes(), "p");
             if (pNode != null) {
-                metadata.add("Abstract", pNode.getTextContent());
+                metadata.add(ABSTRACT, pNode.getTextContent());
             }
         }
 
@@ -407,10 +424,10 @@ public class TEIDOMParser {
                 List<Node> terms = getChildNodes(keywordsNode.getChildNodes(), "term");
                 if (terms.size() == 0) {
                     // test AJ15.pdf
-                    metadata.add("Keyword", keywordsNode.getTextContent());
+                    metadata.add(KEYWORD, keywordsNode.getTextContent());
                 } else {
                     for (Node term : terms) {
-                        metadata.add("Keyword", term.getTextContent());
+                        metadata.add(KEYWORD, term.getTextContent());
                     }
                 }
 

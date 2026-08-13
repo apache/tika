@@ -35,6 +35,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -57,7 +58,7 @@ public class ClaudeVLMParserTest {
         config.setModel("claude-sonnet-4-20250514");
         config.setPrompt("Extract all text.");
         config.setMaxTokens(4096);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
         config.setApiKey("sk-ant-test-key");
 
         parser = new ClaudeVLMParser(config);
@@ -75,7 +76,7 @@ public class ClaudeVLMParserTest {
                 buildClaudeResponse("Hello from Claude!", 200, 30)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         BodyContentHandler handler = new BodyContentHandler();
 
         try (TikaInputStream tis = TikaInputStream.get(
@@ -125,7 +126,7 @@ public class ClaudeVLMParserTest {
                 buildClaudeResponse("PDF text extracted by Claude", 500, 60)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
         BodyContentHandler handler = new BodyContentHandler();
         byte[] fakePdf = "%PDF-1.4 fake".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
@@ -169,7 +170,7 @@ public class ClaudeVLMParserTest {
                 buildClaudeResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{1, 2}))) {
@@ -188,7 +189,7 @@ public class ClaudeVLMParserTest {
                 "{\"error\":{\"type\":\"server_error\",\"message\":\"boom\"}}"));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(
@@ -247,7 +248,7 @@ public class ClaudeVLMParserTest {
         parser = new ClaudeVLMParser(config);
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{1, 2}))) {

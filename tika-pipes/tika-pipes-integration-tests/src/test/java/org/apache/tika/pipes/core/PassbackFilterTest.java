@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -83,17 +84,17 @@ public class PassbackFilterTest {
                 .get(0);
         pipesClient.close();
         assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertNull(metadata.get(Metadata.CONTENT_TYPE));
-        assertNull(metadata.get(Metadata.CONTENT_LENGTH));
+        assertNull(metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH));
         assertEquals(1, metadata.names().length);
 
         List<Metadata> metadataList = JsonMetadataList.fromJson(Files.newBufferedReader(tmpDir.resolve("output").resolve(emitFileBase + ".json"), StandardCharsets.UTF_8));
         assertEquals(1, metadataList.size());
         assertEquals("application/pdf", metadataList
                 .get(0)
-                .get(Metadata.CONTENT_TYPE));
+                .get(HttpHeaders.CONTENT_TYPE));
         assertEquals("899", metadataList
                 .get(0)
-                .get(Metadata.CONTENT_LENGTH));
+                .get(HttpHeaders.CONTENT_LENGTH));
     }
 }

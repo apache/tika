@@ -329,19 +329,21 @@ framework keys.
 
 == Creating a Custom Component
 
-Complete example of a custom metadata filter:
+Complete example of a custom metadata filter. `fieldName` is config-supplied, so it could
+legitimately name a reserved `tk:` key; use `setTrusted` rather than `set` -- filters run
+inside the trusted bracket of `MetadataFilter`, the sanctioned route for a write keyed by
+a name that isn't a compile-time constant:
 
 [source,java]
 ----
 package com.example.tika;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilterBase;
 
 @TikaComponent
-public class UpperCaseFilter implements MetadataFilter {
+public class UpperCaseFilter extends MetadataFilterBase {
 
     private String fieldName = "title";
 
@@ -354,18 +356,19 @@ public class UpperCaseFilter implements MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         String value = metadata.get(fieldName);
         if (value != null) {
-            metadata.set(fieldName, value.toUpperCase());
+            metadata.setTrusted(fieldName, value.toUpperCase());
         }
     }
 }
 ----
 
 Configure in JSON. Metadata filters are loaded via `parse-context` (they
-implement the `MetadataFilter` interface, which is a `ParseContext`-keyed
-component):
+extend the `MetadataFilter` abstract class -- here via `MetadataFilterBase`,
+whose per-`Metadata` hook suits context-free filters -- which is a
+`ParseContext`-keyed component):
 
 [source,json]
 ----

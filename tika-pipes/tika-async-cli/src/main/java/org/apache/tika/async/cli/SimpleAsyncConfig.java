@@ -29,7 +29,7 @@ class SimpleAsyncConfig {
     private String inputDir;
     private String outputDir;
     private Integer numClients;
-    private Long timeoutMs;
+    private Long timeoutMillis;
     private String xmx;
     private String fileList;
     private String tikaConfig;//path to the tikaConfig file to be used in the forked process
@@ -51,14 +51,14 @@ class SimpleAsyncConfig {
     private String onExists;
 
     //TODO -- switch to a builder
-    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
+    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMillis, String xmx, String fileList,
                              String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                              ExtractBytesMode extractBytesMode, String pluginsDir) {
-        this(inputDir, outputDir, numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
+        this(inputDir, outputDir, numClients, timeoutMillis, xmx, fileList, tikaConfig, handlerType,
                 extractBytesMode, pluginsDir, false, false, null, null, false);
     }
 
-    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMs, String xmx, String fileList,
+    public SimpleAsyncConfig(String inputDir, String outputDir, Integer numClients, Long timeoutMillis, String xmx, String fileList,
                              String tikaConfig, BasicContentHandlerFactory.HANDLER_TYPE handlerType,
                              ExtractBytesMode extractBytesMode, String pluginsDir,
                              boolean concatenate, boolean contentOnly,
@@ -66,7 +66,7 @@ class SimpleAsyncConfig {
         this.inputDir = inputDir;
         this.outputDir = outputDir;
         this.numClients = numClients;
-        this.timeoutMs = timeoutMs;
+        this.timeoutMillis = timeoutMillis;
         this.xmx = xmx;
         this.fileList = fileList;
         this.tikaConfig = tikaConfig;
@@ -92,8 +92,8 @@ class SimpleAsyncConfig {
         return numClients;
     }
 
-    public Long getTimeoutMs() {
-        return timeoutMs;
+    public Long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public String getXmx() {
@@ -154,7 +154,7 @@ class SimpleAsyncConfig {
                 "inputDir='" + inputDir + '\'' +
                 ", outputDir='" + outputDir + '\'' +
                 ", numClients=" + numClients +
-                ", timeoutMs=" + timeoutMs +
+                ", timeoutMillis=" + timeoutMillis +
                 ", xmx='" + xmx + '\'' +
                 ", fileList='" + fileList + '\'' +
                 ", tikaConfig='" + tikaConfig + '\'' +

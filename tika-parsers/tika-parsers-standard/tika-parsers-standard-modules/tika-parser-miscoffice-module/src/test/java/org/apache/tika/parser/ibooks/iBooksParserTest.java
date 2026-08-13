@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class iBooksParserTest extends TikaTest {
@@ -31,7 +31,7 @@ public class iBooksParserTest extends TikaTest {
 
         XMLResult xmlResult = getXML("testiBooks.ibooks");
 
-        assertEquals("application/x-ibooks+zip", xmlResult.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-ibooks+zip", xmlResult.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("en-GB", xmlResult.metadata.get(TikaCoreProperties.LANGUAGE));
         assertEquals("iBooks Author v1.0", xmlResult.metadata.get(TikaCoreProperties.CONTRIBUTOR));
         assertEquals("Apache", xmlResult.metadata.get(TikaCoreProperties.CREATOR));

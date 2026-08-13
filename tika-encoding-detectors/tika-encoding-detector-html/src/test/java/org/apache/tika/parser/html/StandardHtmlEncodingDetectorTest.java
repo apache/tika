@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.charsetdetector.StandardHtmlEncodingDetector;
@@ -290,7 +291,7 @@ public class StandardHtmlEncodingDetectorTest {
 
     @Test
     public void withCharsetInContentType() throws IOException {
-        metadata.set(Metadata.CONTENT_TYPE, "text/html; Charset=ISO-8859-1");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html; Charset=ISO-8859-1");
         // ISO-8859-1 is an alias for WINDOWS-1252, even if it's set at the transport layer level
         assertWindows1252("");
         assertWindows1252("<meta charset='UTF-8'>");
@@ -301,7 +302,7 @@ public class StandardHtmlEncodingDetectorTest {
     public void withCharsetInContentEncoding() throws IOException {
         // When Content-Type is absent, the charset should be read from Content-Encoding
         Metadata meta = new Metadata();
-        meta.set(Metadata.CONTENT_ENCODING, "UTF-8");
+        meta.set(HttpHeaders.CONTENT_ENCODING, "UTF-8");
         StandardHtmlEncodingDetector detector = new StandardHtmlEncodingDetector();
         TikaInputStream tis = TikaInputStream.get("".getBytes(StandardCharsets.UTF_8));
         List<EncodingResult> results = detector.detect(tis, meta, new ParseContext());

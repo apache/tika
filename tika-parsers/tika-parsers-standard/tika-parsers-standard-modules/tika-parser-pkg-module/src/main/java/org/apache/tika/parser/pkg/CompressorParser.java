@@ -70,6 +70,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -355,7 +356,7 @@ public class CompressorParser implements Parser {
      * ind
      */
     private String getStreamName(Metadata metadata) {
-        String mimeString = metadata.get(Metadata.CONTENT_TYPE);
+        String mimeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mimeString == null) {
             return null;
         }
