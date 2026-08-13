@@ -56,6 +56,14 @@ public class TikaPipesConfigTest extends TikaTest {
     }
 
     @Test
+    void testNumClientsRejectsNonPositive() {
+        // ArrayBlockingQueue(0)'s message-less IAE pointed at nothing; this names the field.
+        PipesConfig config = new PipesConfig();
+        assertThrows(IllegalArgumentException.class, () -> config.setNumClients(0));
+        assertThrows(IllegalArgumentException.class, () -> config.setNumClients(-1));
+    }
+
+    @Test
     void testMaxIpcPayloadBytesRejectsTooSmall() {
         PipesConfig config = new PipesConfig();
         // 0 and -1 are rejected (below MIN_FALLBACK_PAYLOAD_BYTES)

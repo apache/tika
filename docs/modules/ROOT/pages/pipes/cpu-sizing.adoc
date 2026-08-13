@@ -119,9 +119,9 @@ Everything above describes sizing for *one* `PipesParser` — one `pipes`
 config section, one set of forked workers. The auto-sizer has no visibility
 into anything else running in the same JVM.
 
-This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`+`/meta`+
+This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`+`/meta`+`/detect`+
 `/pipes` and `/async` are backed by *two independent* groups when both are
-enabled in the same server — the first five endpoints share one `PipesParser`
+enabled in the same server — the first six endpoints share one `PipesParser`
 instance, and `/async` manages its own forked-worker pool directly (not via
 `PipesParser` at all, though it uses the same underlying auto-sizer). Each
 group's auto-sizer computes its slice from `Runtime.availableProcessors()` as

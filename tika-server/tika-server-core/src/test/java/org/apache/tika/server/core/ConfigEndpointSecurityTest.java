@@ -54,7 +54,7 @@ public class ConfigEndpointSecurityTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         // Add security filter with allowPerRequestConfig=false
         providers.add(new ConfigEndpointSecurityFilter(false));

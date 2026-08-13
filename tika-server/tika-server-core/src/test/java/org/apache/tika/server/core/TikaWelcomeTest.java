@@ -35,7 +35,7 @@ import org.apache.tika.server.core.resource.TikaWelcome;
 
 public class TikaWelcomeTest extends CXFTestBase {
     protected static final String WELCOME_PATH = "/";
-    protected static final String PATH_RESOURCE = "/detect/stream"; // TIKA-1567
+    protected static final String PATH_RESOURCE = "/detect"; // TIKA-1567
     protected static final String PATH_RESOURCE_2 = "/meta/form"; //TIKA-1567
     private static final String VERSION_PATH = TikaVersionTest.VERSION_PATH;
 

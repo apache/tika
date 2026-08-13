@@ -162,15 +162,18 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        RequestConfig requestConfig = RequestConfig
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
+        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private RequestConfig buildRequestConfig() {
+        return RequestConfig
                 .custom()
                 .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
-        get.setConfig(requestConfig);
-        setHttpRequestHeaders(metadata, get);
-        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
-        return execute(get, metadata, httpClient, true);
     }
 
     private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
@@ -218,6 +221,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                              ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
+        // Same RequestConfig as the whole-document fetch: maxRedirects must bind range fetches too.
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
@@ -475,6 +481,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         if (httpFetcherConfig.getMaxConnectionsPerRoute() != null) {
             httpClientFactory.setMaxConnectionsPerRoute(httpFetcherConfig.getMaxConnectionsPerRoute());
         }
+        httpClientFactory.setVerifySsl(httpFetcherConfig.isVerifySsl());
         if (!StringUtils.isBlank(httpFetcherConfig.getAuthScheme())) {
             httpClientFactory.setUserName(httpFetcherConfig.getUserName());
             httpClientFactory.setPassword(httpFetcherConfig.getPassword());

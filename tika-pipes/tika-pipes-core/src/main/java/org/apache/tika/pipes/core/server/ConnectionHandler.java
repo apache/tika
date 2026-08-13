@@ -264,13 +264,27 @@ public class ConnectionHandler implements Runnable, Closeable {
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
         long heartbeatCounter = 1;
         boolean wroteIntermediateResult = false;
+        // If the client disconnects mid-parse we stop writing to the dead socket but keep
+        // polling and enforcing the timeouts below, so an abandoned worker that will not stop
+        // still trips checkTotalTimeout/checkProgressTimeout -> System.exit -> the shared JVM
+        // recycles it. Otherwise (per-JVM shared mode has no per-request process to kill) a
+        // runaway parse would spin forever with its heap pinned.
+        boolean clientGone = false;
 
         while (running) {
             // Check for intermediate result
             if (!wroteIntermediateResult) {
                 Metadata intermediate = intermediateResult.poll(100, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
-                    protocolIO.writeIntermediate(intermediate);
+                    if (!clientGone) {
+                        try {
+                            protocolIO.writeIntermediate(intermediate);
+                        } catch (IOException e) {
+                            clientGone = true;
+                            LOG.debug("handlerId={}: client gone (writing intermediate); keeping the "
+                                    + "worker under its timeout so a runaway parse is reclaimed", handlerId);
+                        }
+                    }
                     countDownLatch.countDown();
                     wroteIntermediateResult = true;
                 }
@@ -299,15 +313,27 @@ public class ConnectionHandler implements Runnable, Closeable {
                 }
                 LOG.debug("handlerId={}: finished task id={} status={}", handlerId,
                         fetchEmitTuple.getId(), pipesResult.status());
-                protocolIO.writeFinished(pipesResult);
+                if (!clientGone) {
+                    try {
+                        protocolIO.writeFinished(pipesResult);
+                    } catch (IOException e) {
+                        LOG.debug("handlerId={}: client gone before final result could be sent", handlerId);
+                    }
+                }
                 return;
             }
 
             // Send fire-and-forget heartbeat
             long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
-            if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
+            if (!clientGone && elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
-                PipesMessage.working().write(output);
+                try {
+                    PipesMessage.working().write(output);
+                } catch (IOException e) {
+                    clientGone = true;
+                    LOG.debug("handlerId={}: client gone (heartbeat); keeping the worker under its "
+                            + "timeout so a runaway parse is reclaimed", handlerId);
+                }
                 heartbeatCounter++;
             }
 

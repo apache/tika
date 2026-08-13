@@ -303,9 +303,20 @@ public class Metadata
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
+     * <p>
+     * <strong>Writes to reserved Tika-native ({@code tk:}) keys are silently dropped.</strong>
+     * Parsers pass document-controlled names through here -- custom OOXML/MSG properties,
+     * NetCDF and GRIB attribute names -- so a crafted file must not be able to assert Tika's
+     * own computed keys by naming one. Dropping rather than throwing keeps such a file from
+     * failing the parse.
+     * <p>
+     * The consequence for Tika's own code is that this call compiles, runs, and does nothing
+     * when {@code name} is reserved. If you are writing a key Tika owns, use its
+     * {@link Property} overload, or {@link #addTrusted} when only the name is available.
      *
      * @param name  the metadata name.
      * @param value the metadata value.
+     * @see #addTrusted(String, String)
      */
     public void add(final String name, final String value) {
         if (blockReservedKeyWrite(name)) {
@@ -433,9 +444,14 @@ public class Metadata
      * metadata name. If some previous values were associated to this name,
      * they are removed. If the given value is <code>null</code>, then the
      * metadata entry is removed.
+     * <p>
+     * <strong>Writes to reserved Tika-native ({@code tk:}) keys are silently dropped</strong>
+     * -- see {@link #add(String, String)} for why, and use the {@link Property} overload or
+     * {@link #setTrusted} for keys Tika owns.
      *
      * @param name  the metadata name.
      * @param value the metadata value, or <code>null</code>
+     * @see #setTrusted(String, String)
      */
     public void set(String name, String value) {
         if (blockReservedKeyWrite(name)) {

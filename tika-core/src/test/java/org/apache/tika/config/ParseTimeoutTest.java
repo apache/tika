@@ -218,6 +218,19 @@ public class ParseTimeoutTest {
     }
 
     @Test
+    public void testStartRejectsZeroProgressWithPositiveTotal() {
+        // A stall timeout of 0 with a real total budget would kill every task immediately.
+        assertThrows(IllegalArgumentException.class,
+                () -> ParseTimeout.start(new TimeoutLimits(1000L, 0L)));
+    }
+
+    @Test
+    public void testStartAcceptsZeroTotalAndZeroProgress() {
+        // A fully-exhausted budget (both zero) is valid and expires immediately.
+        ParseTimeout.start(new TimeoutLimits(0L, 0L));
+    }
+
+    @Test
     public void testStartAllowsZeroAsAnAlreadyExhaustedBudget() {
         // Zero is a coherent state (no time left), unlike negative -- must not throw,
         // and must behave as immediately exhausted.

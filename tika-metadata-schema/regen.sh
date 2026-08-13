@@ -1,10 +1,28 @@
 #!/usr/bin/env bash
+
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing,
+#   software distributed under the License is distributed on an
+#   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#   KIND, either express or implied.  See the License for the
+#   specific language governing permissions and limitations
+#   under the License.
+
 #
 # Regenerates and validates the metadata key registry (tika-metadata-schema).
 #
 # Run this after adding, renaming, or removing a Property or PassthroughPrefix
 # constant anywhere in tika-core or the standard parser bundle. It replaces the
-# multi-step manual sequence in .skills/metadata-schema.md with one command:
+# multi-step manual sequence in .skills/metadata-schema/SKILL.md with one command:
 # install the dependency modules, regenerate the three registry files, sanity
 # check the diff, then run the gate tests.
 #
@@ -16,7 +34,7 @@
 #                   changed since the last install)
 #   --skip-tests    skip the final gate-test run, for a faster inner loop
 #
-# See tika-metadata-schema/README.md and .skills/metadata-schema.md for the
+# See tika-metadata-schema/README.md and .skills/metadata-schema/SKILL.md for the
 # design and the traps this script exists to route around.
 
 set -euo pipefail
@@ -34,7 +52,7 @@ for arg in "$@"; do
         --skip-install) SKIP_INSTALL=1 ;;
         --skip-tests) SKIP_TESTS=1 ;;
         -h|--help)
-            sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+            sed -n '20,38p' "$0" | sed 's/^# \{0,1\}//'
             exit 0
             ;;
         *)
@@ -68,7 +86,7 @@ for f in "${REGISTRY_FILES[@]}"; do
     fi
 done
 
-echo "==> Regenerating the registry (forked exec — see .skills/metadata-schema.md for why exec:java is unsafe)"
+echo "==> Regenerating the registry (forked exec — see .skills/metadata-schema/SKILL.md for why exec:java is unsafe)"
 ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes "$MVN_REPO_OPT"
 
 echo "==> Comparing key counts before/after (a large drop usually means classes failed to load):"

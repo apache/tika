@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -79,11 +81,11 @@ import org.apache.tika.server.core.resource.TikaDetectors;
 import org.apache.tika.server.core.resource.TikaMimeTypes;
 import org.apache.tika.server.core.resource.TikaParsers;
 import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.resource.TikaResourceAware;
 import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.server.core.resource.TikaServerStatus;
 import org.apache.tika.server.core.resource.TikaVersion;
 import org.apache.tika.server.core.resource.TikaWelcome;
-import org.apache.tika.server.core.resource.TranslateResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
@@ -102,15 +104,20 @@ public class TikaServerProcess {
     public static int DO_NOT_RESTART_EXIT_VALUE = -100;
 
     private static final List<String> VALID_ENDPOINTS = List.of("tika", "rmeta", "meta",
-            "unpack", "detect", "language", "translate", "mime", "mime-types", "detectors",
+            "unpack", "detect", "language", "mime", "mime-types", "detectors",
             "parsers", "version", "status", "pipes", "async");
+
+    // Bound when 'endpoints' is not set; status/pipes/async are opt-in.
+    private static final Set<String> DEFAULT_ENDPOINTS = Set.of("tika", "rmeta", "meta",
+            "unpack", "detect", "language", "mime", "mime-types", "detectors",
+            "parsers", "version");
 
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("h", "host", true, "host name, use * for all)");
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
-        options.addOption("i", "id", true, "id to use for server in server status endpoint");
+        options.addOption("i", "id", true, "id for this server, written to the startup log");
         options.addOption("?", "help", false, "this help message");
         return options;
     }
@@ -131,6 +138,7 @@ public class TikaServerProcess {
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
             startServer(serverDetails);
+            registerOrderedShutdown(serverDetails);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -151,7 +159,7 @@ public class TikaServerProcess {
     private static void startServer(ServerDetails serverDetails) {
         try {
             //start the server
-            Server server = serverDetails.sf.create();
+            serverDetails.server = serverDetails.sf.create();
         } catch (ServiceConstructionException e) {
             LOG.warn("exception starting server", e);
             if (isBindException(e)) {
@@ -160,6 +168,27 @@ public class TikaServerProcess {
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
+    }
+
+    /**
+     * One ordered shutdown: stop the HTTP endpoint first so no new request can arrive, then
+     * tear down the pipes workers and delete their temp directories. Replaces the previously
+     * separate, unordered cleanup hook, so in-flight requests are not killed mid-parse by the
+     * teardown.
+     */
+    private static void registerOrderedShutdown(ServerDetails serverDetails) {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (serverDetails.server != null) {
+                try {
+                    serverDetails.server.stop();
+                } catch (Exception e) {
+                    LOG.warn("Error stopping HTTP server", e);
+                }
+            }
+            if (serverDetails.pipesParsingHelper != null) {
+                serverDetails.pipesParsingHelper.shutdown();
+            }
+        }));
     }
 
     /**
@@ -176,10 +205,6 @@ public class TikaServerProcess {
         if (config.isAllowPerRequestConfig()) {
             LOG.warn("allowPerRequestConfig is enabled: callers may set any parser option, "
                     + "including options that spawn external processes such as OCR.");
-        }
-        if (config.isReturnStackTrace()) {
-            LOG.warn("returnStackTrace is enabled: error responses include server-side stack "
-                    + "traces. Intended for development, not production.");
         }
         if ("*".equals(config.getCors())) {
             LOG.warn("cors is '*': any origin may call this server from a browser.");
@@ -213,7 +238,7 @@ public class TikaServerProcess {
         PipesParsingHelper pipesParsingHelper = null;
         if (needsPipesParsingHelper(tikaServerConfig)) {
             pipesParsingHelper = initPipesParsingHelper(tikaServerConfig);
-            LOG.info("Pipes-based parsing enabled for /tika, /rmeta, /unpack, /meta, and /pipes endpoints");
+            LOG.info("Pipes-based parsing enabled for /tika, /rmeta, /unpack, /meta, /detect, and /pipes endpoints");
         }
 
         TikaResource tikaResource = new TikaResource(tikaLoader, serverStatus, pipesParsingHelper,
@@ -264,6 +289,7 @@ public class TikaServerProcess {
         details.url = url;
         details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
+        details.pipesParsingHelper = pipesParsingHelper;
         return details;
     }
 
@@ -340,12 +366,15 @@ public class TikaServerProcess {
         writers.add(new JSONMessageBodyWriter());
         writers.add(new TextMessageBodyWriter());
         writers.addAll(loadWriterServices());
-        writers.add(new TikaServerParseExceptionMapper(tikaServerConfig.isReturnStackTrace()));
+        writers.add(new TikaServerParseExceptionMapper());
+        writers.add(new BadRequestExceptionMapper());
         writers.add(new JSONObjWriter());
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
         writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes()));
+        // 413 for over-limit chunked bodies, which bypass the Content-Length pre-check.
+        writers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
 
         // setRequestLogLevel rejects anything but debug/info, so no validation needed here.
         TikaLoggingFilter logFilter = null;
@@ -382,7 +411,6 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new LanguageResource()));
-            resourceProviders.add(new SingletonResourceProvider(new TranslateResource(serverStatus)));
             resourceProviders.add(new SingletonResourceProvider(tikaResource));
             resourceProviders.add(new SingletonResourceProvider(new UnpackerResource(tikaResource)));
             resourceProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tikaResource)));
@@ -407,8 +435,6 @@ public class TikaServerProcess {
                             new SingletonResourceProvider(new DetectorResource(serverStatus, tikaResource)));
                     case "language" -> resourceProviders.add(
                             new SingletonResourceProvider(new LanguageResource()));
-                    case "translate" -> resourceProviders.add(
-                            new SingletonResourceProvider(new TranslateResource(serverStatus)));
                     case "tika" -> resourceProviders.add(
                             new SingletonResourceProvider(tikaResource));
                     case "unpack" -> resourceProviders.add(
@@ -445,6 +471,7 @@ public class TikaServerProcess {
 
         if (addAsyncResource) {
             final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
+            localAsyncResource.setMaxQueuePauseMillis(tikaServerConfig.getMaxQueuePauseMillis());
             Runtime
                     .getRuntime()
                     .addShutdownHook(new Thread(() -> {
@@ -463,23 +490,79 @@ public class TikaServerProcess {
             // not by PipesResource.
             PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
             resourceProviders.add(new SingletonResourceProvider(
-                    new PipesResource(helper.getPipesParser(), helper.isReturnStackTrace())));
+                    new PipesResource(helper.getPipesParser(), helper.getPipesConfig())));
         }
-        resourceProviders.addAll(loadResourceServices(serverStatus));
+        Set<String> enabledEndpoints = new HashSet<>();
+        if (tikaServerConfig
+                .getEndpoints()
+                .isEmpty()) {
+            enabledEndpoints.addAll(DEFAULT_ENDPOINTS);
+        } else {
+            enabledEndpoints.addAll(tikaServerConfig.getEndpoints());
+            if (enabledEndpoints.contains("mime")) {
+                enabledEndpoints.add("mime-types");
+            }
+        }
+        if (addPipesResource) {
+            enabledEndpoints.add("pipes");
+        }
+        if (addAsyncResource) {
+            enabledEndpoints.add("async");
+        }
+        resourceProviders.addAll(loadResourceServices(enabledEndpoints, serverStatus, tikaResource));
         return resourceProviders;
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus) {
+    private static Collection<? extends ResourceProvider> loadResourceServices(Set<String> enabledEndpoints,
+                                                                              ServerStatus serverStatus,
+                                                                              TikaResource tikaResource) {
         List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
         for (TikaServerResource r : resources) {
+            if (!spiResourceEnabled(r.getClass(), enabledEndpoints)) {
+                LOG.warn("skipping SPI resource {}: its endpoint '{}' is not enabled in 'endpoints'",
+                        r.getClass().getName(), resourcePathRoot(r.getClass()));
+                continue;
+            }
             LOG.info("loading resource from SPI: " + r.getClass());
             if (r instanceof ServerStatusResource) {
                 ((ServerStatusResource) r).setServerStatus(serverStatus);
             }
+            if (r instanceof TikaResourceAware) {
+                ((TikaResourceAware) r).setTikaResource(tikaResource);
+            }
             providers.add(new SingletonResourceProvider(r));
         }
         return providers;
+    }
+
+    /**
+     * SPI resources honor the 'endpoints' allowlist too: a resource whose root path is one
+     * of the named endpoints binds only when that endpoint is enabled (XMPMetadataResource
+     * serves /meta, so omitting "meta" removes it as well). A custom root path loads
+     * unconditionally -- installing the jar is the opt-in.
+     */
+    public static boolean spiResourceEnabled(Class<?> resourceClass, Set<String> enabledEndpoints) {
+        String root = resourcePathRoot(resourceClass);
+        return root == null || !VALID_ENDPOINTS.contains(root) || enabledEndpoints.contains(root);
+    }
+
+    /**
+     * Root segment of the class-level {@code @Path}, walking up the hierarchy:
+     * {@code @Path} is not {@code @Inherited}, but JAX-RS resolves it from superclasses.
+     */
+    static String resourcePathRoot(Class<?> resourceClass) {
+        for (Class<?> c = resourceClass; c != null && c != Object.class; c = c.getSuperclass()) {
+            jakarta.ws.rs.Path path = c.getAnnotation(jakarta.ws.rs.Path.class);
+            if (path != null) {
+                String root = path
+                        .value()
+                        .replaceFirst("^/+", "");
+                int slash = root.indexOf('/');
+                return slash < 0 ? root : root.substring(0, slash);
+            }
+        }
+        return null;
     }
 
     private static Collection<?> loadWriterServices() {
@@ -488,9 +571,9 @@ public class TikaServerProcess {
 
     /**
      * Determines if the shared PipesParser (wrapped in PipesParsingHelper) is needed
-     * based on configured endpoints. It's needed when /tika, /rmeta, /unpack, /meta, or
-     * /pipes are enabled (either explicitly or by default) -- all five now share one
-     * parser. (Note: unlike the others, /pipes also requires allowPipes to actually
+     * based on configured endpoints. It's needed when /tika, /rmeta, /unpack, /meta,
+     * /detect, or /pipes are enabled (either explicitly or by default) -- all six now
+     * share one parser. (Note: unlike the others, /pipes also requires allowPipes to actually
      * start; if it's listed without allowPipes, loadCoreProviders will refuse to start
      * regardless of whether this method already triggered building the shared parser.)
      */
@@ -503,7 +586,7 @@ public class TikaServerProcess {
         }
         return endpoints.contains("tika") || endpoints.contains("rmeta")
                 || endpoints.contains("unpack") || endpoints.contains("pipes")
-                || endpoints.contains("meta");
+                || endpoints.contains("meta") || endpoints.contains("detect");
     }
 
     /**
@@ -568,44 +651,11 @@ public class TikaServerProcess {
 
         // Create and return the helper
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
-                inputTempDirectory, unpackTempDirectory, tikaServerConfig.isReturnStackTrace());
+                inputTempDirectory, unpackTempDirectory);
 
-        // Register shutdown hook to clean up PipesParser and temp directories
-        final Path inputDirToClean = inputTempDirectory;
-        final Path unpackDirToClean = unpackTempDirectory;
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                LOG.info("Shutting down PipesParser");
-                pipesParser.close();
-            } catch (Exception e) {
-                LOG.warn("Error closing PipesParser", e);
-            }
-            // Clean up temp directories
-            cleanupTempDirectory(inputDirToClean);
-            if (unpackDirToClean != null) {
-                cleanupTempDirectory(unpackDirToClean);
-            }
-        }));
-
+        // Temp-dir cleanup and PipesParser teardown happen in the server's ordered shutdown
+        // (registerOrderedShutdown), after the HTTP endpoint has stopped -- see helper.shutdown().
         return helper;
-    }
-
-    private static void cleanupTempDirectory(Path tempDir) {
-        try {
-            if (Files.exists(tempDir)) {
-                Files.walk(tempDir)
-                        .sorted((a, b) -> -a.compareTo(b)) // Delete files before directories
-                        .forEach(p -> {
-                            try {
-                                Files.deleteIfExists(p);
-                            } catch (IOException e) {
-                                LOG.warn("Failed to delete: {}", p);
-                            }
-                        });
-            }
-        } catch (IOException e) {
-            LOG.warn("Error cleaning up temp directory: {}", tempDir, e);
-        }
     }
 
     private static final String DEFAULT_PLUGINS_DIR = "plugins";
@@ -698,8 +748,10 @@ public class TikaServerProcess {
 
     private static class ServerDetails {
         JAXRSServerFactoryBean sf;
+        Server server;
         String serverId;
         String url;
         ServerStatus serverStatus;
+        PipesParsingHelper pipesParsingHelper;
     }
 }

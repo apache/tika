@@ -37,7 +37,7 @@ public class PipesConfig {
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
-    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
+    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS = 300000;
 
     /** Past this, worker count becomes a memory decision, and memory is not visible here. */
     public static final int MAX_AUTO_NUM_CLIENTS = 4;
@@ -97,15 +97,11 @@ public class PipesConfig {
      */
     private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
 
-    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
+    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS;
     private int numClients = defaultNumClients();
 
     private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS;
     private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
-    public static final int DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS = 600;
-    private int staleFetcherTimeoutSeconds = DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS;
-    public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
-    private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
 
     // Async-specific fields (used by AsyncProcessor, ignored by PipesServer)
     public static final long DEFAULT_EMIT_WITHIN_MILLIS = 10000;
@@ -284,6 +280,10 @@ public class PipesConfig {
     }
 
     public void setNumClients(int numClients) {
+        // Without this, 0 surfaces at startup as ArrayBlockingQueue's message-less IAE.
+        if (numClients <= 0) {
+            throw new IllegalArgumentException("numClients must be > 0, was " + numClients);
+        }
         this.numClients = numClients;
     }
 
@@ -332,22 +332,6 @@ public class PipesConfig {
      */
     public void setEmitStrategy(EmitStrategyConfig emitStrategy) {
         this.emitStrategy = emitStrategy;
-    }
-
-    public int getStaleFetcherTimeoutSeconds() {
-        return staleFetcherTimeoutSeconds;
-    }
-
-    public void setStaleFetcherTimeoutSeconds(int staleFetcherTimeoutSeconds) {
-        this.staleFetcherTimeoutSeconds = staleFetcherTimeoutSeconds;
-    }
-
-    public int getStaleFetcherDelaySeconds() {
-        return staleFetcherDelaySeconds;
-    }
-
-    public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
-        this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
     }
 
     public long getMaxWaitForClientMillis() {

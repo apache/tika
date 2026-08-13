@@ -31,14 +31,17 @@ The `/tika` endpoint has been simplified with path-based routing:
 |===
 |Method |Path |Config? |Output
 
-|PUT |`/tika` |- |raw XHTML
-|PUT |`/tika/text` |- |raw text
+|PUT |`/tika` |- |raw Markdown
+|PUT |`/tika/text` |- |raw text (body only)
 |PUT |`/tika/html` |- |raw HTML
 |PUT |`/tika/xml` |- |raw XML
-|PUT |`/tika/json` |- |JSON (text handler)
-|PUT |`/tika/json/\{handler\}` |- |JSON with specified handler (text, html, xml)
-|POST |`/tika` |YES |raw output (multipart with optional config)
-|POST |`/tika/json` |YES |JSON output (multipart with optional config)
+|PUT |`/tika/md` |- |raw Markdown
+|PUT |`/tika/json` |- |JSON (default handler: markdown)
+|PUT |`/tika/json/\{handler\}` |- |JSON with specified handler (text, txt, html, xml, body, markdown, md)
+|POST |`/tika/config` |YES |raw Markdown (multipart with optional config)
+|POST |`/tika/config/\{text,html,xml,md\}` |YES |raw output in the named format
+|POST |`/tika/config/json` |YES |JSON (default handler: markdown)
+|POST |`/tika/config/json/\{handler\}` |YES |JSON with specified handler
 |===
 
 === Using PUT endpoints (simple)
@@ -61,8 +64,8 @@ POST endpoints accept multipart requests with a `file` part and optional `config
 
 [source,bash]
 ----
-# Parse with custom PDF parser settings
-curl -X POST http://localhost:9998/tika/json \
+# Parse with custom PDF parser settings (requires allowPerRequestConfig)
+curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
   -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
 ----
@@ -85,9 +88,60 @@ All `/form` endpoints have been removed. Use the simplified endpoint structure a
 
 ==== `/tika/config`, `/tika/form/config`
 
-The separate `/config` endpoints have been removed. Configuration is now handled via the POST endpoints with multipart.
+The 3.x `/tika/config` and `/tika/form/config` endpoints have been removed. Per-request configuration is now supplied as a `config` part in a multipart POST to the `/tika/config*` paths shown in the table above (`/tika/config`, `/tika/config/json`, `/tika/config/{text,html,xml,md}`, `/tika/config/json/{handler}`), and requires `allowPerRequestConfig`.
 
-**Migration:** Use `POST /tika` or `POST /tika/json` with a `config` part in your multipart request.
+**Migration:** Use `POST /tika/config` (raw) or `POST /tika/config/json` (JSON) with a `config` part in your multipart request.
+
+==== `/translate/*`
+
+The translation endpoints have been removed, along with tika-server's dependency on `tika-translate`.
+
+These endpoints were never usable as shipped. Every request had to name a fully-qualified translator implementation class in the URL path, and each of the bundled implementations wraps a commercial API that requires credentials the server has no way to supply -- there is no configuration surface for them and none was ever wired up. With the default distribution, every request returned an error.
+
+**Migration:** Call the translation service you use directly, or invoke `tika-translate` from your own code. Tika's translation support is unaffected; only the server endpoints are gone.
+
+=== Renamed Endpoints
+
+==== `/detect/stream` is now `/detect`
+
+==== `/language/stream` and `/language/string` are now both `/language`
+
+The `/stream` and `/string` suffixes never described anything a caller could choose between. Every one of these endpoints has always taken the request body and `@Consumes("*/*")`; the two `/language` paths differed only in whether JAX-RS bound the body to a `String` or an `InputStream`, and both then ran the identical detection. The suffixes existed to disambiguate Java method signatures, not to offer an option.
+
+Collapsing them also removes the `/detect/stream` vs `/detectors` near-collision. `/detectors` is unchanged -- it lists the server's configured detectors and does not detect anything.
+
+**Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies and headers are unchanged, but behavior is not:
+
+* `/detect` now runs in the forked worker pool (detection opens containers over
+  caller-supplied bytes), so it can return `429` or `503` with `Retry-After`, and `413`,
+  like the parsing endpoints. A failure reading the body is now a `500`; 3.x returned
+  `200` with `application/octet-stream` as if detection had succeeded.
+* `/language` caps detection input at the first 100,000 characters and uses the default
+  `LanguageDetector` on the classpath; 3.x pinned it to Optimaize.
+
+=== Handler-Type Changes on `/tika`
+
+==== `/tika/text` is body-only again
+
+3.x served this from a `BodyContentHandler`. 4.0.0 prereleases ran it over the whole XHTML document, so output began with the document title as bare text. This is restored to 3.x behaviour: `/tika/text` returns body content only.
+
+**Migration:** if you relied on the prerelease behaviour, `PUT /tika/json/text` still runs the whole-document handler and returns the content in a JSON envelope.
+
+==== `/tika/json` and `/tika/config/json` default to markdown
+
+Previously they hardcoded plain text. With no handler named in the path they now use the server default, which is markdown -- matching `/rmeta`. Name one explicitly to pin it: `/tika/json/text`, `/tika/json/html`, `/tika/json/xml`, `/tika/json/body`, `/tika/json/md`.
+
+==== Raw `/tika` and `POST /tika/config` default to Markdown
+
+3.x -- and the 4.0 prereleases -- returned XHTML from the bare `PUT /tika` endpoint (and XHTML from the bare `POST /tika/config`). Both now return Markdown by default, matching `/tika/json` and `/rmeta`. Use `/tika/xml` for XHTML, `/tika/html` for HTML, or `/tika/text` for body-only text (and the `/tika/config/{xml,html,text}` POST variants for the configured equivalents).
+
+==== Unrecognized handler names are rejected
+
+`/rmeta/txet` used to fall back to the default handler and return output that looked correct. Any unrecognized handler name in the path is now a 400 naming the valid types (`text`, `txt`, `html`, `xml`, `body`, `markdown`, `md`, `ignore`). This applies to `/tika/json/{handler}` and the `/rmeta/{handler}` family.
+
+==== New: `POST /tika/config/json/{handler}`
+
+The PUT family had `/tika/json/{handler}` but the multipart POST family had only fixed paths, so a POST caller wanting text-in-JSON had nowhere to go -- `/tika/config/text` returns raw text with no metadata envelope. Added for parity. Requires `allowPerRequestConfig`.
 
 === Error Response Bodies Are Now JSON
 
@@ -100,17 +154,63 @@ at least a `status` field:
 {"status": "TIMEOUT"}
 ----
 
-When the server is configured with `returnStackTrace=true`, a `message` field is also
-included (it may contain a server-side stack trace), e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
+A `message` field is included when one is available and may contain a server-side stack
+trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
 
 The HTTP status codes are also more precise:
 
-* `UNSPECIFIED_CRASH` changed from `500` to `503` — it is a transient process failure
-  in the same category as `TIMEOUT` and `OOM`, not a server misconfiguration.
+* `UNSPECIFIED_CRASH`, `TIMEOUT`, and `OOM` return `503` — transient process failures,
+  not a `500` server misconfiguration.
+* Pool saturation (`CLIENT_UNAVAILABLE_WITHIN_MS`) returns `429` with a `Retry-After`
+  header, not `503` or `200`.
+* An unknown or reserved fetcher/emitter (`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`)
+  returns `400`, not `500` — the request is permanently malformed, so retrying will not help.
+* Two distinct limits return `413`. A request body over `maxRequestSizeBytes` is
+  rejected by a request filter with a plain-text `413` -- both a declared
+  `Content-Length` over the limit and a chunked body that turns out to be too large.
+  Separately, a parse *result* too large for the pipes IPC channel
+  (`pipes.maxIpcPayloadBytes`) returns `413` with the JSON status body
+  `{"status":"PAYLOAD_LIMIT_EXCEEDED"}`.
+* `/pipes` and `/async` now signal the outcome through the HTTP status (the same
+  `429`/`503`/`400`/`413` mappings, plus `Retry-After`) instead of always returning `200`
+  with the failure only in the body.
+
+The raw `/tika`, `/tika/text`, `/tika/html`, `/tika/xml`, and `/tika/md` endpoints return
+`422` with the extracted content as the body when a container-level exception occurs during
+a partial parse; the exception itself is not appended to the raw body — use `/rmeta` for the
+structured exception.
 
 **Migration:** Clients that parse plain-text error bodies must switch to JSON. Clients
-that branch only on HTTP status code are unaffected unless they were treating
-`UNSPECIFIED_CRASH` as a `500`.
+that branch only on HTTP status code should account for the `429`/`400`/`413` mappings
+above and stop treating `UNSPECIFIED_CRASH` as `500`.
+
+=== `/pipes` and `/async` Wire Formats
+
+**`/pipes` response body.** `/pipes` now returns the same JSON body as `/tika`, `/rmeta`,
+and `/unpack` -- `{"status":"<RESULT_STATUS>","message":"..."}` -- where `status` is the
+`PipesResult` status enum (`EMIT_SUCCESS`, `EMIT_SUCCESS_PARSE_EXCEPTION`,
+`PARSE_EXCEPTION_NO_EMIT`, `TIMEOUT`, `OOM`, `FETCHER_NOT_FOUND`, ...) and `message` carries
+the exception when there is one. It previously used a `/pipes`-only shape
+(`{"status":"ok"|"process_crash"|"application_error", ...}` with `type`, `parse_exception`,
+and a stringified `emitted`). A parse that threw is now reported by its status enum, not as
+`"ok"`.
+
+`/pipes` also rejects with `400`: a malformed request body (the reason is in the response),
+and any emit strategy other than `EMIT_ALL` -- the `/pipes` response carries only
+status and message, so a passback strategy would silently discard the parsed data. Use
+`/rmeta` if you want the data passed back.
+
+**`/async` request body.** `POST /async` now requires an object envelope,
+`{"tuples":[ ... ]}`, instead of a bare JSON array; the envelope leaves room for future
+batch-level fields. A bare array (or any body without a `tuples` array) is rejected with `400`,
+as is a tuple naming a fetcher or emitter the server does not have -- validated at POST time,
+before anything is queued. A batch larger than the queue's *total* capacity is also a `400`
+telling the caller to split it: retrying cannot help. `429` with `Retry-After` is reserved
+for transient fullness, where the same batch can succeed later.
+
+**`FetchEmitTuple` wire format.** The per-tuple parse-context key is `parse-context`;
+3.x used `parseContext`. An unknown field anywhere in a tuple is rejected with a `400`
+naming the field and listing the known ones, instead of being silently ignored.
 
 === `/meta` Is Now Pipes-Backed
 
@@ -132,8 +232,11 @@ xref:using-tika/server/index.adoc#_error_responses[Error Responses]):
 **Migration:** clients that treated any non-`200` from `/meta` as "parse failed"
 should check the new status codes above. Clients that inspected the response body
 for error text should check `tk:exception:container-exception` (full-object
-endpoints) or the `422` body (`/meta/\{field}`, populated only when
-`returnStackTrace=true`).
+endpoints) or the `422` body (`/meta/\{field}`).
+
+**The default representation is now JSON, not CSV.** A `/meta` request without an
+`Accept` header returned CSV in 3.x; it now returns JSON. CSV is still available with
+`Accept: text/csv`.
 
 Two changes to the returned metadata come with this, neither of which produces an
 error:
@@ -145,20 +248,17 @@ error:
   content handler, so there is no text for a language detector to work from.
 +
 **Migration:** configure a language-detection metadata filter
-(`charsoup-metadata-filter`, `optimaize`, or `opennlp`) and use `/rmeta` or
+(`charsoup-metadata-filter`, `optimaize-metadata-filter`, or
+`open-nlp-metadata-filter`) and use `/rmeta` or
 `/tika/json`, which capture content. The detected value arrives as
 `tk:detected-language`, with `tk:detected-language-confidence`. Note that these
 filters read `tk:content`, so they are no-ops on `/meta` and on any endpoint
 configured with the `ignore` handler.
 
-* **`/meta` now sets `tk:exception:embedded-depth-limit-reached` on any document
-  with embedded content.** `/meta` suppresses embedded parsing by setting an embedded
-  depth limit of `0`, and reaching a limit is recorded. The previous implementation
-  suppressed embedded documents by a different mechanism that recorded nothing. The
-  flag is expected on this endpoint and does not indicate a truncated result.
-+
-**Migration:** clients that alert on the presence of any `tk:exception:*` key should
-exclude this one for `/meta`.
+* **`/meta` suppresses embedded parsing without stamping an exception flag.** It skips
+  embedded documents with a document selector, so -- unlike the 4.0 prereleases, which set
+  an embedded depth limit of `0` and recorded `tk:exception:embedded-depth-limit-reached` on
+  every container -- no `tk:exception:*` flag is set merely for suppressing embedded content.
 
 === Accept Header Routing Removed
 
@@ -171,6 +271,13 @@ The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit pa
 === Removed Configuration Options
 
 The following `TikaServerConfig` options have been removed:
+
+* `returnStackTrace` - Removed as misleading. It gated only the error-response body, while
+  exception detail — including messages carrying file paths and document fragments —
+  continued to travel in `tk:exception:*` metadata on successful parses and inside
+  `/unpack` zips. Setting it to `false` did not keep stack traces inside the server, which
+  is what the name implied. Exception detail is now always returned; filter Tika's output
+  with a `MetadataFilter` before forwarding it somewhere less trusted.
 
 * `taskTimeoutMillis` - Was the total time allowed per task before the forked process was
   killed; that is now `parse-context.timeout-limits.totalTaskTimeoutMillis` (same
@@ -185,6 +292,19 @@ The following `TikaServerConfig` options have been removed:
   xref:pipes/timeouts.adoc[Timeouts].
 * `taskPulseMillis` - No longer needed
 * `minimumTimeoutMillis` - No longer needed
+* `logLevel` - Renamed to `requestLogLevel`, with a narrower meaning: it only sets the level
+  at which each request URI is logged (empty, the default, disables request logging), and no
+  longer changes any other log level. A config still carrying `logLevel` fails to start.
+* `digest`, `digestMarkLimit` - Moved to the parse-context digester configuration; configure
+  digests there instead of in the `server` section.
+* `idBase` - Renamed to `id`.
+* `preventStopMethod`, `maxFiles`, `javaPath`, `maxRestarts`, `numRestarts`,
+  `forkedStatusFile`, `maxForkedStartupMillis`, `tempFilePrefix`, `noFork` - Vestigial
+  options from the pre-4.0 spawn-child server model, which no longer exists (the `-noFork`
+  CLI flag is gone too). Delete them from your config; leaving any in place now fails
+  startup, because unrecognized config keys are rejected.
+* `port` is now a single integer. The 3.x multi-instance port ranges and lists
+  (`-p 9995-9998`, `-p 9995,9997`) are no longer supported; run one server per port.
 
 === Configuration via HTTP Headers Removed
 
@@ -251,13 +371,18 @@ There is no replacement on the push endpoints; attach provenance on your side of
 the call, or use `/pipes`, where the `FetchEmitTuple` carries metadata.
 ====
 
-Transport headers are unaffected: `Content-Disposition`/`File-Name`,
+Transport headers are unaffected: `Content-Disposition`,
 `Content-Type` and `Content-Length` still describe the payload and still
 influence detection.
 
 === Removed Features
 
 * **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
+
+=== Command-Line Flags
+
+* The no-op `-a`/`--pluginsConfig` flag has been removed; delete it from launch scripts, where it now fails option parsing.
+* `--help` now exits `0` (it previously exited non-zero).
 
 === `/pipes` and `/async` Require `allowPipes`; Per-Request Config Requires `allowPerRequestConfig`
 
@@ -285,6 +410,12 @@ The capabilities are two default-`false` flags in the `server` section:
 
 `/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
 
+The `endpoints` allowlist now also gates SPI-provided resources: a discovered resource
+whose root path matches a named endpoint binds only when that endpoint is enabled (e.g.
+the `application/rdf+xml` XMP resource serves `/meta`, so omitting `meta` removes it too).
+An SPI resource with a custom root path still loads unconditionally -- installing the jar
+is the opt-in.
+
 **Migration:** if your config selects `pipes` or `async`, add `"allowPipes": true`; if you rely on per-request config, add `"allowPerRequestConfig": true`:
 
 [source,json]
@@ -300,9 +431,13 @@ The capabilities are two default-`false` flags in the `server` section:
 
 == Configuration Changes
 
-=== Required: Pipes Configuration
+=== Pipes Configuration (for `/pipes` and `/async`)
 
-All tika-server configurations must now include a `pipes` section and a `file-system-fetcher`:
+No pipes or fetcher configuration is required to start the server: the default-on endpoints
+(`/tika`, `/rmeta`, `/meta`, `/unpack`, `/detect`) run on an internally-configured spool
+fetcher and a default `pipes` config, and the server starts with no config file at all. You
+need a `pipes` section and your own `file-system-fetcher` only when you enable `allowPipes`
+and want `/pipes`/`/async` to fetch documents from a directory you control:
 
 [source,json]
 ----
@@ -325,6 +460,10 @@ All tika-server configurations must now include a `pipes` section and a `file-sy
   "plugin-roots": "path/to/plugins"
 }
 ----
+
+The 3.x `pipes` keys `staleFetcherTimeoutSeconds` and `staleFetcherDelaySeconds` are gone.
+A pipes config still carrying either fails startup: unknown pipes keys are rejected, not
+ignored.
 
 [IMPORTANT]
 ====
@@ -360,6 +499,24 @@ xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing]). Neither failure mode
 throws an error pointing at `numClients` as the cause — size it deliberately
 before deploying, not from this example.
 ====
+
+=== `maxRequestSizeBytes` now defaults to 1 GiB
+
+The request-body cap was unlimited by default in the prereleases; it now defaults to 1 GiB.
+tika-server spools uploads to disk, so this bounds how much one request can write, and a body
+over the limit is rejected with `413`.
+
+**Migration:** if you legitimately post bodies larger than 1 GiB, set `"maxRequestSizeBytes"`
+in the `server` section above your largest payload (or `-1` to restore no limit).
+
+=== http-fetcher verifies TLS by default
+
+The `http-fetcher` now verifies TLS certificates by default (`verifySsl` defaults to `true`).
+A pipeline that fetched from a self-signed or internal host and previously succeeded will
+start failing at the TLS handshake.
+
+**Migration:** trust the host's CA (preferred), or set `verifySsl: false` on the fetcher if
+you accept the risk.
 
 == New Features
 

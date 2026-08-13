@@ -76,12 +76,16 @@ public class ParseTimeout {
      * Starts a new timeout window anchored to now, using the total and progress
      * timeouts from the given limits.
      * <p>
-     * Rejects negative totals/progress (no coherent "less than no time"). Zero is
-     * accepted (e.g. a task resuming with none of its budget left). A progress timeout
-     * at or above a positive total is accepted but logged, since the stall detector
-     * could then never fire before the total deadline.
+     * Rejects negative totals/progress (no coherent "less than no time"). Zero is accepted
+     * when both are zero (a task resuming with none of its budget left, which expires
+     * immediately). A progress timeout of zero with a <em>positive</em> total is rejected:
+     * it is never intended and would fire the stall detector immediately, killing every task
+     * despite the remaining total budget. A progress timeout at or above a positive total is
+     * accepted but logged, since the stall detector could then never fire before the total
+     * deadline.
      *
-     * @throws IllegalArgumentException if either limit is negative
+     * @throws IllegalArgumentException if either limit is negative, or the progress timeout is
+     *         zero while the total is positive
      */
     public static ParseTimeout start(TimeoutLimits limits) {
         long total = limits.getTotalTaskTimeoutMillis();
@@ -91,6 +95,11 @@ public class ParseTimeout {
         }
         if (progress < 0) {
             throw new IllegalArgumentException("progressTimeoutMillis must not be negative, was " + progress);
+        }
+        if (progress == 0 && total > 0) {
+            throw new IllegalArgumentException("progressTimeoutMillis of 0 with a positive "
+                    + "totalTaskTimeoutMillis (" + total + ") would kill every task immediately; "
+                    + "use a positive progress timeout");
         }
         if (total > 0 && progress >= total) {
             LOG.warn("progressTimeoutMillis ({}) >= totalTaskTimeoutMillis ({}) -- the stall " +

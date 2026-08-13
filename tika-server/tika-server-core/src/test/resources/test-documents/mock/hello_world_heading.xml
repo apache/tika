@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-
+<?xml version="1.0" encoding="UTF-8" ?>
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -18,15 +17,11 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<Configuration status="WARN">
-  <Appenders>
-    <Console name="Console" target="SYSTEM_ERR">
-      <PatternLayout pattern="%-5p [%t] %d{HH:mm:ss,SSS} %c %m%n"/>
-    </Console>
-  </Appenders>
-  <Loggers>
-    <Root level="info">
-      <AppenderRef ref="Console"/>
-    </Root>
-  </Loggers>
-</Configuration>
+
+<!-- A heading so markdown output is distinguishable from plain text: "# " vs bare text.
+     Without one, md and text render identically and a default-handler test cannot fail. -->
+<mock>
+    <metadata action="add" name="title">你好，世界</metadata>
+    <write element="h1">Chapter One</write>
+    <write element="p">hello world</write>
+</mock>
