@@ -1,3 +1,28 @@
+---
+name: tika-eval-compare
+description: >
+  Compare extracts from two Tika builds over a corpus to detect regressions
+  in content, encoding, exceptions, and embedded-document handling. Use for
+  "compare before/after extracts", "eval this change against the corpus".
+---
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # tika-eval: Compare Before/After Extracts
 
 Compare the output of two versions of Tika against a corpus of files
@@ -9,7 +34,7 @@ embedded document handling.
 Ask the user for:
 
 1. **Working directory** — where to put builds, extracts, eval db, and
-   reports (e.g., `~/data/commoncrawl/my-eval`).  All artifacts go here.
+   reports (`<workdir>` below).  All artifacts go here.
 2. **Number of threads** (`-n`) — default is 2.  Use `-n 6` for faster
    runs when parse time comparison is not needed.  When comparing parse
    times between A and B, use the same `-n` for both.
@@ -182,8 +207,8 @@ unzip -qo /tmp/tika-app-before.zip -d /tmp/tika-app-before
 unzip -qo tika-app/target/tika-app-*.zip -d /tmp/tika-app-after
 
 # Generate extracts
-java -jar /tmp/tika-app-before/tika-app-*.jar ~/data/msgs /tmp/extracts-a
-java -jar /tmp/tika-app-after/tika-app-*.jar  ~/data/msgs /tmp/extracts-b
+java -jar /tmp/tika-app-before/tika-app-*.jar <corpus> /tmp/extracts-a
+java -jar /tmp/tika-app-after/tika-app-*.jar  <corpus> /tmp/extracts-b
 
 # Build and run tika-eval
 ./mvnw clean install -pl tika-eval/tika-eval-app -am -Pfast \

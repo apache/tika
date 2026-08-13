@@ -1,12 +1,49 @@
+---
+name: dev
+description: >
+  Ground rules for working in the Tika codebase — git policy, Maven
+  wrapper/repo conventions, building and testing specific modules, code and
+  test conventions, pre-commit checks. Load at session start for any Tika
+  development task.
+---
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to You under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
 # Tika Development Skill
 
 Guidelines and checklist for developing against the Apache Tika codebase.
 
-## Git Policy
+## Git Policy (default — personally overridable)
 
-Unless otherwise directed, the user wants to commit and push changes
-themselves.  Do not run `git commit` or `git push`.  Stage files and
-provide the suggested commit message for the user to execute.
+Never run `git commit` or `git push` — no commits of any kind, including
+merge commits.  If a merge is needed, use `git merge --no-commit --no-ff`
+and hand back.  Stage files and provide the suggested commit message for
+the user to run.
+
+Never write to GitHub (PR comments, reviews, issues, labels, merges).
+Read-only `gh` is fine.
+
+**Precedence**: these are conservative defaults for *workflow* — actions on
+the contributor's own machine and accounts.  A contributor's personal agent
+configuration (their own skills, CLAUDE.md/AGENTS.md, settings) may override
+them.  Everything else in this file — code and comment conventions, test
+discipline, hygiene, pre-commit checks — governs what lands in the repo and
+is project policy: personal configuration does not override it.
 
 ## Session Start Checklist
 
@@ -15,8 +52,8 @@ provide the suggested commit message for the user to execute.
    This isolates builds from the system `~/.m2/repository` and avoids
    polluting or being affected by other projects.
 
-2. **Maven wrapper** — Use `./mvnw` (or the fallback
-   `/apache/apache-maven-3.9.12/bin/mvn` if the wrapper is absent).
+2. **Maven wrapper** — Use `./mvnw`; fall back to a system Maven (3.9+)
+   only if the wrapper is absent.
 
 3. **Merge conflicts** — Check `git status` for `UU` files and resolve
    before building.
@@ -37,7 +74,7 @@ provide the suggested commit message for the user to execute.
   ```
 
 - **Fast builds with `-Pfast`** — use the `fast` profile to skip
-  tests, checkstyle, and spotless in one flag.  Prefer this over
+  tests, checkstyle, spotless, and rat in one flag.  Prefer this over
   individual `-D` skip flags when you want a quick build (e.g.,
   installing for downstream consumers or eval runs):
   ```bash
@@ -45,7 +82,8 @@ provide the suggested commit message for the user to execute.
     -Dmaven.repo.local=$(pwd)/.local_m2_repo
   ```
   Run **without** `-Pfast` before final commit to catch formatting
-  and style issues.
+  and style issues.  License (rat) checks run only under `-Ppedantic`
+  (or explicit `apache-rat:check`), not in default builds.
 
   **`-Pfast` skips test *execution*** (by design): a green `-Pfast`
   build — including `-Pfast test` — has run zero tests, and stale
@@ -91,6 +129,14 @@ provide the suggested commit message for the user to execute.
 - Spotless formatter runs during build — don't fight it
 - Tests use `@TempDir Path tmp` for temp directories
 - No emojis in code or comments
+- **Comments**: every comment must earn its place — one short line by
+  default; multi-line only for a genuinely non-obvious WHY (subtle
+  invariant, workaround, spec quirk).  Never restate the code, narrate the
+  next line, justify the change to a reviewer, or describe past states of
+  the code.
+- **Input files are hostile**: bound anything derived from document content
+  (loop counts, allocations, timeouts); release external processes, temp
+  files, and pool slots on every failure path.
 - **No local/machine-specific paths** in committed code, tests, docs, or
   config — never `/home/<user>`, `/Users/<user>`, `C:\Users\<user>`, or a
   personal `~/data/...`.  Use a placeholder (`<workdir>/`, `<corpus>`),
@@ -98,17 +144,32 @@ provide the suggested commit message for the user to execute.
   legitimate exception: a path that is the data under test (e.g. an expected
   metadata value extracted from a test document) — leave those untouched.
 
+## Test Discipline
+
+- A behavioral change gets a regression test that fails without it.  Where
+  impractical (timing, native binaries, external services, kill paths), say
+  so explicitly and name the next-best check.
+- Cover error paths and the configuration/mode matrix — a behavior verified
+  in only one parse mode or config shape is a gap (RMETA-only tests miss
+  CONCATENATE-only bugs).
+- Keep tests non-duplicative: don't add a test whose failure another test
+  already guarantees.
+- Where there's bang for the buck, prefer parameterized tests over
+  copy-pasted cases, randomized inputs over hand-picked ones (log the seed
+  so failures reproduce), and fuzzing for parsers and format/boundary
+  arithmetic.  Don't force it on code a couple of fixed cases fully cover.
+
 ## Metadata Keys & Schema Registry
 
 Adding/renaming a metadata key touches the committed, build-gated registry in
 `tika-metadata-schema` — regeneration has real traps. See
-`.skills/metadata-schema.md`.
+`.skills/metadata-schema/SKILL.md`.
 
 ## Testing an End-to-End Change
 
 When a change affects parsing output (e.g., new parser behavior,
 encoding fix), run a before/after comparison using tika-eval.
-See `.skills/tika-eval-compare.md` for the full procedure.
+See `.skills/tika-eval-compare/SKILL.md` for the full procedure.
 
 ## Pre-Commit Checks
 
@@ -121,6 +182,12 @@ See `.skills/tika-eval-compare.md` for the full procedure.
 ./mvnw clean test -pl <module> \
   -Dmaven.repo.local=$(pwd)/.local_m2_repo
 ```
+
+Also before commit:
+
+- Commit message / PR title references a JIRA ticket (`TIKA-XXXX`).
+- CHANGES entry for user-visible changes.
+- New dependencies: ASF-compatible license; LICENSE/NOTICE updated.
 
 Scan the staged diff for machine-specific local paths before committing
 (see Code Conventions). Added lines only; review any hit by hand — a test

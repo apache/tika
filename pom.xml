@@ -307,6 +307,8 @@ least three +1 Tika PMC votes are cast.
           <inputExcludes>
             <inputExclude>CHANGES.txt</inputExclude>
             <inputExclude>README.md</inputExclude>
+            <!-- plain-text manifest for LLM consumers; header would pollute it -->
+            <inputExclude>llms.txt</inputExclude>
             <!-- remove this once we figure out the bundle packaging -->
             <inputExclude>tika-bundle/src/main/resources/META-INF/MANIFEST.MF</inputExclude>
             <inputExclude>.gitattributes</inputExclude>
