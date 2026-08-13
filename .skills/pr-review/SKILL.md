@@ -64,9 +64,12 @@ One background agent per dimension, launched in a single batch:
    too: when the diff moves, replaces, or relocates a guard, check whether
    the new check point is reachable from untrusted input and what catches
    its throw.
-2. **Correctness** — logic bugs, races, arithmetic (units, overflow-safe
-   idioms), rename sweeps with missed sites, dangling references, exception
-   paths.
+2. **Correctness** — method: establish the happy path first, then walk every
+   way it can be left — each exception, timeout, early return, partial write —
+   asking what state each one leaves behind (resources released? flags reset?
+   caller told the truth?). Also: logic bugs, races, arithmetic (units,
+   overflow-safe idioms), rename sweeps with missed sites, dangling
+   references.
 3. **Test coverage** — changed behavior should have a test that fails without
    it; where impractical (timing, native binaries, external services, kill
    paths) say so and name the next-best check. Error paths and the
@@ -86,6 +89,11 @@ One background agent per dimension, launched in a single batch:
 5. **Usability** — walk the config surface cold as an upgrading user: map the
    knobs and how they compose; enumerate wrong-config scenarios and classify
    each fail-fast / warn / silent, with the cheapest fix for silent ones.
+   Pay special attention to setting *interactions* and least surprise: a
+   typo, a forgotten option, or an odd combination should produce an error
+   or a warning, not silently change what another explicitly-set option
+   does. No config surface can catch every mistake; surprising silence is
+   still a finding.
 6. **Documentation** — reconcile javadoc, `docs/`, CHANGES, and example
    configs against actual behavior: stale names, wrong defaults, claimed
    behavior with no implementing code, migration steps that mislead.
