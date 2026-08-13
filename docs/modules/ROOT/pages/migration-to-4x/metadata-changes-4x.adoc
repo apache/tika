@@ -47,10 +47,6 @@ from potentially overwriting existing metadata values in the Metadata object.
 |Prefixed with `img:`
 |Unrecognized image metadata keys now use the `img:` prefix
 
-|Office metadata
-|Prefix changed
-|Changed from `meta` prefix to `office` prefix
-
 |QuattroPro metadata
 |Prefix changed
 |Changed from `wordperfect:` (a collision — it was shared with WordPerfect) to `quattropro:`
@@ -115,6 +111,8 @@ detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type
 |`X-TIKA:EXCEPTION:container_exception` |`tk:exception:container-exception`
 |`X-TIKA:EXCEPTION:embedded_bytes_exception` |`tk:exception:embedded-bytes-exception`
 |`X-TIKA:EXCEPTION:embedded_exception` |`tk:exception:embedded-exception`
+|`X-TIKA:EXCEPTION:embedded_parser` |`tk:exception:embedded-parser`
+|`X-TIKA:EXCEPTION:embedded_resource_limit_reached` |`tk:exception:embedded-resource-limit-reached`
 |`X-TIKA:EXCEPTION:embedded_stream_exception` |`tk:exception:embedded-stream-exception`
 |`X-TIKA:EXCEPTION:embedded_warning` |`tk:exception:embedded-warning`
 |`X-TIKA:EXCEPTION:warn` |`tk:exception:warn`
@@ -141,19 +139,19 @@ handler-type enum name), so the old key is not remapped.
 New in 4.0.0, with no 3.x predecessor: `tk:chunks`, `tk:content-handler-type`,
 `tk:content-type-magic-detected`, `tk:decoded-charset`, `tk:detection-content-length`,
 `tk:encoding-detection-trace`, `tk:resource-name-extension-inferred`,
-`tk:truncated-content-for-detection`, `tk:exception:embedded-depth-limit-reached`,
-`tk:exception:embedded-resource-limit-reached`, and `tk:page:numbers` (only the singular
-`tk:page:number` has a 3.x predecessor, `tika_pg:page_number`).
+`tk:truncated-content-for-detection`, `tk:exception:embedded-depth-limit-reached`, and
+`tk:page:numbers` (only the singular `tk:page:number` has a 3.x predecessor,
+`tika_pg:page_number`).
 
-Open key families migrate by prefix, suffix preserved verbatim (e.g. digest algorithm names):
+Reserved-namespace families migrate by prefix:
 
 [cols="1,1"]
 |===
 |3.x prefix |4.0.0 prefix
 
-|`X-TIKA:digest:\*` |`tk:digest:*`
-|`X-TIKA:EXCEPTION:\*` |`tk:exception:*`
-|`X-TIKA:WARN:\*` |`tk:warn:*`
+|`X-TIKA:digest:\*` |`tk:digest:*` (algorithm renamed to its JCA spelling: `SHA256` -> `SHA-256`, `SHA3_512` -> `SHA3-512`, ...; encoding suffix preserved)
+|`X-TIKA:EXCEPTION:\*` |`tk:exception:*` (suffixes kebab-cased -- enumerated key-for-key in the tables below)
+|`X-TIKA:WARN:\*` |`tk:warn:*` (suffixes kebab-cased -- enumerated below)
 |===
 
 
@@ -255,10 +253,7 @@ independent of casing (the name's origin).
 |`xmlprofiler:root_entity` |`xmlprofiler:root-entity`
 |`xmlprofiler:entity_uris` |`xmlprofiler:entity-uris`
 |`xmlprofiler:entity_local_names` |`xmlprofiler:entity-local-names`
-|`Password (un-namespaced)` |`mdb:password`
-|`MDB_PROP:*` |`mdb-prop:*`
-|`MDB_SUMMARY_PROP:*` |`mdb-summary-prop:*`
-|`MDB_USER_PROP:*` |`mdb-user-prop:*`
+|`Password (un-namespaced; restored on egress only)` |`mdb:password`
 |===
 
 Also new in 4.0.0, with no 3.x predecessor: the entire `zip:*` integrity-check family
@@ -285,22 +280,44 @@ flat key-for-key row can enumerate them) also moved prefix in this release:
 |`NER_*` |`ner:*`
 |`envi.*` |`envi:*`
 |`streams-*` |`ogg:streams-*`
-|`grobid:header_*` |`grobid:header:*`
-|bare GROBID TEI field names (`Abstract`, `Address`, ...) |`grobid:tei:*`
+|`grobid:header_*` (the keys 3.x actually emitted) |`grobid:tei:*` (kebab-cased field)
+|`iworks:*` |`iwork:*`
+|`DIF-*` |`dif:DIF-*`
+|`MDB_PROP:*` |`mdb-prop:*`
+|`MDB_USER_PROP:*` |`mdb-user-prop:*`
+|`MDB_SUMMARY_PROP:*` |`mdb-summary-prop:*`
 |bare ISO 19115 field names; the space-delimited `Keywords`, `KeywordsType`,
 `ThesaurusNameTitle`, `ThesaurusNameAlternativeTitle` families |`iso19115:*`
-|bare GDAL field names (`Driver`, `Size`, `Upper Left`, ...) |`gdal:*`
+|bare GDAL field names (`Driver`, `Size`, `Upper Left`, ... and gdalinfo's open
+key/value residual) |`gdal:*`
 |`Geographic_*`; `Optional_NAME<n>`/`Optional_LONGITUDE<n>`/`Optional_LATITUDE<n>`
 (word lower-cased, not a verbatim suffix) |`geotopic:*`
 |bare MIF field names |`mif:*`
 |bare IDML field names |`idml:*`
-|bare audio field names (`bits`, `channels`, `encoding`) |`audio:*`
+|bare audio field names (`bits`, `channels`, `encoding`, and third-party
+`javax.sound` SPI properties) |`audio:*`
+|bare HDF attribute names |`hdf:*`
+|bare NetCDF global-attribute names |`netcdf:*`
+|bare ISA-Tab field names |`isatab:*`
+|bare QuickTime `keys`-box names (`com.apple.quicktime.*`, ...) |`mp4:*`
+|bare `meta/@name` values from a NetworkParser parse service |`network:*`
 |===
 
+The compatibility filter bridges families whose 3.x form carries a recognizable marker
+(`NER_*`, `iworks:*`, `MDB_PROP:*`, ...) in both directions. Families whose 3.x keys were
+completely bare (HDF, NetCDF, GDAL's residual, ISA-Tab, QuickTime, NetworkParser, audio
+SPI, the bare ISO 19115/GROBID-adjacent one-off keys `File-Type-Description`, `version`,
+and `Password`) are restored only on egress (`V4_TO_V3`): on ingest a bare name carries
+nothing that identifies its family, so rewriting would mis-map same-named keys from other
+sources, and the filter deliberately passes them through.
+
 This table is a summary by prefix, not exhaustive. `metadata-migration-3x-4x.json`
-(bundled in `tika-core`, generated by the TIKA-4797 migration join) is the exhaustive,
-machine-readable, key-for-key list -- every row in every table on this page plus the
-individual field names each prefix above stands in for.
+(bundled in `tika-core`, generated by the TIKA-4797 migration join) is the machine-readable
+key-for-key list of every enumerable rename and drop, including egress-only rows (marked
+`"egressOnly":true`). The open-vocabulary families in the table above cannot be enumerated
+key-for-key -- their suffixes come from documents -- and exist as prefix rules inside
+`LegacyKeyMigrationFilter` rather than as JSON rows; a script migrating an index should
+handle both the JSON and the prefix families above.
 
 == Migration Steps
 

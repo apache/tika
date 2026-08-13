@@ -21,16 +21,16 @@ A machine-readable schema of Apache Tika's metadata keys, plus a registry-driven
 
 **Scope: `tika-core` + the standard parser bundle + the extended/optional families
 (scientific, sqlite3, nlp, vlm; TIKA-4816 stage 5a).** All are on the (test-scope, for the
-heavier ones) classpath, so `sqlite3:`, `vlm:`, `grib:`, `netcdf:`, `envi:`, `ctakes:`, `ner:`,
-`grobid:header:` are all in the registry. `MetadataCoverageTest` enforces completeness: any
+heavier ones) classpath, so `sqlite3:`, `vlm:`, `grib:`, `netcdf:`, `envi:`, `ctakes:`, `ner:`
+and the `grobid:tei:*` keys are all in the registry. `MetadataCoverageTest` enforces completeness: any
 module declaring keys that is neither scanned nor on its explicit out-of-scope list fails the
 build, so nothing escapes *silently*. `OUT_OF_SCOPE` is currently empty; it stays as the documented
 mechanism for excluding a future heavy/optional family.
 
 ## `metadata-keys.json` — the closed set (generated + gated)
 Every key Tika declares as a `Property` constant, plus the bounded digest cross-product
-(`X-TIKA:digest:<ALGORITHM>[:<ENCODING>]`, enumerated from `DigestDef`). Each record:
-`{ key, namespace, valueType, cardinality }`.
+(`tk:digest:<ALGORITHM>[:<ENCODING>]`, enumerated from `DigestDef`). Each record:
+`{ key, namespace, valueType, cardinality, module }`.
 
 **Generated, never hand-edited.** `SchemaGenerator` scans the parser classpath for classes that
 declare a `Property` field, force-loads them, reads the global `Property` table, and writes stable
@@ -48,8 +48,8 @@ manual steps this replaces.
 ## `metadata-open-namespaces.json` — the open sets (generated + gated)
 The **prefixes** under which parsers mint file-controlled key names at runtime — names that are not
 `Property` constants, so the individual keys cannot be enumerated (scraped HTML `<meta>` under
-`html:`, OOXML `custom:`, email `Message:Raw-Header:`, Access `MDB_PROP:`, Vorbis comments, FLV
-attributes, unmapped image/XMP tags, …). Each record: `{ prefix, provenance, description }`.
+`html:`, OOXML `custom:`, email `message:raw-header:`, Access `mdb-prop:`, Vorbis comments, FLV
+attributes, unmapped image/XMP tags, …). Each record: `{ prefix, provenance, description, module }`.
 
 **Generated from the `KeyPrefix` declarations, never hand-edited.** Every such prefix is a
 registered `KeyPrefix` constant; `SchemaGenerator` reads that registry the same way it reads

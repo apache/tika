@@ -16,7 +16,10 @@
 # TIKA-4797 manual migration overlay (core scope, adjudicated + confirmed 2026-07-28)
 # The moves/removals the field-identity join could NOT auto-bridge. Everything else auto-renames.
 #
-# v3<TAB>v4    (v4 = DROPPED means 4.x no longer emits it; not bridgeable)
+# v3<TAB>v4[<TAB>EGRESS_ONLY]
+#   v4 = DROPPED: 4.x no longer emits it; removed on ingest, not bridgeable.
+#   EGRESS_ONLY: applied only V4_TO_V3 (several v4 keys may share one v3 spelling; ingest would
+#   be ambiguous or would mis-map same-named keys from other sources, so ingest ignores the row).
 meta:mapi-from-representing-email	mapi:from-representing-email
 meta:mapi-from-representing-name	mapi:from-representing-name
 meta:mapi-importance	mapi:importance
@@ -65,25 +68,27 @@ Geographic_NAME	geotopic:name
 Geographic_LONGITUDE	geotopic:longitude
 Geographic_LATITUDE	geotopic:latitude
 #
-# TEIDOMParser (tika-parser-nlp-module): namespaced under grobid:tei: + kebab-case; GrobidRESTParser
-# used to re-key these again under grobid:header:* (a separate, still-live stage-5a delimiter rename,
-# grobid:header_ <-> grobid:header:) -- that re-keying step is retired now that TEIDOMParser's own
-# keys are final, so these bare names are the correct v3 side (what a pre-this-batch TEIDOMParser
-# standalone Metadata, or GrobidRESTParser's now-removed re-keying step, actually carried).
-Class	grobid:tei:class
-TEIXMLSource	grobid:tei:xml-source
-Language	grobid:tei:language
-Title	grobid:tei:title
-Address	grobid:tei:address
-Affiliation	grobid:tei:affiliation
-Authors	grobid:tei:authors
-FullAffiliations	grobid:tei:full-affiliations
-Error	grobid:tei:error
-Abstract	grobid:tei:abstract
-Keyword	grobid:tei:keyword
+# TEIDOMParser (tika-parser-nlp-module): namespaced under grobid:tei: + kebab-case. The v3
+# spellings are grobid:header_<Field> -- 3.3.2 GrobidRESTParser.java:107 re-keyed TEIDOMParser's
+# scratch-Metadata bare names under "grobid:header_" before they reached parse output, so the bare
+# names (Title, Abstract, ...) never appeared in any release's output and must NOT be v3 rows
+# (bare generic words would mis-map unrelated 3.x keys on ingest). The re-keying step is retired
+# in 4.x: TEIDOMParser's grobid:tei:* keys are final.
+grobid:header_Class	grobid:tei:class
+grobid:header_TEIXMLSource	grobid:tei:xml-source
+grobid:header_Language	grobid:tei:language
+grobid:header_Title	grobid:tei:title
+grobid:header_Address	grobid:tei:address
+grobid:header_Affiliation	grobid:tei:affiliation
+grobid:header_Authors	grobid:tei:authors
+grobid:header_FullAffiliations	grobid:tei:full-affiliations
+grobid:header_Error	grobid:tei:error
+grobid:header_Abstract	grobid:tei:abstract
+grobid:header_Keyword	grobid:tei:keyword
 #
-# KeynoteContentHandler (tika-parser-apple-module): namespaced to match pages:/numbers:/iworks:
-# elsewhere in the module.
+# KeynoteContentHandler (tika-parser-apple-module): namespaced to match pages:/numbers:/iwork:
+# elsewhere in the module (the iworks: -> iwork: prefix rename itself is a
+# LegacyKeyMigrationFilter prefix rule, not a flat row -- open family).
 slides-width	keynote:slides-width
 slides-height	keynote:slides-height
 #
@@ -97,11 +102,13 @@ TotalPageCount	mif:total-page-count
 # Audio addendum (tika-parser-audiovideo-module): AudioParser/Mp3Parser's bare "channels"/"bits"
 # unified onto the pre-existing curated Audio.CHANNELS/Audio.BITS_PER_SAMPLE; AudioParser's bare
 # "encoding" promoted to a new curated Audio constant; MidiParser's MIDI-sequence fields namespaced.
-# NOT bridged: Mp3Parser's bare "version" (MPEG version/layer string) and OggAudioParser's bare
-# "version" (CODEC_VERSION, e.g. "Theora 3.2.1") both used the identical bare key "version" pre-batch
-# and now diverge to mp3:version vs ogg:codec-version -- a flat v3->v4 row can't disambiguate by
-# source parser, and picking one target would silently mis-map the other family's values on ingest/
-# egress, which is worse than no bridge. Left unmapped; see MigrationTableGenerator/regen report.
+# Mp3Parser's bare "version" (MPEG version/layer string) and OggAudioParser's bare "version"
+# (CODEC_VERSION, e.g. "Theora 3.2.1") both used the identical bare key "version" pre-batch and
+# now diverge to mp3:version vs ogg:codec-version. A flat v3->v4 row can't disambiguate by source
+# parser on ingest, so ingest stays unbridged -- but egress (V4_TO_V3, the BWC direction) is
+# unambiguous per 4.x key, so both restore the 3.x bare spelling as EGRESS_ONLY rows.
+version	mp3:version	EGRESS_ONLY
+version	ogg:codec-version	EGRESS_ONLY
 channels	audio:channels
 bits	audio:bits-per-sample
 encoding	audio:encoding
@@ -122,10 +129,14 @@ Lower Left	gdal:lower-left
 Upper Right	gdal:upper-right
 Lower Right	gdal:lower-right
 #
-# HDFParser/NetCDFParser/NumbersContentHandler (tika-parser-scientific-module,
-# tika-parser-apple-module): fixed single keys, kebab-cased.
-hdf:File-Type-Description	hdf:file-type-description
-netcdf:File-Type-Description	netcdf:file-type-description
+# HDFParser/NetCDFParser (tika-parser-scientific-module): 3.3.2 emitted the SAME bare
+# "File-Type-Description" from both parsers (HDFParser.java:106 / NetCDFParser.java:87 at the
+# 3.3.2 tag -- the prefixed spellings only ever existed on unreleased 4.x main). Bare-and-shared
+# means ingest can't disambiguate (same shape as bare "version" above), so these are EGRESS_ONLY:
+# each 4.x key restores the bare 3.x spelling on egress; ingest passes the bare key through.
+File-Type-Description	hdf:file-type-description	EGRESS_ONLY
+File-Type-Description	netcdf:file-type-description	EGRESS_ONLY
+# NumbersContentHandler (tika-parser-apple-module): fixed single key, kebab-cased.
 numbers:sheetNames	numbers:sheet-names
 #
 # The rows below were found by MetadataChangesAdocDriftTest (TIKA-4816), not by the original
@@ -206,3 +217,22 @@ ParentMetaDataTitle	iso19115:parent-metadata-title
 MetaDataIdentifierCode	iso19115:metadata-identifier-code
 MetaDataStandardTitle 	iso19115:metadata-standard-title
 MetaDataStandardEdition 	iso19115:metadata-standard-edition
+#
+# Deleted-key adjudications (TIKA-4816 round-3 review: keys removed in 4.x that the field-identity
+# join silently produced nothing for -- see MigrationCompletenessTest, which now fails on any
+# unadjudicated 3.x key).
+# OfficeOpenXMLCore.SUBJECT (cp:subject) was a COMPOSITE that also wrote DublinCore.SUBJECT, so
+# every 3.x output carrying cp:subject carries the same value under dc:subject; dropping on ingest
+# is pure dedup, and dc:subject survives unchanged.
+cp:subject	DROPPED
+# IPTC.DIGITAL_SOURCE_FILE_TYPE was a misspelled 3.x alias no parser ever wrote (declaration-only;
+# the correctly-spelled Iptc4xmpExt:DigitalSourceType survives in 4.x). Nothing to bridge.
+Iptc4xmpExt:DigitalSourcefileType	DROPPED
+# JackcessParser.MDB_PW: bare "Password" -> mdb:password. EGRESS_ONLY: rewriting every bare
+# "Password" key on ingest would mis-map same-named keys from non-Access sources.
+Password	mdb:password	EGRESS_ONLY
+# ParserUtils' 3.x exception keys, found by MigrationCompletenessTest's first run: the fields
+# moved onto TikaCoreProperties (and the keys kebab-cased), so the core-only field-identity join
+# never saw them. Unambiguous both-way renames.
+X-TIKA:EXCEPTION:embedded_parser	tk:exception:embedded-parser
+X-TIKA:EXCEPTION:embedded_resource_limit_reached	tk:exception:embedded-resource-limit-reached
