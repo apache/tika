@@ -154,7 +154,7 @@ These settings control how parsed results are batched before sending to emitters
 
 |`maxIpcPayloadBytes`
 |`104857600` (100 MB)
-|Maximum size in bytes of a single IPC message between the client and the forked server. This limit is *bidirectional*: it applies both to parse results returned from the server (FINISHED) and to requests sent from the client (NEW_REQUEST). Raising it lets very large documents pass over IPC; lower the forked JVM `-Xmx` to approximately 3× this value to keep heap usage under control. Setting it too small (below the size of a typical `FetchEmitTuple`) will cause requests to be rejected silently as `UNSPECIFIED_CRASH`. The minimum accepted value is the serialized size of a `PAYLOAD_LIMIT_EXCEEDED` response (a few dozen bytes); values below that are rejected at config load time.
+|Maximum size in bytes of a single IPC message between the client and the forked server. This limit is *bidirectional*: it applies both to parse results returned from the server (FINISHED) and to requests sent from the client (NEW_REQUEST). Raising it lets very large documents pass over IPC; set the forked JVM `-Xmx` to at least approximately 3× this value to keep heap usage under control. Setting it too small (below the size of a typical `FetchEmitTuple`) will cause requests to be rejected silently as `UNSPECIFIED_CRASH`. The minimum accepted value is the serialized size of a `PAYLOAD_LIMIT_EXCEEDED` response (a few dozen bytes); values below that are rejected at config load time.
 |===
 
 == Emit Strategy

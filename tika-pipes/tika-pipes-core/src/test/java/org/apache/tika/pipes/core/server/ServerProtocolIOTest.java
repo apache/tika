@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.List;
@@ -224,8 +223,97 @@ class ServerProtocolIOTest {
         assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
     }
 
-    @SuppressWarnings("unused")
-    private static int serializedSize(PipesResult result) throws IOException {
-        return JsonPipesIpc.toBytes(result).length;
+    /**
+     * When an EMIT_SUCCESS_PASSBACK result overflows the limit, the server preserves
+     * the EMIT_SUCCESS_PASSBACK status rather than replacing it with PAYLOAD_LIMIT_EXCEEDED,
+     * so the client does not re-emit content that was already emitted server-side.
+     */
+    @Test
+    void testEmitSuccessPassbackStatusPreservedOnOverflow() throws Exception {
+        Metadata m = new Metadata();
+        m.add("content", "x".repeat(10_000));
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK,
+                new EmitDataImpl("key", List.of(m)));
+
+        int limit = 512;
+        assertTrue(JsonPipesIpc.toBytes(result).length > limit,
+                "test setup: serialized content must exceed limit");
+
+        PipesResult returned = exchange(result, limit);
+
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK, returned.status());
+    }
+
+    // ---- writeCrash tests ----
+
+    /**
+     * Helper: calls writeCrash on the server side, reads the crash message from the client side,
+     * sends ACK, and returns the deserialized stack trace string.
+     */
+    private String exchangeCrash(Throwable t, int maxPayloadBytes) throws Exception {
+        PipedOutputStream serverOutPipe = new PipedOutputStream();
+        PipedInputStream clientInPipe = new PipedInputStream(serverOutPipe, 1024 * 1024);
+        PipedOutputStream clientOutPipe = new PipedOutputStream();
+        PipedInputStream serverInPipe = new PipedInputStream(clientOutPipe, 1024);
+
+        AtomicReference<String> received = new AtomicReference<>();
+        AtomicReference<Exception> clientError = new AtomicReference<>();
+
+        Thread clientThread = new Thread(() -> {
+            try {
+                DataInputStream clientDis = new DataInputStream(clientInPipe);
+                DataOutputStream clientDos = new DataOutputStream(clientOutPipe);
+
+                PipesMessage msg = PipesMessage.read(clientDis, maxPayloadBytes);
+                assertEquals(PipesMessageType.UNSPECIFIED_CRASH, msg.type());
+                received.set(JsonPipesIpc.fromBytes(msg.payload(), String.class));
+                PipesMessage.ack().write(clientDos);
+            } catch (Exception e) {
+                clientError.set(e);
+            }
+        });
+        clientThread.setDaemon(true);
+        clientThread.start();
+
+        ServerProtocolIO io = new ServerProtocolIO(
+                new DataInputStream(serverInPipe),
+                new DataOutputStream(serverOutPipe),
+                maxPayloadBytes);
+        io.writeCrash(PipesMessageType.UNSPECIFIED_CRASH, t);
+
+        clientThread.join(5000);
+        if (clientError.get() != null) {
+            throw clientError.get();
+        }
+        assertNotNull(received.get(), "client never received a CRASH message");
+        return received.get();
+    }
+
+    /**
+     * A crash with a small stack trace passes through unchanged and the client reads
+     * it within the configured limit.
+     */
+    @Test
+    void testCrashSmallPayloadPassesThrough() throws Exception {
+        RuntimeException ex = new RuntimeException("something failed");
+        String returned = exchangeCrash(ex, PipesMessage.MAX_PAYLOAD_BYTES);
+        assertTrue(returned.contains("something failed"));
+    }
+
+    /**
+     * A crash whose stack trace would overflow the limit falls back to an empty string,
+     * not a truncated string that could still exceed the limit due to multi-byte encoding.
+     * The client must be able to read the response with the same configured limit.
+     */
+    @Test
+    void testCrashOversizedPayloadFallsBackToEmptyString() throws Exception {
+        // Build a large exception message that will serialize beyond a small limit.
+        RuntimeException ex = new RuntimeException("x".repeat(10_000));
+        int limit = 512;
+
+        String returned = exchangeCrash(ex, limit);
+
+        // Empty string fallback: the trace was too large, we get an empty payload.
+        assertEquals("", returned);
     }
 }

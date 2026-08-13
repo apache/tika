@@ -112,13 +112,33 @@ public class ServerProtocolIO {
         try {
             JsonPipesIpc.toStream(pipesResult, bos);
         } catch (IOException e) {
-            if (bos.overflowed()) {
-                LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
-                        maxIpcPayloadBytes);
-                doWritePayloadLimitExceeded();
-                return;
+            if (!bos.overflowed()) {
+                throw e;
             }
-            throw e;
+            LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
+                    maxIpcPayloadBytes);
+            // If content was already emitted server-side, preserve that status so the
+            // client does not duplicate the emission on the passback path.
+            if (pipesResult.status() == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK) {
+                BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
+                try {
+                    JsonPipesIpc.toStream(
+                            new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK,
+                                    "payload_limit_exceeded"),
+                            fallbackBos);
+                    PipesMessage.finished(fallbackBos.toByteArray()).write(output);
+                    awaitAck();
+                    return;
+                } catch (IOException fallbackE) {
+                    if (!fallbackBos.overflowed()) {
+                        throw fallbackE;
+                    }
+                    // Even status-only EMIT_SUCCESS_PASSBACK overflows — fall through to
+                    // the guaranteed-fit static fallback.
+                }
+            }
+            doWritePayloadLimitExceeded();
+            return;
         }
         PipesMessage.finished(bos.toByteArray()).write(output);
         awaitAck();
@@ -134,7 +154,7 @@ public class ServerProtocolIO {
     /**
      * Writes an INTERMEDIATE_RESULT message with the serialized metadata and waits for ACK.
      * If the metadata exceeds {@code maxIpcPayloadBytes}, the intermediate is silently skipped
-     * (the FINISHED message will still follow with the full result).
+     * (the FINISHED message will still follow).
      *
      * @throws ShutDownReceivedException if SHUT_DOWN is received instead of ACK
      * @throws IOException on serialization or I/O errors
@@ -157,20 +177,27 @@ public class ServerProtocolIO {
 
     /**
      * Writes a crash message (OOM, TIMEOUT, or UNSPECIFIED_CRASH) with the
-     * serialized stack trace and waits for ACK. If the stack trace exceeds
-     * {@code maxIpcPayloadBytes / 2} chars it is truncated so the encoded frame
-     * always fits within the limit.
+     * serialized stack trace and waits for ACK. Serialization is streamed into
+     * a {@link BoundedOutputStream} capped at {@code maxIpcPayloadBytes}. If
+     * the stack trace overflows the cap, an empty payload is sent instead.
      *
      * @throws IOException on serialization, I/O, or unexpected ACK response
      */
     public void writeCrash(PipesMessageType crashType, Throwable t) throws IOException {
         String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
-        int maxChars = maxIpcPayloadBytes / 2;
-        if (msg.length() > maxChars) {
-            msg = msg.substring(0, maxChars) + "\n[truncated]";
+        BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
+        try {
+            JsonPipesIpc.toStream(msg, bos);
+        } catch (IOException e) {
+            if (!bos.overflowed()) {
+                throw e;
+            }
+            // Stack trace overflows limit (e.g., CJK chars encode at 3 bytes/char in Smile).
+            // Fall back to an empty payload, guaranteed to fit within any valid limit.
+            bos = new BoundedOutputStream(maxIpcPayloadBytes);
+            JsonPipesIpc.toStream("", bos);
         }
-        byte[] bytes = JsonPipesIpc.toBytes(msg);
-        PipesMessage.crash(crashType, bytes).write(output);
+        PipesMessage.crash(crashType, bos.toByteArray()).write(output);
         awaitAck();
     }
 
@@ -181,7 +208,7 @@ public class ServerProtocolIO {
      * @throws IOException if the message is any other non-ACK type, or on I/O error
      */
     public void awaitAck() throws IOException {
-        PipesMessage msg = PipesMessage.read(input);
+        PipesMessage msg = PipesMessage.read(input, maxIpcPayloadBytes);
         if (msg.type() == PipesMessageType.ACK) {
             return;
         }
@@ -273,7 +300,7 @@ public class ServerProtocolIO {
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            if (buf.size() + len > limit) {
+            if ((long) buf.size() + len > limit) {
                 overflowed = true;
                 throw new IOException("payload_overflow");
             }

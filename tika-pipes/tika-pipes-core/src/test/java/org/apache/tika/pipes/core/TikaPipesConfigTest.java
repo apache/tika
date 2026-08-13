@@ -82,7 +82,6 @@ public class TikaPipesConfigTest extends TikaTest {
         assertThrows(Exception.class, () -> PipesConfig.load(tikaJsonConfig));
     }
 
-
     //this handles tests for the newer pipes type configs.
 /*
     TODO -- reimplent these with json

@@ -181,6 +181,15 @@ public class ConnectionHandler implements Runnable, Closeable {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
+                            if (t instanceof Error) {
+                                // OOM or other JVM-level error: don't trust the heap; exit immediately.
+                                LOG.error("handlerId={}: fatal JVM error; exiting", handlerId, t);
+                                try {
+                                    protocolIO.writeCrash(PipesMessageType.OOM, t);
+                                } catch (Throwable ignored) {
+                                }
+                                System.exit(PipesMessageType.OOM.getExitCode().orElse(18));
+                            }
                             // respond, or the client blocks until socket timeout and
                             // restarts a healthy server
                             LOG.error("handlerId={}: error processing request", handlerId, t);

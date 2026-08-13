@@ -402,6 +402,12 @@ public class PipesServer implements AutoCloseable {
                         try {
                             loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
                         } catch (Throwable t) {
+                            if (t instanceof Error) {
+                                // OOM or other JVM-level error: exit rather than continue in a
+                                // possibly corrupt heap state.
+                                handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), t);
+                                return; // handleCrash calls exit(); unreachable
+                            }
                             LOG.error("Serious problem processing request", t);
                         }
                         break;
