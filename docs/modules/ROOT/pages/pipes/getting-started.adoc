@@ -115,7 +115,8 @@ The `pipes` section controls the pipeline behavior:
 
 |`socketTimeoutMillis`
 |`60000`
-|Maximum time (ms) for a single parse operation
+|Maximum time (ms) to wait for data (heartbeat or result) from a forked process
+before it is considered hung -- a transport/liveness bound, not a per-parse limit
 
 |`maxFilesProcessedPerProcess`
 |`10000`

@@ -22,7 +22,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Configuration for the two-tier task timeout system.
+ * Configuration for the task timeout system.
  * <p>
  * <ul>
  *   <li>{@code totalTaskTimeoutMillis} — bounds entire task wall-clock time, including
@@ -30,9 +30,13 @@ import org.apache.tika.parser.ParseContext;
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
  *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes)</li>
+ *   <li>{@code throwOnDeadline} — whether reaching the total timeout mid-parse throws
+ *       (via {@link org.apache.tika.exception.EmbeddedLimitReachedException}) instead of
+ *       skipping remaining embedded documents and returning content extracted so far
+ *       (default: {@code false})</li>
  * </ul>
  * <p>
- * These compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
+ * The first two compose with any per-parser timeout via {@link ParseTimeout#budgetFor(long)}: a
  * parser's own timeout is honored, but no operation gets more than what remains of
  * {@code totalTaskTimeoutMillis}. A bounded external call reports its own progress, so a
  * legitimately long call (e.g. a multi-minute external process) doesn't need
@@ -78,8 +82,17 @@ public class TimeoutLimits implements Serializable {
      * @param progressTimeoutMillis  maximum time between progress updates
      */
     public TimeoutLimits(long totalTaskTimeoutMillis, long progressTimeoutMillis) {
-        this.totalTaskTimeoutMillis = totalTaskTimeoutMillis;
-        this.progressTimeoutMillis = progressTimeoutMillis;
+        setTotalTaskTimeoutMillis(totalTaskTimeoutMillis);
+        setProgressTimeoutMillis(progressTimeoutMillis);
+    }
+
+    // Jackson invokes setters, so this turns a bad value into a config-load failure.
+    private static long checkNonNegative(long millis, String name) {
+        if (millis < 0) {
+            throw new IllegalArgumentException(name + " must be >= 0, was " + millis +
+                    "; use Long.MAX_VALUE for unbounded");
+        }
+        return millis;
     }
 
     /**
@@ -97,7 +110,8 @@ public class TimeoutLimits implements Serializable {
      * @param totalTaskTimeoutMillis total task timeout in milliseconds
      */
     public void setTotalTaskTimeoutMillis(long totalTaskTimeoutMillis) {
-        this.totalTaskTimeoutMillis = totalTaskTimeoutMillis;
+        this.totalTaskTimeoutMillis =
+                checkNonNegative(totalTaskTimeoutMillis, "totalTaskTimeoutMillis");
     }
 
     /**
@@ -117,7 +131,8 @@ public class TimeoutLimits implements Serializable {
      * @param progressTimeoutMillis progress timeout in milliseconds
      */
     public void setProgressTimeoutMillis(long progressTimeoutMillis) {
-        this.progressTimeoutMillis = progressTimeoutMillis;
+        this.progressTimeoutMillis =
+                checkNonNegative(progressTimeoutMillis, "progressTimeoutMillis");
     }
 
     /**
@@ -131,6 +146,21 @@ public class TimeoutLimits implements Serializable {
 
     public void setThrowOnDeadline(boolean throwOnDeadline) {
         this.throwOnDeadline = throwOnDeadline;
+    }
+
+    /**
+     * Returns this instance if both timeouts are within {@code maxMillis}, otherwise a
+     * copy with each offending timeout reduced to {@code maxMillis}.
+     */
+    public TimeoutLimits clampedTo(long maxMillis) {
+        if (totalTaskTimeoutMillis <= maxMillis && progressTimeoutMillis <= maxMillis) {
+            return this;
+        }
+        TimeoutLimits clamped = new TimeoutLimits(
+                Math.min(totalTaskTimeoutMillis, maxMillis),
+                Math.min(progressTimeoutMillis, maxMillis));
+        clamped.throwOnDeadline = throwOnDeadline;
+        return clamped;
     }
 
     /**

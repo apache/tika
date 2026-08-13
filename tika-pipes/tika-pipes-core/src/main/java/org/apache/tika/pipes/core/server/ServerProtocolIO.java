@@ -23,6 +23,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -134,6 +135,34 @@ public class ServerProtocolIO {
                     + "UnpackConfig will be ignored. "
                     + "To extract embedded bytes, set ParseMode.UNPACK in the ParseContext.",
                     unpackConfig.getEmitter(), parseMode);
+        }
+    }
+
+    /**
+     * Trust boundary: caps request-supplied {@link TimeoutLimits} (typed or unresolved
+     * {@code timeout-limits} JSON) at {@code pipes.maxTotalTaskTimeoutMillis}; the
+     * server's own tika-config limits are never clamped. Must run after
+     * {@code ParseContextUtils.resolveAll} and before {@code ParseTimeout} is armed.
+     */
+    public static void clampRequestTimeoutLimits(ParseContext requestContext,
+            ParseContext mergedContext, long maxMillis) {
+        if (requestContext == null) {
+            return;
+        }
+        boolean requestSupplied = requestContext.get(TimeoutLimits.class) != null
+                || requestContext.hasJsonConfig("timeout-limits");
+        if (!requestSupplied) {
+            return;
+        }
+        TimeoutLimits merged = mergedContext.get(TimeoutLimits.class);
+        if (merged == null) {
+            return;
+        }
+        TimeoutLimits clamped = merged.clampedTo(maxMillis);
+        if (clamped != merged) {
+            LOG.warn("request-supplied {} exceeds pipes.maxTotalTaskTimeoutMillis ({}); clamping",
+                    merged, maxMillis);
+            mergedContext.set(TimeoutLimits.class, clamped);
         }
     }
 }

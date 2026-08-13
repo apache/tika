@@ -29,8 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -380,16 +378,24 @@ public class PipesServer implements AutoCloseable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
-                        // Create merged ParseContext: defaults from tika-config + request overrides
-                        ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                        // Resolve friendly-named configs in ParseContext to actual objects
-                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                        // Validate the effective (merged + resolved) context
-                        ServerProtocolIO.validateParseContext(mergedContext);
-                        // Installed here, before submit, so the worker thread's own
-                        // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
-                        // sees this instance rather than racing to install its own.
-                        ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        ParseContext mergedContext;
+                        ParseTimeout parseTimeout;
+                        try {
+                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            ServerProtocolIO.validateParseContext(mergedContext);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        } catch (Exception e) {
+                            // write the reason to the client instead of a bare exit code
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
+                            break; // unreachable after handleCrash/exit, but needed for compilation
+                        }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
@@ -451,7 +457,8 @@ public class PipesServer implements AutoCloseable {
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
                                ParseTimeout parseTimeout) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
@@ -497,13 +504,13 @@ public class PipesServer implements AutoCloseable {
             }
 
             // Send fire-and-forget heartbeat if we've waited long enough
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
             if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
-                PipesMessage.working(parseTimeout.getLastProgressMillis()).write(output);
+                PipesMessage.working().write(output);
                 heartbeatCounter++;
             }
 
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
             }
             if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
@@ -514,20 +521,15 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
-     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not exactly at
-     * {@code totalTaskTimeoutMillis}. The cooperative deadline path
-     * (ParsingEmbeddedDocumentExtractor skipping remaining embedded docs, then
-     * EmitHandler filtering/emitting a PARTIAL_TIMEOUT result) only starts once
-     * ParseTimeout's own deadline -- anchored at the same start, same
-     * totalTaskTimeoutMillis -- is reached, so killing the JVM at that identical instant
-     * leaves no time for that wind-down to run. The grace window is bounded by the
-     * ordinary stall detector: {@link #checkProgressTimeout} still fires independently on
-     * its own schedule, so a wind-down that hangs (rather than progressing to
-     * completion) is still caught, just via the stall path instead of the total-timeout
-     * path.
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
      */
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
         long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
                 ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
         if (elapsed > graceDeadline) {
@@ -539,7 +541,7 @@ public class PipesServer implements AutoCloseable {
     }
 
     private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - parseTimeout.getLastProgressMillis();
+        long timeSinceProgress = parseTimeout.millisSinceLastProgress();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));

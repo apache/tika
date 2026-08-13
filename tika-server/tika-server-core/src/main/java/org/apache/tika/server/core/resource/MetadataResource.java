@@ -98,10 +98,8 @@ public class MetadataResource {
         Metadata metadata = Metadata.newInstance(context);
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            // No request headers: on a multipart request those describe the envelope
-            // ("multipart/form-data; boundary=..." and its total length), and would
-            // overwrite the Content-Type/Content-Length setupMultipartConfig derived
-            // from the file part.
+            // Null headers: multipart request headers describe the envelope and would
+            // overwrite the Content-Type/Content-Length derived from the file part.
             return Response.ok(parseMetadata(tis, metadata, null, context)).build();
         }
     }

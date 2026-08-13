@@ -77,6 +77,10 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |`1000`
 |Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMillis`.
 
+|`maxTotalTaskTimeoutMillis`
+|`3600000`
+|Ceiling for *request-supplied* timeout limits: a per-request `timeout-limits` override may lower its timeouts freely but can never raise `totalTaskTimeoutMillis` or `progressTimeoutMillis` above this value (values over the cap are clamped with a warning). Limits set in the server's own `parse-context` are trusted and not subject to this cap.
+
 |`shutdownClientAfterMillis`
 |`300000`
 |Shut down an idle forked process after this many milliseconds of inactivity.

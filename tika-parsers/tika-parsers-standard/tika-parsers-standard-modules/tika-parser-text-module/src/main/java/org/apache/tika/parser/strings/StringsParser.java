@@ -37,7 +37,6 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.TikaProgressTracker;
 import org.apache.tika.detect.FileCommandDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -213,7 +212,7 @@ public class StringsParser implements Parser, Initializable {
                 throw new TikaTimeoutException("strings process timed out", requestedMillis, timeoutMillis);
             }
             gobbler.join(10000);
-            TikaProgressTracker.update(context);
+            ParseTimeout.checkpoint(context);
         } catch (InterruptedException e) {
             throw new TikaException("strings process failed", e);
         } finally {

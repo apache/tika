@@ -41,7 +41,6 @@ public class ProcessUtilsTest {
         ParseContext context = new ParseContext();
         context.set(TimeoutLimits.class, new TimeoutLimits(60_000, 60_000));
         ParseTimeout parseTimeout = ParseTimeout.getOrCreate(context);
-        long initialProgress = parseTimeout.getLastProgressMillis();
 
         ProcessBuilder pb = new ProcessBuilder("sleep", "6");
         Thread runner = new Thread(() -> {
@@ -57,9 +56,9 @@ public class ProcessUtilsTest {
             // Wait a generous multiple of HEARTBEAT_INTERVAL_MILLIS (~1000ms), well short of
             // the process's 6s completion, for slack against jitter under a loaded test run.
             Thread.sleep(3000);
-            long midProgress = parseTimeout.getLastProgressMillis();
 
-            assertTrue(midProgress > initialProgress,
+            // without a mid-wait checkpoint, millisSinceLastProgress() would be >= 3000
+            assertTrue(parseTimeout.millisSinceLastProgress() < 3000,
                     "expected a checkpoint to have fired while the process was still running");
         } finally {
             runner.join(10_000);

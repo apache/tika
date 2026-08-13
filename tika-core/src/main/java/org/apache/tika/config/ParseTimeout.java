@@ -32,6 +32,10 @@ import org.apache.tika.parser.ParseContext;
  * (e.g. OCR on an image inside a zip inside a PDF) draws from the same remaining time as the
  * top-level task -- no per-depth bookkeeping needed.
  * <p>
+ * All public accessors are relative to the task (elapsed/remaining/since-last-progress), not
+ * anchored to wall-clock time -- internally this is backed by {@link System#nanoTime()}, so
+ * a system clock adjustment mid-task doesn't affect it.
+ * <p>
  * Runtime-only state (not Serializable); never sent over the wire.
  * <p>
  * Two responsibilities:
@@ -49,21 +53,23 @@ public class ParseTimeout {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseTimeout.class);
 
-    private final long startMillis;
-    private final long hardDeadlineMillis;
+    private final long startNanos;
+    // Long.MAX_VALUE means unbounded. Kept in millis rather than a nanos deadline:
+    // remainingMillis() only ever subtracts from it, never adds, so overflow can't happen.
+    private final long totalTimeoutMillis;
     private final long progressTimeoutMillis;
-    private final AtomicLong lastProgressMillis;
+    private final AtomicLong lastProgressNanos;
 
     // Each fires at most once per task, not once per embedded document/operation.
     private final AtomicBoolean warnedNonPositiveRequest = new AtomicBoolean(false);
     private final AtomicBoolean warnedSubSecondRequest = new AtomicBoolean(false);
     private final AtomicBoolean warnedRequestExceedsTotal = new AtomicBoolean(false);
 
-    private ParseTimeout(long startMillis, long hardDeadlineMillis, long progressTimeoutMillis) {
-        this.startMillis = startMillis;
-        this.hardDeadlineMillis = hardDeadlineMillis;
+    private ParseTimeout(long startNanos, long totalTimeoutMillis, long progressTimeoutMillis) {
+        this.startNanos = startNanos;
+        this.totalTimeoutMillis = totalTimeoutMillis;
         this.progressTimeoutMillis = progressTimeoutMillis;
-        this.lastProgressMillis = new AtomicLong(startMillis);
+        this.lastProgressNanos = new AtomicLong(startNanos);
     }
 
     /**
@@ -82,7 +88,6 @@ public class ParseTimeout {
      *         zero while the total is positive
      */
     public static ParseTimeout start(TimeoutLimits limits) {
-        long now = System.currentTimeMillis();
         long total = limits.getTotalTaskTimeoutMillis();
         long progress = limits.getProgressTimeoutMillis();
         if (total < 0) {
@@ -100,9 +105,15 @@ public class ParseTimeout {
             LOG.warn("progressTimeoutMillis ({}) >= totalTaskTimeoutMillis ({}) -- the stall " +
                     "detector can never fire before the total deadline does", progress, total);
         }
-        // Avoid overflow: a total near MAX_VALUE would wrap negative and expire the task immediately.
-        long deadline = (total >= Long.MAX_VALUE - now) ? Long.MAX_VALUE : now + total;
-        return new ParseTimeout(now, deadline, progress);
+        if (total > 0 && total < 1000) {
+            LOG.warn("totalTaskTimeoutMillis ({}) is under one second -- this is often a " +
+                    "seconds-vs-milliseconds mistake in the configuration", total);
+        }
+        if (progress > 0 && progress < 1000) {
+            LOG.warn("progressTimeoutMillis ({}) is under one second -- this is often a " +
+                    "seconds-vs-milliseconds mistake in the configuration", progress);
+        }
+        return new ParseTimeout(System.nanoTime(), total, progress);
     }
 
     /**
@@ -176,7 +187,7 @@ public class ParseTimeout {
             LOG.warn("a requested timeout of {}ms is under one second -- this is often a " +
                     "seconds-vs-milliseconds mistake in the caller's configuration", requestedMillis);
         }
-        long total = totalMillis();
+        long total = getTotalTimeoutMillis();
         if (total != Long.MAX_VALUE && requestedMillis > total && !warnedRequestExceedsTotal.getAndSet(true)) {
             LOG.warn("a requested timeout of {}ms exceeds totalTaskTimeoutMillis ({}ms) -- it can " +
                     "never be granted in full; raise totalTaskTimeoutMillis or lower this timeout",
@@ -189,18 +200,25 @@ public class ParseTimeout {
      * @return the task's original total timeout in milliseconds, or {@code Long.MAX_VALUE}
      * if unbounded -- unlike {@link #remainingMillis()}, this does not shrink over time
      */
-    private long totalMillis() {
-        return hardDeadlineMillis == Long.MAX_VALUE ? Long.MAX_VALUE : hardDeadlineMillis - startMillis;
+    public long getTotalTimeoutMillis() {
+        return totalTimeoutMillis;
+    }
+
+    /**
+     * @return milliseconds elapsed since the task started
+     */
+    public long elapsedMillis() {
+        return (System.nanoTime() - startNanos) / 1_000_000L;
     }
 
     /**
      * @return milliseconds remaining before the task's total timeout, never negative
      */
     public long remainingMillis() {
-        if (hardDeadlineMillis == Long.MAX_VALUE) {
+        if (totalTimeoutMillis == Long.MAX_VALUE) {
             return Long.MAX_VALUE;
         }
-        return Math.max(0, hardDeadlineMillis - System.currentTimeMillis());
+        return Math.max(0, totalTimeoutMillis - elapsedMillis());
     }
 
     /**
@@ -209,14 +227,14 @@ public class ParseTimeout {
      * {@code ParseRecord}), not here.
      */
     public void checkpoint() {
-        lastProgressMillis.set(System.currentTimeMillis());
+        lastProgressNanos.set(System.nanoTime());
     }
 
     /**
-     * @return epoch millis of the last checkpoint
+     * @return milliseconds elapsed since the last checkpoint
      */
-    public long getLastProgressMillis() {
-        return lastProgressMillis.get();
+    public long millisSinceLastProgress() {
+        return (System.nanoTime() - lastProgressNanos.get()) / 1_000_000L;
     }
 
     /**
@@ -224,19 +242,5 @@ public class ParseTimeout {
      */
     public long getProgressTimeoutMillis() {
         return progressTimeoutMillis;
-    }
-
-    /**
-     * @return epoch millis when this task's total timeout started counting
-     */
-    public long getStartMillis() {
-        return startMillis;
-    }
-
-    /**
-     * @return epoch millis of the task's hard deadline, or {@code Long.MAX_VALUE} if unbounded
-     */
-    public long getHardDeadlineMillis() {
-        return hardDeadlineMillis;
     }
 }

@@ -1006,7 +1006,7 @@ public class PipesClientTest {
                 PipesMessage.ready().write(out);
                 PipesMessage.read(in); // NEW_REQUEST -- ignored, this fake never parses anything
                 while (!socket.isClosed()) {
-                    PipesMessage.working(System.currentTimeMillis()).write(out);
+                    PipesMessage.working().write(out);
                     Thread.sleep(200);
                 }
             } catch (Exception e) {
