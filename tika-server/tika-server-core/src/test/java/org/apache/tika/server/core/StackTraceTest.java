@@ -19,17 +19,20 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -136,6 +139,14 @@ public class StackTraceTest extends CXFTestBase {
         assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: /unpack");
         msg = getStringFromInputStream((InputStream) response.getEntity());
         assertContains("org.apache.tika.exception.EncryptedDocumentException", msg);
+
+        // The failed unpack must not orphan its zip in the emitter dir (handedOff cleanup).
+        try (Stream<Path> files = Files.list(unpackTempDir)) {
+            List<Path> zips = files
+                    .filter(p -> p.getFileName().toString().endsWith(".zip"))
+                    .toList();
+            assertTrue(zips.isEmpty(), "orphaned unpack zips: " + zips);
+        }
     }
 
     @Test

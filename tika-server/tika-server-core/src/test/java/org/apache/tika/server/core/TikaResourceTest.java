@@ -252,11 +252,71 @@ public class TikaResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(doc));
         assertEquals(200, response.getStatus(), path + " should have succeeded");
+        return contentOf(response);
+    }
+
+    private static String contentOf(Response response) throws Exception {
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
                 (InputStream) response.getEntity(), StandardCharsets.UTF_8));
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         return content == null ? "" : content.trim();
     }
 
+    /** Bare /tika must return markdown -- provably distinct from plain text via the heading. */
+    @Test
+    public void testBareTikaIsMarkdownNotText() throws Exception {
+        assertContains("# Chapter One", putRawContent("", TEST_HELLO_WORLD_HEADING));
+        assertNotFound("# Chapter One", putRawContent("/text", TEST_HELLO_WORLD_HEADING));
+    }
 
+    private String putRawContent(String pathSuffix, String doc) throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + pathSuffix)
+                .put(ClassLoader.getSystemResourceAsStream(doc));
+        assertEquals(200, response.getStatus(), pathSuffix + " should have succeeded");
+        return getStringFromInputStream((InputStream) response.getEntity());
+    }
+
+    /** POST /tika/config defaults to markdown; /config/text is body-only text. */
+    @Test
+    public void testConfigFamilyDefaults() throws Exception {
+        assertContains("# Chapter One", postFileContent("/config", "text/plain"));
+        assertNotFound("# Chapter One", postFileContent("/config/text", "text/plain"));
+    }
+
+    /** The multipart JSON sibling endpoints, incl. the {handler} variant. */
+    @Test
+    public void testConfigJsonHandlerPlumbs() throws Exception {
+        Response md = postFile("/config/json/md", "application/json");
+        assertEquals(200, md.getStatus());
+        assertContains("# Chapter One", contentOf(md));
+
+        Response text = postFile("/config/json/text", "application/json");
+        assertEquals(200, text.getStatus());
+        assertNotFound("# Chapter One", contentOf(text));
+
+        Response dflt = postFile("/config/json", "application/json");
+        assertEquals(200, dflt.getStatus());
+        assertContains("# Chapter One", contentOf(dflt));
+    }
+
+    private Response postFile(String pathSuffix, String accept) {
+        org.apache.cxf.jaxrs.ext.multipart.ContentDisposition cd =
+                new org.apache.cxf.jaxrs.ext.multipart.ContentDisposition(
+                        "form-data; name=\"file\"; filename=\"hello.xml\"");
+        org.apache.cxf.jaxrs.ext.multipart.Attachment att =
+                new org.apache.cxf.jaxrs.ext.multipart.Attachment("file",
+                        ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD_HEADING), cd);
+        return WebClient
+                .create(endPoint + TIKA_PATH + pathSuffix)
+                .type("multipart/form-data")
+                .accept(accept)
+                .post(new org.apache.cxf.jaxrs.ext.multipart.MultipartBody(List.of(att)));
+    }
+
+    private String postFileContent(String pathSuffix, String accept) throws Exception {
+        Response response = postFile(pathSuffix, accept);
+        assertEquals(200, response.getStatus(), pathSuffix + " should have succeeded");
+        return getStringFromInputStream((InputStream) response.getEntity());
+    }
 }

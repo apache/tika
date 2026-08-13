@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -104,6 +105,24 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         // Test that pipes-based parsing works for normal documents
         startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
         testBaseline();
+    }
+
+    /**
+     * Production wiring pin: BadRequestExceptionMapper must be registered in the real
+     * server assembly, or 400 bodies are empty -- the CXF tests register it by hand,
+     * so only a forked-server test can catch a dropped registration.
+     */
+    @Test
+    public void testBadRequestBodyReachesClient() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
+        awaitServerStartup();
+        Response response = WebClient
+                .create(endPoint + RMETA_PATH + "/txet")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        assertEquals(400, response.getStatus());
+        String body = new String(((InputStream) response.getEntity()).readAllBytes(), UTF_8);
+        assertTrue(body.contains("Valid types"), body);
     }
 
     @Test

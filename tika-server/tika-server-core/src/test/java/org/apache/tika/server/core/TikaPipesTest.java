@@ -336,6 +336,19 @@ public class TikaPipesTest extends CXFTestBase {
                 .post(writer.toString());
     }
 
+    /** Wiring pin: the reserved-id guard must actually run on /pipes, not just exist. */
+    @Test
+    public void testReservedFetcherIdIs400() throws Exception {
+        FetchEmitTuple t = new FetchEmitTuple("reserved",
+                new FetchKey(org.apache.tika.server.core.resource.PipesParsingHelper.DEFAULT_FETCHER_ID,
+                        "hello_world.xml"),
+                new EmitKey(EMITTER_JSON_ID, ""), new Metadata());
+        Response response = postTuple(t);
+        assertEquals(400, response.getStatus());
+        assertContains("reserved",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
     /** The /pipes body carries only status: a passback strategy would silently drop data. */
     @Test
     public void testPassbackStrategyIs400() throws Exception {

@@ -60,6 +60,15 @@ public class TikaServerConfigTest extends TikaTest {
         assertTrue(config.isAllowPerRequestConfig());
     }
 
+    /** Documented defaults: 1 GiB request cap, 60s /async queue pause. */
+    @Test
+    public void testDocumentedDefaults() {
+        TikaServerConfig config = new TikaServerConfig();
+        assertEquals(1024L * 1024 * 1024, config.getMaxRequestSizeBytes());
+        assertEquals(TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS, config.getMaxQueuePauseMillis());
+        assertEquals(60000L, TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS);
+    }
+
     @Test
     public void testPorts() throws Exception {
         CommandLineParser parser = new DefaultParser();
