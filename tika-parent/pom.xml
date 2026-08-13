@@ -1781,6 +1781,8 @@
         <!-- Skip spotless -->
         <spotless.apply.skip>true</spotless.apply.skip>
         <spotless.check.skip>true</spotless.check.skip>
+        <!-- Skip rat -->
+        <rat.skip>true</rat.skip>
       </properties>
     </profile>
 
