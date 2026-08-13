@@ -336,6 +336,20 @@ public class TikaPipesTest extends CXFTestBase {
                 .post(writer.toString());
     }
 
+    /** The /pipes body carries only status: a passback strategy would silently drop data. */
+    @Test
+    public void testPassbackStrategyIs400() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
+        FetchEmitTuple t = new FetchEmitTuple("passback",
+                new FetchKey(FETCHER_ID, "hello_world.xml"), new EmitKey(EMITTER_JSON_ID, ""),
+                new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        Response response = postTuple(t);
+        assertEquals(400, response.getStatus());
+        assertContains("PASSBACK_ALL",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
     /** A malformed body is the caller's error: 400 with the reason, never an empty 500. */
     @Test
     public void testMalformedBodyIs400() throws Exception {

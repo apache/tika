@@ -262,7 +262,9 @@ public class TikaResource {
         }
 
         if (fileAtt == null) {
-            throw new IOException("Missing file attachment (use name='file' or send single unnamed attachment)");
+            // Caller error: 400 with the fix, not an unmapped IOException -> empty 500.
+            throw new BadRequestException(
+                    "Missing file attachment (use name='file' or send single unnamed attachment)");
         }
 
         // Set filename from content-disposition

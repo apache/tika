@@ -373,6 +373,8 @@ public class TikaServerProcess {
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
         writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes()));
+        // 413 for over-limit chunked bodies, which bypass the Content-Length pre-check.
+        writers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
 
         // setRequestLogLevel rejects anything but debug/info, so no validation needed here.
         TikaLoggingFilter logFilter = null;

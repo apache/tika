@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -58,7 +59,7 @@ import org.apache.tika.parser.ParseContext;
  * @since Apache Tika 4.0
  */
 @TikaComponent(spi = false)
-public class TimeoutLimits implements Serializable {
+public class TimeoutLimits implements Serializable, Initializable {
 
     private static final long serialVersionUID = 2L;
 
@@ -133,6 +134,20 @@ public class TimeoutLimits implements Serializable {
     public void setProgressTimeoutMillis(long progressTimeoutMillis) {
         this.progressTimeoutMillis =
                 checkNonNegative(progressTimeoutMillis, "progressTimeoutMillis");
+    }
+
+    /**
+     * Cross-field check, so it cannot live in the setters (Jackson calls them in JSON
+     * field order). Fails config load rather than every task at runtime; ParseTimeout.start
+     * repeats the check as the backstop for programmatic construction.
+     */
+    @Override
+    public void initialize() throws TikaConfigException {
+        if (progressTimeoutMillis == 0 && totalTaskTimeoutMillis > 0) {
+            throw new TikaConfigException("progressTimeoutMillis of 0 with a positive "
+                    + "totalTaskTimeoutMillis (" + totalTaskTimeoutMillis
+                    + ") would kill every task immediately; use a positive progress timeout");
+        }
     }
 
     /**

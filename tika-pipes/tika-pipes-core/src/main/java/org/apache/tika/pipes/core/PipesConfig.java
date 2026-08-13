@@ -279,6 +279,10 @@ public class PipesConfig {
     }
 
     public void setNumClients(int numClients) {
+        // Without this, 0 surfaces at startup as ArrayBlockingQueue's message-less IAE.
+        if (numClients <= 0) {
+            throw new IllegalArgumentException("numClients must be > 0, was " + numClients);
+        }
         this.numClients = numClients;
     }
 

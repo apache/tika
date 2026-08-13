@@ -107,12 +107,18 @@ public class PipesResource {
         PipesParsingHelper.rejectReservedComponentIds(fetchEmitTuple);
         // This parser is shared with /tika+/rmeta+/unpack, whose own default is
         // PASSBACK_ALL. /pipes needs the child to emit via the client's configured
-        // emitter by default -- set EMIT_ALL explicitly per-request rather than
-        // relying on the parser-level default, but don't clobber a caller's own
-        // explicit override if they set one.
+        // emitter -- set EMIT_ALL explicitly per-request rather than relying on the
+        // parser-level default.
         ParseContext parseContext = fetchEmitTuple.getParseContext();
-        if (parseContext.get(EmitStrategyConfig.class) == null) {
+        EmitStrategyConfig callerStrategy = parseContext.get(EmitStrategyConfig.class);
+        if (callerStrategy == null) {
             parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
+        } else if (callerStrategy.getType() != EmitStrategy.EMIT_ALL) {
+            // The /pipes response body carries only status+message: a passback strategy
+            // would report EMIT_SUCCESS_PASSBACK while the parsed data went nowhere.
+            throw new BadRequestException("emit-strategy-config '" + callerStrategy.getType()
+                    + "' is not supported on /pipes: the response cannot carry passed-back data."
+                    + " Use EMIT_ALL (the default) or parse via /rmeta instead.");
         }
         PipesResult pipesResult = pipesParser.parse(fetchEmitTuple);
         // One body shape for every outcome -- {"status":<RESULT_STATUS>,"message":...} --
