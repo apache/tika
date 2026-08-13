@@ -379,8 +379,8 @@ public class Tess4JParser implements Parser, Initializable {
      * {@code tesseract} until doOCR returns on its own. {@code settled} arbitrates the pool
      * return in that case: giver-upper and worker race to CAS it {@code false -> true}, and
      * the loser -- the second to arrive -- returns the instance, so it goes back exactly
-     * once. On a normal return or {@link TesseractException} the worker already finished,
-     * neither side touched {@code settled}, and the caller retains ownership.
+     * once. On a normal return or {@link TesseractException} the waiter never gave up, so
+     * the worker's CAS wins and it skips the pool return -- the caller retains ownership.
      */
     private String doOCRWithTimeout(Tesseract tesseract, BufferedImage image, long requestedMillis,
                                     ParseContext parseContext)

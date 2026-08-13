@@ -312,8 +312,10 @@ public class MetadataResourceTest extends CXFTestBase {
         for (String name : container.names()) {
             // tk:content is absent from both (ignore handler); embedded-only bookkeeping
             // differs because /meta stops at the container; tk:resource-name/tk:source-path
-            // carry the server's per-request spool filename, so they differ by construction.
-            if (name.startsWith("X-TIKA:EXCEPTION") || name.equals("tk:content")
+            // carry the server's per-request spool filename, so they differ by
+            // construction until that is fixed.
+            if (name.startsWith(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX)
+                    || name.equals("tk:content")
                     || name.startsWith("tk:parsed-by-full-set")
                     || name.equals("tk:resource-name") || name.equals("tk:source-path")
                     || name.equals("tk:parse-time-millis")) {

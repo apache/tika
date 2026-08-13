@@ -150,7 +150,8 @@ public class TimeoutLimits implements Serializable {
 
     /**
      * Returns this instance if both timeouts are within {@code maxMillis}, otherwise a
-     * copy with each offending timeout reduced to {@code maxMillis}.
+     * copy with each offending timeout reduced to {@code maxMillis}. Used at trust
+     * boundaries to cap request-supplied limits at an operator-set maximum.
      */
     public TimeoutLimits clampedTo(long maxMillis) {
         if (totalTaskTimeoutMillis <= maxMillis && progressTimeoutMillis <= maxMillis) {
