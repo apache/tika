@@ -26,10 +26,12 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.server.core.TikaServerProcess;
 import org.apache.tika.server.core.resource.TikaServerResource;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
@@ -69,6 +71,14 @@ public class ResourceServiceLoadingTest {
                 "XMPMetadataResource must stay declared -- it is what serves rdf+xml from /meta");
         ServiceLoaderUtils.newInstance(XMPMetadataResource.class,
                 new ServiceLoader(getClass().getClassLoader()));
+    }
+
+    /** Omitting "meta" from 'endpoints' must remove the SPI-provided /meta surface too. */
+    @Test
+    public void testXmpResourceHonorsEndpointsAllowlist() {
+        assertFalse(TikaServerProcess.spiResourceEnabled(XMPMetadataResource.class, Set.of("tika")),
+                "an SPI resource must not bind /meta when the allowlist omits it");
+        assertTrue(TikaServerProcess.spiResourceEnabled(XMPMetadataResource.class, Set.of("tika", "meta")));
     }
 
     private List<String> readDeclaredResources() throws IOException {

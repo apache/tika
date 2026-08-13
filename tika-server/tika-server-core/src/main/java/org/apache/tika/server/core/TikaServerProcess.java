@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -104,6 +106,11 @@ public class TikaServerProcess {
     private static final List<String> VALID_ENDPOINTS = List.of("tika", "rmeta", "meta",
             "unpack", "detect", "language", "mime", "mime-types", "detectors",
             "parsers", "version", "status", "pipes", "async");
+
+    // Bound when 'endpoints' is not set; status/pipes/async are opt-in.
+    private static final Set<String> DEFAULT_ENDPOINTS = Set.of("tika", "rmeta", "meta",
+            "unpack", "detect", "language", "mime", "mime-types", "detectors",
+            "parsers", "version");
 
     private static Options getOptions() {
         Options options = new Options();
@@ -483,15 +490,38 @@ public class TikaServerProcess {
             resourceProviders.add(new SingletonResourceProvider(
                     new PipesResource(helper.getPipesParser(), helper.getPipesConfig())));
         }
-        resourceProviders.addAll(loadResourceServices(serverStatus, tikaResource));
+        Set<String> enabledEndpoints = new HashSet<>();
+        if (tikaServerConfig
+                .getEndpoints()
+                .isEmpty()) {
+            enabledEndpoints.addAll(DEFAULT_ENDPOINTS);
+        } else {
+            enabledEndpoints.addAll(tikaServerConfig.getEndpoints());
+            if (enabledEndpoints.contains("mime")) {
+                enabledEndpoints.add("mime-types");
+            }
+        }
+        if (addPipesResource) {
+            enabledEndpoints.add("pipes");
+        }
+        if (addAsyncResource) {
+            enabledEndpoints.add("async");
+        }
+        resourceProviders.addAll(loadResourceServices(enabledEndpoints, serverStatus, tikaResource));
         return resourceProviders;
     }
 
-    private static Collection<? extends ResourceProvider> loadResourceServices(ServerStatus serverStatus,
+    private static Collection<? extends ResourceProvider> loadResourceServices(Set<String> enabledEndpoints,
+                                                                              ServerStatus serverStatus,
                                                                               TikaResource tikaResource) {
         List<TikaServerResource> resources = new ServiceLoader(TikaServerProcess.class.getClassLoader()).loadServiceProviders(TikaServerResource.class);
         List<ResourceProvider> providers = new ArrayList<>();
         for (TikaServerResource r : resources) {
+            if (!spiResourceEnabled(r.getClass(), enabledEndpoints)) {
+                LOG.warn("skipping SPI resource {}: its endpoint '{}' is not enabled in 'endpoints'",
+                        r.getClass().getName(), resourcePathRoot(r.getClass()));
+                continue;
+            }
             LOG.info("loading resource from SPI: " + r.getClass());
             if (r instanceof ServerStatusResource) {
                 ((ServerStatusResource) r).setServerStatus(serverStatus);
@@ -502,6 +532,35 @@ public class TikaServerProcess {
             providers.add(new SingletonResourceProvider(r));
         }
         return providers;
+    }
+
+    /**
+     * SPI resources honor the 'endpoints' allowlist too: a resource whose root path is one
+     * of the named endpoints binds only when that endpoint is enabled (XMPMetadataResource
+     * serves /meta, so omitting "meta" removes it as well). A custom root path loads
+     * unconditionally -- installing the jar is the opt-in.
+     */
+    public static boolean spiResourceEnabled(Class<?> resourceClass, Set<String> enabledEndpoints) {
+        String root = resourcePathRoot(resourceClass);
+        return root == null || !VALID_ENDPOINTS.contains(root) || enabledEndpoints.contains(root);
+    }
+
+    /**
+     * Root segment of the class-level {@code @Path}, walking up the hierarchy:
+     * {@code @Path} is not {@code @Inherited}, but JAX-RS resolves it from superclasses.
+     */
+    static String resourcePathRoot(Class<?> resourceClass) {
+        for (Class<?> c = resourceClass; c != null && c != Object.class; c = c.getSuperclass()) {
+            jakarta.ws.rs.Path path = c.getAnnotation(jakarta.ws.rs.Path.class);
+            if (path != null) {
+                String root = path
+                        .value()
+                        .replaceFirst("^/+", "");
+                int slash = root.indexOf('/');
+                return slash < 0 ? root : root.substring(0, slash);
+            }
+        }
+        return null;
     }
 
     private static Collection<?> loadWriterServices() {
