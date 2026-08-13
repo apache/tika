@@ -163,6 +163,7 @@ public class TikaPipesTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONObjWriter());
         sf.setProviders(providers);
     }
@@ -335,5 +336,29 @@ public class TikaPipesTest extends CXFTestBase {
                 .post(writer.toString());
     }
 
+    /** A malformed body is the caller's error: 400 with the reason, never an empty 500. */
+    @Test
+    public void testMalformedBodyIs400() throws Exception {
+        Response response = WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post("this is not json");
+        assertEquals(400, response.getStatus());
+        assertContains("/pipes request body",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    @Test
+    public void testUnknownTupleFieldIs400() throws Exception {
+        String body = "{\"id\":\"x\",\"fetcher\":\"" + FETCHER_ID + "\",\"fetchKey\":\"hello_world.xml\"," +
+                "\"emitter\":\"" + EMITTER_JSON_ID + "\",\"bogusField\":1}";
+        Response response = WebClient
+                .create(endPoint + PIPES_PATH)
+                .accept("application/json")
+                .post(body);
+        assertEquals(400, response.getStatus());
+        assertContains("bogusField",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
 
 }

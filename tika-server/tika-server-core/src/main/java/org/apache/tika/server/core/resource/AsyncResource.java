@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -51,6 +51,7 @@ import org.apache.tika.pipes.core.async.OfferLargerThanQueueSize;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.serialization.JsonFetchEmitTupleList;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.serialization.ParseContextUtils;
@@ -61,14 +62,18 @@ public class AsyncResource {
     private static final Logger LOG = LoggerFactory.getLogger(AsyncResource.class);
     private final AsyncProcessor asyncProcessor;
     private final EmitterManager emitterManager;
+    private final FetcherManager fetcherManager;
     long maxQueuePauseMillis = 60000;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
     public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
         this.asyncProcessor = AsyncProcessor.load(tikaConfigPath);
+        // One bad tuple must not halt the shared workers and brick /async until restart.
+        this.asyncProcessor.setStopOnlyOnFatal(true);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
         this.emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig);
+        this.fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
     }
 
     /** How long a full /async queue blocks a POST before returning 429; see TikaServerConfig. */
@@ -86,19 +91,17 @@ public class AsyncResource {
     }
 
     /**
-     * The client posts a json request.  At a minimum, this must be a
-     * json object that contains an emitter and a fetcherString key with
-     * the key to fetch the inputStream. Optionally, it may contain a metadata
-     * object that will be used to populate the metadata key for pass
-     * through of metadata from the client.
+     * The client posts a JSON object {@code {"tuples":[...]}}. Each tuple names
+     * a fetcher and fetch key for input and an emitter for output; it may also
+     * carry a metadata object (passed through to the emitted metadata) and a
+     * parse context.
      * <p>
      * The extracted text content is stored with the key
      * {@link TikaCoreProperties#TIKA_CONTENT}
-     * <p>
-     * Must specify a fetcherString and an emitter in the posted json.
      *
      * @param info uri info
-     * @return InputStream that can be deserialized as a list of {@link Metadata} objects
+     * @return JSON body reporting acceptance ({@code {"status":"ok","added":n}});
+     *         the parses themselves run asynchronously
      * @throws Exception
      */
     @POST
@@ -112,6 +115,13 @@ public class AsyncResource {
         //throw early
         for (FetchEmitTuple t : request.getTuples()) {
             PipesParsingHelper.rejectReservedComponentIds(t);
+            if (!fetcherManager
+                    .getSupported()
+                    .contains(t
+                            .getFetchKey()
+                            .getFetcherId())) {
+                return badFetcher(t.getFetchKey());
+            }
             if (!emitterManager
                     .getSupported()
                     .contains(t
@@ -123,7 +133,12 @@ public class AsyncResource {
             }
             ParseContext parseContext = t.getParseContext();
             // Configs are lazy; resolve before reading UnpackConfig for the bytes-emitter check.
-            ParseContextUtils.resolveAll(parseContext, getClass().getClassLoader());
+            try {
+                ParseContextUtils.resolveAll(parseContext, getClass().getClassLoader());
+            } catch (TikaConfigException e) {
+                throw new BadRequestException(
+                        "Could not resolve the parseContext in the /async request body: " + e.getMessage(), e);
+            }
             UnpackConfig unpackConfig = parseContext.get(UnpackConfig.class);
             if (unpackConfig != null && !StringUtils.isAllBlank(unpackConfig.getEmitter())) {
                 String bytesEmitter = unpackConfig.getEmitter();
@@ -153,12 +168,10 @@ public class AsyncResource {
                         .size());
             }
         } catch (OfferLargerThanQueueSize e) {
-            LOG.debug("throttling {} tuples, capacity={}", request
-                    .getTuples()
-                    .size(), asyncProcessor.getCapacity());
-            return throttle(request
-                    .getTuples()
-                    .size());
+            // Bigger than the queue can EVER hold -- retrying is futile, so 400, not 429.
+            throw new BadRequestException("Batch of " + e.getSizeOffered() +
+                    " tuples exceeds the queue capacity (" + e.getQueueSize() +
+                    "); split the batch", e);
         }
     }
 
@@ -200,7 +213,7 @@ public class AsyncResource {
             return new AsyncRequest(JsonFetchEmitTupleList.fromJson(reader));
         } catch (IOException e) {
             // A malformed body is the caller's error, not a server fault -- 400 with the reason.
-            throw new BadRequestException("Could not parse the /async request body: " + e.getMessage());
+            throw new BadRequestException("Could not parse the /async request body: " + e.getMessage(), e);
         }
     }
 

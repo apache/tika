@@ -247,6 +247,15 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.remainingCapacity();
     }
 
+    /**
+     * Long-running callers (tika-server) set true so one bad tuple
+     * (unknown fetcher, init failure) can't halt the shared workers;
+     * fatal errors always stop processing.
+     */
+    public void setStopOnlyOnFatal(boolean stopOnlyOnFatal) {
+        asyncConfig.setStopOnlyOnFatal(stopOnlyOnFatal);
+    }
+
     public boolean offer(FetchEmitTuple t, long offerMs)
             throws PipesException, InterruptedException {
         if (fetchEmitTuples == null) {

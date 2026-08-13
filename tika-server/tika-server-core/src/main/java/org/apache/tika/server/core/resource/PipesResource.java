@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -34,6 +35,7 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -68,21 +70,17 @@ public class PipesResource {
 
 
     /**
-     * The client posts a json request.  At a minimum, this must be a
-     * json object that contains an emitter and a fetcherString key with
-     * the key to fetch the inputStream. Optionally, it may contain a metadata
-     * object that will be used to populate the metadata key for pass
-     * through of metadata from the client. It may also include a handler config.
+     * The client posts a single JSON FetchEmitTuple: a fetcher and fetch key
+     * for input and an emitter for output; it may also carry a metadata object
+     * (passed through to the emitted metadata) and a parse context.
      * <p>
      * The extracted text content is stored with the key
      * {@link TikaCoreProperties#TIKA_CONTENT}
-     * <p>
-     * Must specify a fetcherString and an emitter in the posted json.
      *
      * @param info uri info
-     * @return a JSON body describing the outcome (status/type, or a parse_exception),
-     *         with HTTP status reflecting whether the process succeeded, crashed, or
-     *         was unavailable within the configured wait
+     * @return {@code {"status":<RESULT_STATUS>,"message":...}}, with HTTP status
+     *         reflecting whether the process succeeded, crashed, or was
+     *         unavailable within the configured wait
      * @throws Exception
      */
     @POST
@@ -91,9 +89,17 @@ public class PipesResource {
         FetchEmitTuple t = null;
         try (Reader reader = new InputStreamReader(is, StandardCharsets.UTF_8)) {
             t = JsonFetchEmitTuple.fromJson(reader);
+        } catch (IOException e) {
+            // A malformed body is the caller's error, not a server fault -- 400 with the reason.
+            throw new BadRequestException("Could not parse the /pipes request body: " + e.getMessage(), e);
         }
         // Resolve friendly-named configs in ParseContext to actual objects
-        ParseContextUtils.resolveAll(t.getParseContext(), getClass().getClassLoader());
+        try {
+            ParseContextUtils.resolveAll(t.getParseContext(), getClass().getClassLoader());
+        } catch (TikaConfigException e) {
+            throw new BadRequestException(
+                    "Could not resolve the parseContext in the /pipes request body: " + e.getMessage(), e);
+        }
         return processTuple(t);
     }
 

@@ -37,7 +37,7 @@ import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 public class JsonFetchEmitTupleList {
 
-    /** Envelope key: the request body may be {"tuples":[...]} or a bare array. */
+    /** Envelope key: the body must be {"tuples":[...]}; a bare array is rejected. */
     public static final String TUPLES = "tuples";
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -60,7 +60,13 @@ public class JsonFetchEmitTupleList {
         if (tuples == null || !tuples.isArray()) {
             throw new IOException("Expected a JSON object with a \"" + TUPLES + "\" array");
         }
-        return OBJECT_MAPPER.convertValue(tuples, new TypeReference<List<FetchEmitTuple>>() {});
+        try {
+            return OBJECT_MAPPER.convertValue(tuples, new TypeReference<List<FetchEmitTuple>>() {});
+        } catch (IllegalArgumentException e) {
+            // convertValue rewraps deserializer IOExceptions; unwrap so callers see IOException.
+            Throwable cause = e.getCause() == null ? e : e.getCause();
+            throw new IOException(cause.getMessage(), e);
+        }
     }
 
     public static String toJson(List<FetchEmitTuple> list) throws IOException {
