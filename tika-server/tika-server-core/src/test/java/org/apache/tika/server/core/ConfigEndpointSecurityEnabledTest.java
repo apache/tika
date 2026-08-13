@@ -53,7 +53,8 @@ public class ConfigEndpointSecurityEnabledTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         // Add security filter with allowPerRequestConfig=true
         providers.add(new ConfigEndpointSecurityFilter(true));
@@ -107,5 +108,22 @@ public class ConfigEndpointSecurityEnabledTest extends CXFTestBase {
                 .post(new MultipartBody(Arrays.asList(fileAtt)));
 
         assertEquals(200, response.getStatus());
+    }
+
+    /** A multipart POST with no usable file part is the caller's error: 400 with the fix. */
+    @Test
+    public void testMissingFilePartIs400() throws Exception {
+        ContentDisposition cd = new ContentDisposition("form-data; name=\"notfile\"; filename=\"test.xml\"");
+        Attachment att = new Attachment("notfile",
+                ClassLoader.getSystemResourceAsStream(TEST_DOC), cd);
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(att)));
+
+        assertEquals(400, response.getStatus());
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("Missing file attachment"), responseMsg);
     }
 }

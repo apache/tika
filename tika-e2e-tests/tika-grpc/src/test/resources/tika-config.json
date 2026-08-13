@@ -1,5 +1,7 @@
 {
-  "plugin-roots": ["/var/cache/tika/plugins"],
+  "plugin-roots": [
+    "/var/cache/tika/plugins"
+  ],
   "pipes": {
     "numClients": 1,
     "forkedJvmArgs": [
@@ -28,5 +30,8 @@
       "--add-opens=java.management/sun.management=ALL-UNNAMED",
       "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
     ]
+  },
+  "grpc": {
+    "allowComponentManagement": true
   }
 }

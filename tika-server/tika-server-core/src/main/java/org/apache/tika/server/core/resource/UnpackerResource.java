@@ -166,7 +166,6 @@ public class UnpackerResource {
         ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack", metadata);
             return doUnpack(tis, metadata, pc, false);
@@ -211,7 +210,6 @@ public class UnpackerResource {
         ParseContext pc = tikaResource.createParseContext();
         Metadata metadata = Metadata.newInstance(pc);
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);

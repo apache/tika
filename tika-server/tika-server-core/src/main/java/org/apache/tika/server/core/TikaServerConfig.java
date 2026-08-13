@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
@@ -50,26 +49,21 @@ public class TikaServerConfig {
      */
     private static final Set<String> ENDPOINTS_REQUIRING_PIPES =
             new HashSet<>(Arrays.asList("pipes", "async"));
-    private static Pattern SYS_PROPS = Pattern.compile("\\$\\{sys:([-_0-9A-Za-z]+)\\}");
-    /*
-TODO: integrate these settings:
- * Number of milliseconds to wait to start forked process.
-public static final long DEFAULT_FORKED_PROCESS_STARTUP_MILLIS = 60000;
+    /**
+     * Default request-body cap: 1 GiB. Generous enough for essentially any single-document
+     * upload, bounded so one request cannot fill the temp directory. Operators who genuinely
+     * need larger bodies raise it explicitly; setting a negative value restores no limit.
+     */
+    public static final long DEFAULT_MAX_REQUEST_SIZE_BYTES = 1024L * 1024L * 1024L;
 
- * Maximum number of milliseconds to wait to shutdown forked process to allow
- * for current parses to complete.
-public static final long DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS = 30000;
+    /** How long a full /async queue blocks a POST before it is rejected with 429. */
+    public static final long DEFAULT_MAX_QUEUE_PAUSE_MILLIS = 60000;
 
-private long forkedProcessStartupMillis = DEFAULT_FORKED_PROCESS_STARTUP_MILLIS;
-
-private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLIS;
-
- */
     private boolean allowPipes = false;
     private boolean allowPerRequestConfig = false;
     private String cors = "";
-    private boolean returnStackTrace = false;
-    private long maxRequestSizeBytes = -1;
+    private long maxQueuePauseMillis = DEFAULT_MAX_QUEUE_PAUSE_MILLIS;
+    private long maxRequestSizeBytes = DEFAULT_MAX_REQUEST_SIZE_BYTES;
     private String id = UUID
             .randomUUID()
             .toString();
@@ -242,8 +236,10 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
     }
 
     /**
-     * Maximum request body in bytes. Negative (the default) means no limit; tika-server
-     * spools uploads to disk, so an unbounded value lets a caller fill the temp directory.
+     * Maximum request body in bytes; defaults to {@link #DEFAULT_MAX_REQUEST_SIZE_BYTES}
+     * (1 GiB). tika-server spools uploads to disk, so this bounds how much one request can
+     * write. A negative value disables the limit (the pre-4.0 behavior); an over-limit
+     * request is rejected with 413.
      */
     public long getMaxRequestSizeBytes() {
         return maxRequestSizeBytes;
@@ -253,12 +249,16 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
         this.maxRequestSizeBytes = maxRequestSizeBytes;
     }
 
-    public boolean isReturnStackTrace() {
-        return returnStackTrace;
+    /**
+     * How long a POST to /async blocks when the queue is full before it is rejected with
+     * 429 (Retry-After); defaults to {@link #DEFAULT_MAX_QUEUE_PAUSE_MILLIS}.
+     */
+    public long getMaxQueuePauseMillis() {
+        return maxQueuePauseMillis;
     }
 
-    public void setReturnStackTrace(boolean returnStackTrace) {
-        this.returnStackTrace = returnStackTrace;
+    public void setMaxQueuePauseMillis(long maxQueuePauseMillis) {
+        this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
     public TlsConfig getTlsConfig() {
@@ -286,10 +286,6 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    private void addEndPoints(List<String> endPoints) {
-        this.endpoints.addAll(endPoints);
     }
 
 }

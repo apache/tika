@@ -18,6 +18,7 @@ package org.apache.tika.server.core.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PUT;
@@ -29,13 +30,14 @@ import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.server.core.ServerStatus;
+import org.apache.tika.server.core.TikaServerParseException;
 
 @Path("/detect")
 public class DetectorResource {
@@ -49,7 +51,6 @@ public class DetectorResource {
     }
 
     @PUT
-    @Path("stream")
     @Consumes("*/*")
     @Produces("text/plain")
     public String detect(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
@@ -62,20 +63,19 @@ public class DetectorResource {
         long taskId = serverStatus.start(ServerStatus.TASK.DETECT, filename);
 
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            return tikaResource
-                    .getTikaLoader()
-                    .loadDetectors()
-                    .detect(tis, met, parseContext)
-                    .toString();
-        } catch (IOException | TikaConfigException e) {
+            // NO_PARSE: the child detects (and digests, if configured) without parsing.
+            // Detection still opens containers -- zip, OPC, POIFS -- over caller-supplied
+            // bytes, so it belongs in the forked worker for the same reason parsing does.
+            List<Metadata> metadataList =
+                    tikaResource.parseWithPipes(tis, met, parseContext, ParseMode.NO_PARSE);
+            String detected = metadataList.isEmpty()
+                    ? null : metadataList.get(0).get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
+            return detected == null ? MediaType.OCTET_STREAM.toString() : detected;
+        } catch (IOException e) {
+            // A failure reading/spooling the bytes is a server-side error, not a confident
+            // "application/octet-stream" detection -- surface it as 500 rather than masking it.
             LOG.warn("Unable to detect MIME type for file. Reason: {} ({})", e.getMessage(), filename, e);
-            return MediaType.OCTET_STREAM.toString();
-        } catch (OutOfMemoryError e) {
-            LOG.error("OOM while detecting: ({})", filename, e);
-            throw e;
-        } catch (Throwable e) {
-            LOG.error("Exception while detecting: ({})", filename, e);
-            throw e;
+            throw new TikaServerParseException(e);
         } finally {
             serverStatus.complete(taskId);
         }

@@ -68,7 +68,7 @@ public class PipesClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
     private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
-    public static final int SOCKET_TIMEOUT_MS = 60000;
+    public static final int SOCKET_TIMEOUT_MILLIS = 60000;
 
     private final PipesConfig pipesConfig;
     private final int maxIpcPayloadBytes;

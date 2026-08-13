@@ -610,12 +610,15 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
 
-            assertEquals(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, pipesResult.status(),
-                    "Should return FETCHER_INITIALIZATION_EXCEPTION when fetcher name is invalid");
+            // An unknown fetcher id is not an initialization failure: nothing failed to start,
+            // the caller named something this server does not have. FetchHandler used to catch
+            // IllegalArgumentException, which FetcherManager never throws, so this fell through
+            // to the initialization branch and FETCHER_NOT_FOUND was unreachable.
+            assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
+                    "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
 
-            // Verify it's categorized as INITIALIZATION_FAILURE
-            assertTrue(pipesResult.isInitializationFailure(),
-                    "FETCHER_INITIALIZATION_EXCEPTION should be initialization failure category");
+            assertTrue(pipesResult.isTaskException(),
+                    "FETCHER_NOT_FOUND is a task exception, not an initialization failure");
 
             // Verify error message mentions the fetcher name
             Assertions.assertNotNull(pipesResult.message());

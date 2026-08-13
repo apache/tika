@@ -66,7 +66,7 @@ public class SharedServerManager implements ServerManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(SharedServerManager.class);
     private static final long WAIT_ON_DESTROY_MS = 10000;
-    private static final int STARTUP_TIMEOUT_MS = 60000;
+    private static final int STARTUP_TIMEOUT_MILLIS = 60000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
@@ -345,12 +345,12 @@ public class SharedServerManager implements ServerManager {
 
                 // Check timeout
                 long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed > STARTUP_TIMEOUT_MS) {
+                if (elapsed > STARTUP_TIMEOUT_MILLIS) {
                     LOG.error("Timed out waiting for shared server to start after {}ms", elapsed);
                     ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     destroyProcessUnsafe();
                     throw new ServerInitializationException(
-                            "Shared server did not start within " + STARTUP_TIMEOUT_MS + "ms");
+                            "Shared server did not start within " + STARTUP_TIMEOUT_MILLIS + "ms");
                 }
 
                 // Try to read a line (with short timeout via available check)

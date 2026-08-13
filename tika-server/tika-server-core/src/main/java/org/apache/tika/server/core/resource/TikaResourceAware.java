@@ -14,17 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server.client;
+package org.apache.tika.server.core.resource;
 
-import org.apache.tika.exception.TikaException;
-
-public class TikaClientConfigException extends TikaException {
-
-    public TikaClientConfigException(String msg) {
-        super(msg);
-    }
-
-    public TikaClientConfigException(String msg, Throwable cause) {
-        super(msg, cause);
-    }
+/**
+ * For SPI-loaded resources that need the shared {@link TikaResource}. The service loader can
+ * only call a no-arg (or ServiceLoader-arg) constructor, so the dependency is injected after
+ * construction, the same way {@code ServerStatusResource} receives its ServerStatus.
+ */
+public interface TikaResourceAware extends TikaServerResource {
+    void setTikaResource(TikaResource tikaResource);
 }

@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentInstantiator;
@@ -156,6 +157,11 @@ public class ParseContextUtils {
                             MAPPER, classLoader, null);
                 } else {
                     instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                    // Cross-field validation hook; the ComponentInstantiator paths call
+                    // initialize() themselves, this path deserializes directly.
+                    if (instance instanceof Initializable initializable) {
+                        initializable.initialize();
+                    }
                 }
                 context.setResolvedConfig(friendlyName, instance);
                 context.set((Class) contextKey, instance);

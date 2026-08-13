@@ -419,11 +419,22 @@ public class Metadata implements Serializable {
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
+     * <p>
+     * <strong>This route rejects reserved Tika-native ({@code tk:}) keys.</strong> It is for
+     * names the caller owns. Document-controlled names -- custom OOXML/MSG properties, NetCDF
+     * and GRIB attribute names -- must not come through here, because a crafted file could
+     * then assert Tika's own computed keys by naming one; route those through
+     * {@link #add(KeyPrefix, String, String)}, which namespaces them and applies
+     * skip-and-WARN bounds instead of throwing.
+     * <p>
+     * If you are writing a key Tika owns, use its {@link Property} overload, or
+     * {@link #addTrusted} when only the name is available.
      *
      * @param name  the metadata name.
      * @param value the metadata value.
      * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
      * ({@code tk:}) key; use its {@link Property} or {@link #addTrusted}.
+     * @see #addTrusted(String, String)
      */
     public void add(final String name, final String value) {
         checkNotReserved(name);
@@ -647,6 +658,10 @@ public class Metadata implements Serializable {
      * metadata name. If some previous values were associated to this name,
      * they are removed. If the given value is <code>null</code>, then the
      * metadata entry is removed.
+     * <p>
+     * <strong>This route rejects reserved Tika-native ({@code tk:}) keys</strong>
+     * -- see {@link #add(String, String)} for why, and use the {@link Property} overload or
+     * {@link #setTrusted} for keys Tika owns.
      *
      * @param name  the metadata name.
      * @param value the metadata value, or <code>null</code>
@@ -654,6 +669,7 @@ public class Metadata implements Serializable {
      * ({@code tk:}) key and {@code value} is non-null; use its {@link Property} or
      * {@link #setTrusted}. A null value (removal) is always allowed, matching
      * {@link #remove(String)}.
+     * @see #setTrusted(String, String)
      */
     public void set(String name, String value) {
         if (value != null) {
