@@ -111,44 +111,51 @@ public class StackTraceTest extends CXFTestBase {
         return unpackTempDir;
     }
 
+    // /rmeta and /meta embed a container exception at 200 instead of throwing 422.
+    // /tika signals a partial parse with 422 but its body is content-only -- the
+    // exception is never exposed there; clients needing it use /rmeta.
+    // /unpack has no content body, so its 422 carries the container exception.
+
     @Test
     public void testEncrypted() throws Exception {
-        for (String path : PATHS) {
-            // /rmeta and /meta embed a container exception at 200 instead of throwing 422.
-            if ("/rmeta".equals(path) || "/meta".equals(path)) {
-                continue;
-            }
-            // Use path-based routing for /tika
-            String actualPath = "/tika".equals(path) ? "/tika/text" : path;
-            Response response = WebClient
-                    .create(endPoint + actualPath)
-                    .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
-            assertNotNull(response, "null response: " + actualPath);
-            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + actualPath);
-            String msg = getStringFromInputStream((InputStream) response.getEntity());
-            assertContains("org.apache.tika.exception.EncryptedDocumentException", msg);
-        }
+        Response response = WebClient
+                .create(endPoint + "/tika/text")
+                .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
+                .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
+        assertNotNull(response, "null response: /tika/text");
+        assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: /tika/text");
+        String msg = getStringFromInputStream((InputStream) response.getEntity());
+        assertNotFound("EncryptedDocumentException", msg);
+        assertEquals("", msg.trim(), "content-only body: /tika/text");
+
+        response = WebClient
+                .create(endPoint + "/unpack")
+                .header("Content-Disposition", "attachment; filename=" + TEST_PASSWORD_PROTECTED)
+                .put(ClassLoader.getSystemResourceAsStream(TEST_PASSWORD_PROTECTED));
+        assertNotNull(response, "null response: /unpack");
+        assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: /unpack");
+        msg = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("org.apache.tika.exception.EncryptedDocumentException", msg);
     }
 
     @Test
     public void testNullPointerOnTika() throws Exception {
-        for (String path : PATHS) {
-            // Same as testEncrypted.
-            if ("/rmeta".equals(path) || "/meta".equals(path)) {
-                continue;
-            }
-            // Use path-based routing for /tika
-            String actualPath = "/tika".equals(path) ? "/tika/text" : path;
-            Response response = WebClient
-                    .create(endPoint + actualPath)
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
-            assertNotNull(response);
-            assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: " + actualPath);
-            String msg = getStringFromInputStream((InputStream) response.getEntity());
-            // In pipes-based parsing, the exception is stored directly without wrapper
-            assertContains("java.lang.NullPointerException: null pointer message", msg);
-        }
+        Response response = WebClient
+                .create(endPoint + "/tika/text")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
+        assertNotNull(response);
+        assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: /tika/text");
+        String msg = getStringFromInputStream((InputStream) response.getEntity());
+        assertNotFound("NullPointerException", msg);
+        assertContains("some content", msg);
+
+        response = WebClient
+                .create(endPoint + "/unpack")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
+        assertNotNull(response);
+        assertEquals(UNPROCESSEABLE, response.getStatus(), "unprocessable: /unpack");
+        msg = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("java.lang.NullPointerException: null pointer message", msg);
     }
 
     @Test
