@@ -38,6 +38,13 @@ import org.slf4j.LoggerFactory;
  * Every public factory method below throws {@link IllegalArgumentException} if {@code name}
  * is in the reserved Tika-native namespace ({@code tk:}/{@code X-TIKA:}); see
  * {@link ReservedNamespaces}.
+ * <p>
+ * <strong>The public factories intern every Property in a static, JVM-global registry,
+ * permanently</strong> (first-wins: a name collision keeps the earlier registration and WARNs
+ * on a shape mismatch). They are for declaration-time constants — a bounded population. Never
+ * feed them runtime, per-document, or user-supplied names: each distinct name grows the
+ * registry forever, and a collision can shadow a curated constant JVM-wide. Document-derived
+ * names go through {@link Metadata#add(KeyPrefix, String, String)} with no Property at all.
  *
  * @since Apache Tika 0.7
  */
@@ -101,9 +108,11 @@ public final class Property implements Comparable<Property> {
                             || incumbent.valueType != valueType)) {
                         LOG.warn(
                                 "Property registration collision for '{}': keeping {}/{}, " +
-                                        "dropping {}/{}",
+                                        "dropping {}/{} -- two declarations claim this name; " +
+                                        "check for duplicate Property constants across jars, " +
+                                        "or runtime code minting via a public factory",
                                 name, incumbent.propertyType, incumbent.valueType, propertyType,
-                                valueType);
+                                valueType, new Exception("registration site of the dropped mint"));
                     }
                 }
             }
@@ -294,6 +303,11 @@ public final class Property implements Comparable<Property> {
     public static Property externalRealSeq(String name) {
         requireNotReserved(name);
         return new Property(name, false, PropertyType.SEQ, ValueType.REAL);
+    }
+
+    public static Property externalIntegerSequence(String name) {
+        requireNotReserved(name);
+        return new Property(name, false, PropertyType.SEQ, ValueType.INTEGER);
     }
 
     public static Property externalInteger(String name) {

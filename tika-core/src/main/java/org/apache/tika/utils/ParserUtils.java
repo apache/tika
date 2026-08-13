@@ -21,7 +21,6 @@ import static org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_EXCEPTION;
 import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -30,13 +29,6 @@ import org.apache.tika.parser.ParserDecorator;
  * Helper util methods for Parsers themselves.
  */
 public class ParserUtils {
-
-    /**
-     * @see TikaCoreProperties#EMBEDDED_PARSER the curated Property this aliases; {@code tk:}
-     * Properties mint only in org.apache.tika.metadata (see Property mint-time validation)
-     */
-    public final static Property EMBEDDED_PARSER = TikaCoreProperties.EMBEDDED_PARSER;
-
 
     /**
      * Does a deep clone of a Metadata object.
@@ -93,6 +85,6 @@ public class ParserUtils {
     public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata) {
         String trace = ExceptionUtils.getStackTrace(failure);
         metadata.add(EMBEDDED_EXCEPTION, trace);
-        metadata.add(EMBEDDED_PARSER, getParserClassname(parser));
+        metadata.add(TikaCoreProperties.EMBEDDED_PARSER, getParserClassname(parser));
     }
 }

@@ -263,10 +263,19 @@ the full list of behavioral changes and required config edits.
 * `ExternalParsersFactory` and XML-based external parser auto-discovery
 * DOM-based OOXML extractors (`XWPFWordExtractorDecorator`, `XSLFPowerPointExtractorDecorator`)
   -- SAX-based extractors are now the only implementation
-* `TikaMimeKeys` -- `Metadata` no longer implements it
+* `TikaMimeKeys` -- the interface is deleted outright, so direct references break too
+  (not just the constants formerly inherited by `Metadata`)
 * `Metadata` no longer implements `CreativeCommons`, `Geographic`, `HttpHeaders`, `Message`,
   `ClimateForecast` (renamed from `ClimateForcast`), or `TIFF` -- reference the interface's
   constants directly instead of the inherited `Metadata` constant (e.g. `Geographic.LATITUDE`)
+* `CreativeCommons` -- deleted outright: no parser ever produced its three keys
+  (`License-Url`, `License-Location`, `Work-Type`), and nothing consumed them
+* `ParserUtils.EMBEDDED_PARSER` -- use `TikaCoreProperties.EMBEDDED_PARSER` (it was a
+  same-Property alias)
+* package `org.apache.tika.metadata.writefilter` -> `org.apache.tika.metadata.writelimiter`
+  (the classes were renamed Filter -> Limiter earlier in 4.0.0; the package now matches)
+* `ClimateForecast` keys move under `cf:` (`cf:history`, `cf:comment`, ...; suffixes keep
+  the CF convention's verbatim spellings)
 * `TikaCoreProperties.TIKA_CONTENT_HANDLER` -- use `TIKA_CONTENT_HANDLER_TYPE`
 * `OfficeOpenXMLCore.SUBJECT` -- use `DublinCore#SUBJECT`
 * `XMPDM.ChannelTypePropertyConverter` -- experimental, no replacement
@@ -275,3 +284,5 @@ the full list of behavioral changes and required config edits.
   and the four `*_WRONG_CASE` fields (use the correctly-cased sibling, e.g. `IMAGE_SUPPLIER_ID`)
 * `Property.PropertyType.STRUCTURE` and `Property.ValueType.{LOCALE, MIME_TYPE, PROPER_NAME,
   URL, XPATH}` -- dead enum constants, never produced by any `Property` factory
+* `Property.internalClosedChoise`/`internalOpenChoise`/`externalClosedChoise`/`externalOpenChoise`
+  -- renamed to `...Choice` (typo-fix rename, no forwarders)

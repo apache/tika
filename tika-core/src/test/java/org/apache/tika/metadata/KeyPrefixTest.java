@@ -17,6 +17,7 @@
 package org.apache.tika.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -61,20 +62,34 @@ public class KeyPrefixTest {
     }
 
     @Test
-    public void testAcceptsAllCurrentlyUsedTrailingDelimiters() {
-        // ':' and '-' are the live delimiters (geotopic:alt-, ogg:streams-); '.' and '_' stay
-        // accepted for now -- the constructor polices structure, not convention.
-        for (char delim : new char[]{':', '.', '-', '_'}) {
-            String prefix = uniquePrefix("delim-" + delim) + delim;
-            KeyPrefix.file(prefix, "d"); // must not throw
+    public void testTrailingDelimiters() {
+        // ':' and '-' are the complete live population (geotopic:alt-, ogg:streams-); '.' and
+        // '_' were retired with the envi./NER_ renames and are rejected -- tightening later
+        // would be breaking, loosening later is free.
+        for (char delim : new char[]{':', '-'}) {
+            KeyPrefix.file(uniquePrefix("delim-ok") + delim, "d"); // must not throw
+        }
+        for (char delim : new char[]{'.', '_'}) {
+            String prefix = uniquePrefix("delim-bad") + delim;
+            assertThrows(IllegalArgumentException.class, () -> KeyPrefix.file(prefix, "d"));
         }
     }
 
     @Test
-    public void testDuplicateRegistrationThrows() {
-        String prefix = uniquePrefix("dup");
+    public void testIdenticalRedeclarationReturnsIncumbent() {
+        // class re-init against a shared tika-core (webapp redeploy) must not brick the class
+        String prefix = uniquePrefix("re-init");
+        KeyPrefix first = KeyPrefix.file(prefix, "same");
+        assertSame(first, KeyPrefix.file(prefix, "same"));
+        assertSame(first, KeyPrefix.get(prefix));
+    }
+
+    @Test
+    public void testConflictingRedeclarationThrows() {
+        String prefix = uniquePrefix("conflict");
         KeyPrefix.file(prefix, "first");
-        assertThrows(IllegalStateException.class, () -> KeyPrefix.tool(prefix, "second"));
+        assertThrows(IllegalStateException.class, () -> KeyPrefix.tool(prefix, "first"));
+        assertThrows(IllegalStateException.class, () -> KeyPrefix.file(prefix, "second"));
     }
 
     @Test

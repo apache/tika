@@ -47,8 +47,8 @@ import org.apache.tika.parser.ParseContext;
  * <p>
  * When a limit is hit and throwing is disabled:
  * <ul>
- *   <li>{@code X-TIKA-maxDepthReached=true} is set when maxDepth is hit</li>
- *   <li>{@code X-TIKA-maxEmbeddedCountReached=true} is set when maxCount is hit</li>
+ *   <li>{@code tk:exception:embedded-depth-limit-reached=true} is set when maxDepth is hit</li>
+ *   <li>{@code tk:exception:embedded-resource-limit-reached=true} is set when maxCount is hit</li>
  * </ul>
  * <p>
  * Example configuration:

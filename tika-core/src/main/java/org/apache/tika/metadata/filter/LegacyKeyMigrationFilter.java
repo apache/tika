@@ -29,7 +29,13 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -55,6 +61,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
  */
 @TikaComponent
 public class LegacyKeyMigrationFilter extends MetadataFilterBase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LegacyKeyMigrationFilter.class);
 
     /** V4_TO_V3 = egress (4.x output rewritten to 3.x keys, the BWC case); V3_TO_V4 = ingest. */
     public enum Direction { V4_TO_V3, V3_TO_V4 }
@@ -91,6 +99,11 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
 
     public LegacyKeyMigrationFilter(Config config) {
         this(loadTable(config.table), config.direction);
+    }
+
+    /** Constructor for JSON configuration; requires Jackson on the classpath. */
+    public LegacyKeyMigrationFilter(JsonConfig jsonConfig) throws TikaConfigException {
+        this(ConfigDeserializer.buildConfig(jsonConfig, Config.class));
     }
 
     /** Test/explicit hook. {@code table} is v3-&gt;v4 (with {@code null}/"DROPPED" = dropped). */
@@ -192,7 +205,12 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
         try (InputStream in = LegacyKeyMigrationFilter.class.getResourceAsStream(resource)) {
             if (in == null) {
                 if (DEFAULT_TABLE.equals(resource)) {
-                    return table;   // always bundled; treat absence as a defensive no-op
+                    // always bundled; absent only in a shaded/minimized jar -- the filter would
+                    // silently rewrite nothing, so say so loudly
+                    LOG.warn("bundled migration table {} missing from the classpath; "
+                            + "LegacyKeyMigrationFilter will not rewrite any flat-renamed keys",
+                            DEFAULT_TABLE);
+                    return table;
                 }
                 throw new IllegalArgumentException("migration table not found: " + resource);
             }

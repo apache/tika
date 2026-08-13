@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -175,9 +174,11 @@ public class CSVPipesIterator extends PipesIteratorBase {
             }
             String header = headers.get(i);
             try {
-                //header is the column-to-metadata-key contract; externalText preserves the
-                //exact name (a KeyPrefix would add one) and still rejects reserved names
-                metadata.set(Property.externalText(header), record.get(i));
+                //map-style user metadata: the header is the column-to-metadata-key contract,
+                //kept verbatim; the String route's guard rejects reserved names. No Property --
+                //Property.externalText here interned every distinct header forever and could
+                //first-wins-shadow a curated constant (a column named dc:creator).
+                metadata.set(header, record.get(i));
             } catch (IllegalArgumentException e) {
                 //header collides with a reserved Tika-native key; skip this column
                 //rather than aborting the whole row

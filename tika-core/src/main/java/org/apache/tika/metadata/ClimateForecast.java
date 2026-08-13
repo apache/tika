@@ -18,42 +18,46 @@ package org.apache.tika.metadata;
 
 /**
  * Met keys from NCAR CCSM files in the <a
- * href="http://cf-pcmdi.llnl.gov/">Climate Forecast Convention</a>. Key spellings are the
+ * href="http://cf-pcmdi.llnl.gov/">Climate Forecast Convention</a>. Key suffixes are the
  * external convention's own attribute names, verbatim (not Tika-coined) — some contain
- * underscores per that convention.
+ * underscores per that convention — under the {@code cf:} namespace: bare generic tokens
+ * ({@code comment}, {@code source}, {@code history}) would collide indistinguishably in
+ * the global keyspace (TIKA-4816 round-3 review).
  */
 public interface ClimateForecast {
 
-    Property PROGRAM_ID = Property.externalText("prg_ID");
+    String PREFIX = "cf" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    Property COMMAND_LINE = Property.externalText("cmd_ln");
+    Property PROGRAM_ID = Property.externalText(PREFIX + "prg_ID");
+
+    Property COMMAND_LINE = Property.externalText(PREFIX + "cmd_ln");
 
     // BAG: CF history is a provenance trail, appended once per processing step
     // (NetCDFParser/GribParser addGlobalAttribute).
-    Property HISTORY = Property.externalTextBag("history");
+    Property HISTORY = Property.externalTextBag(PREFIX + "history");
 
-    Property TABLE_ID = Property.externalText("table_id");
+    Property TABLE_ID = Property.externalText(PREFIX + "table_id");
 
-    Property INSTITUTION = Property.externalText("institution");
+    Property INSTITUTION = Property.externalText(PREFIX + "institution");
 
-    Property SOURCE = Property.externalText("source");
+    Property SOURCE = Property.externalText(PREFIX + "source");
 
-    Property CONTACT = Property.externalText("contact");
+    Property CONTACT = Property.externalText(PREFIX + "contact");
 
-    Property PROJECT_ID = Property.externalText("project_id");
+    Property PROJECT_ID = Property.externalText(PREFIX + "project_id");
 
-    Property CONVENTIONS = Property.externalText("Conventions");
+    Property CONVENTIONS = Property.externalText(PREFIX + "Conventions");
 
-    Property REFERENCES = Property.externalText("references");
+    Property REFERENCES = Property.externalText(PREFIX + "references");
 
-    Property ACKNOWLEDGEMENT = Property.externalText("acknowledgement");
+    Property ACKNOWLEDGEMENT = Property.externalText(PREFIX + "acknowledgement");
 
-    Property REALIZATION = Property.externalText("realization");
+    Property REALIZATION = Property.externalText(PREFIX + "realization");
 
-    Property EXPERIMENT_ID = Property.externalText("experiment_id");
+    Property EXPERIMENT_ID = Property.externalText(PREFIX + "experiment_id");
 
-    Property COMMENT = Property.externalText("comment");
+    Property COMMENT = Property.externalText(PREFIX + "comment");
 
-    Property MODEL_NAME_ENGLISH = Property.externalText("model_name_english");
+    Property MODEL_NAME_ENGLISH = Property.externalText(PREFIX + "model_name_english");
 
 }

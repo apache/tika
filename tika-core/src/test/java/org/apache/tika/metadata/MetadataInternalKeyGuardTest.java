@@ -69,6 +69,16 @@ public class MetadataInternalKeyGuardTest {
     }
 
     @Test
+    public void testReservedKeyThrowMessageNamesTheRemedies() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> new Metadata().set("tk:content", "x"));
+        // the message is user-facing migration guidance; pin the three remedies it names
+        assertTrue(ex.getMessage().contains("putAll"));
+        assertTrue(ex.getMessage().contains("KeyPrefix"));
+        assertTrue(ex.getMessage().contains("setTrusted"));
+    }
+
+    @Test
     public void testPropertyWriteToInternalKeyStillWorks() {
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.TIKA_CONTENT, "legit");

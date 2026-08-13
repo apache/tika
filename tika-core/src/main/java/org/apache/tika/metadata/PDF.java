@@ -36,7 +36,8 @@ public interface PDF {
      * end of the file.  This does not include an %%EOF
      * if the startxref=0, as would happen in a dummy %%EOF in a linearized PDF.
      */
-    Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eof-offsets");
+    // byte offsets: integral; was REAL only to satisfy the old REAL-only getLongValues
+    Property EOF_OFFSETS = Property.externalIntegerSequence(PDF_PREFIX + "eof-offsets");
 
     /** Trapped flag from the XMP {@code pdf:} schema; docinfo counterpart {@link #DOC_INFO_TRAPPED}. */
     Property TRAPPED = Property.internalText(PDF_PREFIX + "Trapped");

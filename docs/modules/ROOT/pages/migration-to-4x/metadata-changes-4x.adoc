@@ -298,6 +298,8 @@ key/value residual) |`gdal:*`
 `javax.sound` SPI properties) |`audio:*`
 |bare HDF attribute names |`hdf:*`
 |bare NetCDF global-attribute names |`netcdf:*`
+|bare Climate-Forecast convention keys (`prg_ID`, `history`, `comment`, ...; verbatim
+suffixes, distinctive spellings bridged both ways, generic tokens egress-only) |`cf:*`
 |bare ISA-Tab field names |`isatab:*`
 |bare QuickTime `keys`-box names (`com.apple.quicktime.*`, ...) |`mp4:*`
 |bare `meta/@name` values from a NetworkParser parse service |`network:*`
@@ -452,6 +454,10 @@ security gap.
 * `Property`'s public factories (`Property.externalText(...)`, `internalText(...)`, etc.)
   throw `IllegalArgumentException` at construction if given a reserved name -- a curated
   `tk:` `Property` can only be built from Tika's own package-private factories.
+  Since these calls usually initialize `static final` constants, the throw surfaces as an
+  `ExceptionInInitializerError` at class-load time (and `NoClassDefFoundError` on later
+  touches of the same class), far from the offending declaration -- check the initializer
+  error's cause for the reserved name.
 * The throw is a `RuntimeException` (`IllegalArgumentException`), not a `TikaException`.
   A harness that narrowly catches `TikaException` around a parse will see this as a new,
   uncaught failure mode when an unmigrated parser hits a crafted file.

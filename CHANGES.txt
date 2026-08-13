@@ -2,21 +2,33 @@ Release 4.0.0 - ???
 
   BREAKING CHANGES
 
-   * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a real trust
-     boundary. A String write to a reserved key throws IllegalArgumentException
-     instead of 3.x's silent success or silent drop, and the public Property
-     factories reject reserved names outright -- a curated tk: constant can only
-     be built from Tika's own package-private factories.
+   * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a trust
+     boundary for String-keyed writes. A String write to a reserved key throws
+     IllegalArgumentException instead of 3.x's silent success or silent drop,
+     and the public Property factories reject reserved names outright -- a
+     curated tk: constant can only be built from Tika's own package-private
+     factories.
      Metadata#setAll(Properties) is removed with no replacement; use
      putAll(Metadata) or individual set/add calls. PassthroughPrefix is
      renamed to KeyPrefix, and document/tool-derived names are written via the
      new Metadata#add(KeyPrefix, String, String) route (append-only, with
      built-in skip-and-WARN bounds on hostile names) or its Instant overload
-     for source-typed dates. A batch of open-namespace
-     prefixes was also renamed (audio:, ner:, envi:, ogg:streams-, grobid:,
+     for source-typed dates. A batch of key families was also renamed into
+     namespaced spellings (audio:, ner:, envi:, ogg:streams-, grobid:,
      iso19115:, gdal:, geotopic:, mif:, idml:, and GeoParser's Optional_NAME<n>
      fields); see the metadata key migration guide (metadata-changes-4x.adoc)
-     for the full renamed-key table (TIKA-4816).
+     for the full renamed-key table.
+     Metadata no longer implements CreativeCommons, Geographic, HttpHeaders,
+     Message, ClimateForcast, TIFF, or TikaMimeKeys: inherited constants like
+     Metadata.CONTENT_TYPE move to their home interface (HttpHeaders.CONTENT_TYPE,
+     etc.). The TikaMimeKeys and ClimateForcast interfaces are deleted outright;
+     ClimateForecast (corrected spelling) replaces the latter. The Property
+     factories internalClosedChoise/internalOpenChoise/externalClosedChoise/
+     externalOpenChoise are renamed to ...Choice (typo fix, no forwarders), and
+     the dead enum constants PropertyType.STRUCTURE and ValueType.{LOCALE,
+     MIME_TYPE, PROPER_NAME, URL, XPATH} are removed. The remaining metadata
+     API cleanups (cf: prefix, writelimiter package, smaller removals) are
+     enumerated in the migration guide, migrating-to-4x.adoc (TIKA-4816).
 
   NEW FEATURES
 

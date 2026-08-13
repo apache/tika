@@ -14,19 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata;
+package org.apache.tika.metadata.writelimiter;
 
 /**
- * A collection of Creative Commons properties names.
+ * Factory interface for creating {@link MetadataWriteLimiter} instances.
+ * <p>
+ * Implementations of this interface are placed in ParseContext and used
+ * by {@code Metadata.newInstance(ParseContext)} to create Metadata objects with
+ * limits applied at creation time.
  *
- * @see <a href="http://www.creativecommons.org/">creativecommons.org</a>
+ * @since Apache Tika 4.0.0
  */
-public interface CreativeCommons {
-
-    Property LICENSE_URL = Property.externalText("License-Url");
-
-    Property LICENSE_LOCATION = Property.externalText("License-Location");
-
-    Property WORK_TYPE = Property.externalText("Work-Type");
-
+public interface MetadataWriteLimiterFactory {
+    /**
+     * Creates a new limiter instance.
+     * Each call should return a fresh instance since limiters are stateful.
+     *
+     * @return a new MetadataWriteLimiter instance
+     */
+    MetadataWriteLimiter newInstance();
 }

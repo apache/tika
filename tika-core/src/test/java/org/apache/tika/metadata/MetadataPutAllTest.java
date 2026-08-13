@@ -18,9 +18,13 @@ package org.apache.tika.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.metadata.writelimiter.StandardMetadataLimiterFactory;
 
 /** {@link Metadata#putAll(Metadata)}: the provenance-preserving per-key-replace copy API. */
 public class MetadataPutAllTest {
@@ -48,6 +52,45 @@ public class MetadataPutAllTest {
         dest.putAll(src);
 
         assertEquals("the content", dest.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    @Test
+    public void testReservedMultiValuedKeyReplacesWholesale() {
+        String name = TikaCoreProperties.TIKA_PARSED_BY.getName();
+        Property property = Property.get(name);
+        assertNotNull(property, "precondition: tk:parsed-by must be a registered Property");
+        assertTrue(property.isMultiValuePermitted(), "precondition: tk:parsed-by must be a bag");
+
+        Metadata src = new Metadata();
+        src.addTrusted(name, "v1");
+        src.addTrusted(name, "v2");
+
+        Metadata dest = new Metadata();
+        dest.addTrusted(name, "pre-existing");
+
+        dest.putAll(src);
+
+        // per-key replace holds for the reserved Property route too, values in order
+        assertArrayEquals(new String[] {"v1", "v2"}, dest.getValues(name));
+    }
+
+    @Test
+    public void testLimiterCapsValuesWithoutThrowing() {
+        Metadata src = new Metadata();
+        src.add("multi", "a");
+        src.add("multi", "b");
+        src.add("multi", "c");
+        src.add("multi", "d");
+
+        StandardMetadataLimiterFactory factory = new StandardMetadataLimiterFactory();
+        factory.setMaxValuesPerField(2);
+        Metadata dest = new Metadata(factory.newInstance());
+
+        dest.putAll(src);
+
+        // the limiter silently caps at maxValuesPerField and flags truncation; no throw
+        assertArrayEquals(new String[] {"a", "b"}, dest.getValues("multi"));
+        assertEquals("true", dest.get(TikaCoreProperties.TRUNCATED_METADATA));
     }
 
     @Test

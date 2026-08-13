@@ -362,10 +362,10 @@ curl -s -X PUT -H "X-Tika-OCRskipOcr: true" -T testPDF.pdf http://localhost:9998
 
 [source,bash]
 ----
-curl -s -X PUT -H "Content-Disposition: attachment; filename=myfile.pdf" -T testPDF.pdf http://localhost:9998/meta/resourceName
+curl -s -X PUT -H "Content-Disposition: attachment; filename=myfile.pdf" -T testPDF.pdf http://localhost:9998/meta/tk:resource-name
 ----
 
-*Expected:* Returns the filename from Content-Disposition header.
+*Expected:* Returns the `tk:resource-name` value taken from the Content-Disposition filename.
 
 == Error Handling
 

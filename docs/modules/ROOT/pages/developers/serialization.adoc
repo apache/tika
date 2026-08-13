@@ -339,12 +339,11 @@ a name that isn't a compile-time constant:
 package com.example.tika;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilterBase;
 
 @TikaComponent
-public class UpperCaseFilter implements MetadataFilter {
+public class UpperCaseFilter extends MetadataFilterBase {
 
     private String fieldName = "title";
 
@@ -357,7 +356,7 @@ public class UpperCaseFilter implements MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         String value = metadata.get(fieldName);
         if (value != null) {
             metadata.setTrusted(fieldName, value.toUpperCase());
@@ -367,8 +366,9 @@ public class UpperCaseFilter implements MetadataFilter {
 ----
 
 Configure in JSON. Metadata filters are loaded via `parse-context` (they
-implement the `MetadataFilter` interface, which is a `ParseContext`-keyed
-component):
+extend the `MetadataFilter` abstract class -- here via `MetadataFilterBase`,
+whose per-`Metadata` hook suits context-free filters -- which is a
+`ParseContext`-keyed component):
 
 [source,json]
 ----

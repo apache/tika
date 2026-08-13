@@ -44,15 +44,20 @@ import org.apache.tika.metadata.Property;
  */
 public final class ClimateForecast {
 
+    // keyed by the file's bare attribute name; the Property's key is cf:-prefixed
     private static final Map<String, Property> BY_NAME = Stream
             .of(PROGRAM_ID, COMMAND_LINE, HISTORY, TABLE_ID, INSTITUTION, SOURCE, CONTACT,
                     PROJECT_ID, CONVENTIONS, REFERENCES, ACKNOWLEDGEMENT, REALIZATION,
                     EXPERIMENT_ID, COMMENT, MODEL_NAME_ENGLISH)
-            .collect(Collectors.toMap(Property::getName, p -> p));
+            .collect(Collectors.toMap(
+                    p -> p.getName().substring(
+                            org.apache.tika.metadata.ClimateForecast.PREFIX.length()),
+                    p -> p));
 
     private ClimateForecast() {
     }
 
+    /** The curated Property for a CF global-attribute name (bare, as in the file), or null. */
     public static Property byName(String name) {
         return BY_NAME.get(name);
     }

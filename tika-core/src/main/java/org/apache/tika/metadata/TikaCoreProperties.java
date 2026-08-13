@@ -181,7 +181,6 @@ public interface TikaCoreProperties {
     /**
      * Identifies the embedded {@link org.apache.tika.parser.Parser} that produced
      * {@link #EMBEDDED_EXCEPTION}, when known.
-     * @see org.apache.tika.utils.ParserUtils#EMBEDDED_PARSER the alias parser code uses
      */
     Property EMBEDDED_PARSER =
             Property.reservedInternalText(TIKA_META_EXCEPTION_PREFIX + "embedded-parser");

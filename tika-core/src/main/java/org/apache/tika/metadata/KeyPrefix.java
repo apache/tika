@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,8 +37,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p><strong>{@code KeyPrefix} instances are declaration-time constants.</strong> Declare one as a
  * {@code static final} field, the same way a curated {@link Property} constant is declared — never
  * construct one from document-derived text, and never construct one per-parse: the registry is
- * static and unbounded, so per-parse construction grows it forever, and re-registering the same
- * prefix throws {@link IllegalStateException}.
+ * static and unbounded, so per-parse construction grows it forever. An identical redeclaration
+ * (class re-init in another classloader) returns the incumbent; a conflicting one throws
+ * {@link IllegalStateException}.
  *
  * @since Apache Tika 4.0.0
  */
@@ -45,9 +47,10 @@ public final class KeyPrefix {
 
     public enum Provenance { FILE, TOOL }
 
-    /** Delimiters accepted at the end of a prefix; kept intentionally loose (some declarations
-     * predate a single convention) — see {@code ReservedNamespaces} for the reserved-name check. */
-    private static final char[] TRAILING_DELIMITERS = {':', '.', '-', '_'};
+    /** Delimiters accepted at the end of a prefix — the complete live population uses only these
+     * two ({@code geotopic:alt-}, {@code ogg:streams-}); '.' and '_' were retired with the
+     * envi./NER_ renames. Loosening later is free; tightening later is breaking. */
+    private static final char[] TRAILING_DELIMITERS = {':', '-'};
 
     private static final Map<String, KeyPrefix> REGISTRY = new ConcurrentHashMap<>();
 
@@ -70,13 +73,30 @@ public final class KeyPrefix {
         this.prefix = prefix;
         this.provenance = provenance;
         this.description = description;
-        KeyPrefix incumbent = REGISTRY.putIfAbsent(prefix, this);
-        if (incumbent != null) {
-            throw new IllegalStateException(
-                    "KeyPrefix '" + prefix + "' is already registered; KeyPrefix instances are "
-                            + "declaration-time constants and must be constructed exactly once "
-                            + "(never from document-derived text, never per-parse)");
+    }
+
+    /**
+     * Registers a freshly-constructed instance, tolerating an IDENTICAL redeclaration: a
+     * declaring class re-initialized against a shared tika-core (webapp redeploy, a second
+     * plugin classloader) gets the incumbent back instead of an
+     * {@code ExceptionInInitializerError} that kills the class until JVM restart. A
+     * CONFLICTING redeclaration (different provenance or description) still throws — that is
+     * either per-parse misconstruction or two libraries claiming one prefix.
+     */
+    private static KeyPrefix register(KeyPrefix fresh) {
+        KeyPrefix incumbent = REGISTRY.putIfAbsent(fresh.prefix, fresh);
+        if (incumbent == null) {
+            return fresh;
         }
+        if (incumbent.provenance == fresh.provenance
+                && Objects.equals(incumbent.description, fresh.description)) {
+            return incumbent;
+        }
+        throw new IllegalStateException(
+                "KeyPrefix '" + fresh.prefix + "' is already registered with different "
+                        + "provenance/description; another library may already own this prefix. "
+                        + "KeyPrefix instances are declaration-time constants (never from "
+                        + "document-derived text, never per-parse).");
     }
 
     private static boolean hasTrailingDelimiter(String prefix) {
@@ -90,25 +110,35 @@ public final class KeyPrefix {
     }
 
     /**
-     * Declares a FILE-provenance prefix: names read from the document itself.
+     * Declares a FILE-provenance prefix: names read from the document itself. An identical
+     * redeclaration (same provenance and description, e.g. class re-initialization in another
+     * classloader) returns the incumbent instance.
      *
      * @throws IllegalArgumentException if {@code prefix} is null, empty, reserved, or lacks a
      * trailing delimiter
-     * @throws IllegalStateException if {@code prefix} is already registered
+     * @throws IllegalStateException if {@code prefix} is already registered with a different
+     * provenance or description
      */
     public static KeyPrefix file(String prefix, String description) {
-        return new KeyPrefix(prefix, Provenance.FILE, description);
+        return register(new KeyPrefix(prefix, Provenance.FILE, description));
     }
 
     /**
-     * Declares a TOOL-provenance prefix: names coined by an external tool or service.
+     * Declares a TOOL-provenance prefix: names coined by an external tool or service. An
+     * identical redeclaration returns the incumbent instance; see {@link #file}.
      *
      * @throws IllegalArgumentException if {@code prefix} is null, empty, reserved, or lacks a
      * trailing delimiter
-     * @throws IllegalStateException if {@code prefix} is already registered
+     * @throws IllegalStateException if {@code prefix} is already registered with a different
+     * provenance or description
      */
     public static KeyPrefix tool(String prefix, String description) {
-        return new KeyPrefix(prefix, Provenance.TOOL, description);
+        return register(new KeyPrefix(prefix, Provenance.TOOL, description));
+    }
+
+    /** The registered prefix instance for {@code prefix}, or {@code null}. */
+    public static KeyPrefix get(String prefix) {
+        return REGISTRY.get(prefix);
     }
 
     /**

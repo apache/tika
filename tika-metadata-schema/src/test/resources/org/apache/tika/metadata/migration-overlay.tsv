@@ -236,3 +236,25 @@ Password	mdb:password	EGRESS_ONLY
 # never saw them. Unambiguous both-way renames.
 X-TIKA:EXCEPTION:embedded_parser	tk:exception:embedded-parser
 X-TIKA:EXCEPTION:embedded_resource_limit_reached	tk:exception:embedded-resource-limit-reached
+#
+# ClimateForecast (chunk-4 ruling, 2026-08-13): the CF convention's 15 keys keep their verbatim
+# suffixes but move under cf: -- bare generic tokens (comment, source, history) collided
+# indistinguishably in the global keyspace. Distinctive CF-specific spellings bridge both ways;
+# generic English tokens are EGRESS_ONLY (rewriting every bare "comment" on ingest would
+# mis-map same-named keys from non-CF sources). The field-identity join can't see any of these:
+# the constants moved interfaces (ClimateForcast -> ClimateForecast) AND renamed.
+prg_ID	cf:prg_ID
+cmd_ln	cf:cmd_ln
+table_id	cf:table_id
+experiment_id	cf:experiment_id
+model_name_english	cf:model_name_english
+history	cf:history	EGRESS_ONLY
+institution	cf:institution	EGRESS_ONLY
+source	cf:source	EGRESS_ONLY
+contact	cf:contact	EGRESS_ONLY
+project_id	cf:project_id	EGRESS_ONLY
+Conventions	cf:Conventions	EGRESS_ONLY
+references	cf:references	EGRESS_ONLY
+acknowledgement	cf:acknowledgement	EGRESS_ONLY
+realization	cf:realization	EGRESS_ONLY
+comment	cf:comment	EGRESS_ONLY

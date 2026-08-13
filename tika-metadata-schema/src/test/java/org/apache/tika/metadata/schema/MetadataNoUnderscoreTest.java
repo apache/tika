@@ -48,8 +48,8 @@ public class MetadataNoUnderscoreTest {
      * {@code ClimateForecast}, not Tika-coined.
      */
     private static final Set<String> ALLOWLIST = Set.of(
-            "prg_ID", "cmd_ln", "table_id", "project_id", "experiment_id",
-            "model_name_english", "sqlite3:application_id", "sqlite3:user_version");
+            "cf:prg_ID", "cf:cmd_ln", "cf:table_id", "cf:project_id", "cf:experiment_id",
+            "cf:model_name_english", "sqlite3:application_id", "sqlite3:user_version");
 
     @Test
     public void noUnderscoreInTikaCoinedKeys() throws Exception {

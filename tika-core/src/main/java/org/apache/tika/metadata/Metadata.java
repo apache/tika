@@ -37,8 +37,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 
@@ -47,7 +47,14 @@ import org.apache.tika.utils.DateUtils;
  */
 public class Metadata implements Serializable {
 
-    private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
+    /**
+     * A named class, not an anonymous one: this is the default {@code writeLimiter}, so it is
+     * part of {@code Metadata}'s serialized form — an anonymous class would freeze the synthetic
+     * name {@code Metadata$1} into it, silently renamed by any later class reorder.
+     */
+    private static final class AcceptAllLimiter implements MetadataWriteLimiter {
+        private static final long serialVersionUID = 1L;
+
         @Override
         public void add(String field, String value, Map<String, String[]> data) {
             String[] values = data.get(field);
@@ -77,7 +84,13 @@ public class Metadata implements Serializable {
             newValues[newValues.length - 1] = value;
             return newValues;
         }
-    };
+
+        private Object readResolve() {
+            return ACCEPT_ALL;
+        }
+    }
+
+    private static final MetadataWriteLimiter ACCEPT_ALL = new AcceptAllLimiter();
 
     /**
      * Serial version UID
@@ -89,7 +102,7 @@ public class Metadata implements Serializable {
     /**
      * Safety net on {@link #add(KeyPrefix, String, String)}: a doc-derived name longer than
      * this is skipped (with a WARN). Configurable policy belongs in a
-     * {@link org.apache.tika.metadata.writefilter.StandardMetadataLimiter}.
+     * {@link org.apache.tika.metadata.writelimiter.StandardMetadataLimiter}.
      */
     public static final int MAX_PREFIX_ROUTE_NAME_LENGTH = 1024;
 
@@ -437,7 +450,7 @@ public class Metadata implements Serializable {
      * {@link #MAX_PREFIX_ROUTE_NAMES} distinct prefix-route names is skipped with a WARN,
      * never an exception. Known, bounded vocabularies belong in curated {@link Property}
      * constants instead; deployment-tunable limits belong in a
-     * {@link org.apache.tika.metadata.writefilter.StandardMetadataLimiter}, which applies
+     * {@link org.apache.tika.metadata.writelimiter.StandardMetadataLimiter}, which applies
      * on top of this route.
      *
      * @param prefix the declared prefix for this source (never from document text)
@@ -519,6 +532,7 @@ public class Metadata implements Serializable {
      * Trusted write for clone/merge/deserialize; reserved keys go via their Property.
      *
      * @param append add rather than set
+     * @see #putAll(Metadata) the bulk copy built on this, which is what most callers want
      */
     public void reconstruct(String name, String value, boolean append) {
         if (ReservedNamespaces.isTikaNative(name)) {
@@ -815,10 +829,11 @@ public class Metadata implements Serializable {
     }
 
     /**
-     * Gets the array of ints of the identified "seq" integer metadata property.
+     * Gets the array of longs of the identified "seq" metadata property. INTEGER or REAL
+     * valued (mirroring {@link #getLong}).
      *
-     * @param property seq integer property definition
-     * @return array of ints
+     * @param property seq integer or real property definition
+     * @return array of longs
      * @since Apache Tika 1.21
      */
     public long[] getLongValues(Property property) {
@@ -826,8 +841,9 @@ public class Metadata implements Serializable {
             throw new PropertyTypeException(PropertyType.SEQ,
                     property.getPrimaryProperty().getPropertyType());
         }
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER
+                && property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER,
                     property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
