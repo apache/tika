@@ -271,7 +271,11 @@ the rest are safe by construction.
 *Rejected at config load or startup:*
 
 * Negative values for `totalTaskTimeoutMillis` or `progressTimeoutMillis` (zero is
-  accepted -- see below).
+  accepted in some combinations -- see below).
+* `progressTimeoutMillis: 0` with a *positive* `totalTaskTimeoutMillis` -- the stall
+  detector would fire at the first check, killing every task immediately despite the
+  remaining total budget. Rejected at config load, and again at task start for
+  programmatically-built limits.
 * `pipes.socketTimeoutMillis` less than or equal to `pipes.heartbeatIntervalMillis` -- the client
   would kill a healthy server between heartbeats.
 * Unknown or renamed configuration fields (including pre-4.0 `timeoutSeconds` names) --
@@ -300,11 +304,11 @@ the rest are safe by construction.
 
 *Accepted without warning (a coherent edge case, not a misconfiguration):*
 
-* Zero for `totalTaskTimeoutMillis` or `progressTimeoutMillis` -- legal, and useful
-  mainly in tests: it means the budget is already exhausted, so the task fails at the
-  next operation or embedded-document boundary. It does *not* disable the timeout. A
-  zero `progressTimeoutMillis` is in fact the *strictest* possible stall detector (any
-  silence at all trips it) -- the opposite of disabling it. To make stall detection
+* Zero for *both* timeouts -- legal, and useful mainly in tests: it means the budget is
+  already exhausted, so the task fails at the next operation or embedded-document
+  boundary. A zero `totalTaskTimeoutMillis` alone is likewise legal (the total budget is
+  spent). Zero does *not* disable a timeout -- and a zero `progressTimeoutMillis` next
+  to a positive total is rejected outright (see above). To make stall detection
   effectively inert, set `progressTimeoutMillis` at or above `totalTaskTimeoutMillis`
   (see above).
 * `Long.MAX_VALUE` (`9223372036854775807`) for `totalTaskTimeoutMillis` or
@@ -371,9 +375,8 @@ rename with the existing value is correct for all of them: `PipesConfig`'s
 flag (now `--timeoutMillis`), the DWG parser's `dwgReadTimeout` (now `timeoutMillis`,
 default unchanged at 300000), and `ExternalParser`'s `timeoutMs` (now `timeoutMillis`, a
 rename that landed in 4.0 itself so this doc previously lagged the code). Fields that are
-genuinely seconds-based and stayed that way (e.g. `staleFetcherTimeoutSeconds`, JDBC's
-`queryTimeoutSeconds`, which feeds `java.sql.Statement.setQueryTimeout(int seconds)`
-directly) were deliberately left alone.
+genuinely seconds-based and stayed that way (e.g. JDBC's `queryTimeoutSeconds`, which feeds
+`java.sql.Statement.setQueryTimeout(int seconds)` directly) were deliberately left alone.
 
 `ProcessUtils.checkCommand()` -- used by several detectors and parsers
 (`FileCommandDetector`, `GDALParser`, etc.) to probe whether an external binary is

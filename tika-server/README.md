@@ -85,8 +85,11 @@ Usage examples from command line with `curl` utility:
 * Get all document attachments as ZIP-file:  
 `curl -v -T Doc1_ole.doc http://localhost:9998/unpack > /var/tmp/x.zip`
 
-* Extract metadata to CSV format:  
+* Extract metadata as JSON (the default):  
 `curl -T price.xls http://localhost:9998/meta`
+
+* Extract metadata as CSV:  
+`curl -T price.xls -H "Accept: text/csv" http://localhost:9998/meta`
 
 * Detect media type from CSV format using file extension hint:  
 `curl -X PUT -H "Content-Disposition: attachment; filename=foo.csv" --upload-file foo.csv http://localhost:9998/detect`

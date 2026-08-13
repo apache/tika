@@ -118,7 +118,8 @@ curl -s -X PUT -H "Accept: application/json" -T testPDF.pdf http://localhost:999
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/meta/Content-Type
 ----
 
-*Expected:* `Content-Type,application/pdf`
+*Expected:* JSON containing only the requested field: `{"Content-Type":"application/pdf"}`
+(the header-less default is JSON; add `-H "Accept: text/csv"` for `Content-Type,application/pdf`)
 
 === Test 9: PUT /rmeta
 
@@ -155,7 +156,8 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all 
 unzip -l /tmp/unpack.zip
 ----
 
-*Expected:* ZIP file containing extracted embedded files plus `__TEXT__` and `__METADATA__` files.
+*Expected:* ZIP file containing the extracted embedded files, a `*.metadata.json` entry
+per file, and the original container document.
 
 === Test 13: GET /parsers
 

@@ -110,7 +110,14 @@ The `/stream` and `/string` suffixes never described anything a caller could cho
 
 Collapsing them also removes the `/detect/stream` vs `/detectors` near-collision. `/detectors` is unchanged -- it lists the server's configured detectors and does not detect anything.
 
-**Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies, headers, and responses are unchanged.
+**Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies and headers are unchanged, but behavior is not:
+
+* `/detect` now runs in the forked worker pool (detection opens containers over
+  caller-supplied bytes), so it can return `429` or `503` with `Retry-After`, and `413`,
+  like the parsing endpoints. A failure reading the body is now a `500`; 3.x returned
+  `200` with `application/octet-stream` as if detection had succeeded.
+* `/language` caps detection input at the first 100,000 characters and uses the default
+  `LanguageDetector` on the classpath; 3.x pinned it to Optimaize.
 
 === Handler-Type Changes on `/tika`
 
@@ -158,7 +165,12 @@ The HTTP status codes are also more precise:
   header, not `503` or `200`.
 * An unknown or reserved fetcher/emitter (`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`)
   returns `400`, not `500` — the request is permanently malformed, so retrying will not help.
-* A body over `maxRequestSizeBytes` (`PAYLOAD_LIMIT_EXCEEDED`) returns `413`.
+* Two distinct limits return `413`. A request body over `maxRequestSizeBytes` is
+  rejected by a request filter with a plain-text `413` -- both a declared
+  `Content-Length` over the limit and a chunked body that turns out to be too large.
+  Separately, a parse *result* too large for the pipes IPC channel
+  (`pipes.maxIpcPayloadBytes`) returns `413` with the JSON status body
+  `{"status":"PAYLOAD_LIMIT_EXCEEDED"}`.
 * `/pipes` and `/async` now signal the outcome through the HTTP status (the same
   `429`/`503`/`400`/`413` mappings, plus `Retry-After`) instead of always returning `200`
   with the failure only in the body.
@@ -183,9 +195,22 @@ the exception when there is one. It previously used a `/pipes`-only shape
 and a stringified `emitted`). A parse that threw is now reported by its status enum, not as
 `"ok"`.
 
+`/pipes` also rejects with `400`: a malformed request body (the reason is in the response),
+and any emit strategy other than `EMIT_ALL` -- the `/pipes` response carries only
+status and message, so a passback strategy would silently discard the parsed data. Use
+`/rmeta` if you want the data passed back.
+
 **`/async` request body.** `POST /async` now requires an object envelope,
 `{"tuples":[ ... ]}`, instead of a bare JSON array; the envelope leaves room for future
-batch-level fields. A bare array (or any body without a `tuples` array) is rejected with `400`.
+batch-level fields. A bare array (or any body without a `tuples` array) is rejected with `400`,
+as is a tuple naming a fetcher or emitter the server does not have -- validated at POST time,
+before anything is queued. A batch larger than the queue's *total* capacity is also a `400`
+telling the caller to split it: retrying cannot help. `429` with `Retry-After` is reserved
+for transient fullness, where the same batch can succeed later.
+
+**`FetchEmitTuple` wire format.** The per-tuple parse-context key is `parse-context`;
+3.x used `parseContext`. An unknown field anywhere in a tuple is rejected with a `400`
+naming the field and listing the known ones, instead of being silently ignored.
 
 === `/meta` Is Now Pipes-Backed
 
@@ -209,6 +234,10 @@ should check the new status codes above. Clients that inspected the response bod
 for error text should check `tk:exception:container-exception` (full-object
 endpoints) or the `422` body (`/meta/\{field}`).
 
+**The default representation is now JSON, not CSV.** A `/meta` request without an
+`Accept` header returned CSV in 3.x; it now returns JSON. CSV is still available with
+`Accept: text/csv`.
+
 Two changes to the returned metadata come with this, neither of which produces an
 error:
 
@@ -219,7 +248,8 @@ error:
   content handler, so there is no text for a language detector to work from.
 +
 **Migration:** configure a language-detection metadata filter
-(`charsoup-metadata-filter`, `optimaize`, or `opennlp`) and use `/rmeta` or
+(`charsoup-metadata-filter`, `optimaize-metadata-filter`, or
+`open-nlp-metadata-filter`) and use `/rmeta` or
 `/tika/json`, which capture content. The detected value arrives as
 `tk:detected-language`, with `tk:detected-language-confidence`. Note that these
 filters read `tk:content`, so they are no-ops on `/meta` and on any endpoint
@@ -269,9 +299,12 @@ The following `TikaServerConfig` options have been removed:
   digests there instead of in the `server` section.
 * `idBase` - Renamed to `id`.
 * `preventStopMethod`, `maxFiles`, `javaPath`, `maxRestarts`, `numRestarts`,
-  `forkedStatusFile`, `maxForkedStartupMillis`, `tmpFilePrefix` - Vestigial options from the
-  pre-4.0 spawn-child server model, which no longer exists. Delete them from your config;
-  leaving any in place now fails startup, because unrecognized config keys are rejected.
+  `forkedStatusFile`, `maxForkedStartupMillis`, `tempFilePrefix`, `noFork` - Vestigial
+  options from the pre-4.0 spawn-child server model, which no longer exists (the `-noFork`
+  CLI flag is gone too). Delete them from your config; leaving any in place now fails
+  startup, because unrecognized config keys are rejected.
+* `port` is now a single integer. The 3.x multi-instance port ranges and lists
+  (`-p 9995-9998`, `-p 9995,9997`) are no longer supported; run one server per port.
 
 === Configuration via HTTP Headers Removed
 
@@ -377,6 +410,12 @@ The capabilities are two default-`false` flags in the `server` section:
 
 `/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
 
+The `endpoints` allowlist now also gates SPI-provided resources: a discovered resource
+whose root path matches a named endpoint binds only when that endpoint is enabled (e.g.
+the `application/rdf+xml` XMP resource serves `/meta`, so omitting `meta` removes it too).
+An SPI resource with a custom root path still loads unconditionally -- installing the jar
+is the opt-in.
+
 **Migration:** if your config selects `pipes` or `async`, add `"allowPipes": true`; if you rely on per-request config, add `"allowPerRequestConfig": true`:
 
 [source,json]
@@ -421,6 +460,10 @@ and want `/pipes`/`/async` to fetch documents from a directory you control:
   "plugin-roots": "path/to/plugins"
 }
 ----
+
+The 3.x `pipes` keys `staleFetcherTimeoutSeconds` and `staleFetcherDelaySeconds` are gone.
+A pipes config still carrying either fails startup: unknown pipes keys are rejected, not
+ignored.
 
 [IMPORTANT]
 ====

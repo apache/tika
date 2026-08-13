@@ -191,13 +191,12 @@ It is therefore outside the process isolation that protects `/tika`, `/rmeta`, `
 one worker.
 
 `/language` caps detection at the first 100,000 characters, since accuracy saturates well
-before that. That bounds the CPU per request, but *not* the memory: the request body is read
-into the server's heap before the cap applies. Bounding the body itself is what
-`maxRequestSizeBytes` is for; it defaults to 1 GiB, so one request cannot fill the temp
-directory or the heap with a small body, though enough concurrent large ones still can. Raise
-it for larger documents, or set a negative value to remove the limit. Treat the server as
-available only to trusted callers, the same as the rest of the server — see
-xref:security.adoc[the security model]. If you do not need `/language`, omit it from `endpoints`.
+before that. It reads at most that much from the body without materializing the rest, so the
+cap bounds both the CPU and the heap used per request. `maxRequestSizeBytes` (default 1 GiB)
+still bounds what a request may send at all; raise it for larger documents, or set a negative
+value to remove the limit. Treat the server as available only to trusted callers, the same as
+the rest of the server — see xref:security.adoc[the security model]. If you do not need
+`/language`, omit it from `endpoints`.
 
 NOTE: `/detect` runs in a forked pipes worker like the parsing endpoints. Detection opens
 containers — zip, OPC, POIFS — over caller-supplied bytes, so it gets the same isolation,
@@ -249,7 +248,10 @@ not help; fix the fetcher/emitter id.
 
 |`413 Payload Too Large`
 |`PAYLOAD_LIMIT_EXCEEDED`
-|The request body exceeded `maxRequestSizeBytes`.
+|The parse *result* was too large for the pipes IPC channel (`pipes.maxIpcPayloadBytes`).
+Distinct from a request *body* over `maxRequestSizeBytes`, which a request filter rejects
+with a plain-text `413` (declared `Content-Length` and chunked bodies alike) before any
+parsing starts.
 
 |`500 Internal Server Error`
 |`FAILED_TO_INITIALIZE`, `FETCH_EXCEPTION`, `EMIT_EXCEPTION`,
@@ -364,7 +366,7 @@ Server behavior beyond host/port is controlled by a JSON config file passed via
 
 |`maxQueuePauseMillis`
 |`60000`
-|How long a POST to `/async` blocks when the queue is full before it is rejected with `429` (`Retry-After`).
+|How long a POST to `/async` blocks when the queue is full before it is rejected with `429` (`Retry-After`). A batch larger than the queue's total capacity is rejected immediately with `400` -- retrying cannot help; split the batch.
 
 |`requestLogLevel`
 |_empty (off)_
@@ -448,10 +450,12 @@ mitigation (scope `endpoints` to what you actually use, or set
 
 === Config Endpoint Protection
 
-By default, the `/config` family of endpoints that expose server configuration are
-disabled. These endpoints can reveal sensitive information about your server,
-including parser settings and system properties (see
-https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]).
+By default, the `/config` family of endpoints is disabled. These endpoints *accept*
+per-request configuration -- they do not reveal the server's own config -- and a
+caller-supplied config can enable dangerous operations, such as pointing parsers at
+attacker-chosen resources (see
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271] for the
+class of risk).
 
 Protected endpoints include:
 
@@ -476,9 +480,9 @@ your config file's `server` section:
 WARNING: Only enable `allowPerRequestConfig` if you have secured access to Tika
 Server through network controls (firewalls, private subnets), a reverse proxy
 (nginx, Apache httpd), or
-xref:using-tika/server/tls.adoc[2-way TLS authentication]. Exposing config endpoints
-to untrusted networks can help attackers identify vulnerabilities and craft
-targeted attacks.
+xref:using-tika/server/tls.adoc[2-way TLS authentication]. Per-request configuration
+lets callers change how documents are parsed, widening what anyone with access to the
+server can do.
 
 === Pipes and Async Endpoints
 
