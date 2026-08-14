@@ -37,6 +37,14 @@ to avoid uploading hundreds of megabytes of native libraries and plugin bundles 
   ```
   This produces `tika-grpc/target/tika-grpc-<version>.zip` but does **not** deploy it to Nexus.
 
+## Concurrency
+
+`fetchAndParse` runs on a pool of forked worker JVMs sized by `pipes.numClients`
+(when unset, derived from host cores, at most 4). A call that cannot get a
+worker within `pipes.maxWaitForClientMillis` (default 60s) returns the in-band
+status `CLIENT_UNAVAILABLE_WITHIN_MS`: the server is at capacity, not failing.
+With `pipes.useSharedServer: true` the workers share one JVM instead.
+
 ## Quick Start - Development Mode
 
 The fastest way to run tika-grpc in development mode with plugin hot-reloading:

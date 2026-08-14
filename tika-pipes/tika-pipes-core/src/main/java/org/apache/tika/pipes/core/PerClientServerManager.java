@@ -289,6 +289,12 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
+    public void connectionAbandoned() {
+        LOG.info("clientId={}: connection abandoned mid-request, recycling the worker", clientId);
+        pendingRestart = true;
+    }
+
+    @Override
     public int handleCrashAndGetExitCode() {
         pendingRestart = true;
         if (process != null) {

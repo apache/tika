@@ -68,8 +68,9 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
-import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesException;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
@@ -88,7 +89,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     PipesConfig pipesConfig;
     TikaGrpcConfig tikaGrpcConfig;
-    PipesClient pipesClient;
+    PipesParser pipesParser;
     FetcherManager fetcherManager;
     ConfigStore configStore;
     Path tikaConfigPath;
@@ -120,7 +121,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // modifications) are off unless explicitly enabled in the "grpc" section.
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
-        pipesClient = new PipesClient(pipesConfig, configPath);
+        // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
+        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
@@ -304,7 +306,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 contextNode.fields().forEachRemaining(entry ->
                         parseContext.setJsonConfig(entry.getKey(), entry.getValue().toString()));
             }
-            PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
+            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder()
@@ -324,7 +326,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 }
             }
             responseObserver.onNext(fetchReplyBuilder.build());
-        } catch (IOException e) {
+        } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -630,17 +632,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     /**
-     * Close the pipe client, to be called after TikaGrpcServer has shut down.
+     * Close the pipes parser, to be called after TikaGrpcServer has shut down.
      */
     void postShutdown() {
-        if (pipesClient != null) {
-            LOG.info("Shutting down the pipes client");
+        if (pipesParser != null) {
+            LOG.info("Shutting down the pipes parser");
             try {
-                pipesClient.close();
+                pipesParser.close();
             } catch (IOException e) {
-                LOG.error("Error closing the pipes client", e);
+                LOG.error("Error closing the pipes parser", e);
             } finally {
-                pipesClient = null;
+                pipesParser = null;
             }
         }
     }
