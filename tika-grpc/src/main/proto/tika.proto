@@ -113,7 +113,8 @@ message FetchAndParseReply {
   string fetch_key = 1;
   // Metadata fields from the parse output.
   map<string, string> fields = 2;
-  // The status from the message. See javadoc for org.apache.tika.pipes.PipesResult.STATUS for the list of status.
+  // The status from the message. See javadoc for
+  // org.apache.tika.pipes.api.PipesResult.RESULT_STATUS for the list of statuses.
   string status = 3;
   // If there was an error, this will contain the error message.
   string error_message = 4;

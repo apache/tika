@@ -66,8 +66,8 @@ public class PipesClientInterruptTest {
             sentinel.start();
 
             PipesConfig pipesConfig = new PipesConfig();
-            PipesClient client = new PipesClient(pipesConfig,
-                    new SentinelServerManager(serverSocket.getLocalPort()));
+            SentinelServerManager manager = new SentinelServerManager(serverSocket.getLocalPort());
+            PipesClient client = new PipesClient(pipesConfig, manager);
 
             AtomicReference<Throwable> fromProcess = new AtomicReference<>();
             CountDownLatch processReturned = new CountDownLatch(1);
@@ -94,7 +94,90 @@ public class PipesClientInterruptTest {
                     "process() must rethrow the interrupt, got: " + fromProcess.get());
             assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
                     "the interrupted client left its connection open with a request in flight");
+            assertTrue(manager.abandoned,
+                    "the manager was not told; a per-client worker never dials back, so the "
+                            + "next connect() would wait out the accept timeout for nothing");
             client.close();
+        }
+    }
+
+    /**
+     * Interrupting during startup retry must leave the same state as
+     * interrupting mid-parse: connection closed, manager told. The scripted
+     * server breaks the handshake (a valid frame of the wrong type instead of
+     * READY), which lands the client in the retry backoff where the interrupt
+     * is delivered.
+     */
+    @Test
+    @Timeout(30)
+    public void interruptDuringStartupBackoffAbandonsTheConnection() throws Exception {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            CountDownLatch badHandshakeSent = new CountDownLatch(1);
+            CountDownLatch connectionClosed = new CountDownLatch(1);
+            Thread sentinel = new Thread(() ->
+                    runBadHandshakeServer(serverSocket, badHandshakeSent, connectionClosed));
+            sentinel.setDaemon(true);
+            sentinel.start();
+
+            PipesConfig pipesConfig = new PipesConfig();
+            SentinelServerManager manager = new SentinelServerManager(serverSocket.getLocalPort());
+            PipesClient client = new PipesClient(pipesConfig, manager);
+
+            AtomicReference<Throwable> fromProcess = new AtomicReference<>();
+            CountDownLatch processReturned = new CountDownLatch(1);
+            Thread worker = new Thread(() -> {
+                try {
+                    client.process(new FetchEmitTuple("interrupt-startup-test",
+                            new FetchKey("fetcher", "key"), new EmitKey(), new Metadata(),
+                            new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                } catch (Throwable t) {
+                    fromProcess.set(t);
+                } finally {
+                    processReturned.countDown();
+                }
+            });
+            worker.start();
+
+            assertTrue(badHandshakeSent.await(15, TimeUnit.SECONDS),
+                    "the scripted server never got a connection; the test proves nothing");
+            worker.interrupt();
+
+            assertTrue(processReturned.await(15, TimeUnit.SECONDS),
+                    "process() must return after the interrupt");
+            assertTrue(fromProcess.get() instanceof InterruptedException,
+                    "process() must rethrow the interrupt, got: " + fromProcess.get());
+            assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
+                    "the interrupted client left its half-established connection open");
+            assertTrue(manager.abandoned,
+                    "the manager was not told; an abandoned per-client worker never "
+                            + "dials back, mid-handshake or not");
+            client.close();
+        }
+    }
+
+    /**
+     * Accepts one connection and answers the handshake with a valid frame of
+     * the wrong type, sending the client into its reconnect backoff. Releases
+     * connectionClosed when the client sends SHUT_DOWN or the socket reaches
+     * EOF.
+     */
+    private static void runBadHandshakeServer(ServerSocket serverSocket,
+            CountDownLatch badHandshakeSent, CountDownLatch connectionClosed) {
+        try (Socket socket = serverSocket.accept();
+                DataInputStream in = new DataInputStream(socket.getInputStream());
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream())) {
+            PipesMessage.ack().write(out);
+            badHandshakeSent.countDown();
+            while (true) {
+                PipesMessage message = PipesMessage.read(in);
+                if (message.type() == PipesMessageType.SHUT_DOWN) {
+                    break;
+                }
+            }
+            connectionClosed.countDown();
+        } catch (IOException e) {
+            // EOF or reset: the connection is gone either way
+            connectionClosed.countDown();
         }
     }
 
@@ -146,9 +229,15 @@ public class PipesClientInterruptTest {
      */
     private static final class SentinelServerManager implements ServerManager {
         private final int port;
+        private volatile boolean abandoned;
 
         private SentinelServerManager(int port) {
             this.port = port;
+        }
+
+        @Override
+        public void connectionAbandoned() {
+            abandoned = true;
         }
 
         @Override

@@ -80,8 +80,22 @@ public class TikaGrpcConcurrencyTest {
      */
     @Test
     public void concurrentCallsAllParseTheirOwnDocument(Resources resources) throws Exception {
+        runConcurrentBurst(resources, writeConfig(null, null, null));
+    }
+
+    /**
+     * The same burst with pipes.useSharedServer=true. This change makes shared
+     * mode reachable from tika-grpc for the first time (the old single-client
+     * constructor always forced per-client mode), so prove the wiring end to
+     * end: one shared worker JVM, two connections, four calls.
+     */
+    @Test
+    public void sharedServerModeParsesConcurrently(Resources resources) throws Exception {
+        runConcurrentBurst(resources, writeConfig(null, null, Boolean.TRUE));
+    }
+
+    private void runConcurrentBurst(Resources resources, Path config) throws Exception {
         int concurrency = 4;
-        Path config = writeConfig(null, null);
         TikaGrpcServerImpl service = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
         List<File> testFiles = new ArrayList<>();
         ExecutorService pool = Executors.newFixedThreadPool(concurrency);
@@ -140,7 +154,7 @@ public class TikaGrpcConcurrencyTest {
      */
     @Test
     public void saturationSurfacesInBand(Resources resources) throws Exception {
-        Path config = writeConfig(1, 0L);
+        Path config = writeConfig(1, 0L, null);
         TikaGrpcServerImpl service = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
         List<File> testFiles = new ArrayList<>();
         ExecutorService pool = Executors.newFixedThreadPool(2);
@@ -223,8 +237,8 @@ public class TikaGrpcConcurrencyTest {
                         + "</body></html>", StandardCharsets.UTF_8);
     }
 
-    private static Path writeConfig(Integer numClients, Long maxWaitForClientMillis)
-            throws Exception {
+    private static Path writeConfig(Integer numClients, Long maxWaitForClientMillis,
+            Boolean useSharedServer) throws Exception {
         Path config = Paths.get("target", "tika4815-config-" + UUID.randomUUID() + ".json");
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("JAVA_PATH", Paths.get(System.getProperty("java.home"), "bin", "java"));
@@ -232,7 +246,7 @@ public class TikaGrpcConcurrencyTest {
         replacements.put("PLUGIN_ROOTS", Paths.get("target").toAbsolutePath().resolve("plugins"));
         JsonConfigHelper.writeConfigFromResource("/tika-pipes-test-config.json",
                 TikaGrpcConcurrencyTest.class, replacements, config);
-        if (numClients != null || maxWaitForClientMillis != null) {
+        if (numClients != null || maxWaitForClientMillis != null || useSharedServer != null) {
             ObjectNode root = (ObjectNode) OBJECT_MAPPER.readTree(config.toFile());
             ObjectNode pipes = (ObjectNode) root.get("pipes");
             if (numClients != null) {
@@ -240,6 +254,9 @@ public class TikaGrpcConcurrencyTest {
             }
             if (maxWaitForClientMillis != null) {
                 pipes.put("maxWaitForClientMillis", maxWaitForClientMillis);
+            }
+            if (useSharedServer != null) {
+                pipes.put("useSharedServer", useSharedServer);
             }
             Files.writeString(config, OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                     .writeValueAsString(root), StandardCharsets.UTF_8);

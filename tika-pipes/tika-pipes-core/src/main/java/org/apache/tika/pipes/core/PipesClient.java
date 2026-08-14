@@ -208,6 +208,13 @@ public class PipesClient implements Closeable {
         PipesResult result = null;
         try {
             maybeInit();
+        } catch (InterruptedException e) {
+            // Same invariant as the in-flight path below: an abandoned connection,
+            // here possibly half-established, must not be re-queued, and an
+            // abandoned per-client worker never dials back.
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
         } catch (ServerInitializationException e) {
             LOG.error("server initialization failed: {} ", t.getId(), e);
             closeConnection();
@@ -227,14 +234,11 @@ public class PipesClient implements Closeable {
             // Update server manager's file counter for maxFilesProcessedPerProcess tracking
             serverManager.incrementFilesProcessed(pipesConfig.getMaxFilesProcessedPerProcess());
         } catch (InterruptedException | SecurityException e) {
-            // The request is still in flight on the connection. A pooled client
-            // is handed to the next caller after this throw, and a live orphaned
-            // request would stall that caller's ping until the socket timeout.
-            try {
-                closeConnection();
-            } catch (InterruptedException e2) {
-                Thread.currentThread().interrupt();
-            }
+            // A pooled client is re-queued right after this throw; the next borrower
+            // must not inherit a connection with a request still in flight, nor a
+            // per-client worker that will never dial back for a fresh connect.
+            serverManager.connectionAbandoned();
+            closeConnection();
             throw e;
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);

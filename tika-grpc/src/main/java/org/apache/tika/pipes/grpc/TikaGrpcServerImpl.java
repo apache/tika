@@ -121,8 +121,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // modifications) are off unless explicitly enabled in the "grpc" section.
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
-        // The pool sizes real concurrency by pipes.numClients; a bare PipesClient
-        // is single-threaded and concurrent handler threads corrupt its protocol.
+        // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
         pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
         
         try {

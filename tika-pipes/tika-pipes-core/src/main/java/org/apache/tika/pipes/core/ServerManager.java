@@ -111,6 +111,20 @@ public interface ServerManager extends Closeable {
     }
 
     /**
+     * Signals that the client walked away from its connection, whether
+     * mid-handshake or with a request still in flight.
+     * <p>
+     * A per-client worker dials the parent once and never dials back, so an
+     * abandoned worker must be recycled or the next {@link #connect(int)} waits
+     * out the full accept timeout against a process that will never call. A
+     * shared server outlives its clients and needs nothing here; its
+     * connection handlers already detect the dead socket themselves.
+     */
+    default void connectionAbandoned() {
+        // Default no-op: only per-client mode must recycle the worker
+    }
+
+    /**
      * Increments the count of files processed and marks for restart if limit reached.
      * <p>
      * This tracks progress toward the maxFilesProcessedPerProcess limit. When the limit

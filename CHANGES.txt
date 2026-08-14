@@ -126,11 +126,13 @@ Release 4.0.0 - ???
      for a terminal signal that never came (TIKA-4804).
 
    * tika-grpc now routes fetchAndParse through the PipesParser client
-     pool instead of sharing one single-threaded PipesClient across all
-     handler threads: concurrent calls no longer crash the worker, and
-     pipes.numClients is honored. PipesClient also closes its connection
-     when an in-flight parse is interrupted, so a pooled client cannot
-     go back to the queue dirty (TIKA-4815).
+     pool instead of one shared single-threaded PipesClient: concurrent
+     calls no longer crash the worker, pipes.numClients and (for the
+     first time) pipes.useSharedServer take effect, up to numClients
+     forked worker JVMs instead of one, and pool saturation surfaces
+     in-band as CLIENT_UNAVAILABLE_WITHIN_MS. An interrupted call
+     closes its connection and recycles the per-client worker, so a
+     pooled client cannot go back to the queue dirty (TIKA-4815).
 
 
 Release 4.0.0-beta-1 - 6/29/2026
