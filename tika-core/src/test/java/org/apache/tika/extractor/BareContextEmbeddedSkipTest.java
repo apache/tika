@@ -23,8 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.NoOpDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -70,5 +73,19 @@ public class BareContextEmbeddedSkipTest {
                 "parsing embedded content on a bare context must not install a Parser as a "
                         + "side effect -- that mutation is exactly what let a fresh context "
                         + "masquerade as a configured one");
+    }
+
+    @Test
+    public void bareContextGetsNoOpDetectorNotAnSpiDiscoveredOne() throws Exception {
+        ParseContext context = new ParseContext();
+        Detector detector = EmbeddedDocumentUtil.getDetector(context);
+        assertSame(NoOpDetector.INSTANCE, detector);
+
+        // real JPEG magic bytes -- a DefaultDetector would confidently report image/jpeg;
+        // an unconfigured context must not get even a partially-informed guess.
+        byte[] jpegMagic = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+        try (TikaInputStream tis = TikaInputStream.get(jpegMagic)) {
+            assertEquals(MediaType.OCTET_STREAM, detector.detect(tis, new Metadata(), context));
+        }
     }
 }

@@ -25,6 +25,11 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * Implementations are typically bound as a single shared instance reused across concurrent
+ * parses (see {@link ParsingEmbeddedDocumentExtractor#INSTANCE}) -- do not cache per-parse
+ * state on {@code this}; read it from the {@link ParseContext} parameter on each call instead.
+ */
 public interface EmbeddedDocumentExtractor {
     /**
      * Determines whether the given embedded document should be parsed.

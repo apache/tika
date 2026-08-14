@@ -18,7 +18,7 @@ package org.apache.tika.pipes.core.extractor;
 
 /**
  * Running total of bytes {@link UnpackExtractor} has written out for the current request,
- * checked against {@link UnpackConfig#getMaxUnpackBytesOrUnlimited()}.
+ * checked against {@link UnpackConfig#maxUnpackBytesOrUnlimited()}.
  * <p>
  * One instance per request: create it alongside the request's {@link org.apache.tika.extractor.UnpackHandler}
  * and bind it into the request's {@link org.apache.tika.parser.ParseContext}. Not thread-safe.

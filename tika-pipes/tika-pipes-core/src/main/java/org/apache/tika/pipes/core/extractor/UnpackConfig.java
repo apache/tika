@@ -241,7 +241,8 @@ public class UnpackConfig implements Serializable {
 
     /**
      * Maximum total bytes to unpack per file. Default is 10GB.
-     * Set to -1 to disable the limit (not recommended).
+     * Set to -1 to disable the limit (not recommended). 0 is not "unlimited" -- it means
+     * zero bytes, so the very first embedded file's extraction is immediately capped.
      *
      * @return max bytes to unpack, or -1 if no limit
      */

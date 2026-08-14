@@ -342,7 +342,8 @@ malicious files that may expand to enormous sizes when unpacked.
 |`maxUnpackBytes`
 |10 GB
 |Maximum total bytes to extract from all embedded documents per file. Set to -1 for
-unlimited (not recommended for untrusted input).
+unlimited (not recommended for untrusted input). 0 is not unlimited -- it means zero
+bytes.
 |===
 
 === Behavior

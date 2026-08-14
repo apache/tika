@@ -244,6 +244,15 @@ for details.
 
 === EmbeddedDocumentExtractor is now stateless
 
+[WARNING]
+====
+If you call a concrete parser directly instead of going through `AutoDetectParser`, you
+must set `Parser.class` in the `ParseContext` yourself or embedded documents are
+**silently skipped** -- no content, no exception. The same applies to `Detector.class`:
+without it, embedded documents are reported as `application/octet-stream` instead of
+being identified. See <<bare-context-embedded-skip,Behavior change>> below.
+====
+
 `ParsingEmbeddedDocumentExtractor` (and Tika Pipes' `UnpackExtractor`) no longer capture a
 `ParseContext` at construction. Every method now takes the `ParseContext` of the enclosing
 parse as a parameter, and a single shared instance is reused across parses instead of one
@@ -275,6 +284,11 @@ This affects:
   `ParsingEmbeddedDocumentExtractor.INSTANCE` singleton (or `UnpackExtractor.INSTANCE` in
   Tika Pipes). A subclass that called `super(context)` should drop the constructor and read
   `ParseContext` from the method parameter instead of a captured field.
+* `ParsingEmbeddedDocumentExtractor#checkEmbeddedLimits(ParseRecord)` ->
+  `checkEmbeddedLimits(ParseRecord, ParseContext)`, and `isWriteFileNameToContent()` ->
+  `isWriteFileNameToContent(ParseContext)`. A subclass overriding either must add the
+  parameter -- without `@Override`, the old signature silently becomes a dead, unused overload
+  instead of a compile error.
 * `EmbeddedDocumentExtractorFactory`, `EmbeddedDocumentByteStoreExtractorFactory`,
   `StandardExtractorFactory`, and Tika Pipes' `UnpackExtractorFactory` are deleted -- there is
   no longer a per-parse object to build. Code that supplied a custom factory should instead
@@ -298,8 +312,11 @@ context.set(EmbeddedDocumentExtractor.class, MyExtractor.INSTANCE);
   directly. `getPasswordProvider()` had no replacement added since it had no callers;
   use `context.get(PasswordProvider.class)`.
 
+[[bare-context-embedded-skip]]
 ==== Behavior change: parsing a concrete parser directly with a bare `ParseContext`
 
+[WARNING]
+====
 Calling a concrete parser directly (bypassing `AutoDetectParser`) with a `ParseContext` that
 has no `Parser.class` set now **silently skips embedded documents** instead of constructing an
 SPI-discovered `AutoDetectParser` to parse them:
@@ -315,6 +332,30 @@ new PDFParser().parse(tis, handler, metadata, new ParseContext());
 If you rely on embedded documents being parsed, set `Parser.class` in the `ParseContext`
 (typically to an `AutoDetectParser`) before calling a concrete parser directly, or go through
 `AutoDetectParser` in the first place, which does this for you automatically.
+====
+
+[[bare-context-detector-noop]]
+==== Behavior change: identifying embedded files with a bare `ParseContext`
+
+[WARNING]
+====
+Some container parsers (`OpenDocumentParser`, the POIFS-based Office parsers, `RFC822Parser`)
+detect each embedded file's media type to label it in the output metadata. With a bare
+`ParseContext` (no `Detector.class` set), this now reports every embedded file as
+`application/octet-stream` instead of constructing an SPI-discovered `DefaultDetector`:
+
+[source,java]
+----
+new OpenDocumentParser().parse(tis, handler, metadata, new ParseContext());
+// 3.x/early 4.x: embedded pictures identified by an SPI-discovered DefaultDetector
+//                (e.g. image/jpeg, image/png)
+// 4.x: embedded pictures are all labeled application/octet-stream
+----
+
+If you rely on embedded files being identified, set `Detector.class` in the `ParseContext`
+before calling a concrete parser directly, or go through `AutoDetectParser` in the first
+place, which does this for you automatically.
+====
 
 == Timeout Model Changes
 

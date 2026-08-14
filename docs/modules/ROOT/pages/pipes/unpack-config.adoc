@@ -83,7 +83,9 @@ All options below are fields of the `unpack-config` block — nest them inside
 |`maxUnpackBytes`
 |long
 |10GB
-|Maximum total bytes to extract per file. Set to `-1` for unlimited (not recommended).
+|Maximum total bytes to extract per file. Set to `-1` for unlimited (not recommended). `0`
+is not unlimited -- it means zero bytes, so the first embedded file's extraction is
+immediately capped.
 
 |`includeOriginal`
 |boolean

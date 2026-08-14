@@ -130,7 +130,7 @@ one of these known interfaces:
 * `Parser`, `Detector`, `EncodingDetector`
 * `MetadataFilter`, `Translator`, `Renderer`
 * `DigesterFactory`, `ContentHandlerFactory`
-* `MetadataWriteLimiterFactory`
+* `MetadataWriteLimiterFactory`, `EmbeddedDocumentExtractor`
 
 [source,java]
 ----
@@ -283,7 +283,8 @@ fail-closed gate on top of the registry:
   `ContentHandlerDecoratorFactory`, `DigesterFactory`,
   `MetadataWriteLimiterFactory`, `UnpackSelector`
 * Types with exec/IO/network capability or control over which components run
-  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`, `Translator`
+  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`, `Translator`,
+  `EmbeddedDocumentExtractor`
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
 * The whole tree is scanned *before* any component is constructed

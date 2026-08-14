@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.NoOpDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -82,9 +83,22 @@ public class EmbeddedDocumentUtil {
         return p;
     }
 
+    /**
+     * Looks up the {@link Detector} configured for this parse.
+     * <p>
+     * A configured parse (one that has gone through {@link org.apache.tika.parser.AutoDetectParser})
+     * always has one bound in the context. If none is bound -- e.g. a concrete parser was
+     * invoked directly with a bare {@link ParseContext} -- this returns
+     * {@link NoOpDetector#INSTANCE} rather than constructing an SPI-discovered
+     * {@link DefaultDetector}: an honest "unknown" beats a partially-informed guess from a
+     * detector the caller never configured.
+     *
+     * @param context the parse context
+     * @return the Detector to use for this parse
+     */
     public static Detector getDetector(ParseContext context) {
         Detector detector = context.get(Detector.class);
-        return detector != null ? detector : new DefaultDetector(getMimeTypes(context));
+        return detector != null ? detector : NoOpDetector.INSTANCE;
     }
 
     public static MimeTypes getMimeTypes(ParseContext context) {
