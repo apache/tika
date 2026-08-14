@@ -468,7 +468,7 @@ public class PDFParser implements Parser, RenderingParser {
 
         for (RenderResult result : renderResults.getResults()) {
             if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
+                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
                     try (TikaInputStream tis = result.getInputStream()) {
                         embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
                     } catch (SecurityException e) {

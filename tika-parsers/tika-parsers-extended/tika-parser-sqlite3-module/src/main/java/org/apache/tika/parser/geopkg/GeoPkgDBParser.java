@@ -19,8 +19,6 @@ package org.apache.tika.parser.geopkg;
 import java.sql.Connection;
 import java.util.Set;
 
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
 import org.apache.tika.parser.sqlite3.SQLite3DBParser;
 
@@ -39,16 +37,7 @@ class GeoPkgDBParser extends SQLite3DBParser {
     }
 
     @Override
-    public JDBCTableReader getTableReader(Connection connection, String tableName,
-                                          ParseContext context) {
-        return new GeoPkgTableReader(connection, tableName, new EmbeddedDocumentUtil(context),
-                ignoreBlobColumns);
-    }
-
-    @Override
-    protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                             EmbeddedDocumentUtil embeddedDocumentUtil) {
-        return new GeoPkgTableReader(connection, tableName, embeddedDocumentUtil,
-                ignoreBlobColumns);
+    protected JDBCTableReader getTableReader(Connection connection, String tableName) {
+        return new GeoPkgTableReader(connection, tableName, ignoreBlobColumns);
     }
 }

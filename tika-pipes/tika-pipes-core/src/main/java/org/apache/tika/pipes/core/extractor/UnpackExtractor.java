@@ -52,43 +52,31 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 /**
  * Embedded document extractor that parses and unpacks embedded documents,
  * extracting both text/metadata and raw bytes.
+ * <p>
+ * Stateless, like its parent: per-request state (the running byte count) is held in
+ * {@link UnpackedByteCount}, bound into the request's {@link ParseContext} alongside its
+ * {@link UnpackHandler} rather than captured on this extractor.
  *
  * @since Apache Tika 3.0.0
  */
 public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(ParsingEmbeddedDocumentExtractor.class);
+    public static final UnpackExtractor INSTANCE = new UnpackExtractor();
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnpackExtractor.class);
 
     private static final File ABSTRACT_PATH = new File("");
 
-    private final EmbeddedStreamTranslator embeddedStreamTranslator = new DefaultEmbeddedStreamTranslator();
-    private long bytesExtracted = 0;
-    private final long maxEmbeddedBytesForExtraction;
-
-    public UnpackExtractor(ParseContext context) {
-        super(context);
-        // Get maxUnpackBytes from UnpackConfig, defaulting to 10GB if not configured
-        // or using Long.MAX_VALUE if set to -1 (unlimited)
-        UnpackConfig unpackConfig = context.get(UnpackConfig.class);
-        if (unpackConfig != null) {
-            long configuredMax = unpackConfig.getMaxUnpackBytes();
-            // -1 means no limit (use Long.MAX_VALUE)
-            this.maxEmbeddedBytesForExtraction = configuredMax >= 0 ? configuredMax : Long.MAX_VALUE;
-        } else {
-            this.maxEmbeddedBytesForExtraction = UnpackConfig.DEFAULT_MAX_UNPACK_BYTES;
-        }
-    }
-
+    private static final EmbeddedStreamTranslator EMBEDDED_STREAM_TRANSLATOR = new DefaultEmbeddedStreamTranslator();
 
     @Override
     public void parseEmbedded(
-            TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml)
+            TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context, boolean outputHtml)
             throws SAXException, IOException {
         // Check and enforce embedded limits even if caller didn't call shouldParseEmbedded()
         // This guarantees limits are enforced for all callers
         ParseRecord parseRecord = context.get(ParseRecord.class);
-        if (parseRecord != null && !checkEmbeddedLimits(parseRecord)) {
+        if (parseRecord != null && !checkEmbeddedLimits(parseRecord, context)) {
             return;
         }
 
@@ -104,7 +92,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
 
         String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (isWriteFileNameToContent() && name != null && name.length() > 0 && outputHtml) {
+        if (isWriteFileNameToContent(context) && name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();
             handler.characters(chars, 0, chars.length);
@@ -116,9 +104,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             UnpackHandler bytesHandler = context.get(UnpackHandler.class);
             tis.setCloseShield();
             if (bytesHandler != null) {
-                parseWithBytes(tis, handler, metadata);
+                parseWithBytes(tis, handler, metadata, context);
             } else {
-                parse(tis, handler, metadata);
+                parse(tis, handler, metadata, context);
             }
         } catch (EncryptedDocumentException ede) {
             recordException(ede, context);
@@ -137,7 +125,8 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata) throws TikaException, IOException, SAXException {
+    private void parseWithBytes(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws TikaException, IOException, SAXException {
 
         //trigger spool to disk
         Path rawBytes = tis.getPath();
@@ -146,19 +135,19 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         Path translated = null;
         try {
             //translate the stream or not
-            if (embeddedStreamTranslator.shouldTranslate(tis, metadata)) {
+            if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
                 translated = Files.createTempFile("tika-tmp-", ".bin");
                 try (OutputStream os = Files.newOutputStream(translated)) {
-                    embeddedStreamTranslator.translate(tis, metadata, os);
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
                 }
             }
-            parse(tis, handler, metadata);
+            parse(tis, handler, metadata, context);
         } finally {
             try {
                 if (translated != null) {
-                    storeEmbeddedBytes(translated, metadata);
+                    storeEmbeddedBytes(translated, metadata, context);
                 } else {
-                    storeEmbeddedBytes(rawBytes, metadata);
+                    storeEmbeddedBytes(rawBytes, metadata, context);
                 }
             } finally {
                 if (translated != null) {
@@ -168,14 +157,14 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
     }
 
-    private void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata)
+    private void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context)
             throws TikaException, IOException, SAXException {
         getDelegatingParser().parse(tis,
                 new EmbeddedContentHandler(new BodyContentHandler(handler)),
                 metadata, context);
     }
 
-    private void storeEmbeddedBytes(Path p, Metadata metadata) {
+    private void storeEmbeddedBytes(Path p, Metadata metadata, ParseContext context) {
         if (p == null) {
             return;
         }
@@ -191,10 +180,12 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
             }
             return;
         }
-        UnpackHandler unpackHandler =
-                context.get(UnpackHandler.class);
+        UnpackHandler unpackHandler = context.get(UnpackHandler.class);
+        UnpackedByteCount byteCount = context.get(UnpackedByteCount.class);
+        long maxEmbeddedBytesForExtraction = getMaxUnpackBytes(context);
         int id = metadata.getInt(TikaCoreProperties.EMBEDDED_ID);
         try (InputStream is = Files.newInputStream(p)) {
+            long bytesExtracted = byteCount.get();
             if (bytesExtracted >= maxEmbeddedBytesForExtraction) {
                 throw new IOException("Bytes extracted (" + bytesExtracted +
                         ") >= max allowed (" + maxEmbeddedBytesForExtraction + ")");
@@ -203,9 +194,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
             try (BoundedInputStream boundedIs = new BoundedInputStream(maxToRead, is)) {
                 unpackHandler.add(id, metadata, boundedIs);
-                bytesExtracted += boundedIs.getPos();
+                byteCount.add(boundedIs.getPos());
                 if (boundedIs.hasHitBound()) {
-                    throw new IOException("Bytes extracted (" + bytesExtracted +
+                    throw new IOException("Bytes extracted (" + byteCount.get() +
                             ") >= max allowed (" + maxEmbeddedBytesForExtraction + "). Truncated " +
                             "bytes");
                 }
@@ -213,5 +204,10 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (IOException e) {
             LOGGER.warn("problem writing out embedded bytes", e);
         }
+    }
+
+    private static long getMaxUnpackBytes(ParseContext context) {
+        UnpackConfig unpackConfig = context.get(UnpackConfig.class);
+        return unpackConfig != null ? unpackConfig.maxUnpackBytesOrUnlimited() : UnpackConfig.DEFAULT_MAX_UNPACK_BYTES;
     }
 }

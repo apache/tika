@@ -39,6 +39,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -61,7 +62,7 @@ abstract class AbstractPOIFSExtractor {
     protected final Metadata parentMetadata;//metadata of the parent/container document
     protected final OfficeParserConfig officeParserConfig;
     protected final ParseContext context;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private PasswordProvider passwordProvider;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
@@ -69,7 +70,7 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected AbstractPOIFSExtractor(ParseContext context, Metadata parentMetadata) {
-        embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         this.passwordProvider = context.get(PasswordProvider.class);
         this.officeParserConfig = context.get(OfficeParserConfig.class, new OfficeParserConfig());
@@ -78,7 +79,7 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected Detector getDetector() {
-        return embeddedDocumentUtil.getDetector();
+        return EmbeddedDocumentUtil.getDetector(context);
     }
 
     /**
@@ -130,8 +131,8 @@ abstract class AbstractPOIFSExtractor {
                 embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, mediaType);
             }
 
-            if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
-                embeddedDocumentUtil.parseEmbedded(resource, xhtml, embeddedMetadata, outputHtml);
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
+                embeddedDocumentExtractor.parseEmbedded(resource, xhtml, embeddedMetadata, context, outputHtml);
             }
         }
     }
@@ -314,7 +315,7 @@ abstract class AbstractPOIFSExtractor {
             String extension = type.getExtension();
             try {
                 MimeType mimeType =
-                        embeddedDocumentUtil.getMimeTypes().forName(mediaType.toString());
+                        EmbeddedDocumentUtil.getMimeTypes(context).forName(mediaType.toString());
                 extension = mimeType.getExtension();
             } catch (MimeTypeException mte) {
                 // No details on this type are known
@@ -391,20 +392,20 @@ abstract class AbstractPOIFSExtractor {
     private void parseEmbedded(DirectoryEntry parentDir, TikaInputStream tis, XHTMLContentHandler xhtml,
                                Metadata metadata, boolean outputHtml) throws IOException,
             SAXException, TikaException {
-        if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             return;
         }
         if (parentDir.getStorageClsid() != null) {
             metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                     parentDir.getStorageClsid().toString());
         }
-        embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
+        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, outputHtml);
     }
 
     private void parseEmbedded(DirectoryEntry dir, XHTMLContentHandler xhtml, Metadata metadata,
                                boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             return;
         }
         long sz = estimateSize(dir);
@@ -413,7 +414,7 @@ abstract class AbstractPOIFSExtractor {
                 metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                         dir.getStorageClsid().toString());
             }
-            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, outputHtml);
         }
     }
 

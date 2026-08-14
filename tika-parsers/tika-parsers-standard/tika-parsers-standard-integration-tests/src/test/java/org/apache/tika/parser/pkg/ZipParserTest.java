@@ -127,7 +127,7 @@ public class ZipParserTest extends AbstractPkgTest {
     private static class GatherInternalPathsDocumentExtractor implements EmbeddedDocumentExtractor {
         public Set<String> allInternalPaths = new HashSet<>();
 
-        public boolean shouldParseEmbedded(Metadata metadata) {
+        public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
             String internalPath = metadata.get(TikaCoreProperties.INTERNAL_PATH);
             if (internalPath != null) {
                 allInternalPaths.add(internalPath);

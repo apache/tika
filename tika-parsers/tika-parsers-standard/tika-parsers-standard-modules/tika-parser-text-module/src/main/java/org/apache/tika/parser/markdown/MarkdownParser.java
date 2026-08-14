@@ -406,7 +406,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
             }
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-            if (extractor.shouldParseEmbedded(m)) {
+            if (extractor.shouldParseEmbedded(m, context)) {
                 try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                     extractor.parseEmbedded(tis, xhtml, m, context, true);
                 } catch (IOException e) {

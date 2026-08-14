@@ -242,6 +242,80 @@ External parsers must now be explicitly configured via JSON. See
 xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
 for details.
 
+=== EmbeddedDocumentExtractor is now stateless
+
+`ParsingEmbeddedDocumentExtractor` (and Tika Pipes' `UnpackExtractor`) no longer capture a
+`ParseContext` at construction. Every method now takes the `ParseContext` of the enclosing
+parse as a parameter, and a single shared instance is reused across parses instead of one
+being built per parse.
+
+**3.x / early 4.x:**
+[source,java]
+----
+EmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+if (extractor.shouldParseEmbedded(metadata)) {
+    extractor.parseEmbedded(tis, handler, metadata, outputHtml);
+}
+----
+
+**4.x:**
+[source,java]
+----
+EmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
+if (extractor.shouldParseEmbedded(metadata, context)) {
+    extractor.parseEmbedded(tis, handler, metadata, context, outputHtml);
+}
+----
+
+This affects:
+
+* `EmbeddedDocumentExtractor#shouldParseEmbedded(Metadata)` -> `shouldParseEmbedded(Metadata, ParseContext)`.
+  Any custom `EmbeddedDocumentExtractor` implementation must add the parameter.
+* `ParsingEmbeddedDocumentExtractor`'s public constructor is gone -- use the
+  `ParsingEmbeddedDocumentExtractor.INSTANCE` singleton (or `UnpackExtractor.INSTANCE` in
+  Tika Pipes). A subclass that called `super(context)` should drop the constructor and read
+  `ParseContext` from the method parameter instead of a captured field.
+* `EmbeddedDocumentExtractorFactory`, `EmbeddedDocumentByteStoreExtractorFactory`,
+  `StandardExtractorFactory`, and Tika Pipes' `UnpackExtractorFactory` are deleted -- there is
+  no longer a per-parse object to build. Code that supplied a custom factory should instead
+  bind an `EmbeddedDocumentExtractor` instance directly:
++
+[source,java]
+----
+// 3.x/early 4.x
+context.set(EmbeddedDocumentExtractorFactory.class, new MyExtractorFactory());
+
+// 4.x
+context.set(EmbeddedDocumentExtractor.class, MyExtractor.INSTANCE);
+----
+* `EmbeddedDocumentUtil`'s instance API is removed (the constructor, and the instance methods
+  `getPasswordProvider()`, `getDetector()`, `getMimeTypes()`, `getExtension(TikaInputStream,
+  Metadata)`, `shouldParseEmbedded(Metadata)`, `parseEmbedded(...)`). Use the static
+  replacements, which take `ParseContext` explicitly: `EmbeddedDocumentUtil.getDetector(context)`,
+  `EmbeddedDocumentUtil.getMimeTypes(context)`,
+  `EmbeddedDocumentUtil.getExtension(tis, metadata, context)`, or call the methods on the
+  `EmbeddedDocumentExtractor` obtained from `EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)`
+  directly. `getPasswordProvider()` had no replacement added since it had no callers;
+  use `context.get(PasswordProvider.class)`.
+
+==== Behavior change: parsing a concrete parser directly with a bare `ParseContext`
+
+Calling a concrete parser directly (bypassing `AutoDetectParser`) with a `ParseContext` that
+has no `Parser.class` set now **silently skips embedded documents** instead of constructing an
+SPI-discovered `AutoDetectParser` to parse them:
+
+[source,java]
+----
+new PDFParser().parse(tis, handler, metadata, new ParseContext());
+// 3.x/early 4.x: embedded documents parsed by an SPI-discovered AutoDetectParser
+//                (bypassing whatever parser/limits/selectors the caller actually configured)
+// 4.x: embedded documents are skipped -- no content, no exception
+----
+
+If you rely on embedded documents being parsed, set `Parser.class` in the `ParseContext`
+(typically to an `AutoDetectParser`) before calling a concrete parser directly, or go through
+`AutoDetectParser` in the first place, which does this for you automatically.
+
 == Timeout Model Changes
 
 4.x replaces the previous ad hoc, per-parser timeout handling with a single unified model
@@ -286,3 +360,11 @@ the full list of behavioral changes and required config edits.
   URL, XPATH}` -- dead enum constants, never produced by any `Property` factory
 * `Property.internalClosedChoise`/`internalOpenChoise`/`externalClosedChoise`/`externalOpenChoise`
   -- renamed to `...Choice` (typo-fix rename, no forwarders)
+* `EmbeddedDocumentExtractorFactory`, `EmbeddedDocumentByteStoreExtractorFactory`,
+  `StandardExtractorFactory`, `UnpackExtractorFactory` -- deleted; bind an
+  `EmbeddedDocumentExtractor` instance directly instead (see
+  <<EmbeddedDocumentExtractor is now stateless>> above)
+* `ParsingEmbeddedDocumentExtractor(ParseContext)` constructor -- removed; use the
+  `ParsingEmbeddedDocumentExtractor.INSTANCE` singleton
+* `EmbeddedDocumentUtil`'s instance API (constructor and all instance methods) -- removed;
+  use the static equivalents, which now take `ParseContext` explicitly

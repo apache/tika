@@ -244,7 +244,7 @@ class MailContentHandler implements ContentHandler {
         }
 
         try {
-            if (extractor.shouldParseEmbedded(metadata)) {
+            if (extractor.shouldParseEmbedded(metadata, parseContext)) {
                 // Wrap the InputStream before passing on, as the James provided
                 //  one misses many features we might want eg mark/reset
                 extractor.parseEmbedded(tis, handler, metadata, parseContext, false);

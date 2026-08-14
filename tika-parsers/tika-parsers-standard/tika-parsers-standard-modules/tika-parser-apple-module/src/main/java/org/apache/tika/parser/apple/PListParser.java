@@ -193,13 +193,13 @@ public class PListParser implements Parser {
     private void handleData(NSData value, State state) throws IOException, SAXException, TikaException {
         state.xhtml.characters(value.getBase64EncodedData());
         Metadata embeddedMetadata = Metadata.newInstance(state.parseContext);
-        if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, state.parseContext)) {
             return;
         }
 
         try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
             state.embeddedDocumentExtractor
-                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, new ParseContext(), true);
+                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, state.parseContext, true);
         }
     }
 

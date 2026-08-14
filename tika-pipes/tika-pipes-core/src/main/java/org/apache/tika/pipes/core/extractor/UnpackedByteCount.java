@@ -16,17 +16,22 @@
  */
 package org.apache.tika.pipes.core.extractor;
 
-import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.extractor.EmbeddedDocumentByteStoreExtractorFactory;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
+/**
+ * Running total of bytes {@link UnpackExtractor} has written out for the current request,
+ * checked against {@link UnpackConfig#getMaxUnpackBytesOrUnlimited()}.
+ * <p>
+ * One instance per request: create it alongside the request's {@link org.apache.tika.extractor.UnpackHandler}
+ * and bind it into the request's {@link org.apache.tika.parser.ParseContext}. Not thread-safe.
+ */
+public class UnpackedByteCount {
 
-@TikaComponent(name = "unpack-extractor-factory")
-public class UnpackExtractorFactory implements EmbeddedDocumentByteStoreExtractorFactory {
+    private long value;
 
-    @Override
-    public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        return new UnpackExtractor(parseContext);
+    public void add(long n) {
+        value += n;
+    }
+
+    public long get() {
+        return value;
     }
 }

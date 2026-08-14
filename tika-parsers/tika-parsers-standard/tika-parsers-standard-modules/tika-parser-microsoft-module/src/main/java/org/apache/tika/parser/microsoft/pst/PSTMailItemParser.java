@@ -263,7 +263,7 @@ public class PSTMailItemParser implements Parser {
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", filename);
         xhtml.startElement("div", attributes);
-        if (embeddedExtractor.shouldParseEmbedded(attachMeta)) {
+        if (embeddedExtractor.shouldParseEmbedded(attachMeta, context)) {
             TikaInputStream tis = null;
             try {
                 tis = TikaInputStream.get(attachment.getFileInputStream());

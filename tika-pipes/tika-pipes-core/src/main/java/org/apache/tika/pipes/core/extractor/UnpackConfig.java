@@ -254,6 +254,20 @@ public class UnpackConfig implements Serializable {
     }
 
     /**
+     * Maximum total bytes to unpack per file, with -1 (no limit) normalized to
+     * {@link Long#MAX_VALUE} so callers can bound reads without a special case.
+     * <p>
+     * Deliberately not named {@code getMaxUnpackBytesOrUnlimited} -- this class is JSON
+     * (de)serialized via bean introspection, and a "get"-prefixed method here would be
+     * picked up as a phantom property with no matching setter.
+     *
+     * @return max bytes to unpack, or {@link Long#MAX_VALUE} if unlimited
+     */
+    public long maxUnpackBytesOrUnlimited() {
+        return maxUnpackBytes >= 0 ? maxUnpackBytes : Long.MAX_VALUE;
+    }
+
+    /**
      * Get the output format for UNPACK mode.
      * REGULAR is the default (existing behavior).
      * FRICTIONLESS creates a Frictionless Data Package with datapackage.json manifest.

@@ -32,10 +32,11 @@ public interface EmbeddedDocumentExtractor {
      * Note: Implementations may throw {@link org.apache.tika.exception.EmbeddedLimitReachedException}
      * (a RuntimeException) if a limit is exceeded and throwing is configured.
      *
-     * @param metadata the metadata for the embedded document
+     * @param metadata     the metadata for the embedded document
+     * @param parseContext the parse context of the enclosing parse
      * @return true if the embedded document should be parsed
      */
-    boolean shouldParseEmbedded(Metadata metadata);
+    boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext);
 
     /**
      * Processes the supplied embedded resource, calling the delegating

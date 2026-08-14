@@ -30,7 +30,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.MetadataFilter;
@@ -67,7 +66,6 @@ public final class ComponentNameResolver {
         CONTEXT_KEY_INTERFACES.add(Translator.class);
         CONTEXT_KEY_INTERFACES.add(Renderer.class);
         CONTEXT_KEY_INTERFACES.add(DigesterFactory.class);
-        CONTEXT_KEY_INTERFACES.add(EmbeddedDocumentExtractorFactory.class);
         CONTEXT_KEY_INTERFACES.add(MetadataWriteLimiterFactory.class);
         CONTEXT_KEY_INTERFACES.add(ContentHandlerDecoratorFactory.class);
         CONTEXT_KEY_INTERFACES.add(ContentHandlerFactory.class);
@@ -105,7 +103,6 @@ public final class ComponentNameResolver {
         WIRE_BLOCKED_CONTEXT_KEYS.add(EncodingDetector.class);
         WIRE_BLOCKED_CONTEXT_KEYS.add(Renderer.class);
         WIRE_BLOCKED_CONTEXT_KEYS.add(Translator.class);
-        WIRE_BLOCKED_CONTEXT_KEYS.add(EmbeddedDocumentExtractorFactory.class);
     }
 
     private static final Map<String, ComponentRegistry> REGISTRIES = new ConcurrentHashMap<>();

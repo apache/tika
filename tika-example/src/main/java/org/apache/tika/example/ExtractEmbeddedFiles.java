@@ -55,7 +55,7 @@ public class ExtractEmbeddedFiles {
         ContentHandler h = new BodyContentHandler(-1);
 
         c.set(Parser.class, parser);
-        EmbeddedDocumentExtractor ex = new MyEmbeddedDocumentExtractor(outputDir, c);
+        EmbeddedDocumentExtractor ex = new MyEmbeddedDocumentExtractor(outputDir);
         c.set(EmbeddedDocumentExtractor.class, ex);
 
         parser.parse(tis, h, m, c);
@@ -65,13 +65,12 @@ public class ExtractEmbeddedFiles {
         private final Path outputDir;
         private int fileCount = 0;
 
-        private MyEmbeddedDocumentExtractor(Path outputDir, ParseContext context) {
-            super(context);
+        private MyEmbeddedDocumentExtractor(Path outputDir) {
             this.outputDir = outputDir;
         }
 
         @Override
-        public boolean shouldParseEmbedded(Metadata metadata) {
+        public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
             return true;
         }
 
@@ -97,7 +96,7 @@ public class ExtractEmbeddedFiles {
             }
 
             //now try to figure out the right extension for the embedded file
-            MediaType contentType = detector.detect(stream, metadata, context);
+            MediaType contentType = detector.detect(stream, metadata, parseContext);
 
             if (name.indexOf('.') == -1 && contentType != null) {
                 try {

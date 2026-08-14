@@ -294,7 +294,7 @@ public abstract class OggAudioParser extends AbstractParser {
             pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
                     ID3Tags.PICTURE_TYPES[pictureType]);
         }
-        if (extractor.shouldParseEmbedded(pictureMetadata)) {
+        if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
             try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
                 extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
             }

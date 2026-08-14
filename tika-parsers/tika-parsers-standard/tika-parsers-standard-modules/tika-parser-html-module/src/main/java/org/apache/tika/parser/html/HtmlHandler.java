@@ -345,7 +345,7 @@ class HtmlHandler extends TextContentHandler {
         //TODO add metadata about iframe content?
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
             try (TikaInputStream tis = TikaInputStream.get(string.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             } catch (IOException e) {
@@ -372,7 +372,7 @@ class HtmlHandler extends TextContentHandler {
         }
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
             try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             } catch (IOException e) {
@@ -405,7 +405,7 @@ class HtmlHandler extends TextContentHandler {
             dataUriMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
             dataUriMetadata.set(HttpHeaders.CONTENT_TYPE, dataURIScheme.getMediaType().toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(dataUriMetadata, context)) {
                 try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                     embeddedDocumentExtractor
                             .parseEmbedded(tis, xhtml, dataUriMetadata, context, true);

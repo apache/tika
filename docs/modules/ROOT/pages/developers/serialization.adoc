@@ -130,7 +130,7 @@ one of these known interfaces:
 * `Parser`, `Detector`, `EncodingDetector`
 * `MetadataFilter`, `Translator`, `Renderer`
 * `DigesterFactory`, `ContentHandlerFactory`
-* `EmbeddedDocumentExtractorFactory`, `MetadataWriteLimiterFactory`
+* `MetadataWriteLimiterFactory`
 
 [source,java]
 ----
@@ -175,7 +175,6 @@ Components not implementing first-class interfaces go to `parse-context.idx`:
 
 * `DigesterFactory` - Digest/checksum calculation
 * `ContentHandlerFactory` - SAX content handler creation
-* `EmbeddedDocumentExtractorFactory` - Embedded document handling
 * `MetadataWriteLimiterFactory` - Metadata write limiting
 
 == Self-Configuring Components
@@ -284,8 +283,7 @@ fail-closed gate on top of the registry:
   `ContentHandlerDecoratorFactory`, `DigesterFactory`,
   `MetadataWriteLimiterFactory`, `UnpackSelector`
 * Types with exec/IO/network capability or control over which components run
-  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`,
-  `Translator`, `EmbeddedDocumentExtractorFactory`
+  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`, `Translator`
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
 * The whole tree is scanned *before* any component is constructed
