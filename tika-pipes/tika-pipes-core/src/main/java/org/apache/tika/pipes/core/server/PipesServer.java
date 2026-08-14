@@ -52,7 +52,6 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -68,7 +67,6 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.UnpackExtractor;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
@@ -665,13 +663,12 @@ public class PipesServer implements AutoCloseable {
     private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
-        // If no embedded document extractor is configured, use UnpackExtractor as the
-        // default for pipes scenarios (supports embedded byte extraction). UnpackExtractor
-        // is stateless; its per-request byte budget (UnpackedByteCount) is only needed -- and
-        // only created -- where UnpackHandler is bound, in PipesWorker's UNPACK-mode setup.
-        if (mergedContext.get(EmbeddedDocumentExtractor.class) == null) {
-            mergedContext.set(EmbeddedDocumentExtractor.class, UnpackExtractor.INSTANCE);
-        }
+        // EmbeddedDocumentExtractor is deliberately left unset here: setting a default (even
+        // UnpackExtractor, which is stateless) would short-circuit AutoDetectParser's own
+        // Parser/Detector propagation to embedded docs (initializeEmbeddedDocumentExtractor
+        // no-ops whenever one is already bound), silently disabling embedded content
+        // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
+        // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
         return mergedContext;

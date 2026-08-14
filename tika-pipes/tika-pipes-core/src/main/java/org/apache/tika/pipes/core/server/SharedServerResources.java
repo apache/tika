@@ -25,7 +25,6 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
@@ -36,7 +35,6 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.UnpackExtractor;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -155,9 +153,9 @@ public class SharedServerResources {
      */
     public ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
         ParseContext mergedContext = tikaLoader.loadParseContext();
-        if (mergedContext.get(EmbeddedDocumentExtractor.class) == null) {
-            mergedContext.set(EmbeddedDocumentExtractor.class, UnpackExtractor.INSTANCE);
-        }
+        // EmbeddedDocumentExtractor is deliberately left unset here -- see PipesServer's
+        // createMergedParseContext for why defaulting it would silently disable embedded
+        // content extraction for every non-UNPACK parse mode.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
         return mergedContext;
