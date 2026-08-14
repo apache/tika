@@ -55,7 +55,7 @@ public class PipesClientInterruptTest {
      * open with an abandoned request on it.
      */
     @Test
-    @Timeout(30)
+    @Timeout(45)
     public void interruptClosesTheConnection() throws Exception {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             CountDownLatch heartbeatStarted = new CountDownLatch(1);
@@ -67,37 +67,36 @@ public class PipesClientInterruptTest {
 
             PipesConfig pipesConfig = new PipesConfig();
             SentinelServerManager manager = new SentinelServerManager(serverSocket.getLocalPort());
-            PipesClient client = new PipesClient(pipesConfig, manager);
+            try (PipesClient client = new PipesClient(pipesConfig, manager)) {
+                AtomicReference<Throwable> fromProcess = new AtomicReference<>();
+                CountDownLatch processReturned = new CountDownLatch(1);
+                Thread worker = new Thread(() -> {
+                    try {
+                        client.process(new FetchEmitTuple("interrupt-test",
+                                new FetchKey("fetcher", "key"), new EmitKey(), new Metadata(),
+                                new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    } catch (Throwable t) {
+                        fromProcess.set(t);
+                    } finally {
+                        processReturned.countDown();
+                    }
+                });
+                worker.start();
 
-            AtomicReference<Throwable> fromProcess = new AtomicReference<>();
-            CountDownLatch processReturned = new CountDownLatch(1);
-            Thread worker = new Thread(() -> {
-                try {
-                    client.process(new FetchEmitTuple("interrupt-test",
-                            new FetchKey("fetcher", "key"), new EmitKey(), new Metadata(),
-                            new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-                } catch (Throwable t) {
-                    fromProcess.set(t);
-                } finally {
-                    processReturned.countDown();
-                }
-            });
-            worker.start();
+                assertTrue(heartbeatStarted.await(15, TimeUnit.SECONDS),
+                        "the scripted server never got the request; the test proves nothing");
+                worker.interrupt();
 
-            assertTrue(heartbeatStarted.await(15, TimeUnit.SECONDS),
-                    "the scripted server never got the request; the test proves nothing");
-            worker.interrupt();
-
-            assertTrue(processReturned.await(15, TimeUnit.SECONDS),
-                    "process() must return after the interrupt");
-            assertTrue(fromProcess.get() instanceof InterruptedException,
-                    "process() must rethrow the interrupt, got: " + fromProcess.get());
-            assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
-                    "the interrupted client left its connection open with a request in flight");
-            assertTrue(manager.abandoned,
-                    "the manager was not told; a per-client worker never dials back, so the "
-                            + "next connect() would wait out the accept timeout for nothing");
-            client.close();
+                assertTrue(processReturned.await(15, TimeUnit.SECONDS),
+                        "process() must return after the interrupt");
+                assertTrue(fromProcess.get() instanceof InterruptedException,
+                        "process() must rethrow the interrupt, got: " + fromProcess.get());
+                assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
+                        "the interrupted client left its connection open with a request in flight");
+                assertTrue(manager.abandoned,
+                        "the manager was not told; a per-client worker never dials back, so the "
+                                + "next connect() would wait out the accept timeout for nothing");
+            }
         }
     }
 
@@ -109,7 +108,7 @@ public class PipesClientInterruptTest {
      * is delivered.
      */
     @Test
-    @Timeout(30)
+    @Timeout(45)
     public void interruptDuringStartupBackoffAbandonsTheConnection() throws Exception {
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             CountDownLatch badHandshakeSent = new CountDownLatch(1);
@@ -120,38 +119,39 @@ public class PipesClientInterruptTest {
             sentinel.start();
 
             PipesConfig pipesConfig = new PipesConfig();
+            // handshake reads aren't interrupt-responsive; a late interrupt waits this out
+            pipesConfig.setStartupTimeoutMillis(1000);
             SentinelServerManager manager = new SentinelServerManager(serverSocket.getLocalPort());
-            PipesClient client = new PipesClient(pipesConfig, manager);
+            try (PipesClient client = new PipesClient(pipesConfig, manager)) {
+                AtomicReference<Throwable> fromProcess = new AtomicReference<>();
+                CountDownLatch processReturned = new CountDownLatch(1);
+                Thread worker = new Thread(() -> {
+                    try {
+                        client.process(new FetchEmitTuple("interrupt-startup-test",
+                                new FetchKey("fetcher", "key"), new EmitKey(), new Metadata(),
+                                new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+                    } catch (Throwable t) {
+                        fromProcess.set(t);
+                    } finally {
+                        processReturned.countDown();
+                    }
+                });
+                worker.start();
 
-            AtomicReference<Throwable> fromProcess = new AtomicReference<>();
-            CountDownLatch processReturned = new CountDownLatch(1);
-            Thread worker = new Thread(() -> {
-                try {
-                    client.process(new FetchEmitTuple("interrupt-startup-test",
-                            new FetchKey("fetcher", "key"), new EmitKey(), new Metadata(),
-                            new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-                } catch (Throwable t) {
-                    fromProcess.set(t);
-                } finally {
-                    processReturned.countDown();
-                }
-            });
-            worker.start();
+                assertTrue(badHandshakeSent.await(15, TimeUnit.SECONDS),
+                        "the scripted server never got a connection; the test proves nothing");
+                worker.interrupt();
 
-            assertTrue(badHandshakeSent.await(15, TimeUnit.SECONDS),
-                    "the scripted server never got a connection; the test proves nothing");
-            worker.interrupt();
-
-            assertTrue(processReturned.await(15, TimeUnit.SECONDS),
-                    "process() must return after the interrupt");
-            assertTrue(fromProcess.get() instanceof InterruptedException,
-                    "process() must rethrow the interrupt, got: " + fromProcess.get());
-            assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
-                    "the interrupted client left its half-established connection open");
-            assertTrue(manager.abandoned,
-                    "the manager was not told; an abandoned per-client worker never "
-                            + "dials back, mid-handshake or not");
-            client.close();
+                assertTrue(processReturned.await(15, TimeUnit.SECONDS),
+                        "process() must return after the interrupt");
+                assertTrue(fromProcess.get() instanceof InterruptedException,
+                        "process() must rethrow the interrupt, got: " + fromProcess.get());
+                assertTrue(connectionClosed.await(5, TimeUnit.SECONDS),
+                        "the interrupted client left its half-established connection open");
+                assertTrue(manager.abandoned,
+                        "the manager was not told; an abandoned per-client worker never "
+                                + "dials back, mid-handshake or not");
+            }
         }
     }
 

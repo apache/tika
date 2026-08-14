@@ -29,6 +29,14 @@ register a fetcher (`SaveFetcher`) and then submit `FetchAndParseRequest`
 messages, each of which returns a `FetchAndParseReply` with extracted
 metadata and content.
 
+== Concurrency
+
+`FetchAndParse` and its streaming variants run on a pool of forked worker JVMs
+sized by `pipes.numClients` (default: derived from host cores, at most 4). A
+call that cannot get a worker within `pipes.maxWaitForClientMillis` (default
+60s) returns the in-band reply status `CLIENT_UNAVAILABLE_WITHIN_MS` -- at
+capacity, not failing. `pipes.useSharedServer: true` shares one JVM instead.
+
 == Security
 
 [WARNING]
