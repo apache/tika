@@ -58,4 +58,7 @@ jobs:
           cache: 'maven'
       - name: Build with Maven (de_DE locale)
         working-directory: 'tika build dir'
-        run: mvn clean test install javadoc:aggregate -Pci -Pe2e -Duser.language=de -Duser.country=DE -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        # The -Duser.* args MUST stay quoted: PowerShell splits an unquoted dotted
+        # -D property before it reaches mvn, so the locale silently never applies
+        # and the leftover fragment fails the build as an unknown lifecycle phase.
+        run: mvn clean test install javadoc:aggregate -Pci -Pe2e "-Duser.language=de" "-Duser.country=DE" -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
