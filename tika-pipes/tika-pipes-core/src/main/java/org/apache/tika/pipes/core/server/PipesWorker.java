@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -53,7 +53,8 @@ import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
 import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
 import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
-import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
+import org.apache.tika.pipes.core.extractor.UnpackExtractor;
+import org.apache.tika.pipes.core.extractor.UnpackedByteCount;
 import org.apache.tika.pipes.core.extractor.frictionless.DataPackage;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -556,9 +557,12 @@ class PipesWorker implements Callable<PipesResult> {
                 unpackConfig.setEmitter(emitterName);
             }
 
-            // Set up the extractor factory - the extractor will be created during parsing
-            // with the correct context (after RecursiveParserWrapper sets up EmbeddedParserDecorator)
-            parseContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
+            // Set up the extractor and its per-request byte budget together: UnpackExtractor
+            // is stateless, so the running byte count lives in the context, not on the
+            // extractor, and must be created here -- never lazily inside the extractor --
+            // so it's scoped to exactly this request.
+            parseContext.set(EmbeddedDocumentExtractor.class, UnpackExtractor.INSTANCE);
+            parseContext.set(UnpackedByteCount.class, new UnpackedByteCount());
 
             // Set up the bytes handler based on output format and mode
             if (unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS) {

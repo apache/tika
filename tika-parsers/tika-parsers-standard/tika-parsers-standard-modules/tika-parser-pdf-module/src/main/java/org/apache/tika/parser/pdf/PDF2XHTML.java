@@ -172,7 +172,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         try (RenderResults results = renderer.render(tis, renderedMetadata, context, request)) {
             for (RenderResult result : results.getResults()) {
                 if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
+                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
 
                         try (TikaInputStream resultInputStream = result.getInputStream()) {
                             //TODO: add markup here?

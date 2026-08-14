@@ -16,19 +16,28 @@
  */
 package org.apache.tika.extractor;
 
+import org.xml.sax.ContentHandler;
+
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * Standard factory for creating {@link ParsingEmbeddedDocumentExtractor} instances.
- * This is the default embedded document extractor factory in tika-core.
+ * Registered-by-name test double, needed only so {@code WireRestrictedParseContextTest} has a
+ * real, resolvable {@link EmbeddedDocumentExtractor} to prove the wire gate actually blocks it.
  */
-@TikaComponent
-public class StandardExtractorFactory implements EmbeddedDocumentExtractorFactory {
+@TikaComponent(name = "mock-embedded-document-extractor")
+public class MockEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
 
     @Override
-    public EmbeddedDocumentExtractor newInstance(Metadata metadata, ParseContext parseContext) {
-        return new ParsingEmbeddedDocumentExtractor(parseContext);
+    public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+        return false;
+    }
+
+    @Override
+    public void parseEmbedded(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+                              ParseContext parseContext, boolean outputHtml) {
+        // never invoked: this double exists only to be name-resolvable for the wire-block test
     }
 }

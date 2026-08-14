@@ -419,7 +419,7 @@ public class DWGReadParser extends AbstractDWGParser {
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail");
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {

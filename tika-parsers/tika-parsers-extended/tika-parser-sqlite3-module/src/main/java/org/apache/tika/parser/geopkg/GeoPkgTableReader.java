@@ -28,7 +28,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.sqlite3.SQLite3TableReader;
 
@@ -44,9 +43,8 @@ class GeoPkgTableReader extends SQLite3TableReader {
 
     private final Set<String> ignoreBlobColumns;
 
-    public GeoPkgTableReader(Connection connection, String tableName,
-                             EmbeddedDocumentUtil embeddedDocumentUtil, Set<String> ignoreBlobColumns) {
-        super(connection, tableName, embeddedDocumentUtil);
+    public GeoPkgTableReader(Connection connection, String tableName, Set<String> ignoreBlobColumns) {
+        super(connection, tableName);
         this.ignoreBlobColumns = ignoreBlobColumns;
     }
 

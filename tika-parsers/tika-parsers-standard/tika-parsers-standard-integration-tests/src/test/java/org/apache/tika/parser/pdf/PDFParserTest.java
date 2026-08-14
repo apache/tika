@@ -660,17 +660,13 @@ public class PDFParserTest extends TikaTest {
 
     private ParseContext configureRenderingParseContext() {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor(parseContext));
+        parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor());
         return parseContext;
     }
 
     private static class RenderCaptureExtractor extends ParsingEmbeddedDocumentExtractor {
         private int count = 0;
         Map<Integer, byte[]> embedded = new HashMap<>();
-
-        public RenderCaptureExtractor(ParseContext context) {
-            super(context);
-        }
 
         @Override
         public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml) throws SAXException, IOException {

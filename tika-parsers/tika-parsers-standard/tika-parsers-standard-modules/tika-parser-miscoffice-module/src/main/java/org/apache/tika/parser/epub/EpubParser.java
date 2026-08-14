@@ -441,7 +441,7 @@ public class EpubParser implements Parser {
             embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, hRefMediaPair.media);
         }
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath);
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
 

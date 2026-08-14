@@ -147,7 +147,7 @@ public class MboxParser implements Parser {
                     TikaInputStream msgStream = TikaInputStream.get(message.toInputStream());
                     message = null;
 
-                    if (extractor.shouldParseEmbedded(mailMetadata)) {
+                    if (extractor.shouldParseEmbedded(mailMetadata, context)) {
                         extractor.parseEmbedded(msgStream, xhtml, mailMetadata, context, true);
                     }
 

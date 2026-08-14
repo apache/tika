@@ -24,6 +24,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -44,7 +45,7 @@ public class RTFEmbeddedHandler {
 
     private final ContentHandler handler;
     private final ParseContext context;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final long maxBytes;
 
     private boolean inObject;
@@ -67,7 +68,7 @@ public class RTFEmbeddedHandler {
                               int maxBytesInKb) {
         this.handler = handler;
         this.context = context;
-        this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        this.embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         this.maxBytes = maxBytesInKb > 0 ? (long) maxBytesInKb * 1024 : -1;
         this.metadata = Metadata.newInstance(context);
     }
@@ -206,9 +207,9 @@ public class RTFEmbeddedHandler {
             throws SAXException, IOException, TikaException {
         meta.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
 
-        if (embeddedDocumentUtil.shouldParseEmbedded(meta)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(meta, context)) {
             if (meta.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
-                String extension = embeddedDocumentUtil.getExtension(tis, meta);
+                String extension = EmbeddedDocumentUtil.getExtension(tis, meta, context);
                 if (inObject && pictParser != null) {
                     meta.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                             EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL.getPrefix()
@@ -223,8 +224,8 @@ public class RTFEmbeddedHandler {
                 meta.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             }
             try {
-                embeddedDocumentUtil.parseEmbedded(
-                        tis, new EmbeddedContentHandler(handler), meta, true);
+                embeddedDocumentExtractor.parseEmbedded(
+                        tis, new EmbeddedContentHandler(handler), meta, context, true);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, meta);
             }

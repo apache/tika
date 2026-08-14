@@ -174,11 +174,11 @@ public class PackageParser extends AbstractArchiveParser {
                     name, null, entry.getLastModifiedDate(), entry.getSize(),
                     xhtml, context);
 
-            if (extractor.shouldParseEmbedded(entrydata)) {
+            if (extractor.shouldParseEmbedded(entrydata, context)) {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
-                    extractor.parseEmbedded(tis, xhtml, entrydata, new ParseContext(), true);
+                    extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
                 } finally {
                     tmp.dispose();
                 }

@@ -26,13 +26,13 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
+import org.apache.tika.pipes.core.extractor.UnpackExtractor;
 
 public class DigestingOpenContainersTest extends TikaTest {
 
@@ -45,8 +45,8 @@ public class DigestingOpenContainersTest extends TikaTest {
         AutoDetectParser autoDetectParser = (AutoDetectParser) loader.loadAutoDetectParser();
         ParseContext parseContext = loader.loadParseContext();
         //this models what happens in tika-pipes
-        if (parseContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
-            parseContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
+        if (parseContext.get(EmbeddedDocumentExtractor.class) == null) {
+            parseContext.set(EmbeddedDocumentExtractor.class, UnpackExtractor.INSTANCE);
         }
         List<Metadata> metadataList = getRecursiveMetadata("testLargeOLEDoc.doc",
                 autoDetectParser, parseContext);

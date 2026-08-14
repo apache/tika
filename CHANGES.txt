@@ -30,6 +30,18 @@ Release 4.0.0 - ???
      API cleanups (cf: prefix, writelimiter package, smaller removals) are
      enumerated in the migration guide, migrating-to-4x.adoc (TIKA-4816).
 
+   * Parsing with a concrete parser (not AutoDetectParser) and an empty
+     ParseContext no longer auto-generates an AutoDetectParser to handle
+     embedded files. Users must set the Parser of their choice for embedded
+     files. EmbeddedDocumentExtractorFactory and friends are removed;
+     ParsingEmbeddedDocumentExtractor/UnpackExtractor are now stateless
+     singletons (TIKA-4819).
+
+   * Parsing with a concrete parser (not AutoDetectParser) and an empty
+     ParseContext no longer auto-generates a Detector to identify embedded
+     files; they are reported as application/octet-stream instead. Users
+     must set the Detector of their choice for embedded files (TIKA-4819).
+
    * tika-server: the /translate endpoints have been removed (TIKA-4809).
 
    * tika-server: /detect/stream and /language/stream and /language/string have

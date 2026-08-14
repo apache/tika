@@ -496,11 +496,11 @@ public class ZipParser extends AbstractArchiveParser {
 
         writeEntryXhtml(name, xhtml);
 
-        if (extractor.shouldParseEmbedded(entryMetadata)) {
+        if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             try (InputStream entryStream = zipFile.getInputStream(entry)) {
                 TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
-                extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+                extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {
@@ -538,11 +538,11 @@ public class ZipParser extends AbstractArchiveParser {
 
         writeEntryXhtml(name, xhtml);
 
-        if (extractor.shouldParseEmbedded(entryMetadata)) {
+        if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata);
-                extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+                extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {

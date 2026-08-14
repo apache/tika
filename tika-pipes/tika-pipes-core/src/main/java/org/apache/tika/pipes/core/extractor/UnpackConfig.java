@@ -241,7 +241,8 @@ public class UnpackConfig implements Serializable {
 
     /**
      * Maximum total bytes to unpack per file. Default is 10GB.
-     * Set to -1 to disable the limit (not recommended).
+     * Set to -1 to disable the limit (not recommended). 0 is not "unlimited" -- it means
+     * zero bytes, so the very first embedded file's extraction is immediately capped.
      *
      * @return max bytes to unpack, or -1 if no limit
      */
@@ -251,6 +252,20 @@ public class UnpackConfig implements Serializable {
 
     public void setMaxUnpackBytes(long maxUnpackBytes) {
         this.maxUnpackBytes = maxUnpackBytes;
+    }
+
+    /**
+     * Maximum total bytes to unpack per file, with -1 (no limit) normalized to
+     * {@link Long#MAX_VALUE} so callers can bound reads without a special case.
+     * <p>
+     * Deliberately not named {@code getMaxUnpackBytesOrUnlimited} -- this class is JSON
+     * (de)serialized via bean introspection, and a "get"-prefixed method here would be
+     * picked up as a phantom property with no matching setter.
+     *
+     * @return max bytes to unpack, or {@link Long#MAX_VALUE} if unlimited
+     */
+    public long maxUnpackBytesOrUnlimited() {
+        return maxUnpackBytes >= 0 ? maxUnpackBytes : Long.MAX_VALUE;
     }
 
     /**

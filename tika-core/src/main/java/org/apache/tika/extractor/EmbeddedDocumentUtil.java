@@ -18,13 +18,10 @@ package org.apache.tika.extractor;
 
 
 import java.io.IOException;
-import java.io.Serializable;
-
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.NoOpDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -33,62 +30,36 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.StatefulParser;
 import org.apache.tika.utils.ExceptionUtils;
 
 /**
- * Utility class to handle common issues with embedded documents.
- * <p/>
- * Use statically if all that is needed is getting the EmbeddedDocumentExtractor.
- * Otherwise, instantiate an instance.
- * <p/>
- * Note: This is not thread safe.  Make sure to instantiate one per thread.
+ * Static utility methods to handle common issues with embedded documents.
  */
-public class EmbeddedDocumentUtil implements Serializable {
+public class EmbeddedDocumentUtil {
 
-
-    private final ParseContext context;
-    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
-    //these are lazily initialized and can be null
-    private MimeTypes mimeTypes;
-    private Detector detector;
-
-    public EmbeddedDocumentUtil(ParseContext context) {
-        this.context = context;
-        this.embeddedDocumentExtractor = getEmbeddedDocumentExtractor(context);
+    private EmbeddedDocumentUtil() {
     }
 
     /**
-     * This offers a uniform way to get an EmbeddedDocumentExtractor from a ParseContext.
-     * As of Tika 1.15, an AutoDetectParser will automatically be added to parse
-     * embedded documents if no Parser.class is specified in the ParseContext.
-     * <p/>
-     * If you'd prefer not to parse embedded documents, set Parser.class
-     * to {@link org.apache.tika.parser.EmptyParser} in the ParseContext.
+     * Looks up the {@link EmbeddedDocumentExtractor} configured for this parse.
+     * <p>
+     * A configured parse (one that has gone through {@link org.apache.tika.parser.AutoDetectParser})
+     * always has one bound in the context. If none is bound -- e.g. a concrete parser was
+     * invoked directly with a bare {@link ParseContext} -- this returns the stateless
+     * {@link ParsingEmbeddedDocumentExtractor#INSTANCE}, which delegates to whatever
+     * {@link Parser} is in the context (or silently skips embedded documents if none is set).
      *
-     * @param context
-     * @return EmbeddedDocumentExtractor
+     * @param context the parse context
+     * @return the EmbeddedDocumentExtractor to use for this parse
      */
     public static EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
         EmbeddedDocumentExtractor extractor = context.get(EmbeddedDocumentExtractor.class);
-        if (extractor != null) {
-            return extractor;
-        }
-        //ensure that an AutoDetectParser is
-        //available for parsing embedded docs TIKA-2096
-        Parser embeddedParser = context.get(Parser.class);
-        if (embeddedParser == null) {
-            context.set(Parser.class, new AutoDetectParser());
-        }
-        EmbeddedDocumentExtractor ex = new ParsingEmbeddedDocumentExtractor(context);
-        context.set(EmbeddedDocumentExtractor.class, ex);
-        return ex;
+        return extractor != null ? extractor : ParsingEmbeddedDocumentExtractor.INSTANCE;
     }
 
     /**
@@ -112,56 +83,47 @@ public class EmbeddedDocumentUtil implements Serializable {
         return p;
     }
 
-    public PasswordProvider getPasswordProvider() {
-        return context.get(PasswordProvider.class);
+    /**
+     * Looks up the {@link Detector} configured for this parse.
+     * <p>
+     * A configured parse (one that has gone through {@link org.apache.tika.parser.AutoDetectParser})
+     * always has one bound in the context. If none is bound -- e.g. a concrete parser was
+     * invoked directly with a bare {@link ParseContext} -- this returns
+     * {@link NoOpDetector#INSTANCE} rather than constructing an SPI-discovered
+     * {@link DefaultDetector}: an honest "unknown" beats a partially-informed guess from a
+     * detector the caller never configured.
+     *
+     * @param context the parse context
+     * @return the Detector to use for this parse
+     */
+    public static Detector getDetector(ParseContext context) {
+        Detector detector = context.get(Detector.class);
+        return detector != null ? detector : NoOpDetector.INSTANCE;
     }
 
-    public Detector getDetector() {
-        //be as lazy as possible and cache
-        Detector localDetector = context.get(Detector.class);
-        if (localDetector != null) {
-            return localDetector;
-        }
-        if (detector != null) {
-            return detector;
-        }
-
-        detector = new DefaultDetector(getMimeTypes());
-        return detector;
+    public static MimeTypes getMimeTypes(ParseContext context) {
+        MimeTypes mimeTypes = context.get(MimeTypes.class);
+        return mimeTypes != null ? mimeTypes : MimeTypes.getDefaultMimeTypes();
     }
 
-    public MimeTypes getMimeTypes() {
-        MimeTypes localMimeTypes = context.get(MimeTypes.class);
-        //be as lazy as possible and cache the mimeTypes
-        if (localMimeTypes != null) {
-            return localMimeTypes;
-        }
-        if (mimeTypes != null) {
-            return mimeTypes;
-        }
-        mimeTypes = MimeTypes.getDefaultMimeTypes();
-        return mimeTypes;
-    }
-
-    public String getExtension(TikaInputStream is, Metadata metadata) {
+    public static String getExtension(TikaInputStream is, Metadata metadata, ParseContext context) {
         String mimeString = metadata.get(HttpHeaders.CONTENT_TYPE);
 
-        //use the buffered mimetypes as default
-        MimeTypes localMimeTypes = getMimeTypes();
+        MimeTypes mimeTypes = getMimeTypes(context);
 
         //a parseable declared type wins, even if we have no glob for it. Don't
         //detect just because the registry lookup came back empty -- that would
         //overwrite a type the calling parser set deliberately.
         if (mimeString != null && MediaType.parse(mimeString) != null) {
-            return extensionOf(getRegisteredMimeType(localMimeTypes, mimeString));
+            return extensionOf(getRegisteredMimeType(mimeTypes, mimeString));
         }
         try {
-            MediaType mediaType = getDetector().detect(is, metadata, context);
+            MediaType mediaType = getDetector(context).detect(is, metadata, context);
             is.reset();
             //set or correct the mime type. Record what was detected, not the
             //registry match, which may have fallen back to the base type.
             metadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
-            return extensionOf(getRegisteredMimeType(localMimeTypes, mediaType.toString()));
+            return extensionOf(getRegisteredMimeType(mimeTypes, mediaType.toString()));
         } catch (IOException e) {
             //swallow
         }
@@ -277,19 +239,6 @@ public class EmbeddedDocumentUtil implements Serializable {
     public static void recordEmbeddedStreamException(Throwable t, Metadata m) {
         String ex = ExceptionUtils.getFilteredStackTrace(t);
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ex);
-    }
-
-    public boolean shouldParseEmbedded(Metadata m) {
-        return getEmbeddedDocumentExtractor().shouldParseEmbedded(m);
-    }
-
-    private EmbeddedDocumentExtractor getEmbeddedDocumentExtractor() {
-        return embeddedDocumentExtractor;
-    }
-
-    public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                              boolean outputHtml) throws IOException, SAXException {
-        embeddedDocumentExtractor.parseEmbedded(tis, handler, metadata, context, outputHtml);
     }
 
     /**

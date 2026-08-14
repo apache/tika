@@ -93,7 +93,7 @@ public class HttpParser implements Parser {
     private void parsePayload(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                               ParseContext context) throws IOException, SAXException {
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (ex.shouldParseEmbedded(metadata)) {
+        if (ex.shouldParseEmbedded(metadata, context)) {
             ex.parseEmbedded(tis, handler, metadata, context, true);
         }
     }

@@ -249,7 +249,7 @@ public class TikaUserDataBox {
         }
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
-        if (extractor.shouldParseEmbedded(pictureMetadata)) {
+        if (extractor.shouldParseEmbedded(pictureMetadata, parseContext)) {
             try (TikaInputStream tis = TikaInputStream.get(picture)) {
                 extractor.parseEmbedded(tis, xhtml, pictureMetadata, parseContext, true);
             } catch (SAXException e) {

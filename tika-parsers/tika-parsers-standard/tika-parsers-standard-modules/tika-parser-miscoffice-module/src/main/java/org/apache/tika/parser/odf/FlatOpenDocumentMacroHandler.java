@@ -107,7 +107,7 @@ class FlatOpenDocumentMacroHandler extends ContentHandlerDecorator {
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(tis, contentHandler, embeddedMetadata, parseContext, true);

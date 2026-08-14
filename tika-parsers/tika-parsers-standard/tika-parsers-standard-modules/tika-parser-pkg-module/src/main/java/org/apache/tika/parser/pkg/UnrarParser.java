@@ -133,7 +133,7 @@ public class UnrarParser implements Parser {
         String fName = FilenameUtils.getName(relPath);
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fName);
         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, relPath);
-        if (extractor.shouldParseEmbedded(metadata)) {
+        if (extractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(embeddedFile)) {
                 extractor.parseEmbedded(tis, xhtml, metadata, context, true);
             }

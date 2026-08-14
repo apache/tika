@@ -25,6 +25,11 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
+/**
+ * Implementations are typically bound as a single shared instance reused across concurrent
+ * parses (see {@link ParsingEmbeddedDocumentExtractor#INSTANCE}) -- do not cache per-parse
+ * state on {@code this}; read it from the {@link ParseContext} parameter on each call instead.
+ */
 public interface EmbeddedDocumentExtractor {
     /**
      * Determines whether the given embedded document should be parsed.
@@ -32,10 +37,11 @@ public interface EmbeddedDocumentExtractor {
      * Note: Implementations may throw {@link org.apache.tika.exception.EmbeddedLimitReachedException}
      * (a RuntimeException) if a limit is exceeded and throwing is configured.
      *
-     * @param metadata the metadata for the embedded document
+     * @param metadata     the metadata for the embedded document
+     * @param parseContext the parse context of the enclosing parse
      * @return true if the embedded document should be parsed
      */
-    boolean shouldParseEmbedded(Metadata metadata);
+    boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext);
 
     /**
      * Processes the supplied embedded resource, calling the delegating

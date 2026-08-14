@@ -334,7 +334,7 @@ public class Mp3Parser implements Parser {
                     pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
                             ID3Tags.PICTURE_TYPES[picture.getPictureType()]);
                 }
-                if (extractor.shouldParseEmbedded(pictureMetadata)) {
+                if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
                     try (TikaInputStream pictureStream = TikaInputStream.get(picture.getData())) {
                         extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context,
                                 true);

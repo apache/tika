@@ -120,9 +120,9 @@ public class EmbeddedDocumentUtilExtensionTest {
     public void testDeclaredUnregisteredTypeIsNotOverwritten() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "application/tika-bogus-xyz");
-        EmbeddedDocumentUtil util = new EmbeddedDocumentUtil(new ParseContext());
+        ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get("%PDF-1.4\n".getBytes(UTF_8))) {
-            assertEquals("", util.getExtension(tis, metadata));
+            assertEquals("", EmbeddedDocumentUtil.getExtension(tis, metadata, context));
             assertEquals("application/tika-bogus-xyz", metadata.get(HttpHeaders.CONTENT_TYPE));
         }
     }
@@ -131,9 +131,9 @@ public class EmbeddedDocumentUtilExtensionTest {
     public void testDeclaredParameterizedTypeResolvesAndIsPreserved() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8");
-        EmbeddedDocumentUtil util = new EmbeddedDocumentUtil(new ParseContext());
+        ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get("hello".getBytes(UTF_8))) {
-            assertEquals(".txt", util.getExtension(tis, metadata));
+            assertEquals(".txt", EmbeddedDocumentUtil.getExtension(tis, metadata, context));
             assertEquals("text/plain; charset=UTF-8", metadata.get(HttpHeaders.CONTENT_TYPE));
         }
     }

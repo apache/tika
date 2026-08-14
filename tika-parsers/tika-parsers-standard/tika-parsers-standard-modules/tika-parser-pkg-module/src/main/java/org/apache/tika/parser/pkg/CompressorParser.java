@@ -301,7 +301,7 @@ public class CompressorParser implements Parser {
             // Use the delegate parser to parse the compressed document
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-            if (extractor.shouldParseEmbedded(entrydata)) {
+            if (extractor.shouldParseEmbedded(entrydata, context)) {
                 try (TikaInputStream inner = TikaInputStream.get(cis)) {
                     extractor.parseEmbedded(inner, xhtml, entrydata, context, true);
                 }

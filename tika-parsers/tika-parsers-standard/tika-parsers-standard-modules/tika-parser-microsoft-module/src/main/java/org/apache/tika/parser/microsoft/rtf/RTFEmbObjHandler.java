@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -63,7 +64,7 @@ class RTFEmbObjHandler {
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
     private final ParseContext context;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final UnsynchronizedByteArrayOutputStream os;
     private final int memoryLimitInKb;
 
@@ -84,7 +85,7 @@ class RTFEmbObjHandler {
                                int memoryLimitInKb) {
         this.handler = handler;
         this.context = context;
-        this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        this.embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         os = UnsynchronizedByteArrayOutputStream.builder().get();
         this.memoryLimitInKb = memoryLimitInKb;
     }
@@ -221,10 +222,10 @@ class RTFEmbObjHandler {
 
         metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(bytes.length));
 
-        if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
-                    String extension = embeddedDocumentUtil.getExtension(tis, metadata);
+                    String extension = EmbeddedDocumentUtil.getExtension(tis, metadata, context);
                     if (inObject && state == EMB_STATE.PICT) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                                 EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL.getPrefix()
@@ -247,9 +248,9 @@ class RTFEmbObjHandler {
                 // endDocument. Same shape as the SXWPF / Epub catch arms.
                 XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(handler);
                 try {
-                    embeddedDocumentUtil
+                    embeddedDocumentExtractor
                             .parseEmbedded(tis, new EmbeddedContentHandler(balancer), metadata,
-                                    true);
+                                    context, true);
                 } catch (IOException e) {
                     balancer.drainOpenElements();
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);

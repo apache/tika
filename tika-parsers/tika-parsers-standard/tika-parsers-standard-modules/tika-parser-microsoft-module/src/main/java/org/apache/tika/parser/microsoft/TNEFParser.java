@@ -128,7 +128,7 @@ public class TNEFParser implements Parser {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
 
-        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+        if (embeddedExtractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(contents)) {
                 embeddedExtractor.parseEmbedded(tis,
                         new EmbeddedContentHandler(handler), metadata, context, true);
