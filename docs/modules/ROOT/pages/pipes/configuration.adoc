@@ -71,7 +71,7 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 
 |`socketTimeoutMillis`
 |`60000`
-|Maximum time (ms) to wait for data from a forked process. If no heartbeat or result is received within this window, the parse is considered hung.
+|Maximum time (ms) to wait for data from a forked process. If no heartbeat or result is received within this window, the parse is considered hung. Also serves as the fork's idle-shutdown timer: a fork that receives no work for this long exits and is restarted transparently on next use.
 
 |`heartbeatIntervalMillis`
 |`1000`

@@ -25,9 +25,10 @@ cores.
 
 To fix this, Tika Pipes auto-injects `-XX:ActiveProcessorCount` into each
 forked JVM's command line, sizing each fork's view of the CPU count to a fair
-slice of the host. This is on by default in per-client mode (`numClients > 1`)
-when the user has not already supplied `-XX:ActiveProcessorCount` in
-`forkedJvmArgs`.
+slice of the host. This is on by default in per-client mode — including
+`numClients=1`, where the slice is everything but the parent's reserved
+cores — whenever the user has not already supplied
+`-XX:ActiveProcessorCount` in `forkedJvmArgs`.
 
 == Mental model
 
@@ -73,10 +74,10 @@ For typical cloud-VM core counts:
 |===
 |hostCores |numClients |slice |Notes
 
-|2  |1 |n/a    |Tight; auto-cap not applied (single fork). Acceptable for low throughput.
-|4  |1 |n/a    |Comfortable single-fork deployment.
+|2  |1 |1 → skipped |Tight; auto-cap declines. Acceptable for low throughput.
+|4  |1 |2      |Comfortable single-fork deployment.
 |4  |2 |1 → skipped |Auto-cap declines; consider `numClients=1`.
-|8  |1 |n/a    |Lots of headroom; single-fork lifecycle isolation is fine.
+|8  |1 |6      |Lots of headroom; single-fork lifecycle isolation is fine.
 |8  |3 |2      |Sweet spot for medium pods.
 |16 |4 |3      |Sweet spot for 16-core hosts. Measured winner in benchmarks.
 |16 |6 |2      |Higher concurrency; tighter per-fork breathing room.
@@ -87,6 +88,26 @@ For typical cloud-VM core counts:
 The general rule is: pick the largest `numClients` that satisfies
 `numClients × 2 + 2 ≤ hostCores`. Beyond that point, adding workers
 starts hurting throughput.
+
+== Lazy start, warm reuse, and idle shutdown
+
+`numClients` is a *ceiling* on concurrent forks, not a resident count:
+
+* **Lazy start.** No fork is started at construction; each starts on the
+  first request that needs it.
+* **Warm reuse (LIFO).** The client pool hands out the most-recently-used
+  client first. Sequential or lightly-concurrent traffic stays on the same
+  warm fork (or forks) instead of round-robining every fork awake; a cold
+  fork is only started when concurrency actually exceeds the number of warm
+  ones.
+* **Idle shutdown.** A fork that receives no work for `socketTimeoutMillis`
+  (default 60s) exits on its own and is restarted transparently on next use.
+
+Together these make the resident fork count track *recent concurrency*
+rather than `numClients`, so over-sizing `numClients` costs little at idle.
+Per-fork CPU and heap slices are still computed statically from
+`numClients` (a lone warm fork does not inherit its idle siblings'
+shares) — capacity planning above is unchanged.
 
 == Diagnostics
 
@@ -102,7 +123,6 @@ The `autoCap` field is one of:
 
 * `slice=N` — the auto-cap fired; each fork sees N CPUs.
 * `skipped (slice<2)` — over-provisioned; operator should reduce `numClients`.
-* `n/a (single fork; not capped)` — `numClients=1`; fork sees the whole host.
 * `user-set in forkedJvmArgs` — operator set `-XX:ActiveProcessorCount` themselves.
 
 Two `WARN`-level messages call out clearly-bad provisioning:
@@ -168,10 +188,11 @@ report `autoCap=user-set in forkedJvmArgs`.
 
 Heap is auto-sized the same way CPU is. Left to itself, every forked JVM takes its own
 default max heap — a fixed fraction of host or container memory — so `numClients` forks have
-a combined ceiling well above what the host actually has. When `numClients > 1` and you have
-not set `-Xmx` (or `-XX:MaxRAMPercentage`/`-XX:MaxRAMFraction`) yourself, Tika injects
-`-XX:MaxRAMPercentage=75/numClients`, leaving the remainder for the parent JVM and the OS.
-The `pipes-cpu-sizing` summary line reports the decision as `heap=...`.
+a combined ceiling well above what the host actually has. When you have not set `-Xmx`
+(or `-XX:MaxRAMPercentage`/`-XX:MaxRAMFraction`) yourself, Tika injects
+`-XX:MaxRAMPercentage=75/numClients` — 75 for a single fork — leaving the remainder for
+the parent JVM and the OS. The `pipes-cpu-sizing` summary line reports the decision as
+`heap=...`.
 
 [IMPORTANT]
 ====
@@ -186,6 +207,12 @@ memory and has no portable way to resolve that to bytes. Each forked JVM therefo
 its own heap at startup and logs a `WARN` if it came up under 256 MB — the point below which
 ordinary documents, not just pathological ones, begin to fail. If you see that warning,
 lower `numClients`, raise the container memory limit, or set `-Xmx` explicitly.
+
+When you set fork heap explicitly, the parent checks the arithmetic for you at startup:
+if `numClients × -Xmx` exceeds 75% of host/container memory (or explicit
+`-XX:MaxRAMPercentage` values sum past 75%), it logs a `pipes-cpu-sizing` `WARN` naming
+the commitment. It warns rather than fails — a co-tenant box the operator has budgeted
+deliberately is indistinguishable from a mistake.
 
 Cross-check both constraints yourself when sizing: `numClients × 2 + 2 ≤ hostCores` **and**
 `numClients × per-worker-heap ≤ 75% of memory`.

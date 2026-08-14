@@ -57,7 +57,7 @@ public class TikaPipesConfigTest extends TikaTest {
 
     @Test
     void testNumClientsRejectsNonPositive() {
-        // ArrayBlockingQueue(0)'s message-less IAE pointed at nothing; this names the field.
+        // The client queue's message-less IAE pointed at nothing; this names the field.
         PipesConfig config = new PipesConfig();
         assertThrows(IllegalArgumentException.class, () -> config.setNumClients(0));
         assertThrows(IllegalArgumentException.class, () -> config.setNumClients(-1));

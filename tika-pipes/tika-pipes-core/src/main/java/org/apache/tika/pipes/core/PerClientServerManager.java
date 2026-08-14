@@ -80,6 +80,87 @@ public class PerClientServerManager implements ServerManager {
         return Math.max(1, FORK_HEAP_BUDGET_PERCENT / numClients);
     }
 
+    /**
+     * Explicit heap settings suppress auto-division, so nothing else checks that
+     * numClients forks at the user's size can actually coexist -- the mistake only
+     * surfaces later as fork OOMs or the host OOM-killer. Returns a warning when
+     * the combined explicit ceiling exceeds the fork budget, else null.
+     * Package-private for tests.
+     */
+    static String heapOvercommitWarning(List<String> forkedJvmArgs, int numClients,
+                                        long totalMemBytes) {
+        long xmxBytes = -1;
+        double maxRamPct = -1;
+        // last occurrence wins, same as the JVM
+        for (String arg : forkedJvmArgs) {
+            if (arg.startsWith("-Xmx")) {
+                xmxBytes = parseJvmMemArg(arg.substring("-Xmx".length()));
+            } else if (arg.startsWith("-XX:MaxRAMPercentage=")) {
+                try {
+                    maxRamPct = Double.parseDouble(
+                            arg.substring("-XX:MaxRAMPercentage=".length()));
+                } catch (NumberFormatException e) {
+                    maxRamPct = -1;
+                }
+            }
+        }
+        // -Xmx beats MaxRAMPercentage in the JVM, so only judge the percentage alone
+        if (xmxBytes <= 0 && maxRamPct > 0 && numClients * maxRamPct > FORK_HEAP_BUDGET_PERCENT) {
+            return String.format(java.util.Locale.ROOT,
+                    "numClients=%d x -XX:MaxRAMPercentage=%s commits %.0f%% of memory; " +
+                    "the parent JVM and OS need the remainder (fork budget: %d%%). " +
+                    "Lower numClients or the percentage.",
+                    numClients, maxRamPct, numClients * maxRamPct, FORK_HEAP_BUDGET_PERCENT);
+        }
+        if (xmxBytes > 0 && totalMemBytes > 0
+                && numClients * (double) xmxBytes > totalMemBytes * FORK_HEAP_BUDGET_PERCENT / 100.0) {
+            return String.format(java.util.Locale.ROOT,
+                    "numClients=%d x -Xmx (%,dMB each) commits %,dMB of %,dMB total memory, " +
+                    "over the %d%% fork budget; the parent JVM and OS need the remainder. " +
+                    "Lower numClients or -Xmx.",
+                    numClients, xmxBytes / MB, numClients * xmxBytes / MB, totalMemBytes / MB,
+                    FORK_HEAP_BUDGET_PERCENT);
+        }
+        return null;
+    }
+
+    private static final long MB = 1024 * 1024;
+
+    // "-Xmx" style value: digits with optional k/m/g/t suffix; -1 if unparseable
+    static long parseJvmMemArg(String value) {
+        if (value == null || value.isEmpty()) {
+            return -1;
+        }
+        long multiplier = switch (Character.toLowerCase(value.charAt(value.length() - 1))) {
+            case 'k' -> 1024L;
+            case 'm' -> 1024L * 1024;
+            case 'g' -> 1024L * 1024 * 1024;
+            case 't' -> 1024L * 1024 * 1024 * 1024;
+            default -> 1;
+        };
+        String digits = multiplier == 1 ? value : value.substring(0, value.length() - 1);
+        try {
+            long n = Long.parseLong(digits);
+            return n <= 0 ? -1 : Math.multiplyExact(n, multiplier);
+        } catch (NumberFormatException | ArithmeticException e) {
+            return -1;
+        }
+    }
+
+    // Container-aware on JDK 17 (honors cgroup memory limits); -1 if unavailable.
+    // Read via JMX attribute name: the typed accessor lives on a com.sun
+    // interface that forbiddenapis bans as non-portable.
+    private static long totalMemorySize() {
+        try {
+            Object value = java.lang.management.ManagementFactory.getPlatformMBeanServer()
+                    .getAttribute(new javax.management.ObjectName("java.lang:type=OperatingSystem"),
+                            "TotalMemorySize");
+            return value instanceof Number n ? n.longValue() : -1;
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
 
     private final PipesConfig pipesConfig;
     private final Path tikaConfigPath;
@@ -144,8 +225,6 @@ public class PerClientServerManager implements ServerManager {
         String capDecision;
         if (userSetCap) {
             capDecision = "user-set in forkedJvmArgs";
-        } else if (numClients <= 1) {
-            capDecision = "n/a (single fork; not capped)";
         } else {
             int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
             int slice = budget / numClients;
@@ -156,14 +235,18 @@ public class PerClientServerManager implements ServerManager {
         String heapDecision;
         if (userSetHeap(pipesConfig.getForkedJvmArgs())) {
             heapDecision = "user-set in forkedJvmArgs";
-        } else if (numClients <= 1) {
-            heapDecision = "n/a (single fork; JVM default)";
         } else {
             heapDecision = "MaxRAMPercentage=" + forkHeapPercentage(numClients);
         }
         LOG.info("pipes-cpu-sizing: hostCores={}, numClients={}, parentReserved={}, " +
                 "autoCap={}, heap={}", hostCores, numClients, PARENT_RESERVED_CORES,
                 capDecision, heapDecision);
+
+        String overcommit = heapOvercommitWarning(pipesConfig.getForkedJvmArgs(),
+                numClients, totalMemorySize());
+        if (overcommit != null) {
+            LOG.warn("pipes-cpu-sizing: {}", overcommit);
+        }
     }
 
     @Override
@@ -313,7 +396,7 @@ public class PerClientServerManager implements ServerManager {
         LOG.trace("clientId={}: starting server on port={}", clientId, port);
 
         tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
-        ProcessBuilder pb = new ProcessBuilder(getCommandline());
+        ProcessBuilder pb = new ProcessBuilder(getCommandline(tmpDir));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. Without this, an orphan child
         // can only notice via socket-read timeout (default 60s) and can't
@@ -448,7 +531,9 @@ public class PerClientServerManager implements ServerManager {
         }
     }
 
-    private String[] getCommandline() throws IOException {
+    // package-private and tmpDir passed in (rather than read from the field set by
+    // startServer) so tests can exercise arg injection without forking a JVM
+    String[] getCommandline(Path tmpDir) throws IOException {
         List<String> configArgs = new ArrayList<>(pipesConfig.getForkedJvmArgs());
         boolean hasClassPath = false;
         boolean hasHeadless = false;
@@ -500,7 +585,7 @@ public class PerClientServerManager implements ServerManager {
         // host has -- the same "each JVM thinks it owns the machine" problem the
         // ActiveProcessorCount cap solves. Give each fork a slice of a fixed budget
         // instead, leaving the remainder for the parent and the OS.
-        if (!userSetHeap(configArgs) && pipesConfig.getNumClients() > 1) {
+        if (!userSetHeap(configArgs)) {
             int pct = forkHeapPercentage(pipesConfig.getNumClients());
             configArgs.add("-XX:MaxRAMPercentage=" + pct);
             LOG.debug("clientId={}: auto-injected -XX:MaxRAMPercentage={} (numClients={})",
@@ -517,7 +602,7 @@ public class PerClientServerManager implements ServerManager {
         // Skip the auto-cap when the computed slice would drop below
         // MIN_AUTO_CAP_SLICE -- below that, the fork can't keep its socket
         // reader responsive and back-pressures the parent.
-        if (!hasActiveProcessorCount && pipesConfig.getNumClients() > 1) {
+        if (!hasActiveProcessorCount) {
             int hostCores = Runtime.getRuntime().availableProcessors();
             int forkBudget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
             int slice = forkBudget / pipesConfig.getNumClients();
@@ -530,10 +615,11 @@ public class PerClientServerManager implements ServerManager {
             } else {
                 LOG.info("clientId={}: skipping -XX:ActiveProcessorCount auto-cap " +
                         "(would yield slice={} < MIN_AUTO_CAP_SLICE={}; " +
-                        "hostCores={}, parentReserved={}, numClients={}). " +
-                        "Consider lowering numClients on this host.",
+                        "hostCores={}, parentReserved={}, numClients={}).{}",
                         clientId, slice, MIN_AUTO_CAP_SLICE, hostCores,
-                        PARENT_RESERVED_CORES, pipesConfig.getNumClients());
+                        PARENT_RESERVED_CORES, pipesConfig.getNumClients(),
+                        pipesConfig.getNumClients() > 1
+                                ? " Consider lowering numClients on this host." : "");
             }
         }
 
@@ -547,7 +633,7 @@ public class PerClientServerManager implements ServerManager {
         commandLine.add(ProcessUtils.escapeCommandLine(javaPath));
 
         if (!hasClassPath) {
-            Path argFile = writeArgFile();
+            Path argFile = writeArgFile(tmpDir);
             commandLine.add("@" + argFile.toAbsolutePath());
         }
 
@@ -573,7 +659,7 @@ public class PerClientServerManager implements ServerManager {
         return commandLine.toArray(new String[0]);
     }
 
-    private Path writeArgFile() throws IOException {
+    private Path writeArgFile(Path tmpDir) throws IOException {
         Path argFile = tmpDir.resolve("jvm-args.txt");
         // forward any tika.extras.dir jars to the forked PipesServer
         String classpath = TikaExtras.appendJarsToClasspath(System.getProperty("java.class.path"));
