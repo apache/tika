@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -280,7 +281,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
     }
 
     String detectMimeType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/") || contentType.equals("application/pdf")) {

@@ -38,7 +38,11 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -57,6 +61,22 @@ public class AudioParser implements Parser {
     private static final String UNSUPPORTED_AUDIO_FILE_EXCEPTION = "An " +
             "UnsupportedAudioFileException was thrown.  This could mean that the underlying " +
             "parser hit an EndOfFileException or that the file is unsupported. ¯\\_(ツ)_/¯";
+
+    // javax.sound SPI property names the stock JDK providers document (see Audio.SPI_*); any
+    // other SPI property name is a third-party extension and falls through AUDIO_SPI below.
+    private static final Map<String, Property> STOCK_SPI_PROPERTIES = Map.of(
+            "duration", Audio.SPI_DURATION,
+            "author", Audio.SPI_AUTHOR,
+            "title", Audio.SPI_TITLE,
+            "copyright", Audio.SPI_COPYRIGHT,
+            "date", Audio.SPI_DATE,
+            "comment", Audio.SPI_COMMENT,
+            "bitrate", Audio.BITRATE,
+            "vbr", Audio.IS_VARIABLE_BITRATE,
+            "quality", Audio.SPI_QUALITY);
+
+    private static final KeyPrefix AUDIO_SPI = KeyPrefix.file("audio:",
+            "javax.sound SPI property names beyond the stock JDK-documented vocabulary");
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(
@@ -77,18 +97,17 @@ public class AudioParser implements Parser {
             AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(audioStream);
             Type type = fileFormat.getType();
             if (type == Type.AIFC || type == Type.AIFF) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/x-aiff");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/x-aiff");
             } else if (type == Type.AU || type == Type.SND) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/basic");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/basic");
             } else if (type == Type.WAVE) {
-                metadata.set(Metadata.CONTENT_TYPE, "audio/vnd.wave");
+                metadata.set(HttpHeaders.CONTENT_TYPE, "audio/vnd.wave");
             }
 
             AudioFormat audioFormat = fileFormat.getFormat();
             int channels = audioFormat.getChannels();
             if (channels != AudioSystem.NOT_SPECIFIED) {
-                metadata.set("channels", String.valueOf(channels));
-                // TODO: Use XMPDM.TRACKS? (see also frame rate in AudioFormat)
+                metadata.set(Audio.CHANNELS, channels);
             }
             float rate = audioFormat.getSampleRate();
             if (rate != AudioSystem.NOT_SPECIFIED) {
@@ -96,7 +115,7 @@ public class AudioParser implements Parser {
             }
             int bits = audioFormat.getSampleSizeInBits();
             if (bits != AudioSystem.NOT_SPECIFIED) {
-                metadata.set("bits", String.valueOf(bits));
+                metadata.set(Audio.BITS_PER_SAMPLE, bits);
                 if (bits == 8) {
                     metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, "8Int");
                 } else if (bits == 16) {
@@ -105,17 +124,12 @@ public class AudioParser implements Parser {
                     metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, "32Int");
                 }
             }
-            metadata.set("encoding", audioFormat.getEncoding().toString());
+            metadata.set(Audio.ENCODING, audioFormat.getEncoding().toString());
 
-            // Javadoc suggests that some of the following properties might
-            // be available, but I had no success in finding any:
-
-            // "duration" Long playback duration of the file in microseconds
-            // "author" String name of the author of this file
-            // "title" String title of this file
-            // "copyright" String copyright message
-            // "date" Date date of the recording or release
-            // "comment" String an arbitrary text
+            // The Javadoc documents "duration"/"author"/"title"/"copyright"/"date"/"comment"
+            // (AudioFileFormat) and "bitrate"/"vbr"/"quality" (AudioFormat) as available, but
+            // Tika's built-in providers (WAV/AIFF/AU/basic) never populate them -- only a
+            // third-party SPI would. See Audio.SPI_* / STOCK_SPI_PROPERTIES above.
 
             addMetadata(metadata, fileFormat.properties());
             addMetadata(metadata, audioFormat.properties());
@@ -134,12 +148,19 @@ public class AudioParser implements Parser {
         xhtml.endDocument();
     }
 
-    private void addMetadata(Metadata metadata, Map<String, Object> properties) {
+    // package-private: unit-tested directly with a synthetic properties map.
+    void addMetadata(Metadata metadata, Map<String, Object> properties) {
         if (properties != null) {
             for (Entry<String, Object> entry : properties.entrySet()) {
                 Object value = entry.getValue();
-                if (value != null) {
-                    metadata.set(entry.getKey(), value.toString());
+                if (value == null) {
+                    continue;
+                }
+                Property stock = STOCK_SPI_PROPERTIES.get(entry.getKey());
+                if (stock != null) {
+                    metadata.set(stock, value.toString());
+                } else {
+                    metadata.add(AUDIO_SPI, entry.getKey(), value.toString());
                 }
             }
         }

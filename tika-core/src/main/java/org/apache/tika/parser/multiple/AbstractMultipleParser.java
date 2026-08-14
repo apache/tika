@@ -43,7 +43,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.utils.ParserUtils;
 
 /**
  * Abstract base class for parser wrappers which may / will
@@ -112,7 +111,7 @@ public abstract class AbstractMultipleParser implements Parser {
             if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) {
                 continue;
             }
-            if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) {
+            if (n.equals(TikaCoreProperties.EMBEDDED_PARSER.getName())) {
                 continue;
             }
             if (n.equals(TikaCoreProperties.EMBEDDED_EXCEPTION.getName())) {

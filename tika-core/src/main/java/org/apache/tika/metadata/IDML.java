@@ -17,16 +17,20 @@
 package org.apache.tika.metadata;
 
 /**
- * A collection of Creative Commons properties names.
- *
- * @see <a href="http://www.creativecommons.org/">creativecommons.org</a>
+ * Adobe InDesign IDML properties collection.
  */
-public interface CreativeCommons {
+public interface IDML {
 
-    String LICENSE_URL = "License-Url";
+    String IDML_PREFIX = "idml" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String LICENSE_LOCATION = "License-Location";
+    /**
+     * Total page count summed across all body Spreads.
+     */
+    Property SPREAD_PAGE_COUNT = Property.internalInteger(IDML_PREFIX + "spread-page-count");
 
-    String WORK_TYPE = "Work-Type";
-
+    /**
+     * Total page count summed across all MasterSpreads.
+     */
+    Property MASTER_SPREAD_PAGE_COUNT =
+            Property.internalInteger(IDML_PREFIX + "master-spread-page-count");
 }

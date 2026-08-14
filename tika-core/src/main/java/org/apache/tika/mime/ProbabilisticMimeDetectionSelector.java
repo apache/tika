@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -171,7 +172,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 
         // Get type based on metadata hint (if available)
         MimeType metaHint = null;
-        String typeName = metadata.get(Metadata.CONTENT_TYPE);
+        String typeName = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (typeName != null) {
             try {
                 // MimeType hint = forName(typeName);

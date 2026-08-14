@@ -270,7 +270,8 @@ class EmitHandler {
         return (stack != null) ? stack : StringUtils.EMPTY;
     }
 
-    private void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
+    //package-private for testing
+    void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
         Metadata target = metadataList.get(0);
         for (String n : userMetadata.names()) {
             //overwrite whatever was there

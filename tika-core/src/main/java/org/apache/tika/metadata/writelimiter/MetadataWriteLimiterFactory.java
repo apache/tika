@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.writefilter;
+package org.apache.tika.metadata.writelimiter;
 
 /**
  * Factory interface for creating {@link MetadataWriteLimiter} instances.
@@ -23,7 +23,7 @@ package org.apache.tika.metadata.writefilter;
  * by {@code Metadata.newInstance(ParseContext)} to create Metadata objects with
  * limits applied at creation time.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface MetadataWriteLimiterFactory {
     /**

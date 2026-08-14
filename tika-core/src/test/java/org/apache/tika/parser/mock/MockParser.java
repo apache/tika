@@ -56,6 +56,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -289,7 +290,7 @@ public class MockParser implements Parser {
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         if (!"".equals(contentType)) {
-            m.set(Metadata.CONTENT_TYPE, contentType);
+            m.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
         // Check if we should parse this embedded document (respects EmbeddedLimits)
         if (!extractor.shouldParseEmbedded(m)) {

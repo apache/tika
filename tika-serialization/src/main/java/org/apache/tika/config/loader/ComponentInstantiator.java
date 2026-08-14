@@ -238,6 +238,11 @@ public class ComponentInstantiator {
         return types;
     }
 
+    /** True if {@code clazz} binds its config through a public {@code (JsonConfig)} constructor. */
+    public static boolean hasJsonConfigConstructor(Class<?> clazz) {
+        return findJsonConfigConstructor(clazz) != null;
+    }
+
     private static Constructor<?> findJsonConfigConstructor(Class<?> clazz) {
         try {
             return clazz.getConstructor(JsonConfig.class);

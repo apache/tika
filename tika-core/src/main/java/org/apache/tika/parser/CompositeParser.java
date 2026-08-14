@@ -34,6 +34,7 @@ import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -249,7 +250,7 @@ public class CompositeParser implements Parser {
         //check for parser override first
         String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (contentTypeString == null) {
-            contentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+            contentTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         }
         MediaType type = MediaType.parse(contentTypeString);
         if (type != null) {

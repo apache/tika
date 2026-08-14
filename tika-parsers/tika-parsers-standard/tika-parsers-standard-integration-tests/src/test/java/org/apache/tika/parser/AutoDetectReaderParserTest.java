@@ -32,6 +32,7 @@ import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -69,7 +70,7 @@ public class AutoDetectReaderParserTest extends MultiThreadedTikaTest {
             try (AutoDetectReader reader = new AutoDetectReader(stream)) {
                 Charset charset = reader.getCharset();
                 MediaType type = new MediaType(MediaType.parse("text/plhtml"), charset);
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
                 XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
                 xhtml.startDocument();
 

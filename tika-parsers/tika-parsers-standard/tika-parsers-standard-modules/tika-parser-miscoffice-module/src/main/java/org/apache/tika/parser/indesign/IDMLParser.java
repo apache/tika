@@ -35,6 +35,8 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.IDML;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.mime.MediaType;
@@ -115,8 +117,8 @@ public class IDMLParser implements Parser {
             }
         }
 
-        metadata.set("SpreadPageCount", Integer.toString(pageCount));
-        metadata.set("MasterSpreadPageCount", Integer.toString(masterSpreadCount));
+        metadata.set(IDML.SPREAD_PAGE_COUNT, Integer.toString(pageCount));
+        metadata.set(IDML.MASTER_SPREAD_PAGE_COUNT, Integer.toString(masterSpreadCount));
         metadata.set(Office.PAGE_COUNT, Integer.toString(pageCount + masterSpreadCount));
 
         xhtml.endDocument();
@@ -165,7 +167,7 @@ public class IDMLParser implements Parser {
 
         if (entry.getName().equals("mimetype")) {
             String type = IOUtils.toString(zip, UTF_8);
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         } else if (entry.getName().equals("META-INF/metadata.xml")) {
             try {
                 new XmpExtractor().extract(zip, metadata, context);
@@ -177,12 +179,12 @@ public class IDMLParser implements Parser {
         } else if (entry.getName().contains("MasterSpreads")) {
             Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
-            int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
+            int spreadCount = Integer.parseInt(embeddedMeta.get(Office.PAGE_COUNT));
             masterSpreadCount += spreadCount;
         } else if (entry.getName().contains("Spreads/Spread")) {
             Metadata embeddedMeta = Metadata.newInstance(context);
             ContentAndMetadataExtractor.extract(zip, handler, embeddedMeta, context);
-            int spreadCount = Integer.parseInt(embeddedMeta.get("PageCount"));
+            int spreadCount = Integer.parseInt(embeddedMeta.get(Office.PAGE_COUNT));
             pageCount += spreadCount;
         }  else if (entry.getName().contains("Stories")) {
             ContentAndMetadataExtractor.extract(zip, handler, Metadata.newInstance(context), context);

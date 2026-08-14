@@ -20,7 +20,7 @@
 #
 # Regenerates and validates the metadata key registry (tika-metadata-schema).
 #
-# Run this after adding, renaming, or removing a Property or PassthroughPrefix
+# Run this after adding, renaming, or removing a Property or KeyPrefix
 # constant anywhere in tika-core or the standard parser bundle. It replaces the
 # multi-step manual sequence in .skills/metadata-schema/SKILL.md with one command:
 # install the dependency modules, regenerate the three registry files, sanity
@@ -30,7 +30,7 @@
 #   tika-metadata-schema/regen.sh [--skip-install] [--skip-tests]
 #
 #   --skip-install  skip the -am install step (only safe if no Property/
-#                   PassthroughPrefix classes outside tika-metadata-schema
+#                   KeyPrefix classes outside tika-metadata-schema
 #                   changed since the last install)
 #   --skip-tests    skip the final gate-test run, for a faster inner loop
 #
@@ -71,7 +71,7 @@ REGISTRY_FILES=(
 
 if [ "$SKIP_INSTALL" -eq 0 ]; then
     echo "==> Installing tika-metadata-schema + its dependency modules (tika-core, standard parsers)"
-    echo "    so newly added Property/PassthroughPrefix classes are on the scan classpath."
+    echo "    so newly added Property/KeyPrefix classes are on the scan classpath."
     echo "    (skip with --skip-install if you already did this)"
     ./mvnw -Pfast -DskipTests -pl tika-metadata-schema -am install "$MVN_REPO_OPT"
 fi
@@ -110,4 +110,4 @@ if [ "$SKIP_TESTS" -eq 0 ]; then
     ./mvnw -pl tika-metadata-schema test "$MVN_REPO_OPT"
 fi
 
-echo "==> Done. Review the diff above, then commit the Property/PassthroughPrefix change and the regenerated JSON together."
+echo "==> Done. Review the diff above, then commit the Property/KeyPrefix change and the regenerated JSON together."

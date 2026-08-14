@@ -36,6 +36,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -838,7 +839,7 @@ public class IptcAnpaParser implements Parser {
 
         // every property that gets set must be non-null, or it will cause NPE
         // in other consuming applications, like Lucene
-        metadata.set(Metadata.CONTENT_TYPE, clean("text/anpa-1312"));
+        metadata.set(HttpHeaders.CONTENT_TYPE, clean("text/anpa-1312"));
         metadata.set(TikaCoreProperties.TITLE, clean(properties.get("title")));
         metadata.set(TikaCoreProperties.SUBJECT, clean(properties.get("subject")));
         metadata.set(TikaCoreProperties.CREATOR, clean(properties.get("author")));

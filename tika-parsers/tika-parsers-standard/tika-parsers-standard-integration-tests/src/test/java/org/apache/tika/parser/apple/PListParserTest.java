@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -33,7 +34,7 @@ public class PListParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testWEBARCHIVE.webarchive");
         assertEquals(12, metadataList.size());
         Metadata m0 = metadataList.get(0);
-        assertEquals("application/x-bplist-webarchive", m0.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bplist-webarchive", m0.get(HttpHeaders.CONTENT_TYPE));
         Metadata m1 = metadataList.get(1);
         String content = m1.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("December 2008: Apache Tika Release", content);

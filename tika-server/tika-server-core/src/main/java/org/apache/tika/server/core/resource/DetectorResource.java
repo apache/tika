@@ -69,7 +69,7 @@ public class DetectorResource {
             List<Metadata> metadataList =
                     tikaResource.parseWithPipes(tis, met, parseContext, ParseMode.NO_PARSE);
             String detected = metadataList.isEmpty()
-                    ? null : metadataList.get(0).get(Metadata.CONTENT_TYPE);
+                    ? null : metadataList.get(0).get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
             return detected == null ? MediaType.OCTET_STREAM.toString() : detected;
         } catch (IOException e) {
             // A failure reading/spooling the bytes is a server-side error, not a confident

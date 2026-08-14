@@ -30,6 +30,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.WordPerfect;
 import org.apache.tika.mime.MediaType;
@@ -95,7 +96,7 @@ public class WordPerfectParser implements Parser {
             throws UnsupportedFormatException, EncryptedDocumentException {
         if (pa.getMajorVersion() != WPPrefixArea.WP5_MAJOR_VERSION &&
                 pa.getMajorVersion() != WPPrefixArea.WP6_MAJOR_VERSION) {
-            metadata.set(Metadata.CONTENT_TYPE, WP_UNK.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, WP_UNK.toString());
             throw new UnsupportedFormatException(
                     "Parser doesn't recognize this major version: " + pa.getMajorVersion());
         }
@@ -108,15 +109,15 @@ public class WordPerfectParser implements Parser {
         // Should we force the more precise media type if only the base
         // form is found?  Or shall we store a friendly representation
         // of the version in a new field?
-        if (metadata.get(Metadata.CONTENT_TYPE) == null) {
+        if (metadata.get(HttpHeaders.CONTENT_TYPE) == null) {
             if (pa.getMajorVersion() == WPPrefixArea.WP6_MAJOR_VERSION) {
-                metadata.set(Metadata.CONTENT_TYPE, WP_6_x.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, WP_6_x.toString());
             } else if (pa.getMinorVersion() == WPPrefixArea.WP5_0_MINOR_VERSION) {
-                metadata.set(Metadata.CONTENT_TYPE, WP_5_0.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, WP_5_0.toString());
             } else if (pa.getMinorVersion() == WPPrefixArea.WP5_1_MINOR_VERSION) {
-                metadata.set(Metadata.CONTENT_TYPE, WP_5_1.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, WP_5_1.toString());
             } else {
-                metadata.set(Metadata.CONTENT_TYPE, WP_BASE.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, WP_BASE.toString());
             }
         }
 

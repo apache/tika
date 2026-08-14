@@ -39,6 +39,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -124,7 +125,7 @@ public class IWorkPackageParser implements Parser {
                         throw new TikaException("Unhandled iWorks file " + type);
                 }
 
-                metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
                 xhtml.startDocument();
                 if (contentHandler != null) {
                     XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),

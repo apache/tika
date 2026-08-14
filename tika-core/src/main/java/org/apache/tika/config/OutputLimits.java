@@ -36,7 +36,7 @@ import org.apache.tika.parser.ParseContext;
  * <b>writeLimit behavior:</b> The writeLimit is the TOTAL characters across all documents
  * (container + embedded). When the limit is reached:
  * <ul>
- *   <li>If {@code throwOnWriteLimit=false}: Output is truncated, {@code X-TIKA-writeLimitReached=true} is set</li>
+ *   <li>If {@code throwOnWriteLimit=false}: Output is truncated, {@code tk:exception:write-limit-reached=true} is set</li>
  *   <li>If {@code throwOnWriteLimit=true}: {@code WriteLimitReachedException} is thrown</li>
  * </ul>
  * <p>

@@ -54,6 +54,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.Zip;
@@ -446,20 +447,20 @@ public class ZipParser extends AbstractArchiveParser {
     }
 
     private void setMediaTypeIfNotSpecialization(Metadata metadata, MediaType type) {
-        String incomingContentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        String incomingContentTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (incomingContentTypeString == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
         if (incomingMediaType == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         if (!ZIP_SPECIALIZATIONS.contains(incomingMediaType)) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
     }
 
@@ -623,7 +624,7 @@ public class ZipParser extends AbstractArchiveParser {
 
         long size = entry.getSize();
         if (size >= 0) {
-            entryMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(size));
+            entryMetadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
             entryMetadata.set(Zip.UNCOMPRESSED_SIZE, Long.toString(size));
         }
         long compressedSize = entry.getCompressedSize();

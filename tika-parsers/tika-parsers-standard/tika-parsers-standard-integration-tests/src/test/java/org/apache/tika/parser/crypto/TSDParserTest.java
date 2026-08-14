@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -42,7 +43,7 @@ public class TSDParserTest extends TikaTest {
         //and make sure embedded exception is recorded
         List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd", parseContext);
         assertEquals(2, list.size());
-        assertEquals("application/pdf", list.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", list.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
         // Exception occurs during TSD content extraction (truncated file)
         assertContains("EOFException",

@@ -1,0 +1,2 @@
+id,project,fetchKey,tk:reserved
+1,projecta,path/to/my/file1,shouldnotbewritten

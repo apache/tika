@@ -47,6 +47,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.QuickTime;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -92,7 +93,7 @@ public class MP4ParserTest extends TikaTest {
         String content = getText("testMP4.m4a", metadata);
 
         // Check core properties
-        assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("2012-01-28T18:39:18Z", metadata.get(TikaCoreProperties.CREATED));
@@ -159,10 +160,10 @@ public class MP4ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testMP4_coverArt.m4a");
 
         assertEquals(2, metadataList.size());
-        assertEquals("audio/mp4", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
 
         Metadata pictureMetadata = metadataList.get(1);
-        assertEquals("image/png", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
@@ -178,11 +179,11 @@ public class MP4ParserTest extends TikaTest {
         assertEquals(3, metadataList.size());
         //a png data atom (well-known type 14) followed by a jpeg one (13)
         Metadata front = metadataList.get(1);
-        assertEquals("image/png", front.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         Metadata back = metadataList.get(2);
-        assertEquals("image/jpeg", back.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
@@ -193,7 +194,7 @@ public class MP4ParserTest extends TikaTest {
         // a 10 fps H.264 clip generated with ffmpeg (color source, 16x16, 1s);
         // libx264 also writes the average bitrate into the btrt BitRateBox
         XMLResult r = getXML("testMP4Video.mp4");
-        assertEquals("video/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
         assertEquals("6536", r.metadata.get(Video.BITRATE));
     }
@@ -202,7 +203,7 @@ public class MP4ParserTest extends TikaTest {
     @Timeout(30000)
     public void testInfiniteLoop() throws Exception {
         XMLResult r = getXML("testMP4_truncated.m4a");
-        assertEquals("audio/mp4", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
     }
 
@@ -211,7 +212,7 @@ public class MP4ParserTest extends TikaTest {
         final XMLResult xmlResult = getXML("testMP4AudioOnly.mp4");
         final Metadata metadata = xmlResult.metadata;
 
-        assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("audio/mp4", metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -375,24 +376,26 @@ public class MP4ParserTest extends TikaTest {
         //dropped by the MP4 handler. See TIKA-2861.
         Metadata metadata = new Metadata();
         getText("testMP4_QuickTimeMetadata.mov", metadata);
+        //QuickTime 'keys' box item names come verbatim from file bytes, so they are
+        //routed through the mp4: KeyPrefix rather than used as raw keys. TIKA-4816.
         assertEquals("TEST-UUID-0001-LIVEPHOTO",
-                metadata.get("com.apple.quicktime.content.identifier"));
+                metadata.get("mp4:com.apple.quicktime.content.identifier"));
 
         //the raw ISO 6709 location is preserved ...
         assertEquals("+12.3456-098.7654+010.500/",
-                metadata.get("com.apple.quicktime.location.ISO6709"));
+                metadata.get("mp4:com.apple.quicktime.location.ISO6709"));
         //... and also mapped to the standard geo:* properties (incl. altitude)
         assertEquals(12.3456, Double.parseDouble(metadata.get(TikaCoreProperties.LATITUDE)), 0.00001);
         assertEquals(-98.7654, Double.parseDouble(metadata.get(TikaCoreProperties.LONGITUDE)), 0.00001);
         assertEquals(10.5, Double.parseDouble(metadata.get(TikaCoreProperties.ALTITUDE)), 0.00001);
 
         //numeric well-known value types (uint8, float32, int32, float64)
-        assertEquals("1", metadata.get("com.apple.quicktime.live-photo.auto"));
-        assertEquals("0.75", metadata.get("com.apple.quicktime.live-photo.vitality-score"));
+        assertEquals("1", metadata.get("mp4:com.apple.quicktime.live-photo.auto"));
+        assertEquals("0.75", metadata.get("mp4:com.apple.quicktime.live-photo.vitality-score"));
         assertEquals("-13",
-                metadata.get("com.apple.quicktime.camera.focal_length.35mm_equivalent"));
+                metadata.get("mp4:com.apple.quicktime.camera.focal_length.35mm_equivalent"));
         assertEquals("1.5",
-                metadata.get("com.apple.quicktime.full-frame-rate-playback-intent"));
+                metadata.get("mp4:com.apple.quicktime.full-frame-rate-playback-intent"));
 
         //the Live Photo still moment: presentation time of the single sample of
         //the timed metadata track declaring still-image-time (mebx, leading empty
@@ -401,10 +404,12 @@ public class MP4ParserTest extends TikaTest {
         //foreign mebx keys get no property (the fixture's other timed metadata
         //tracks are delayed, non-leading and multi-sample variants), and the
         //per-key suffix scheme from earlier iterations is gone
-        assertNull(metadata.get("com.apple.quicktime.still-image-time.track-start-us"));
-        assertNull(metadata.get("test.quicktime.v1delayed.track-start-us"));
-        assertNull(metadata.get("test.quicktime.nonleading.track-start-us"));
-        assertNull(metadata.get("test.quicktime.multisample.track-start-us"));
+        assertNull(metadata.get("mp4:com.apple.quicktime.still-image-time.track-start-us"));
+        assertNull(metadata.get("mp4:test.quicktime.v1delayed.track-start-us"));
+        assertNull(metadata.get("mp4:test.quicktime.nonleading.track-start-us"));
+        assertNull(metadata.get("mp4:test.quicktime.multisample.track-start-us"));
+        //and the unprefixed legacy keys are gone entirely
+        assertNull(metadata.get("com.apple.quicktime.content.identifier"));
     }
 
     @Test

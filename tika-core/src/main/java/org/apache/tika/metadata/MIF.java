@@ -17,12 +17,24 @@
 package org.apache.tika.metadata;
 
 /**
- * A collection of Tika metadata keys used in Mime Type resolution
+ * FrameMaker MIF properties collection.
  */
-public interface TikaMimeKeys {
+public interface MIF {
 
-    String TIKA_MIME_FILE = "tika.mime.file";
+    String MIF_PREFIX = "mif" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String MIME_TYPE_MAGIC = "mime.type.magic";
+    /**
+     * Count of MIF {@code LeftMasterPage}/{@code RightMasterPage}/{@code OtherMasterPage} pages.
+     */
+    Property MASTER_PAGE_COUNT = Property.internalInteger(MIF_PREFIX + "master-page-count");
 
+    /**
+     * Count of MIF {@code ReferencePage} pages.
+     */
+    Property REFERENCE_PAGE_COUNT = Property.internalInteger(MIF_PREFIX + "reference-page-count");
+
+    /**
+     * Sum of body, master, and reference page counts.
+     */
+    Property TOTAL_PAGE_COUNT = Property.internalInteger(MIF_PREFIX + "total-page-count");
 }

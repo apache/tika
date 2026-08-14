@@ -27,6 +27,7 @@ import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 public class FLVParserTest {
@@ -56,7 +57,7 @@ public class FLVParserTest {
                 new Tika().parseToString(FLVParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("", content);
-        assertEquals("video/x-flv", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("video/x-flv", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("true", metadata.get("flv:hasVideo"));
         assertEquals("false", metadata.get("flv:stereo"));
         assertEquals("true", metadata.get("flv:hasAudio"));

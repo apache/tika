@@ -73,7 +73,7 @@ public class MetadataAwareLuceneIndexer {
         met.add(TikaCoreProperties.SUBJECT, "File");
         met.add(TikaCoreProperties.SUBJECT, "Indexing");
         met.add(TikaCoreProperties.SUBJECT, "Metadata");
-        met.set(Property.externalClosedChoise(TikaCoreProperties.RIGHTS.getName(), "public", "private"), "public");
+        met.set(Property.externalClosedChoice(TikaCoreProperties.RIGHTS.getName(), "public", "private"), "public");
         try (TikaInputStream tis = TikaInputStream.get(file.toPath(), met)) {
             tika.parse(tis, met);
             Document document = new Document();

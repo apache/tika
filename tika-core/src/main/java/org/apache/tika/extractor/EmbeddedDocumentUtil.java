@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -143,7 +144,7 @@ public class EmbeddedDocumentUtil implements Serializable {
     }
 
     public String getExtension(TikaInputStream is, Metadata metadata) {
-        String mimeString = metadata.get(Metadata.CONTENT_TYPE);
+        String mimeString = metadata.get(HttpHeaders.CONTENT_TYPE);
 
         //use the buffered mimetypes as default
         MimeTypes localMimeTypes = getMimeTypes();
@@ -159,7 +160,7 @@ public class EmbeddedDocumentUtil implements Serializable {
             is.reset();
             //set or correct the mime type. Record what was detected, not the
             //registry match, which may have fallen back to the base type.
-            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
             return extensionOf(getRegisteredMimeType(localMimeTypes, mediaType.toString()));
         } catch (IOException e) {
             //swallow

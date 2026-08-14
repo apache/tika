@@ -30,6 +30,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -82,7 +83,7 @@ public class FictionBookParser extends XMLParser {
 
                 metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                         attributes.getValue(ATTRIBUTE_ID));
-                metadata.set(Metadata.CONTENT_TYPE, attributes.getValue(ATTRIBUTE_CONTENT_TYPE));
+                metadata.set(HttpHeaders.CONTENT_TYPE, attributes.getValue(ATTRIBUTE_CONTENT_TYPE));
             }
         }
 

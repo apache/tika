@@ -40,8 +40,10 @@ public class DIFParserTest extends TikaTest {
             parser.parse(tis, handler, metadata, new ParseContext());
         }
 
-        assertEquals(metadata.get("DIF-Entry_ID"), "00794186-48f9-11e3-9dcb-00c0f03d5b7c");
-        assertEquals(metadata.get("DIF-Metadata_Name"), "ACADIS IDN DIF");
+        // DIF element-name paths are doc-derived, so DIFContentHandler routes them through the
+        // dif: KeyPrefix (TIKA-4816).
+        assertEquals(metadata.get("dif:DIF-Entry_ID"), "00794186-48f9-11e3-9dcb-00c0f03d5b7c");
+        assertEquals(metadata.get("dif:DIF-Metadata_Name"), "ACADIS IDN DIF");
 
         String content = handler.toString();
         assertContains("Title: Zamora 2010 Using Sediment Geochemistry", content);

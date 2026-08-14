@@ -41,6 +41,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -104,7 +105,7 @@ public class TikaToXMPTest {
     public void convert_OOXMLMetadataWithMimetype_everythingConverted()
             throws XMPException, TikaException {
         setupOOXMLMetadata(tikaMetadata);
-        tikaMetadata.set(Metadata.CONTENT_TYPE, OOXML_MIMETYPE);
+        tikaMetadata.set(HttpHeaders.CONTENT_TYPE, OOXML_MIMETYPE);
 
         XMPMeta xmp = TikaToXMP.convert(tikaMetadata);
 
@@ -248,7 +249,7 @@ public class TikaToXMPTest {
                         for (int j = 0; j < numIterations; j++) {
                             Metadata m = new Metadata();
                             setupOOXMLMetadata(m);
-                            m.set(Metadata.CONTENT_TYPE, OOXML_MIMETYPE);
+                            m.set(HttpHeaders.CONTENT_TYPE, OOXML_MIMETYPE);
                             XMPMeta xmp = TikaToXMP.convert(m);
                             checkOOXMLMetadata(xmp);
                         }

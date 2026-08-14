@@ -35,10 +35,13 @@ class AbstractMetadataHandler extends DefaultHandler {
     private final Property property;
     private final String name;
 
+    /**
+     * String-keyed constructor: {@code name} must be one of a small set of fixed,
+     * compile-time-known key names (never document-derived), so it is minted as a
+     * curated, registered Property, like {@link Property#externalText}.
+     */
     protected AbstractMetadataHandler(Metadata metadata, String name) {
-        this.metadata = metadata;
-        this.property = null;
-        this.name = name;
+        this(metadata, Property.externalText(name));
     }
 
     protected AbstractMetadataHandler(Metadata metadata, Property property) {
@@ -60,34 +63,22 @@ class AbstractMetadataHandler extends DefaultHandler {
                 // Add the value, assuming it's not already there
                 List<String> previous = Arrays.asList(metadata.getValues(name));
                 if (!previous.contains(value)) {
-                    if (property != null) {
-                        metadata.add(property, value);
-                    } else {
-                        metadata.add(name, value);
-                    }
+                    metadata.add(property, value);
                 }
             } else {
                 // Set the value, assuming it's not already there
                 String previous = metadata.get(name);
                 if (previous != null && previous.length() > 0) {
                     if (!previous.equals(value)) {
-                        if (property != null) {
-                            if (property.isMultiValuePermitted()) {
-                                metadata.add(property, value);
-                            } else {
-                                // Replace the existing value if isMultiValuePermitted is false
-                                metadata.set(property, value);
-                            }
+                        if (property.isMultiValuePermitted()) {
+                            metadata.add(property, value);
                         } else {
-                            metadata.add(name, value);
+                            // Replace the existing value if isMultiValuePermitted is false
+                            metadata.set(property, value);
                         }
                     }
                 } else {
-                    if (property != null) {
-                        metadata.set(property, value);
-                    } else {
-                        metadata.set(name, value);
-                    }
+                    metadata.set(property, value);
                 }
             }
         }

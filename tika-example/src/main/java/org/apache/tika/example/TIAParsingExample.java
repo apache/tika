@@ -37,6 +37,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -132,7 +133,7 @@ public class TIAParsingExample {
             parser.setFallback(new TXTParser());
 
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.CONTENT_TYPE, "text/html");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "text/html");
             parser.parse(tis, handler, metadata, context);
         }
     }

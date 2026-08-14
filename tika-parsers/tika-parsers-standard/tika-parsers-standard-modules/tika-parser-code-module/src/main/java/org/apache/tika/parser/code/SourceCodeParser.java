@@ -49,6 +49,7 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -100,13 +101,13 @@ public class SourceCodeParser extends AbstractEncodingDetectorParser {
         try (AutoDetectReader reader = new AutoDetectReader(tis,
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
-            String mediaType = metadata.get(Metadata.CONTENT_TYPE);
+            String mediaType = metadata.get(HttpHeaders.CONTENT_TYPE);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             MediaType type = null;
             if (mediaType != null) {
                 type = MediaType.parse(mediaType);
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
-                metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+                metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
+                metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
             } else {
                 throw new TikaException("media type must be set in metadata before parse");
             }

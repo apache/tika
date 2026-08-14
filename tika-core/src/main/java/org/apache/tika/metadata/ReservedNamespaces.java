@@ -18,9 +18,13 @@ package org.apache.tika.metadata;
 
 /**
  * Classifies metadata keys by who is allowed to assert them. The Tika-native namespace
- * ({@code tk:}) is a trust boundary: only Tika, via a registered {@link Property}, may write it.
- * A key name derived from file content (a blind scrape) that lands in this namespace is a forgery
- * and must be refused rather than honored.
+ * ({@code tk:}) is guarded on the String write route: a key name derived from file content
+ * (a blind scrape) that lands in this namespace is a forgery and is refused (thrown) rather
+ * than honored, and the public {@link Property} factories reject reserved names at
+ * construction. This is a file-borne-forgery guard and an internal-bug detector — not a
+ * sealed boundary: {@link Metadata#setTrusted}, {@link Metadata#reconstruct}, and
+ * {@link Metadata#putAll} deliberately write reserved keys for filters, serialization, and
+ * pipes user metadata.
  *
  * @since Apache Tika 4.0.0
  */

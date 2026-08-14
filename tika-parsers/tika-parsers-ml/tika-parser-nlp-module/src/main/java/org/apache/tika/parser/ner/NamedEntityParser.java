@@ -37,8 +37,9 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -49,7 +50,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * This implementation of {@link org.apache.tika.parser.Parser} extracts
  * entity names from text content and adds it to the metadata.
- * <p>All the metadata keys will have a common suffix {@value #MD_KEY_PREFIX}</p>
+ * <p>All the metadata keys will have a common prefix {@value #MD_KEY_PREFIX} (the entity-type
+ * spelling from the recogniser -- e.g. {@code PERSON}, {@code WEEK_DAY} -- is kept verbatim
+ * after the prefix)</p>
  * <p>The Named Entity recogniser implementation can be changed by setting the
  * system property {@value #SYS_PROP_NER_IMPL} value to a name of class that
  * implements {@link NERecogniser} contract</p>
@@ -61,9 +64,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class NamedEntityParser implements Parser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
-    public static final String MD_KEY_PREFIX = "NER_";
-    public static final PassthroughPrefix NER =
-            PassthroughPrefix.tool(MD_KEY_PREFIX, "named-entity types");
+    public static final String MD_KEY_PREFIX = "ner:";
+    public static final KeyPrefix NER =
+            KeyPrefix.tool(MD_KEY_PREFIX, "named-entity types");
     public static final String DEFAULT_NER_IMPL =
             OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
@@ -128,7 +131,7 @@ public class NamedEntityParser implements Parser {
         }
 
         Reader reader =
-                MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE)) ?
+                MediaType.TEXT_PLAIN.toString().equals(metadata.get(HttpHeaders.CONTENT_TYPE)) ?
                         new InputStreamReader(tis, StandardCharsets.UTF_8) :
                         secondaryParser.parse(tis);
 
@@ -140,9 +143,8 @@ public class NamedEntityParser implements Parser {
             if (names != null) {
                 for (Map.Entry<String, Set<String>> entry : names.entrySet()) {
                     if (entry.getValue() != null) {
-                        String mdKey = NER.key(entry.getKey());
                         for (String name : entry.getValue()) {
-                            metadata.add(mdKey, name);
+                            metadata.add(NER, entry.getKey(), name);
                         }
                     }
                 }

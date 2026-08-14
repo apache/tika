@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -39,7 +40,7 @@ public class ActiveMimeParserTest extends TikaTest {
         //if we get permission to add it to our repo, these should work
         Path p = Paths.get(".../editdata.mso");
         List<Metadata> metadataList = getRecursiveMetadata(p);
-        assertEquals("application/x-activemime", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-activemime", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         assertEquals(5, metadataList.size());
         assertContains("Arquivo Gerado com sucesso!!!",
                 metadataList.get(4).get(TikaCoreProperties.TIKA_CONTENT));

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -44,7 +45,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         Metadata m = r.metadata;
         assertEquals("Allison, Timothy B.", m.get(TikaCoreProperties.CREATOR));
         assertEquals("16.00", m.get(OfficeOpenXMLCore.VERSION));
-        assertEquals("application/vnd.ms-spreadsheetml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-spreadsheetml", m.get(HttpHeaders.CONTENT_TYPE));
 
         String xml = r.xml;
         xml = xml.replaceAll("\\s+", " ");
@@ -73,7 +74,7 @@ public class XML2003ParserTest extends MultiThreadedTikaTest {
         // getXML wraps the handler in StrictXHTMLValidator, so any imbalance
         // would throw before the assertions.
         XMLResult r = getXML("testWORDML_tableInsideParagraph.doc");
-        assertEquals("application/vnd.ms-wordml", r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-wordml", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         // Structural sanity: tables emit with tbody and rows.
         assertContains("<table><tbody>", r.xml);
     }

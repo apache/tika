@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MimeTypeException;
@@ -381,7 +382,7 @@ public class FilenameUtils {
     }
 
     /**
-     * Calculate the extension based on the {@link Metadata#CONTENT_TYPE} value.
+     * Calculate the extension based on the {@link HttpHeaders#CONTENT_TYPE} value.
      * On parse exception or null value, return the default value.
      *
      * @param metadata
@@ -389,7 +390,7 @@ public class FilenameUtils {
      * @return the extension based on the mime type, including the initial "."
      */
     public static String calculateExtension(Metadata metadata, String defaultValue) {
-        String mime = metadata.get(Metadata.CONTENT_TYPE);
+        String mime = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mime == null) {
             return defaultValue;
         }

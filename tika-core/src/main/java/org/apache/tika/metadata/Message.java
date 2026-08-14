@@ -29,7 +29,7 @@ public interface Message {
     String MESSAGE_RAW_HEADER_PREFIX =
             MESSAGE_PREFIX + "raw-header" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    PassthroughPrefix RAW_HEADER = PassthroughPrefix.file(MESSAGE_RAW_HEADER_PREFIX,
+    KeyPrefix RAW_HEADER = KeyPrefix.file(MESSAGE_RAW_HEADER_PREFIX,
             "RFC822 / Outlook raw email header names");
 
     Property MESSAGE_RECIPIENT_ADDRESS =

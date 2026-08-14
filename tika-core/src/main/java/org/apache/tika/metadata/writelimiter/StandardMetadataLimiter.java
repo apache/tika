@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.metadata.writefilter;
+package org.apache.tika.metadata.writelimiter;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.metadata.AccessPermissions;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -58,7 +59,7 @@ import org.apache.tika.utils.StringUtils;
  * <p>This class uses {@link #minimumMaxFieldSizeInAlwaysFields} to protect the
  * {@link #ALWAYS_ADD_FIELDS} and {@link #ALWAYS_SET_FIELDS}. If we didn't have this and a user
  * sets the {@link #maxFieldSize} to, say, 10 bytes, the internal parser behavior would be broken
- * because parsers rely on {@link Metadata#CONTENT_TYPE} to determine which parser to call.
+ * because parsers rely on {@link HttpHeaders#CONTENT_TYPE} to determine which parser to call.
  *
  * <p><b>NOTE:</b> as with {@link Metadata}, this object is not thread safe.
  *
@@ -66,28 +67,33 @@ import org.apache.tika.utils.StringUtils;
  */
 public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializable {
 
-    public static final Set<String> ALWAYS_SET_FIELDS = new HashSet<>();
-    public static final Set<String> ALWAYS_ADD_FIELDS = new HashSet<>();
+    // Set.copyOf below: these are public JVM-global policy (which fields bypass the limiter,
+    // including CONTENT_TYPE/RESOURCE_NAME); a mutable set would be a global extension point
+    public static final Set<String> ALWAYS_SET_FIELDS;
+    public static final Set<String> ALWAYS_ADD_FIELDS;
 
     static {
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_LENGTH.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_TYPE.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_ENCODING.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTENT_TYPE_HINT.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.TIKA_CONTENT.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
-        ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_CONTENT.getName());
-        ALWAYS_SET_FIELDS.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
-        ALWAYS_SET_FIELDS.add(Metadata.CONTENT_DISPOSITION.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.CONTAINER_EXCEPTION.getName());
-        ALWAYS_SET_FIELDS.add(TikaCoreProperties.EMBEDDED_EXCEPTION.getName());
-        //Metadata.CONTENT_LOCATION? used by the html parser
-    }
+        Set<String> alwaysSet = new HashSet<>();
+        alwaysSet.add(HttpHeaders.CONTENT_LENGTH.getName());
+        alwaysSet.add(HttpHeaders.CONTENT_TYPE.getName());
+        alwaysSet.add(HttpHeaders.CONTENT_ENCODING.getName());
+        alwaysSet.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE.getName());
+        alwaysSet.add(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
+        alwaysSet.add(TikaCoreProperties.CONTENT_TYPE_HINT.getName());
+        alwaysSet.add(TikaCoreProperties.TIKA_CONTENT.getName());
+        alwaysSet.add(TikaCoreProperties.RESOURCE_NAME_KEY.getName());
+        alwaysSet.add(AccessPermissions.EXTRACT_CONTENT.getName());
+        alwaysSet.add(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY.getName());
+        alwaysSet.add(HttpHeaders.CONTENT_DISPOSITION.getName());
+        alwaysSet.add(TikaCoreProperties.CONTAINER_EXCEPTION.getName());
+        //HttpHeaders.CONTENT_LOCATION? used by the html parser
+        ALWAYS_SET_FIELDS = Set.copyOf(alwaysSet);
 
-    static {
-        ALWAYS_ADD_FIELDS.add(TikaCoreProperties.TIKA_PARSED_BY.getName());
+        Set<String> alwaysAdd = new HashSet<>();
+        alwaysAdd.add(TikaCoreProperties.TIKA_PARSED_BY.getName());
+        //bag-typed: one embedded-file failure per add() call must not clobber prior ones
+        alwaysAdd.add(TikaCoreProperties.EMBEDDED_EXCEPTION.getName());
+        ALWAYS_ADD_FIELDS = Set.copyOf(alwaysAdd);
     }
 
     private static final String METADATA_TRUNCATED_KEY =
@@ -197,7 +203,11 @@ public class StandardMetadataLimiter implements MetadataWriteLimiter, Serializab
             setAlwaysInclude(field, value, data);
             return;
         }
-        //TODO: should we limit the number of field values?
+        String[] existing = data.get(field);
+        if (existing.length >= maxValuesPerField) {
+            setTruncated(data);
+            return;
+        }
 
         int toAddSize = estimateSize(value);
         //if the maxFieldSize is < minimumMaxFieldSizeInAlwaysFields, use the minmax

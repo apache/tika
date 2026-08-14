@@ -24,6 +24,7 @@ import java.nio.file.Path;
 
 import org.apache.commons.io.IOUtils;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
 
@@ -263,8 +264,8 @@ class CachingSource extends InputStream implements TikaInputSource {
 
             // Update metadata if not already set
             if (metadata != null &&
-                    StringUtils.isBlank(metadata.get(Metadata.CONTENT_LENGTH))) {
-                metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+                    StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
+                metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
             }
 
             cachingStream = null;

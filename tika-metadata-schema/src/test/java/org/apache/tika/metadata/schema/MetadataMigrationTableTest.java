@@ -33,12 +33,14 @@ public class MetadataMigrationTableTest {
 
     private static final String THREE_X = "/org/apache/tika/metadata/metadata-keys-3x.json";
     private static final String FOUR_X = "/org/apache/tika/metadata/metadata-key-fields.json";
+    private static final String FOUR_X_KEYS = "/org/apache/tika/metadata/metadata-keys.json";
     private static final String OVERLAY = "/org/apache/tika/metadata/migration-overlay.tsv";
     private static final String COMMITTED = "/org/apache/tika/metadata/metadata-migration-3x-4x.json";
 
     @Test
     public void committedMigrationTableMatchesRegeneration() throws Exception {
-        String regenerated = MigrationTableGenerator.generate(read(THREE_X), read(FOUR_X), read(OVERLAY));
+        String regenerated = MigrationTableGenerator.generate(read(THREE_X), read(FOUR_X),
+                read(FOUR_X_KEYS), read(OVERLAY));
         assertEquals(read(COMMITTED), regenerated,
                 "metadata-migration-3x-4x.json (in tika-core) is stale. Regenerate with "
                         + "MigrationTableGenerator and commit the result.");

@@ -23,7 +23,7 @@ import java.util.Map;
 
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 
 /**
  * Parse context. Used to pass context information to Tika parsers.

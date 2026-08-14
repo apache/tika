@@ -20,14 +20,14 @@ package org.apache.tika.metadata;
  *
  * Properties that typically appear in MSG/PST message format files.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface MAPI {
 
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_PROPERTY = PREFIX_MAPI_META + "property" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    PassthroughPrefix PROPERTY = PassthroughPrefix.file(PREFIX_MAPI_PROPERTY, "MAPI named properties");
+    KeyPrefix PROPERTY = KeyPrefix.file(PREFIX_MAPI_PROPERTY, "MAPI named properties");
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?

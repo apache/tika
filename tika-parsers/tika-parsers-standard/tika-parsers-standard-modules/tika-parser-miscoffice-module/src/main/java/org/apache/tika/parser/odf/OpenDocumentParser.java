@@ -45,6 +45,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -286,7 +287,7 @@ public class OpenDocumentParser implements Parser {
             checkForEncryption(tisZip, context);
         } else if (entry.getName().equals("mimetype")) {
             String type = IOUtils.toString(tisZip, UTF_8);
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         } else if (entry.getName().equals(META_NAME)) {
                 meta.parse(tisZip, new DefaultHandler(), metadata, context);
         } else if (entry.getName().endsWith("content.xml")) {
@@ -324,7 +325,7 @@ public class OpenDocumentParser implements Parser {
                                 .getDetector()
                                 .detect(tisZip, embeddedMetadata, context);
                         if (embeddedMimeType != null) {
-                            embeddedMetadata.set(Metadata.CONTENT_TYPE, embeddedMimeType.toString());
+                            embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, embeddedMimeType.toString());
                         }
                         tisZip.reset();
                         // Tag the picture with the draw:page indices it

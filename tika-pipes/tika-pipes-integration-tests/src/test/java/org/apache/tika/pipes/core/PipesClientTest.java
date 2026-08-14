@@ -41,6 +41,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -795,7 +796,7 @@ public class PipesClientTest {
             // Other metadata should be stripped by the IncludeFieldMetadataFilter
             assertNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
                     "RESOURCE_NAME should be stripped in CONTENT_ONLY mode");
-            assertNull(metadata.get(Metadata.CONTENT_TYPE),
+            assertNull(metadata.get(HttpHeaders.CONTENT_TYPE),
                     "CONTENT_TYPE should be stripped in CONTENT_ONLY mode");
         }
     }

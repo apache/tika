@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -49,7 +50,7 @@ public class PowerPointParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/vnd.ms-powerpoint", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertEquals("Sample Powerpoint Slide", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();
@@ -243,7 +244,7 @@ public class PowerPointParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, context);
         }
 
-        assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-powerpoint", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
         assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.MODIFIED));
@@ -285,9 +286,9 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     public void testMacros() throws Exception {
         Metadata minExpected = new Metadata();
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
-        minExpected.add(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
-        minExpected.add(Metadata.CONTENT_TYPE, "text/x-vbasic");
+        minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Embolden()");
+        minExpected.addTrusted(TikaCoreProperties.TIKA_CONTENT.getName(), "Sub Italicize()");
+        minExpected.add(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
         minExpected.add(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
 
@@ -383,7 +384,7 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                xlsx.get(Metadata.CONTENT_TYPE));
+                xlsx.get(HttpHeaders.CONTENT_TYPE));
 
     }
 

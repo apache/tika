@@ -43,6 +43,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -132,7 +133,7 @@ public class StringsParser implements Parser, Initializable {
     private String doFile(TikaInputStream tis) throws IOException {
         Metadata tmpMetadata = new Metadata();
         fileCommandDetector.detect(tis, tmpMetadata, new ParseContext());
-        return tmpMetadata.get(Metadata.CONTENT_TYPE);
+        return tmpMetadata.get(HttpHeaders.CONTENT_TYPE);
     }
 
     /**

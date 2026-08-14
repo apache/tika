@@ -31,6 +31,12 @@ import org.apache.tika.metadata.filter.LegacyKeyMigrationFilter.Direction;
 
 public class LegacyKeyMigrationFilterTest {
 
+    private static LegacyKeyMigrationFilter bundled(Direction direction) {
+        LegacyKeyMigrationFilter.Config config = new LegacyKeyMigrationFilter.Config();
+        config.direction = direction;
+        return new LegacyKeyMigrationFilter(config);
+    }
+
     private static List<Metadata> apply(LegacyKeyMigrationFilter f, Metadata m) throws Exception {
         List<Metadata> list = new ArrayList<>();
         list.add(m);
@@ -136,5 +142,130 @@ public class LegacyKeyMigrationFilterTest {
         apply(f, m);
         assertEquals("z", m.get("tk:digest:SHA3-512"));
         assertNull(m.get("X-TIKA:digest:SHA3_512"));
+    }
+
+    // Open-vocabulary KeyPrefix families (unbounded suffix), rewritten by prefix rule rather than
+    // the flat table; one representative row per family (plus a second NER row for the entity
+    // type's own underscore, kept verbatim through the rule).
+    private static final String[][] EGRESS_ROWS = {
+            // {v4 key, v3 key, sample value}
+            {"ner:PERSON", "NER_PERSON", "John McKay"},
+            {"ner:WEEK_DAY", "NER_WEEK_DAY", "Sunday"},
+            {"envi:lat/lon", "envi.lat/lon", "36.79, -108.48"},
+            {"ogg:streams-total", "streams-total", "2"},
+            {"iso19115:keywords:2", "Keywords 2", "climate"},
+            {"iso19115:keywords-type:2", "KeywordsType 2", "theme"},
+            {"iso19115:thesaurus-name-title:2", "ThesaurusNameTitle 2", "GCMD"},
+            {"iso19115:thesaurus-name-alternative-title:2", "ThesaurusNameAlternativeTitle 2", "GCMD Keywords"},
+            {"geotopic:alt-name1", "Optional_NAME1", "United States"},
+            {"geotopic:alt-longitude12", "Optional_LONGITUDE12", "-98.5"},
+            {"iwork:document-id", "iworks:document-id", "ABC-123"},
+            {"dif:DIF-Entry_ID", "DIF-Entry_ID", "e-42"},
+            {"mdb-prop:Title", "MDB_PROP:Title", "My DB"},
+            {"mdb-user-prop:Owner", "MDB_USER_PROP:Owner", "me"},
+            {"mdb-summary-prop:Company", "MDB_SUMMARY_PROP:Company", "ACME"},
+            // bare-in-3.x families: egress strips the 4.x prefix
+            {"hdf:GRingPointLatitude", "GRingPointLatitude", "1.0 2.0"},
+            {"netcdf:project_id", "project_id", "IPCC"},
+            {"gdal:NETCDF_VARNAME", "NETCDF_VARNAME", "tasmax"},
+            {"isatab:Study Title", "Study Title", "Mouse study"},
+            {"mp4:com.apple.quicktime.author", "com.apple.quicktime.author", "someone"},
+            {"network:geo:lat", "geo:lat", "36.4"},
+            {"audio:x-vendor-extension", "x-vendor-extension", "v"},
+    };
+    private static final String[][] INGEST_ROWS = {
+            // {v3 key, v4 key, sample value}
+            {"NER_LOCATION", "ner:LOCATION", "Los Angeles"},
+            {"envi.samples", "envi:samples", "2400"},
+            {"streams-vorbis", "ogg:streams-vorbis", "1"},
+            {"Keywords 3", "iso19115:keywords:3", "ocean"},
+            {"Optional_LATITUDE1", "geotopic:alt-latitude1", "39.76"},
+            {"iworks:document-id", "iwork:document-id", "ABC-123"},
+            {"DIF-Entry_ID", "dif:DIF-Entry_ID", "e-42"},
+            {"MDB_PROP:Title", "mdb-prop:Title", "My DB"},
+            {"MDB_USER_PROP:Owner", "mdb-user-prop:Owner", "me"},
+            {"MDB_SUMMARY_PROP:Company", "mdb-summary-prop:Company", "ACME"},
+    };
+    // bare-in-3.x families carry no marker a rule could recognize, so ingest must NOT touch them
+    private static final String[] INGEST_PASSTHROUGH_KEYS = {
+            "GRingPointLatitude", "project_id", "Study Title", "com.apple.quicktime.author",
+            "x-vendor-extension", "File-Type-Description", "version", "Password",
+    };
+
+    @Test
+    public void prefixRuleFamiliesEgress() throws Exception {
+        for (String[] row : EGRESS_ROWS) {
+            assertMigrates(Direction.V4_TO_V3, row[0], row[1], row[2]);
+        }
+    }
+
+    @Test
+    public void prefixRuleFamiliesIngest() throws Exception {
+        for (String[] row : INGEST_ROWS) {
+            assertMigrates(Direction.V3_TO_V4, row[0], row[1], row[2]);
+        }
+    }
+
+    private static void assertMigrates(Direction direction, String from, String to, String value)
+            throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), direction);
+        Metadata m = new Metadata();
+        m.set(from, value);
+        apply(f, m);
+        assertEquals(value, m.get(to), from + " -> " + to);
+        assertNull(m.get(from), from + " should be removed");
+    }
+
+    @Test
+    public void bareFamilyKeysPassThroughOnIngest() throws Exception {
+        LegacyKeyMigrationFilter f = bundled(Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        for (String key : INGEST_PASSTHROUGH_KEYS) {
+            m.set(key, "v");
+        }
+        apply(f, m);
+        for (String key : INGEST_PASSTHROUGH_KEYS) {
+            assertEquals("v", m.get(key), key + " must pass through unchanged on ingest");
+        }
+    }
+
+    @Test
+    public void bundledTableEndToEnd() throws Exception {
+        // One behavior test over the committed table, pinning the three bug classes the
+        // TIKA-4816 round-3 review found shipped unpinned: (a) egress-only rows -- several 4.x
+        // keys share one bare 3.x spelling, restored on egress, ignored on ingest; (b) grobid's
+        // real 3.x spellings were grobid:header_<Field>, and bare generic words must not be
+        // mis-mapped; (c) ISO19115 v3 spellings are character-exact including trailing spaces.
+        LegacyKeyMigrationFilter egress = new LegacyKeyMigrationFilter();   // bundled, V4_TO_V3
+        Metadata m = new Metadata();
+        m.set("hdf:file-type-description", "HDF5");
+        m.set("mp3:version", "MPEG 3 Layer III");
+        m.set("mdb:password", "s3cret");
+        m.set("grobid:tei:abstract", "text");
+        apply(egress, m);
+        assertEquals("HDF5", m.get("File-Type-Description"));
+        assertEquals("MPEG 3 Layer III", m.get("version"));
+        assertEquals("s3cret", m.get("Password"));
+        assertEquals("text", m.get("grobid:header_Abstract"));
+        assertNull(m.get("hdf:file-type-description"));
+
+        Metadata m2 = new Metadata();
+        m2.set("netcdf:file-type-description", "NetCDF-4");
+        m2.set("ogg:codec-version", "Theora 3.2.1");
+        apply(egress, m2);
+        assertEquals("NetCDF-4", m2.get("File-Type-Description"));
+        assertEquals("Theora 3.2.1", m2.get("version"));
+
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata m3 = new Metadata();
+        m3.set("grobid:header_Title", "A Paper");
+        m3.set("Title", "not grobid's");            // bare generic word: must pass through
+        m3.set("AccessContraints ", "restricted");  // sic: upstream typo + trailing space
+        apply(ingest, m3);
+        assertEquals("A Paper", m3.get("grobid:tei:title"));
+        assertEquals("not grobid's", m3.get("Title"));
+        assertEquals("restricted", m3.get("iso19115:access-constraints"));
+        assertNull(m3.get("grobid:header_Title"));
+        assertNull(m3.get("AccessContraints "));
     }
 }

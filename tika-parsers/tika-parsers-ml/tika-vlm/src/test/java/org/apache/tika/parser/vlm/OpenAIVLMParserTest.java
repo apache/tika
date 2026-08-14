@@ -34,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -77,7 +78,7 @@ public class OpenAIVLMParserTest {
                 buildChatResponse(ocrText, 100, 20)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         BodyContentHandler handler = new BodyContentHandler();
         byte[] fakeImage = new byte[]{(byte) 0x89, 'P', 'N', 'G'};
@@ -115,7 +116,7 @@ public class OpenAIVLMParserTest {
         server.enqueue(new TikaTestHttpServer.MockResponse(500, "{\"error\":\"boom\"}"));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(
@@ -131,7 +132,7 @@ public class OpenAIVLMParserTest {
         parser = new OpenAIVLMParser(config);
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         BodyContentHandler handler = new BodyContentHandler();
 
         try (TikaInputStream tis = TikaInputStream.get(
@@ -148,7 +149,7 @@ public class OpenAIVLMParserTest {
         parser = new OpenAIVLMParser(config);
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[10]))) {
@@ -171,7 +172,7 @@ public class OpenAIVLMParserTest {
                 buildChatResponse("text", 10, 5)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{(byte) 0xFF, (byte) 0xD8}))) {
@@ -197,7 +198,7 @@ public class OpenAIVLMParserTest {
                 buildChatResponse("text", 10, 5)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(
                 new ByteArrayInputStream(new byte[]{(byte) 0xFF, (byte) 0xD8}))) {
@@ -235,7 +236,7 @@ public class OpenAIVLMParserTest {
                 buildChatResponse("ok", 10, 5)));
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         ParseContext ctx = new ParseContext();
         ctx.set(VLMOCRConfig.class, override);
 
