@@ -290,7 +290,7 @@ public class PerClientServerManager implements ServerManager {
 
     @Override
     public void connectionAbandoned() {
-        LOG.info("clientId={}: connection abandoned mid-request, recycling the worker", clientId);
+        LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
         pendingRestart = true;
     }
 

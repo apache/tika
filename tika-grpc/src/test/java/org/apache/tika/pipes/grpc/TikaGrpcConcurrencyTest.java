@@ -80,7 +80,7 @@ public class TikaGrpcConcurrencyTest {
      */
     @Test
     public void concurrentCallsAllParseTheirOwnDocument(Resources resources) throws Exception {
-        runConcurrentBurst(resources, writeConfig(null, null, null));
+        runConcurrentBurst(resources, writeConfig(null, null, null), false);
     }
 
     /**
@@ -91,12 +91,16 @@ public class TikaGrpcConcurrencyTest {
      */
     @Test
     public void sharedServerModeParsesConcurrently(Resources resources) throws Exception {
-        runConcurrentBurst(resources, writeConfig(null, null, Boolean.TRUE));
+        runConcurrentBurst(resources, writeConfig(null, null, Boolean.TRUE), true);
     }
 
-    private void runConcurrentBurst(Resources resources, Path config) throws Exception {
+    private void runConcurrentBurst(Resources resources, Path config, boolean expectSharedMode)
+            throws Exception {
         int concurrency = 4;
         TikaGrpcServerImpl service = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
+        // the burst alone can't tell the modes apart
+        assertEquals(expectSharedMode, service.pipesParser.isSharedMode(),
+                "pipes.useSharedServer did not take effect");
         List<File> testFiles = new ArrayList<>();
         ExecutorService pool = Executors.newFixedThreadPool(concurrency);
         try {
