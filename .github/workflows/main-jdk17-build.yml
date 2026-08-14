@@ -27,6 +27,26 @@ on:
     paths-ignore:
       - 'docs/**'
 
+# Superseded PR runs are dead work: cancel them. Never cancel a main build --
+# that run is the record for a commit that is already merged.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Single source of truth for the build/integration-tests shard split: the
+  # `integration-tests` job runs exactly these modules and the `build` job
+  # excludes exactly these modules, both derived from this one list.
+  #
+  # Do NOT split this into two hand-maintained lists. The dangerous direction is
+  # silent: a module excluded from `build` but missing from the shard runs
+  # nowhere, and CI stays green while the tests stop existing.
+  #
+  # These six are ~15 of the build's 37 minutes -- five are testcontainers-backed
+  # (Elasticsearch/OpenSearch/Solr/Kafka/MinIO) and tika-pipes-integration-tests
+  # forks JVMs. Adding a slow IT module here is the intended way to rebalance.
+  IT_MODULES: ':tika-pipes-integration-tests,:tika-pipes-es-integration-tests,:tika-pipes-opensearch-integration-tests,:tika-pipes-solr-integration-tests,:tika-pipes-kafka-integration-tests,:tika-pipes-s3-integration-tests'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,14 +65,54 @@ jobs:
           cache: 'maven'
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
+      # Everything except $IT_MODULES, which the integration-tests job owns.
+      # sed turns each ':artifactId' into the '!:artifactId' exclusion form.
       - name: Build with Maven
-        run: mvn clean apache-rat:check test install javadoc:aggregate -Pci -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: |
+          mvn clean apache-rat:check test install javadoc:aggregate -Pci \
+            -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
+            -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # No `needs: build`, same reasoning as e2e-tests below: this job installs the
+    # reactor itself, so gating on build would only serialize it.
+    strategy:
+      matrix:
+        java: [ '17' ]
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+      - name: Install external tools
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
+      # Full reactor for the same reason as the e2e job: these modules depend on
+      # the tika-pipes plugin zips, and a zip-type dependency never matches a
+      # jar-packaging reactor module, so -am cannot supply them. -Pfast keeps it
+      # to ~3 min; the tests themselves run in the next step.
+      - name: Install all modules (produces the plugin zips)
+        run: mvn clean install -Pfast -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      # apache-rat:check here too -- the build job no longer sees these modules,
+      # so without this they would drop out of license checking entirely.
+      - name: Run integration tests
+        run: |
+          mvn clean apache-rat:check test -Pci \
+            -pl "$IT_MODULES" \
+            -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
   e2e-tests:
     runs-on: ubuntu-latest
     # full-reactor install added; 30 was tight for it
     timeout-minutes: 45
-    needs: build
+    # No `needs: build` on purpose: this job checks out and installs the reactor
+    # itself, so it consumes nothing from `build`. Gating on it only serialized
+    # ~5 min onto the critical path.
     strategy:
       matrix:
         java: [ '17' ]
@@ -69,9 +129,10 @@ jobs:
       # zip-type dependency never matches a jar-packaging reactor module, so -am treats every
       # plugin zip as external and skips building those modules entirely. install (not verify)
       # because the assembly sets attach=false (TIKA-4723) and an install-phase install-file is
-      # what puts each zip in the local repo. Tests are skipped here; the build job owns them.
+      # what puts each zip in the local repo. -Pfast (skipTests + rat/checkstyle/spotless
+      # off) because the build job owns all of that; this job only needs the artifacts.
       - name: Install all modules (produces the plugin zips)
-        run: mvn clean install -DskipTests -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn clean install -Pfast -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
       # -pl must name the leaf modules: tika-e2e-tests is an aggregator pom, and Maven does
       # not pull in a selected aggregator's children, so this job built two pom-only modules
       # and ran zero tests while reporting green.
