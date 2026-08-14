@@ -227,6 +227,14 @@ public class PipesClient implements Closeable {
             // Update server manager's file counter for maxFilesProcessedPerProcess tracking
             serverManager.incrementFilesProcessed(pipesConfig.getMaxFilesProcessedPerProcess());
         } catch (InterruptedException | SecurityException e) {
+            // The request is still in flight on the connection. A pooled client
+            // is handed to the next caller after this throw, and a live orphaned
+            // request would stall that caller's ping until the socket timeout.
+            try {
+                closeConnection();
+            } catch (InterruptedException e2) {
+                Thread.currentThread().interrupt();
+            }
             throw e;
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
