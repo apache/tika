@@ -111,6 +111,11 @@ Release 4.0.0 - ???
 
   OTHER CHANGES
 
+   * PipesClient/PipesServer IPC now enforces a configurable payload limit
+     (pipes.maxIpcPayloadBytes, default 100 MB) in both directions. Results
+     that exceed the limit return PAYLOAD_LIMIT_EXCEEDED instead of causing
+     heap exhaustion; crash messages are also size-capped (TIKA-4793).
+
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
 

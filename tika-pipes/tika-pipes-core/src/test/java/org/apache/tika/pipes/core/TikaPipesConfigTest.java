@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.server.ServerProtocolIO;
 
 public class TikaPipesConfigTest extends TikaTest {
 
@@ -63,10 +64,20 @@ public class TikaPipesConfigTest extends TikaTest {
     }
 
     @Test
-    void testMaxIpcPayloadBytesRejectsNonPositive() {
+    void testMaxIpcPayloadBytesRejectsTooSmall() {
         PipesConfig config = new PipesConfig();
+        // 0 and -1 are rejected (below MIN_FALLBACK_PAYLOAD_BYTES)
         assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(0));
         assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(-1));
+        // A small-but-positive value below the minimum is also rejected
+        int belowMin = ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES - 1;
+        if (belowMin > 0) {
+            assertThrows(IllegalArgumentException.class, () -> config.setMaxIpcPayloadBytes(belowMin));
+        }
+        // A value at or above the minimum is accepted
+        int atMin = ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES;
+        config.setMaxIpcPayloadBytes(atMin);
+        assertEquals(atMin, config.getMaxIpcPayloadBytes());
     }
 
     @Test

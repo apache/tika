@@ -104,7 +104,7 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.resources = resources;
         this.pipesConfig = pipesConfig;
         this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
     @Override
@@ -181,6 +181,20 @@ public class ConnectionHandler implements Runnable, Closeable {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
+                            if (t instanceof Error) {
+                                // OOM or other JVM-level error: don't trust the heap; exit
+                                // immediately. Everything before the exit is best-effort and
+                                // inside the try -- a secondary OOM in logging or writeCrash
+                                // must not escape and leave this shared JVM alive post-Error.
+                                try {
+                                    LOG.error("handlerId={}: fatal JVM error; exiting", handlerId, t);
+                                    protocolIO.writeCrash(PipesMessageType.OOM, t);
+                                } catch (Throwable ignored) {
+                                    //swallow
+                                } finally {
+                                    System.exit(PipesMessageType.OOM.getExitCode().orElse(18));
+                                }
+                            }
                             // respond, or the client blocks until socket timeout and
                             // restarts a healthy server
                             LOG.error("handlerId={}: error processing request", handlerId, t);

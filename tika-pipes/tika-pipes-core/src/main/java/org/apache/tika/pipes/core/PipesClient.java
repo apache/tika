@@ -421,6 +421,16 @@ public class PipesClient implements Closeable {
                         if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
                             emitDataImpl.setParseContext(t.getParseContext());
                         }
+                        // The server's static PAYLOAD_LIMIT_EXCEEDED fallback frame carries null
+                        // emitData/emitKey. AsyncEmitter silently skips null-emitData results, so
+                        // the document would disappear from the audit trail. Rebuild with the
+                        // original emit key using what partial metadata we have.
+                        if (result.emitData() == null
+                                && result.status() == PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED) {
+                            return buildFatalResult(t.getId(), t.getEmitKey(),
+                                    PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                                    intermediateResult.get());
+                        }
                         return result;
                     default:
                         throw new IOException("Unexpected message type from server: " + msg.type());
