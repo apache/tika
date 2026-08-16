@@ -45,7 +45,6 @@
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "shutdownClientAfterMillis": 300000,
     "numClients": 4,
     "maxFilesProcessedPerProcess": 10000,
     "forkedJvmArgs": [

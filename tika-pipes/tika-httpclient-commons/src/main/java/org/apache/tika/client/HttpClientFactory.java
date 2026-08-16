@@ -80,8 +80,9 @@ import org.apache.tika.utils.StringUtils;
 /**
  * This holds quite a bit of state and is not thread safe.  Beware!
  * <p>
- * TLS certificate/hostname verification is off unless {@link #setVerifySsl(boolean)}
- * is called with {@code true} (the http-fetcher does so by default).
+ * TLS certificates and hostnames are verified against the JVM trust store unless
+ * {@link #setVerifySsl(boolean)} is called with {@code false}, which accepts any
+ * certificate and skips the hostname check.
  */
 public class HttpClientFactory {
 
@@ -106,7 +107,7 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
-    private boolean verifySsl = false;
+    private boolean verifySsl = true;
 
     public String getProxyHost() {
         return proxyHost;

@@ -146,7 +146,9 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/rmeta/text
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/language
 ----
 
-*Expected:* Two-letter language code (e.g., `en`, `th`).
+*Expected:* An ISO 639 code, i.e. 2-3 lowercase letters. Do not assert a *particular*
+language here: `testPDF.pdf` carries too little text for detection to be reliable, which
+is why `run-uat.sh` matches `^[a-z]{2,3}$` rather than a specific code.
 
 === Test 12: PUT /unpack/all
 
@@ -237,7 +239,7 @@ EOF
 java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-pipes-no-flags.json
 ----
 
-*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `allowPipes` to be `true`. The same applies to `async`. (`/status` is no longer gated — it can be enabled simply by listing `status` under `endpoints`.)
+*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `allowPipes` to be `true`. The same applies to `async`. `/status` is not gated — listing `status` under `endpoints` is enough.
 
 == Part 2: Tests with allowPipes / allowPerRequestConfig
 
@@ -351,14 +353,20 @@ java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config.json &
 
 == Headers
 
-=== Test 26: X-Tika-OCRskipOcr Header
+=== Test 26: Removed X-Tika-* headers are ignored
+
+The `X-Tika-OCR*` and `X-Tika-PDF*` header families no longer exist — `grep X-Tika`
+over `tika-server/` finds nothing. This test only confirms that sending one is inert
+rather than an error; it does *not* change OCR behaviour.
 
 [source,bash]
 ----
 curl -s -X PUT -H "X-Tika-OCRskipOcr: true" -T testPDF.pdf http://localhost:9998/tika/text
 ----
 
-*Expected:* Text extraction without OCR.
+*Expected:* HTTP 200 with the same body as the same request without the header. To
+configure OCR in 4.x, use `tika-config.json` (or per-request config where enabled) —
+see xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating tika-server to 4.x].
 
 === Test 27: Content-Disposition Filename
 
@@ -501,8 +509,8 @@ The server automatically configures the required fetcher and emitter for pipes-b
 
 Both temp directories are cleaned up on server shutdown.
 
-If a user config file does not include `plugin-roots`, the server automatically adds a default value pointing to a `plugins` directory in the current working directory.
+If a user config file does not include `plugin-roots`, the server automatically adds a default value: a `plugins` directory beside the server jar if one exists, otherwise `plugins` in the current working directory. An explicit `plugin-roots` in the user config is never overwritten.
 
 === Security Boundary
 
-Child processes (pipes workers) are configured with `basePath` rather than `allowAbsolutePaths`, ensuring they can only access files within their designated temp directories. This provides a security boundary between the parent server process and forked child processes.
+Forks are configured with `basePath` rather than `allowAbsolutePaths`, ensuring they can only access files within their designated temp directories. This provides a security boundary between the parent server process and its forks.

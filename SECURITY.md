@@ -19,44 +19,35 @@
 
 # Security Policy
 
-For known security vulnerabilities, see: **https://tika.apache.org/security.html**
-
 ## Security Model
 
-Before reporting, please review Tika's security model to understand what is and isn't considered a vulnerability:
-- [Apache Tika Security Model](https://tika.apache.org/security-model.html)
+Before reporting, review Tika's
+[security model](https://tika.apache.org/security-model.html) to understand what is and
+isn't considered a vulnerability.
 
 ## Reporting a Vulnerability
 
-The Apache Tika project takes security seriously. We appreciate your efforts to responsibly disclose your findings.
+**Do NOT report security vulnerabilities through public GitHub or JIRA issues.**
 
-**Please do NOT report security vulnerabilities through public GitHub or JIRA issues.**
+Report them privately to the [Apache Security Team](https://www.apache.org/security/) at
+[security@apache.org](mailto:security@apache.org), including:
 
-Instead, please report security vulnerabilities privately to the Apache Tika team and to the Apache Security Team:
-
-- **Email**: [security@apache.org](mailto:security@apache.org)
-- **More information**: [Apache Security Team](https://www.apache.org/security/)
-
-Please include:
 - Description of the vulnerability
 - Steps to reproduce
 - Affected versions
-- Any potential mitigations you've identified
-
+- Any potential mitigations you have identified
 
 ## Security Advisories
 
-Known vulnerabilities are published at:
-- [Apache Tika Security](https://tika.apache.org/security.html)
-- [CVE Database](https://cve.mitre.org/)
+Known vulnerabilities are published on the
+[Apache Tika security page](https://tika.apache.org/security.html) and in the
+[CVE database](https://cve.mitre.org/).
 
 ## Supported Versions
 
-We provide security updates for:
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 4.x     | :white_check_mark: |
-| 3.x     | :white_check_mark: |
-| 2.x     | :x: (EOL April 2025) |
-| < 2.0   | :x:                |
+| Version | Security updates    |
+| ------- | ------------------- |
+| 4.x     | Yes                 |
+| 3.x     | Yes                 |
+| 2.x     | No (EOL April 2025) |
+| < 2.0   | No                  |

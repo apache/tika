@@ -17,6 +17,9 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,13 +34,12 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.server.ServerProtocolIO;
+import org.apache.tika.utils.StringUtils;
 
 public class PipesConfig {
 
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
-
-    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS = 300000;
 
     /** Past this, worker count becomes a memory decision, and memory is not visible here. */
     public static final int MAX_AUTO_NUM_CLIENTS = 4;
@@ -97,7 +99,6 @@ public class PipesConfig {
      */
     private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
 
-    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS;
     private int numClients = defaultNumClients();
 
     private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS;
@@ -259,20 +260,6 @@ public class PipesConfig {
      */
     public void setHeartbeatIntervalMillis(long heartbeatIntervalMillis) {
         this.heartbeatIntervalMillis = heartbeatIntervalMillis;
-    }
-
-    public long getShutdownClientAfterMillis() {
-        return shutdownClientAfterMillis;
-    }
-
-    /**
-     * If the client has been inactive after this many milliseconds,
-     * shut it down.
-     *
-     * @param shutdownClientAfterMillis
-     */
-    public void setShutdownClientAfterMillis(long shutdownClientAfterMillis) {
-        this.shutdownClientAfterMillis = shutdownClientAfterMillis;
     }
 
     public int getNumClients() {
@@ -497,6 +484,20 @@ public class PipesConfig {
      */
     public String getTempDirectory() {
         return tempDirectory;
+    }
+
+    /**
+     * Creates a temp directory under {@link #getTempDirectory()}, or under the system default
+     * when unset. Callers must not use {@code Files.createTempDirectory} directly or the
+     * configured directory is silently ignored.
+     */
+    public Path createTempDirectory(String prefix) throws IOException {
+        if (StringUtils.isBlank(tempDirectory)) {
+            return Files.createTempDirectory(prefix);
+        }
+        Path base = Paths.get(tempDirectory);
+        Files.createDirectories(base);
+        return Files.createTempDirectory(base, prefix);
     }
 
     /**

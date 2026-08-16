@@ -16,64 +16,46 @@
 //
 
 = Getting Started with Apache Tika
-:toc:
 
-Apache Tika can be used in several ways depending on your needs. Choose the approach
-that best fits your use case.
+Four ways to use Tika. Pick by how you need to call it.
 
-== Choose Your Integration Method
-
-xref:using-tika/java-api/index.adoc[Java API]::
-Use Tika directly in your Java application. Best for tight integration and full control
-over parsing behavior.
-
-xref:using-tika/cli/index.adoc[Command Line (tika-app)]::
-Run Tika from the command line. Best for quick extraction, scripting, and one-off tasks.
-
-xref:using-tika/server/index.adoc[Server (REST API)]::
-Run Tika as a standalone server with a REST API. Best for language-agnostic integration
-and microservice architectures.
-
-xref:using-tika/grpc/index.adoc[gRPC]::
-Use Tika via gRPC protocol. Best for high-performance, cross-language communication.
-+
-NOTE: tika-grpc is more exposed by default than tika-server — by default it has no
-transport security or per-caller authorization, and its core fetch-and-parse surface
-is always on. (Its most dangerous capabilities — runtime fetcher/iterator changes and
-per-request parse configuration — are off by default.) Run it only on a trusted,
-access-controlled network. See the
-xref:using-tika/grpc/index.adoc#_security[Security] section.
-
-== Which Should I Use?
-
-[cols="1,3"]
+[cols="1,2,2"]
 |===
-|Use Case |Recommended Approach
+|Integration |What it is |Best for
 
-|Java application needing content extraction
-|Java API
+|xref:using-tika/java-api/index.adoc[Java API]
+|Tika embedded in your Java application
+|Tight integration and full control over parsing behavior
 
-|Shell scripts or batch processing
-|Command Line
+|xref:using-tika/cli/index.adoc[Command line (`tika-app`)]
+|A standalone jar you run per file or per directory
+|Quick extraction, shell scripts, one-off tasks
 
-|Non-Java application (Python, Node.js, etc.)
-|Server (REST) or gRPC
+|xref:using-tika/server/index.adoc[Server (REST)]
+|A standalone service with an HTTP API
+|Language-agnostic integration and microservice architectures
 
-|High-throughput processing pipeline
-|Server or gRPC with xref:pipes/index.adoc[Pipes]
-
-|Quick one-time extraction
-|Command Line
+|xref:using-tika/grpc/index.adoc[gRPC]
+|A standalone service speaking gRPC
+|High-performance, cross-language communication
 |===
 
-== Scalable Processing
+NOTE: tika-grpc is more exposed by default than tika-server: no transport security, no per-caller
+authorization, and its core fetch-and-parse surface is always on. (Its most dangerous
+capabilities — runtime fetcher/iterator changes and per-request parse configuration — are off by
+default.) Run it only on a trusted, access-controlled network. See
+xref:using-tika/grpc/index.adoc#_security[Security].
 
-For processing large volumes of documents, see xref:pipes/index.adoc[Tika Pipes],
-which provides fault-tolerant, scalable document processing and works with all of the
-above integration methods.
+For large volumes of documents, xref:pipes/index.adoc[Tika Pipes] adds fault-tolerant, scalable
+processing and works with all four.
+
+To run the server or gRPC service from a published image rather than a distribution zip, see
+xref:using-tika/docker.adoc[Running Tika in Docker].
 
 == Resources
 
-* https://tika.apache.org/[Apache Tika Website] - Official project website
-* https://tika.apache.org/{tika-stable-version}/formats.html[Supported Formats] - File formats Tika can parse
-* https://tika.apache.org/{tika-stable-version}/api/[API Documentation] - Javadoc
+* https://tika.apache.org/download.html[Downloads] — jars, the `tika-app` and `tika-server` zips
+* https://hub.docker.com/r/apache/tika[Docker images] — `apache/tika` on Docker Hub
+* https://tika.apache.org/[Apache Tika website]
+* https://tika.apache.org/{tika-stable-version}/formats.html[Supported formats] — what Tika can parse
+* https://tika.apache.org/{tika-stable-version}/api/[Javadoc]

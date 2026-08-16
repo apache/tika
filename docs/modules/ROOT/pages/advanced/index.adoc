@@ -26,23 +26,34 @@ xref:pipes/index.adoc[Tika Pipes] (pipeline + Pipes-mode tuning),
 xref:using-tika/server/index.adoc[Tika Server] (REST + server config), or
 xref:using-tika/cli/index.adoc[Tika CLI] (`tika-app` flags). The
 xref:advanced/setting-limits.adoc[Setting Limits] page is the model — it
-covers Java, JSON, and CLI side by side. Filing issues against specific
+covers the Java API and the JSON config side by side. Filing issues against specific
 advanced pages where the JSON/CLI equivalent isn't documented yet helps us
 prioritize the gap.
 
-== Topics
+== Running untrusted content safely
 
-* xref:advanced/language-detection.adoc[Language Detection] - Built-in bigram language detector, training pipeline, and comparison with OpenNLP
-* xref:advanced/language-detection-build.adoc[Building the Language Detector] - Full training log, decisions, and benchmark results vs OpenNLP
-* xref:advanced/robustness.adoc[Robustness] - Process isolation and fault tolerance when parsing untrusted content
-* xref:advanced/setting-limits.adoc[Setting Limits] - Limiting metadata size and resource consumption when processing untrusted content
-* xref:advanced/spooling.adoc[TikaInputStream and Spooling] - Understanding how TikaInputStream handles buffering, caching, and spooling to disk
-* xref:advanced/embedded-documents.adoc[Embedded Document Metadata] - Understanding how Tika tracks embedded documents and their paths
-* xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] - How Tika detects and recovers truncated ZIP-based files
+* xref:advanced/robustness.adoc[Robustness] — process isolation and fault tolerance
+* xref:advanced/setting-limits.adoc[Setting Limits] — depth, size, timeout, and metadata bounds
+* xref:advanced/spooling.adoc[TikaInputStream and Spooling] — buffering, rewinding, and spilling to disk
 
-* xref:advanced/local-vlm-server.adoc[Running a Local VLM Server] - Run an open-source VLM locally as an OpenAI-compatible endpoint for air-gapped OCR
+== Detection and text quality
 
-== Integration Testing
+* xref:advanced/language-detection.adoc[Language Detection] — the built-in CharSoup detector
+* xref:advanced/language-detection-build.adoc[Building the Language Detector] — training and benchmarks
+* xref:advanced/charsoup-supported-languages.adoc[CharSoup Supported Languages] — the 204 output classes
+* xref:advanced/junk-detection.adoc[Text Quality Scoring (Junk Detection)] — scoring text for corruption
+* xref:advanced/junk-detection-build.adoc[Building the Junk Detector] — training and model format
+* xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline] — how the encoding-detector chain arbitrates
+* xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] — recovering truncated ZIP-based files
 
-* xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App] - Integration testing strategies for Tika App
-* xref:advanced/integration-testing/tika-server.adoc[Testing with Tika Server] - Integration testing strategies for Tika Server
+== Parsing internals
+
+* xref:advanced/embedded-documents.adoc[Embedded Document Metadata] — how Tika tracks embedded documents and their paths
+* xref:advanced/local-vlm-server.adoc[Running a Local VLM Server] — an OpenAI-compatible endpoint for air-gapped OCR
+
+== Integration testing
+
+* xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App]
+* xref:advanced/integration-testing/tika-server.adoc[Testing with Tika Server]
+* xref:advanced/integration-testing/run-uat-script.adoc[Tika-Server REST UAT Script]
+* xref:advanced/integration-testing/tika-eval-regression.adoc[Regression evaluation with tika-app + tika-eval]

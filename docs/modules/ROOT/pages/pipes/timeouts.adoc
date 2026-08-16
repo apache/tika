@@ -16,6 +16,8 @@
 //
 
 = Timeouts
+:toc:
+:toclevels: 3
 
 == Overview
 
@@ -74,9 +76,11 @@ configuration, alongside any per-parser timeouts:
 
 == How Timeouts Are Reported
 
+=== The two outcomes
+
 There are two families of outcome:
 
-* **The document survives.** The worker JVM is healthy and everything extracted so far is
+* **The document survives.** The fork is healthy and everything extracted so far is
   emitted. Interior timeouts are reported in metadata:
   ** An embedded document whose external call timed out carries a recorded
      `TikaTimeoutException` (its message reports the requested and granted budget);
@@ -87,9 +91,11 @@ There are two families of outcome:
      skipped cleanly, the document metadata carries `TikaCoreProperties.TASK_DEADLINE_REACHED = true`, and the
      result status is `PARTIAL_TIMEOUT`. The content is complete up to the point the
      budget was exhausted.
-* **The worker is lost.** A genuine hang (or an unkillable child process) forces the
-  forked JVM to exit; the client restarts it automatically and the result status is
+* **The fork is lost.** A genuine hang (or an unkillable child process) forces the
+  fork to exit; the client restarts it automatically and the result status is
   `TIMEOUT`. Content for that document is lost (except any intermediate result).
+
+=== The hard watchdog
 
 In Pipes mode, a hard external watchdog backs up the cooperative `PARTIAL_TIMEOUT` path
 above rather than racing it: it does not fire until
@@ -99,6 +105,8 @@ remaining embedded documents, then filter and emit a `PARTIAL_TIMEOUT` result --
 actually run once the deadline is hit, rather than the hard kill landing on top of it at
 the same instant. A wind-down that itself hangs is still caught, just via the ordinary
 stall detector (`progressTimeoutMillis` of silence) rather than the total-timeout path.
+
+=== Reading a timeout message
 
 Every timeout message reports the *requested* budget, the *granted* budget, and which
 limit did the clipping, e.g.:
@@ -126,8 +134,8 @@ The blast radius of that exception depends on how you call Tika:
 * **Library usage** (`Tika`/`Parser.parse()` called directly): the exception propagates
   to your own call site as an ordinary uncaught `RuntimeException`, which you can catch
   around the parse call like any other.
-* **Pipes mode**: the pipes worker catches the exception itself -- it does *not* crash
-  the forked JVM or affect other in-flight documents. The exception's stack trace is
+* **Pipes mode**: the fork catches the exception itself -- it does *not* crash
+  the fork's JVM or affect other in-flight documents. The exception's stack trace is
   recorded in the document's `tk:exception:container-exception` metadata, parsing of
   that document stops where the exception was thrown, and the result is reported as
   `PARTIAL_TIMEOUT` with whatever content was extracted up to that point -- the same
@@ -217,22 +225,22 @@ builds).
 * *What happens:* the process is forcibly killed at its 120 s budget and the timeout is
   recorded against that call, exactly as in scenario 2 -- the kill is fire-and-forget,
   so Tika does not wait for an unkillable child to actually die. If the wedged child (or
-  threads still tied to it) subsequently leaves the worker genuinely silent, the stall
-  detector fires 60 s later and exits the forked JVM.
+  threads still tied to it) subsequently leaves the fork genuinely silent, the stall
+  detector fires 60 s later and exits the fork.
 * *What you see:* no dedicated diagnostic distinguishes this from an ordinary timeout:
   first the per-call timeout (`requested=120000ms, granted=120000ms -- budget
-  exhausted`), then -- if the worker stalls -- status `TIMEOUT` with the generic
+  exhausted`), then -- if the fork stalls -- status `TIMEOUT` with the generic
   `no progress for 60000ms` message. Zombie `tesseract` processes on the host are the
   telltale.
 * *What to change:* no timeout setting helps. This is an environment problem (the OCR
   binary, the filesystem).
 
-=== 7. The worker JVM dies
+=== 7. The forked JVM dies
 
-The OS OOM-killer takes the forked JVM mid-parse.
+The OS OOM-killer takes the fork mid-parse.
 
-* *What happens:* all messages from the worker stop. The client's socket read times out
-  (`pipes.socketTimeoutMillis`, default 60 s) and the client restarts the worker.
+* *What happens:* all messages from the fork stop. The client's socket read times out
+  (`pipes.socketTimeoutMillis`, default 60 s) and the client restarts the fork.
 * *What you see:* status `TIMEOUT` with a client-side socket timeout stack trace and no
   server diagnostic (the server is gone).
 * *What to change:* infrastructure -- typically raise `-Xmx` in `pipes.forkedJvmArgs` or
@@ -260,7 +268,7 @@ The OS OOM-killer takes the forked JVM mid-parse.
 |Unkillable child process: environment problem; no timeout setting helps
 
 |`TIMEOUT`, client socket timeout, no server messages
-|Worker JVM died: memory/infrastructure
+|Fork died: memory/infrastructure
 |===
 
 == Misconfiguration Handling
@@ -268,62 +276,66 @@ The OS OOM-killer takes the forked JVM mid-parse.
 Some invalid combinations are rejected outright; suspicious ones produce a warning;
 the rest are safe by construction.
 
-*Rejected at config load or startup:*
+[cols="3,1,4"]
+|===
+|Setting or combination |Handling |Notes
 
-* Negative values for `totalTaskTimeoutMillis` or `progressTimeoutMillis` (zero is
-  accepted in some combinations -- see below).
-* `progressTimeoutMillis: 0` with a *positive* `totalTaskTimeoutMillis` -- the stall
-  detector would fire at the first check, killing every task immediately despite the
-  remaining total budget. Rejected at config load, and again at task start for
-  programmatically-built limits.
-* `pipes.socketTimeoutMillis` less than or equal to `pipes.heartbeatIntervalMillis` -- the client
-  would kill a healthy server between heartbeats.
-* Unknown or renamed configuration fields (including pre-4.0 `timeoutSeconds` names) --
-  configuration parsing fails on unknown properties rather than silently ignoring them.
+|Negative `totalTaskTimeoutMillis` or `progressTimeoutMillis`
+|Rejected
+|At config load. The rejection message points at `Long.MAX_VALUE` as the unbounded sentinel.
 
-*Warned, but allowed (clamped rather than rejected):*
+|`progressTimeoutMillis: 0` with a *positive* `totalTaskTimeoutMillis`
+|Rejected
+|The stall detector would fire at the first check, killing every task immediately despite the remaining total budget. Rejected at config load, and again at task start for programmatically-built limits.
 
-* Zero or negative per-parser timeout (e.g. `tesseract-ocr-parser.timeoutMillis: 0`) --
-  treated as unset and clamped to whatever remains of the document budget. Warned once
-  per *task* at runtime rather than rejected at config load: there is no single
-  chokepoint across the several per-parser config classes to validate this centrally.
-* A per-parser timeout larger than `totalTaskTimeoutMillis` (e.g., tesseract at 900 s
-  with a 600 s total). This is allowed because a per-request override may raise the total
-  for individual documents; but with these values as-is, the parser can never receive its
-  full budget. Warned once per task at runtime, when the oversized request is first
-  budgeted -- there is no config-load warning, since per-parser configs and
-  `TimeoutLimits` are not cross-validated at load time.
-* `progressTimeoutMillis` greater than or equal to `totalTaskTimeoutMillis` -- stall
-  detection is effectively disabled, since the total deadline always arrives first.
-  Warned when the task starts.
-* `totalTaskTimeoutMillis` or `progressTimeoutMillis` above zero but under one second --
-  almost always a seconds-vs-milliseconds mistake (an unconverted pre-4.0 value). Warned
-  when the task starts.
-* Per-parser (external-call) timeouts under one second -- same likely mistake. Warned
-  once per task at runtime.
+|`pipes.socketTimeoutMillis` ≤ `pipes.heartbeatIntervalMillis`
+|Rejected
+|The client would kill a healthy server between heartbeats.
 
-*Accepted without warning (a coherent edge case, not a misconfiguration):*
+|Unknown or renamed config fields (including pre-4.0 `timeoutSeconds` names)
+|Rejected
+|Config parsing fails on unknown properties rather than silently ignoring them.
 
-* Zero for *both* timeouts -- legal, and useful mainly in tests: it means the budget is
-  already exhausted, so the task fails at the next operation or embedded-document
-  boundary. A zero `totalTaskTimeoutMillis` alone is likewise legal (the total budget is
-  spent). Zero does *not* disable a timeout -- and a zero `progressTimeoutMillis` next
-  to a positive total is rejected outright (see above). To make stall detection
-  effectively inert, set `progressTimeoutMillis` at or above `totalTaskTimeoutMillis`
-  (see above).
-* `Long.MAX_VALUE` (`9223372036854775807`) for `totalTaskTimeoutMillis` or
-  `progressTimeoutMillis` -- the unbounded sentinel, and currently the only way to
-  "disable" either bound; there is no separate off switch. The rejection message for
-  negative values points at it.
-* A per-parser timeout larger than the time *remaining* in a document -- the grant is
-  clipped to what remains, and the result reports
-  `requested=... granted=... (task remaining)`.
+|Zero or negative per-parser timeout (e.g. `tesseract-ocr-parser.timeoutMillis: 0`)
+|Warned
+|Treated as unset and clamped to whatever remains of the document budget. Warned once per *task* at runtime, not at config load: there is no single chokepoint across the several per-parser config classes.
+
+|Per-parser timeout larger than `totalTaskTimeoutMillis`
+|Warned
+|Allowed because a per-request override may raise the total for individual documents; with these values as-is the parser can never receive its full budget. Warned once per task, when the oversized request is first budgeted — per-parser configs and `TimeoutLimits` are not cross-validated at load time.
+
+|`progressTimeoutMillis` ≥ `totalTaskTimeoutMillis`
+|Warned
+|Stall detection is effectively disabled, since the total deadline always arrives first. Warned at task start. This is also the supported way to make stall detection inert.
+
+|`totalTaskTimeoutMillis` or `progressTimeoutMillis` above zero but under one second
+|Warned
+|Almost always a seconds-vs-milliseconds mistake. Warned at task start.
+
+|Per-parser (external-call) timeout under one second
+|Warned
+|Same likely mistake. Warned once per task at runtime.
+
+|Zero for *both* timeouts, or a zero `totalTaskTimeoutMillis` alone
+|Accepted
+|Means the budget is already exhausted, so the task fails at the next operation or embedded-document boundary. Useful mainly in tests. Zero does *not* disable a timeout.
+
+|`Long.MAX_VALUE` (`9223372036854775807`) for either timeout
+|Accepted
+|The unbounded sentinel, and the only way to "disable" either bound — there is no separate off switch.
+
+|Per-parser timeout larger than the time *remaining* in a document
+|Accepted
+|The grant is clipped to what remains; the result reports `requested=... granted=... (task remaining)`.
+|===
 
 == Upgrading from Tika 3.x
 
 Several behavioral and configuration changes in 4.0 are easy to miss -- none of them shows
 up as a compile error, and most don't show up as a config validation failure either. They
 change what already-written code and already-tuned configs actually do.
+
+=== `TikaTimeoutException` is now checked
 
 `TikaTimeoutException` is now checked, not a `RuntimeException`. It extends
 `TikaException` so a single embedded document's timeout is recorded and its siblings
@@ -333,6 +345,8 @@ including a custom one you wrote -- silently stops catching it. This compiles wi
 warning; the only symptom is an exception that used to be caught now propagating
 instead. If you have such a catch block, add `TikaTimeoutException` (or its supertype
 `TikaException`) explicitly.
+
+=== `progressTimeoutMillis` no longer caps a single external call
 
 Deployments that raised `progressTimeoutMillis` to tolerate slow-but-legitimate OCR will
 see those calls start timing out again. Before 4.0, the stall detector doubled as an
@@ -344,6 +358,8 @@ Overview): a bounded external call that reports progress no longer needs a large
 timeout (e.g. `tesseract-ocr-parser.timeoutMillis`) or `totalTaskTimeoutMillis`. If your
 only lever was `progressTimeoutMillis`, raise the actual per-parser timeout instead --
 see Scenario 2.
+
+=== `timeoutSeconds` became `timeoutMillis`
 
 WARNING: Several parser timeout fields changed *both* their key name and their unit in
 4.0: `timeoutSeconds` became `timeoutMillis`, and every configured value must be
@@ -367,16 +383,20 @@ The configs that changed unit as well as name (old default -> new default):
 * Image embedding (`ImageEmbeddingConfig`): `timeoutSeconds` (120) -> `timeoutMillis`
   (120000)
 
+=== Renames without a unit change
+
 Several other pre-4.0 timeout fields were renamed to the `*TimeoutMillis`/`timeoutMillis`
 convention *without* a unit change -- they were already milliseconds, so a plain key
 rename with the existing value is correct for all of them: `PipesConfig`'s
 `socketTimeoutMs`/`startupTimeoutMs`/`heartbeatIntervalMs` (now `socketTimeoutMillis` /
 `startupTimeoutMillis` / `heartbeatIntervalMillis`), the async/pipes CLI's `--timeoutMs`
 flag (now `--timeoutMillis`), the DWG parser's `dwgReadTimeout` (now `timeoutMillis`,
-default unchanged at 300000), and `ExternalParser`'s `timeoutMs` (now `timeoutMillis`, a
-rename that landed in 4.0 itself so this doc previously lagged the code). Fields that are
-genuinely seconds-based and stayed that way (e.g. JDBC's `queryTimeoutSeconds`, which feeds
-`java.sql.Statement.setQueryTimeout(int seconds)` directly) were deliberately left alone.
+default unchanged at 300000), and `ExternalParser`'s `timeoutMs` (now `timeoutMillis`).
+Fields that are genuinely seconds-based and stayed that way (e.g. JDBC's
+`queryTimeoutSeconds`, which feeds `java.sql.Statement.setQueryTimeout(int seconds)`
+directly) were deliberately left alone.
+
+=== `ProcessUtils.checkCommand()` probe window
 
 `ProcessUtils.checkCommand()` -- used by several detectors and parsers
 (`FileCommandDetector`, `GDALParser`, etc.) to probe whether an external binary is
@@ -402,15 +422,16 @@ parseContext.setJsonConfig("timeout-limits",
 FetchEmitTuple t = new FetchEmitTuple("id",
     new FetchKey("my-fetcher", "large-document.pdf"),
     new EmitKey("my-emitter", "output-key"),
+    new Metadata(),
     parseContext);
 ----
 
-Enforcement happens in the forked server against the merged configuration (server config
+Enforcement happens in the fork against the merged configuration (server config
 with per-request values applied on top).
 
 A per-request override can lower timeouts freely, but raising them is capped at
 `pipes.maxTotalTaskTimeoutMillis` (default 1 hour): request values above the cap are
-clamped to it, with a warning in the forked server's log. This keeps a client from
+clamped to it, with a warning in the fork's log. This keeps a client from
 disabling the server's self-termination with an enormous requested timeout. Operators
 who need longer per-request budgets raise the cap; limits set in the server's own
 `parse-context` are trusted and never clamped.
@@ -430,15 +451,9 @@ they are parsed but have nothing to apply to, since there is no forked process t
 java -jar tika-app.jar --fork --task-timeout=600000 --progress-timeout=60000 document.pdf
 ----
 
-NOTE: The pre-4.0 `--fork-timeout` flag was removed because its meaning was ambiguous --
-it conflated the total per-file budget with the stall detector. Passing it now is a hard
-error naming `--task-timeout` and `--progress-timeout` as the replacements, rather than
-silently mapping to one or the other. `--fork-timeout` defaulted to `60000` (60 s) and, as
-the sole knob, acted as an effective hard kill for the whole parse. That single default is
-now split: `--task-timeout` (total per-file budget) defaults to `3600000` (1 hour) and
-`--progress-timeout` (stall detector) defaults to `120000` (2 minutes) -- so a fork-mode
-file that previously died around 60 s of inactivity now runs up to 2 minutes before the
-stall detector fires, and up to an hour overall.
+NOTE: `--fork-timeout` conflated the two budgets and is gone. Passing it is a hard error
+(`IllegalArgumentException`) naming `--task-timeout` and `--progress-timeout` as the
+replacements, rather than silently mapping to one or the other.
 
 === Pipes mode (`-i` / `-o`)
 

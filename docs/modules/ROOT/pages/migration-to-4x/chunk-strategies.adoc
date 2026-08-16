@@ -16,26 +16,35 @@
 //
 
 = Chunk Strategies for Search Engines
+:toc:
 
-Tika 4.x introduces a unified chunking and embedding pipeline (`tika-inference`) that produces
-a `tk:chunks` array on each document's metadata. This page describes the strategies for
-emitting those chunks to Elasticsearch and OpenSearch.
+Tika 4.x introduces a unified chunking and embedding pipeline (`tika-inference`) that puts a
+`tk:chunks` array on each document's metadata. This page describes how those chunks reach
+Elasticsearch and OpenSearch, and why the shipped strategy is the one it is.
 
-== Background
+== The `tk:chunks` Field
 
-The `tika-inference` module produces chunks from two sources:
+All chunk data lands in one metadata field, `tk:chunks`, as a JSON array. There is no
+separate field for image embeddings versus text embeddings — a chunk is a chunk, identified
+by which locators it carries:
 
-* **Text chunks** — the extracted text is split by the `MarkdownChunker` at heading/paragraph
-  boundaries, then each chunk is sent to a text embedding endpoint (e.g., OpenAI Embeddings API).
-  Each chunk carries a `TextLocator` (character offsets).
+[cols="1,3"]
+|===
+|Chunk kind |Produced by, and what it carries
 
-* **Image chunks** — rendered PDF page images (via PDFBox or Poppler) are sent to a CLIP-like
-  image embedding endpoint (e.g., Jina CLIP v2). Each chunk carries a `PaginatedLocator`
-  (page number) and a vector, but no text.
+|Text
+|`AbstractEmbeddingFilter` subclasses (e.g. `OpenAIEmbeddingFilter`) split `tk:content` with
+the `MarkdownChunker` and send each piece to a text embeddings endpoint. Carries `text`, a
+`vector`, and a `TextLocator` (character offsets).
 
-Both types are stored in the same `tk:chunks` metadata field as a JSON array. When multiple
-components produce chunks (e.g., image embedder runs during parsing, text embedder runs as a
-metadata filter), they merge into the same array via `ChunkSerializer.mergeInto()`.
+|Image
+|`OpenAIImageEmbeddingParser` sends rendered PDF page images (PDFBox or Poppler) to a
+CLIP-like image embeddings endpoint, e.g. Jina CLIP v2. Carries a `vector` and a
+`PaginatedLocator` (page number), and no `text`.
+|===
+
+`SpatialLocator` (bounding box) and `TemporalLocator` (millisecond range) are already defined
+and round-tripped by `ChunkSerializer`; no component produces them yet.
 
 A single chunk looks like:
 
@@ -51,94 +60,16 @@ A single chunk looks like:
 }
 ----
 
-Image-only chunks omit `text`; text-only chunks omit `paginated`.
+When several pipeline components produce chunks for the same document — the image embedder
+during parsing, the text embedder as a metadata filter — they merge into the same array via
+`ChunkSerializer.mergeInto()`.
 
-== The Four Chunk Strategies
+== What Tika Emits Today
 
-=== Option A: Chunks as Nested Objects
-
-Each file (container or embedded) is **one ES/OpenSearch document**. The `tk:chunks` field
-is mapped as a https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html[`nested`] type.
-
-[source,json]
-----
-{"index":{"_id":"report.pdf"}}
-{"title":"Q4 Report","mime":"application/pdf","tk:chunks":[
-  {"text":"Revenue grew...","vector":"...","locators":{"text":[{"start_offset":0,"end_offset":120}]}},
-  {"text":"Operating costs...","vector":"...","locators":{"text":[{"start_offset":121,"end_offset":300}]}},
-  {"vector":"...","locators":{"paginated":[{"page":1}]}},
-  {"vector":"...","locators":{"paginated":[{"page":2}]}}
-]}
-----
-
-**Pros:**
-
-* Simple — one document per file, everything together.
-* Atomic updates.
-
-**Cons:**
-
-* `nested` kNN search is available in ES 8.11+ but has limitations.
-* Large documents with many chunks can be expensive.
-* Cannot retrieve individual chunks independently.
-
-=== Option B: Chunks as Separate Documents
-
-Each chunk is **its own ES/OpenSearch document** with a `parent_doc_id` keyword field
-(not a join — just a plain reference). Parent document metadata may be denormalized onto
-each chunk.
-
-[source,json]
-----
-{"index":{"_id":"report.pdf"}}
-{"title":"Q4 Report","mime":"application/pdf"}
-{"index":{"_id":"report.pdf-chunk-0"}}
-{"parent_doc_id":"report.pdf","text":"Revenue grew...","vector":[0.1,0.2,...],"locators":{...}}
-{"index":{"_id":"report.pdf-chunk-1"}}
-{"parent_doc_id":"report.pdf","text":"Operating costs...","vector":[0.1,0.2,...],"locators":{...}}
-----
-
-**Pros:**
-
-* Standard RAG pattern — each chunk is independently searchable via kNN.
-* Used by LangChain, LlamaIndex, Haystack, and most vector search frameworks.
-* Simple mapping: one `dense_vector` field, one vector per document.
-
-**Cons:**
-
-* Many more documents.
-* Parent metadata is either denormalized (duplicated) or requires a second lookup.
-
-=== Option C: Chunks as Parent-Child (Join)
-
-Chunks use the ES/OpenSearch
-https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html[join field]
-as children of the container document.
-
-[source,json]
-----
-{"index":{"_id":"report.pdf","routing":"report.pdf"}}
-{"title":"Q4 Report","mime":"application/pdf","relation_type":"container"}
-{"index":{"_id":"report.pdf-chunk-0","routing":"report.pdf"}}
-{"text":"Revenue grew...","vector":[0.1,...],"relation_type":{"name":"chunk","parent":"report.pdf"}}
-----
-
-**Pros:**
-
-* Parent metadata is not duplicated.
-* Can query parent fields via `has_parent` queries.
-
-**Cons:**
-
-* Join queries are expensive in ES/OpenSearch.
-* kNN + parent_id queries are awkward.
-* Routing is required — all children must be on the same shard as the parent.
-
-=== Option D: Separate Documents per File with Inline Chunks (Current Default)
-
-Each **file** (container + each embedded file) is a separate document — matching the existing
-`SEPARATE_DOCUMENTS` attachment strategy. Chunks are stored as a **structured JSON array**
-within each document (not exploded into separate docs, not a stringified blob).
+Each **file** — the container and each embedded file — is a separate Elasticsearch or
+OpenSearch document, matching the existing `SEPARATE_DOCUMENTS` attachment strategy. Chunks
+ride along inside their file's document as a structured JSON array: not exploded into
+separate documents, and not a stringified blob.
 
 [source,json]
 ----
@@ -155,48 +86,28 @@ within each document (not exploded into separate docs, not a stringified blob).
 ]}
 ----
 
-**Pros:**
+Mechanically:
 
-* Natural model — one document per file matches how users think about documents.
-* Embedded files (e.g., PDF inside an email) each get their own document with their own chunks.
-* Chunks are structured JSON (not escaped strings), so ES/OpenSearch can index vectors and locators natively.
-* No need for join fields or routing for the chunk relationship.
-* Compatible with ES `nested` kNN when needed.
+* The emitter's `AttachmentStrategy` (`SEPARATE_DOCUMENTS` or `PARENT_CHILD`) decides how
+  **embedded files** are emitted; each embedded file becomes its own document either way.
+* `tk:chunks` on each document holds all of that document's chunks, text and image alike.
+* The emitter clients (`ESClient`, `OpenSearchClient`) recognize `tk:chunks` and write it as
+  raw JSON rather than an escaped string, so the nested objects are indexable.
 
-**Cons:**
+Why this shape:
 
-* Same `nested` kNN caveats as Option A when searching within a document's chunks.
-* For very large files with many pages, the document can be large.
+* One document per file matches how users think about documents, and an embedded file (a PDF
+  inside an email) gets its own document with its own chunks.
+* Structured JSON lets Elasticsearch/OpenSearch index the vectors and locators natively.
+* No join field and no routing are needed for the chunk relationship.
+* It stays compatible with `nested` kNN when you want to search within a document's chunks.
 
-== Current Implementation
-
-Tika 4.x currently implements **Option D**:
-
-* The `AttachmentStrategy` (`SEPARATE_DOCUMENTS` or `PARENT_CHILD`) controls how
-  **embedded files** are emitted — each embedded file becomes its own document.
-* The `tk:chunks` field on each document holds all chunks (text + image) as a
-  structured JSON array.
-* The emitter clients (`ElasticsearchClient`, `OpenSearchClient`) detect the `tk:chunks`
-  field and write it as **raw JSON** rather than an escaped string, so the nested objects
-  are indexable.
-
-== The `tk:chunks` Field
-
-All chunk data — regardless of source — is unified in a single metadata field: `tk:chunks`.
-
-There is no separate field for image embeddings vs. text embeddings. A chunk is a chunk:
-
-* **Text chunk:** has `text`, `vector`, and `TextLocator` (character offsets)
-* **Image chunk:** has `vector` and `PaginatedLocator` (page number), no `text`
-* **Audio chunk (future):** would have `vector` and `TemporalLocator` (millisecond range)
-
-When multiple pipeline components produce chunks (e.g., `OpenAIImageEmbeddingParser` for
-rendered page images, then `OpenAIEmbeddingFilter` for extracted text), they merge into the
-same array via `ChunkSerializer.mergeInto()`.
+The trade-offs are the `nested` kNN caveats below, and large documents for files with many
+pages.
 
 == Elasticsearch/OpenSearch Mapping
 
-For Option D with `nested` kNN support, a mapping like this works:
+With `nested` kNN support, a mapping like this works:
 
 [source,json]
 ----
@@ -241,11 +152,42 @@ For Option D with `nested` kNN support, a mapping like this works:
 }
 ----
 
-NOTE: The `vector` field in `tk:chunks` stores base64-encoded float32 arrays during Tika
-processing, but the emitter writes them as-is. If your mapping uses `dense_vector`, you may
-need a pipeline or custom serialization to convert the base64 vectors to float arrays at
-index time. Alternatively, map `vector` as `keyword` and decode at query time.
+NOTE: `vector` holds a base64-encoded float32 array throughout Tika processing, and the
+emitter writes it as-is. To use a `dense_vector` mapping you need an ingest pipeline or
+custom serialization to decode it at index time; alternatively, map `vector` as `keyword`
+and decode at query time.
 
+== Alternatives Considered
+
+[cols="1,2,3"]
+|===
+|Option |Approach |Why not
+
+|A
+|One document per file with `tk:chunks` mapped as a
+https://www.elastic.co/guide/en/elasticsearch/reference/current/nested.html[`nested`] type —
+everything about a file in one place, updated atomically.
+|`nested` kNN needs Elasticsearch 8.11+ and has limitations; a document with many chunks gets
+expensive; individual chunks cannot be retrieved on their own. What shipped is this shape
+plus the per-file split and the structured-JSON requirement, and it inherits the same
+`nested` kNN caveats.
+
+|B
+|Each chunk becomes its own document with a `parent_doc_id` keyword field (a plain
+reference, not a join). This is the standard RAG pattern used by LangChain, LlamaIndex,
+and Haystack, and it gives one `dense_vector` per document.
+|Many more documents, and parent metadata must be either denormalized onto every chunk or
+fetched in a second lookup. Still wanted — see <<future-work,Future Work>>.
+
+|C
+|Chunks are children of the container document via the ES/OpenSearch
+https://www.elastic.co/guide/en/elasticsearch/reference/current/parent-join.html[join field],
+so parent metadata is never duplicated and `has_parent` queries work.
+|Join queries are expensive, kNN combined with `parent_id` queries is awkward, and routing
+becomes mandatory so that every child lands on the parent's shard.
+|===
+
+[#future-work]
 == Future Work
 
 * **Option B support** — a `ChunkStrategy.SEPARATE_DOCUMENTS` that explodes chunks into

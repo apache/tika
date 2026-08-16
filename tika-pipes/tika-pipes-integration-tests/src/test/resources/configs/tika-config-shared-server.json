@@ -19,7 +19,7 @@
       "file-system-emitter": {
         "basePath": "EMITTER_BASE_PATH",
         "fileExtension": "json",
-        "onExists": "OVERWRITE"
+        "onExists": "REPLACE"
       }
     }
   },
@@ -47,7 +47,6 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "mock-digester-factory": {},
     "timeout-limits": {
       "progressTimeoutMillis": 5000
     }

@@ -51,9 +51,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 
 /**
  * This test will start an HTTP server using jetty.

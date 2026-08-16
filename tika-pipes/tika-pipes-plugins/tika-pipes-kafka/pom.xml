@@ -32,7 +32,7 @@
     <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
      to get messed up when finding your plugins. -->
     <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
-    <plugin.excluded.groupIds>org.apache.kafka,org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
+    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>

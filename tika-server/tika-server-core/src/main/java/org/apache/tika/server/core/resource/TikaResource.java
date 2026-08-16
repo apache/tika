@@ -389,7 +389,7 @@ public class TikaResource {
     // ==================== GET ====================
 
     @GET
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     public String getMessage() {
         return GREETING;
     }
@@ -423,7 +423,7 @@ public class TikaResource {
      */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     public Response getDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         return putRaw(is, httpHeaders, "md");
@@ -432,7 +432,7 @@ public class TikaResource {
     /** Parse document and return body-only plain text. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("text")
     public Response getText(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -462,7 +462,7 @@ public class TikaResource {
     /** Parse document and return Markdown content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("md")
     public Response getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -523,7 +523,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns Markdown unless the config names a handler. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config")
     public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -533,7 +533,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns body-only plain text. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config/text")
     public Response postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -563,7 +563,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns Markdown. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config/md")
     public Response postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {

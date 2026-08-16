@@ -55,9 +55,9 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.ListFetchersRequest;
-import org.apache.tika.TikaGrpc;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers

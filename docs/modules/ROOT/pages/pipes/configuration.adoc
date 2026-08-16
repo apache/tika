@@ -28,7 +28,6 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
     "socketTimeoutMillis": 60000,
     "maxFilesProcessedPerProcess": 10000,
     "parseMode": "RMETA",
-    "onParseException": "EMIT",
     "forkedJvmArgs": ["-Xmx512m"]
   }
 }
@@ -42,11 +41,11 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`numClients`
 |_CPU-derived_
-|Number of parallel forked JVM processes. Each processes one document at a time. Defaults to `max(1, min((cores - 2) / 2, 4))` -- roughly half the host's cores, capped at 4. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing] for guidance on choosing this value relative to host CPU count.
+|Number of parallel forked JVMs. Each processes one document at a time. Defaults to `max(1, min((cores - 2) / 2, 4))` -- roughly half the host's cores, capped at 4. The batch CLIs (`tika-app -i/-o`, `tika-async-cli`) override that to `2` when neither `-n` nor a config value is given -- see xref:using-tika/cli/index.adoc#_tika_pipes_processing[Tika Pipes Processing]. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing] for guidance on choosing this value relative to host CPU count.
 
 |`forkedJvmArgs`
 |`[]`
-|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). When `numClients > 1`, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools unless you provide your own; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing].
+|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). Unless you supply your own, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools, and `-XX:MaxRAMPercentage` to keep the forks' combined heap ceiling under the host's memory; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
 
 |`javaPath`
 |`java`
@@ -58,8 +57,14 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`tempDirectory`
 |_system default_
-|Directory for temporary files. Consider a RAM-backed filesystem (e.g., `/dev/shm`) for better performance.
+|Directory for temporary files. Each fork gets a subdirectory here, and the fork's whole `java.io.tmpdir` points at it, so spooled input, unpacked embedded files and JVM crash logs all land inside. Consider a RAM-backed filesystem (e.g., `/dev/shm`) for better performance -- but see the caveat below.
 |===
+
+The parent deletes a fork's subdirectory when that fork is torn down or fails to start, so a
+crashing fork does not accumulate them. A parent killed abruptly (`SIGKILL`, container stop)
+cannot, and its subdirectories survive. On a RAM-backed filesystem those leaks consume memory
+rather than disk, and `/dev/shm` is commonly sized at half of RAM -- so if you point
+`tempDirectory` at one, sweep it on service start.
 
 == Timeouts
 
@@ -77,13 +82,13 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 |`1000`
 |Interval (ms) between heartbeats sent from the forked process. Must be significantly less than `socketTimeoutMillis`.
 
+|`startupTimeoutMillis`
+|`60000`
+|Socket read timeout (ms) applied to a freshly-connected fork until it completes its READY handshake, after which `socketTimeoutMillis` takes over. Raise it if plugin loading in the fork is slow. It does *not* bound how long the parent waits for the fork to connect in the first place — that wait is fixed at 60 s.
+
 |`maxTotalTaskTimeoutMillis`
 |`3600000`
 |Ceiling for *request-supplied* timeout limits: a per-request `timeout-limits` override may lower its timeouts freely but can never raise `totalTaskTimeoutMillis` or `progressTimeoutMillis` above this value (values over the cap are clamped with a warning). Limits set in the server's own `parse-context` are trusted and not subject to this cap.
-
-|`shutdownClientAfterMillis`
-|`300000`
-|Shut down an idle forked process after this many milliseconds of inactivity.
 
 |`maxWaitForClientMillis`
 |`60000`
@@ -102,7 +107,9 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 
 |`onParseException`
 |`EMIT`
-|What to do when a parse fails: `EMIT` (emit error metadata) or `SKIP` (silently skip).
+|What to do when a parse fails: `EMIT` (emit error metadata) or `SKIP` (silently skip). Set this
+per tuple, not here -- the effective value is the one on each `FetchEmitTuple`, and the iterators
+set `EMIT`. Nothing reads the value from this section.
 
 |`stopOnlyOnFatal`
 |`false`
@@ -146,7 +153,7 @@ These settings control how parsed results are batched before sending to emitters
 
 |`maxIpcPayloadBytes`
 |`104857600` (100 MB)
-|Maximum size in bytes of a single IPC message between the client and the forked server. This limit is *bidirectional*: it applies both to parse results returned from the server (FINISHED) and to requests sent from the client (NEW_REQUEST). Raising it lets very large documents pass over IPC; set the forked JVM `-Xmx` to at least approximately 3× this value to keep heap usage under control. Setting it too small (below the size of a typical `FetchEmitTuple`) will cause requests to be rejected silently as `UNSPECIFIED_CRASH`. The minimum accepted value is the serialized size of a `PAYLOAD_LIMIT_EXCEEDED` response (a few dozen bytes); values below that are rejected at config load time.
+|Maximum size in bytes of a single IPC message between the client and the fork. This limit is *bidirectional*: it applies both to parse results returned from the fork (FINISHED) and to requests sent from the client (NEW_REQUEST). Raising it lets very large documents pass over IPC; set the forked JVM `-Xmx` to at least approximately 3× this value to keep heap usage under control. Setting it too small (below the size of a typical `FetchEmitTuple`) will cause requests to be rejected silently as `UNSPECIFIED_CRASH`. The minimum accepted value is the serialized size of a `PAYLOAD_LIMIT_EXCEEDED` response (a few dozen bytes); values below that are rejected at config load time.
 |===
 
 == Emit Strategy
@@ -211,7 +218,9 @@ See xref:pipes/shared-server-mode.adoc[Shared Server Mode] for details.
 [#complete-examples]
 == Complete examples
 
-Worked-out end-to-end configs from the test tree. Each is loaded by an automated test, so the syntax stays current.
+Worked-out end-to-end configs from the test tree, so the syntax stays current. The tests that
+cover them assert that the JSON *parses*; they do not instantiate every component, so a config
+can load cleanly and still name something that is missing from a release classpath.
 
 [#fs-pipeline]
 === Filesystem-to-filesystem pipeline

@@ -51,11 +51,11 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 
 /**

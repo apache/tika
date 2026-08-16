@@ -92,10 +92,7 @@ public class Metadata implements Serializable {
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new AcceptAllLimiter();
 
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = 5623926545693153182L;
+    private static final long serialVersionUID = 7748196982570748206L;
 
     private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 

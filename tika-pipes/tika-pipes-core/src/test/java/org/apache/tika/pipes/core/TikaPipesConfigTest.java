@@ -17,12 +17,17 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -30,6 +35,25 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.server.ServerProtocolIO;
 
 public class TikaPipesConfigTest extends TikaTest {
+
+    /** A configured tempDirectory must reach the filesystem; a consumerless setter is silent. */
+    @Test
+    void testTempDirectoryIsHonored(@TempDir Path tmp) throws Exception {
+        PipesConfig unset = new PipesConfig();
+        Path systemDefault = unset.createTempDirectory("tika-pipes-config-test-");
+        try {
+            assertNotEquals(tmp, systemDefault.getParent());
+        } finally {
+            Files.deleteIfExists(systemDefault);
+        }
+
+        Path configured = tmp.resolve("nested-does-not-exist-yet");
+        PipesConfig config = new PipesConfig();
+        config.setTempDirectory(configured.toString());
+        Path made = config.createTempDirectory("tika-pipes-config-test-");
+        assertEquals(configured, made.getParent());
+        assertTrue(Files.isDirectory(made));
+    }
 
     @Test
     void testMaxIpcPayloadBytesDefault() {

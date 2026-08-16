@@ -47,11 +47,11 @@ replaces the running type only with a strict specialization, so of two sibling r
 the first — the opt-in detector must run first to win.
 ====
 
-With this configuration, `Tika.detect()` on a signed CMS message returns
+`Tika.detect()` on a signed CMS message then returns
 `application/pkcs7-mime; smime-type=signed-data` instead of the coarse
-`application/pkcs7-signature`. This is verified end-to-end in
+`application/pkcs7-signature`, as verified end-to-end in
 link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/java/org/apache/tika/config/ConfigExamplesTest.java[`ConfigExamplesTest`].
 
-NOTE: The default (magic-only) path already detects the crypto *families* — PKCS7/CMS,
-RFC 5544 timestamped-data, and PKCS12 — so most users do not need this detector. Enable it only
-when a routing or downstream decision depends on the CMS subtype before parsing.
+NOTE: The default magic-only path already identifies the crypto *families* — PKCS7/CMS, RFC 5544
+timestamped-data, PKCS12. Enable this detector only when a routing or downstream decision depends
+on the CMS subtype before parsing.

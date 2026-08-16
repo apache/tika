@@ -288,7 +288,7 @@ class HttpFetcherTest extends TikaTest {
 
     /**
      * The one-line factory hand-off is what makes verifySsl real: deleting it silently
-     * reverts to the factory's never-verify default this option was added to fix.
+     * pins the factory to whatever it was last set to instead of the fetcher's config.
      */
     @Test
     public void testVerifySslReachesClientFactory() throws Exception {
@@ -298,7 +298,9 @@ class HttpFetcherTest extends TikaTest {
         assertTrue(new HttpFetcherConfig().isVerifySsl(), "bare config default must be verify-on");
 
         HttpClientFactory factory = new HttpClientFactory();
-        assertFalse(factory.isVerifySsl(), "the bare factory defaults to no-verify");
+        assertTrue(factory.isVerifySsl(), "the bare factory verifies by default");
+        // seed the opposite of the config, so the next assertion can only pass via the hand-off
+        factory.setVerifySsl(false);
         fetcher.setHttpClientFactory(factory);
         fetcher.initialize();
         assertTrue(factory.isVerifySsl(), "the config default must reach the factory");

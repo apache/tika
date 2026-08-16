@@ -115,13 +115,180 @@ Release 4.0.0 - ???
 
    * tika-server: the tika-server-client module has been removed (TIKA-4809).
 
+   * Tika 4.x requires Java 17 or later; 3.x built and ran on Java 11. All
+     published artifacts are compiled with --release 17 (TIKA-4685).
+
+   * The core SPI signatures changed. Parser.parse now takes a TikaInputStream
+     instead of an InputStream (there is no InputStream overload),
+     Detector.detect takes (TikaInputStream, Metadata, ParseContext) instead of
+     (InputStream, Metadata), and EmbeddedDocumentExtractor's
+     shouldParseEmbedded/parseEmbedded gained a ParseContext and take a
+     TikaInputStream. Every third-party Parser, Detector or
+     EmbeddedDocumentExtractor implementation must be updated; callers can wrap
+     with TikaInputStream.get(...). The Tika facade (Tika.parse/parseToString)
+     still accepts an InputStream and is unaffected
+     (TIKA-4399, TIKA-4541, TIKA-4569).
+
+   * TikaConfig and the org.apache.tika.config XML-configuration API are
+     removed: TikaConfig, ConfigBase, Field, Param, ParamField,
+     LoadErrorHandler, InitializableProblemHandler, TikaConfigSerializer and
+     TikaTaskTimeout are gone. Use TikaLoader from tika-serialization; see
+     migrating-to-4x.adoc (TIKA-4545, TIKA-4553, TIKA-4565).
+
+   * ForkParser and the entire org.apache.tika.fork package are removed from
+     tika-core. Out-of-process parsing is now provided by PipesForkParser in
+     the new tika-pipes-fork-parser module. tika-app's -f/--fork routes through
+     it, and --fork-timeout is rejected rather than silently ignored
+     (TIKA-4554, TIKA-4571, TIKA-4651).
+
+   * tika-app and tika-server-standard now ship as zip distributions with an
+     adjacent lib/ directory; the published jars are thin launchers and fail
+     with NoClassDefFoundError if run on their own (TIKA-4733).
+
+   * The encoding detectors moved out of parser packages into
+     org.apache.tika.detect.* and into new tika-encoding-detector-* modules:
+     org.apache.tika.parser.txt.{CharsetDetector,CharsetMatch,
+     Icu4jEncodingDetector,UniversalEncodingDetector,BOMDetector,...} are now
+     org.apache.tika.detect.icu4j.*, org.apache.tika.detect.universal.* and
+     org.apache.tika.detect.BOMDetector, and
+     org.apache.tika.parser.html.HtmlEncodingDetector is now
+     org.apache.tika.detect.html.HtmlEncodingDetector.
+     NonDetectingEncodingDetector is removed (TIKA-4685, TIKA-4720).
+
+   * The tika-langdetect-tika module is removed (TikaLanguageDetector,
+     LanguageIdentifier, LanguageProfile, LanguageProfilerBuilder,
+     ProfilingWriter). tika-app, tika-server and tika-eval now bundle the new
+     CharSoup detector (tika-langdetect-charsoup) instead of
+     tika-langdetect-optimaize, so the language reported by default changes
+     (TIKA-4662).
+
+   * SolrJ moves from 8.11.4 to 10.0.0; the Solr fetcher, emitter and pipes
+     iterator no longer support Solr 8 (TIKA-4789).
+
+   * tika-app's batch mode is gone. The -bc/batch directory-to-directory command
+     line (backed by the removed tika-batch module) has no successor flag; use
+     -a/--async, which runs the same work through tika-pipes (TIKA-4340).
+
+   * Metadata's serialVersionUID changed. A Metadata instance serialized by 3.x
+     now fails deserialization with InvalidClassException instead of silently
+     producing an object with a null write limiter that throws on first write
+     (TIKA-4816).
+
+   * PDF: extractIncrementalUpdateInfo now defaults to true (was false), so
+     every PDF parse emits pdf:incremental-update-count and related keys
+     without configuration. parseIncrementalUpdates remains false
+     (TIKA-4354, TIKA-4358).
+
+   * The DOM-based OOXML extractors are removed (XWPFWordExtractorDecorator,
+     XSLFPowerPointExtractorDecorator, POIXMLTextExtractorDecorator,
+     XPSTextExtractor) and with them the OfficeParserConfig keys
+     useSAXDocxExtractor and useSAXPptxExtractor. The SAX extractors are the
+     only implementation (TIKA-4692, TIKA-4708).
+
+   * The MuPDF renderer is removed (org.apache.tika.renderer.pdf.mutool); PDF
+     page rendering for OCR now uses the PDFBox renderer or the new
+     PopplerRenderer (TIKA-4664).
+
+   * Parsers and detectors no longer expose bean setters/getters for their
+     settings. Configuration moves to per-component *Config objects supplied
+     through the ParseContext (e.g. GeoParserConfig, DWGParserConfig,
+     AmazonTranscribeConfig, MagikaDetector/SiegfriedDetector configs)
+     (TIKA-4758).
+
+   * TikaInputStream no longer buffers by default. A stream is consumed in
+     passthrough mode unless enableRewind() is called at position 0;
+     rewind()/getFile()/getPath() after reading without enableRewind() throw
+     instead of silently spooling. Digesters call enableRewind() themselves
+     (TIKA-4618, TIKA-4623).
+
+   * tika-eval-app's command line changed: the FileProfile sub-command is
+     removed, the -bc batch-config option is gone, and extract directories are
+     now named with -e/--extracts (Profile) and -a/--extractsA + -b/--extractsB
+     (Compare); -i/--inputDir, -d/--db, -c/--config, -n/--numWorkers and
+     -m/--maxExtractLength replace the 3.x spellings
+     (TIKA-4342, TIKA-4450, TIKA-4452, TIKA-4507).
+
+   * Audio cover art is now extracted as embedded documents from MP3 (ID3v2
+     APIC/PIC), MP4 (covr), Vorbis and FLAC. Embedded-document counts and
+     /rmeta list lengths for audio files change (TIKA-4801).
+
+   * Additional removals with no direct replacement: the tika-server-eval
+     module (TIKA-4555); SentimentAnalysisParser (TIKA-4574); the
+     tika-age-recogniser module / AgeRecogniser (TIKA-4343);
+     ObjectRecognitionParser and the Tensorflow recognisers/captioners;
+     PooledTimeSeriesParser; org.apache.tika.parser.pdf.AccessChecker
+     (replaced by PDFParserConfig.AccessCheckMode);
+     org.apache.tika.utils.{RereadableInputStream,AnnotationUtils};
+     org.apache.tika.io.{IOUtils,InputStreamFactory};
+     org.apache.tika.sax.DIFContentHandler;
+     org.apache.tika.parser.{AutoDetectParserFactory,ParserFactory};
+     org.apache.tika.parser.internal.Activator; and the jempbox-based
+     JempboxExtractor / XMPMetadataExtractor / pdf.xmpschemas.* classes
+     superseded by the unified XMP extractor (TIKA-4775).
+
   NEW FEATURES
 
-   * Content-based detection of ASN.1/DER crypto containers at parse time. An
-     opt-in Pkcs7Detector surfaces the subtype at detect() time,
-     but must be enabled via configuration (TIKA-1997).
+   * Content-based detection of ASN.1/DER crypto containers. Magic for the
+     PKCS#7/CMS arc ships enabled by default: application/pkcs7-mime gained
+     magic (3.x had globs only), application/pkcs7-signature's magic was
+     broadened across the DER length forms, and application/timestamped-data,
+     application/x-pkcs12, application/x-pkcs7-certificates and
+     application/x-pkcs7-certreqresp gained magic. Pkcs7Parser further refines
+     the smime-type on the output Content-Type. Files that detected as
+     application/octet-stream in 3.x may now detect as a crypto type
+     (TIKA-1997, TIKA-2856).
+
+   * tika-pipes gains three parse modes: NO_PARSE (detect only, no parse),
+     CONTENT_ONLY (emitters write raw content, no metadata envelope) and
+     UNPACK (write embedded bytes out). All three are wired through tika-app
+     and tika-server (TIKA-4631, TIKA-4637, TIKA-4656).
+
+   * New tika-pipes plugins: an Elasticsearch emitter (TIKA-4672), an
+     Atlassian JWT fetcher (TIKA-4604), Google Drive, Microsoft Graph, Azure
+     Blob, JSON and HTTP plugins, and an Apache Ignite ConfigStore for
+     runtime fetcher/emitter configuration (TIKA-4583, TIKA-4587, TIKA-4598).
+
+   * New inference and OCR modules: tika-inference and tika-vlm add
+     vision-language-model parsers (Claude, Gemini, OpenAI) that emit
+     vlm:prompt-tokens / vlm:completion-tokens, and
+     tika-parser-tess4j-module adds in-process Tesseract OCR
+     (TIKA-4665, TIKA-4666, TIKA-4667, TIKA-4690).
+
+   * A Markdown parser with structured, lossless XHTML output, complementing
+     the Markdown content handler (TIKA-4770).
+
+   * New detection: Android binary XML (application/vnd.android.axml,
+     TIKA-4747) and Frictionless Data packages (TIKA-4643); improved mp3/aac
+     (TIKA-4612) and grib (TIKA-4655) detection.
 
   OTHER CHANGES
+
+   * Dependency upgrades since 4.0.0-beta-1, including Jetty 12.1.12, CXF
+     4.2.3 and SolrJ 10.0.0 (TIKA-4327).
+
+   * The charset, junk-text and language detection stack was rewritten:
+     language-aware charset detection, a universal junk detector, wider
+     Unicode handling and the new CharSoup language detector
+     (TIKA-4662, TIKA-4671, TIKA-4675, TIKA-4691, TIKA-4719, TIKA-4810).
+
+   * New audio/video metadata: audio:bitrate, audio:is-variable-bitrate,
+     audio:has-drm, audio:channels, video:frame-rate, video:bitrate and MP4
+     sample size; ID3 TCOP and Vorbis COPYRIGHT map to xmpDM:copyright, EXIF
+     GPS altitude maps to geo:alt, and the presentation start of delayed
+     QuickTime timed-metadata tracks is exposed (TIKA-4777, TIKA-4779,
+     TIKA-4780, TIKA-4781, TIKA-4800, TIKA-4802).
+
+   * Parsing and robustness fixes across formats: CHM (TIKA-4783), ID3 UTF-16
+     (TIKA-4784), MPEG2/2.5 Layer III frame sizing (TIKA-4791), .doc empty
+     comments (TIKA-4718), OOXML hyphenation and field-code hyperlinks
+     (TIKA-4646, TIKA-4683), RTF attachments in HTML decapsulation
+     (TIKA-4710), image extraction (TIKA-4736), embedded-file extension
+     calculation (TIKA-4808), and general media-file robustness (TIKA-4812).
+     MAPI properties no longer overwrite better-fitting Dublin Core terms
+     (TIKA-4806). Embedded-file naming was streamlined (TIKA-4689).
+
+   * tika-eval-core is no longer published as a fat jar (TIKA-4414) and
+     tika-grpc no longer shades gRPC (TIKA-4709).
 
    * PipesClient/PipesServer IPC now enforces a configurable payload limit
      (pipes.maxIpcPayloadBytes, default 100 MB) in both directions. Results

@@ -892,8 +892,6 @@ public class TikaCLI {
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
-        out.println("    --on-exists=<mode>     When an output file already exists: exception");
-        out.println("                           (default), replace or skip");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
@@ -961,7 +959,7 @@ public class TikaCLI {
         out.println("    -i, --input=<dir>          Input directory");
         out.println("    -o, --output=<dir>         Output directory");
         out.println("    -n, --numClients           Number of forked processes");
-        out.println("    -X                         -Xmx in the forked processes");
+        out.println("    --Xmx=<size>               -Xmx for the forked processes, e.g. --Xmx=1g");
         out.println("    -T, --timeoutMillis        Timeout for each parse in milliseconds");
         out.println("    -c, --config=<file>        Tika config file (--config=<file> also accepted)");
         out.println("    -p, --pluginsDir           Plugins directory");

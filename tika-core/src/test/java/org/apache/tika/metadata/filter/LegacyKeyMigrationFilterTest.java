@@ -268,4 +268,41 @@ public class LegacyKeyMigrationFilterTest {
         assertNull(m3.get("grobid:header_Title"));
         assertNull(m3.get("AccessContraints "));
     }
+
+    /**
+     * These seven are 3.x bare String constants, not Property fields, so the field-identity join
+     * cannot generate their rows -- they are hand-carried in migration-overlay.tsv and nothing
+     * but this test would catch their loss.
+     */
+    @Test
+    public void testBareMailKeysBridgeBothDirections() throws Exception {
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata in = new Metadata();
+        in.set("Message-To", "to@example.com");
+        in.set("Message-From", "from@example.com");
+        in.set("Message-Cc", "cc@example.com");
+        in.set("Message-Bcc", "bcc@example.com");
+        in.set("Message-Recipient-Address", "rcpt@example.com");
+        in.set("Multipart-Boundary", "----=_Part_0");
+        in.set("Multipart-Subtype", "mixed");
+        apply(ingest, in);
+        assertEquals("to@example.com", in.get("message:to"));
+        assertEquals("from@example.com", in.get("message:from"));
+        assertEquals("cc@example.com", in.get("message:cc"));
+        assertEquals("bcc@example.com", in.get("message:bcc"));
+        assertEquals("rcpt@example.com", in.get("message:recipient-address"));
+        assertEquals("----=_Part_0", in.get("multipart:boundary"));
+        assertEquals("mixed", in.get("multipart:subtype"));
+        assertNull(in.get("Message-To"));
+        assertNull(in.get("Multipart-Boundary"));
+
+        LegacyKeyMigrationFilter egress = bundled(Direction.V4_TO_V3);
+        Metadata out = new Metadata();
+        out.set("message:to", "to@example.com");
+        out.set("multipart:subtype", "mixed");
+        apply(egress, out);
+        assertEquals("to@example.com", out.get("Message-To"));
+        assertEquals("mixed", out.get("Multipart-Subtype"));
+        assertNull(out.get("message:to"));
+    }
 }

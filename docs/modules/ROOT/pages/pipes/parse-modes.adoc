@@ -94,6 +94,10 @@ these values. If unset, the default is `MARKDOWN`.
 |`b` (body)
 |`.txt`
 |Body content handler output (text from the document body only)
+
+|`i` (ignore)
+|_n/a_
+|No content extracted; metadata only
 |===
 
 [#concatenate-mode]

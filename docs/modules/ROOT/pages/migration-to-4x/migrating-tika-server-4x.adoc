@@ -37,7 +37,7 @@ The `/tika` endpoint has been simplified with path-based routing:
 |PUT |`/tika/xml` |- |raw XML
 |PUT |`/tika/md` |- |raw Markdown
 |PUT |`/tika/json` |- |JSON (default handler: markdown)
-|PUT |`/tika/json/\{handler\}` |- |JSON with specified handler (text, txt, html, xml, body, markdown, md)
+|PUT |`/tika/json/\{handler\}` |- |JSON with specified handler (text, txt, html, xml, body, markdown, md, ignore)
 |POST |`/tika/config` |YES |raw Markdown (multipart with optional config)
 |POST |`/tika/config/\{text,html,xml,md\}` |YES |raw output in the named format
 |POST |`/tika/config/json` |YES |JSON (default handler: markdown)
@@ -88,9 +88,9 @@ All `/form` endpoints have been removed. Use the simplified endpoint structure a
 
 ==== `/tika/config`, `/tika/form/config`
 
-The 3.x `/tika/config` and `/tika/form/config` endpoints have been removed. Per-request configuration is now supplied as a `config` part in a multipart POST to the `/tika/config*` paths shown in the table above (`/tika/config`, `/tika/config/json`, `/tika/config/{text,html,xml,md}`, `/tika/config/json/{handler}`), and requires `allowPerRequestConfig`.
+The 3.x forms of these endpoints are gone. The `/tika/config*` paths in the table above are their replacements, and they work differently: per-request configuration now travels as a `config` part in a multipart POST, and requires `allowPerRequestConfig`.
 
-**Migration:** Use `POST /tika/config` (raw) or `POST /tika/config/json` (JSON) with a `config` part in your multipart request.
+**Migration:** `POST /tika/config` for raw output, `POST /tika/config/json` for JSON, each with a `config` part in the multipart request.
 
 ==== `/translate/*`
 
@@ -112,7 +112,7 @@ Collapsing them also removes the `/detect/stream` vs `/detectors` near-collision
 
 **Migration:** drop the suffix. `PUT /detect/stream` becomes `PUT /detect`; `PUT /language/stream` and `PUT /language/string` both become `PUT /language`. Request bodies and headers are unchanged, but behavior is not:
 
-* `/detect` now runs in the forked worker pool (detection opens containers over
+* `/detect` now runs in the fork pool (detection opens containers over
   caller-supplied bytes), so it can return `429` or `503` with `Retry-After`, and `413`,
   like the parsing endpoints. A failure reading the body is now a `500`; 3.x returned
   `200` with `application/octet-stream` as if detection had succeeded.
@@ -162,7 +162,7 @@ The HTTP status codes are also more precise:
 * `UNSPECIFIED_CRASH`, `TIMEOUT`, and `OOM` return `503` — transient process failures,
   not a `500` server misconfiguration.
 * Pool saturation (`CLIENT_UNAVAILABLE_WITHIN_MS`) returns `429` with a `Retry-After`
-  header, not `503` or `200`.
+  header, not `503` or `200` — see <<backpressure,Backpressure>>.
 * An unknown or reserved fetcher/emitter (`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`)
   returns `400`, not `500` — the request is permanently malformed, so retrying will not help.
 * Two distinct limits return `413`. A request body over `maxRequestSizeBytes` is
@@ -262,11 +262,64 @@ configured with the `ignore` handler.
 
 === Accept Header Routing Removed
 
-The `/tika` endpoint no longer routes based on `Accept` headers. Use explicit paths instead:
+The `/tika` endpoint no longer routes on the `Accept` header. Name the format in the path
+instead — `/tika/text`, `/tika/html`, `/tika/json`, and the rest of the table above.
 
-* `Accept: text/plain` → use `/tika/text`
-* `Accept: text/html` → use `/tika/html`
-* `Accept: application/json` → use `/tika/json`
+=== Removed Features
+
+* **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
+
+=== Command-Line Flags
+
+* The no-op `-a`/`--pluginsConfig` flag has been removed; delete it from launch scripts, where it now fails option parsing.
+* `--help` now exits `0` (it previously exited non-zero).
+
+=== `/pipes` and `/async` Require `allowPipes`; Per-Request Config Requires `allowPerRequestConfig`
+
+This replaces the `enableUnsecureFeatures` flag that alpha-1 briefly used, and before
+that, enabling these capabilities simply by listing endpoints under `server.endpoints`.
+`enableUnsecureFeatures` no longer exists: a config that still carries it fails to start
+with an "Unrecognized field" error naming the key, rather than silently ignoring it.
+The single flag has been split into two, so that granting batch/fetcher access and
+granting per-request parser configuration are separate decisions:
+
+|===
+|Was |Now
+
+|`enableUnsecureFeatures: true` (to use `/pipes` or `/async`)
+|`allowPipes: true`
+
+|`enableUnsecureFeatures: true` (to send per-request config)
+|`allowPerRequestConfig: true`
+|===
+
+The capabilities are two default-`false` flags in the `server` section:
+
+* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
+* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+
+`/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
+
+The `endpoints` allowlist now also gates SPI-provided resources: a discovered resource
+whose root path matches a named endpoint binds only when that endpoint is enabled (e.g.
+the `application/rdf+xml` XMP resource serves `/meta`, so omitting `meta` removes it too).
+An SPI resource with a custom root path still loads unconditionally -- installing the jar
+is the opt-in.
+
+**Migration:** if your config selects `pipes` or `async`, add `"allowPipes": true`; if you rely on per-request config, add `"allowPerRequestConfig": true`:
+
+[source,json]
+----
+{
+  "server": {
+    "allowPipes": true,
+    "allowPerRequestConfig": true,
+    "endpoints": ["tika", "rmeta", "pipes", "async", "status"]
+  }
+}
+----
+
+== Configuration Changes
 
 === Removed Configuration Options
 
@@ -375,62 +428,6 @@ Transport headers are unaffected: `Content-Disposition`,
 `Content-Type` and `Content-Length` still describe the payload and still
 influence detection.
 
-=== Removed Features
-
-* **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
-
-=== Command-Line Flags
-
-* The no-op `-a`/`--pluginsConfig` flag has been removed; delete it from launch scripts, where it now fails option parsing.
-* `--help` now exits `0` (it previously exited non-zero).
-
-=== `/pipes` and `/async` Require `allowPipes`; Per-Request Config Requires `allowPerRequestConfig`
-
-This replaces the `enableUnsecureFeatures` flag that alpha-1 briefly used, and before
-that, enabling these capabilities simply by listing endpoints under `server.endpoints`.
-`enableUnsecureFeatures` no longer exists: a config that still carries it fails to start
-with an "Unrecognized field" error naming the key, rather than silently ignoring it.
-The single flag has been split into two, so that granting batch/fetcher access and
-granting per-request parser configuration are separate decisions:
-
-|===
-|Was |Now
-
-|`enableUnsecureFeatures: true` (to use `/pipes` or `/async`)
-|`allowPipes: true`
-
-|`enableUnsecureFeatures: true` (to send per-request config)
-|`allowPerRequestConfig: true`
-|===
-
-The capabilities are two default-`false` flags in the `server` section:
-
-* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
-* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
-
-`/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
-
-The `endpoints` allowlist now also gates SPI-provided resources: a discovered resource
-whose root path matches a named endpoint binds only when that endpoint is enabled (e.g.
-the `application/rdf+xml` XMP resource serves `/meta`, so omitting `meta` removes it too).
-An SPI resource with a custom root path still loads unconditionally -- installing the jar
-is the opt-in.
-
-**Migration:** if your config selects `pipes` or `async`, add `"allowPipes": true`; if you rely on per-request config, add `"allowPerRequestConfig": true`:
-
-[source,json]
-----
-{
-  "server": {
-    "allowPipes": true,
-    "allowPerRequestConfig": true,
-    "endpoints": ["tika", "rmeta", "pipes", "async", "status"]
-  }
-}
-----
-
-== Configuration Changes
-
 === Pipes Configuration (for `/pipes` and `/async`)
 
 No pipes or fetcher configuration is required to start the server: the default-on endpoints
@@ -487,17 +484,13 @@ by other means.
 `numClients` is not boilerplate to copy unchanged from this example. In 3.x,
 `/tika`, `/rmeta`, and `/unpack` parsed in-process, in the request-handling
 JVM — no forked processes, no fixed concurrency limit. In 4.x, these same
-default-on endpoints *always* fork `numClients` child JVMs and share a fixed
-pool of that many concurrent workers. Size it too low for your request volume
-and callers start getting `429 CLIENT_UNAVAILABLE_WITHIN_MS` under load that
-used to just queue up on request threads instead (this is deliberate
-backpressure, not a bug — see
+default-on endpoints *always* start `numClients` forked JVMs and share a fixed
+pool of that many concurrent forks, so this single number sets both your
+server's concurrency ceiling and its CPU footprint. Neither mis-sizing raises an
+error naming `numClients` as the cause. See <<backpressure,Backpressure>> for
+what each looks like from the client's side, and
 xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
-and Forked-Process Groups]). Size it too high for your host's core count, and
-the forked workers individually starve each other of CPU (see
-xref:pipes/cpu-sizing.adoc[Forked-JVM CPU Sizing]). Neither failure mode
-throws an error pointing at `numClients` as the cause — size it deliberately
-before deploying, not from this example.
+and Forked-Process Groups] for which endpoints share which pool.
 ====
 
 === `maxRequestSizeBytes` now defaults to 1 GiB
@@ -527,6 +520,33 @@ All parsing now occurs in isolated child processes, providing:
 * Protection against parser crashes affecting the server
 * Memory isolation (OOM in parser doesn't crash server)
 * Configurable timeouts at the pipes level
+
+[#backpressure]
+=== Backpressure: `429` Separates "Busy" From "Broken"
+
+In 3.x a saturated server had no way to say so. `/tika`, `/rmeta`, and `/unpack` parsed in
+the request-handling JVM, so load simply piled onto request threads, and a client could not
+tell overload apart from a document that broke the parse.
+
+Because parsing now runs in a fixed pool of forks, 4.x reports the two conditions
+differently:
+
+* **The pool was full** -> `429`, status `CLIENT_UNAVAILABLE_WITHIN_MS`. Nothing failed; the
+  same request can succeed later, and `Retry-After` says how long the server thinks that is.
+* **A fork died on this document** -> `503`, status `OOM`, `TIMEOUT`, or
+  `UNSPECIFIED_CRASH`. The replacement fork is up within seconds (`Retry-After: 5`), but
+  resubmitting the same bytes will likely reproduce the failure.
+* **The request is malformed** -> `400`. Retrying never helps.
+
+A client, load balancer, or queue consumer can now back off on the first, quarantine or route
+elsewhere on the second, and drop the third — instead of hammering a busy server or failing
+blind on a single opaque status.
+
+The cost is a sizing decision 3.x did not ask of you: the pool is exactly `numClients`
+forks wide. `429` under normal load is what "too small for this request volume" looks like;
+forks starving each other of CPU is what "too large for this host" looks like. Neither
+raises an error naming `numClients`, so size it deliberately — see
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
 
 === Performance Optimizations
 

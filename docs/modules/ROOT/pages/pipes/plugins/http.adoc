@@ -47,23 +47,23 @@ include::example$pipes-http-fetcher.json[]
 |Field |Default |Description
 
 |`userName` / `password`
-|_optional_
-|Basic-auth credentials.
+|_none_
+|Credentials. Applied only when `authScheme` is also set — without it they are silently ignored.
 
 |`ntDomain`
-|_optional_
-|NT domain for NTLM auth.
+|_none_
+|NT domain for NTLM auth. Same `authScheme` precondition.
 
 |`authScheme`
-|_optional_
-|Auth scheme hint: `basic`, `digest`, `ntlm`, or unset.
+|_none_
+|`basic` or `ntlm`. Acts as the switch that enables `userName`/`password`/`ntDomain`.
 
 |`proxyHost` / `proxyPort`
-|_optional_
+|_none_
 |Outbound HTTP proxy.
 
 |`userAgent`
-|_no default_
+|_none_
 |`User-Agent` header sent on each request.
 
 |`maxConnections`
@@ -115,15 +115,15 @@ include::example$pipes-http-fetcher.json[]
 |Structured per-request headers as a `Header → [values]` map. Used when a header has multiple values.
 
 |`jwtIssuer` / `jwtSubject` / `jwtExpiresInSeconds`
-|_optional_
+|_none_
 |JWT claims, for endpoints that accept JWT-bearer auth.
 
 |`jwtSecret`
-|_optional_
+|_none_
 |HMAC secret for symmetric-key JWT signing.
 
 |`jwtPrivateKeyBase64`
-|_optional_
+|_none_
 |Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
 |===
 
@@ -143,9 +143,8 @@ endpoint that can reach it (`/pipes`, `/async`).
   Schemes other than `http`/`https` fail only because no other scheme is registered in
   the connection manager — that is a side effect of the transport setup, not a check.
 
-* **TLS certificates are verified by default (`verifySsl: true`).** Earlier 4.0.0
-  prereleases could not verify at all: the underlying client defaulted to `false` and
-  `HttpFetcherConfig` exposed no setting, so no configuration could turn verification on.
+* **TLS certificates are verified by default (`verifySsl: true`).** Not every HTTP-based
+  plugin does this — check the plugin page before assuming.
 +
 To opt out -- self-signed internal certificates are the usual reason -- set `verifySsl`
 to `false` on the fetcher:

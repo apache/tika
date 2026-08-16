@@ -17,27 +17,30 @@
 
 = Configuring Digesters
 
-Tika can compute cryptographic digests (hashes) of documents during parsing. This is useful for
-document deduplication, integrity verification, and forensic analysis.
+Tika can hash documents during parsing — useful for deduplication, integrity verification and
+forensics. Digests land in metadata under `tk:digest:<ALGORITHM>` for the default HEX encoding, or
+`tk:digest:<ALGORITHM>:<ENCODING>` for the others, e.g. `tk:digest:SHA-256:BASE32`. The key
+carries the algorithm's JCA name (`SHA-256`, `SHA3-512`); config names it by the enum spelling
+below (`SHA256`, `SHA3_512`).
 
-== Overview
+Two implementations are available, both configured in the `parse-context` section:
 
-Digesters compute hash values of document content and store them in metadata. The digest value
-is stored with a key like `tk:digest:SHA256` (for HEX encoding) or `tk:digest:SHA256:BASE32`
-(for non-default encodings).
+[cols="2,1,3"]
+|===
+|Factory |Config key |Algorithms
 
-Tika provides two digester implementations:
+|`CommonsDigesterFactory`
+|`commons-digester-factory`
+|MD2, MD5, SHA1, SHA256, SHA384, SHA512 (Apache Commons Codec)
 
-* **CommonsDigesterFactory** - Uses Apache Commons Codec. Supports MD2, MD5, SHA1, SHA256, SHA384, SHA512.
-* **BouncyCastleDigesterFactory** - Uses BouncyCastle provider. Supports all Commons algorithms plus SHA3-256, SHA3-384, SHA3-512.
+|`BouncyCastleDigesterFactory`
+|`bouncy-castle-digester-factory`
+|All of the above plus SHA3_256, SHA3_384, SHA3_512 (BouncyCastle provider)
+|===
+
+Encodings: `HEX` (default, lowercase), `BASE32` and `BASE64`, both RFC 4648.
 
 == JSON Configuration
-
-Configure digesters in the `parse-context` section of your tika-config.json.
-
-=== Basic Example with CommonsDigester
-
-This example configures multiple digest algorithms:
 
 .link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-commons-digests-basic.json[tika-config-commons-digests-basic.json]
 [source,json]
@@ -55,10 +58,18 @@ This example configures multiple digest algorithms:
 }
 ----
 
+Each entry takes an optional `encoding` — see
+link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-digests.json[tika-config-digests.json]:
+
+[source,json]
+----
+{ "algorithm": "SHA256", "encoding": "BASE32" }
+----
+
 [#bouncycastle-sha3]
 === Using BouncyCastle for SHA3 Algorithms
 
-For SHA3 algorithms, use the BouncyCastle digester:
+Swap the factory key; SHA3 algorithms are spelled `SHA3_256`, `SHA3_384`, `SHA3_512`.
 
 .link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-bc-digests-multiple.json[tika-config-bc-digests-multiple.json]
 [source,json]
@@ -76,32 +87,10 @@ For SHA3 algorithms, use the BouncyCastle digester:
 }
 ----
 
-=== Custom Encoding
+=== Skipping the container digest
 
-By default, digest values are encoded as lowercase hexadecimal. You can specify BASE32 or BASE64 encoding:
-
-.link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-digests.json[tika-config-digests.json]
-[source,json]
-----
-{
-  "parse-context": {
-    "commons-digester-factory": {
-      "digests": [
-        { "algorithm": "SHA256", "encoding": "BASE32" },
-        { "algorithm": "MD5" }
-      ]
-    }
-  }
-}
-----
-
-Non-default encodings include the encoding in the metadata key: `tk:digest:SHA256:BASE32`.
-
-=== Skip Container Document Digest
-
-When processing documents with embedded content (e.g., a ZIP file with PDFs inside), you may
-want to digest only the embedded documents, not the container. Set `skipContainerDocumentDigest`
-to `true`:
+To digest only the embedded documents of a container (say, the PDFs inside a zip) and not the
+container itself, set `skipContainerDocumentDigest` alongside `digests`:
 
 .link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/configs/tika-config-digests-skip-container.json[tika-config-digests-skip-container.json]
 [source,json]
@@ -109,77 +98,50 @@ to `true`:
 {
   "parse-context": {
     "commons-digester-factory": {
-      "digests": [
-        { "algorithm": "MD5" }
-      ],
+      "digests": [ { "algorithm": "MD5" } ],
       "skipContainerDocumentDigest": true
     }
   }
 }
 ----
 
-== Supported Algorithms
-
-[cols="1,1,1"]
-|===
-|Algorithm |CommonsDigester |BouncyCastleDigester
-
-|MD2 |Yes |Yes
-|MD5 |Yes |Yes
-|SHA1 |Yes |Yes
-|SHA256 |Yes |Yes
-|SHA384 |Yes |Yes
-|SHA512 |Yes |Yes
-|SHA3_256 |No |Yes
-|SHA3_384 |No |Yes
-|SHA3_512 |No |Yes
-|===
-
-== Supported Encodings
-
-* **HEX** (default) - Lowercase hexadecimal
-* **BASE32** - RFC 4648 Base32
-* **BASE64** - RFC 4648 Base64
-
 == Programmatic Configuration
-
-You can also configure digesters programmatically via `ParseContext`:
 
 [source,java]
 ----
-// See: CommonsDigesterFactory.java
 CommonsDigesterFactory factory = new CommonsDigesterFactory();
 factory.setDigests(Arrays.asList(
     new DigestDef(DigestDef.Algorithm.SHA256),
-    new DigestDef(DigestDef.Algorithm.MD5, DigestDef.Encoding.BASE32)
-));
+    new DigestDef(DigestDef.Algorithm.MD5, DigestDef.Encoding.BASE32)));
 factory.setSkipContainerDocumentDigest(true);
 
 ParseContext context = new ParseContext();
 context.set(DigesterFactory.class, factory);
 
-// Use with AutoDetectParser
 AutoDetectParser parser = new AutoDetectParser();
-parser.parse(inputStream, handler, metadata, context);
+try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
+    parser.parse(tis, handler, metadata, context);
+}
 ----
 
-See link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-digest-commons/src/main/java/org/apache/tika/parser/digestutils/CommonsDigesterFactory.java[CommonsDigesterFactory.java] and
-link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-digest-commons/src/main/java/org/apache/tika/parser/digestutils/BouncyCastleDigesterFactory.java[BouncyCastleDigesterFactory.java] for implementation details.
+== Command Line
 
-== Command Line Usage
-
-When using the Tika CLI (`tika-app`), you can enable digesting with the `--digest` flag:
+`tika-app`'s `--digest=<algorithm>` flag covers the Commons algorithms only; the digest appears in
+the metadata output.
 
 [source,bash]
 ----
 java -jar tika-app.jar --digest=SHA256 document.pdf
 ----
 
-This computes a SHA256 digest of the document. The digest value appears in the metadata output.
+For SHA3, use a JSON config with `bouncy-castle-digester-factory` as above. See
+xref:using-tika/cli/index.adoc[the CLI reference].
 
-== Related Classes
+== Source
 
-* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigesterFactory.java[DigesterFactory] - Factory interface
-* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigestDef.java[DigestDef] - Algorithm and encoding definition
-* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/Digester.java[Digester] - Digester interface
-* link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/java/org/apache/tika/parser/digest/DigestConfigTest.java[DigestConfigTest] - Test examples
+* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigesterFactory.java[`DigesterFactory`],
+  link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/Digester.java[`Digester`],
+  link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/digest/DigestDef.java[`DigestDef`]
+* link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-digest-commons/src/main/java/org/apache/tika/parser/digestutils/CommonsDigesterFactory.java[`CommonsDigesterFactory`],
+  link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-modules/tika-parser-digest-commons/src/main/java/org/apache/tika/parser/digestutils/BouncyCastleDigesterFactory.java[`BouncyCastleDigesterFactory`]
+* link:https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/java/org/apache/tika/parser/digest/DigestConfigTest.java[`DigestConfigTest`] — worked examples

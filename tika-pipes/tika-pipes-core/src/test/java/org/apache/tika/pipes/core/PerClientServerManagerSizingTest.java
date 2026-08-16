@@ -51,9 +51,10 @@ public class PerClientServerManagerSizingTest {
         return args.stream().filter(a -> a.startsWith(prefix)).toList();
     }
 
+    /** A lone fork is capped below the fork budget; the parent claims the JVM default on top. */
     @Test
     public void heapInjectedForSingleClient() throws Exception {
-        assertEquals(List.of("-XX:MaxRAMPercentage=75"),
+        assertEquals(List.of("-XX:MaxRAMPercentage=60"),
                 withPrefix(commandLine(1), "-XX:MaxRAMPercentage"));
     }
 

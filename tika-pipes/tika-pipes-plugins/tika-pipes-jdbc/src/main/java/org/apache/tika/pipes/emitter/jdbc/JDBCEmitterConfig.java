@@ -19,7 +19,6 @@ package org.apache.tika.pipes.emitter.jdbc;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,13 +30,26 @@ public record JDBCEmitterConfig(
         String createTable,
         String alterTable,
         String postConnection,
-        @JsonProperty(defaultValue = "0") int maxRetries,
-        @JsonProperty(defaultValue = "64000") int maxStringLength,
+        int maxRetries,
+        int maxStringLength,
         LinkedHashMap<String, String> keys,
-        @JsonProperty(defaultValue = "FIRST_ONLY") String attachmentStrategy,
-        @JsonProperty(defaultValue = "CONCATENATE") String multivaluedFieldStrategy,
-        @JsonProperty(defaultValue = ", ") String multivaluedFieldDelimiter
+        String attachmentStrategy,
+        String multivaluedFieldStrategy,
+        String multivaluedFieldDelimiter
 ) {
+
+    private static final String DEFAULT_MULTIVALUED_FIELD_DELIMITER = ", ";
+
+    /**
+     * The strategy fields are defaulted by their enum accessors and maxStringLength by
+     * {@link #getEffectiveMaxStringLength()}; the delimiter is consumed raw, so unset would
+     * join multivalued fields with the literal "null".
+     */
+    public JDBCEmitterConfig {
+        if (multivaluedFieldDelimiter == null) {
+            multivaluedFieldDelimiter = DEFAULT_MULTIVALUED_FIELD_DELIMITER;
+        }
+    }
 
     public enum AttachmentStrategy {
         FIRST_ONLY, ALL

@@ -36,6 +36,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.serialization.JsonMetadataList;
@@ -151,6 +152,15 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         }
 
         Path output;
+
+        // CONTENT_ONLY emit keys are the input's own name, so without the extension the output
+        // collides with the input. UNPACK keys already carry the embedded file's own name and
+        // extension, so appending there would rename every unpacked file.
+        if (parseContext.get(ParseMode.class) == ParseMode.CONTENT_ONLY
+                && !StringUtils.isBlank(config.fileExtension())) {
+            emitKey += "." + config.fileExtension();
+        }
+
         if (config.basePath() != null) {
             Path basePath = Paths.get(config.basePath());
             output = basePath.resolve(emitKey);

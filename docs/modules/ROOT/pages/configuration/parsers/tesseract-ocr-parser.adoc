@@ -17,7 +17,8 @@
 
 = TesseractOCRParser Configuration
 
-This page documents the configuration options for `TesseractOCRParser` in Tika 4.x.
+Configuration options for `TesseractOCRParser`, which runs the `tesseract` command-line program in
+a separate process.
 
 == Basic Configuration
 
@@ -29,10 +30,10 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 
 == Full Configuration
 
-The example below lists every option with its default value and an inline comment describing
-it. It also includes a `default-parser` entry so the config works as-is; see
-xref:configuration/index.adoc[Configuration] for why that entry matters. ImageMagick is
-optional — it is only used when `enableImagePreprocessing` or `applyRotation` is true.
+Every option with its default value and an inline comment describing it. The `default-parser` entry
+keeps the rest of Tika's parsers loaded — see xref:configuration/index.adoc[Configuration] for why
+that matters. ImageMagick is optional; it is used only when `enableImagePreprocessing` or
+`applyRotation` is true.
 
 [source,json]
 ----
@@ -40,30 +41,7 @@ include::example$tesseract-full.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/tesseract-full.json[View source on GitHub]
 
-== Changes from 3.x
-
-In Tika 3.x, the `otherTesseractSettings` was a list of space-delimited key-value strings:
-
-[source,xml]
-----
-<!-- 3.x XML format -->
-<param name="otherTesseractSettings" type="list">
-  <string>textord_initialx_ile 0.75</string>
-  <string>textord_noise_hfract 0.15625</string>
-</param>
-----
-
-In Tika 4.x, this is replaced with `otherTesseractConfig` as a proper map:
-
-[source,json]
-----
-// 4.x JSON format
-"otherTesseractConfig": {
-  "textord_initialx_ile": "0.75",
-  "textord_noise_hfract": "0.15625"
-}
-----
-
-The automatic converter handles this transformation.
-
-See xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] for general migration guidance.
+Arbitrary Tesseract variables go in `otherTesseractConfig` as a name-to-value map, as in the
+example above. Converting a 3.x config? See
+xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] — the automatic converter rewrites the
+old `otherTesseractSettings` list for you.

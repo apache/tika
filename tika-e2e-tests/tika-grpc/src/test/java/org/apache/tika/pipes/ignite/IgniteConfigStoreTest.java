@@ -48,13 +48,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherReply;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers

@@ -36,8 +36,8 @@ Before starting the release, run vulnerability and dependency audits:
 
 [source,bash]
 ----
-# Identify vulnerable dependencies
-mvn ossindex:audit -Dossindex.fail=true
+# Identify vulnerable dependencies (add -Possindex-fail to fail the build on findings)
+mvn ossindex:audit
 
 # Check for outdated plugins
 mvn versions:display-plugin-updates
@@ -46,7 +46,7 @@ mvn versions:display-plugin-updates
 mvn versions:display-dependency-updates
 
 # Run full regression tests
-mvn -Prelease-profile clean verify
+mvn -Papache-release clean verify
 ----
 
 == Release Process
@@ -187,31 +187,15 @@ Goes Where] for the authoritative list and the rationale.
 
 NOTE: The bin zips and `-shaded.jar` files are `<attach>false</attach>`, so the
 build's `maven-gpg-plugin` (which signs only attached artifacts) does not sign
-them; the antrun's own gpg step does. If you are cutting a release whose tag
-predates that step (anything before 4.0.0-beta-1's fix), sign the staged dir by
-hand before committing:
-+
-[source,bash]
-----
-cd target/checkout/target/X.Y.Z
-for f in *.zip *.jar *.tgz; do
-  [ -e "$f" ] || continue
-  [ -e "$f.asc" ] && continue   # src.zip is already signed by the build
-  gpg --armor --detach-sign "$f"
-done
-for a in *.asc; do gpg --verify "$a" "${a%.asc}" || echo "BAD SIG: $a"; done
-----
+them; the antrun's own gpg step does, and the build fails if any staged dist
+artifact ends up without a detached `.asc`.
 
-WARNING: At the end of `release:perform` you will see an echo telling you
-to `scp -r ... people.apache.org:public_html/tika/`.  *Ignore that.*  It
-is stale — the current ASF release distribution channel is the SVN repo
-under `dist.apache.org`, not `people.apache.org`.
-
-Check out the dist dev SVN repo and copy the prepared dist directory in:
+`release:perform` echoes these SVN commands at the end of the run. Publish the
+staged directory to the dev dist area:
 
 [source,bash]
 ----
-svn co https://dist.apache.org/repos/dist/dev/tika tika-dist-dev
+svn checkout https://dist.apache.org/repos/dist/dev/tika tika-dist-dev
 cp -r target/checkout/target/X.Y.Z tika-dist-dev/
 cd tika-dist-dev
 svn add X.Y.Z
@@ -238,7 +222,9 @@ Also:
 
 === Step 11: Call the Vote
 
-Send a vote request to the dev@tika.apache.org mailing list:
+The antrun writes a filled-in vote template — with the staged URL, the source
+zip's SHA-512, and the version — to `target/checkout/target/vote.txt`. Send it to
+dev@tika.apache.org after filling in the staging repository id and RC number:
 
 [source]
 ----
@@ -300,9 +286,10 @@ git push origin X.Y.Z-beta-N
 ----
 +
 then publish the images manually with `workflow_dispatch`. Do this *after* the
-dist artifacts are live on `downloads.apache.org` (the release Dockerfile
-downloads and GPG-verifies them, so promote dist in the substep above and let it
-propagate — `workflow_dispatch` skips the auto-wait that the tag-push path has):
+dist artifacts are live on `downloads.apache.org`: the release Dockerfile
+downloads and GPG-verifies `tika-server-standard-<v>.zip` at build time, and
+the workflow has no step that waits for it, so promote dist in the substep
+above and let it propagate first:
 +
 [source,bash]
 ----
@@ -317,54 +304,22 @@ the full Docker flow, the tag scheme, and Docker-only rebuilds.
 [[troubleshooting]]
 == Troubleshooting `release:perform`
 
-The `release:perform` build can fail mid-way for reasons unrelated to the
-release itself.  This section captures the recoveries learned during recent
-releases.  Once these get fixed in the build (tracked in the to-fix-before-
-beta punch list), this section can be slimmed down.
+The `release:perform` build can fail mid-way for reasons unrelated to the release
+itself. Recoveries learned in recent releases:
 
-=== `tika-docs` assembly fails: "archive cannot be empty"
+=== Resuming a partial build
 
-[source]
-----
-[ERROR] Failed to create assembly: Error creating assembly archive docs:
-        archive cannot be empty
-----
-
-Cause: the Antora plugin is not auto-bound to the `package` phase, so
-`target/site/` is empty when `maven-assembly-plugin` runs.
-
-Recovery (resume from `tika-docs`):
+`release:perform` runs its inner build in `target/checkout`. Resume from the
+module that failed rather than starting over:
 
 [source,bash]
 ----
 cd target/checkout
-mvn deploy -Papache-release -rf :tika-docs -DskipITs
+mvn deploy -Papache-release -rf :<failed-module> -DskipITs
 ----
 
-If the antora binding (the recommended fix in the to-fix-before-beta punch
-list) hasn't yet landed, you may need to manually build the site first:
-
-[source,bash]
-----
-cd target/checkout/docs
-mvn antora:antora
-cd ..
-mvn deploy -Papache-release -rf :tika-docs -DskipITs
-----
-
-=== Antrun error from a child module: "Could not find file ... -src.zip"
-
-[source]
-----
-Could not find file .../docs/target/X.Y.Z/tika-X.Y.Z-src.zip
-to generate checksum for.
-----
-
-Cause: the root-pom antrun execution lacks `<inherited>false</inherited>`,
-so it fires from each child module on a resumed deploy with `$\{basedir}`
-pointing at the wrong directory.
-
-Recovery (run the antrun once at the root):
+If the failure was after all modules deployed and only the root-pom dist staging
+needs re-running:
 
 [source,bash]
 ----
@@ -372,10 +327,9 @@ cd target/checkout
 mvn deploy --non-recursive -Papache-release -Dmaven.deploy.skip=true
 ----
 
-`--non-recursive` runs only the root pom; `-Dmaven.deploy.skip=true`
-prevents re-uploading the root pom artifact (already uploaded earlier).
-The antrun fires in the correct basedir and `target/X.Y.Z/` gets
-populated.
+`--non-recursive` runs only the root pom, so the antrun fires with the right
+`$\{basedir}` and populates `target/X.Y.Z/`; `-Dmaven.deploy.skip=true` avoids
+re-uploading the root pom artifact.
 
 === Nexus staging repository: only one repo when I expected two
 
@@ -395,13 +349,14 @@ of artifacts.
 `tika-grpc` is distributed only as the `apache/tika-grpc` Docker image and the
 slim Maven Central jar — it has *no* Apache-dist archive by design (see
 xref:maintainers/release-guides/release-artifacts.adoc[Release Artifacts: What
-Goes Where]). The `-Pdocker` build still produces a `tika-grpc-X.Y.Z.zip`, but
-only as the *image build context*, not a published artifact. That zip bundles
-every pipes plugin with its full transitive closure (microsoft-graph, gcs,
-az-blob, s3, kafka, etc.) plus multi-platform native libs (rocksdbjni, netty
-natives), so it runs ~600+ MB, much of it duplicating dependencies already under
-`lib/`. The bloat lands in the Docker image, not in a release artifact; reducing
-it is tracked for a future release and does not block a release.
+Goes Where]). The `release-tika-grpc` job assembles the image build context by
+hand into `target/tika-grpc-docker/` (grpc jar + `dependency:copy-dependencies`
+output + every pipes-plugin zip + the parser-package jars). Those plugin zips
+each carry their full transitive closure (microsoft-graph, gcs, az-blob, s3,
+kafka, etc.) plus multi-platform native libs (rocksdbjni, netty natives), so the
+context runs ~600+ MB, much of it duplicating jars already copied into `libs/`.
+The bloat lands in the Docker image, not in a release artifact; reducing it is
+tracked for a future release and does not block a release.
 
 == Post-Release
 

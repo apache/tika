@@ -17,50 +17,28 @@
 
 = Apache Tika Roadmap
 
-This page outlines the planned features and improvements for Apache Tika releases.
+Which Tika line runs on which Java, and how long each is supported.
 
 NOTE: All dates are in Open Source Standard Time which does not always neatly align
 with traditional calendars.
 
-== Release Timeline
-
-[cols="1,3"]
-|===
-|Date |Milestone
-
-|October 2024
-|Release 3.0.0
-
-|October 2024
-|Move main branch to 4.x (Java 17) after 3.0.0 release
-
-|April 2025
-|End support for 2.x (and Java 8)
-
-|March 2026
-|Release 4.0.0
-
-|March 2027
-|End support for 3.x (and Java 11)
-|===
-
-== Version Support Matrix
+== Version Support
 
 [cols="1,1,1,2,2"]
 |===
-|Version |Java |Jakarta/javax |Availability |Planned EOL
+|Version |Java |Jakarta/javax |Released |End of support
 
 |2.x
 |8
 |javax
-|Now
+|--
 |April 2025
 
 |3.x
 |11
 |jakarta
 |October 2024
-|June 2026 or 6 months after 4.0.0 release
+|March 2027
 
 |4.x
 |17
@@ -81,16 +59,5 @@ with traditional calendars.
 |TBD
 |===
 
-== Metadata Changes in 4.x
-
-Tika 4.x implements namespaced metadata keys to prevent overwrites and improve namespace clarity.
-
-See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x] for complete details and
-migration examples.
-
-== Long-term Goals
-
-// Add long-term goals as they are defined
-// * Improved streaming support
-// * Enhanced language detection
-// * Better support for modern document formats
+For what changes between 3.x and 4.x, see
+xref:migration-to-4x/index.adoc[Migrating to Tika 4.x].

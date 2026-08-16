@@ -30,7 +30,9 @@ This is useful for:
 * Evaluation and testing
 
 The server wraps a Hugging Face model in a lightweight FastAPI app that
-exposes the `/v1/chat/completions` endpoint in the OpenAI format.
+exposes the `/v1/chat/completions` and `/v1/models` endpoints in the OpenAI
+format. `OpenAIVLMParser` probes `/v1/models` at startup and stays disabled
+for the whole run if that probe fails, so the server must answer it.
 
 == Prerequisites
 
@@ -161,6 +163,7 @@ class ChatResponse(BaseModel):
 app = FastAPI(title="VLM server")
 
 model = None
+model_name = None
 processor = None
 device = None
 
@@ -203,6 +206,12 @@ def parse_messages(messages: list[ChatMessage]):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# Tika's OpenAIVLMParser health-checks this at init; a 404 here disables the parser.
+@app.get("/v1/models")
+def list_models():
+    return {"object": "list", "data": [{"id": model_name, "object": "model"}]}
 
 
 @app.post("/v1/chat/completions")
@@ -262,7 +271,7 @@ def chat_completions(req: ChatRequest):
 
 
 def main():
-    global model, processor, device
+    global model, model_name, processor, device
 
     parser = argparse.ArgumentParser(
         description="VLM OpenAI-compatible server (localhost only)"
@@ -275,6 +284,7 @@ def main():
         "--port", type=int, default=8000, help="Port (default: 8000)"
     )
     args = parser.parse_args()
+    model_name = args.model
 
     if torch.backends.mps.is_available():
         device = "mps"
@@ -321,6 +331,9 @@ network.
 ----
 curl http://localhost:8000/health
 # {"status":"ok"}
+
+curl http://localhost:8000/v1/models
+# {"object":"list","data":[{"id":"jinaai/jina-vlm","object":"model"}]}
 ----
 
 == Configure Tika to use it

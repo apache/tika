@@ -125,7 +125,7 @@ public class ESEmitter extends AbstractEmitter {
                 httpClientFactory.setProxyHost(http.proxyHost());
                 httpClientFactory.setProxyPort(http.proxyPort());
             }
-            httpClientFactory.setVerifySsl(http.verifySsl());
+            httpClientFactory.setVerifySsl(http.verifySslOrDefault());
         }
 
         esClient = new ESClient(config, httpClientFactory.build());

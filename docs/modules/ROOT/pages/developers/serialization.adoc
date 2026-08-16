@@ -52,10 +52,14 @@ Tika uses a compact format for component configuration:
 }
 ----
 
-Components can be specified as:
+Inside an array-valued section (`parsers`, `detectors`, `encoding-detectors`,
+`metadata-filters`) an element can be specified as:
 
 * **String**: `"pdf-parser"` - creates instance with defaults
 * **Object**: `{"pdf-parser": {"ocr": {"strategy": "AUTO"}}}` - creates configured instance
+
+Object-valued sections such as `parse-context` key each entry by name instead, with
+the config object as the value.
 
 == The @TikaComponent Annotation
 
@@ -129,8 +133,8 @@ one of these known interfaces:
 
 * `Parser`, `Detector`, `EncodingDetector`
 * `MetadataFilter`, `Translator`, `Renderer`
-* `DigesterFactory`, `ContentHandlerFactory`
-* `MetadataWriteLimiterFactory`, `EmbeddedDocumentExtractor`
+* `DigesterFactory`, `ContentHandlerFactory`, `ContentHandlerDecoratorFactory`
+* `MetadataWriteLimiterFactory`, `UnpackSelector`, `EmbeddedDocumentExtractor`
 
 [source,java]
 ----
@@ -179,18 +183,21 @@ Components not implementing first-class interfaces go to `parse-context.idx`:
 
 == Self-Configuring Components
 
-Components implementing `SelfConfiguring` handle their own configuration
-at runtime rather than during initial loading:
+`SelfConfiguring` is a marker interface with no methods: `resolveAll` skips such
+components, leaving their JSON in `ParseContext`, and the component reads it where
+it needs it. `Parser` extends `SelfConfiguring`, so every parser is self-configuring.
 
 [source,java]
 ----
 @TikaComponent
-public class PDFParser extends AbstractParser implements SelfConfiguring {
+public class PDFParser implements Parser {
 
-    private PDFParserConfig defaultConfig = new PDFParserConfig();
+    private final PDFParserConfig defaultConfig = new PDFParserConfig();
 
     @Override
-    public void configure(ParseContext parseContext) {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext parseContext)
+            throws IOException, SAXException, TikaException {
         PDFParserConfig config = ParseContextConfig.getConfig(
             parseContext, "pdf-parser", PDFParserConfig.class, defaultConfig);
         // Use config...
@@ -260,15 +267,17 @@ including options that spawn external processes such as OCR" — not as somethin
 the allowlist constrains.
 ====
 
-[source,java]
+[source,json]
 ----
-// This will FAIL - class not registered
 {
   "parse-context": {
-    "java.lang.Runtime": {}  // Error: Unknown component
+    "java.lang.Runtime": {}
   }
 }
 ----
+
+That fails with "Unrecognized parse-context entry 'java.lang.Runtime'" — the class
+is not registered.
 
 === Untrusted (Wire) Input: Restricted Mode
 
@@ -378,7 +387,7 @@ whose per-`Metadata` hook suits context-free filters -- which is a
 }
 ----
 
-Or with defaults (string form constructs with no overrides):
+Or with defaults (an empty config object applies no overrides):
 
 [source,json]
 ----
@@ -401,7 +410,8 @@ Or with defaults (string form constructs with no overrides):
 
 * Verify you're using the correct interface type for lookup
 * Check if explicit `contextKey` is needed
-* For self-configuring components, ensure `configure()` was called
+* Self-configuring components are never resolved into the context map; read them
+  with `ParseContextConfig.getConfig(context, "<name>", ConfigClass.class, default)`
 
 === SPI Not Loading Component
 

@@ -79,6 +79,8 @@ public class OpenSearchTest {
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName(CONTAINER.getUsername());
         httpClientFactory.setPassword(CONTAINER.getPassword());
+        // testcontainer runs with the security plugin: https with a self-signed cert
+        httpClientFactory.setVerifySsl(false);
     }
 
     @AfterAll
@@ -420,9 +422,11 @@ public class OpenSearchTest {
         HttpClientFactory httpClientFactory = new HttpClientFactory();
         httpClientFactory.setUserName(CONTAINER.getUsername());
         httpClientFactory.setPassword(CONTAINER.getPassword());
+        // testcontainer runs with the security plugin: https with a self-signed cert
+        httpClientFactory.setVerifySsl(false);
         OpenSearchEmitterConfig config = new OpenSearchEmitterConfig(CONTAINER.getHttpHostAddress(), "_id", OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE, 10, DEFAULT_EMBEDDED_FILE_FIELD_NAME,
-                new HttpClientConfig(null, null, null, -1, -1, null, -1));
+                new HttpClientConfig(null, null, null, -1, -1, null, -1, false));
         return new OpensearchTestClient(config, httpClientFactory.build());
 
     }

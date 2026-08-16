@@ -152,7 +152,7 @@ public class XmpExtractor {
         put(ps, "ICCProfile", Photoshop.ICC_PROFILE);
         put(ps, "DateCreated", Photoshop.DATE_CREATED);
         put("http://ns.adobe.com/xap/1.0/t/pg/", "NPages", PagedText.N_PAGES);
-        put(pdf, "Trapped", PDF.TRAPPED);
+        put(pdf, "Trapped", PDF.TRAPPED, XMPPDF.TRAPPED);
 
         // Camera/EXIF/TIFF -> shared TIFF interface. tiff:/exif: double-keyed: the canonical key may
         // also come from binary EXIF (extracted later, so it wins); the XMPTIFF key keeps XMP

@@ -16,23 +16,42 @@
 //
 
 = Serialization in Tika 4.x
+:toc:
 
-This document describes the JSON serialization design and implementation details for Apache Tika 4.x.
+The JSON serialization design behind Tika 4.x configuration. For the API you actually call,
+see xref:developers/serialization.adoc[Serialization and Configuration]; for the wider 4.x
+architecture, see xref:migration-to-4x/design-notes-4x.adoc[Design Notes for 4.x].
 
-== High-Level Goals
+== Design Goals
 
-=== Jackson Framework Integration
+Jackson, minimally wrapped::
+Use Jackson as much as possible, with as few custom serializers and annotations as possible.
+Jackson dependencies stay out of the core modules so those modules remain free of it.
 
-Use Jackson as much as possible with as few custom serializers and as few annotations as possible.
-Jackson dependencies are kept out of core modules to maintain flexibility.
+Friendly names, not class names::
+Configuration refers to components by friendly names such as `pdf-parser`. The name belongs
+to the configured item, not to a configuration class.
 
-=== Friendly Naming Conventions
+Custom classes via `@TikaComponent`, not polymorphic typing::
+Annotate a class with `@TikaComponent` and the annotation processor generates a
+`META-INF/tika/*.idx` registry entry at compile time. Any class whose `.idx` entry is on the
+classpath can then be named in JSON. Unregistered classes and packages cannot be
+instantiated — there is no package-pattern allowlist and no `Class.forName` fallback.
 
-Implementation uses friendly names like `pdf-parser` rather than full class names. These friendly
-names are applied to configured items rather than configuration class names.
+The same shape at init and at runtime::
+Initialization and runtime configuration should look identical and share the same underlying
+code. Security constraints may still restrict which fields are modifiable at runtime.
+
+Config objects, not field annotations::
+Configuration lives in config objects rather than annotated parser fields, so parsers stay
+usable from multiple threads; a parser reads its settings from `ParseContext` at parse time.
+
+One config format across systems::
+The same configuration passes from a user's client, through the tika-server REST API, into
+the tika-pipes infrastructure, without translation at each hop.
 
 [#discovering-friendly-names]
-==== Discovering the friendly name for a component
+== Discovering the friendly name for a component
 
 The 4.x JSON config refers to parsers, detectors, fetchers, emitters, and other components
 by their friendly name (e.g., `pdf-parser`, `file-system-fetcher`). To map a Java class
@@ -73,85 +92,48 @@ NOTE: The `--list-parsers`, `--list-detectors`, and `--list-parser-details` comm
 print the hierarchical, human-oriented view (class names with composite parsers
 indented). Use the `--list-*-names` variants when you want a machine-readable mapping.
 
-=== Custom Class Support
-
-Custom classes are supported through the `@TikaComponent` annotation rather than
-Jackson polymorphic typing:
-
-* Annotate the class with `@TikaComponent`; the annotation processor generates a
-  `META-INF/tika/*.idx` registry entry at compile time
-* Any class whose `.idx` entry is on the classpath can be referenced by its
-  friendly name in JSON configuration
-* Class names or packages that are not registered cannot be instantiated from
-  JSON — there is no package-pattern allowlist and no `Class.forName` fallback
-
-See xref:developers/serialization.adoc[Serialization and Configuration] for the
-full mechanism.
-
-=== Configuration Consistency
-
-The approach seeks to make initialization and runtime configuration look exactly the same and use
-the same underlying code where possible. However, security constraints may require differences in
-which fields are modifiable at runtime.
-
-=== Configuration Objects Over Annotations
-
-Preference for config objects rather than field annotations to support multithreading. Parsers
-retrieve settings from `ParseContext` at runtime.
-
-=== Cross-System Configuration Flow
-
-Configuration must pass seamlessly from:
-
-. User clients
-. Through tika-server REST APIs
-. Into tika-pipes infrastructure
-
 == Initialization Structure
 
-=== Tier 1 Objects
+Tier 1 — the top-level config sections, each loaded into a component of a known kind:
 
-ID Objects::
-Fetchers, emitters - components with unique identifiers
+ID objects:: Fetchers and emitters — components addressed by a unique identifier.
+Composite objects:: Parsers and detectors — components that aggregate other components.
+Single objects:: The `pipes`, `grpc`, and `server` configurations.
 
-Composite Objects::
-Parsers, detectors - components that aggregate other components
-
-Single Objects::
-Pipes, gRPC, server configurations
-
-=== Tier 2 Objects
-
-Components that can be read via friendly names using `@TikaComponent` annotations in an
-`other-config` section.
+Tier 2 — anything else that carries `@TikaComponent`, bound by friendly name inside the
+`parse-context` section.
 
 == Runtime Patterns
 
-=== Backwards Compatibility
+Backwards compatibility::
+New capabilities are added to `ParseContext`, keyed by their interface, so an existing
+context keeps working.
 
-The design maintains backwards compatibility by allowing `ParseContext` additions where the
-interface serves as the key.
+Partial configuration updates::
+A partial JSON object may specify only the updates to the initialization configuration;
+a complete configuration document is not required.
 
-=== Partial Configuration Updates
+Self-configuring components in pipes::
+In the pipes infrastructure, components configure themselves rather than being configured
+by a central loader, so nothing has to load classes like `PDFParser` to configure them.
 
-Users can specify only updates to the initialization configuration through partial JSON objects,
-rather than requiring complete configuration documents.
+[#serialization-security]
+== Security Model
 
-=== Self-Configuring Components in Pipes
+Configuration files read at initialization are treated as trusted sources. Component
+instantiation from JSON is restricted to classes registered at compile time by the
+`@TikaComponent` annotation processor (`META-INF/tika/*.idx` files); unknown class names are
+rejected, and there is no Jackson default typing.
 
-In the pipes infrastructure, objects should configure themselves to avoid classloading
-dependencies on components like `PDFParser`.
+Untrusted per-request configuration (tika-server requests, pipes `FetchEmitTuple`s) is
+deserialized in a restricted mode that additionally applies a fail-closed allowlist of
+context-key types: only metadata/output-shaping components (e.g. `MetadataFilter`,
+`ContentHandlerFactory`, `DigesterFactory`) may be bound from the wire; `Parser`, `Detector`,
+`Renderer`, and similar are blocked before anything is constructed.
 
-== Security Considerations
-
-* Configuration files at initialization are treated as trusted sources
-* Only classes registered via `@TikaComponent` (compile-time-generated
-  `META-INF/tika/*.idx` files) can be instantiated from JSON; unregistered class
-  names are rejected and there is no Jackson default typing
-* Untrusted per-request configuration (tika-server requests, pipes
-  `FetchEmitTuple`s) is deserialized in restricted mode: a fail-closed allowlist
-  permits only metadata/output-shaping context keys (e.g. `MetadataFilter`,
-  `ContentHandlerFactory`, `DigesterFactory`) and blocks `Parser`, `Detector`,
-  `Renderer`, and similar before anything is constructed
-
-See link:design-notes-4x.html[Design Notes for 4.x] for additional architectural context.
+Note the boundary: the allowlist blocks *binding a component* from the wire, not *configuring
+one that is already loaded*. Self-configuring components — every `Parser` among them — have
+their config subtree passed through unscanned, so a per-request config can still set parser
+options (including ones that spawn external processes, such as OCR). This is why
+`allowPerRequestConfig` is a separate gate and is off by default; the allowlist alone does
+not make per-request configuration safe to expose.

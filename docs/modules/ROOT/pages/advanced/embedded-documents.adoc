@@ -80,12 +80,13 @@ This field may have fewer "unknown" file names than `EMBEDDED_RESOURCE_PATH`.
 === Resource Naming
 
 `TikaCoreProperties.RESOURCE_NAME_KEY` (`tk:resource-name`)::
-The file name (not path) of the resource. Tika makes a best effort to determine a meaningful
+The name a parser recorded for the resource. Tika makes a best effort to determine a meaningful
 name from the container's metadata. When unavailable, Tika falls back to synthetic names
-such as `embedded-1.jpeg`.
+such as `embedded-1.jpg`.
 +
-NOTE: In Tika 4.x, this field contains only the file name. Use `INTERNAL_PATH` for the
-full path as stored in the container.
+NOTE: The archive parsers (zip, tar, and friends) store the full entry path here — the same
+value as `INTERNAL_PATH`. Most other parsers store a bare file name. Tika strips any path
+when it builds `EMBEDDED_RESOURCE_PATH`.
 
 == Container Metadata (From the File)
 
@@ -101,7 +102,7 @@ container knows about where the file lives in its internal structure:
 +
 * In a ZIP: the entry path (e.g., `reports/Q1/sales.xlsx`)
 * In a PST: the folder path plus message name (e.g., `Inbox/Important/Meeting notes.msg`)
-* In an OOXML document: the part name (e.g., `xl/media/image1.png`)
+* In an OOXML document: the part name (e.g., `/xl/media/image1.png`)
 +
 This differs fundamentally from `EMBEDDED_RESOURCE_PATH`:
 +
@@ -111,8 +112,8 @@ This differs fundamentally from `EMBEDDED_RESOURCE_PATH`:
 `TikaCoreProperties.ORIGINAL_RESOURCE_NAME` (`tk:orig-resource-name`)::
 For some file formats, the file path where the document was last saved on the creator's
 system. For example, an `.xlsx` file named `budget.xlsx` may include a metadata property
-storing where it was last saved: `C:\Users\Alice\budget.xlsx`. This is not specific to
-embedded files - it's a property that certain file formats preserve about themselves.
+storing where it was last saved: `C:\Users\Alice\budget.xlsx`. Parsers also use it for the
+original file name or path a container recorded for an attachment.
 
 == Microsoft-Specific Metadata
 
@@ -206,7 +207,7 @@ itself contains an embedded image:
 |`reports/Q1/sales.xlsx` (from ZIP entry)
 
 |`RESOURCE_NAME_KEY`
-|`sales.xlsx`
+|`reports/Q1/sales.xlsx` (the ZIP parser stores the entry path)
 
 |`EMBEDDED_RESOURCE_PATH`
 |`/sales.xlsx`
@@ -219,7 +220,7 @@ itself contains an embedded image:
 |`/1/2` (embedded in file with ID=1)
 
 |`INTERNAL_PATH`
-|`xl/media/image1.png` (from XLSX structure)
+|`/xl/media/image1.png` (from XLSX structure)
 
 |`RESOURCE_NAME_KEY`
 |`image1.png`
@@ -244,7 +245,7 @@ container metadata:
 
 * `INTERNAL_PATH` for the spreadsheet (`reports/Q1/sales.xlsx`) is what the _ZIP file knows_
   about where that entry was stored - its internal folder structure.
-* `INTERNAL_PATH` for the image (`xl/media/image1.png`) is what the _XLSX file knows_ about
+* `INTERNAL_PATH` for the image (`/xl/media/image1.png`) is what the _XLSX file knows_ about
   where that media file lives - its internal OOXML part name.
 
 Notice that `INTERNAL_PATH` resets at each container boundary. The image's internal path

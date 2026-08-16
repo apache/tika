@@ -15,11 +15,14 @@
 // limitations under the License.
 //
 
-// Regenerate with DumpLabels tool after model training.
+// Regenerate after model training with PrintDiscLabels (tika-langdetect-charsoup,
+// test scope), passing the .bin path; it prints the model's labels sorted.
 
 = CharSoup Supported Languages
 
-Language codes are ISO 639-3 (with private-use suffixes for romanized variants).
+Language codes are ISO 639-3, apart from three orthography variants that carry a
+private-use subtag: `cdo-x-rom` and `hak-x-rom` (romanized) and `be-x-old`
+(Belarusian Taraškievica).
 
 == Model 20260320
 

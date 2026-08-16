@@ -76,7 +76,15 @@ public class PerClientServerManager implements ServerManager {
                 || a.startsWith("-XX:MaxRAMFraction"));
     }
 
+    /** A lone fork gets less than the whole budget: the parent claims the JVM default (~25% of
+     *  the container) on top, and metaspace, thread stacks and page cache come out of what is
+     *  left. Exceeding the container trades a per-document OOM for an OOM-kill of both JVMs. */
+    private static final int SINGLE_FORK_HEAP_PERCENT = 60;
+
     private static int forkHeapPercentage(int numClients) {
+        if (numClients == 1) {
+            return SINGLE_FORK_HEAP_PERCENT;
+        }
         return Math.max(1, FORK_HEAP_BUDGET_PERCENT / numClients);
     }
 
@@ -401,7 +409,7 @@ public class PerClientServerManager implements ServerManager {
 
         LOG.trace("clientId={}: starting server on port={}", clientId, port);
 
-        tmpDir = Files.createTempDirectory("pipes-server-" + clientId + "-");
+        tmpDir = pipesConfig.createTempDirectory("pipes-server-" + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline(tmpDir));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. Without this, an orphan child

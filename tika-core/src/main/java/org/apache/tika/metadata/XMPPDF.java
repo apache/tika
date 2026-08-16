@@ -39,4 +39,6 @@ public interface XMPPDF {
 
     Property PRODUCER = Property.externalText(PREFIX + "Producer");
 
+    Property TRAPPED = Property.externalText(PREFIX + "Trapped");
+
 }

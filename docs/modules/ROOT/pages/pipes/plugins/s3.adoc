@@ -74,8 +74,8 @@ include::example$pipes-s3-fetcher.json[]
 |AWS region (e.g., `us-east-1`).
 
 |`prefix`
-|_no default_
-|Optional key prefix. Fetch keys are resolved underneath this prefix.
+|_none_
+|Optional key prefix, prepended verbatim to the fetch key — include the trailing `/` yourself. Leave it unset when the fetch keys already carry the prefix (see <<prefix-warning>>).
 
 |`credentialsProvider`
 |_required_
@@ -95,14 +95,14 @@ include::example$pipes-s3-fetcher.json[]
 
 |`maxConnections`
 |`0`
-|Maximum HTTP connections in the S3 client pool. `0` lets the SDK pick a default.
+|Maximum HTTP connections in the S3 client pool. `0` or less falls back to the SDK's own default (50).
 
 |`maxLength`
 |`-1`
 |Maximum object size, in bytes. `-1` means no limit.
 
 |`endpointConfigurationService`
-|_no default_
+|_none_
 |Custom S3 endpoint, for S3-compatible services such as MinIO or LocalStack.
 
 |`pathStyleAccessEnabled`
@@ -110,8 +110,8 @@ include::example$pipes-s3-fetcher.json[]
 |Force path-style URLs (e.g., `https://endpoint/bucket/key`). Required by some S3-compatible services.
 
 |`throttleSeconds`
-|_no default_
-|Optional rate-limit array; consecutive failures sleep for the corresponding number of seconds.
+|_none_
+|Retry/back-off array. Its length is the number of attempts, and entry _i_ is the seconds to sleep before retry _i_. Absent means a single attempt with no retry.
 |===
 
 [#s3-emitter]
@@ -147,23 +147,23 @@ include::example$pipes-s3-emitter.json[]
 |Required by the matching `credentialsProvider` (validated).
 
 |`prefix`
-|_no default_
+|_none_
 |Optional key prefix. A trailing `/` is stripped automatically.
 
 |`fileExtension`
 |`json`
-|Extension appended to each emitted key.
+|Extension appended to each emitted key. Set it to `""` to append nothing.
 
 |`spoolToTemp`
 |`true`
-|If `true`, output is spooled locally before being uploaded.
+|If `true`, output is spooled to a temp file before being uploaded; if `false`, it is buffered in memory.
 
 |`maxConnections`
 |`50`
-|Maximum HTTP connections in the S3 client pool.
+|Maximum HTTP connections in the S3 client pool. The value goes straight to the underlying connection manager, which rejects `0` and negatives.
 
 |`endpointConfigurationService`
-|_no default_
+|_none_
 |Custom S3 endpoint, for S3-compatible services.
 
 |`pathStyleAccessEnabled`
@@ -183,6 +183,8 @@ include::example$pipes-s3-iterator.json[]
 
 === Configuration
 
+In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
+
 [cols="1,1,3"]
 |===
 |Field |Default |Description
@@ -200,7 +202,7 @@ include::example$pipes-s3-iterator.json[]
 |Key prefix to scope the listing.
 
 |`credentialsProvider`
-|_optional_
+|_none_
 |One of `profile`, `instance`, `key_secret`. See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey` / `endpointConfigurationService`
@@ -208,8 +210,8 @@ include::example$pipes-s3-iterator.json[]
 |Auth fields, mirroring the fetcher and emitter.
 
 |`fileNamePattern`
-|_no default_
-|Optional regex; only keys whose name matches are emitted.
+|_none_
+|Optional regex, applied with `find()` to the last path segment of the key only. It is a substring search, so anchor it (`^...$`) if you want a whole-name match.
 
 |`maxConnections`
 |`50`
@@ -218,21 +220,30 @@ include::example$pipes-s3-iterator.json[]
 |`pathStyleAccessEnabled`
 |`false`
 |Force path-style URLs.
-
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
 |===
 
 [#s3-pipeline]
 == Complete Pipeline Example
 
-The example below wires the S3 fetcher, emitter, and iterator into a complete pipeline that lists `s3://my-tika-input/incoming/` and writes results to `s3://my-tika-output/results/`.
+Fetcher, emitter, and iterator wired to list `s3://my-tika-input/incoming/` and write results to `s3://my-tika-output/results/`.
 
 [source,json]
 ----
 include::example$pipes-s3-pipeline.json[]
 ----
+
+[#prefix-warning]
+[WARNING]
+====
+The iterator's `prefix` and the fetcher's `prefix` do *not* compose — they stack. The
+iterator emits the full S3 key it listed (`incoming/report.pdf`), and the fetcher then
+prepends its own `prefix` to that, asking for `incoming/incoming/report.pdf`. The example
+above sets `"prefix": "incoming/"` on both, so every fetch misses.
+
+Set the prefix on exactly one side: on the iterator (and leave the fetcher's unset), or on
+the fetcher when fetch keys come from somewhere that emits bare names. The emitter's
+`prefix` is independent of both and is safe to set alongside either.
+====
 
 [#notes]
 == Notes

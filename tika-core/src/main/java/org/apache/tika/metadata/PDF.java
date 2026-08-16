@@ -40,7 +40,7 @@ public interface PDF {
     Property EOF_OFFSETS = Property.externalIntegerSequence(PDF_PREFIX + "eof-offsets");
 
     /** Trapped flag from the XMP {@code pdf:} schema; docinfo counterpart {@link #DOC_INFO_TRAPPED}. */
-    Property TRAPPED = Property.internalText(PDF_PREFIX + "Trapped");
+    Property TRAPPED = Property.internalText(PDF_PREFIX + "trapped");
 
     /**
      * Prefix to be used for properties that record what was stored

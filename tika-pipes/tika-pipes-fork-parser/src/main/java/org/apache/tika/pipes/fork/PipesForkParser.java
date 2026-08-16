@@ -395,9 +395,12 @@ public class PipesForkParser implements Closeable {
             builder.setTimeoutLimits(config.getTimeoutLimits());
         }
 
-        // Set plugin roots if specified
+        // plugin-roots is mandatory downstream (TikaPluginManager.load throws without it), so an
+        // unset pluginsDir has to resolve to something rather than fail construction.
         if (config.getPluginsDir() != null) {
             builder.setPluginRoots(config.getPluginsDir().toAbsolutePath().toString());
+        } else {
+            builder.setPluginRoots(resolveDefaultPluginsDir());
         }
 
         ConfigOverrides overrides = builder.build();
@@ -405,4 +408,32 @@ public class PipesForkParser implements Closeable {
         // Merge with user config if provided, otherwise create new
         return ConfigMerger.mergeOrCreate(config.getUserConfigPath(), overrides);
     }
+
+    private static final String DEFAULT_PLUGINS_DIR = "plugins";
+
+    /**
+     * Mirrors tika-server's resolution: a "plugins" directory beside the running jar, else one in
+     * the working directory, else the bare name so pf4j reports the missing root itself.
+     */
+    private static String resolveDefaultPluginsDir() {
+        try {
+            Path jarPath = Path.of(PipesForkParser.class.getProtectionDomain()
+                    .getCodeSource().getLocation().toURI());
+            Path jarDir = jarPath.getParent();
+            if (jarDir != null) {
+                Path pluginsNextToJar = jarDir.resolve(DEFAULT_PLUGINS_DIR);
+                if (Files.isDirectory(pluginsNextToJar)) {
+                    return pluginsNextToJar.toAbsolutePath().toString();
+                }
+            }
+        } catch (Exception e) {
+            // fall through to the working directory
+        }
+        Path cwdPlugins = Path.of(DEFAULT_PLUGINS_DIR);
+        if (Files.isDirectory(cwdPlugins)) {
+            return cwdPlugins.toAbsolutePath().toString();
+        }
+        return DEFAULT_PLUGINS_DIR;
+    }
+
 }

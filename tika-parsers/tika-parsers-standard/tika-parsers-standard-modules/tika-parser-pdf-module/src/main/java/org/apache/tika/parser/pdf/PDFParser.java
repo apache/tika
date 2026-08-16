@@ -652,6 +652,7 @@ public class PDFParser implements Parser, RenderingParser {
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
 
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        PDMetadataExtractor.addMetadata(metadata, PDF.TRAPPED, info.getTrapped());
         Calendar created = info.getCreationDate();
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATED, created);

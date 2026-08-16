@@ -37,32 +37,54 @@ The OpenSearch plugin (`tika-pipes-opensearch`) provides an emitter (writes pars
 [#http-client-config]
 == Shared HTTP Client Settings
 
-Both the emitter and the reporter accept a nested `httpClientConfig` block with these fields:
+Both the emitter and the reporter take a nested `httpClientConfig` block. The block is
+*required* on both — omitting it fails at startup with a `NullPointerException`, not a
+config error.
+
+The two components read different subsets of it: the emitter honours only `userName` and
+`password` and ignores the rest; the reporter honours every field.
 
 [cols="1,1,3"]
 |===
 |Field |Default |Description
 
 |`userName` / `password`
-|_optional_
-|Basic-auth credentials. Omit both for an anonymous client.
+|_none_
+|Credentials. Omit both for an anonymous client.
 
 |`authScheme`
-|_optional_
-|Set to `basic` to send credentials preemptively.
+|_none_
+|`basic` or `ntlm`. Reporter only, and required there whenever `userName`/`password` are set — the reporter passes it through unconditionally, so leaving it out throws a `NullPointerException` once credentials are present.
 
 |`connectionTimeoutMillis`
-|_no default_
-|HTTP connect timeout, in milliseconds.
+|`0`
+|HTTP connect timeout, ms. `0` means no timeout. Reporter only.
 
 |`socketTimeoutMillis`
-|_no default_
-|HTTP socket read timeout, in milliseconds.
+|`0`
+|HTTP socket read timeout, ms. `0` means no timeout. Reporter only.
 
 |`proxyHost` / `proxyPort`
-|_optional_
-|Optional outbound HTTP proxy.
+|_none_ / `0`
+|Outbound HTTP proxy. Reporter only.
 |===
+
+Both components verify TLS certificates and hostnames by default, so an `https://`
+`openSearchUrl` is encrypted *and* authenticated. If the cluster uses a private CA, add it to
+the JVM truststore. To disable verification — self-signed certificates are the usual reason —
+set `verifySsl` on `httpClientConfig` for the emitter and the reporter separately:
+
+[source,json]
+----
+"httpClientConfig": { "verifySsl": false }
+----
+
+[WARNING]
+====
+With `verifySsl: false` the client accepts any certificate from any host and skips the
+hostname check, so anything on the network path can read and alter what is indexed. It logs a
+WARN saying so at startup. Prefer trusting the CA.
+====
 
 [#opensearch-emitter]
 == OpenSearch Emitter (`opensearch-emitter`)
@@ -86,32 +108,26 @@ include::example$pipes-opensearch-emitter.json[]
 
 |`idField`
 |_required_
-|Field in the emitted JSON document that holds the OpenSearch `_id`.
+|Validated non-blank, but not otherwise read: the `_id` is the emit key (attachments get the emit key plus a random suffix).
 
 |`attachmentStrategy`
-|_no default_
-|How attached/embedded documents are indexed. One of:
-
-* `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document.
-* `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation.
+|`SEPARATE_DOCUMENTS`
+|How attached/embedded documents are indexed. `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document; `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation. Absent behaves as `SEPARATE_DOCUMENTS`.
 
 |`updateStrategy`
-|_no default_
-|How existing documents are handled. One of:
-
-* `OVERWRITE` — replaces an existing document at `_id`.
-* `UPSERT` — merges into an existing document.
+|`UPSERT`
+|How existing documents are handled. `OVERWRITE` — replaces an existing document at `_id`; `UPSERT` — merges into an existing document. Absent behaves as `UPSERT`.
 
 |`commitWithin`
-|_no default_
-|Maximum delay before the index refresh becomes visible, in milliseconds (passed to OpenSearch's `refresh` semantics).
+|_unused_
+|Accepted by the config parser but never read. Control refresh visibility on the OpenSearch side instead.
 
 |`embeddedFileFieldName`
-|_no default_
+|_none_
 |Name of the field used to hold embedded-file content (used by `PARENT_CHILD`).
 
 |`httpClientConfig`
-|_optional_
+|_required_
 |See <<http-client-config>>.
 |===
 
@@ -125,7 +141,7 @@ Writes per-document processing status records to an OpenSearch index. Useful for
 include::example$pipes-opensearch-reporter.json[]
 ----
 
-`pipes-reporters` accepts multiple reporters keyed by type name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
+`pipes-reporters` accepts multiple reporters keyed by component name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
 
 === Configuration
 
@@ -138,15 +154,15 @@ include::example$pipes-opensearch-reporter.json[]
 |Full URL of the status index, e.g., `https://opensearch.example.com:9200/tika-status`.
 
 |`includes`
-|_optional_
-|Set of `RESULT_STATUS` names to include (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`). If unset, all are reported.
+|_none_
+|Set of `RESULT_STATUS` names to include (e.g., `PARSE_SUCCESS`, `PARSE_SUCCESS_WITH_EXCEPTION`). Names are resolved with `RESULT_STATUS.valueOf`, so an unrecognised name fails at startup. If unset, all are reported.
 
 |`excludes`
-|_optional_
-|Set of `RESULT_STATUS` names to skip. Applied after `includes`.
+|_none_
+|Set of `RESULT_STATUS` names to skip. Mutually exclusive with `includes`; setting both is a config error.
 
 |`keyPrefix`
-|_optional_
+|_none_
 |Prefix prepended to status field names in the emitted documents.
 
 |`includeRouting`
@@ -154,14 +170,14 @@ include::example$pipes-opensearch-reporter.json[]
 |If `true`, include OpenSearch routing info in each status record.
 
 |`httpClientConfig`
-|_optional_
+|_required_
 |See <<http-client-config>>.
 |===
 
 [#opensearch-pipeline]
 == Complete Pipeline Example
 
-The example below combines a filesystem iterator/fetcher with the OpenSearch emitter and reporter — a common pattern for ingesting a directory of documents into an OpenSearch index.
+A filesystem iterator/fetcher feeding the OpenSearch emitter and reporter — the usual shape for ingesting a directory into an OpenSearch index.
 
 [source,json]
 ----

@@ -45,24 +45,29 @@ Isolation: Per-request                  Isolation: None (shared fate)
 
 == Limitations and Risks
 
-=== Blast Radius
-In default mode, a crash only affects one request. In shared mode, **all concurrent requests are lost** when the server crashes, times out, or runs out of memory.
+=== Shared fate
 
-=== Resource Contention
-All concurrent parses share the same heap, CPU, and file handles. A memory-hungry document can starve other parses or trigger an OOM that kills everything.
+Any crash, timeout, or `OutOfMemoryError` kills the one server process, so **all concurrent
+requests are lost**, not just the offending one. The server is then restarted and clients
+reconnect (see <<_recovery_behavior,Recovery Behavior>>).
 
-=== No Per-Document Memory Limits
-In per-client mode, each JVM has its own heap limit, providing natural isolation. In shared mode, you must size the heap for worst-case concurrent load.
+=== Shared resources
 
-=== Timeout and OOM Blast Radius
-When a timeout or OutOfMemoryError occurs, the shared server must be killed and restarted. All other in-progress parses are lost.
+All concurrent parses share one heap, CPU allocation, and file-handle table. A memory-hungry
+document can starve the others or trigger the OOM that kills everything, and there is no
+per-document heap limit to contain it — you must size the heap for worst-case *concurrent*
+load rather than worst-case single document.
 
-=== Multithreading Bugs in Parsers
-In per-client mode, each parse runs in its own JVM with a single thread, so thread-safety bugs in parsers are not exposed. In shared mode, multiple parses run concurrently in the same JVM, which may expose latent threading bugs in parsers or their dependencies. If you encounter strange behavior or crashes in shared mode that don't occur in per-client mode, threading issues in parsers are a likely cause.
+=== Concurrency exposure
+
+In per-client mode each parse gets its own JVM and a single thread, so thread-safety bugs in
+parsers stay hidden. In shared mode parses run concurrently in one JVM, which can expose
+latent threading bugs in parsers or their dependencies. Strange behaviour that appears only
+in shared mode is most often this.
 
 == When to Use Shared Mode
 
-Consider shared mode only when:
+Consider shared mode only when all of these hold:
 
 * You have strict memory constraints and cannot run N separate JVMs
 * Your documents are well-behaved and unlikely to cause OOM or timeouts
@@ -93,35 +98,24 @@ See xref:pipes/timeouts.adoc[Timeouts] for details on configuring timeouts.
 
 == Sizing Guidance
 
-When using shared mode, size the JVM heap for worst-case concurrent load:
+Size the single heap for `numClients` × worst-case per-document usage, plus GC headroom and
+JVM overhead: 4 clients at up to 500 MB each needs at least 2 GB. That is the same total a
+per-client deployment would use, but concentrated in one JVM where a single OOM takes down
+every in-flight request instead of one.
 
-* If you have 4 clients and each document could use up to 500MB, you need at least 2GB heap (plus overhead for the JVM itself)
-* Add buffer for garbage collection overhead
-* Consider that peak memory may be higher than average
-
-In per-client mode, the same workload would use 4 x 500MB = 2GB total, but distributed across 4 isolated JVMs where one OOM only affects one request.
-
-For the per-worker `-Xmx` rule of thumb that informs both modes, see xref:pipes/cpu-sizing.adoc#heap-per-worker[Heap per worker].
+For the per-fork `-Xmx` rule of thumb that informs both modes, see
+xref:pipes/cpu-sizing.adoc#heap-per-fork[Heap per fork].
 
 == Recovery Behavior
 
-When a fatal error occurs (OOM, timeout, or crash):
-
-1. The affected client marks the server for restart
-2. The server process is terminated
-3. All other clients detect the restart is pending
-4. A new server process is started
-5. Clients reconnect and resume processing
-
-During this recovery window, **all in-flight requests from all clients are lost**.
+On a fatal error (OOM, timeout, or crash) the affected client marks the server for restart
+and the process is terminated; other clients detect the pending restart, and once a new
+server process is up they reconnect and resume. **All in-flight requests from all clients
+are lost** in that window, so retry logic belongs at the application level.
 
 == Recommendation
 
-For production workloads, **use the default per-client mode** unless you have specific memory constraints that require shared mode. The isolation provided by per-client mode is valuable for reliability.
-
-If you must use shared mode:
-
-* Test thoroughly with your document corpus
-* Monitor for OOM and timeout events
-* Have retry logic at the application level for lost requests
-* Size the heap generously
+Use the default per-client mode for production workloads unless a memory constraint forces
+otherwise — the isolation is worth more than the saved JVMs. If you must use shared mode,
+test against your own corpus, monitor OOM and timeout events, retry lost requests at the
+application level, and size the heap generously.

@@ -40,13 +40,13 @@ import org.junit.jupiter.api.condition.OS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherReply;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 
 /**
  * Tests per-request ParseContext configuration via FetchAndParseRequest.parse_context_json.

@@ -90,6 +90,24 @@
   </dependencies>
 
   <build>
+    <resources>
+      <!-- plugin.properties carries the release version; everything else must stay unfiltered
+           so config examples keep their literal ${...} placeholders. -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>plugin.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>plugin.properties</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.rat</groupId>

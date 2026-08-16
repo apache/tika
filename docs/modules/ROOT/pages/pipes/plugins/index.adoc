@@ -131,3 +131,6 @@ For descriptions of the interfaces themselves — their contracts, the shared co
 * xref:pipes/emitters.adoc[Emitters]
 * xref:pipes/iterators.adoc[Pipes Iterators]
 * xref:pipes/reporters.adoc[Pipes Reporters]
+
+To implement one of those interfaces and package it as a plugin, see
+xref:pipes/plugins/writing-a-plugin.adoc[Writing a Pipes Plugin].

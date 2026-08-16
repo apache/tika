@@ -16,30 +16,81 @@
 //
 
 = Migrating to Tika 4.x
+:toc:
 
 This guide covers the changes required when upgrading from Apache Tika 3.x to 4.x.
 
-See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
-
 == Requirements
 
-* Java 17 or later (upgraded from Java 11 in 3.x)
+Java 17 or later (3.x required Java 11). See the xref:roadmap.adoc[Roadmap] for version
+timelines and support schedules.
 
-== `tika-app` distribution: jar -> zip
+[#tika-input-stream-spi]
+== Core SPI signatures: `InputStream` -> `TikaInputStream`
+
+`Parser`, `Detector` and `EmbeddedDocumentExtractor` all changed shape. Every third-party
+implementation of these interfaces must be updated; there is no `InputStream` overload, so the
+break is a compile error rather than a silent behavior change.
+
+[source,java]
+----
+// 3.x
+void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context);
+MediaType detect(InputStream input, Metadata metadata);
+
+// 4.x
+void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext context);
+MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext);
+----
+
+`EmbeddedDocumentExtractor.shouldParseEmbedded` and `parseEmbedded` likewise take a
+`ParseContext`, and `parseEmbedded` takes a `TikaInputStream`.
+
+*Callers* wrap with `TikaInputStream.get(...)`:
+
+[source,java]
+----
+try (TikaInputStream tis = TikaInputStream.get(myInputStream)) {
+    parser.parse(tis, handler, metadata, context);
+}
+----
+
+The `Tika` facade (`Tika#parse`, `Tika#parseToString`, `Tika#detect`) still accepts a plain
+`InputStream` and is unaffected — if you only use the facade, nothing changes.
+
+Why: passing `TikaInputStream` explicitly makes the spooling and rewind contract visible in the
+signature instead of leaving every implementation to wrap defensively. See
+xref:advanced/spooling.adoc[spooling] for the stream contract.
+
+[#thin-launcher-zip]
+== `tika-app` and `tika-server` distributions: jar -> zip
 
 In 3.x, `tika-app-<version>.jar` was a self-contained fat jar — you could drop it anywhere and run `java -jar tika-app.jar`. In 4.x it is a thin launcher that depends on the parsers, the Tika Pipes processor, and other modules living in an adjacent `lib/` directory. Running the bare jar by itself will fail with `NoClassDefFoundError`.
 
-Download `tika-app-<version>.zip` and run from inside the unzipped directory so `lib/` (and `plugins/`) sit alongside the jar:
+Download `tika-app-<version>.zip` and run from inside the unzipped directory so `lib/` (and `plugins/`) sit alongside the jar. The zip has no top-level directory, so unzip it into one:
 
 [source,bash]
 ----
-unzip tika-app-<version>.zip
+unzip -d tika-app-<version> tika-app-<version>.zip
 cd tika-app-<version>
 java -jar tika-app-<version>.jar [option...] [file...]
 ----
 
+`tika-server-standard` changed the same way, and it is the more common trap because the jar is
+still published to Maven Central: `tika-server-standard-<version>.jar` is now a thin launcher
+whose manifest `Class-Path` points at `lib/`. Pull it from Central on its own and it fails at
+startup.
+
+[source,bash]
+----
+unzip -d tika-server-standard-<version> tika-server-standard-<version>.zip
+cd tika-server-standard-<version>
+java -jar tika-server-standard-<version>.jar
+----
+
 If you have build scripts or container images that drop in just the jar, update them to unpack the zip and run from inside it.
 
+[#default-handler-markdown]
 == Default content handler: XHTML/XML -> Markdown
 
 In 3.x the default content handler produced XHTML/XML. In 4.x the default is **Markdown** everywhere:
@@ -64,8 +115,7 @@ Tika provides a conversion tool in `tika-app` to help migrate your XML configura
 java -jar tika-app.jar --convert-config-xml-to-json=tika-config.xml > tika-config.json
 ----
 
-The converted JSON is written to standard output, so redirect it to the file of your choice
-(as shown above). No separate `--config` argument is needed.
+The converted JSON goes to standard output; there is no separate `--config` argument.
 
 The converter currently supports:
 
@@ -74,9 +124,20 @@ The converter currently supports:
 * **Special handling** - TesseractOCR's `otherTesseractSettings` list is automatically
   converted to the `otherTesseractConfig` map format
 
-IMPORTANT: The converter is a starting point, not a complete translation. It handles only
-the `parsers` section, and some 3.x options were genuinely removed or restructured in 4.x
-with no mechanical equivalent. Review the generated JSON and confirm it loads before relying on it.
+[IMPORTANT]
+====
+The converter is a starting point, not a complete translation:
+
+* It handles only the `parsers` section. Detectors and every other section need manual
+  migration.
+* A parser class it cannot resolve in the component registry — a custom or third-party
+  parser — falls back to a kebab-case name derived from the class's simple name, which may
+  not be the name the component actually registers.
+* Some 3.x options were genuinely removed or restructured in 4.x with no mechanical
+  equivalent.
+
+Review the generated JSON and confirm it loads before relying on it.
+====
 
 === Example Conversion
 
@@ -140,14 +201,6 @@ explicit `exclude` directives are only needed to disable a parser without replac
 |`"exclude": ["component-name"]` (only needed to disable a parser entirely)
 |===
 
-=== Limitations
-
-The automatic converter has some limitations:
-
-* Only the `parsers` section is currently converted
-* Detectors and other sections require manual migration
-* Custom or third-party parsers not in the registry will use kebab-case name conversion
-
 === Parser Configuration Changes
 
 WARNING: The configuration options for `PDFParser` and `TesseractOCRParser` have changed
@@ -167,15 +220,12 @@ xref:developers/serialization.adoc[Serialization and Configuration].
 
 === Full Configuration Example
 
-Below is a complete example of a Tika 4.x JSON configuration file with commonly configured parsers:
+A complete Tika 4.x JSON configuration file with the commonly configured parsers:
 
 [source,json]
 ----
 include::example$migration-full-example.json[]
 ----
-
-NOTE: This example shows common options. See the individual parser configuration pages for
-complete documentation of all available options.
 
 == Metadata Key Changes
 
@@ -235,22 +285,28 @@ String text = tika.parseToString(file);
 Parser parser = new DefaultParser();
 ----
 
-=== ExternalParser
+=== ExternalParser is configuration-only
 
-The legacy `ExternalParser` and `CompositeExternalParser` have been removed.
-External parsers must now be explicitly configured via JSON. See
+`ExternalParser` still exists (`org.apache.tika.parser.external.ExternalParser`), but it is
+no longer discovered from the classpath: `CompositeExternalParser` and
+`ExternalParsersFactory`, which loaded `tika-external-parsers.xml` definitions from the
+classpath automatically, are gone. Declare each external parser in your JSON config instead. See
 xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
 for details.
 
+[#stateless-embedded-extractor]
 === EmbeddedDocumentExtractor is now stateless
 
 [WARNING]
 ====
 If you call a concrete parser directly instead of going through `AutoDetectParser`, you
-must set `Parser.class` in the `ParseContext` yourself or embedded documents are
-**silently skipped** -- no content, no exception. The same applies to `Detector.class`:
-without it, embedded documents are reported as `application/octet-stream` instead of
-being identified. See <<bare-context-embedded-skip,Behavior change>> below.
+must populate the `ParseContext` yourself:
+
+* no `Parser.class` -> embedded documents are
+  <<bare-context-embedded-skip,**silently skipped**>>, with no content and no exception;
+* no `Detector.class` -> embedded documents are
+  <<bare-context-detector-noop,reported as `application/octet-stream`>> instead of being
+  identified.
 ====
 
 `ParsingEmbeddedDocumentExtractor` (and Tika Pipes' `UnpackExtractor`) no longer capture a
@@ -280,7 +336,7 @@ This affects:
 
 * `EmbeddedDocumentExtractor#shouldParseEmbedded(Metadata)` -> `shouldParseEmbedded(Metadata, ParseContext)`.
   Any custom `EmbeddedDocumentExtractor` implementation must add the parameter.
-* `ParsingEmbeddedDocumentExtractor`'s public constructor is gone -- use the
+* `ParsingEmbeddedDocumentExtractor`'s `ParseContext` constructor is gone -- use the
   `ParsingEmbeddedDocumentExtractor.INSTANCE` singleton (or `UnpackExtractor.INSTANCE` in
   Tika Pipes). A subclass that called `super(context)` should drop the constructor and read
   `ParseContext` from the method parameter instead of a captured field.
@@ -404,7 +460,7 @@ the full list of behavioral changes and required config edits.
 * `EmbeddedDocumentExtractorFactory`, `EmbeddedDocumentByteStoreExtractorFactory`,
   `StandardExtractorFactory`, `UnpackExtractorFactory` -- deleted; bind an
   `EmbeddedDocumentExtractor` instance directly instead (see
-  <<EmbeddedDocumentExtractor is now stateless>> above)
+  <<stateless-embedded-extractor,EmbeddedDocumentExtractor is now stateless>> above)
 * `ParsingEmbeddedDocumentExtractor(ParseContext)` constructor -- removed; use the
   `ParsingEmbeddedDocumentExtractor.INSTANCE` singleton
 * `EmbeddedDocumentUtil`'s instance API (constructor and all instance methods) -- removed;
