@@ -63,6 +63,11 @@ public class MetadataResource {
     protected MetadataResource() {
     }
 
+    /** For subclasses in other modules; they need it for request contexts and metadata. */
+    protected TikaResource getTikaResource() {
+        return tikaResource;
+    }
+
     protected void setTikaResource(TikaResource tikaResource) {
         this.tikaResource = tikaResource;
     }
@@ -72,10 +77,10 @@ public class MetadataResource {
     @Produces({"application/json", "text/csv"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
+        ParseContext context = tikaResource.createRequestContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
-                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), context))
+                    .ok(parseMetadata(tis, tikaResource.newRequestMetadata(), att.getHeaders(), context))
                     .build();
         }
     }
@@ -93,8 +98,8 @@ public class MetadataResource {
             @Context HttpHeaders httpHeaders) throws Exception {
 
         // Load default context from config, then overlay with request config
-        ParseContext context = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             TikaResource.logRequest(LOG, "/meta/config", metadata);
             // Null headers: multipart request headers describe the envelope and would
@@ -106,8 +111,8 @@ public class MetadataResource {
     @PUT
     @Produces({"application/json", "text/csv"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
@@ -140,10 +145,10 @@ public class MetadataResource {
     @Path("{field}")
     @Produces({"application/json", "text/csv", "text/plain"})
     public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
+        ParseContext context = tikaResource.createRequestContext();
         Metadata metadata;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            metadata = parseMetadata(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), context);
+            metadata = parseMetadata(tis, tikaResource.newRequestMetadata(), httpHeaders.getRequestHeaders(), context);
         }
 
         String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
@@ -191,7 +196,7 @@ public class MetadataResource {
         TikaResource.logRequest(LOG, "/meta", metadata);
         List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
         if (metadataList.isEmpty()) {
-            return Metadata.newInstance(context);
+            return tikaResource.newRequestMetadata();
         }
         return metadataList.get(0);
     }

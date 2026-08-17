@@ -315,19 +315,7 @@ public abstract class CXFTestBase {
      */
     private Path createDefaultTestConfig(Path tikaConfigPath) throws IOException {
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
-
-        // Read tika config to check for metadata-filters
-        String metadataFiltersJson = "";
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode tikaConfig = mapper.readTree(tikaConfigPath.toFile());
-            JsonNode metadataFilters = tikaConfig.get("metadata-filters");
-            if (metadataFilters != null && !metadataFilters.isEmpty()) {
-                metadataFiltersJson = ",\n              \"metadata-filters\": " + mapper.writeValueAsString(metadataFilters);
-            }
-        } catch (Exception e) {
-            LOG.debug("Could not read metadata-filters from tika config: {}", e.getMessage());
-        }
+        ObjectMapper mapper = new ObjectMapper();
 
         String configJson = String.format(Locale.ROOT, """
             {
@@ -346,12 +334,35 @@ public abstract class CXFTestBase {
                   "progressTimeoutMillis": 60000
                 }
               },
-              "plugin-roots": "%s"%s
+              "plugin-roots": "%s"
             }
-            """, pluginsDir.toString().replace("\\", "/"), metadataFiltersJson);
+            """, pluginsDir.toString().replace("\\", "/"));
+
+        com.fasterxml.jackson.databind.node.ObjectNode root =
+                (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(configJson);
+
+        // Production hands the forked worker a ConfigMerger'd copy of the server's own config,
+        // so the worker resolves the same parse-context and metadata-filters. Carry them across
+        // here too: requests ship only their own entries, so anything the harness leaves out of
+        // the worker's config is simply absent rather than arriving over the wire.
+        try {
+            JsonNode tikaConfig = mapper.readTree(tikaConfigPath.toFile());
+            JsonNode parseContext = tikaConfig.get("parse-context");
+            if (parseContext != null && parseContext.isObject()) {
+                com.fasterxml.jackson.databind.node.ObjectNode target =
+                        (com.fasterxml.jackson.databind.node.ObjectNode) root.get("parse-context");
+                parseContext.properties().forEach(e -> target.set(e.getKey(), e.getValue()));
+            }
+            JsonNode metadataFilters = tikaConfig.get("metadata-filters");
+            if (metadataFilters != null && !metadataFilters.isEmpty()) {
+                root.set("metadata-filters", metadataFilters);
+            }
+        } catch (Exception e) {
+            LOG.debug("Could not carry config into the worker config: {}", e.getMessage());
+        }
 
         Path tempConfig = Files.createTempFile("tika-test-default-config-", ".json");
-        Files.writeString(tempConfig, configJson);
+        Files.writeString(tempConfig, mapper.writeValueAsString(root));
         return tempConfig;
     }
 

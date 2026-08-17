@@ -138,6 +138,13 @@ Release 4.0.0 - ???
    * tika-server: /meta now runs through the same pipes-backed parser as the
      other extraction endpoints (TIKA-4809).
 
+   * tika-server requests now carry only their own parse-context entries to the
+     forked worker, which supplies the config defaults itself. Previously the
+     server sent its config's parse-context along with every request, so the
+     worker -- which clamps request-supplied timeout limits but trusts its own
+     config's -- treated the operator's timeout-limits as caller input and
+     clamped them at pipes.maxTotalTaskTimeoutMillis (TIKA-4808).
+
    * tika-grpc's fetchAndParseServerSideStreaming now completes the call
      after delivering its reply, instead of leaving the client waiting
      for a terminal signal that never came (TIKA-4804).
