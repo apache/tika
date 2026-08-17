@@ -4,7 +4,7 @@ Apache Tika includes a number of subcomponents with separate copyright notices
 and license terms. Your use of these subcomponents is subject to the terms and
 conditions of the following licenses.
 
-Bouncy Castle libraries (bcjmail and bcprov)
+Bouncy Castle libraries (bcjmail, bcpkix, bcprov and bcutil)
 
     Copyright (c) 2000-2009 The Legion Of The Bouncy Castle
     (http://www.bouncycastle.org)
@@ -1658,3 +1658,217 @@ Jakarta Annotations API, Jakarta Servlet API and Jakarta RESTful Web Services AP
         exception to your version of the library, but you are not obligated to
         do so.  If you do not wish to do so, delete this exception statement
         from your version.
+
+Curvesapi library (curvesapi), JMatIO library (jmatio)
+
+    The 3-Clause BSD License
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software
+       without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+JAI Image I/O Tools core (jai-imageio-core)
+
+    Copyright (c) 2005 Sun Microsystems, Inc.
+    Copyright (c) 2010-2014 University of Manchester
+    Copyright (c) 2010-2015 Stian Soiland-Reyes
+    Copyright (c) 2015 Peter Hull
+    All Rights Reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    - Redistribution of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    - Redistribution in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in
+      the documentation and/or other materials provided with the
+      distribution.
+
+    Neither the name of Sun Microsystems, Inc. or the names of
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+    This software is provided "AS IS," without a warranty of any
+    kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND
+    WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY
+    EXCLUDED. SUN MIDROSYSTEMS, INC. ("SUN") AND ITS LICENSORS SHALL
+    NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT OF
+    USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
+    DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR
+    ANY LOST REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL,
+    CONSEQUENTIAL, INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND
+    REGARDLESS OF THE THEORY OF LIABILITY, ARISING OUT OF THE USE OF OR
+    INABILITY TO USE THIS SOFTWARE, EVEN IF SUN HAS BEEN ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGES.
+
+    You acknowledge that this software is not designed or intended for
+    use in the design, construction, operation or maintenance of any
+    nuclear facility.
+
+dd-plist library (dd-plist), java-semver library (java-semver) and
+jsoup library (jsoup)
+
+    The MIT License
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+JAXB runtime and the Jakarta XML Binding / Activation APIs (jaxb-runtime,
+jaxb-core, txw2, istack-commons-runtime, jakarta.xml.bind-api,
+jakarta.activation-api, angus-activation)
+
+    Eclipse Distribution License, Version 1.0 (3-Clause BSD)
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+      - Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+      - Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+      - Neither the name of the Eclipse Foundation, Inc. nor the names of its
+        contributors may be used to endorse or promote products derived
+        from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+JDOM library (jdom2)
+
+    Copyright (C) 2000-2012 Jason Hunter & Brett McLaughlin.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    1. Redistributions of source code must retain the above copyright
+       notice, this list of conditions, and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions, and the disclaimer that follows
+       these conditions in the documentation and/or other materials
+       provided with the distribution.
+
+    3. The name "JDOM" must not be used to endorse or promote products
+       derived from this software without prior written permission.  For
+       written permission, please contact <request_AT_jdom_DOT_org>.
+
+    4. Products derived from this software may not be called "JDOM", nor
+       may "JDOM" appear in their name, without prior written permission
+       from the JDOM Project Management <request_AT_jdom_DOT_org>.
+
+    In addition, we request (but do not require) that you include in the
+    end-user documentation provided with the redistribution and/or in the
+    software itself an acknowledgement equivalent to the following:
+        "This product includes software developed by the
+         JDOM Project (http://www.jdom.org/)."
+    Alternatively, the acknowledgment may be graphical using the logos
+    available at http://www.jdom.org/images/logos.
+
+    THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+    OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED.  IN NO EVENT SHALL THE JDOM AUTHORS OR THE PROJECT
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+    USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
+
+    This software consists of voluntary contributions made by many
+    individuals on behalf of the JDOM Project and was originally
+    created by Jason Hunter <jhunter_AT_jdom_DOT_org> and
+    Brett McLaughlin <brett_AT_jdom_DOT_org>.  For more information
+    on the JDOM Project, please see <http://www.jdom.org/>.
+
+JHighlight library (jhighlight)
+
+    CDDL 1.0 / LGPL 2.1 or later (dual-licensed)
+
+    JHighlight is dual-licensed under the Common Development and Distribution
+    License (CDDL), Version 1.0 and the GNU Lesser General Public License
+    (LGPL), Version 2.1 or later.  Under the Apache Software Foundation's
+    third-party licensing policy this is a "Category B" work: Apache Tika
+    redistributes it in unmodified binary form only and does not include its
+    source or derive from it.
+
+    The jhighlight jar does not carry a copy of either license.  Their full
+    texts are available at:
+
+        CDDL 1.0    https://opensource.org/licenses/cddl1.php
+        LGPL 2.1    https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+    The upstream project is https://github.com/codelibs/jhighlight
+
+Eclipse Jetty (jetty-ee11-servlet, jetty-http, jetty-http2-common,
+jetty-http2-hpack, jetty-http2-server, jetty-io, jetty-security, jetty-server,
+jetty-session, jetty-util)
+
+    Eclipse Jetty is dual-licensed: it is made available under the terms of
+    either the Eclipse Public License, Version 2.0
+    (https://www.eclipse.org/legal/epl-2.0/) or the Apache License,
+    Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0.txt), at the
+    recipient's option.
+
+    Apache Tika elects the Apache License, Version 2.0, whose terms appear
+    above.  The Jetty jars do not carry a copy of either license; both texts
+    are available at the URLs above.

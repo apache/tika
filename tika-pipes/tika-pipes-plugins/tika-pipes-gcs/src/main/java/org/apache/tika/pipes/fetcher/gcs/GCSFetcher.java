@@ -93,12 +93,22 @@ public class GCSFetcher extends AbstractTikaExtension implements Fetcher {
             } else {
                 long start = System.currentTimeMillis();
                 TemporaryResources tmpResources = new TemporaryResources();
-                Path tmp = tmpResources.createTempFile();
-                blob.downloadTo(tmp);
-                TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
-                long elapsed = System.currentTimeMillis() - start;
-                LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
-                return tis;
+                try {
+                    Path tmp = tmpResources.createTempFile();
+                    blob.downloadTo(tmp);
+                    TikaInputStream tis = TikaInputStream.get(tmp, metadata, tmpResources);
+                    long elapsed = System.currentTimeMillis() - start;
+                    LOGGER.debug("took {} ms to copy to local tmp file", elapsed);
+                    return tis;
+                } catch (Throwable t) {
+                    // a failed download must not orphan the temp file, and a close failure must not hide why
+                    try {
+                        tmpResources.close();
+                    } catch (IOException e) {
+                        t.addSuppressed(e);
+                    }
+                    throw t;
+                }
             }
         } catch (Exception e) {
             throw new IOException("gcs storage exception", e);

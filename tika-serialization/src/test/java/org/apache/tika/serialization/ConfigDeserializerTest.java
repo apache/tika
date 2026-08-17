@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,14 @@ public class ConfigDeserializerTest {
         public void setEnabled(boolean enabled) {
             this.enabled = enabled;
         }
+    }
+
+    /**
+     * Stands in for the validation-only RuntimeConfig subclasses (TesseractOCRConfig,
+     * Tess4JConfig, VLMOCRConfig) that a component deserializes a key into before
+     * deserializing the same key into the real config class.
+     */
+    public static class RuntimeTestConfig extends TestConfig {
     }
 
     @Test
@@ -310,6 +319,39 @@ public class ConfigDeserializerTest {
         // and the second lookup of each key returns its own cached instance
         assertEquals("a", ParseContextConfig.getConfig(
                 context, "provider-a", TestConfig.class, new TestConfig()).getName());
+    }
+
+    /**
+     * Components resolve one key into two classes: a validation-only subclass first,
+     * then the real config class merged with the operator's defaults. The second
+     * lookup must not be served the first lookup's instance.
+     */
+    @Test
+    public void testTwoClassesOnOneKeyEachResolveToTheirOwnInstance() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("dual-class-parser", "{\"value\":200}");
+
+        TestConfig operatorDefaults = new TestConfig();
+        operatorDefaults.setName("operator-set");
+
+        RuntimeTestConfig runtime = ParseContextConfig.getConfig(context, "dual-class-parser",
+                RuntimeTestConfig.class, new RuntimeTestConfig());
+        assertEquals(200, runtime.getValue());
+
+        TestConfig merged = ParseContextConfig.getConfig(context, "dual-class-parser",
+                TestConfig.class, operatorDefaults);
+
+        assertEquals(TestConfig.class, merged.getClass(),
+                "the second lookup must resolve into the class it asked for");
+        assertEquals("operator-set", merged.getName(),
+                "the second lookup must merge the operator defaults, not reuse the cached subclass");
+        assertEquals(200, merged.getValue());
+
+        // both entries stay cached: a repeat lookup of either class is stable
+        assertSame(runtime, ParseContextConfig.getConfig(context, "dual-class-parser",
+                RuntimeTestConfig.class, new RuntimeTestConfig()));
+        assertSame(merged, ParseContextConfig.getConfig(context, "dual-class-parser",
+                TestConfig.class, operatorDefaults));
     }
 
     /** A programmatic class-keyed override still applies when a key has no JSON config. */

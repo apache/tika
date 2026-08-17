@@ -289,8 +289,10 @@ public class CompressorParser implements Parser {
 
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
         try {
+            //inside the try: a handler that throws from startDocument() must still
+            //release cis and the shield
+            xhtml.startDocument();
             Metadata entrydata = Metadata.newInstance(context);
             boolean foundName = false;
             if (cis instanceof GzipCompressorInputStream) {
@@ -309,8 +311,13 @@ public class CompressorParser implements Parser {
                 }
             }
         } finally {
-            cis.close();
-            tis.removeCloseShield();
+            //nested so a throw from cis.close() can't strand the shield; a stuck shield
+            //makes the caller's tis.close() a no-op and leaks its whole resource tree
+            try {
+                cis.close();
+            } finally {
+                tis.removeCloseShield();
+            }
         }
 
         xhtml.endDocument();

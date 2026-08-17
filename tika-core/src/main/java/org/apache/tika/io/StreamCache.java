@@ -131,6 +131,9 @@ class StreamCache implements Closeable {
         }
 
         spillFile = tmp.createTempFile(suffix);
+        // registered after the file so tmp.close() releases these handles before deleting it,
+        // and so a caller that disposes tmp without closing this cache does not leak them
+        tmp.addResource(this);
         spillOutputStream = new BufferedOutputStream(Files.newOutputStream(spillFile));
 
         // Write existing memory content to file
@@ -147,6 +150,9 @@ class StreamCache implements Closeable {
      * Read a single byte at the given position.
      */
     int readAt(long position) throws IOException {
+        if (closed) {
+            throw new IOException("StreamCache is closed");
+        }
         if (position < 0 || position >= totalSize) {
             return -1;
         }
@@ -165,6 +171,9 @@ class StreamCache implements Closeable {
      * Read multiple bytes starting at the given position.
      */
     int readAt(long position, byte[] b, int off, int len) throws IOException {
+        if (closed) {
+            throw new IOException("StreamCache is closed");
+        }
         if (position < 0 || position >= totalSize) {
             return -1;
         }

@@ -467,7 +467,7 @@ public class TikaInputStream extends TaggedInputStream {
      * {@link #rewind()}, {@link #mark(int)}/{@link #reset()}, and random access.
      * <p>
      * Must be called when position is 0 (before any reading), otherwise
-     * throws IllegalStateException.
+     * throws IOException.
      * <p>
      * Use this method when you know you'll need to rewind the stream later
      * (e.g., for detection followed by parsing, or digest calculation).

@@ -342,29 +342,29 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
-        boolean handedOff = false;
         try {
-        Path tmpFile = tmp.createTempFile(metadata);
-        if (httpFetcherConfig.getMaxSpoolSize() < 0) {
-            Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                long totalRead = IOUtils.copyLarge(content, os, 0, httpFetcherConfig.getMaxSpoolSize());
-                if (totalRead == httpFetcherConfig.getMaxSpoolSize() && content.read() != -1) {
-                    metadata.set(HTTP_FETCH_TRUNCATED, "true");
+            Path tmpFile = tmp.createTempFile(metadata);
+            if (httpFetcherConfig.getMaxSpoolSize() < 0) {
+                Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                    long totalRead = IOUtils.copyLarge(content, os, 0, httpFetcherConfig.getMaxSpoolSize());
+                    if (totalRead == httpFetcherConfig.getMaxSpoolSize() && content.read() != -1) {
+                        metadata.set(HTTP_FETCH_TRUNCATED, "true");
+                    }
                 }
             }
-        }
-        long elapsed = System.currentTimeMillis() - start;
-        LOG.debug("took {} ms to copy to local tmp file", elapsed);
-        TikaInputStream tis = TikaInputStream.get(tmpFile, metadata, tmp);
-        handedOff = true;
-        return tis;
-        } finally {
-            // a failed copy must not orphan the temp file
-            if (!handedOff) {
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.debug("took {} ms to copy to local tmp file", elapsed);
+            return TikaInputStream.get(tmpFile, metadata, tmp);
+        } catch (Throwable t) {
+            // a failed copy must not orphan the temp file, and a close failure must not hide why
+            try {
                 tmp.close();
+            } catch (IOException e) {
+                t.addSuppressed(e);
             }
+            throw t;
         }
     }
 

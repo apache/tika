@@ -150,6 +150,43 @@
       </resource>
     </resources>
     <plugins>
+      <!-- A plugin's lib/ is its runtime-scope dependencies; a logging jar there puts a
+           second SLF4J binding on the plugin classloader. Anything from these groups that
+           arrives transitively must be declared provided (see the parent's dependencies). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-bundled-logging</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.slf4j</exclude>
+                    <exclude>org.apache.logging.log4j</exclude>
+                  </excludes>
+                  <!-- the artifacts this module declares provided; anything else in these
+                       groups needs a provided declaration here before it may be depended on -->
+                  <includes>
+                    <include>org.slf4j:slf4j-api</include>
+                    <include>org.slf4j:jcl-over-slf4j</include>
+                    <include>org.apache.logging.log4j:log4j-api</include>
+                    <include>org.apache.logging.log4j:log4j-core</include>
+                    <include>org.apache.logging.log4j:log4j-slf4j2-impl</include>
+                  </includes>
+                  <message>logging is host-supplied: add a provided-scope declaration in tika-pipes-plugins/pom.xml (and to this rule's include list) rather than bundling this artifact in the plugin zip</message>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>

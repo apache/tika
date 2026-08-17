@@ -1,0 +1,520 @@
+APACHE TIKA SUBCOMPONENTS
+
+This distribution bundles third-party libraries under tika-grpc/.  Except for
+the components listed below, those libraries are licensed under the Apache
+License, Version 2.0, whose terms appear above.  The components below are
+licensed under other terms, reproduced here as required.
+
+The pipes plugin zips under plugins/ carry their own LICENSE and NOTICE files
+covering the libraries they bundle.
+
+
+Bouncy Castle Licence
+
+    Applies to:
+        bcjmail-jdk18on-1.85.jar
+        bcpkix-jdk18on-1.85.jar
+        bcprov-jdk18on-1.85.2.jar
+        bcutil-jdk18on-1.85.jar
+
+    Copyright (c) 2000-2009 The Legion Of The Bouncy Castle
+    (http://www.bouncycastle.org)
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files
+    (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of the Software,
+    and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+
+
+CDDL 1.0 / LGPL 2.1 or later (dual-licensed)
+
+    Applies to:
+        jhighlight-2.0.0.jar
+
+    JHighlight is dual-licensed under the Common Development and Distribution
+    License (CDDL), Version 1.0 and the GNU Lesser General Public License
+    (LGPL), Version 2.1 or later.  Under the Apache Software Foundation's
+    third-party licensing policy this is a "Category B" work: Apache Tika
+    redistributes it in unmodified binary form only and does not include its
+    source or derive from it.
+
+    The jhighlight jar does not carry a copy of either license.  Their full
+    texts are available at:
+
+        CDDL 1.0    https://opensource.org/licenses/cddl1.php
+        LGPL 2.1    https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+
+    The upstream project is https://github.com/codelibs/jhighlight
+
+
+CDDL 1.1 / GPL 2.0 with the Classpath Exception (dual-licensed)
+
+    Applies to:
+        javax.annotation-api-1.3.2.jar
+
+    This component is dual-licensed under the Common Development and Distribution
+    License (CDDL) Version 1.1 and the GNU General Public License Version 2 with the
+    Classpath Exception.  Apache Tika redistributes it in binary form only.
+
+    The full text of both licenses accompanies the component inside its own jar in
+    this distribution, at META-INF/LICENSE (or META-INF/LICENSE.txt) within the jar
+    named above under tika-grpc/.
+
+    The Classpath Exception reads:
+
+      "Linking this library statically or dynamically with other modules is making
+       a combined work based on this library.  Thus, the terms and conditions of
+       the GNU General Public License cover the whole combination.
+
+       As a special exception, the copyright holders of this library give you
+       permission to link this library with independent modules to produce an
+       executable, regardless of the license terms of these independent modules,
+       and to copy and distribute the resulting executable under terms of your
+       choice, provided that you also meet, for each linked independent module,
+       the terms and conditions of the license of that module."
+
+
+Eclipse Distribution License, Version 1.0 (3-Clause BSD)
+
+    Applies to:
+        angus-activation-2.0.3.jar
+        istack-commons-runtime-4.1.2.jar
+        jakarta.activation-api-2.1.4.jar
+        jakarta.xml.bind-api-4.0.5.jar
+        jaxb-core-4.0.9.jar
+        jaxb-runtime-4.0.9.jar
+        txw2-4.0.9.jar
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+      - Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+      - Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+      - Neither the name of the Eclipse Foundation, Inc. nor the names of its
+        contributors may be used to endorse or promote products derived
+        from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Eclipse Public License 2.0 or Eclipse Distribution License 1.0 (dual-licensed)
+
+    Applies to:
+        jts-core-1.19.0.jar
+        jts-io-common-1.19.0.jar
+
+    The JTS Topology Suite is made available under the terms of either the Eclipse
+    Public License, Version 2.0 (https://www.eclipse.org/legal/epl-2.0) or the
+    Eclipse Distribution License, Version 1.0
+    (http://www.eclipse.org/org/documents/edl-v10.php), at the recipient's option.
+    Apache Tika relies on the Eclipse Distribution License, Version 1.0 -- a
+    3-clause BSD license whose terms are reproduced above.
+
+    The jts jars do not carry a copy of either license; both texts are available
+    at the URLs above.
+
+
+Eclipse Public License, Version 2.0
+
+    Applies to:
+        jakarta.annotation-api-3.0.0.jar
+        jakarta.transaction-api-1.3.3.jar
+
+    This program and the accompanying materials are made available under the terms
+    of the Eclipse Public License 2.0 which is available at
+    http://www.eclipse.org/legal/epl-2.0
+
+    The full text of the Eclipse Public License, Version 2.0 is available at that
+    URL, and is additionally included inside jakarta.annotation-api's own jar in
+    this distribution, at META-INF/LICENSE.md.  jakarta.transaction-api does not
+    carry a copy.
+
+    SPDX-License-Identifier: EPL-2.0
+
+    Secondary Licenses: when the conditions for such availability set forth in the
+    Eclipse Public License v. 2.0 are satisfied, the following Secondary Licenses
+    apply: GNU General Public License, version 2 with the GNU Classpath Exception,
+    which is available at https://www.gnu.org/software/classpath/license.html.
+
+
+GNU General Public License, Version 2, with the Classpath Exception
+
+    Applies to:
+        jakarta.annotation-api-3.0.0.jar
+        jakarta.transaction-api-1.3.3.jar
+
+    This component is available under the GNU General Public License, version 2,
+    with the Classpath Exception:
+
+      "Linking this library statically or dynamically with other modules is making
+       a combined work based on this library.  Thus, the terms and conditions of
+       the GNU General Public License cover the whole combination.
+
+       As a special exception, the copyright holders of this library give you
+       permission to link this library with independent modules to produce an
+       executable, regardless of the license terms of these independent modules,
+       and to copy and distribute the resulting executable under terms of your
+       choice, provided that you also meet, for each linked independent module,
+       the terms and conditions of the license of that module.  An independent
+       module is a module which is not derived from or based on this library.  If
+       you modify this library, you may extend this exception to your version of
+       the library, but you are not obliged to do so.  If you do not wish to do so,
+       delete this exception statement from your version."
+
+    The full text of the GNU General Public License, version 2 is available at
+    https://www.gnu.org/software/classpath/license.html, and is additionally
+    included inside jakarta.annotation-api's own jar in this distribution, at
+    META-INF/LICENSE.md.  These components are dual-licensed; Apache Tika
+    redistributes them in binary form relying on the Classpath Exception.
+
+
+JDOM License
+
+    Applies to:
+        jdom2-2.0.6.1.jar
+
+    Copyright (C) 2000-2012 Jason Hunter & Brett McLaughlin.
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    1. Redistributions of source code must retain the above copyright
+       notice, this list of conditions, and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions, and the disclaimer that follows
+       these conditions in the documentation and/or other materials
+       provided with the distribution.
+
+    3. The name "JDOM" must not be used to endorse or promote products
+       derived from this software without prior written permission.  For
+       written permission, please contact <request_AT_jdom_DOT_org>.
+
+    4. Products derived from this software may not be called "JDOM", nor
+       may "JDOM" appear in their name, without prior written permission
+       from the JDOM Project Management <request_AT_jdom_DOT_org>.
+
+    In addition, we request (but do not require) that you include in the
+    end-user documentation provided with the redistribution and/or in the
+    software itself an acknowledgement equivalent to the following:
+        "This product includes software developed by the
+         JDOM Project (http://www.jdom.org/)."
+    Alternatively, the acknowledgment may be graphical using the logos
+    available at http://www.jdom.org/images/logos.
+
+    THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
+    WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+    OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED.  IN NO EVENT SHALL THE JDOM AUTHORS OR THE PROJECT
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+    SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+    LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
+    USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+    OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+    SUCH DAMAGE.
+
+    This software consists of voluntary contributions made by many
+    individuals on behalf of the JDOM Project and was originally
+    created by Jason Hunter <jhunter_AT_jdom_DOT_org> and
+    Brett McLaughlin <brett_AT_jdom_DOT_org>.  For more information
+    on the JDOM Project, please see <http://www.jdom.org/>.
+
+
+Multi-licensed components redistributed here under the Apache License, Version 2.0
+
+    Applies to:
+        javassist-3.30.2-GA.jar
+        jna-5.19.1.jar
+        rocksdbjni-10.2.1.jar
+
+    Each of these components is distributed under a choice of licenses that
+    includes the Apache License, Version 2.0:
+
+        javassist     MPL 1.1 OR LGPL-2.1 OR Apache-2.0
+        jna           Apache-2.0 OR LGPL-2.1-or-later
+        rocksdbjni    Apache-2.0 OR GPL-2.0
+
+    Apache Tika elects the Apache License, Version 2.0, whose terms appear at the
+    top of this file.  Note that the Maven POMs for jna and javassist list the
+    copyleft option first, so automated license scans may report these dependencies
+    as LGPL or MPL; the choice of license above governs.
+
+
+Public Domain
+
+    Applies to:
+        xz-1.12.jar
+
+    All the files in this package have been written by Lasse Collin
+    and/or Igor Pavlov. All these files have been put into the
+    public domain. You can do whatever you want with these files.
+
+    This software is provided "as is", without any warranty.
+
+
+The 2-Clause BSD License
+
+    Applies to:
+        commonmark-0.30.0.jar
+        commonmark-ext-gfm-strikethrough-0.30.0.jar
+        commonmark-ext-gfm-tables-0.30.0.jar
+        flexmark-0.62.2.jar
+        flexmark-ext-emoji-0.62.2.jar
+        flexmark-ext-gfm-strikethrough-0.62.2.jar
+        flexmark-ext-ins-0.62.2.jar
+        flexmark-ext-superscript-0.62.2.jar
+        flexmark-ext-tables-0.62.2.jar
+        flexmark-ext-wikilink-0.62.2.jar
+        flexmark-html2md-converter-0.62.2.jar
+        flexmark-jira-converter-0.62.2.jar
+        flexmark-util-0.62.2.jar
+        flexmark-util-ast-0.62.2.jar
+        flexmark-util-builder-0.62.2.jar
+        flexmark-util-collection-0.62.2.jar
+        flexmark-util-data-0.62.2.jar
+        flexmark-util-dependency-0.62.2.jar
+        flexmark-util-format-0.62.2.jar
+        flexmark-util-html-0.62.2.jar
+        flexmark-util-misc-0.62.2.jar
+        flexmark-util-options-0.62.2.jar
+        flexmark-util-sequence-0.62.2.jar
+        flexmark-util-visitor-0.62.2.jar
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+The 3-Clause BSD License
+
+    Applies to:
+        asm-9.10.1.jar
+        asm-analysis-9.9.jar
+        asm-tree-9.9.jar
+        asm-util-9.9.jar
+        commons-compiler-3.1.12.jar
+        curvesapi-1.08.jar
+        janino-3.1.12.jar
+        jmatio-1.5.jar
+        protobuf-java-3.25.9.jar
+        protobuf-java-util-3.25.9.jar
+        xmpcore-6.1.11.jar
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software
+       without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+The 3-Clause BSD License with nuclear disclaimer
+
+    Applies to:
+        jai-imageio-core-1.4.0.jar
+
+    Copyright (c) 2005 Sun Microsystems, Inc.
+    Copyright (c) 2010-2014 University of Manchester
+    Copyright (c) 2010-2015 Stian Soiland-Reyes
+    Copyright (c) 2015 Peter Hull
+    All Rights Reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+    - Redistribution of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+
+    - Redistribution in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in
+      the documentation and/or other materials provided with the
+      distribution.
+
+    Neither the name of Sun Microsystems, Inc. or the names of
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
+
+    This software is provided "AS IS," without a warranty of any
+    kind. ALL EXPRESS OR IMPLIED CONDITIONS, REPRESENTATIONS AND
+    WARRANTIES, INCLUDING ANY IMPLIED WARRANTY OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE OR NON-INFRINGEMENT, ARE HEREBY
+    EXCLUDED. SUN MIDROSYSTEMS, INC. ("SUN") AND ITS LICENSORS SHALL
+    NOT BE LIABLE FOR ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT OF
+    USING, MODIFYING OR DISTRIBUTING THIS SOFTWARE OR ITS
+    DERIVATIVES. IN NO EVENT WILL SUN OR ITS LICENSORS BE LIABLE FOR
+    ANY LOST REVENUE, PROFIT OR DATA, OR FOR DIRECT, INDIRECT, SPECIAL,
+    CONSEQUENTIAL, INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND
+    REGARDLESS OF THE THEORY OF LIABILITY, ARISING OUT OF THE USE OF OR
+    INABILITY TO USE THIS SOFTWARE, EVEN IF SUN HAS BEEN ADVISED OF THE
+    POSSIBILITY OF SUCH DAMAGES.
+
+    You acknowledge that this software is not designed or intended for
+    use in the design, construction, operation or maintenance of any
+    nuclear facility.
+
+
+The MIT License
+
+    Applies to:
+        animal-sniffer-annotations-1.27.jar
+        checker-qual-3.43.0.jar
+        dd-plist-1.30.jar
+        dec-0.1.2.jar
+        java-semver-0.10.2.jar
+        jsoup-1.23.1.jar
+        slf4j-api-2.0.18.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+The MIT No Attribution License (MIT-0)
+
+    Applies to:
+        reactive-streams-1.0.4.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal in
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software is furnished to do so.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+
+UnRAR License
+
+    Applies to:
+        junrar-8.1.0.jar
+
+    JUnRAR is based on the UnRAR tool, and covered by the same license.
+
+     ******    *****   ******   UnRAR - free utility for RAR archives
+     **   **  **   **  **   **  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     ******   *******  ******    License for use and distribution of
+     **   **  **   **  **   **   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+     **   **  **   **  **   **         FREE portable version
+                                       ~~~~~~~~~~~~~~~~~~~~~
+
+    The source code of UnRAR utility is freeware. This means:
+
+    1. All copyrights to RAR and the utility UnRAR are exclusively
+       owned by the author - Alexander Roshal.
+
+    2. The UnRAR sources may be used in any software to handle RAR
+       archives without limitations free of charge, but cannot be used
+       to re-create the RAR compression algorithm, which is proprietary.
+       Distribution of modified UnRAR sources in separate form or as a
+       part of other software is permitted, provided that it is clearly
+       stated in the documentation and source comments that the code may
+       not be used to develop a RAR (WinRAR) compatible archiver.
+
+    3. The UnRAR utility may be freely distributed. It is allowed
+       to distribute UnRAR inside of other software packages.
+
+    4. THE RAR ARCHIVER AND THE UnRAR UTILITY ARE DISTRIBUTED "AS IS".
+       NO WARRANTY OF ANY KIND IS EXPRESSED OR IMPLIED.  YOU USE AT
+       YOUR OWN RISK. THE AUTHOR WILL NOT BE LIABLE FOR DATA LOSS,
+       DAMAGES, LOSS OF PROFITS OR ANY OTHER KIND OF LOSS WHILE USING
+       OR MISUSING THIS SOFTWARE.
+
+    5. Installing and using the UnRAR utility signifies acceptance of
+       these terms and conditions of the license.
+
+    6. If you don't agree with terms of the license you must remove
+       UnRAR files from your storage devices and cease to use the
+       utility.
+
+       Thank you for your interest in RAR and UnRAR.  Alexander L. Roshal

@@ -17,6 +17,8 @@
 package org.apache.tika;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -27,8 +29,11 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
 
 /** {@link Tika#detect} peeks: it must dispose only what it spooled itself. */
 public class TikaDetectStreamOwnershipTest {
@@ -56,6 +61,30 @@ public class TikaDetectStreamOwnershipTest {
         tika.detect(stream, new Metadata());
         assertEquals(0, stream.closes,
                 "detect() must not close a stream it was handed; the javadoc promises this");
+    }
+
+    /** Stands in for the container detectors, which call getFile() and so force a spill. */
+    private static class SpoolingDetector implements Detector {
+        TikaInputStream tis;
+        Path spooled;
+
+        @Override
+        public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
+                throws IOException {
+            this.tis = tis;
+            this.spooled = tis.getPath();
+            return MediaType.OCTET_STREAM;
+        }
+    }
+
+    @Test
+    public void testDetectClosesTheHandlesItOpenedOnItsSpoolFile() throws Exception {
+        SpoolingDetector detector = new SpoolingDetector();
+        new Tika(detector).detect(new ByteArrayInputStream(DATA), new Metadata());
+
+        assertFalse(Files.exists(detector.spooled), "detect() must delete the file it spooled");
+        assertThrows(IOException.class, () -> detector.tis.read(),
+                "detect() must close the handles it opened on its spool file, not just delete it");
     }
 
     /** get() returns a caller-supplied TikaInputStream as-is, so disposing it here

@@ -1,13 +1,128 @@
 APACHE TIKA SUBCOMPONENTS
 
-Apache Tika includes a number of subcomponents with separate copyright notices
-and license terms. Your use of these subcomponents is subject to the terms and
-conditions of the following licenses.
+This distribution bundles third-party libraries under lib/.  Except for the
+components listed below, those libraries are licensed under the Apache License,
+Version 2.0, whose terms appear above.  The components below are licensed under
+other terms, reproduced here as required.
 
-H2 Database in tika-eval
+
+ECMA-376 Office Open XML schemas
+
+    Applies to:
+        poi-ooxml-lite-5.5.1.jar
+
+    The Office Open XML schema definitions compiled into this Apache POI
+    component are part of the Office Open XML ECMA Specification (ECMA-376, [1]).
+    As defined in section 9.4 of the ECMA bylaws [2], this specification
+    is available to all interested parties without restriction:
+
+        9.4 All documents when approved shall be made available to
+            all interested parties without restriction.
+
+    Furthermore, both Microsoft and Adobe have granted patent licenses
+    to this work [3,4,5].
+
+    [1] http://www.ecma-international.org/publications/standards/Ecma-376.htm
+    [2] http://www.ecma-international.org/memento/Ecmabylaws.htm
+    [3] http://www.microsoft.com/interop/osp/
+    [4] http://www.ecma-international.org/publications/files/ECMA-ST/Ecma%20PATENT/ECMA-376%20Edition%201%20Microsoft%20Patent%20Declaration.pdf
+    [5] http://www.ecma-international.org/publications/files/ECMA-ST/Ecma%20PATENT/ga-2006-191.pdf
+
+
+MPL 2.0 / EPL 1.0 (dual-licensed)
+
+    Applies to:
+        h2-2.4.240.jar
+
     This software contains unmodified binary redistributions for
     H2 database engine (http://www.h2database.com/),
     which is dual licensed and available under the MPL 2.0
     (Mozilla Public License) or under the EPL 1.0 (Eclipse Public License).
     An original copy of the license agreement can be found at:
     http://www.h2database.com/html/license.html
+
+
+The 2-Clause BSD License
+
+    Applies to:
+        commonmark-0.30.0.jar
+        commonmark-ext-gfm-strikethrough-0.30.0.jar
+        commonmark-ext-gfm-tables-0.30.0.jar
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+The 3-Clause BSD License
+
+    Applies to:
+        curvesapi-1.08.jar
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    3. Neither the name of the copyright holder nor the names of its contributors
+       may be used to endorse or promote products derived from this software
+       without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+The MIT License
+
+    Applies to:
+        java-semver-0.10.2.jar
+        jsoup-1.23.1.jar
+        slf4j-api-2.0.18.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.

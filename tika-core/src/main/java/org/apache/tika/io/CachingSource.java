@@ -17,6 +17,7 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -257,8 +258,11 @@ class CachingSource extends InputStream implements TikaInputSource {
             spilledSource = cachingStream.getSource();
             cachingStream.closeCacheOnly();
 
-            // Open file stream at current position
+            // Open file stream at current position. Registered with tmp so a caller that
+            // disposes the TemporaryResources without closing this source (Tika.detect)
+            // still releases the handle -- and releases it before the file is deleted.
             fileStream = new BufferedInputStream(Files.newInputStream(spilledPath));
+            tmp.addResource(this::closeFileStream);
             if (currentPosition > 0) {
                 IOUtils.skipFully(fileStream, currentPosition);
             }
@@ -284,19 +288,34 @@ class CachingSource extends InputStream implements TikaInputSource {
         return length;
     }
 
-    @Override
-    public void close() throws IOException {
+    // seekTo() reopens fileStream, so the registered resource must close whichever
+    // handle is current rather than the one open at registration time.
+    private void closeFileStream() throws IOException {
         if (fileStream != null) {
             fileStream.close();
         }
-        if (cachingStream != null) {
-            cachingStream.close();
+    }
+
+    @Override
+    public void close() throws IOException {
+        IOException exception = null;
+        for (Closeable closeable :
+                new Closeable[]{this::closeFileStream, cachingStream, passthroughStream, spilledSource}) {
+            if (closeable == null) {
+                continue;
+            }
+            try {
+                closeable.close();
+            } catch (IOException e) {
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
+                }
+            }
         }
-        if (passthroughStream != null) {
-            passthroughStream.close();
-        }
-        if (spilledSource != null) {
-            spilledSource.close();
+        if (exception != null) {
+            throw exception;
         }
     }
 }

@@ -47,6 +47,7 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
+    "mock-digester-factory": {},
     "timeout-limits": {
       "progressTimeoutMillis": 5000
     }

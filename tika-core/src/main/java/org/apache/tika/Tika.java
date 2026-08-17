@@ -139,8 +139,9 @@ public class Tika {
      * pass a {@link TikaInputStream} they own (which they can
      * {@link TikaInputStream#rewind() rewind}) or re-open the source.
      * <p>
-     * Unlike in the {@link #parse(InputStream, Metadata)} method, the
-     * given document metadata is <em>not</em> modified by this method.
+     * Unlike in the {@link #parse(InputStream, Metadata)} method, this method adds no
+     * parsed metadata. It does set {@link org.apache.tika.metadata.HttpHeaders#CONTENT_LENGTH}
+     * if detection spools the stream to a temporary file and no content length was given.
      *
      * @param stream   the document stream, or <code>null</code>
      * @param metadata document metadata

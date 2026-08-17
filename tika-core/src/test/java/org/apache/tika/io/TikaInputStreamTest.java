@@ -1027,6 +1027,42 @@ public class TikaInputStreamTest {
         assertFalse(Files.exists(spilled), "temp file must be deleted on close");
     }
 
+    /**
+     * Closing the TemporaryResources must release the handles the spill opened, not only
+     * delete the file: Tika.detect() disposes tmp without closing the source.
+     */
+    @Test
+    public void testTmpCloseReleasesSpilledFileHandle() throws Exception {
+        TemporaryResources tmp = new TemporaryResources();
+        CachingSource source = new CachingSource(
+                new ByteArrayInputStream(bytes("ABCDEFGHIJ")), tmp, -1, null, null);
+        Path spilled = source.getPath(".tmp");
+        assertEquals('A', source.read());
+
+        tmp.close();
+
+        assertFalse(Files.exists(spilled), "tmp.close() must delete the spill file");
+        assertThrows(IOException.class, source::read,
+                "tmp.close() must close the handle the spill opened on that file");
+    }
+
+    /** Same for the handles the cache itself opens when it spills at the memory threshold. */
+    @Test
+    public void testTmpCloseReleasesCacheHandlesAfterThresholdSpill() throws Exception {
+        TemporaryResources tmp = new TemporaryResources();
+        CachingSource source = new CachingSource(
+                new ByteArrayInputStream(new byte[1024 * 1024 + 1]), tmp, -1, null, null);
+        source.enableRewind();
+        IOUtils.toByteArray(source);
+        source.seekTo(0);
+        assertEquals(0, source.read(), "precondition: reading from the spilled cache");
+
+        tmp.close();
+
+        assertThrows(IOException.class, source::read,
+                "tmp.close() must close the cache's handles on the spill file");
+    }
+
     /** TIKA-3903: the suffix must survive a spill triggered by the memory threshold. */
     @Test
     public void testSuffixSurvivesThresholdSpill() throws Exception {

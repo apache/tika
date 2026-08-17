@@ -69,8 +69,8 @@ public class ParseContextConfig {
     /**
      * Retrieves runtime configuration from ParseContext.
      * <p>
-     * Resolution is per config key: the resolved-config cache, then JSON config
-     * (deserialized and cached). A class-keyed entry set programmatically via
+     * Resolution is per config key and config class: the resolved-config cache, then
+     * JSON config (deserialized and cached). A class-keyed entry set programmatically via
      * {@code context.set(configClass, config)} is honored only when no JSON config
      * exists for the key, since several components may share one config class.
      * <p>
@@ -95,8 +95,10 @@ public class ParseContextConfig {
         }
 
         // Per-key resolution first: a class-keyed entry may belong to a different
-        // component that happens to share this config class.
-        T resolved = context.getResolvedConfig(configKey);
+        // component that happens to share this config class. The cache is also keyed
+        // by class: one key may be resolved into a validation-only subclass and then
+        // into the real config class, and each must get its own instance.
+        T resolved = context.getResolvedConfig(configKey, configClass);
         if (resolved != null) {
             return resolved;
         }

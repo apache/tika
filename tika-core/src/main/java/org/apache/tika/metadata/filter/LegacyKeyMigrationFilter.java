@@ -148,6 +148,10 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
         this.prefixRules.add(prefixSwapRule(direction, "mdb-prop:", "MDB_PROP:"));
         this.prefixRules.add(prefixSwapRule(direction, "mdb-user-prop:", "MDB_USER_PROP:"));
         this.prefixRules.add(prefixSwapRule(direction, "mdb-summary-prop:", "MDB_SUMMARY_PROP:"));
+        this.prefixRules.add(prefixSwapRule(direction, "message:raw-header:", "Message:Raw-Header:"));
+        this.prefixRules.add(prefixSwapRule(direction, "rtf:pict:", "rtf_pict:"));
+        this.prefixRules.add(prefixSwapRule(direction, "icc:", "ICC:"));
+        this.prefixRules.add(prefixSwapRule(direction, "mbox:", "MboxParser-"));
         // Families whose 3.x keys were BARE (no marker to recognize on ingest): egress-only
         // prefix strips. Flat renames are consulted before prefix rules, so declared constants
         // under these prefixes (hdf:file-type-description, the gdal: fixed 8, audio:/mp3: stock
@@ -159,6 +163,10 @@ public class LegacyKeyMigrationFilter extends MetadataFilterBase {
         this.prefixRules.add(egressPrefixStripRule(direction, "mp4:"));
         this.prefixRules.add(egressPrefixStripRule(direction, "network:"));
         this.prefixRules.add(egressPrefixStripRule(direction, "audio:"));
+        // 3.x wrote scraped <meta> names and unrecognized image tag names bare; the one
+        // prefixed 3.x key of either family (html_meta:scriptSrc) has its own flat row.
+        this.prefixRules.add(egressPrefixStripRule(direction, "html:"));
+        this.prefixRules.add(egressPrefixStripRule(direction, "img:"));
         // One hop straight to the 3.x spelling below, not a chain through any intermediate spelling.
         this.prefixRules.add(prefixSwapRule(direction, "iso19115:keywords:", "Keywords "));
         this.prefixRules.add(prefixSwapRule(direction, "iso19115:keywords-type:", "KeywordsType "));
