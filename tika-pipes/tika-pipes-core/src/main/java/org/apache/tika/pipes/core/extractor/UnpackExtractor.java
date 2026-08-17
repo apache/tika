@@ -101,8 +101,8 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
 
         // Use the delegate parser to parse this entry
         try {
-            UnpackHandler bytesHandler = context.get(UnpackHandler.class);
             tis.setCloseShield();
+            UnpackHandler bytesHandler = context.get(UnpackHandler.class);
             if (bytesHandler != null) {
                 parseWithBytes(tis, handler, metadata, context);
             } else {
@@ -139,6 +139,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
                 translated = Files.createTempFile("tika-tmp-", ".bin");
                 try (OutputStream os = Files.newOutputStream(translated)) {
                     EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
+                } finally {
+                    // translate() drains to EOF; without this the parse below sees an empty stream
+                    tis.rewind();
                 }
             }
             parse(tis, handler, metadata, context);

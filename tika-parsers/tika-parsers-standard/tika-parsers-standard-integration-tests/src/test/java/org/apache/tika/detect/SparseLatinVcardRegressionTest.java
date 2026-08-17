@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.ml.chardetect;
+package org.apache.tika.detect;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -22,11 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.detect.DefaultEncodingDetector;
-import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -38,12 +35,11 @@ import org.apache.tika.parser.ParseContext;
  * <p>Historically a predominantly-ASCII probe with a small number of
  * Latin-supplement high bytes (e.g. a vCard containing a German
  * business name) could detect as {@code IBM424} (Hebrew EBCDIC) at
- * 0.99 confidence — producing complete mojibake.  The combination of
- * structural IBM424 gating, Latin-sibling → windows-1252 fallback in
- * {@code MojibusterEncodingDetector}, and CharSoup's
- * language-signal arbitration prevents that.  This test exercises
- * the full detector chain via {@link DefaultEncodingDetector} and
- * asserts the non-catastrophic property: not IBM424.</p>
+ * 0.99 confidence — producing complete mojibake.  Latin-sibling arbitration in
+ * {@code MojibusterEncodingDetector} plus CharSoup's language signal prevent
+ * that.  This module has the whole shipped chain on its classpath, so
+ * {@link DefaultEncodingDetector} here is the one users get; it asserts the
+ * non-catastrophic property: not IBM424.</p>
  */
 public class SparseLatinVcardRegressionTest {
 
@@ -54,7 +50,6 @@ public class SparseLatinVcardRegressionTest {
      * (windows-1257, IBM852, etc.) is a documented sibling-arbitration
      * limitation; only the catastrophic case is asserted here.
      */
-    @Disabled("TIKA-4683: rolled-back chain (Html, Universal, Icu4j); Mojibuster no longer in default chain.")
     @Test
     public void sparseLatinVcardDoesNotDetectAsIbm424() throws Exception {
         byte[] probe = buildSparseLatinVcard();

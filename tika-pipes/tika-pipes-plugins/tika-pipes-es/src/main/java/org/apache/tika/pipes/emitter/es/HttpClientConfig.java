@@ -28,12 +28,18 @@ package org.apache.tika.pipes.emitter.es;
  * @param socketTimeoutMillis     Socket read timeout in milliseconds
  * @param proxyHost         HTTP proxy host (optional)
  * @param proxyPort         HTTP proxy port
- * @param verifySsl         When {@code true}, the HTTP client validates server certificates and
- *                          hostnames using the JVM's default trust store.  Defaults to
- *                          {@code false} for backward compatibility (trust-all / no hostname check).
+ * @param verifySsl         When {@code true} (the default), the HTTP client validates server
+ *                          certificates and hostnames using the JVM's default trust store.
+ *                          Set {@code false} to trust any certificate and skip the hostname
+ *                          check -- self-signed internal certs are the usual reason.
  */
 public record HttpClientConfig(String userName, String password,
                                String authScheme, int connectionTimeoutMillis,
                                int socketTimeoutMillis, String proxyHost, int proxyPort,
-                               boolean verifySsl) {
+                               Boolean verifySsl) {
+
+    /** Boxed so an absent {@code verifySsl} is distinguishable from an explicit {@code false}. */
+    public boolean verifySslOrDefault() {
+        return verifySsl == null || verifySsl;
+    }
 }

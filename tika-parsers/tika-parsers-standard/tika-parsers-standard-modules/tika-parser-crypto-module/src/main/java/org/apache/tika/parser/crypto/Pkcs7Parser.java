@@ -134,11 +134,15 @@ public class Pkcs7Parser implements Parser {
         try (InputStream is = Files.newInputStream(tis.getPath())) {
             CMSCompressedDataParser parser = new CMSCompressedDataParser(is);
             CMSTypedStream content = parser.getContent(new ZlibExpanderProvider());
-            BoundedInputStream inflated =
-                    new BoundedInputStream(MAX_DECOMPRESSED, content.getContentStream());
-            try (TikaInputStream contentTis = TikaInputStream.get(inflated)) {
-                Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
-                delegate.parse(contentTis, handler, Metadata.newInstance(context), context);
+            BoundedInputStream inflated;
+            // BoundedInputStream does not delegate close(), so the InflaterInputStream underneath
+            // must be closed here or its native zlib arena is only reclaimed by the Cleaner.
+            try (InputStream contentStream = content.getContentStream()) {
+                inflated = new BoundedInputStream(MAX_DECOMPRESSED, contentStream);
+                try (TikaInputStream contentTis = TikaInputStream.get(inflated)) {
+                    Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
+                    delegate.parse(contentTis, handler, Metadata.newInstance(context), context);
+                }
             }
             if (inflated.hasHitBound()) {
                 // zlib-bomb guard tripped: the payload was truncated at MAX_DECOMPRESSED, so record

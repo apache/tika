@@ -22,11 +22,12 @@ to remote Vision-Language Model (VLM) endpoints. These parsers send images
 (or PDFs) to an external API and convert the model's markdown response into
 structured XHTML.
 
-Three implementations are provided out of the box:
+Three implementations are provided out of the box. Only `openai-vlm-parser` is auto-loaded via SPI;
+the other two must be named explicitly in your configuration.
 
 [cols="1,2,1,1"]
 |===
-|Parser |Endpoint |Config key |SPI auto-loaded?
+|Parser |Endpoint |Config key |Auto-loaded
 
 |`OpenAIVLMParser`
 |Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI)
@@ -44,28 +45,18 @@ Three implementations are provided out of the box:
 |No
 |===
 
-`OpenAIVLMParser` is the only parser loaded by the default parser via SPI.
-`ClaudeVLMParser` and `GeminiVLMParser` must be explicitly added to your
-configuration.
-
-== Supported input types
-
-All three parsers handle standard OCR image types (`image/ocr-png`,
-`image/ocr-jpeg`, etc.).  `ClaudeVLMParser` and `GeminiVLMParser`
-additionally declare `application/pdf` support, meaning they can process
-PDFs natively using the model's vision capabilities.
+All three handle the standard OCR image types (`image/ocr-png`, `image/ocr-jpeg`, ...).
+`ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so they can process
+PDFs natively with the model's vision capabilities.
 
 == Module dependency
 
-The VLM parsers live in the `tika-parser-vlm-ocr-module` artifact. Add it
-to your project:
-
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
   <groupId>org.apache.tika</groupId>
-  <artifactId>tika-parser-vlm-ocr-module</artifactId>
-  <version>${tika.version}</version>
+  <artifactId>tika-vlm</artifactId>
+  <version>{tika-version}</version>
 </dependency>
 ----
 
@@ -216,7 +207,10 @@ text into the parent document's content stream. Mirrors
 
 |`allowRuntimePrompt`
 |`false`
-|When `false` (default), the `prompt` is fixed at initialization time and per-request overrides are rejected. When `true`, the prompt can be overridden per request via the `ParseContext` `VLMOCRConfig`. Security-relevant: a runtime-controllable prompt is effectively a prompt-injection surface for any caller that can set the `ParseContext`. Only enable when callers are trusted.
+|Whether a caller-supplied JSON config may override `prompt`. `false` pins the prompt to its
+initialization-time value and rejects the override. Security-relevant: a runtime-controllable prompt
+is a prompt-injection surface for anyone who can send per-request config, so enable it only for
+trusted callers. See <<_per_request_configuration,Per-request configuration>>.
 
 |`completionsPath`
 |`/v1/chat/completions` (OpenAI/vLLM only)
@@ -230,10 +224,13 @@ https://github.com/commonmark/commonmark-java[commonmark-java] and emits
 proper XHTML elements (`<h1>`, `<p>`, `<table>`, `<b>`, `<i>`, etc.)
 instead of dumping raw text. GFM tables and strikethrough are supported.
 
+[#_per_request_configuration]
 == Per-request configuration
 
-You can override configuration per-request by setting a `VLMOCRConfig`
-instance on the `ParseContext`:
+There are two paths, and they are trusted differently.
+
+*In-process Java.* Set a `VLMOCRConfig` on the `ParseContext`. Nothing is restricted — code holding
+the `ParseContext` is trusted by construction.
 
 [source,java]
 ----
@@ -245,4 +242,27 @@ ParseContext context = new ParseContext();
 context.set(VLMOCRConfig.class, override);
 ----
 
-@since Apache Tika 4.0
+*Caller-supplied JSON* — the tika-server `/config` endpoints and tika-grpc's `parse_context_json`,
+each gated by its own `allowPerRequestConfig`. Here the parser applies a restricted config that
+rejects cost- and security-sensitive changes with an exception:
+
+[cols="1,3"]
+|===
+|Field |Runtime rule
+
+|`baseUrl`, `apiKey`
+|Always blocked; configure at initialization time.
+
+|`model`
+|Always blocked. Configure a separate parser instance for a different model.
+
+|`maxTokens`
+|May be lowered, never raised above the initialization-time value — that ceiling is what bounds
+cost on a paid endpoint.
+
+|`maxImagePixels`, `allowRuntimePrompt`
+|Always blocked.
+
+|`prompt`
+|Blocked unless `allowRuntimePrompt` was set to `true` at initialization time.
+|===

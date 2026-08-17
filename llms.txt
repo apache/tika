@@ -27,9 +27,11 @@ Build with `./mvnw`. Contributor/agent ground rules are in `AGENTS.md` and
   timeout model
 - [Migrating to 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-to-4x.adoc):
   upgrading from Tika 3.x
+- [Migrating tika-server to 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-tika-server-4x.adoc):
+  endpoint, wire-format, and config changes for server upgraders
 - [Security model](docs/modules/ROOT/pages/security.adoc): parsing untrusted
-  files safely
-- [FAQ](docs/modules/ROOT/pages/faq.adoc)
+  files safely, and why in-process parsing cannot be made DoS-proof
+- [FAQ](docs/modules/ROOT/pages/faq.adoc): the questions upgraders ask most
 
 ## Optional
 

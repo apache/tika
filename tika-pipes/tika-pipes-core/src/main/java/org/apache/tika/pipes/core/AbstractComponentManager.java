@@ -39,6 +39,7 @@ import org.apache.tika.pipes.api.ComponentIds;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.InMemoryConfigStore;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaExtension;
 import org.apache.tika.plugins.TikaExtensionFactory;
 
@@ -290,7 +291,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
                     ". Available: " + factories.keySet());
         }
 
-        return factory.buildExtension(config);
+        return PluginComponentLoader.buildExtension(factory, config);
     }
 
     /**

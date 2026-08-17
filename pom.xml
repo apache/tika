@@ -272,9 +272,13 @@ least three +1 Tika PMC votes are cast.
 
                       ${basedir}/target/${project.version}
 
-                      Please deploy it to people.apache.org like this:
+                      Publish it to the dev dist area like this:
 
-                      scp -r ${basedir}/target/${project.version} people.apache.org:public_html/tika/
+                      svn checkout https://dist.apache.org/repos/dist/dev/tika tika-dist-dev
+                      cp -r ${basedir}/target/${project.version} tika-dist-dev/
+                      cd tika-dist-dev
+                      svn add ${project.version}
+                      svn commit -m "Apache Tika ${project.version} release candidate"
 
                       A release vote template has been generated for you:
 

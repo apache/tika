@@ -51,11 +51,11 @@ include::example$pipes-google-drive-fetcher.json[]
 |Application name sent to the Google API for logging/quota tracking.
 
 |`serviceAccountKeyBase64`
-|_optional_
+|_none_
 |Base64-encoded service-account JSON key. If absent, the SDK falls back to Application Default Credentials (env var `GOOGLE_APPLICATION_CREDENTIALS` or workload identity).
 
 |`subjectUser`
-|_optional_
+|_none_
 |For domain-wide delegation: the user to impersonate (e.g., `user@example.com`).
 
 |`scopes`
@@ -67,8 +67,8 @@ include::example$pipes-google-drive-fetcher.json[]
 |If `true`, files are spooled to a temp file before being parsed.
 
 |`throttleSeconds`
-|_optional_
-|Rate-limit array — consecutive failures sleep for the corresponding number of seconds.
+|_none_
+|Retry/back-off array. Its length is the number of attempts, and entry _i_ is the seconds to sleep before retry _i_. Absent or empty means a single attempt with no retry.
 |===
 
 [#notes]

@@ -18,49 +18,17 @@
 = Configuration
 :toc:
 
-This section covers configuring Apache Tika.
+Tika 4.x is configured with a JSON file — parsers, detectors, content handlers, server behavior and
+the Tika Pipes pipeline. `//` and `/* */` comments are allowed.
 
-== Overview
-
-Tika 4.x uses JSON configuration files. Configuration controls parsers, detectors,
-content handlers, server behavior, and the Tika Pipes pipeline.
-
-NOTE: Tika 3.x and earlier used XML configuration (`tika-config.xml`). See the
-xref:migration-to-4x/index.adoc[Migration Guide] for details on converting to JSON.
-
-== Adding extra jars (`tika.extras.dir`)
-
-To add extra components — additional `EncodingDetector` or `Parser`
-implementations, or their dependencies — without repackaging the application,
-drop their jars in a directory and point the `tika.extras.dir` system property
-at it:
-
-[source,bash]
-----
-java -Dtika.extras.dir=/path/to/extras -jar tika-app.jar ...
-java -Dtika.extras.dir=/path/to/extras -jar tika-server-standard.jar ...
-----
-
-Every `*.jar` in that directory is added to the classpath that Tika's
-service-loading scans, so SPI-registered components in those jars are picked up
-automatically. The jars are also forwarded onto forked Pipes/server worker
-processes, so they are available where parsing happens.
-
-This is *off by default* — nothing is loaded unless `tika.extras.dir` is set, and
-there is no implicit default directory (Tika does not scan the working directory automatically). Treat the directory as a trusted code
-location: anything in it runs with the full privileges of the Tika process, so it
-must not be writable by less-trusted principals (and, for a server, must not be
-reachable by request handling).
-
-NOTE: In the Docker images you can instead mount a directory to `/tika-extras`.
-PF4J-managed plugins are a separate mechanism — see
-xref:pipes/plugins/index.adoc[Pipes Plugins].
+NOTE: Converting a 3.x `tika-config.xml`? See the
+xref:migration-to-4x/index.adoc[Migration Guide], and `tika-app`'s
+xref:using-tika/cli/index.adoc[`--convert-config-xml-to-json`] flag.
 
 == Top-level JSON structure
 
-A `tika-config.json` is a single JSON object whose keys are the top-level sections
-listed below. Every section is optional — omit what you don't need. Defaults are
-used wherever a section is missing.
+A `tika-config.json` is a single JSON object whose keys are the sections below. Every section is
+optional; anything you omit uses its defaults.
 
 [source,json]
 ----
@@ -68,37 +36,75 @@ used wherever a section is missing.
   "parsers": [ /* parser declarations */ ],
   "detectors": [ /* detector declarations */ ],
   "encoding-detectors": [ /* encoding detector declarations */ ],
+  "metadata-filters": [ /* metadata filter declarations */ ],
+  "renderers": [ /* page renderer declarations */ ],
+  "translator": { /* translator declaration */ },
   "content-handler-factory": { /* handler type for emitted content */ },
+  "auto-detect-parser": { /* AutoDetectParser options */ },
   "parse-context": {
     "timeout-limits": { /* progress + total task timeouts */ },
     "unpack-config": { /* embedded-byte extraction */ }
     /* other SelfConfiguring components by component name */
   },
-  "server": { /* tika-server options: allowPipes, allowPerRequestConfig, cors, ... */ },
+  "server": { /* tika-server options: allowPipes, allowPerRequestConfig, cors, tlsConfig, ... */ },
+  "grpc": { /* tika-grpc options */ },
   "pipes": { /* Pipes process management: numClients, parseMode, ... */ },
   "fetchers": { /* named fetcher instances */ },
   "emitters": { /* named emitter instances */ },
   "pipes-iterator": { /* iterator (one per pipeline) */ },
   "pipes-reporters": { /* per-document status reporters */ },
-  "plugin-roots": "/path/to/plugins"
+  "plugin-roots": "/path/to/plugins",
+  "metadata-list": { /* Jackson read limits for metadata JSON */ },
+  "service-loader": { /* SPI load-failure policy */ },
+  "xml-reader-utils": { /* XML parser pool size */ }
 }
 ----
 
-Per-section documentation:
+That list is exhaustive: an unrecognized top-level key is fatal at load time, and the error names
+the valid ones.
 
-* `parsers`, `detectors`, `encoding-detectors`, `content-handler-factory`,
-  `parse-context` — covered below under <<_topics,Topics>>.
-* `server` — see xref:using-tika/server/index.adoc[Tika Server].
-* `pipes`, `fetchers`, `emitters`, `pipes-iterator`, `pipes-reporters`,
-  `plugin-roots` — see xref:pipes/configuration.adoc[Pipes Configuration]
-  and xref:pipes/index.adoc[Tika Pipes].
+`parsers`, `detectors`, `encoding-detectors`, `metadata-filters`, `content-handler-factory` and
+`parse-context` are covered under <<_topics,Topics>> below. For `server` see
+xref:using-tika/server/index.adoc[Tika Server]; for `grpc` see
+xref:using-tika/grpc/index.adoc[Tika gRPC]; for `pipes`, `fetchers`, `emitters`,
+`pipes-iterator`, `pipes-reporters` and `plugin-roots` see
+xref:pipes/configuration.adoc[Pipes Configuration].
+
+[#typos]
+=== Where a typo is caught, and where it is not
+
+Unknown keys are rejected almost everywhere: at the top level, inside a component's config body,
+and inside a `FetchEmitTuple`. Four places swallow them silently instead, so a misspelling there
+produces no error and no effect:
+
+* the `metadata-list` body — only `maxStringLength`, `maxNestingDepth` and `maxNumberLength` are
+  read;
+* the body of a self-configuring component under `parse-context` — it is handed to the component
+  untouched;
+* `_mime-include` / `_mime-exclude` when the value is not a JSON array — a shape error yields an
+  empty filter rather than a failure;
+* a non-textual entry inside `default-parser`'s `exclude` list — the list expects plain strings,
+  so an object or array entry such as `[{"pdf-parser": {}}]` is skipped and the component stays
+  enabled. (An *unregistered name* in that list, and an unknown *key* in that same block, are
+  both fatal.)
+
+If a setting appears to do nothing, check its spelling against one of those four first.
+
+[#component-names]
+== Component names
+
+Everything you configure is referenced by its *component name* — a kebab-case identifier such as
+`pdf-parser`, `file-system-fetcher` or `unpack-config`, derived from the class's simple name unless
+the component declares its own. (`developers/` calls the derived form a *friendly name*; it is the
+same string.) Class names are not accepted in their place: only components registered with
+`@TikaComponent` can be instantiated from JSON, which is what stops a config file from loading
+arbitrary classes. `tika-app --list-parser-names` prints the registered parser names, and an
+unknown name fails at load time listing the ones that are registered.
 
 == The `parsers` list and `default-parser`
 
-Tika configuration files are JSON, with optional support for `//` and `/* */` comments.
-
-A `parsers` list loads *only* the parsers it names — every other parser is dropped.
-To customize one parser while keeping all the others, add a `default-parser` entry:
+A `parsers` list loads *only* the parsers it names — every other parser is dropped. To customize
+one parser while keeping all the others, add a `default-parser` entry:
 
 [source,json]
 ----
@@ -110,32 +116,62 @@ To customize one parser while keeping all the others, add a `default-parser` ent
 }
 ----
 
-Configuring a parser automatically excludes its default copy, so there is no duplication.
-Omit `default-parser` only when you want a Tika limited to the parsers you listed.
+Configuring a parser automatically excludes its default copy, so there is no duplication. Omit
+`default-parser` only when you want a Tika limited to the parsers you listed.
+
+`detectors` works the same way, with a `default-detector` entry. `encoding-detectors` has a
+`default-encoding-detector`, but it must not be mixed with explicit detector entries — see
+xref:configuration/encoding-detectors.adoc[Encoding Detectors].
 
 == Windows file paths
 
-JSON uses the backslash as an escape character, so path options (e.g. `tesseractPath`,
-`imageMagickPath`) must use forward slashes (`C:/Tools/...`) or escaped backslashes
+JSON treats the backslash as an escape character, so path options (`tesseractPath`,
+`imageMagickPath`, ...) need forward slashes (`C:/Tools/...`) or escaped backslashes
 (`C:\\Tools\\...`). A single backslash is a JSON parse error.
 
+== Adding extra jars (`tika.extras.dir`)
+
+To add components — extra `EncodingDetector` or `Parser` implementations, or their dependencies —
+without repackaging the application, drop their jars in a directory and point the
+`tika.extras.dir` system property at it:
+
+[source,bash]
+----
+java -Dtika.extras.dir=/path/to/extras -jar tika-app.jar ...
+java -Dtika.extras.dir=/path/to/extras -jar tika-server-standard.jar ...
+----
+
+Every `*.jar` in that directory joins the classpath Tika's service loading scans, so SPI-registered
+components are picked up automatically. The jars are forwarded to the forked JVMs that Pipes and
+tika-server run, too, so they are present where parsing happens.
+
+This is off by default: nothing is loaded unless `tika.extras.dir` is set, and there is no implicit
+default directory. Treat the directory as a trusted code location — anything in it runs with the
+full privileges of the Tika process, so it must not be writable by less-trusted principals, nor (on
+a server) reachable by request handling.
+
+NOTE: In the Docker images, mount a directory to `/tika-extras` instead. PF4J-managed plugins are a
+separate mechanism — see xref:pipes/plugins/index.adoc[Pipes Plugins].
+
+[#_topics]
 == Topics
 
-=== Parser Configuration
+Parser configuration:
 
 * xref:configuration/parsers/pdf-parser.adoc[PDFParser] — PDF parsing options
-* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR options for image-based text extraction
-* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNA bindings (advanced users only; most users should prefer the TesseractOCRParser above)
+* xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR for image-based
+  text extraction
+* xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNA
+  bindings; advanced users only, most should prefer `TesseractOCRParser`
 * xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers] — Claude, Gemini, OpenAI, Ollama, vLLM
-* xref:configuration/parsers/external-parser.adoc[External Parser] — wrap external tools (ffmpeg, exiftool, etc.)
+* xref:configuration/parsers/external-parser.adoc[External Parser] — wrap external tools (ffmpeg,
+  exiftool, ...)
 
-=== Other Configuration
+Other configuration:
 
-* xref:configuration/detectors.adoc[Detectors] — Configuring content (MIME) detection, incl. the opt-in PKCS7/CMS detector
-* xref:configuration/digesters.adoc[Digesters] — Computing cryptographic hashes of documents
-* xref:configuration/encoding-detectors.adoc[Encoding Detectors] — Configuring charset/encoding detection
-
-// Add links to specific topics as they are created
-// * xref:json-config.adoc[JSON Configuration Reference]
-// * xref:detectors.adoc[Configuring Detectors]
-// * xref:mime-types.adoc[MIME Type Configuration]
+* xref:configuration/metadata-filters.adoc[Metadata Filters] — trim, rename and restrict the
+  metadata that leaves the parse
+* xref:configuration/detectors.adoc[Detectors] — content (MIME) detection, including the opt-in
+  PKCS7/CMS detector
+* xref:configuration/digesters.adoc[Digesters] — cryptographic hashes of documents
+* xref:configuration/encoding-detectors.adoc[Encoding Detectors] — charset detection

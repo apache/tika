@@ -51,8 +51,8 @@ public class AsyncHelper {
                 // trips the "unknown args" / "set inputDir once" errors (TIKA-4736).
                 // -z passes through untranslated and is already recognized.
                 argList.add("-z");
-            } else if ("-a".equals(arg)) {
-                //do nothing
+            } else if ("-a".equals(arg) || "--async".equals(arg)) {
+                // both spellings are advertised in usage(); TikaAsyncCLI knows neither
             } else if (arg.startsWith(UNPACK_FORMAT_KEY)) {
                 // Translate --unpack-format=<format> to --unpack-format <format>
                 String format = arg.substring(UNPACK_FORMAT_KEY.length());

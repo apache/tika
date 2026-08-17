@@ -252,6 +252,8 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
                 tmp = new TemporaryResources();
                 Path tmpPath = tmp.createTempFile(FilenameUtils.getSuffixFromPath(fetchKey));
                 Files.copy(s3Object, tmpPath, StandardCopyOption.REPLACE_EXISTING);
+                // Files.copy does not close its input; the success path must
+                s3Object.close();
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
                 LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",
                         System.currentTimeMillis() - start);

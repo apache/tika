@@ -71,7 +71,8 @@ coined by an external tool or service.
 
 == Regenerate the registry
 
-The registry — three JSON files under `tika-metadata-schema/src/main/resources/`, listing every
+The registry — three JSON files under
+`tika-metadata-schema/src/main/resources/org/apache/tika/metadata/`, listing every
 declared key, every open-namespace prefix, and a field-provenance table — is generated from the live
 `Property`/`KeyPrefix` declarations, never hand-edited. A committed copy is the reviewable
 audit trail (a rename or dropped key shows up as a diff), and CI fails if it's stale.
@@ -86,8 +87,9 @@ tika-metadata-schema/regen.sh
 It installs the modules the change touched, regenerates all three registry files, sanity-checks the
 diff, and runs the gate tests. Commit the Java change and the regenerated JSON together.
 
-Details, flags, and the traps this script exists to avoid (classpath scanning quirks, `exec:java`
-vs. a forked classpath) are documented in `tika-metadata-schema/README.md`.
+Flags are on `regen.sh --help`. The registry design is in `tika-metadata-schema/README.md`;
+the traps this script routes around (classpath scanning quirks, `exec:java` vs. a forked
+classpath) are in `.skills/metadata-schema/SKILL.md`.
 
 == After a rename
 

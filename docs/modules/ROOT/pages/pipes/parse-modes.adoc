@@ -94,6 +94,10 @@ these values. If unset, the default is `MARKDOWN`.
 |`b` (body)
 |`.txt`
 |Body content handler output (text from the document body only)
+
+|`i` (ignore)
+|_n/a_
+|No content extracted; metadata only
 |===
 
 [#concatenate-mode]
@@ -191,7 +195,7 @@ extracted markdown content. See <<_content_handler_types>> for the available han
 === What still runs
 
 * **MIME detection.** The configured `Detector` runs against the input stream and populates `Content-Type` and `tk:content-type-parser-override` on the container metadata.
-* **Digesting.** If a `DigesterFactory` is configured on the `ParseContext`, it runs against the raw bytes and writes the digest fields (e.g., `tk:digest:SHA256`) to the container metadata before the parse-mode check.
+* **Digesting.** If a `DigesterFactory` is configured on the `ParseContext`, it runs against the raw bytes and writes the digest fields (e.g., `tk:digest:SHA-256`) to the container metadata before the parse-mode check.
 
 === What does NOT run
 

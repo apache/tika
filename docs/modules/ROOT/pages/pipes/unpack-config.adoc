@@ -82,7 +82,7 @@ All options below are fields of the `unpack-config` block — nest them inside
 
 |`maxUnpackBytes`
 |long
-|10GB
+|10 GiB
 |Maximum total bytes to extract per file. Set to `-1` for unlimited (not recommended). `0`
 is not unlimited -- it means zero bytes, so the first embedded file's extraction is
 immediately capped.
@@ -95,7 +95,7 @@ immediately capped.
 |`zipEmbeddedFiles`
 |boolean
 |`false`
-|Collect all embedded files into a single ZIP archive.
+|Collect all embedded files into a single ZIP archive, emitted at the container's emit key plus `-embedded.zip`.
 
 |`includeMetadataInZip`
 |boolean
@@ -110,38 +110,40 @@ immediately capped.
 |`suffixStrategy`
 |NONE, EXISTING, DETECTED
 |`NONE`
-|How to determine file extensions for extracted files.
+|How to determine file extensions for extracted files. See <<_suffix_strategies,Suffix Strategies>>.
 
 |`embeddedIdPrefix`
 |String
 |`"-"`
-|Prefix between base name and embedded ID (e.g., `doc-1.txt`).
+|Separator between `emitKeyBase` and the embedded ID. Read only when `keyBaseStrategy=CUSTOM`; the `DEFAULT` strategy uses a fixed `-embed/` separator instead.
 
 |`keyBaseStrategy`
 |DEFAULT, CUSTOM
 |`DEFAULT`
-|Strategy for generating emit keys.
+|Strategy for generating emit keys. See <<_key_base_strategies,Key Base Strategies>>.
 
 |`emitKeyBase`
 |String
 |`""`
 |Custom base path when `keyBaseStrategy=CUSTOM`.
+
+|`outputFormat`
+|REGULAR, FRICTIONLESS
+|`REGULAR`
+|Output format for the ZIP archive. See <<_frictionless_data_package_output,Frictionless Data Package Output>>.
+
+|`outputMode`
+|ZIPPED, DIRECTORY
+|`ZIPPED`
+|`ZIPPED` packages everything into one archive; `DIRECTORY` emits each extracted file to the emitter as its own item.
+
+|`includeFullMetadata`
+|boolean
+|`false`
+|Include a `metadata.json` file with full RMETA-style metadata for all extracted files. Frictionless output only.
 |===
 
 == Examples
-
-=== Basic Byte Extraction
-
-Extract embedded bytes with default naming:
-
-[source,json]
-----
-{
-  "pipes": {
-    "parseMode": "UNPACK"
-  }
-}
-----
 
 === ZIP Output with Metadata
 
@@ -165,7 +167,7 @@ Collect all embedded files into a ZIP with metadata:
 
 === Custom Naming
 
-Control output file naming:
+`embeddedIdPrefix` only applies to `keyBaseStrategy=CUSTOM`, so set both:
 
 [source,json]
 ----
@@ -177,33 +179,16 @@ Control output file naming:
     "unpack-config": {
       "zeroPadName": 8,
       "suffixStrategy": "DETECTED",
+      "keyBaseStrategy": "CUSTOM",
+      "emitKeyBase": "document",
       "embeddedIdPrefix": "-embed-"
     }
   }
 }
 ----
 
-Produces names like: `document-embed-00000001.pdf`
-
-=== Limit Extraction Size
-
-Prevent unbounded extraction from malicious files:
-
-[source,json]
-----
-{
-  "pipes": {
-    "parseMode": "UNPACK"
-  },
-  "parse-context": {
-    "unpack-config": {
-      "maxUnpackBytes": 104857600
-    }
-  }
-}
-----
-
-This limits extraction to 100MB total.
+Produces names like `document-embed-00000001.pdf`. Under the `DEFAULT` strategy the same
+`zeroPadName`/`suffixStrategy` settings would produce `<containerKey>-embed/00000001.pdf`.
 
 == Suffix Strategies
 
@@ -213,22 +198,21 @@ This limits extraction to 100MB total.
 
 == Key Base Strategies
 
-`DEFAULT`:: Output key is `\{containerKey}-\{embeddedIdPrefix}\{id}\{suffix}`
-`CUSTOM`:: Output key uses `emitKeyBase` as the prefix.
+`DEFAULT`:: Output key is `\{containerKey}-embed/\{id}\{suffix}`. The `-embed/` separator is fixed; `embeddedIdPrefix` is not consulted.
+`CUSTOM`:: Output key is `\{emitKeyBase}\{embeddedIdPrefix}\{id}\{suffix}`.
 
 == Safety Limits
 
-The `maxUnpackBytes` setting protects against zip bombs and other malicious files that
-expand to enormous sizes. The default 10GB limit should be appropriate for most use cases.
+`maxUnpackBytes` bounds zip bombs and other files that expand to enormous sizes. The 10 GB
+default suits most corpora; lower it for untrusted input.
 
-When the limit is reached:
+Hitting the limit is silent apart from a log line. The embedded file being written is
+truncated at the remaining budget, each later embedded file is skipped, and each case
+logs a WARN — but nothing is stamped on the metadata and the result status is unchanged
+(`PARSE_SUCCESS` / `EMIT_SUCCESS`). Watch the log, not the status, for truncation.
 
-* Extraction stops for the current file
-* An exception is logged
-* Parsing continues (already-extracted bytes are kept)
-* The parse result status is `PARSE_SUCCESS_WITH_EXCEPTION`
-
-Set `maxUnpackBytes=-1` to disable the limit. This is not recommended for untrusted input.
+`maxUnpackBytes: -1` (or any negative value) disables the limit — not recommended for
+untrusted input. `0` is not "unlimited": it caps extraction at zero bytes.
 
 == Frictionless Data Package Output
 
@@ -276,23 +260,6 @@ The `datapackage.json` file contains:
 * SHA256 hash for each file
 * MIME type for each file
 * File size in bytes
-
-=== Frictionless Configuration Options
-
-[cols="2,1,2,3"]
-|===
-|Property |Type |Default |Description
-
-|`outputFormat`
-|STANDARD, FRICTIONLESS
-|`STANDARD`
-|Output format for the ZIP archive. Use `FRICTIONLESS` for Data Package format.
-
-|`includeFullMetadata`
-|boolean
-|`false`
-|Include a `metadata.json` file with full RMETA-style metadata for all extracted files.
-|===
 
 === CLI Usage
 

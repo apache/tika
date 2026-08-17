@@ -126,6 +126,7 @@ public class OpenSearchPipesReporter extends PipesReporterBase {
         HttpClientConfig http = config.httpClientConfig();
         httpClientFactory.setUserName(http.userName());
         httpClientFactory.setPassword(http.password());
+        httpClientFactory.setVerifySsl(http.verifySslOrDefault());
         /*
             turn these back on as necessary
         httpClientFactory.setSocketTimeoutMillis(http.socketTimeoutMillis());

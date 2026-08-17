@@ -118,8 +118,9 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
     }
 
     /** Accepted spellings, for error messages. */
+    // String.join defeats compile-time constant inlining into downstream jars
     public static final String VALID_HANDLER_TYPE_NAMES =
-            "text, txt, html, xml, body, markdown, md, ignore";
+            String.join(", ", "text", "txt", "html", "xml", "body", "markdown", "md", "ignore");
 
     /**
      * Parses a string into a handler type.

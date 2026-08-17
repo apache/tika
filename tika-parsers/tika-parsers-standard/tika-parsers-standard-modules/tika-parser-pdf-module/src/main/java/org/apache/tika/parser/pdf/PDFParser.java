@@ -253,16 +253,15 @@ public class PDFParser implements Parser, RenderingParser {
     }
 
     private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
-        // ParseContextConfig.getConfig() handles:
-        // 1. Check for PDFParserConfig already in ParseContext (fast path for embedded docs)
-        // 2. Check jsonConfigs for "pdf-parser" and deserialize if present
-        // 3. Set deserialized config in ParseContext for future lookups
-        // 4. Return defaultConfig if no runtime config found
-        return ParseContextConfig.getConfig(
+        PDFParserConfig config = ParseContextConfig.getConfig(
                 parseContext,
                 "pdf-parser",
                 PDFParserConfig.class,
                 defaultConfig);
+        // publish class-keyed for collaborators that read parseContext.get(PDFParserConfig.class),
+        // e.g. PDFBoxRenderer; safe because pdf-parser is this class's sole owner
+        parseContext.set(PDFParserConfig.class, config);
+        return config;
     }
 
     private void checkEncryptedPayload(PDDocument pdfDocument,
@@ -652,6 +651,7 @@ public class PDFParser implements Parser, RenderingParser {
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
 
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        PDMetadataExtractor.addMetadata(metadata, PDF.TRAPPED, info.getTrapped());
         Calendar created = info.getCreationDate();
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATED, created);

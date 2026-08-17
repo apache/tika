@@ -684,7 +684,7 @@ public class TikaInputStreamTest {
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
-                    new ByteArrayInputStream(data), tmp, -1, metadata);
+                    new ByteArrayInputStream(data), tmp, -1, metadata, null);
             source.enableRewind(); // Enable caching for spill support
 
             // Read all data
@@ -720,7 +720,7 @@ public class TikaInputStreamTest {
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
-                    new ByteArrayInputStream(data), tmp, -1, metadata);
+                    new ByteArrayInputStream(data), tmp, -1, metadata, null);
             source.enableRewind(); // Enable caching for seek/spill support
 
             // Read and spill
@@ -741,7 +741,7 @@ public class TikaInputStreamTest {
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
-                    new ByteArrayInputStream(data), tmp, -1, null);
+                    new ByteArrayInputStream(data), tmp, -1, null, null);
             source.enableRewind(); // Enable caching for seek support
 
             // Read first 5 bytes
@@ -767,7 +767,7 @@ public class TikaInputStreamTest {
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
-                    new ByteArrayInputStream(data), tmp, -1, null);
+                    new ByteArrayInputStream(data), tmp, -1, null, null);
             source.enableRewind(); // Enable caching for spill/seek support
 
             // Read first 5 bytes
@@ -864,7 +864,7 @@ public class TikaInputStreamTest {
             tis.read(); // Read one byte, position is now 1
             assertEquals(1, tis.getPosition());
 
-            assertThrows(IllegalStateException.class, tis::enableRewind,
+            assertThrows(IOException.class, tis::enableRewind,
                     "enableRewind() should throw when position != 0");
         }
     }
@@ -995,5 +995,92 @@ public class TikaInputStreamTest {
 
     private static String str(byte[] b) {
         return new String(b, UTF_8);
+    }
+
+    private static class CloseCountingInputStream extends ByteArrayInputStream {
+        int closes = 0;
+
+        CloseCountingInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        public void close() throws IOException {
+            closes++;
+            super.close();
+        }
+    }
+
+    /**
+     * Spill must not close the source (an archive stream may still be in use),
+     * but close() must reach it exactly once.
+     */
+    @Test
+    public void testSourceClosedOnceAfterSpill() throws Exception {
+        CloseCountingInputStream source = new CloseCountingInputStream(new byte[64]);
+        Path spilled;
+        try (TikaInputStream tis = TikaInputStream.get(source)) {
+            spilled = tis.getPath();
+            assertEquals(0, source.closes, "source must stay open at spill time");
+        }
+        assertEquals(1, source.closes, "close() must close the spilled source exactly once");
+        assertFalse(Files.exists(spilled), "temp file must be deleted on close");
+    }
+
+    /**
+     * Closing the TemporaryResources must release the handles the spill opened, not only
+     * delete the file: Tika.detect() disposes tmp without closing the source.
+     */
+    @Test
+    public void testTmpCloseReleasesSpilledFileHandle() throws Exception {
+        TemporaryResources tmp = new TemporaryResources();
+        CachingSource source = new CachingSource(
+                new ByteArrayInputStream(bytes("ABCDEFGHIJ")), tmp, -1, null, null);
+        Path spilled = source.getPath(".tmp");
+        assertEquals('A', source.read());
+
+        tmp.close();
+
+        assertFalse(Files.exists(spilled), "tmp.close() must delete the spill file");
+        assertThrows(IOException.class, source::read,
+                "tmp.close() must close the handle the spill opened on that file");
+    }
+
+    /** Same for the handles the cache itself opens when it spills at the memory threshold. */
+    @Test
+    public void testTmpCloseReleasesCacheHandlesAfterThresholdSpill() throws Exception {
+        TemporaryResources tmp = new TemporaryResources();
+        CachingSource source = new CachingSource(
+                new ByteArrayInputStream(new byte[1024 * 1024 + 1]), tmp, -1, null, null);
+        source.enableRewind();
+        IOUtils.toByteArray(source);
+        source.seekTo(0);
+        assertEquals(0, source.read(), "precondition: reading from the spilled cache");
+
+        tmp.close();
+
+        assertThrows(IOException.class, source::read,
+                "tmp.close() must close the cache's handles on the spill file");
+    }
+
+    /** TIKA-3903: the suffix must survive a spill triggered by the memory threshold. */
+    @Test
+    public void testSuffixSurvivesThresholdSpill() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "scan.png");
+        // one byte past the StreamCache memory threshold
+        byte[] data = new byte[1024 * 1024 + 1];
+        try (TikaInputStream tis =
+                TikaInputStream.get(new ByteArrayInputStream(data), metadata)) {
+            tis.enableRewind();
+            // drain past the threshold so the cache spills before getPath()
+            byte[] buffer = new byte[8192];
+            while (tis.read(buffer) != -1) {
+            }
+            tis.rewind();
+            assertTrue(tis.getPath().getFileName().toString().endsWith(".png"),
+                    "threshold spill must keep the original suffix, got: "
+                            + tis.getPath().getFileName());
+        }
     }
 }

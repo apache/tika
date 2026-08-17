@@ -37,8 +37,6 @@
     <asarkar-grpc-test.version>2.0.1</asarkar-grpc-test.version>
     <awaitility.version>4.3.0</awaitility.version>
     <j2objc-annotations.version>3.1</j2objc-annotations.version>
-    <ignite.version>2.17.0</ignite.version>
-    <h2.version>1.4.197</h2.version>
   </properties>
 
   <dependencies>
@@ -220,11 +218,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-pipes-config-store-ignite</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-file-system</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
@@ -402,6 +395,26 @@
             <configuration>
               <rules>
                 <requireUpperBoundDeps />
+              </rules>
+            </configuration>
+          </execution>
+          <!-- Ignite is a dev-profile-only config store; the published jar and the docker
+               image (built from includeScope=runtime) must not carry its ~63 artifacts. -->
+          <execution>
+            <id>ban-ignite</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.apache.ignite:*</exclude>
+                    <exclude>org.apache.tika:tika-pipes-config-store-ignite</exclude>
+                  </excludes>
+                  <message>Apache Ignite must not be on tika-grpc's default classpath. Ignite support is
+                    loaded reflectively and is only wired up under -Pdev.</message>
+                </bannedDependencies>
               </rules>
             </configuration>
           </execution>
@@ -639,6 +652,16 @@
       </dependencies>
       <build>
         <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-enforcer-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>ban-ignite</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>exec-maven-plugin</artifactId>

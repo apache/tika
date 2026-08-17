@@ -229,6 +229,7 @@ public class CompressorParser implements Parser {
         tis.setCloseShield();
 
         CompressorInputStream cis;
+        boolean detected = false;
         try {
             CompressorParserOptions options =
                     context.get(CompressorParserOptions.class,
@@ -272,23 +273,26 @@ public class CompressorParser implements Parser {
                     metadata.set(CONTENT_TYPE, type.toString());
                 }
             }
+            detected = true;
         } catch (CompressorException e) {
-            tis.removeCloseShield();
             if (e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
             throw new TikaException("Unable to uncompress document stream", e);
-        } catch (IOException e) {
-            //the pack200 workaround (getPath()/Files.newInputStream) can throw IOException;
-            //make sure the close shield is removed before propagating
-            tis.removeCloseShield();
-            throw e;
+        } finally {
+            // covers unchecked escapes too (e.g. InaccessibleObjectException from the
+            // pack200 reflection), which used to leave the shield stuck on
+            if (!detected) {
+                tis.removeCloseShield();
+            }
         }
 
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
         try {
+            //inside the try: a handler that throws from startDocument() must still
+            //release cis and the shield
+            xhtml.startDocument();
             Metadata entrydata = Metadata.newInstance(context);
             boolean foundName = false;
             if (cis instanceof GzipCompressorInputStream) {
@@ -307,8 +311,13 @@ public class CompressorParser implements Parser {
                 }
             }
         } finally {
-            cis.close();
-            tis.removeCloseShield();
+            //nested so a throw from cis.close() can't strand the shield; a stuck shield
+            //makes the caller's tis.close() a no-op and leaks its whole resource tree
+            try {
+                cis.close();
+            } finally {
+                tis.removeCloseShield();
+            }
         }
 
         xhtml.endDocument();

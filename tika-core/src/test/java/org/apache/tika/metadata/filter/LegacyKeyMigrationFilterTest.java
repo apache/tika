@@ -268,4 +268,91 @@ public class LegacyKeyMigrationFilterTest {
         assertNull(m3.get("grobid:header_Title"));
         assertNull(m3.get("AccessContraints "));
     }
+
+    /**
+     * These seven are 3.x bare String constants, not Property fields, so the field-identity join
+     * cannot generate their rows -- they are hand-carried in migration-overlay.tsv and nothing
+     * but this test would catch their loss.
+     */
+    @Test
+    public void testBareMailKeysBridgeBothDirections() throws Exception {
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata in = new Metadata();
+        in.set("Message-To", "to@example.com");
+        in.set("Message-From", "from@example.com");
+        in.set("Message-Cc", "cc@example.com");
+        in.set("Message-Bcc", "bcc@example.com");
+        in.set("Message-Recipient-Address", "rcpt@example.com");
+        in.set("Multipart-Boundary", "----=_Part_0");
+        in.set("Multipart-Subtype", "mixed");
+        apply(ingest, in);
+        assertEquals("to@example.com", in.get("message:to"));
+        assertEquals("from@example.com", in.get("message:from"));
+        assertEquals("cc@example.com", in.get("message:cc"));
+        assertEquals("bcc@example.com", in.get("message:bcc"));
+        assertEquals("rcpt@example.com", in.get("message:recipient-address"));
+        assertEquals("----=_Part_0", in.get("multipart:boundary"));
+        assertEquals("mixed", in.get("multipart:subtype"));
+        assertNull(in.get("Message-To"));
+        assertNull(in.get("Multipart-Boundary"));
+
+        LegacyKeyMigrationFilter egress = bundled(Direction.V4_TO_V3);
+        Metadata out = new Metadata();
+        out.set("message:to", "to@example.com");
+        out.set("multipart:subtype", "mixed");
+        apply(egress, out);
+        assertEquals("to@example.com", out.get("Message-To"));
+        assertEquals("mixed", out.get("Multipart-Subtype"));
+        assertNull(out.get("message:to"));
+    }
+
+    /**
+     * Six open-vocabulary families whose spelling changed in 4.x, none of which can appear as
+     * flat rows. html:/img: were bare in 3.x, so they bridge on egress only; the other four
+     * carry a 3.x marker and bridge both ways.
+     */
+    @Test
+    public void testOpenVocabularyPrefixFamiliesBridge() throws Exception {
+        LegacyKeyMigrationFilter egress = bundled(Direction.V4_TO_V3);
+        Metadata out = new Metadata();
+        out.set("html:og:description", "a page");
+        out.set("html:scriptSrc", "https://example.com/x.js");  // declared: flat row beats the strip
+        out.set("img:Image Description", "t1");
+        out.set("message:raw-header:X-Originating-IP", "10.0.0.1");
+        out.set("rtf:pict:wmetafile", "8");
+        out.set("icc:Blue Colorant", "(0.1, 0.2, 0.3)");
+        out.set("mbox:from", "someone@example.com");
+        apply(egress, out);
+        assertEquals("a page", out.get("og:description"));
+        assertEquals("https://example.com/x.js", out.get("html_meta:scriptSrc"));
+        assertEquals("t1", out.get("Image Description"));
+        assertEquals("10.0.0.1", out.get("Message:Raw-Header:X-Originating-IP"));
+        assertEquals("8", out.get("rtf_pict:wmetafile"));
+        assertEquals("(0.1, 0.2, 0.3)", out.get("ICC:Blue Colorant"));
+        assertEquals("someone@example.com", out.get("MboxParser-from"));
+        assertNull(out.get("html:og:description"));
+        assertNull(out.get("html:scriptSrc"));
+        assertNull(out.get("img:Image Description"));
+        assertNull(out.get("mbox:from"));
+
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata in = new Metadata();
+        in.set("html_meta:scriptSrc", "https://example.com/x.js");
+        in.set("Message:Raw-Header:X-Originating-IP", "10.0.0.1");
+        in.set("rtf_pict:wmetafile", "8");
+        in.set("ICC:Blue Colorant", "(0.1, 0.2, 0.3)");
+        in.set("MboxParser-from", "someone@example.com");
+        in.set("og:description", "a page");     // bare in 3.x: no marker, must pass through
+        in.set("Image Description", "t1");
+        apply(ingest, in);
+        assertEquals("https://example.com/x.js", in.get("html:scriptSrc"));
+        assertEquals("10.0.0.1", in.get("message:raw-header:X-Originating-IP"));
+        assertEquals("8", in.get("rtf:pict:wmetafile"));
+        assertEquals("(0.1, 0.2, 0.3)", in.get("icc:Blue Colorant"));
+        assertEquals("someone@example.com", in.get("mbox:from"));
+        assertEquals("a page", in.get("og:description"));
+        assertEquals("t1", in.get("Image Description"));
+        assertNull(in.get("ICC:Blue Colorant"));
+        assertNull(in.get("MboxParser-from"));
+    }
 }

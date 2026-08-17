@@ -1,0 +1,9 @@
+{
+  "parsers": [
+    {
+      "default-parser": {
+        "exclude": ["no-such-parser"]
+      }
+    }
+  ]
+}

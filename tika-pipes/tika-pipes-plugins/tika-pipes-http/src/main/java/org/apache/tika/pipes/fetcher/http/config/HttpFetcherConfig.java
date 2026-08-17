@@ -63,7 +63,8 @@ public class HttpFetcherConfig {
     private String userAgent;
     private String jwtIssuer;
     private String jwtSubject;
-    private int jwtExpiresInSeconds;
+    // 0 would mint already-expired tokens
+    private int jwtExpiresInSeconds = 3600;
     private String jwtSecret;
     private String jwtPrivateKeyBase64;
 

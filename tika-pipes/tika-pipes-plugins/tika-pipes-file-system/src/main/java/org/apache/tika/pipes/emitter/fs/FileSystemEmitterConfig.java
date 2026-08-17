@@ -27,6 +27,13 @@ public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_
         SKIP, EXCEPTION, REPLACE
     }
 
+    /** onExists is optional; absent means EXCEPTION, the documented default. */
+    public FileSystemEmitterConfig {
+        if (onExists == null) {
+            onExists = ON_EXISTS.EXCEPTION;
+        }
+    }
+
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static FileSystemEmitterConfig load(final String json)

@@ -32,7 +32,7 @@ import org.apache.tika.plugins.ExtensionConfig;
  * "reporter": {
  *   "opensearch-pipes-reporter": {
  *     "openSearchUrl": "http://localhost:9200/tika-status",
- *     "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION"],
+ *     "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION_NO_EMIT"],
  *     "keyPrefix": "status_"
  *   }
  * }

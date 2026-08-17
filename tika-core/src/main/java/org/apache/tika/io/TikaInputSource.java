@@ -60,9 +60,9 @@ interface TikaInputSource extends Closeable {
      * For CachingSource, this switches from passthrough mode to caching mode,
      * enabling subsequent {@link #seekTo(long)} and rewind operations.
      * <p>
-     * Must be called when position is 0, otherwise throws IllegalStateException.
+     * Must be called when position is 0, otherwise throws IOException.
      *
-     * @throws IllegalStateException if position is not 0
+     * @throws IOException if position is not 0
      */
-    void enableRewind();
+    void enableRewind() throws IOException;
 }

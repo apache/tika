@@ -19,7 +19,7 @@
       "file-system-emitter": {
         "basePath": "EMITTER_BASE_PATH",
         "fileExtension": "json",
-        "onExists": "OVERWRITE"
+        "onExists": "REPLACE"
       }
     }
   },

@@ -42,6 +42,8 @@ include::example$pipes-csv-iterator.json[]
 
 === Configuration
 
+In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
+
 [cols="1,1,3"]
 |===
 |Field |Default |Description
@@ -50,26 +52,25 @@ include::example$pipes-csv-iterator.json[]
 |_required_
 |Path to the CSV file on disk.
 
-|`idColumn`
-|_optional_
-|Column whose value becomes the iterator's row identifier.
-
 |`fetchKeyColumn`
-|_optional_
-|Column whose value becomes the fetch key on each emitted tuple.
+|_required_
+|Column whose value becomes the fetch key on each emitted tuple. Setting it also makes `fetcherId` required.
 
 |`emitKeyColumn`
-|_optional_
-|Column whose value becomes the emit key on each emitted tuple.
+|_none_
+|Column whose value becomes the emit key on each emitted tuple. Falls back to `fetchKeyColumn`.
 
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|`idColumn`
+|_none_
+|Column whose value becomes the tuple's id. Falls back to `fetchKeyColumn`.
 |===
+
+Every column named above is consumed as a key and left out of the metadata; all remaining columns become metadata, keyed by their header. A column whose header collides with a reserved Tika-native key is logged and skipped rather than aborting the row.
 
 [#notes]
 == Notes
 
-* The CSV must have a header row — column names in the config refer to header values, not column indexes.
+* The file must be UTF-8 and is parsed with `CSVFormat.EXCEL` (comma-delimited).
+* The CSV must have a header row — column names in the config refer to header values, not column indexes. A blank header cell aborts the run.
 * For very large CSV files, the iterator streams rows rather than loading them all into memory.
 * For row-shaped work items in JSONL (one JSON object per line), use the xref:pipes/plugins/json.adoc[JSON iterator] instead.

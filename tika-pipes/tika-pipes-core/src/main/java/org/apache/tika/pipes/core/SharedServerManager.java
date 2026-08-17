@@ -274,7 +274,7 @@ public class SharedServerManager implements ServerManager {
                 "  in-flight parses as collateral damage.\n");
         LOG.info("Starting shared server with {} connections", numConnections);
 
-        tmpDir = Files.createTempDirectory("pipes-shared-server-");
+        tmpDir = pipesConfig.createTempDirectory("pipes-shared-server-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
         // Pass port and auth token via environment variables so they are not
         // visible in /proc/<pid>/cmdline. The token is only readable via

@@ -38,7 +38,7 @@ asciidoc:
   attributes:
     # Tika version attributes
     tika-version: '4.0.0-SNAPSHOT'
-    tika-stable-version: '3.2.3'
+    tika-stable-version: '3.3.2'
     # Enable source highlighting
     source-highlighter: highlight.js
     # Table of contents

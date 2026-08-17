@@ -59,13 +59,14 @@ public class ConfigDeserializer {
      * <p>
      * Resolution order:
      * <ol>
-     *   <li>Check resolved configs cache (already deserialized)</li>
+     *   <li>Check resolved configs cache for this key and class (already deserialized)</li>
      *   <li>Check JSON configs (deserialize, merge with default, cache)</li>
      *   <li>Return default config if nothing found</li>
      * </ol>
      * <p>
-     * The resolved config is cached in ParseContext's resolvedConfigs map and also
-     * set in the main context map so components can find it via {@code parseContext.get(configClass)}.
+     * The resolved config is cached in ParseContext's resolvedConfigs map under this key
+     * and class; it is not registered under the config class alone, since several
+     * components may share one config class.
      *
      * @param context       the parse context
      * @param configKey     the configuration key (e.g., "pdf-parser", "handler-config")
@@ -83,7 +84,7 @@ public class ConfigDeserializer {
         }
 
         // Check resolved cache first
-        T resolved = context.getResolvedConfig(configKey);
+        T resolved = context.getResolvedConfig(configKey, configClass);
         if (resolved != null) {
             return resolved;
         }
@@ -97,11 +98,10 @@ public class ConfigDeserializer {
         // Deserialize and merge with default
         T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
 
-        // Cache in resolved configs
-        context.setResolvedConfig(configKey, config);
-
-        // Also set in main context so other components can find it via parseContext.get(configClass)
-        context.set(configClass, config);
+        // Cache per key and class. A key-less, class-keyed write would leak this config to
+        // every component sharing the class (e.g. the three VLM parsers all bind
+        // VLMOCRConfig, so one provider's base URL and API key would reach the others).
+        context.setResolvedConfig(configKey, configClass, config);
 
         return config;
     }

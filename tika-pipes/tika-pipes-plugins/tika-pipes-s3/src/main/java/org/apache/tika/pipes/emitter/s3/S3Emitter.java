@@ -160,9 +160,6 @@ public class S3Emitter extends AbstractStreamEmitter {
         }
 
         boolean spoolToTemp = config.spoolToTemp();
-        if (spoolToTemp) {
-            spoolToTemp = true; // default from config, but could override from parseContext
-        }
 
         if (!spoolToTemp) {
             UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();

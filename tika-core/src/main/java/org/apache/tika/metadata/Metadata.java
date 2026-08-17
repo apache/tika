@@ -92,10 +92,7 @@ public class Metadata implements Serializable {
 
     private static final MetadataWriteLimiter ACCEPT_ALL = new AcceptAllLimiter();
 
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = 5623926545693153182L;
+    private static final long serialVersionUID = 7748196982570748206L;
 
     private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
@@ -104,13 +101,13 @@ public class Metadata implements Serializable {
      * this is skipped (with a WARN). Configurable policy belongs in a
      * {@link org.apache.tika.metadata.writelimiter.StandardMetadataLimiter}.
      */
-    public static final int MAX_PREFIX_ROUTE_NAME_LENGTH = 1024;
+    static final int MAX_PREFIX_ROUTE_NAME_LENGTH = 1024;
 
     /**
      * Safety net on {@link #add(KeyPrefix, String, String)}: after this many distinct
      * prefix-route names in one Metadata instance, further new names are skipped (WARN once).
      */
-    public static final int MAX_PREFIX_ROUTE_NAMES = 10_000;
+    static final int MAX_PREFIX_ROUTE_NAMES = 10_000;
     /**
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.

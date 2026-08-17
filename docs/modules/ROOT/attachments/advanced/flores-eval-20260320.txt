@@ -19,10 +19,10 @@ limitations under the License.
 [INFO] Scanning for projects...
 [WARNING] 
 [WARNING] Some problems were encountered while building the effective model for org.apache.tika:tika-parent:pom:4.0.0-SNAPSHOT
-[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, /Users/tallison/Intellij/tika-main-chardet/tika-parent/pom.xml, line 35, column 12
+[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, <tika-checkout>/tika-parent/pom.xml, line 35, column 12
 [WARNING] 
 [WARNING] Some problems were encountered while building the effective model for org.apache.tika:tika:pom:4.0.0-SNAPSHOT
-[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, /Users/tallison/Intellij/tika-main-chardet/tika-parent/pom.xml, line 35, column 12
+[WARNING] 'version' contains an expression but should be a constant. @ org.apache.tika:tika-parent:${revision}, <tika-checkout>/tika-parent/pom.xml, line 35, column 12
 [WARNING] 
 [WARNING] It is highly recommended to fix these problems because they threaten the stability of your build.
 [WARNING] 
@@ -38,12 +38,12 @@ limitations under the License.
 [INFO] --- exec:3.6.3:java (default-cli) @ tika-langdetect-charsoup ---
 CharSoup strategy: STANDARD
 Evaluation threads: 12
-Loading test data: /Users/tallison/datasets/flores-200/flores200_dev.tsv
+Loading test data: <datasets>/flores-200/flores200_dev.tsv
   Flores-200 mode: normalizing xxx_Yyyy → xxx codes
   (multi-script variants kept as xxx_Yyyy separate classes)
 Test sentences: 203,381
 
-Loading CharSoup model: /Users/tallison/datasets/wikipedia-model-v14/langdetect-v14.bin
+Loading CharSoup model: <datasets>/wikipedia-model-v14/langdetect-v14.bin
   CharSoup model: 204 classes, 32768 buckets, flags=0xE81, ~8.1 MB heap
   Evaluation routes through CharSoupLanguageDetector (script gate + confusable group collapse).
 Loading OpenNLP detector(s)...
@@ -571,7 +571,7 @@ pol            93.5%    (no misses recorded)
 nob            93.7%  dan→20, nno→20, swe→1
 fas            94.3%  mzn→1, eng→1
 
-Report written to: /Users/tallison/datasets/wikipedia-model-v14/flores-v14-eval.log
+Report written to: <datasets>/wikipedia-model-v14/flores-v14-eval.log
 [INFO] ------------------------------------------------------------------------
 [INFO] BUILD SUCCESS
 [INFO] ------------------------------------------------------------------------

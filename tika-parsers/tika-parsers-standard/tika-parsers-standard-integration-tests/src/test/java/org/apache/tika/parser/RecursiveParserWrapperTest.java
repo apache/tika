@@ -455,9 +455,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
     @Test
     public void testStreamClosedAfterSpill() throws Exception {
-        // When TikaInputStream spills to a temp file (via getPath()/getFile()),
-        // the source stream should be closed promptly since all bytes have been
-        // consumed and cached - there's no reason to keep it open.
+        // Spill must not close the source early; close() must reach it exactly once.
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER, true);
@@ -472,10 +470,11 @@ public class RecursiveParserWrapperTest extends TikaTest {
             TikaInputStream tis = TikaInputStream.get(stream);
             tis.setCloseShield();
             wrapper.parse(tis, handler, metadata, context);
-            // Source stream should not be closed after spilling to file
             assertEquals(0, stream.counter);
             tis.removeCloseShield();
             tis.close();
+            // close() must reach the source, spill or no spill
+            assertEquals(1, stream.counter);
         }
 
     }
