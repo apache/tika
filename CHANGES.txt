@@ -151,6 +151,11 @@ Release 4.0.0 - ???
      closes its connection and recycles the per-client worker, so a
      pooled client cannot go back to the queue dirty (TIKA-4815).
 
+   * PDFs whose %PDF- header is preceded by a print-composition job ticket are
+     no longer detected as text/x-matlab. Up to 50 %% comment or blank lines of
+     up to 150 characters, and nothing else, may now precede the header; the
+     TIKA-3328 rule this extends only reached 512 bytes (TIKA-4782).
+
 
 Release 4.0.0-beta-1 - 6/29/2026
 
