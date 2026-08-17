@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -615,7 +616,7 @@ public class TikaCLI {
             // surface as a confusing MalformedURLException. Catch dash-prefixed
             // args that aren't the stdin marker or an existing file and emit
             // an actionable error before that happens.
-            if (arg.startsWith("-") && !arg.equals("-") && !new File(arg).exists()) {
+            if (arg.startsWith("-") && !arg.equals("-") && !fileExists(arg)) {
                 String hint = " Run with --help for the full option list.";
                 // Heuristic: single-dash + multi-letter (e.g. "-input") is
                 // usually a long-form-with-one-dash typo. Single-dash + one
@@ -639,9 +640,8 @@ public class TikaCLI {
                 }
             } else {
                 URL url;
-                File file = new File(arg);
-                if (file.isFile()) {
-                    url = file
+                if (isRegularFile(arg)) {
+                    url = new File(arg)
                             .toURI()
                             .toURL();
                 } else {
@@ -663,6 +663,27 @@ public class TikaCLI {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Windows rejects a colon outside the drive-letter slot (e.g. a URL passed
+     * as a raw CLI arg) by throwing InvalidPathException from File I/O instead
+     * of just reporting "not found"; normalize that to "doesn't exist".
+     */
+    private static boolean fileExists(String arg) {
+        try {
+            return new File(arg).exists();
+        } catch (InvalidPathException e) {
+            return false;
+        }
+    }
+
+    private static boolean isRegularFile(String arg) {
+        try {
+            return new File(arg).isFile();
+        } catch (InvalidPathException e) {
+            return false;
         }
     }
 
