@@ -16,20 +16,26 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
@@ -37,6 +43,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.NoData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfPropertyValues;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.FileDataObject;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectDataBLOB;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectDataBLOBDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySet;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.PropertySetObject;
@@ -45,6 +55,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStore
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.RevisionStoreObjectGroup;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.DataElementType;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.PropertyType;
@@ -87,7 +98,6 @@ public class MSOneStorePackageTest {
 
         String text = walk(pkg);
         assertTrue(text.indexOf("page one") < text.indexOf("page two"));
-        assertTrue(text.contains("----------------------------------------"));
         assertFalse(text.contains("old page one"));
         assertTrue(text.contains("unrelated"));
     }
@@ -107,7 +117,125 @@ public class MSOneStorePackageTest {
     }
 
     @Test
-    public void testPrimaryPictureSuppressesDerivedPicture() throws Exception {
+    public void testOriginalAuthorBecomesCreator() throws Exception {
+        ExGuid authorId = id(701);
+        RevisionStoreObject root = object(id(700), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D78, new NoData())),
+                Collections.singletonList(authorId), Collections.emptyList());
+        RevisionStoreObject author = object(authorId, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D75, utf16Text("Иван Петров"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, author));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+        Metadata metadata = new Metadata();
+        walk(pkg, metadata);
+        assertEquals("Иван Петров", metadata.get(TikaCoreProperties.CREATOR));
+    }
+
+    @Test
+    public void testBlobOnlyRootStillFallsBackToOtherObjects() throws Exception {
+        RevisionStoreObject blobRoot = object(id(610), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        blobRoot.propertySet = null;
+        blobRoot.fileDataObject = fileData("blob root");
+        RevisionStoreObject textObject = object(id(611), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("fallback content"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(blobRoot, textObject));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = blobRoot.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        assertTrue(walk(pkg).contains("fallback content"));
+    }
+
+    @Test
+    public void testArrayCountsAndRecursionDepthAreBounded() throws Exception {
+        RevisionStoreObject hugeArrayRoot = object(id(600), propertySet(
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001D5F,
+                                arrayNumber(Integer.MAX_VALUE)),
+                        new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001D5F,
+                                new NoData())),
+                Collections.emptyList(), Collections.emptyList());
+        Method collectActions = MSOneStorePackage.class.getDeclaredMethod("collectActions",
+                PropertySet.class, List.class, int[].class, List.class, int[].class, List.class);
+        collectActions.setAccessible(true);
+        List<Object> actions = new ArrayList<>();
+        collectActions.invoke(new MSOneStorePackage(),
+                hugeArrayRoot.propertySet.objectSpaceObjectPropSet.body,
+                Collections.emptyList(), new int[]{0}, Collections.emptyList(), new int[]{0},
+                actions);
+        assertTrue(actions.isEmpty());
+
+        PropertySet alignedSet = propertySet(
+                new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001D5F,
+                        arrayNumber(100001)),
+                new PropertySpec(PropertyType.ObjectID, 0x24001D5F, new NoData()));
+        actions.clear();
+        collectActions.invoke(new MSOneStorePackage(), alignedSet,
+                Collections.nCopies(100001, id(601)), new int[]{0}, Collections.emptyList(),
+                new int[]{0}, actions);
+        assertEquals(100001, actions.size());
+        java.lang.reflect.Field childReference = actions.get(actions.size() - 1).getClass()
+                .getDeclaredField("childReference");
+        childReference.setAccessible(true);
+        assertNull(childReference.get(actions.get(actions.size() - 1)));
+
+        Method walkObject = MSOneStorePackage.class.getDeclaredMethod("walkObject",
+                RevisionStoreObject.class, Map.class, Set.class,
+                Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
+                OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class,
+                int.class);
+        walkObject.setAccessible(true);
+        Metadata metadata = new Metadata();
+        StringWriter writer = new StringWriter();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(
+                new ToTextContentHandler(writer), metadata, new ParseContext());
+        xhtml.startDocument();
+        Object result = walkObject.invoke(new MSOneStorePackage(), hugeArrayRoot,
+                new java.util.HashMap<>(), new java.util.HashSet<>(), null,
+                new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000);
+        xhtml.endDocument();
+        assertFalse((Boolean) result);
+    }
+
+    @Test
+    public void testDanglingPrimaryPictureDoesNotSuppressWebPicture() throws Exception {
+        ExGuid missingPictureID = id(50);
+        ExGuid webPictureID = id(51);
+        RevisionStoreObject root = object(id(52), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x200034C8, new NoData())),
+                Arrays.asList(missingPictureID, webPictureID), Collections.emptyList());
+        RevisionStoreObject webPicture = object(webPictureID, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("derived picture"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, webPicture));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String text = walk(pkg);
+        assertTrue(text.contains("derived picture"), text);
+    }
+
+    @Test
+    public void testContentlessPrimaryPictureDoesNotSuppressDerivedPicture() throws Exception {
         ExGuid pictureID = id(40);
         ExGuid webPictureID = id(41);
         RevisionStoreObject root = object(id(42), propertySet(
@@ -117,6 +245,32 @@ public class MSOneStorePackageTest {
         RevisionStoreObject picture = object(pictureID, propertySet(),
                 Collections.emptyList(), Collections.emptyList());
         picture.propertySet.objectSpaceObjectPropSet.body = null;
+        RevisionStoreObject webPicture = object(webPictureID, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("derived picture"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, picture, webPicture));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        assertTrue(walk(pkg).contains("derived picture"));
+    }
+
+    @Test
+    public void testUsablePrimaryPictureSuppressesDerivedPicture() throws Exception {
+        ExGuid pictureID = id(80);
+        ExGuid webPictureID = id(81);
+        RevisionStoreObject root = object(id(82), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x200034C8, new NoData())),
+                Arrays.asList(pictureID, webPictureID), Collections.emptyList());
+        RevisionStoreObject picture = object(pictureID, propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        picture.fileDataObject = fileData("primary image");
         RevisionStoreObject webPicture = object(webPictureID, propertySet(
                         new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
                                 0x1C003498, text("derived picture"))),
@@ -176,11 +330,16 @@ public class MSOneStorePackageTest {
 
     private static String walk(MSOneStorePackage pkg) throws Exception {
         Metadata metadata = new Metadata();
+        return walk(pkg, metadata);
+    }
+
+    private static String walk(MSOneStorePackage pkg, Metadata metadata) throws Exception {
+        ParseContext context = new ParseContext();
         StringWriter writer = new StringWriter();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
-                new ToTextContentHandler(writer), metadata, new ParseContext());
+                new ToTextContentHandler(writer), metadata, context);
         xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml);
+        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
         xhtml.endDocument();
         return writer.toString();
     }
@@ -219,6 +378,19 @@ public class MSOneStorePackageTest {
         return object;
     }
 
+    private static FileDataObject fileData(String value) {
+        ObjectDataBLOB blob = new ObjectDataBLOB();
+        blob.data.content.addAll(ByteUtil.toListOfByte(value.getBytes(StandardCharsets.UTF_8)));
+        ObjectDataBLOBDataElementData blobData = new ObjectDataBLOBDataElementData();
+        blobData.objectDataBLOB = blob;
+        DataElement element = new DataElement();
+        element.dataElementType = DataElementType.ObjectDataBLOBDataElementData;
+        element.data = blobData;
+        FileDataObject fileData = new FileDataObject();
+        fileData.objectDataBLOBDataElement = element;
+        return fileData;
+    }
+
     private static RevisionStoreObjectGroup group(RevisionStoreObject... objects) {
         RevisionStoreObjectGroup group = new RevisionStoreObjectGroup(id(500));
         group.objects.addAll(Arrays.asList(objects));
@@ -254,6 +426,13 @@ public class MSOneStorePackageTest {
     private static PrtFourBytesOfLengthFollowedByData text(String value) {
         PrtFourBytesOfLengthFollowedByData data = new PrtFourBytesOfLengthFollowedByData();
         data.data = value.getBytes(StandardCharsets.US_ASCII);
+        data.cb = data.data.length;
+        return data;
+    }
+
+    private static PrtFourBytesOfLengthFollowedByData utf16Text(String value) {
+        PrtFourBytesOfLengthFollowedByData data = new PrtFourBytesOfLengthFollowedByData();
+        data.data = (value + "\u0000").getBytes(StandardCharsets.UTF_16LE);
         data.cb = data.data.length;
         return data;
     }

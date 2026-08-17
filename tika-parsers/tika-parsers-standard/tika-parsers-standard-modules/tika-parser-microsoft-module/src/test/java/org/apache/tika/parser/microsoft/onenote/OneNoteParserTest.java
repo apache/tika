@@ -234,6 +234,7 @@ public class OneNoteParserTest extends TikaTest {
     @Test
     public void testOneNoteEmbeddedImage() throws Exception {
         List<byte[]> embedded = new ArrayList<>();
+        List<String> embeddedTypes = new ArrayList<>();
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
@@ -246,6 +247,7 @@ public class OneNoteParserTest extends TikaTest {
                                       Metadata metadata, ParseContext context,
                                       boolean outputHtml) throws IOException {
                 embedded.add(stream.readAllBytes());
+                embeddedTypes.add(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
             }
         });
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNoteEmbeddedImage.one")) {
@@ -253,7 +255,9 @@ public class OneNoteParserTest extends TikaTest {
         }
 
         assertFalse(embedded.isEmpty());
-        assertTrue(embedded.stream().anyMatch(bytes -> bytes.length > 1000));
+        assertTrue(embedded.stream().anyMatch(bytes -> bytes.length > 1000),
+                () -> "embedded sizes: " + embedded.stream().map(bytes -> bytes.length).toList());
+        assertTrue(embeddedTypes.contains("INLINE"));
     }
 
     /**
@@ -267,6 +271,7 @@ public class OneNoteParserTest extends TikaTest {
 
         // only the authors of the current content count - authors that only appear in
         // older page version snapshots are not reported
+        assertEquals("Du Chang", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals(1, metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors").length);
 
         assertEquals(Instant.ofEpochSecond(1636621406),
@@ -289,10 +294,10 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNoteFromOffice365-2.one", metadata);
 
+        assertEquals("Robert Lucarini", metadata.get(TikaCoreProperties.CREATOR));
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
         assertContains(
-                "R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a" +
-                        "\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000",
+                "Robert Lucarini",
                 mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1591712300),

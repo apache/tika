@@ -8,6 +8,10 @@ Release 4.0.0 - ???
 
   OTHER CHANGES
 
+   * Improved Microsoft OneNote FSSHTTPB parsing, including embedded image/file extraction,
+     revision-chain traversal, page ordering, and malformed-input handling (TIKA-4814).
+     Added the missing ObjectDataBLOBDataElementData mapping so embedded BLOBs no longer abort
+     package parsing and cause Office 365 OneNote files to fall back to raw string output.
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
 

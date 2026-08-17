@@ -50,7 +50,8 @@ public class DataElement extends StreamObject {
             String className = DataElement.class.getPackage().getName() + "." + value.name();
 
             try {
-                DATA_ELEMENT_DATA_TYPE_MAPPING.put(value, Class.forName(className));
+                DATA_ELEMENT_DATA_TYPE_MAPPING.put(value,
+                        Class.forName(className, false, DataElement.class.getClassLoader()));
             } catch (ClassNotFoundException e) {
                 // This is OK, we are not pulling over every single class
             }

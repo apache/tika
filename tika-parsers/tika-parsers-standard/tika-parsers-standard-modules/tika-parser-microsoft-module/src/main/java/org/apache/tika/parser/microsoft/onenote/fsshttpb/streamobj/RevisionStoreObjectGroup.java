@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,12 +34,6 @@ public class RevisionStoreObjectGroup {
         this.objects = new ArrayList<>();
         this.encryptionObjects = new ArrayList<>();
         this.objectGroupID = objectGroupId;
-    }
-
-    public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
-                                                          ObjectGroupDataElementData dataObject,
-                                                          boolean isEncryption) throws IOException {
-        return createInstance(objectGroupId, dataObject, isEncryption, Collections.emptyMap());
     }
 
     public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
@@ -127,5 +120,18 @@ public class RevisionStoreObjectGroup {
         }
 
         return objectGroup;
+    }
+
+    /**
+     * Creates a cell-local wrapper around this parsed group. The object lists are copied so
+     * revision supersession filtering cannot mutate a cached group used by another cell.
+     *
+     * @return a shallow copy with independent mutable lists
+     */
+    public RevisionStoreObjectGroup copy() {
+        RevisionStoreObjectGroup copy = new RevisionStoreObjectGroup(objectGroupID);
+        copy.objects.addAll(objects);
+        copy.encryptionObjects.addAll(encryptionObjects);
+        return copy;
     }
 }

@@ -18,10 +18,14 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -42,12 +46,37 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
 public class MSOneStoreParserTest {
 
     @Test
+    public void testStorageMappingIndexesSeePublicListUpdates() {
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.storageIndex = new StorageIndexDataElementData();
+        CellID cellID = cell(700);
+        assertNull(pkg.findStorageIndexCellMapping(cellID));
+        StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
+        cellMapping.cellID = cellID;
+        pkg.storageIndex.storageIndexCellMappingList.add(cellMapping);
+        assertSame(cellMapping, pkg.findStorageIndexCellMapping(cellID));
+        StorageIndexCellMapping replacement = new StorageIndexCellMapping();
+        replacement.cellID = cellID;
+        replacement.cellMappingExGuid = id(702);
+        pkg.storageIndex.storageIndexCellMappingList.set(0, replacement);
+        assertSame(replacement, pkg.findStorageIndexCellMapping(cellID));
+
+        ExGuid revisionID = id(701);
+        assertNull(pkg.findStorageIndexRevisionMapping(revisionID));
+        StorageIndexRevisionMapping revisionMapping = new StorageIndexRevisionMapping();
+        revisionMapping.revisionExGuid = revisionID;
+        pkg.storageIndex.storageIndexRevisionMappingList.add(revisionMapping);
+        assertSame(revisionMapping, pkg.findStorageIndexRevisionMapping(revisionID));
+    }
+
+    @Test
     public void testMissingRootsAndRevisionMappingsReturnNoCell() throws Exception {
         MSOneStoreParser parser = new MSOneStoreParser();
         set(parser, "cellManifestDataElements", new java.util.ArrayList<>());
         set(parser, "revisionManifestDataElements", new java.util.ArrayList<>());
         set(parser, "objectGroupDataElements", new java.util.ArrayList<>());
-        set(parser, "objectBlOBElementsById", new java.util.HashMap<>());
+        set(parser, "objectGroupDataElementsById", new java.util.HashMap<>());
+        set(parser, "objectBlobElementsById", new java.util.HashMap<>());
         MSOneStorePackage pkg = new MSOneStorePackage();
         CellID cellID = cell(1);
 
@@ -64,6 +93,9 @@ public class MSOneStoreParserTest {
         cellManifestElement.dataElementExGuid = cellMapping.cellMappingExGuid;
         cellManifestElement.data = new CellManifestDataElementData();
         set(parser, "cellManifestDataElements", Arrays.asList(cellManifestElement));
+        set(parser, "cellManifestDataElementsById",
+                Collections.singletonMap(cellManifestElement.dataElementExGuid,
+                        cellManifestElement));
         assertNull(parseCell(parser, cellID, pkg));
 
         CellManifestDataElementData cellManifest = (CellManifestDataElementData)
@@ -87,7 +119,8 @@ public class MSOneStoreParserTest {
         set(parser, "cellManifestDataElements", new java.util.ArrayList<>());
         set(parser, "revisionManifestDataElements", new java.util.ArrayList<>());
         set(parser, "objectGroupDataElements", new java.util.ArrayList<>());
-        set(parser, "objectBlOBElementsById", new java.util.HashMap<>());
+        set(parser, "objectGroupDataElementsById", new java.util.HashMap<>());
+        set(parser, "objectBlobElementsById", new java.util.HashMap<>());
 
         CellID cellID = cell(20);
         ExGuid cellMappingID = id(21);
@@ -118,6 +151,9 @@ public class MSOneStoreParserTest {
         cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid = currentRevisionID;
         cellManifestElement.data = cellManifest;
         set(parser, "cellManifestDataElements", Arrays.asList(cellManifestElement));
+        set(parser, "cellManifestDataElementsById",
+                Collections.singletonMap(cellManifestElement.dataElementExGuid,
+                        cellManifestElement));
 
         RevisionManifestDataElementData current = revision(currentRevisionID, oldRevisionID,
                 currentGroupID, currentGroupID, id(99));
@@ -130,6 +166,10 @@ public class MSOneStoreParserTest {
         oldElement.dataElementExGuid = oldMappingID;
         oldElement.data = old;
         set(parser, "revisionManifestDataElements", Arrays.asList(currentElement, oldElement));
+        Map<ExGuid, DataElement> revisionManifests = new HashMap<>();
+        revisionManifests.put(currentElement.dataElementExGuid, currentElement);
+        revisionManifests.put(oldElement.dataElementExGuid, oldElement);
+        set(parser, "revisionManifestDataElementsById", revisionManifests);
 
         DataElement currentGroup = new DataElement();
         currentGroup.dataElementExGuid = currentGroupID;
@@ -138,6 +178,10 @@ public class MSOneStoreParserTest {
         oldGroup.dataElementExGuid = oldGroupID;
         oldGroup.data = new ObjectGroupDataElementData();
         set(parser, "objectGroupDataElements", Arrays.asList(currentGroup, oldGroup));
+        java.util.Map<ExGuid, DataElement> objectGroups = new java.util.HashMap<>();
+        objectGroups.put(currentGroupID, currentGroup);
+        objectGroups.put(oldGroupID, oldGroup);
+        set(parser, "objectGroupDataElementsById", objectGroups);
 
         RevisionStoreCell result = parseCell(parser, cellID, pkg);
         assertEquals(2, result.objectGroups.size());

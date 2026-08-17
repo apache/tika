@@ -25,10 +25,13 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -51,6 +54,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderC
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class MSOneStoreParser {
+    private static final Logger LOG = LoggerFactory.getLogger(MSOneStoreParser.class);
     /**
      * The root role declaration used for the encryption key of encrypted sections.
      */
@@ -63,17 +67,46 @@ public class MSOneStoreParser {
     private List<DataElement> storageManifestDataElements;
     // The DataElements of Cell Manifest
     private List<DataElement> cellManifestDataElements;
+    private Map<ExGuid, DataElement> cellManifestDataElementsById = new HashMap<>();
     // The DataElements of Revision Manifest
     private List<DataElement> revisionManifestDataElements;
+    private Map<ExGuid, DataElement> revisionManifestDataElementsById = new HashMap<>();
     // The DataElements of Object Group Data
     private List<DataElement> objectGroupDataElements;
-    // The DataElements of Object BLOB
-    private List<DataElement> objectBlOBElements;
+    // The DataElements of Object Group Data, keyed by their data element extended GUID
+    private Map<ExGuid, DataElement> objectGroupDataElementsById;
+    private final Map<ObjectGroupCacheKey, RevisionStoreObjectGroup> objectGroupsByDataElementId =
+            new HashMap<>();
     // The DataElements of Object BLOB, keyed by their data element extended GUID
-    private Map<ExGuid, DataElement> objectBlOBElementsById;
+    private Map<ExGuid, DataElement> objectBlobElementsById;
+
+    private static final class ObjectGroupCacheKey {
+        private final ExGuid dataElementId;
+        private final boolean encryption;
+
+        private ObjectGroupCacheKey(ExGuid dataElementId, boolean encryption) {
+            this.dataElementId = dataElementId;
+            this.encryption = encryption;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof ObjectGroupCacheKey)) {
+                return false;
+            }
+            ObjectGroupCacheKey that = (ObjectGroupCacheKey) other;
+            return encryption == that.encryption && Objects.equals(dataElementId, that.dataElementId);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Objects.hashCode(dataElementId) + Boolean.hashCode(encryption);
+        }
+    }
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
+        objectGroupsByDataElementId.clear();
 
         storageIndexDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.StorageIndexDataElementData)
@@ -84,24 +117,48 @@ public class MSOneStoreParser {
         cellManifestDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.CellManifestDataElementData)
                 .collect(Collectors.toList());
+        cellManifestDataElementsById.clear();
+        for (DataElement element : cellManifestDataElements) {
+            cellManifestDataElementsById.putIfAbsent(element.dataElementExGuid, element);
+        }
         revisionManifestDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.RevisionManifestDataElementData)
                 .collect(Collectors.toList());
+        revisionManifestDataElementsById.clear();
+        for (DataElement element : revisionManifestDataElements) {
+            revisionManifestDataElementsById.putIfAbsent(element.dataElementExGuid, element);
+        }
         objectGroupDataElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.ObjectGroupDataElementData)
                 .collect(Collectors.toList());
-        objectBlOBElements = dataElementPackage.dataElements.stream()
+        objectGroupDataElementsById = new HashMap<>();
+        for (DataElement objectGroupElement : objectGroupDataElements) {
+            objectGroupDataElementsById.putIfAbsent(objectGroupElement.dataElementExGuid,
+                    objectGroupElement);
+        }
+        List<DataElement> objectBlobElements = dataElementPackage.dataElements.stream()
                 .filter(d -> d.dataElementType == DataElementType.ObjectDataBLOBDataElementData)
                 .collect(Collectors.toList());
-        objectBlOBElementsById = new HashMap<>();
-        for (DataElement blobElement : objectBlOBElements) {
-            objectBlOBElementsById.put(blobElement.dataElementExGuid, blobElement);
+        objectBlobElementsById = new HashMap<>();
+        for (DataElement blobElement : objectBlobElements) {
+            objectBlobElementsById.putIfAbsent(blobElement.dataElementExGuid, blobElement);
         }
 
+        if (storageIndexDataElements.isEmpty() || storageManifestDataElements.isEmpty()) {
+            throw new IOException("Missing OneNote storage index or storage manifest");
+        }
         msOneStorePackage.storageIndex =
                 (StorageIndexDataElementData) storageIndexDataElements.get(0).data;
         msOneStorePackage.storageManifest =
                 (StorageManifestDataElementData) storageManifestDataElements.get(0).data;
+        if (msOneStorePackage.storageIndex == null ||
+                msOneStorePackage.storageManifest == null) {
+            throw new IOException("Invalid OneNote storage index or storage manifest");
+        }
+        if (msOneStorePackage.storageManifest.storageManifestRootDeclareList == null ||
+                msOneStorePackage.storageManifest.storageManifestRootDeclareList.size() < 2) {
+            throw new IOException("Missing OneNote header or data-root declaration");
+        }
 
         // Parse Header Cell
         CellID headerCellID =
@@ -137,10 +194,10 @@ public class MSOneStoreParser {
                 msOneStorePackage.storageManifest.storageManifestRootDeclareList.get(1).cellID;
         storageIndexHashTab.add(dataRootCellID);
         RevisionStoreCell dataRootCell = this.parseCell(dataRootCellID, msOneStorePackage);
-        if (dataRootCell != null) {
-            msOneStorePackage.dataRoot = dataRootCell.objectGroups;
-            msOneStorePackage.dataRootCell = dataRootCell;
+        if (dataRootCell == null) {
+            throw new IOException("Could not parse the OneNote data root cell");
         }
+        msOneStorePackage.dataRootCell = dataRootCell;
         // Parse other data
         for (StorageIndexCellMapping storageIndexCellMapping : msOneStorePackage.storageIndex
                 .storageIndexCellMappingList) {
@@ -167,9 +224,8 @@ public class MSOneStoreParser {
      * @return The CellManifestDataElementData instance.
      */
     private CellManifestDataElementData findCellManifest(ExGuid cellMappingExtendedGUID) {
-        return this.cellManifestDataElements.stream()
-                .filter(d -> d.dataElementExGuid.equals(cellMappingExtendedGUID)).findFirst()
-                .map(d -> (CellManifestDataElementData) d.data).orElse(null);
+        DataElement element = cellManifestDataElementsById.get(cellMappingExtendedGUID);
+        return element == null ? null : (CellManifestDataElementData) element.data;
     }
 
     /**
@@ -180,21 +236,25 @@ public class MSOneStoreParser {
      */
     private RevisionManifestDataElementData findRevisionManifestDataElement(
             ExGuid revisionMappingExtendedGUID) {
-        return this.revisionManifestDataElements.stream()
-                .filter(d -> d.dataElementExGuid.equals(revisionMappingExtendedGUID)).findFirst()
-                .map(d -> (RevisionManifestDataElementData) d.data).orElse(null);
+        DataElement element = revisionManifestDataElementsById.get(revisionMappingExtendedGUID);
+        return element == null ? null : (RevisionManifestDataElementData) element.data;
     }
 
     private HeaderCell parseHeaderCell(RevisionManifestDataElementData headerCellRevisionManifest)
             throws IOException {
+        if (headerCellRevisionManifest == null ||
+                headerCellRevisionManifest.revisionManifestObjectGroupReferences == null ||
+                headerCellRevisionManifest.revisionManifestObjectGroupReferences.isEmpty()) {
+            return null;
+        }
         ExGuid rootObjectId =
                 headerCellRevisionManifest.revisionManifestObjectGroupReferences.get(
                         0).objectGroupExtendedGUID;
 
-        DataElement element = this.objectGroupDataElements.stream()
-                .filter(d -> d.dataElementExGuid.equals(rootObjectId)).findFirst()
-                .orElse(new DataElement());
-
+        DataElement element = objectGroupDataElementsById.get(rootObjectId);
+        if (element == null) {
+            return null;
+        }
         return HeaderCell.createInstance((ObjectGroupDataElementData) element.data);
     }
 
@@ -204,11 +264,13 @@ public class MSOneStoreParser {
         StorageIndexCellMapping storageIndexCellMapping =
                 msOneStorePackage.findStorageIndexCellMapping(objectGroupCellID);
         if (storageIndexCellMapping == null) {
+            LOG.debug("Skipping OneNote cell {}: no storage-index cell mapping", objectGroupCellID);
             return null;
         }
         CellManifestDataElementData cellManifest =
                 this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
         if (cellManifest == null || cellManifest.cellManifestCurrentRevision == null) {
+            LOG.debug("Skipping OneNote cell {}: no current cell manifest", objectGroupCellID);
             return null;
         }
         List<RevisionStoreObjectGroup> objectGroups = new ArrayList<>();
@@ -217,11 +279,13 @@ public class MSOneStoreParser {
                 msOneStorePackage.findStorageIndexRevisionMapping(
                         cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid);
         if (revisionMapping == null) {
+            LOG.debug("Skipping OneNote cell {}: no revision mapping", objectGroupCellID);
             return null;
         }
         RevisionManifestDataElementData revisionManifest =
                 findRevisionManifestDataElement(revisionMapping.revisionMappingExGuid);
         if (revisionManifest == null || revisionManifest.revisionManifest == null) {
+            LOG.debug("Skipping OneNote cell {}: no revision manifest", objectGroupCellID);
             return null;
         }
 
@@ -270,19 +334,24 @@ public class MSOneStoreParser {
                 if (!seenObjectGroupIds.add(objRef.objectGroupExtendedGUID)) {
                     continue;
                 }
-                Optional<DataElement> dataElement = objectGroupDataElements.stream()
-                        .filter(d -> d.dataElementExGuid.equals(objRef.objectGroupExtendedGUID))
-                        .findFirst();
-                if (!dataElement.isPresent()) {
+                DataElement dataElement =
+                        objectGroupDataElementsById.get(objRef.objectGroupExtendedGUID);
+                if (dataElement == null) {
                     continue;
                 }
                 ObjectGroupDataElementData dataObject =
-                        (ObjectGroupDataElementData) dataElement.get().data;
+                        (ObjectGroupDataElementData) dataElement.data;
 
-                RevisionStoreObjectGroup objectGroup =
-                        RevisionStoreObjectGroup.createInstance(objRef.objectGroupExtendedGUID,
-                                dataObject, isEncryption, objectBlOBElementsById);
-                objectGroups.add(objectGroup);
+                ObjectGroupCacheKey cacheKey =
+                        new ObjectGroupCacheKey(dataElement.dataElementExGuid, isEncryption);
+                RevisionStoreObjectGroup cachedObjectGroup = objectGroupsByDataElementId.get(cacheKey);
+                if (cachedObjectGroup == null) {
+                    cachedObjectGroup = RevisionStoreObjectGroup.createInstance(
+                            objRef.objectGroupExtendedGUID, dataObject, isEncryption,
+                            objectBlobElementsById);
+                    objectGroupsByDataElementId.put(cacheKey, cachedObjectGroup);
+                }
+                objectGroups.add(cachedObjectGroup.copy());
             }
         }
 
