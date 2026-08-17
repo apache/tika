@@ -19,10 +19,12 @@ package org.apache.tika.pipes.core;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.api.ComponentIds;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.InMemoryConfigStore;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -134,10 +137,20 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
             Iterator<Map.Entry<String, JsonNode>> instanceFields = configNode.fields();
             while (instanceFields.hasNext()) {
                 Map.Entry<String, JsonNode> instanceEntry = instanceFields.next();
-                String instanceId = instanceEntry.getKey();
+                // Normalize before validating and storing: {"foo": ...} and {"foo ": ...} are two
+                // distinct keys in valid JSON, and validating the raw id while resolving the
+                // trimmed one would let " __foo" past the reserved-namespace check.
+                // __ is permitted here -- ConfigMerger folds host-injected overrides into the same
+                // JSON before this runs, and those legitimately use it.
+                String instanceId;
+                try {
+                    instanceId = ComponentIds.requireLegalId(instanceEntry.getKey(),
+                            getComponentName(), "configuration");
+                } catch (IllegalArgumentException e) {
+                    throw new TikaConfigException(e.getMessage(), e);
+                }
                 JsonNode typeNode = instanceEntry.getValue();
 
-                // Check for duplicate IDs (should not happen due to JSON parsing, but validate)
                 if (configs.containsKey(instanceId)) {
                     throw new TikaConfigException("Duplicate " + getComponentName() +
                             " id: " + instanceId);
@@ -225,6 +238,10 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * Gets a component by ID, lazily instantiating it if needed.
      */
     public T getComponent(String id) throws IOException, TikaException {
+        // Canonicalize on the way in so lookup agrees with what load() stored. __ is not refused
+        // here: the host's own components resolve through this method.
+        id = ComponentIds.normalize(id);
+
         // Check cache first (fast path, no synchronization)
         T component = componentCache.get(id);
         if (component != null) {
@@ -236,7 +253,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         if (config == null) {
             throw createNotFoundException(
                     "Can't find " + getComponentName() + " for id=" + id +
-                    ". Available: " + configStore.keySet());
+                    ". Available: " + getSupported());
         }
 
         // Synchronized block to ensure only one thread builds the component
@@ -301,7 +318,16 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
             throw new IllegalArgumentException("ExtensionConfig cannot be null");
         }
 
-        String componentId = config.id();
+        // Runtime registration is remote input (grpc saveFetcher), so unlike config load it must
+        // not be able to define or replace a host component.
+        String componentId;
+        try {
+            componentId = ComponentIds.requireUserId(config.id(), getComponentName(),
+                    "a runtime registration");
+        } catch (IllegalArgumentException e) {
+            throw new TikaConfigException(e.getMessage(), e);
+        }
+        config = new ExtensionConfig(componentId, config.name(), config.json());
         String typeName = config.name();
 
         // Validate that factory exists for this type
@@ -342,6 +368,14 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         if (componentId == null) {
             throw new IllegalArgumentException("Component ID cannot be null");
         }
+        // As in saveComponent: a remote caller must not delete a host component out from under
+        // an in-flight request.
+        try {
+            componentId = ComponentIds.requireUserId(componentId, getComponentName(),
+                    "a runtime deletion");
+        } catch (IllegalArgumentException e) {
+            throw new TikaConfigException(e.getMessage(), e);
+        }
 
         if (!configStore.containsKey(componentId)) {
             throw new TikaConfigException(
@@ -362,13 +396,24 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * @return the component configuration, or null if not found
      */
     public ExtensionConfig getComponentConfig(String componentId) {
-        return configStore.get(componentId);
+        return configStore.get(ComponentIds.normalize(componentId));
     }
 
     /**
-     * Returns the set of supported component IDs.
+     * Returns the component IDs a caller may name. Host components are omitted: a request cannot
+     * bind them, so listing them in a "not found" message only advertises internals.
      */
     public Set<String> getSupported() {
+        return configStore.keySet().stream()
+                .filter(id -> !ComponentIds.isSystem(id))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Every configured id, host components included. For lifecycle and existence checks, not for
+     * anything a caller sees.
+     */
+    public Set<String> getAllIds() {
         return configStore.keySet();
     }
 

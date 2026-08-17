@@ -21,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +38,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.ComponentIds;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
@@ -51,6 +51,9 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.pipes.core.fetcher.BytesFetcher;
+import org.apache.tika.pipes.core.fetcher.InlineBytes;
+import org.apache.tika.pipes.core.fetcher.PayloadRouter;
 import org.apache.tika.server.core.TikaServerParseException;
 
 /**
@@ -69,11 +72,12 @@ public class PipesParsingHelper {
      * The fetcher ID used for reading temp files.
      * This fetcher is configured with basePath = inputTempDirectory.
      */
-    public static final String DEFAULT_FETCHER_ID = "tika-server-fetcher";
+    public static final String DEFAULT_FETCHER_ID = "__tika-server";
 
     private final PipesParser pipesParser;
     private final PipesConfig pipesConfig;
     private final Path inputTempDirectory;
+    private final int maxInlineBytes;
     private final Path unpackEmitterBasePath;
 
     /**
@@ -92,6 +96,7 @@ public class PipesParsingHelper {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
         this.inputTempDirectory = inputTempDirectory;
+        this.maxInlineBytes = pipesConfig.getMaxInlineBytes();
         this.unpackEmitterBasePath = unpackEmitterBasePath;
 
         if (inputTempDirectory == null || !Files.isDirectory(inputTempDirectory)) {
@@ -172,19 +177,27 @@ public class PipesParsingHelper {
     public List<Metadata> parse(TikaInputStream tis, Metadata metadata,
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
         String requestId = UUID.randomUUID().toString();
-        Path tempFile = null;
+        PayloadRouter.Routed routed = null;
         String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
         try {
-            // Spool input to our dedicated temp directory with proper suffix
-            String suffix = getSuffix(metadata);
-            tempFile = Files.createTempFile(inputTempDirectory, "tika-", suffix);
-            // getPath() spools once via Tika's TemporaryResources; copying file->file
-            // avoids re-reading the stream (which would decode the spool a second time).
-            Files.copy(tis.getPath(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            routed = PayloadRouter.route(tis, maxInlineBytes,
+                    () -> Files.createTempFile(inputTempDirectory, "tika-", getSuffix(metadata)));
 
-            String relativeName = tempFile.getFileName().toString();
-            LOG.debug("parse: spooled to {} ({} bytes)", relativeName, Files.size(tempFile));
+            String relativeName = null;
+            FetchKey fetchKey;
+            if (routed.isInline()) {
+                parseContext.set(InlineBytes.class, routed.inlineBytes());
+                // Fetch key doubles as the caller's filename, so no spool name to scrub later.
+                fetchKey = new FetchKey(BytesFetcher.FETCHER_ID,
+                        callerSuppliedName == null ? "" : callerSuppliedName);
+                LOG.debug("parse: {} bytes inline", routed.inlineBytes().length());
+            } else {
+                relativeName = routed.path().getFileName().toString();
+                fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
+                LOG.debug("parse: spooled to {} ({} bytes)", relativeName,
+                        Files.size(routed.path()));
+            }
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
@@ -194,9 +207,6 @@ public class PipesParsingHelper {
             // below) -- results must come back over the socket, so set PASSBACK_ALL
             // explicitly per-request rather than relying on the parser-level default.
             parseContext.set(EmitStrategyConfig.class, new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
-
-            // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
-            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
 
             FetchEmitTuple tuple = new FetchEmitTuple(
                     requestId,
@@ -211,7 +221,9 @@ public class PipesParsingHelper {
 
             // Process result
             List<Metadata> metadataList = processResult(result);
-            stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
+            if (relativeName != null) {
+                stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
+            }
             return metadataList;
 
         } catch (InterruptedException e) {
@@ -220,13 +232,11 @@ public class PipesParsingHelper {
         } catch (PipesException e) {
             throw new TikaServerParseException(e);
         } finally {
-            // Clean up temp file
-            if (tempFile != null) {
-                try {
-                    Files.deleteIfExists(tempFile);
-                } catch (IOException e) {
-                    LOG.warn("Failed to delete temp file: {}", tempFile, e);
-                }
+            // The payload is request-owned: contexts are per-request today, but do not let
+            // safety depend on that call-site discipline.
+            parseContext.set(InlineBytes.class, null);
+            if (routed != null) {
+                routed.close();
             }
         }
     }
@@ -454,7 +464,7 @@ public class PipesParsingHelper {
      * This emitter must be configured in tika-config.json with a basePath
      * pointing to a writable temp directory.
      */
-    public static final String UNPACK_EMITTER_ID = "unpack-emitter";
+    public static final String UNPACK_EMITTER_ID = "__unpack";
 
     /**
      * Fetcher/emitter ids the server wires up for its own request plumbing. Both are rooted at
@@ -467,10 +477,11 @@ public class PipesParsingHelper {
      * it builds the tuples for /tika, /rmeta, and /unpack, which is exactly the use being
      * reserved.
      */
-    private static final Set<String> RESERVED_COMPONENT_IDS =
-            Set.of(DEFAULT_FETCHER_ID, UNPACK_EMITTER_ID);
-
     /**
+     * Backstop for ids the tuple deserializer cannot reach. {@code fetcher} and {@code emitter}
+     * are already refused there for any tuple parsed from a request; the UnpackConfig emitter is
+     * buried in a parse-context component, so it is checked only here.
+     *
      * @throws BadRequestException if a caller-supplied tuple names a server-internal component.
      */
     public static void rejectReservedComponentIds(FetchEmitTuple t) {
@@ -484,9 +495,9 @@ public class PipesParsingHelper {
     }
 
     private static void checkNotReserved(String id, String kind) {
-        if (id != null && RESERVED_COMPONENT_IDS.contains(id)) {
+        if (ComponentIds.isSystem(id)) {
             throw new BadRequestException(
-                    "'" + id + "' is reserved for tika-server's internal use and may not be named as a "
+                    "'" + id.trim() + "' is reserved for tika-server's internal use and may not be named as a "
                             + kind + " by a request");
         }
     }
@@ -514,7 +525,7 @@ public class PipesParsingHelper {
     public UnpackResult parseUnpack(TikaInputStream tis, Metadata metadata,
                                     ParseContext parseContext, boolean saveAll) throws IOException {
         String requestId = UUID.randomUUID().toString();
-        Path tempFile = null;
+        PayloadRouter.Routed routed = null;
         String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
         // The child emits the zip during parse, before we know whether the request
         // succeeds. Unless we hand it off to the caller (who streams then deletes it),
@@ -523,16 +534,23 @@ public class PipesParsingHelper {
         boolean handedOff = false;
 
         try {
-            // Spool input to our dedicated temp directory with proper suffix
-            String suffix = getSuffix(metadata);
-            tempFile = Files.createTempFile(inputTempDirectory, "tika-unpack-", suffix);
-            // getPath() spools once via Tika's TemporaryResources; copying file->file
-            // avoids re-reading the stream (which would decode the spool a second time).
-            Files.copy(tis.getPath(), tempFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            routed = PayloadRouter.route(tis, maxInlineBytes, () ->
+                    Files.createTempFile(inputTempDirectory, "tika-unpack-", getSuffix(metadata)));
 
-            String relativeName = tempFile.getFileName().toString();
-            LOG.debug("parseUnpack: spooled to {} ({} bytes), requestId={}",
-                    relativeName, Files.size(tempFile), requestId);
+            String relativeName = null;
+            FetchKey fetchKey;
+            if (routed.isInline()) {
+                parseContext.set(InlineBytes.class, routed.inlineBytes());
+                fetchKey = new FetchKey(BytesFetcher.FETCHER_ID,
+                        callerSuppliedName == null ? "" : callerSuppliedName);
+                LOG.debug("parseUnpack: {} bytes inline, requestId={}",
+                        routed.inlineBytes().length(), requestId);
+            } else {
+                relativeName = routed.path().getFileName().toString();
+                fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
+                LOG.debug("parseUnpack: spooled to {} ({} bytes), requestId={}",
+                        relativeName, Files.size(routed.path()), requestId);
+            }
 
             // Set parse mode to UNPACK
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
@@ -566,8 +584,6 @@ public class PipesParsingHelper {
 
             parseContext.set(UnpackConfig.class, unpackConfig);
 
-            // Create FetchEmitTuple with relative filename (basePath is configured in fetcher)
-            FetchKey fetchKey = new FetchKey(DEFAULT_FETCHER_ID, relativeName);
             EmitKey emitKey = new EmitKey(UNPACK_EMITTER_ID, requestId);
 
         FetchEmitTuple tuple = new FetchEmitTuple(
@@ -627,17 +643,16 @@ public class PipesParsingHelper {
             boolean isFrictionless = unpackConfig.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS;
             Path zipFile = getEmittedZipPath(requestId, isFrictionless);
 
-            stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
+            if (relativeName != null) {
+                stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
+            }
             handedOff = true;
             return new UnpackResult(zipFile, metadataList);
         } finally {
-            // Clean up temp file
-            if (tempFile != null) {
-                try {
-                    Files.deleteIfExists(tempFile);
-                } catch (IOException e) {
-                    LOG.warn("Failed to delete temp file: {}", tempFile, e);
-                }
+            // See parse(): the inline payload must not outlive its request.
+            parseContext.set(InlineBytes.class, null);
+            if (routed != null) {
+                routed.close();
             }
             if (!handedOff) {
                 deleteEmittedZips(requestId);

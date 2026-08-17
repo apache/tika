@@ -16,7 +16,7 @@
     }
   },
   "fetchers": {
-    "nick1:is:cool:super/class org.apache.tika.pipes.fetcher.fs.FileSystemFetcher": {
+    "nick1.is.cool.super-fs": {
       "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": true
