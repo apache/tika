@@ -76,19 +76,7 @@ public final class PayloadRouter {
         if (tis.hasFile()) {
             return new Routed(Route.EXISTING_FILE, null, tis.getPath(), false);
         }
-        byte[] head = IOUtils.toByteArray(
-                new BoundedInputStream((long) maxInlineBytes + 1, tis));
-        if (head.length <= maxInlineBytes) {
-            return new Routed(Route.INLINE, new InlineBytes(head), null, false);
-        }
-        Path target = spoolTarget.create();
-        try (OutputStream out = Files.newOutputStream(target)) {
-            // head was already consumed off tis; writing it back first is what keeps the
-            // spooled file the whole document rather than everything past the threshold.
-            out.write(head);
-            IOUtils.copy(tis, out);
-        }
-        return new Routed(Route.SPOOLED, null, target, true);
+        return route((InputStream) tis, maxInlineBytes, spoolTarget);
     }
 
     /**
@@ -149,8 +137,18 @@ public final class PayloadRouter {
         }
         Path target = spoolTarget.create();
         try (OutputStream out = Files.newOutputStream(target)) {
+            // head was already consumed off the stream; writing it back first is what keeps
+            // the spooled file the whole document rather than everything past the threshold.
             out.write(head);
             IOUtils.copy(is, out);
+        } catch (IOException e) {
+            // No Routed exists yet, so nobody else can delete the partial file.
+            try {
+                Files.deleteIfExists(target);
+            } catch (IOException suppressed) {
+                e.addSuppressed(suppressed);
+            }
+            throw e;
         }
         return new Routed(Route.SPOOLED, null, target, true);
     }

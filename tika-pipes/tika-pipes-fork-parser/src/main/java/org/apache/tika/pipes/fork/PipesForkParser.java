@@ -141,6 +141,8 @@ public class PipesForkParser implements Closeable {
      */
     public PipesForkParser(PipesForkParserConfig config) throws IOException, TikaConfigException {
         this.config = config;
+        // Jackson-deserialized configs are checked on binding; setter-built ones are checked here.
+        config.getPipesConfig().checkPayloadLimits();
         ConfigMerger.MergeResult mergeResult = createTikaConfigFile();
         this.tikaConfigPath = mergeResult.configPath();
         this.internalFetcherId = mergeResult.fetcherId();
@@ -259,9 +261,15 @@ public class PipesForkParser implements Closeable {
                 () -> Files.createTempFile("tika-fork-", ".tmp"))) {
             if (routed.isInline()) {
                 parseContext.set(InlineBytes.class, routed.inlineBytes());
-                String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                return parseWithKey(new FetchKey(BytesFetcher.FETCHER_ID, name == null ? "" : name),
-                        UUID.randomUUID().toString(), metadata, parseContext);
+                try {
+                    String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+                    return parseWithKey(new FetchKey(BytesFetcher.FETCHER_ID, name == null ? "" : name),
+                            UUID.randomUUID().toString(), metadata, parseContext);
+                } finally {
+                    // The payload is request-owned; a caller reusing this context must not
+                    // retain (and re-serialize) this document's bytes on later parses.
+                    parseContext.set(InlineBytes.class, null);
+                }
             }
             return parseInternal(routed.path(), metadata, parseContext);
         }

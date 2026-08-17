@@ -232,6 +232,9 @@ public class PipesParsingHelper {
         } catch (PipesException e) {
             throw new TikaServerParseException(e);
         } finally {
+            // The payload is request-owned: contexts are per-request today, but do not let
+            // safety depend on that call-site discipline.
+            parseContext.set(InlineBytes.class, null);
             if (routed != null) {
                 routed.close();
             }
@@ -646,6 +649,8 @@ public class PipesParsingHelper {
             handedOff = true;
             return new UnpackResult(zipFile, metadataList);
         } finally {
+            // See parse(): the inline payload must not outlive its request.
+            parseContext.set(InlineBytes.class, null);
             if (routed != null) {
                 routed.close();
             }

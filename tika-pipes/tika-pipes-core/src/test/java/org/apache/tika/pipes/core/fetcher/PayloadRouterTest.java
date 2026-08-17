@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -183,6 +184,34 @@ public class PayloadRouterTest {
         try (PayloadRouter.Routed r = route(new byte[0], 100, spools)) {
             assertTrue(r.isInline());
             assertEquals(0, r.inlineBytes().length());
+        }
+    }
+
+    /**
+     * If the source dies after the spool file is created, no Routed exists yet, so route()
+     * itself must delete the partial file.
+     */
+    @Test
+    public void sourceFailureDuringSpoolDeletesPartialFile() throws IOException {
+        AtomicInteger spools = new AtomicInteger();
+        InputStream failing = new InputStream() {
+            private int count = 0;
+
+            @Override
+            public int read() throws IOException {
+                if (count < 200) {
+                    count++;
+                    return 'x';
+                }
+                throw new IOException("source died mid-stream");
+            }
+        };
+        try (TikaInputStream tis = TikaInputStream.get(failing)) {
+            assertThrows(IOException.class, () -> PayloadRouter.route(tis, 100, target(spools)));
+        }
+        assertEquals(1, spools.get(), "spool file should have been created before the failure");
+        try (var files = Files.list(tmp)) {
+            assertEquals(0, files.count(), "partial spool file must be deleted");
         }
     }
 

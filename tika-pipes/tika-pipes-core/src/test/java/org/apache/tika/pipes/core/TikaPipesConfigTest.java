@@ -80,6 +80,62 @@ public class TikaPipesConfigTest extends TikaTest {
         assertEquals(atMin, config.getMaxIpcPayloadBytes());
     }
 
+    /**
+     * The inline/ipc pair is validated after binding, so an inline threshold that is only
+     * legal because ipc was raised must load no matter which key comes first.
+     */
+    @Test
+    void testPayloadLimitPairIsKeyOrderIndependent() throws Exception {
+        String inlineFirst = """
+                {"pipes": {"maxInlineBytes": 99614720, "maxIpcPayloadBytes": 209715200}}
+                """;
+        String ipcFirst = """
+                {"pipes": {"maxIpcPayloadBytes": 209715200, "maxInlineBytes": 99614720}}
+                """;
+        for (String json : new String[]{inlineFirst, ipcFirst}) {
+            PipesConfig config = PipesConfig.load(TikaJsonConfig.load(
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))));
+            assertEquals(99614720, config.getMaxInlineBytes());
+            assertEquals(209715200, config.getMaxIpcPayloadBytes());
+        }
+    }
+
+    /** Lowering only ipc must re-check the untouched inline default (10MB > 90% of 5MB). */
+    @Test
+    void testLoweringIpcAloneRechecksInlineDefault() throws Exception {
+        String json = """
+                {"pipes": {"maxIpcPayloadBytes": 5242880}}
+                """;
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+        assertThrows(Exception.class, () -> PipesConfig.load(tikaJsonConfig));
+    }
+
+    @Test
+    void testInconsistentPayloadPairRejectedInEitherOrder() throws Exception {
+        // inline 95MB against the default 100MB ipc limit fails the 10% headroom rule
+        String inlineFirst = """
+                {"pipes": {"maxInlineBytes": 99614720}}
+                """;
+        String withExplicitIpc = """
+                {"pipes": {"maxIpcPayloadBytes": 104857600, "maxInlineBytes": 99614720}}
+                """;
+        for (String json : new String[]{inlineFirst, withExplicitIpc}) {
+            TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
+            assertThrows(Exception.class, () -> PipesConfig.load(tikaJsonConfig));
+        }
+    }
+
+    @Test
+    void testCheckPayloadLimitsForSetterBuiltConfigs() {
+        PipesConfig config = new PipesConfig();
+        config.setMaxInlineBytes(99614720);
+        assertThrows(IllegalArgumentException.class, config::checkPayloadLimits);
+        config.setMaxIpcPayloadBytes(209715200);
+        config.checkPayloadLimits();
+    }
+
     @Test
     void testMaxIpcPayloadBytesFromJsonRejectsZero() throws Exception {
         String json = """

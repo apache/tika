@@ -23,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.util.StdConverter;
 
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -32,7 +34,18 @@ import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.server.ServerProtocolIO;
 
+// Cross-field limits are checked after binding, so JSON key order cannot change the outcome.
+@JsonDeserialize(converter = PipesConfig.PostDeserializationCheck.class)
 public class PipesConfig {
+
+    /** Runs {@link #checkPayloadLimits()} on every Jackson deserialization path. */
+    public static class PostDeserializationCheck extends StdConverter<PipesConfig, PipesConfig> {
+        @Override
+        public PipesConfig convert(PipesConfig config) {
+            config.checkPayloadLimits();
+            return config;
+        }
+    }
 
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
@@ -558,6 +571,30 @@ public class PipesConfig {
     }
 
     /**
+     * @return largest request body sent inline instead of spooled; see
+     *         {@link #DEFAULT_MAX_INLINE_BYTES}
+     */
+    public int getMaxInlineBytes() {
+        return maxInlineBytes;
+    }
+
+    /**
+     * Sets the inline-payload threshold. Must stay under {@code maxIpcPayloadBytes}: the payload
+     * travels inside the NEW_REQUEST frame, so a threshold above that limit would let the parent
+     * build requests the child refuses, surfacing as an undiagnosable crash rather than a clean
+     * fallback to spooling. The pair is checked in {@link #checkPayloadLimits()}, not here, so
+     * the two fields may be set in either order.
+     *
+     * @throws IllegalArgumentException if negative
+     */
+    public void setMaxInlineBytes(int maxInlineBytes) {
+        if (maxInlineBytes < 0) {
+            throw new IllegalArgumentException("maxInlineBytes must be >= 0, got: " + maxInlineBytes);
+        }
+        this.maxInlineBytes = maxInlineBytes;
+    }
+
+    /**
      * Sets the maximum IPC payload size in bytes. This limit is <em>bidirectional</em>:
      * it controls both the largest result the client will accept back from the forked server
      * (the FINISHED payload) and the largest request the server will accept from the client
@@ -572,36 +609,6 @@ public class PipesConfig {
      * @param maxIpcPayloadBytes payload limit in bytes (must be &ge; {@code ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES})
      * @throws IllegalArgumentException if the value is below the minimum
      */
-    /**
-     * @return largest request body sent inline instead of spooled; see
-     *         {@link #DEFAULT_MAX_INLINE_BYTES}
-     */
-    public int getMaxInlineBytes() {
-        return maxInlineBytes;
-    }
-
-    /**
-     * Sets the inline-payload threshold. Must stay under {@code maxIpcPayloadBytes}: the payload
-     * travels inside the NEW_REQUEST frame, so a threshold above that limit would let the parent
-     * build requests the child refuses, surfacing as an undiagnosable crash rather than a clean
-     * fallback to spooling.
-     *
-     * @throws IllegalArgumentException if negative, or not comfortably under the IPC payload limit
-     */
-    public void setMaxInlineBytes(int maxInlineBytes) {
-        if (maxInlineBytes < 0) {
-            throw new IllegalArgumentException("maxInlineBytes must be >= 0, got: " + maxInlineBytes);
-        }
-        // Headroom for the rest of the tuple (metadata, parseContext) sharing the frame.
-        long ceiling = maxIpcPayloadBytes - (maxIpcPayloadBytes / 10);
-        if (maxInlineBytes > ceiling) {
-            throw new IllegalArgumentException("maxInlineBytes (" + maxInlineBytes +
-                    ") must leave room for the rest of the request inside maxIpcPayloadBytes (" +
-                    maxIpcPayloadBytes + "); keep it at or below " + ceiling);
-        }
-        this.maxInlineBytes = maxInlineBytes;
-    }
-
     public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
         if (maxIpcPayloadBytes < ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(
@@ -610,5 +617,21 @@ public class PipesConfig {
                     " (minimum to carry a PAYLOAD_LIMIT_EXCEEDED response), got: " + maxIpcPayloadBytes);
         }
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
+    }
+
+    /**
+     * Checks that {@code maxInlineBytes} leaves headroom for the rest of the tuple (metadata,
+     * parseContext) inside {@code maxIpcPayloadBytes}. Runs automatically after Jackson
+     * deserialization; call it directly after configuring an instance through setters.
+     *
+     * @throws IllegalArgumentException if the pair is inconsistent
+     */
+    public void checkPayloadLimits() {
+        long ceiling = maxIpcPayloadBytes - (maxIpcPayloadBytes / 10);
+        if (maxInlineBytes > ceiling) {
+            throw new IllegalArgumentException("maxInlineBytes (" + maxInlineBytes +
+                    ") must leave room for the rest of the request inside maxIpcPayloadBytes (" +
+                    maxIpcPayloadBytes + "); keep it at or below " + ceiling);
+        }
     }
 }
