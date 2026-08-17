@@ -52,7 +52,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
@@ -70,7 +69,7 @@ public class TikaGrpcConcurrencyTest {
 
     // The fetcher must come from the config file: one saved at runtime through
     // saveFetcher is not visible to the forked worker.
-    private static final String FETCHER_ID = "nick1:is:cool:super/" + FileSystemFetcher.class;
+    private static final String FETCHER_ID = "nick1.is.cool.super-fs";
 
     /**
      * All concurrent calls must parse, and each reply must carry its own

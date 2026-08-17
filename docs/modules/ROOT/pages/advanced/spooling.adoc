@@ -113,6 +113,28 @@ Skip it for streaming-only work (HTML, plain text) to avoid the caching cost.
 Repeated calls to `getPath()`/`getFile()` return the same temp file — spooling
 happens once — and the temp file is deleted when the stream is closed.
 
+[#passthrough]
+=== Nothing Spools Until Something Asks
+
+A `TikaInputStream` wrapping a plain `InputStream` starts in passthrough mode and stays there.
+Reading through it -- at any size -- writes nothing to disk. Only two things spool:
+
+* `getFile()` / `getPath()`, which materialise a file by definition;
+* `enableRewind()`, which starts caching and spills to disk past 1 MB.
+
+`mark()`/`reset()` in passthrough mode delegate to an in-memory buffer and do not spool, which
+is why the usual detect-then-parse sequence (mark, peek, reset, `getFile()`) still works.
+
+Two consequences worth knowing:
+
+* `enableRewind()` must be called at position 0, and `getPath()` throws if the stream has already
+  been read past position 0. Decide up front whether a code path needs to rewind.
+* `mark(readlimit)` grows a heap buffer up to `readlimit`. A large mark is a memory cost, not a
+  disk one.
+
+This is what lets pipes hand small documents to a forked worker without touching disk; see
+xref:pipes/fetchers.adoc#inline-bytes[Inline Bytes].
+
 == User Guide
 
 === Default Behavior

@@ -303,6 +303,23 @@ classpath automatically, are gone. Declare each external parser in your JSON con
 xref:configuration/parsers/external-parser.adoc[External Parser Configuration]
 for details.
 
+=== TikaInputStream no longer spools unless asked
+
+A `TikaInputStream` wrapping a plain `InputStream` reads straight through; nothing is written to
+disk until `getFile()`/`getPath()` is called, or `enableRewind()` starts caching.
+
+[WARNING]
+====
+`enableRewind()` must be called at position 0, and `getFile()`/`getPath()` throw if the stream
+has already been read past position 0. A parser that reads part of the stream and *then* asks for
+a file worked in 3.x and now fails. Call `enableRewind()` first, or take the file before reading.
+
+`mark()`/`reset()` are unaffected -- they use an in-memory buffer in this mode -- so the usual
+mark, peek, reset, `getFile()` sequence still works.
+====
+
+See xref:advanced/spooling.adoc#passthrough[Spooling] for detail.
+
 [#stateless-embedded-extractor]
 === EmbeddedDocumentExtractor is now stateless
 

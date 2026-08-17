@@ -63,7 +63,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
@@ -226,7 +225,8 @@ public class TikaGrpcServerTest {
 
     @NotNull
     private static String createFetcherId(int i) {
-        return "nick" + i + ":is:cool:super/" + FileSystemFetcher.class;
+        // ComponentIds restricts ids to letters, digits, '.', '_' and '-'
+        return "nick" + i + ".is.cool.super-fs";
     }
 
     @Test

@@ -490,8 +490,7 @@ independent forked-process groups you run — see
 
 |`maxRequestSizeBytes`
 |`1 GiB`
-|Maximum request body in bytes; larger requests are rejected with `413`. Uploads are spooled to
-disk, so this bounds how much one request can write. A negative value disables the limit.
+|Maximum request body in bytes; larger requests are rejected with `413`. Enforced on bytes actually read, so a chunked upload with no `Content-Length` is bounded too. Bodies above xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] are spooled to disk, so this also bounds how much one request can write. Raise it for larger documents, or set a negative value to disable the limit.
 
 |`maxQueuePauseMillis`
 |`60000`
