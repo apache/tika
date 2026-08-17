@@ -840,6 +840,16 @@
             <match value="%PDF-2." type="string" offset="1:512"/>
         </match>
     </magic>
+    <magic priority="40">
+      <!-- Print-composition systems prepend a job ticket of %% comments that can run well
+      past the 512-byte window above (TIKA-4782).  Up to 50 %% comment or blank lines of up
+      to 150 characters, and nothing else, may precede the header.  50x150 is deliberate:
+      the worst case stays inside the first 8K, which is all MagicDetector feeds a regex,
+      so every prefix within those bounds really is reachable.
+      Every quantifier is bounded and the group is atomic, so this cannot backtrack: without
+      the (?> a hostile CRLF run splits exponentially and hangs detection.  Keep it that way. -->
+      <match value="(?>(?:%%[^\\r\\n]{0,148})?(?:\\r\\n|[\\r\\n])){1,50}%PDF-[12]\\." type="regex" offset="0"/>
+    </magic>
     <magic priority="20">
       <!-- Low priority match for %PDF-#.# near the start of the file -->
       <!-- Can trigger false positives, so set the priority rather low here -->
