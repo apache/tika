@@ -495,11 +495,13 @@ curl -X PUT -T file.docx http://localhost:9998/unpack/all -o output.zip
 
 The server automatically configures the required fetcher and emitter for pipes-based parsing:
 
-* **tika-server-fetcher**: A file-system-fetcher with `basePath` pointing to a dedicated temp directory for input files. This enables the `/tika`, `/rmeta`, and `/meta` endpoints to work with uploaded files.
+* **\_\_tika-server**: A file-system-fetcher with `basePath` pointing to a dedicated temp directory for input files. This enables the `/tika`, `/rmeta`, and `/meta` endpoints to work with uploaded files.
 
-* **unpack-emitter**: A file-system-emitter with `basePath` pointing to a dedicated temp directory for unpacked files. This is only created when the `/unpack` endpoint is enabled (default). This enables the `/unpack/all` endpoint to return embedded files as a ZIP.
+* **\_\_unpack**: A file-system-emitter with `basePath` pointing to a dedicated temp directory for unpacked files. This is only created when the `/unpack` endpoint is enabled (default). This enables the `/unpack/all` endpoint to return embedded files as a ZIP.
 
 Both temp directories are cleaned up on server shutdown.
+
+The `\_\_` prefix is reserved. Component ids beginning with `\_\_` name components the server wires up for itself: a `/pipes` or `/async` request that names one is rejected, a config file that defines one fails at startup, and they are omitted from the fetcher and emitter lists reported in error messages. Ids you configure yourself may contain only letters, digits, `.`, `_` and `-`, and are trimmed of surrounding whitespace when loaded.
 
 If a user config file does not include `plugin-roots`, the server automatically adds a default value pointing to a `plugins` directory in the current working directory.
 

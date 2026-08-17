@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.ComponentIds;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
@@ -52,15 +53,39 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
             ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
             METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
 
+    private final boolean restricted;
+
+    /**
+     * Deserializer for untrusted input: refuses system component ids. This is the default
+     * because forgetting to restrict a new caller must not be the thing that opens the gate.
+     */
+    public FetchEmitTupleDeserializer() {
+        this(true);
+    }
+
+    private FetchEmitTupleDeserializer(boolean restricted) {
+        this.restricted = restricted;
+    }
+
+    /**
+     * Deserializer for the parent-to-child IPC, whose tuples the host builds itself and which
+     * must therefore be able to name {@code __} components. The parseContext stays restricted in
+     * both modes, so a request that slipped past the REST gate still cannot bind a wire-blocked
+     * component here.
+     */
+    public static FetchEmitTupleDeserializer internal() {
+        return new FetchEmitTupleDeserializer(false);
+    }
+
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
         rejectUnknownKeys(root);
 
         String id = readVal(ID, root, null, true);
-        String fetcherId = readVal(FETCHER, root, null, true);
+        String fetcherId = normalizeId(readVal(FETCHER, root, null, true), "fetcher");
         String fetchKey = readVal(FETCH_KEY, root, null, true);
-        String emitterName = readVal(EMITTER, root, "", false);
+        String emitterName = normalizeId(readVal(EMITTER, root, "", false), "emitter");
         String emitKey = readVal(EMIT_KEY, root, "", false);
         long fetchRangeStart = readLong(FETCH_RANGE_START, root, -1l, false);
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
@@ -75,6 +100,23 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, parseContext,
                 onParseException);
+    }
+
+    /**
+     * An absent emitter is the empty string, so blank passes through untouched; anything else is
+     * canonicalized here so the id that is checked is the id later used for lookup.
+     */
+    private String normalizeId(String id, String what) throws IOException {
+        if (id == null || id.isBlank()) {
+            return id;
+        }
+        try {
+            return restricted
+                    ? ComponentIds.requireUserId(id, what, "a request")
+                    : ComponentIds.requireLegalId(id, what, "an internal tuple");
+        } catch (IllegalArgumentException e) {
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
     private static void rejectUnknownKeys(JsonNode root) throws IOException {

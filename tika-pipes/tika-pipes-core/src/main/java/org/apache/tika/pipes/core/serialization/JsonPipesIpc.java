@@ -58,7 +58,8 @@ public class JsonPipesIpc {
         // Add pipes-specific serializers
         SimpleModule pipesModule = new SimpleModule();
         pipesModule.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
-        pipesModule.addDeserializer(FetchEmitTuple.class, new FetchEmitTupleDeserializer());
+        // Parent-to-child IPC: the host builds these tuples itself and they name __ components.
+        pipesModule.addDeserializer(FetchEmitTuple.class, FetchEmitTupleDeserializer.internal());
         pipesModule.addSerializer(EmitData.class, new EmitDataSerializer());
         pipesModule.addDeserializer(EmitDataImpl.class, new EmitDataDeserializer());
         pipesModule.addSerializer(PipesResult.class, new PipesResultSerializer());

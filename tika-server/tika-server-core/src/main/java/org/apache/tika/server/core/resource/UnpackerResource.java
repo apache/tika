@@ -55,26 +55,11 @@ import org.apache.tika.parser.ParseContext;
  *   <li>POST /unpack/all - Extract all with config (multipart)</li>
  * </ul>
  * <p>
- * <b>Configuration Requirements:</b>
+ * <b>Configuration:</b>
  * <p>
- * Your tika-config.json must include:
- * <pre>
- * {
- *   "fetchers": {
- *     "file-system-fetcher": {
- *       "class": "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher",
- *       "allowAbsolutePaths": true
- *     }
- *   },
- *   "emitters": {
- *     "unpack-emitter": {
- *       "class": "org.apache.tika.pipes.emitter.fs.FileSystemEmitter",
- *       "basePath": "/tmp/tika-unpack",
- *       "onExists": "replace"
- *     }
- *   }
- * }
- * </pre>
+ * None required. The server wires up its own {@code __}-prefixed fetcher and emitter against
+ * temp directories it owns, confined by {@code basePath}. Those ids are reserved and a request
+ * that names one is rejected.
  * <p>
  * <b>Multipart Configuration (POST endpoints):</b>
  * <p>

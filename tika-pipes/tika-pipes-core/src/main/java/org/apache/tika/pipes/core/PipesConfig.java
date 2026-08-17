@@ -37,6 +37,16 @@ public class PipesConfig {
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
+    /**
+     * Largest request body carried inline to the forked worker rather than spooled to disk.
+     * <p>
+     * Sized for the common case -- most documents are far smaller -- because the cost is heap,
+     * not disk: the parent holds the payload and the Smile frame containing a copy of it, and the
+     * child holds it again. Budget roughly {@code 2 * maxInlineBytes * concurrent-requests} in the
+     * parent before raising this.
+     */
+    public static final int DEFAULT_MAX_INLINE_BYTES = 10 * 1024 * 1024;
+
     public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS = 300000;
 
     /** Past this, worker count becomes a memory decision, and memory is not visible here. */
@@ -83,6 +93,7 @@ public class PipesConfig {
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
     private int maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
+    private int maxInlineBytes = DEFAULT_MAX_INLINE_BYTES;
 
     private long socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
     private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
@@ -561,6 +572,36 @@ public class PipesConfig {
      * @param maxIpcPayloadBytes payload limit in bytes (must be &ge; {@code ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES})
      * @throws IllegalArgumentException if the value is below the minimum
      */
+    /**
+     * @return largest request body sent inline instead of spooled; see
+     *         {@link #DEFAULT_MAX_INLINE_BYTES}
+     */
+    public int getMaxInlineBytes() {
+        return maxInlineBytes;
+    }
+
+    /**
+     * Sets the inline-payload threshold. Must stay under {@code maxIpcPayloadBytes}: the payload
+     * travels inside the NEW_REQUEST frame, so a threshold above that limit would let the parent
+     * build requests the child refuses, surfacing as an undiagnosable crash rather than a clean
+     * fallback to spooling.
+     *
+     * @throws IllegalArgumentException if negative, or not comfortably under the IPC payload limit
+     */
+    public void setMaxInlineBytes(int maxInlineBytes) {
+        if (maxInlineBytes < 0) {
+            throw new IllegalArgumentException("maxInlineBytes must be >= 0, got: " + maxInlineBytes);
+        }
+        // Headroom for the rest of the tuple (metadata, parseContext) sharing the frame.
+        long ceiling = maxIpcPayloadBytes - (maxIpcPayloadBytes / 10);
+        if (maxInlineBytes > ceiling) {
+            throw new IllegalArgumentException("maxInlineBytes (" + maxInlineBytes +
+                    ") must leave room for the rest of the request inside maxIpcPayloadBytes (" +
+                    maxIpcPayloadBytes + "); keep it at or below " + ceiling);
+        }
+        this.maxInlineBytes = maxInlineBytes;
+    }
+
     public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
         if (maxIpcPayloadBytes < ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(

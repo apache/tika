@@ -17,6 +17,7 @@
 package org.apache.tika.server.core.resource;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import jakarta.ws.rs.BadRequestException;
@@ -30,7 +31,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 
 /**
- * The server configures {@code tika-server-fetcher} and {@code unpack-emitter} against its own
+ * The server configures {@code __tika-server} and {@code __unpack} against its own
  * spool directories. They exist on every running server, so unlike an unknown id these would
  * resolve if a /pipes or /async caller named them -- reading another request's pending upload,
  * or planting a file where the unpack download path serves from.
@@ -40,6 +41,17 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * reason (400 for "no such fetcher").
  */
 public class ReservedComponentIdTest {
+
+    /**
+     * cxf-unpack-test-template.json has to spell the emitter id out -- JsonConfigHelper
+     * substitutes textual values, never field names -- so renaming the constant without the
+     * template surfaces only as "Archive is not a ZIP archive" from the unpack tests.
+     */
+    @Test
+    public void testUnpackTemplateIdMatchesConstant() {
+        assertEquals("__unpack", PipesParsingHelper.UNPACK_EMITTER_ID,
+                "cxf-unpack-test-template.json hard-codes this id; update it too");
+    }
 
     @Test
     public void testReservedFetcherRejected() {

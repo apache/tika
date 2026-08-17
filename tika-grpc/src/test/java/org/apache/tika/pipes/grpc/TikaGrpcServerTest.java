@@ -78,7 +78,6 @@ import org.apache.tika.SavePipesIteratorReply;
 import org.apache.tika.SavePipesIteratorRequest;
 import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 
 @ExtendWith(GrpcCleanupExtension.class)
@@ -226,7 +225,8 @@ public class TikaGrpcServerTest {
 
     @NotNull
     private static String createFetcherId(int i) {
-        return "nick" + i + ":is:cool:super/" + FileSystemFetcher.class;
+        // ComponentIds restricts ids to letters, digits, '.', '_' and '-'
+        return "nick" + i + ".is.cool.super-fs";
     }
 
     @Test
