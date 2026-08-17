@@ -460,6 +460,14 @@ spec:
 
 #### Deployment with Apache Ignite ConfigStore
 
+> **Not available in the published `apache/tika-grpc` image.** tika-grpc no longer ships the
+> Ignite jars — they pulled in ~196 transitive artifacts for a store that, in practice, only ever
+> talked to an embedded node in the same JVM (`IgniteConfigStore.init()` hardcodes
+> `127.0.0.1:10800`). Setting `configStoreType: ignite` without those jars fails at startup with
+> an explanatory error. To use it, build an image that adds `tika-pipes-config-store-ignite` and
+> its Ignite dependencies to the classpath (the `dev` Maven profile wires them up for local runs).
+> `memory` and `file` are the config stores available out of the box.
+
 For distributed deployments with shared configuration using Apache Ignite:
 
 **1. Create ConfigMap with Tika configuration:**

@@ -33,8 +33,6 @@
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.25.1</msal4j.version>
     <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
-    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
-    to get messed up when finding your plugins. -->
   </properties>
 
   <dependencyManagement>

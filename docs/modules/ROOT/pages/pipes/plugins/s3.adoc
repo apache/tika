@@ -237,10 +237,11 @@ include::example$pipes-s3-pipeline.json[]
 ====
 The iterator's `prefix` and the fetcher's `prefix` do *not* compose — they stack. The
 iterator emits the full S3 key it listed (`incoming/report.pdf`), and the fetcher then
-prepends its own `prefix` to that, asking for `incoming/incoming/report.pdf`. The example
-above sets `"prefix": "incoming/"` on both, so every fetch misses.
+prepends its own `prefix` to that, asking for `incoming/incoming/report.pdf` — every fetch
+misses.
 
-Set the prefix on exactly one side: on the iterator (and leave the fetcher's unset), or on
+Set the prefix on exactly one side: on the iterator (and leave the fetcher's unset), as the
+example above does, or on
 the fetcher when fetch keys come from somewhere that emits bare names. The emitter's
 `prefix` is independent of both and is safe to set alongside either.
 ====

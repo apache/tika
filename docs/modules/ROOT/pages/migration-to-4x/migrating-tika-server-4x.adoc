@@ -267,7 +267,7 @@ instead — `/tika/text`, `/tika/html`, `/tika/json`, and the rest of the table 
 
 === Removed Features
 
-* **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed via temp files through the pipes infrastructure.
+* **Fetcher-based streaming** - The `InputStreamFactory` pattern for fetching documents via HTTP headers (`fetcherName`, `fetchKey`) has been removed. All documents are now processed through the pipes infrastructure: a body at or below xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] (default 10 MB) travels inside the request to the forked worker and touches no disk; a larger one is spooled to a temp file the worker reads.
 
 === Command-Line Flags
 
@@ -431,8 +431,9 @@ influence detection.
 === Pipes Configuration (for `/pipes` and `/async`)
 
 No pipes or fetcher configuration is required to start the server: the default-on endpoints
-(`/tika`, `/rmeta`, `/meta`, `/unpack`, `/detect`) run on an internally-configured spool
-fetcher and a default `pipes` config, and the server starts with no config file at all. You
+(`/tika`, `/rmeta`, `/meta`, `/unpack`, `/detect`) run on the built-in `\_\_bytes` fetcher for
+content carried inside the request, an internally-configured spool fetcher for anything larger,
+and a default `pipes` config, and the server starts with no config file at all. You
 need a `pipes` section and your own `file-system-fetcher` only when you enable `allowPipes`
 and want `/pipes`/`/async` to fetch documents from a directory you control:
 
@@ -496,8 +497,9 @@ and Forked-Process Groups] for which endpoints share which pool.
 === `maxRequestSizeBytes` now defaults to 1 GiB
 
 The request-body cap was unlimited by default in the prereleases; it now defaults to 1 GiB.
-tika-server spools uploads to disk, so this bounds how much one request can write, and a body
-over the limit is rejected with `413`.
+Bodies above xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] are spooled to disk,
+so this also bounds how much one request can write, and a body over the limit is rejected with
+`413`.
 
 **Migration:** if you legitimately post bodies larger than 1 GiB, set `"maxRequestSizeBytes"`
 in the `server` section above your largest payload (or `-1` to restore no limit).

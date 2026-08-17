@@ -19,8 +19,9 @@
 
 Which Tika line runs on which Java, and how long each is supported.
 
-NOTE: All dates are in Open Source Standard Time which does not always neatly align
-with traditional calendars.
+NOTE: Only 2.x and 3.x have shipped. Everything from 4.x down is a plan, not a commitment, and
+all dates are in Open Source Standard Time which does not always neatly align with traditional
+calendars.
 
 == Version Support
 
@@ -31,8 +32,8 @@ with traditional calendars.
 |2.x
 |8
 |javax
-|--
-|April 2025
+|July 2021
+|April 2025 (ended)
 
 |3.x
 |11
@@ -43,7 +44,7 @@ with traditional calendars.
 |4.x
 |17
 |jakarta
-|March 2026
+|not yet released (4.0.0 in progress)
 |TBD
 
 |5.x

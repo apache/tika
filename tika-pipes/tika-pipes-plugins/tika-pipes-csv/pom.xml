@@ -29,8 +29,6 @@
 
   <name>Apache Tika Pipes CSV</name>
   <url>https://tika.apache.org/</url>
-  <properties>
-  </properties>
 
   <dependencies>
     <dependency>

@@ -147,9 +147,11 @@ class IgniteConfigStoreTest {
         String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
         String mvnCmd = tikaRootDir.resolve(isWindows ? "mvnw.cmd" : "mvnw").toString();
         
+        // -Pdev: tika-grpc no longer ships Ignite, so the config store's jars come from that profile
         ProcessBuilder pb = new ProcessBuilder(
             mvnCmd,
             "exec:exec",
+            "-Pdev",
             "-Dexec.executable=" + javaCmd,
             "-Dexec.args=" +
                 "--add-opens=java.base/java.lang=ALL-UNNAMED " +

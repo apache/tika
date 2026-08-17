@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.PluginComponentLoader;
 import org.apache.tika.plugins.TikaExtensionFactory;
 
 /**
@@ -100,7 +101,7 @@ public interface ConfigStoreFactory extends TikaExtensionFactory<ConfigStore> {
         try {
             ExtensionConfig config = extensionConfig != null ? extensionConfig :
                 new ExtensionConfig(configStoreType, configStoreType, "{}");
-            return factory.buildExtension(config);
+            return PluginComponentLoader.buildExtension(factory, config);
         } catch (IOException e) {
             throw new TikaConfigException("Failed to create ConfigStore: " + configStoreType, e);
         }

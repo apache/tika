@@ -55,8 +55,9 @@ Take `-full` if you OCR scanned documents or parse geospatial rasters; otherwise
 
 Tags come in three forms: `<version>` rolls forward if the image is rebuilt for the same Tika
 release, `<version>-<N>` is immutable and is what to pin in production, and `latest` tracks the
-newest stable release. Images are published for `linux/amd64`, `linux/arm64/v8` and `linux/s390x`;
-`docker pull` picks the right one.
+newest stable release. The `apache/tika` images — minimal and `-full` alike — are published for
+`linux/amd64`, `linux/arm64` and `linux/s390x`; `apache/tika-grpc` is published for
+`linux/amd64` and `linux/arm64` only. `docker pull` picks the right one.
 
 == What is inside
 

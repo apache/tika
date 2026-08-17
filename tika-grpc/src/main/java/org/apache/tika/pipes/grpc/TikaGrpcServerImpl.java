@@ -74,7 +74,6 @@ import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
 import org.apache.tika.pipes.grpc.proto.SavePipesIteratorReply;
 import org.apache.tika.pipes.grpc.proto.SavePipesIteratorRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
-import org.apache.tika.pipes.ignite.server.IgniteStoreServer;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -86,6 +85,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
     private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
+    private static final String IGNITE_STORE_SERVER_CLASS = "org.apache.tika.pipes.ignite.server.IgniteStoreServer";
 
     PipesConfig pipesConfig;
     TikaGrpcConfig tikaGrpcConfig;
@@ -94,7 +94,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     ConfigStore configStore;
     Path tikaConfigPath;
     PluginManager pluginManager;
-    private IgniteStoreServer igniteStoreServer;
+    private AutoCloseable igniteStoreServer;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -171,24 +171,39 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 storeConfig);
     }
     
-    private void startIgniteServer(ExtensionConfig config) {
+    /**
+     * Starts the embedded Ignite node backing an {@code ignite} ConfigStore. Loaded reflectively so
+     * that tika-grpc does not carry an Ignite dependency: Ignite is an opt-in extra that the operator
+     * adds to the classpath, not part of the shipped server.
+     */
+    private void startIgniteServer(ExtensionConfig config) throws TikaConfigException {
+        Class<?> serverClass;
+        try {
+            serverClass = Class.forName(IGNITE_STORE_SERVER_CLASS);
+        } catch (ClassNotFoundException e) {
+            throw new TikaConfigException("configStoreType=ignite requires tika-pipes-config-store-ignite "
+                    + "(and its Ignite dependencies) on the classpath; tika-grpc does not ship them. Add the "
+                    + "jars to the classpath, or use a configStoreType of 'memory' or 'file'.", e);
+        }
         try {
             LOG.info("Starting embedded Ignite server for ConfigStore");
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode params = mapper.readTree(config.json());
+            com.fasterxml.jackson.databind.JsonNode params = OBJECT_MAPPER.readTree(config.json());
 
             String tableName = params.has("tableName") ? params.get("tableName").asText() :
                                params.has("cacheName") ? params.get("cacheName").asText() : "tika_config_store";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
 
-            igniteStoreServer = new IgniteStoreServer(tableName, instanceName);
-            igniteStoreServer.start();
+            igniteStoreServer = (AutoCloseable) serverClass.getConstructor(String.class, String.class)
+                    .newInstance(tableName, instanceName);
+            serverClass.getMethod("start").invoke(igniteStoreServer);
 
             LOG.info("Embedded Ignite server started successfully");
         } catch (Exception e) {
             LOG.error("Failed to start embedded Ignite server", e);
-            throw new RuntimeException("Failed to start Ignite server", e);
+            // The constructor propagates, so nothing else will ever call shutdown() for this node.
+            shutdown();
+            throw new TikaConfigException("Failed to start Ignite server", e);
         }
     }
 

@@ -256,26 +256,6 @@ JDOM License
     on the JDOM Project, please see <http://www.jdom.org/>.
 
 
-Multi-licensed components redistributed here under the Apache License, Version 2.0
-
-    Applies to:
-        javassist-3.30.2-GA.jar
-        jna-5.19.1.jar
-        rocksdbjni-10.2.1.jar
-
-    Each of these components is distributed under a choice of licenses that
-    includes the Apache License, Version 2.0:
-
-        javassist     MPL 1.1 OR LGPL-2.1 OR Apache-2.0
-        jna           Apache-2.0 OR LGPL-2.1-or-later
-        rocksdbjni    Apache-2.0 OR GPL-2.0
-
-    Apache Tika elects the Apache License, Version 2.0, whose terms appear at the
-    top of this file.  Note that the Maven POMs for jna and javassist list the
-    copyleft option first, so automated license scans may report these dependencies
-    as LGPL or MPL; the choice of license above governs.
-
-
 Public Domain
 
     Applies to:

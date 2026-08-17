@@ -439,6 +439,47 @@ before calling a concrete parser directly, or go through `AutoDetectParser` in t
 place, which does this for you automatically.
 ====
 
+[#parse-context-config-resolution]
+=== `ParseContext` config resolution is per component, not per config class
+
+A JSON-configured component's resolved config is no longer published under its config class.
+`ConfigDeserializer` used to call `context.set(configClass, config)` so any component could
+find it with `parseContext.get(SomeConfig.class)`; that leaked one component's settings to
+every other component binding the same config class -- the three VLM parsers all bind
+`VLMOCRConfig`, so one provider's base URL and API key reached the other two. Configs are now
+cached by `(component name, config class)`.
+
+Two things change for callers:
+
+* `parseContext.get(SomeConfig.class)` no longer returns a JSON-resolved config. A
+  third-party component that followed the `PDFBoxRenderer` pattern -- pulling its config off
+  the `ParseContext` by class -- must now be handed its config explicitly.
+* Precedence is inverted. When a key has a JSON config, that config wins over a programmatic
+  `context.set(XConfig.class, ...)`; in earlier 4.x builds the programmatic value won. A
+  programmatic value is still honored for any key with no JSON config.
+
+== tika-grpc: generated Java classes moved package
+
+`tika.proto`'s `java_package` changed from `org.apache.tika` to
+`org.apache.tika.pipes.grpc.proto`. With `java_multiple_files = true` this moves *every*
+generated class -- `TikaGrpc`, `FetchAndParseRequest`, `FetchAndParseReply` and the rest --
+so a Java gRPC client must update its imports:
+
+[source,java]
+----
+// 3.x / earlier 4.x
+import org.apache.tika.TikaGrpc;
+import org.apache.tika.FetchAndParseRequest;
+
+// 4.x
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+----
+
+This is a *source* break only. The proto package (`tika`) and the service name (`Tika`) are
+unchanged, so the wire protocol is identical: existing binaries keep working against a 4.x
+server, and clients generated for other languages need no change.
+
 == Timeout Model Changes
 
 4.x replaces the previous ad hoc, per-parser timeout handling with a single unified model

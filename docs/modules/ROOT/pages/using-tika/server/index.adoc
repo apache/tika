@@ -291,7 +291,9 @@ xref:migration-to-4x/migrating-tika-server-4x.adoc#_detect_stream_is_now_detect[
 === Other endpoints
 
 The `endpoints` config name is what you list under `server.endpoints`; leaving `endpoints` unset
-enables everything below except `status`, `pipes` and `async`.
+enables everything below except `status`, which is opt-in and must be listed explicitly.
+`pipes` and `async` are part of that default set too, but only when `allowPipes=true` — with
+`allowPipes` left at its `false` default they are not served at all.
 
 [cols="1,1,3"]
 |===

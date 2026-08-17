@@ -27,10 +27,6 @@
 
   <artifactId>tika-pipes-opensearch</artifactId>
   <name>Apache Tika Pipes OpenSearch</name>
-  <properties>
-    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
-     to get messed up when finding your plugins. -->
-  </properties>
 
   <dependencies>
     <dependency>

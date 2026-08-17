@@ -41,8 +41,9 @@ Both the emitter and the reporter take a nested `httpClientConfig` block. The bl
 *required* on both — omitting it fails at startup with a `NullPointerException`, not a
 config error.
 
-The two components read different subsets of it: the emitter honours only `userName` and
-`password` and ignores the rest; the reporter honours every field.
+The emitter and the reporter read the same three fields — `userName`, `password` and
+`verifySsl`. The remaining fields are accepted by the JSON parser but not applied to the HTTP
+client by either component, so setting them has no effect:
 
 [cols="1,1,3"]
 |===
@@ -50,24 +51,32 @@ The two components read different subsets of it: the emitter honours only `userN
 
 |`userName` / `password`
 |_none_
-|Credentials. Omit both for an anonymous client.
+|Basic-auth credentials. Omit both for an anonymous client.
+
+|`verifySsl`
+|`true`
+|Verify server certificates and hostnames against the JVM trust store.
 
 |`authScheme`
-|_none_
-|`basic` or `ntlm`. Reporter only, and required there whenever `userName`/`password` are set — the reporter passes it through unconditionally, so leaving it out throws a `NullPointerException` once credentials are present.
+|`basic` (fixed)
+|*Not read.* The client always uses basic auth; setting this to `ntlm` changes nothing.
 
 |`connectionTimeoutMillis`
-|`0`
-|HTTP connect timeout, ms. `0` means no timeout. Reporter only.
+|`120000` (fixed)
+|*Not read.* The connect timeout is the HTTP client's own default of 120000 ms.
 
 |`socketTimeoutMillis`
-|`0`
-|HTTP socket read timeout, ms. `0` means no timeout. Reporter only.
+|`120000` (fixed)
+|*Not read.* The socket read timeout is the HTTP client's own default of 120000 ms.
 
 |`proxyHost` / `proxyPort`
-|_none_ / `0`
-|Outbound HTTP proxy. Reporter only.
+|_none_
+|*Not read.* Neither component configures an outbound proxy.
 |===
+
+NOTE: The Elasticsearch plugin applies all of these; only the OpenSearch plugin is limited to
+the three above. If you need a proxy or non-default timeouts against OpenSearch, set them at the
+JVM level.
 
 Both components verify TLS certificates and hostnames by default, so an `https://`
 `openSearchUrl` is encrypted *and* authenticated. If the cluster uses a private CA, add it to

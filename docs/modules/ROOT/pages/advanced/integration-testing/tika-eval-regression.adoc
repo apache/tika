@@ -106,8 +106,10 @@ match.
 ----
 
 The `parse-context > commons-digester-factory` block makes every
-extracted record carry an `tk:digest:SHA256` metadata field —
+extracted record carry a `tk:digest:SHA-256` metadata field —
 required by `tika-eval` for embedded-document alignment across runs.
+(The config value is the enum name `SHA256`; the emitted key uses the
+JCA spelling `SHA-256`.)
 
 === Config B (variant under test)
 
@@ -239,7 +241,7 @@ joins (see <<h2>>).
 == Tips
 
 * *Keep the digester identical between A and B.*  tika-eval uses the
-  `tk:digest:SHA256` field on embedded documents to align records
+  `tk:digest:SHA-256` field on embedded documents to align records
   across the two extracts.  If A digests and B doesn't (or different
   algorithms), the embedded-doc alignment falls back to filename and
   produces false-positive diffs.

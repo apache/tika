@@ -2,6 +2,15 @@ Release 4.0.0 - ???
 
   BREAKING CHANGES
 
+   * tika-app: the inline short forms -eX (output encoding), -pX (document
+     password) and -c<uri> (network client) were removed from standard mode.
+     Use --encoding=X, --password=X and --client=<uri>. These were the only
+     short flags that consumed an inline value, and matching them by prefix
+     meant a long name written with one dash was silently swallowed:
+     -config=tika.json set the network-client URI to "onfig=tika.json" and
+     loaded no config file, with no error. Every single-dash long name is now
+     rejected with a message naming the two-dash form (TIKA-4808).
+
    * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a trust
      boundary for String-keyed writes. A String write to a reserved key throws
      IllegalArgumentException instead of 3.x's silent success or silent drop,
@@ -88,6 +97,41 @@ Release 4.0.0 - ???
    * The pipes config keys staleFetcherTimeoutSeconds and
      staleFetcherDelaySeconds have been removed; a config still carrying them
      fails startup (TIKA-4809).
+
+   * An unregistered component name in a default-parser, default-detector or
+     default-encoding-detector "exclude" list now throws a TikaConfigException
+     at config load instead of logging a WARN. Silently ignoring an exclusion
+     left a deliberately disabled component enabled. A config that loaded with
+     a warning on 3.x -- typically one that names the excluded component by
+     class name, or misspells it -- now refuses to start. Use the registered
+     component name (e.g. "pdf-parser"); tika-app --list-parser-names prints
+     them (TIKA-3268, TIKA-4808).
+
+   * ParseContext configuration is now resolved per component instance rather
+     than per config class. ConfigDeserializer no longer publishes a resolved
+     config under its class, because a class-keyed write leaked one component's
+     config to every other component sharing that config class -- the three VLM
+     parsers all bind VLMOCRConfig, so one provider's base URL and API key
+     reached the other two. Two user-visible consequences:
+     parseContext.get(SomeConfig.class) no longer returns a JSON-resolved
+     config, so a third-party component following the PDFBoxRenderer pattern
+     must now be handed its config explicitly; and precedence is inverted --
+     a JSON config for a key now beats a programmatic
+     context.set(XConfig.class, ...), where the programmatic value used to win.
+     The programmatic value is still honored for a key with no JSON config.
+     Resolved configs are cached by (component name, config class), so a
+     component that resolves a validation-only RuntimeConfig and then
+     re-resolves its real config class gets each as its own instance and still
+     merges the operator's defaults (TIKA-4808).
+
+   * tika-grpc: the generated Java classes moved from package org.apache.tika
+     to org.apache.tika.pipes.grpc.proto (java_package in tika.proto;
+     java_multiple_files stays true), so every generated type moves --
+     TikaGrpc, FetchAndParseRequest, FetchAndParseReply and the rest. Java gRPC
+     clients must update their imports. This is a source break only: the proto
+     package ("tika") and the service name ("Tika") are unchanged, so the wire
+     protocol is identical and clients in other languages, or Java clients that
+     are not recompiled, are unaffected (TIKA-4808).
 
    * ExceptionUtils.trimMessage has been removed from tika-core; it moved into
      tika-eval-core (TIKA-4809).
@@ -298,6 +342,19 @@ Release 4.0.0 - ???
      (pipes.maxIpcPayloadBytes, default 100 MB) in both directions. Results
      that exceed the limit return PAYLOAD_LIMIT_EXCEEDED instead of causing
      heap exhaustion; crash messages are also size-capped (TIKA-4793).
+
+   * Pipes now carries small documents to the forked worker inside the request
+     instead of writing them to disk first. A host that already holds the
+     content -- tika-server's /tika, /rmeta, /meta, /detect and /unpack, or
+     PipesForkParser with a non-file-backed stream -- sends anything at or
+     below the new pipes.maxInlineBytes (default 10 MB) in the request, where
+     the reserved __bytes fetcher serves it in the worker and no disk is
+     touched; larger content is written out once as before (to tika-server's
+     input temp directory, or the calling JVM's java.io.tmpdir under
+     PipesForkParser), and a stream already backed by a file always keeps its
+     file. Set maxInlineBytes to 0 to spool every non-empty body. The value must
+     leave room for the rest of the request inside pipes.maxIpcPayloadBytes;
+     one that does not is rejected at config load (TIKA-4808).
 
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).

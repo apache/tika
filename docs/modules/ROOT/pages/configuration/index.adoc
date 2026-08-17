@@ -83,8 +83,10 @@ produces no error and no effect:
   untouched;
 * `_mime-include` / `_mime-exclude` when the value is not a JSON array — a shape error yields an
   empty filter rather than a failure;
-* an unregistered component name inside `default-parser`'s `exclude` list — logged as a `WARN`
-  only. (An unknown *key* in that same block is fatal.)
+* a non-textual entry inside `default-parser`'s `exclude` list — the list expects plain strings,
+  so an object or array entry such as `[{"pdf-parser": {}}]` is skipped and the component stays
+  enabled. (An *unregistered name* in that list, and an unknown *key* in that same block, are
+  both fatal.)
 
 If a setting appears to do nothing, check its spelling against one of those four first.
 

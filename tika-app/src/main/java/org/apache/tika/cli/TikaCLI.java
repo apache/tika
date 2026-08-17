@@ -557,12 +557,8 @@ public class TikaCLI {
             CommonsDigesterFactory factory = new CommonsDigesterFactory();
             factory.setDigests(Collections.singletonList(new DigestDef(algorithm)));
             digesterFactory = factory;
-        } else if (arg.startsWith("-e")) {
-            encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
-        } else if (arg.startsWith("-p") && !arg.equals("-p")) {
-            password = arg.substring("-p".length());
         } else if (arg.startsWith("--password=")) {
             password = arg.substring("--password=".length());
         } else if (arg.equals("-j") || arg.equals("--json")) {
@@ -610,8 +606,6 @@ public class TikaCLI {
             maxEmbeddedCount = Integer.parseInt(arg.substring("--maxEmbeddedCount=".length()));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
-        } else if (arg.startsWith("-c")) {
-            networkURI = new URI(arg.substring("-c".length()));
         } else if (arg.startsWith("--client=")) {
             networkURI = new URI(arg.substring("--client=".length()));
         } else {
@@ -888,8 +882,8 @@ public class TikaCLI {
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");
         out.println("                               sha256, sha384, sha512)");
-        out.println("    -eX or --encoding=X    Use output encoding X");
-        out.println("    -pX or --password=X    Use document password X");
+        out.println("    --encoding=X           Use output encoding X");
+        out.println("    --password=X           Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
@@ -956,14 +950,14 @@ public class TikaCLI {
         out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
         out.println("Tika Pipes Options:");
-        out.println("    -i, --input=<dir>          Input directory");
-        out.println("    -o, --output=<dir>         Output directory");
+        out.println("    -i, --inputDir=<dir>       Input directory");
+        out.println("    -o, --outputDir=<dir>      Output directory");
         out.println("    -n, --numClients           Number of forked processes");
         out.println("    --Xmx=<size>               -Xmx for the forked processes, e.g. --Xmx=1g");
         out.println("    -T, --timeoutMillis        Timeout for each parse in milliseconds");
         out.println("    -c, --config=<file>        Tika config file (--config=<file> also accepted)");
         out.println("    -p, --pluginsDir           Plugins directory");
-        out.println("    --fileList                 File list (one path per line, relative to -i or absolute)");
+        out.println("    --fileList                 File list (one path per line, relative to --inputDir or absolute)");
         out.println("    --handler                  Handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore (default: m)");
         out.println("    --concatenate              Concatenate content from all embedded documents");
         out.println("    --content-only             Output only extracted content (no JSON wrapper); implies --concatenate");

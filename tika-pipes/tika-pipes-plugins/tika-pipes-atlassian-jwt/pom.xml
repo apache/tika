@@ -27,10 +27,6 @@
 
   <artifactId>tika-pipes-atlassian-jwt</artifactId>
   <name>Apache Tika Pipes Atlassian JWT</name>
-  <properties>
-    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
-      to get messed up when finding your plugins. -->
-  </properties>
 
   <dependencies>
     <dependency>

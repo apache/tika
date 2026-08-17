@@ -56,29 +56,22 @@ all and nothing piped in, the GUI launches.
 
 [CAUTION]
 ====
-Long flags take the GNU double-dash form. `--input /path` works; `-input /path` does not —
-`tika-app` rejects single-dash long names with an `IllegalArgumentException` naming the right
-form. Short flags take one dash (`-i`, `-eUTF-8`), except `--Xmx=<size>`, which is a long flag
-despite looking like a JVM option (there is no `-X` flag).
+Long flags take the GNU double-dash form; short flags take one dash and are a single letter
+(`-i`, `-x`). The exception is `--Xmx=<size>`, which is a long flag despite looking like a JVM
+option (there is no `-X` flag).
 
-Three short flags mean different things in the two modes, so read them in context:
+Writing a long name with a single dash is always an error — `-input`, `-config=tika.json`,
+`-encoding=UTF-8` and the like are rejected with a message naming the two-dash form. No short
+flag takes an inline value, so nothing is silently consumed as a flag's argument.
 
-[cols="1,2,2"]
-|===
-|Flag |Standard mode |Pipes mode
+NOTE: In 4.0.0 the inline short forms `-eX` (encoding), `-pX` (password) and `-c<uri>`
+(network client) were removed from standard mode. Use `--encoding=X`, `--password=X` and
+`--client=<uri>`. Scripts using the old forms now fail with an unrecognized-option error
+rather than silently misparsing.
 
-|`-T`
-|`--text-main`
-|`--timeoutMillis=<ms>`
-
-|`-p`
-|`--password=<X>` (as `-pX`, no space)
-|`--pluginsDir=<dir>`
-
-|`-c`
-|`--client=<uri>`
-|`--config=<file>`
-|===
+`-T` means different things in the two modes, so read it in context: `--text-main` in standard
+mode, `--timeoutMillis=<ms>` in pipes mode. `-p` (`--pluginsDir`) and `-c` (`--config`) exist
+only in pipes mode.
 ====
 
 == Standard-mode Options
@@ -158,8 +151,8 @@ the content type (default `--md`).
 |`-r`, `--pretty-print`
 |For JSON, XML and XHTML output, add newlines and whitespace for readability.
 
-|`-e<X>`, `--encoding=<X>`
-|Use output encoding `<X>`, e.g. `-eUTF-8`.
+|`--encoding=<X>`
+|Use output encoding `<X>`, e.g. `--encoding=UTF-8`.
 |===
 
 === Detection, Language and Content
@@ -174,8 +167,8 @@ the content type (default `--md`).
 |`-l`, `--language`
 |Detect and print only the language.
 
-|`-p<X>`, `--password=<X>`
-|Use document password `<X>` (encrypted PDFs, OOXML, etc.). No space after `-p`.
+|`--password=<X>`
+|Use document password `<X>` (encrypted PDFs, OOXML, etc.).
 
 |`--digest=<X>`
 |Include a digest of the parsed bytes: `md2`, `md5`, `sha1`, `sha256`, `sha384`, `sha512`. The flag
@@ -297,8 +290,8 @@ output directory.
 * The last two arguments are an existing directory followed by a directory or a path that does
   not yet exist -- the same pair with other options in front of it.
 * A single `.json` argument is given — it is read as a Tika Pipes config file.
-* Any of `-i`, `--input`, `-o`, `--output`, `--fileList`, `-z`, `--extract`, `--extract-dir`, `-Z`,
-  or `-a`/`--async` is present.
+* Any of `-i`, `--inputDir`, `-o`, `--outputDir`, `--fileList`, `-z`, `--extract`,
+  `--extract-dir`, `-Z`, or `-a`/`--async` is present.
 
 Anything else — a single file, a URL, stdin, `--gui` — stays in standard single-document mode.
 
@@ -312,14 +305,14 @@ as usual.
 |===
 |Option |Description
 
-|`-i`, `--input=<dir>`
-|Input directory (a single file also works).
+|`-i`, `--inputDir=<dir>`
+|Input directory (a single file also works). The long form is `--inputDir`, not `--input`.
 
-|`-o`, `--output=<dir>`
-|Output directory.
+|`-o`, `--outputDir=<dir>`
+|Output directory. The long form is `--outputDir`, not `--output`.
 
 |`--fileList=<path>`
-|File list, one path per line, relative to `-i` or absolute.
+|File list, one path per line, relative to `--inputDir` or absolute.
 
 |`--on-exists=<mode>`
 |Behavior when an output file already exists: `exception` (default), `replace`, `skip`.

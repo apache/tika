@@ -57,7 +57,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`tempDirectory`
 |_system default_
-|Directory for temporary files. Each fork gets a subdirectory here, and the fork's whole `java.io.tmpdir` points at it, so spooled input, unpacked embedded files and JVM crash logs all land inside. Consider a RAM-backed filesystem (e.g., `/dev/shm`) for better performance -- but see the caveat below.
+|Directory for temporary files. Each fork gets a subdirectory here, and the fork's whole `java.io.tmpdir` points at it, so anything the fork spools while parsing, unpacked embedded files and JVM crash logs all land inside. It does *not* cover the host side: tika-server spools over-threshold request bodies into its own input temp directory, and `PipesForkParser` into the calling JVM's `java.io.tmpdir`. Consider a RAM-backed filesystem (e.g., `/dev/shm`) for better performance -- but see the caveat below.
 |===
 
 The parent deletes a fork's subdirectory when that fork is torn down or fails to start, so a
@@ -158,7 +158,7 @@ These settings control how parsed results are batched before sending to emitters
 
 |`maxInlineBytes`
 |`10485760` (10 MB)
-|Largest document carried inline to the fork instead of being written to a file first. A host that already holds the content (tika-server's `/tika`, `/rmeta`, `/meta`, `/detect`, `/unpack`; `PipesForkParser` with a non-file-backed stream) sends anything at or below this size inside the request and touches no disk at all; anything larger is written once to the fetcher's `basePath`. A stream already backed by a file always keeps its file, whatever the size. Set to `0` to disable inlining. The cost of raising it is heap, not disk: the parent holds the payload and the frame containing a copy of it, and the child holds it again, so budget roughly `2 * maxInlineBytes * concurrent-requests` in the parent. Must leave room for the rest of the request inside `maxIpcPayloadBytes`; values that do not are rejected at config load time.
+|Largest document carried inline to the fork instead of being written to a file first. A host that already holds the content (tika-server's `/tika`, `/rmeta`, `/meta`, `/detect`, `/unpack`; `PipesForkParser` with a non-file-backed stream) sends anything at or below this size inside the request and touches no disk at all; anything larger is written out once, to tika-server's dedicated input temp directory (the `\_\_tika-server` fetcher's `basePath`) or, for `PipesForkParser`, to the JVM's `java.io.tmpdir`. A stream already backed by a file always keeps its file, whatever the size. Set to `0` to spool every non-empty body (a zero-length body still rides inline, since the test is `size <= maxInlineBytes`). The cost of raising it is heap, not disk: the parent holds the payload and the frame containing a copy of it, and the child holds it again, so budget roughly `2 * maxInlineBytes * concurrent-requests` in the parent. Must leave room for the rest of the request inside `maxIpcPayloadBytes`; values that do not are rejected at config load time.
 |===
 
 == Emit Strategy

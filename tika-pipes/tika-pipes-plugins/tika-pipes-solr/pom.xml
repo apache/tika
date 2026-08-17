@@ -29,11 +29,6 @@
   <name>Apache Tika Pipes Apache Solr</name>
   <packaging>jar</packaging>
 
-  <properties>
-    <!-- You want to make sure you don't load competing dependencies in your plugin or your classloading is going
-     to get messed up when finding your plugins. -->
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>

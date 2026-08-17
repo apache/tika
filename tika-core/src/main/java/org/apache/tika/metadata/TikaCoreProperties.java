@@ -63,7 +63,7 @@ public interface TikaCoreProperties {
 
     /**
      * Template factory for digest keys: {@code tk:digest:<suffix>}, e.g.
-     * {@code tk:digest:SHA256} or {@code tk:digest:SHA256:BASE32} (algorithm[:encoding],
+     * {@code tk:digest:SHA-256} or {@code tk:digest:SHA-256:BASE32} (algorithm[:encoding],
      * config-supplied by a {@code Digester}, never document-derived). Validates only that
      * {@code suffix} is non-empty and contains no whitespace — the shape constraint is
      * hygiene, not security, since the input is trusted config.

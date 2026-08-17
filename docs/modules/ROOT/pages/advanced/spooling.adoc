@@ -95,7 +95,7 @@ nothing is retained. Moving out of passthrough mode is only legal at position 0:
 |`enableRewind()`
 |Switches to caching mode: bytes are retained in memory, spilling to a temp file
 past 1 MB. `rewind()`, `mark()`/`reset()`, and random access all work afterwards.
-|`IllegalStateException`
+|`IOException` — "Cannot enable rewind: position is N, must be 0"
 
 |`getPath()` / `getFile()`
 |Implicitly enables rewind, then spills to a temp file and returns its path.
@@ -282,4 +282,9 @@ try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
 
 4. **Consider memory vs. disk tradeoffs**: For very large files, spooling to disk
    may be needed. For small files processed in bulk, keeping data in memory may be
-   faster. `TikaInputStream` backing strategies can be tuned for your workload.
+   faster. There is no setting for this: the backing strategy is not configurable and
+   its implementations are package-private. You choose it entirely by which
+   `TikaInputStream.get(...)` overload you call — `get(Path)`/`get(File)` is file-backed,
+   `get(byte[])` is memory-backed, and `get(InputStream)` starts in passthrough mode and
+   only begins caching (in memory, spilling past 1 MB) once something calls
+   `enableRewind()` or asks for a `Path`/`File`.

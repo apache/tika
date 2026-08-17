@@ -28,6 +28,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pf4j.PluginClassLoader;
 import org.pf4j.PluginManager;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -35,6 +36,38 @@ import org.apache.tika.exception.TikaConfigException;
 public class PluginComponentLoader {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    /**
+     * Builds an extension with the thread-context classloader set to the classloader of the
+     * plugin that supplied the factory.
+     * <p>
+     * Client libraries a plugin bundles (Kafka, the AWS SDK, ZooKeeper) resolve classes named in
+     * their own configuration off the thread-context classloader and then cast the result to an
+     * interface resolved from their own classloader.  Left at the host's classloader, that lookup
+     * either misses the plugin's {@code lib/} entirely or - on a host that happens to carry the
+     * same library - finds a second copy of the class and the cast fails.  Everything a plugin
+     * constructs must therefore see the plugin's classloader; pf4j does not set it.
+     * <p>
+     * Threads the library starts during construction inherit it, which is what keeps its own
+     * background threads resolving against the plugin.  Factories that are not plugin-supplied
+     * are invoked without touching the context classloader.
+     */
+    public static <T extends TikaExtension> T buildExtension(TikaExtensionFactory<T> factory,
+                                                             ExtensionConfig config)
+            throws TikaConfigException, IOException {
+        ClassLoader pluginClassLoader = factory.getClass().getClassLoader();
+        if (!(pluginClassLoader instanceof PluginClassLoader)) {
+            return factory.buildExtension(config);
+        }
+        Thread thread = Thread.currentThread();
+        ClassLoader restore = thread.getContextClassLoader();
+        thread.setContextClassLoader(pluginClassLoader);
+        try {
+            return factory.buildExtension(config);
+        } finally {
+            thread.setContextClassLoader(restore);
+        }
+    }
 
     /**
      * Load a singleton component from config.
@@ -65,7 +98,7 @@ public class PluginComponentLoader {
         }
 
         // Use typeName as id for singletons
-        T instance = factory.buildExtension(
+        T instance = buildExtension(factory,
                 new ExtensionConfig(typeName, typeName, toJsonString(config)));
         return Optional.of(instance);
     }
@@ -116,7 +149,7 @@ public class PluginComponentLoader {
                     String instanceId = instanceEntry.getKey();
                     JsonNode config = instanceEntry.getValue();
 
-                    T instance = factory.buildExtension(
+                    T instance = buildExtension(factory,
                             new ExtensionConfig(instanceId, typeName, toJsonString(config)));
 
                     if (instances.putIfAbsent(instanceId, instance) != null) {
@@ -166,7 +199,7 @@ public class PluginComponentLoader {
             }
 
             // Use typeName as id for unnamed instances
-            T instance = factory.buildExtension(
+            T instance = buildExtension(factory,
                     new ExtensionConfig(typeName, typeName, toJsonString(config)));
             instances.add(instance);
         }
@@ -187,12 +220,12 @@ public class PluginComponentLoader {
         for (TikaExtensionFactory<T> factory : pluginManager.getExtensions(factoryClass)) {
             String name = factory.getName();
             ClassLoader cl = factory.getClass().getClassLoader();
-            boolean isFromPlugin = cl instanceof org.pf4j.PluginClassLoader;
+            boolean isFromPlugin = cl instanceof PluginClassLoader;
 
             TikaExtensionFactory<T> existing = factories.get(name);
             if (existing != null) {
                 boolean existingIsFromPlugin = existing.getClass().getClassLoader()
-                        instanceof org.pf4j.PluginClassLoader;
+                        instanceof PluginClassLoader;
                 if (isFromPlugin && !existingIsFromPlugin) {
                     // Replace classpath version with plugin version
                     factories.put(name, factory);

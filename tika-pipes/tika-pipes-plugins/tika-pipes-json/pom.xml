@@ -30,9 +30,6 @@
   <name>Apache Tika Pipes JSON</name>
   <url>https://tika.apache.org/</url>
 
-  <properties>
-  </properties>
-
   <dependencies>
     <!-- host framework, parent-loaded -->
     <dependency>

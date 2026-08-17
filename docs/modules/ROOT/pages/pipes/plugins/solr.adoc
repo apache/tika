@@ -145,12 +145,6 @@ Enumerates documents already in a Solr collection and emits one `FetchEmitTuple`
 include::example$pipes-solr-iterator.json[]
 ----
 
-WARNING: The example above is incomplete — `SolrPipesIterator` also validates
-`parsingIdField`, `failCountField` and `sizeFieldName` as non-blank, so as shown it fails
-at startup with `parsingIdField must not be empty`. Add all three before using it. The
-config-example test only checks that the JSON loads, and loading a config never constructs
-the iterator, which is why this is not caught.
-
 === Configuration
 
 In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
