@@ -52,6 +52,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -169,7 +170,7 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
         if (!decodeAs.equals(charset)) {
             metadata.set(TikaCoreProperties.DECODED_CHARSET, decodeAs.name());
         }
-        String previous = metadata.get(Metadata.CONTENT_TYPE);
+        String previous = metadata.get(HttpHeaders.CONTENT_TYPE);
         MediaType contentType = null;
         if (previous == null || previous.startsWith("text/html")) {
             contentType = new MediaType(MediaType.TEXT_HTML, charset);
@@ -181,10 +182,10 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
             contentType = new MediaType(X_ASP, charset);
         }
         if (contentType != null) {
-            metadata.set(Metadata.CONTENT_TYPE, contentType.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, contentType.toString());
         }
         // deprecated, see TIKA-431
-        metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+        metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
 
         // Get the HTML mapper from the parse context
         HtmlMapper mapper = context.get(HtmlMapper.class, new DefaultHtmlMapper());

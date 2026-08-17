@@ -76,6 +76,9 @@ public class RevisionStoreObjectGroup {
             for (int i = 0; i <
                     dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList.size()) {
+                    throw new IOException("Missing BLOB reference for object declaration " + i);
+                }
                 ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration =
                         dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.get(
                                 i);

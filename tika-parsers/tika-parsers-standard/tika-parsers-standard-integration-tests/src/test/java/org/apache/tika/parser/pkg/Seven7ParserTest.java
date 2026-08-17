@@ -30,6 +30,7 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseRecord;
@@ -57,7 +58,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
         // Parse
         String content = getText("test-documents.7z", metadata);
 
-        assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TYPE_7ZIP.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("test-documents/testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);
         assertContains("test-documents/testHTML.html", content);
@@ -149,7 +150,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 exceptions.forEach(e -> e.printStackTrace());
             }
 
-            assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(TYPE_7ZIP.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
             String content = handler.toString();
 
             // Should get filename

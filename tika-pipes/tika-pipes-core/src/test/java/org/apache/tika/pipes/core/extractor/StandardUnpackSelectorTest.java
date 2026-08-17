@@ -24,6 +24,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -77,7 +78,7 @@ public class StandardUnpackSelectorTest extends TikaTest {
     private Metadata getMetadata(String mime, String embeddedResourceType) {
         Metadata m = new Metadata();
         if (!StringUtils.isBlank(mime)) {
-            m.set(Metadata.CONTENT_TYPE, mime);
+            m.set(HttpHeaders.CONTENT_TYPE, mime);
         }
         if (!StringUtils.isBlank(embeddedResourceType)) {
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, embeddedResourceType);

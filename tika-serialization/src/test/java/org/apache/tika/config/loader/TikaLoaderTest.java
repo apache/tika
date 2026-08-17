@@ -31,6 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -63,7 +64,7 @@ public class TikaLoaderTest {
 
         // Parse with the composite parser to verify config was applied
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -126,7 +127,7 @@ public class TikaLoaderTest {
 
         // Parse with minimal parser type
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+minimal");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+minimal");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -146,7 +147,7 @@ public class TikaLoaderTest {
 
         // Parse with fallback parser type
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -168,7 +169,7 @@ public class TikaLoaderTest {
 
         // Parse with ConfigurableTestParser - should use the explicitly configured instance
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -181,7 +182,7 @@ public class TikaLoaderTest {
 
         // Verify other parsers (FallbackTestParser, MinimalTestParser) are still available via SPI
         Metadata fallbackMetadata = new Metadata();
-        fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        fallbackMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
@@ -203,7 +204,7 @@ public class TikaLoaderTest {
 
         // Verify ConfigurableTestParser uses the configured instance
         Metadata configurableMetadata = new Metadata();
-        configurableMetadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        configurableMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), configurableMetadata, new ParseContext());
@@ -214,7 +215,7 @@ public class TikaLoaderTest {
 
         // Verify FallbackTestParser was loaded from SPI
         Metadata fallbackMetadata = new Metadata();
-        fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        fallbackMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
@@ -289,7 +290,7 @@ public class TikaLoaderTest {
 
         // Parse with the opt-in parser
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+optin");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+optin");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());

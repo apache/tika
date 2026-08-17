@@ -30,6 +30,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -51,7 +52,7 @@ public class FontParsersTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
         }
 
-        assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-font-adobe-metric", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("TestFullName", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Fri Jul 15 17:50:51 2011", metadata.get(TikaCoreProperties.CREATED));
 
@@ -84,7 +85,7 @@ public class FontParsersTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, context);
         }
 
-        assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-font-ttf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Open Sans Bold", metadata.get(TikaCoreProperties.TITLE));
 
         assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));

@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
@@ -36,8 +36,8 @@ public class QuattroProTest extends TikaTest {
     public void testQPW() throws Exception {
 
         XMLResult r = getXML("testQUATTRO.qpw");
-        assertEquals(QuattroProParser.QP_9.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(1, r.metadata.getValues(Metadata.CONTENT_TYPE).length);
+        assertEquals(QuattroProParser.QP_9.toString(), r.metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(1, r.metadata.getValues(HttpHeaders.CONTENT_TYPE).length);
         assertContains("This is an example spreadsheet", r.xml);
     }
 
@@ -46,6 +46,6 @@ public class QuattroProTest extends TikaTest {
         XMLResult r = getXML("testQUATTRO.wb3");
         assertEquals("org.apache.tika.parser.EmptyParser",
                 r.metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
-        assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(QuattroProParser.QP_7_8.toString(), r.metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 }

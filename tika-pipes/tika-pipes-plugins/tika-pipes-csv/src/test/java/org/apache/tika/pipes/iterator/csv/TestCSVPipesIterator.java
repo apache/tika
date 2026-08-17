@@ -18,6 +18,7 @@ package org.apache.tika.pipes.iterator.csv;
 
 import static org.apache.tika.pipes.pipesiterator.PipesIteratorBase.COMPLETED_SEMAPHORE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
@@ -87,6 +88,25 @@ public class TestCSVPipesIterator {
                         .get("project"));
             }
         }
+    }
+
+    @Test
+    public void testReservedNameColumnSkippedNotFatal() throws Exception {
+        Path p = get("test-reserved-header.csv");
+        CSVPipesIterator it = createIterator(p, "fsf", "fse", "fetchKey", null, null);
+        List<FetchEmitTuple> tuples = new ArrayList<>();
+        for (FetchEmitTuple t : it) {
+            tuples.add(t);
+        }
+        assertEquals(1, tuples.size());
+        FetchEmitTuple t = tuples.get(0);
+        //the reserved-name column is skipped, but the rest of the row still comes through
+        assertEquals("projecta", t
+                .getMetadata()
+                .get("project"));
+        assertNull(t
+                .getMetadata()
+                .get("tk:reserved"));
     }
 
     @Test

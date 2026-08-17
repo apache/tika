@@ -47,6 +47,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -125,7 +126,7 @@ public class TikaInputStreamTest {
         TikaInputStream.get(url, metadata).close();
         assertEquals("test.txt", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(Long.toString(Files.size(Paths.get(url.toURI()))),
-                metadata.get(Metadata.CONTENT_LENGTH));
+                metadata.get(HttpHeaders.CONTENT_LENGTH));
     }
 
     // ========== New Caching Tests ==========
@@ -696,7 +697,7 @@ public class TikaInputStreamTest {
             }
 
             // Before spill, metadata should not have length
-            assertNull(metadata.get(Metadata.CONTENT_LENGTH));
+            assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH));
 
             // Force spill to file
             Path path = source.getPath(".tmp");
@@ -704,7 +705,7 @@ public class TikaInputStreamTest {
             assertTrue(Files.exists(path));
 
             // After spill, metadata should have length
-            assertEquals("13", metadata.get(Metadata.CONTENT_LENGTH));
+            assertEquals("13", metadata.get(HttpHeaders.CONTENT_LENGTH));
 
             source.close();
         }
@@ -715,7 +716,7 @@ public class TikaInputStreamTest {
         byte[] data = bytes("Hello, World!");
         Metadata metadata = new Metadata();
         // Pre-set CONTENT_LENGTH
-        metadata.set(Metadata.CONTENT_LENGTH, "999");
+        metadata.set(HttpHeaders.CONTENT_LENGTH, "999");
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
@@ -728,7 +729,7 @@ public class TikaInputStreamTest {
             Path path = source.getPath(".tmp");
 
             // Existing value should not be overwritten
-            assertEquals("999", metadata.get(Metadata.CONTENT_LENGTH));
+            assertEquals("999", metadata.get(HttpHeaders.CONTENT_LENGTH));
 
             source.close();
         }

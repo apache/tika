@@ -45,7 +45,8 @@ public class TEITest extends TikaTest {
         assertEquals("Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                 "Montbonnot Saint-Martin, " +
                 "Montbonnot Saint-Martin, null 38330, 38330, 38330, 38330 " +
-                "France, France, France, France ", metadata.get("Address").replaceAll("\\s+", " "));
+                "France, France, France, France ",
+                metadata.get("grobid:tei:address").replaceAll("\\s+", " "));
         String[] keywords = new String[]{
                 "F22 [Analysis of Algorithms and Problem Complexity]: Nonnumerical Algorithms " +
                         "and Problems\u2014Sequencing",
@@ -53,14 +54,14 @@ public class TEITest extends TikaTest {
                         "Concurrency",
                 "Keywords", "Parallel Computing, Algorithms, Scheduling, Parallel Tasks,",
                 "Moldable Tasks, Bi-criteria"};
-        assertArrayEquals(keywords, metadata.getValues("Keyword"));
+        assertArrayEquals(keywords, metadata.getValues("grobid:tei:keyword"));
         assertEquals(
                 "Pierre-François  Dutot 1 Lionel  Eyraud 1 Grégory  Gr´ 1 Grégory  " +
                         "Mouní 1 Denis  Trystram 1 ",
-                metadata.get("Authors"));
+                metadata.get("grobid:tei:authors"));
         assertEquals("Bi-criteria Algorithm for Scheduling Jobs on Cluster Platforms *",
-                metadata.get("Title"));
-        assertEquals("1 ID-IMAG ID-IMAG ID-IMAG ID-IMAG", metadata.get("Affiliation"));
+                metadata.get("grobid:tei:title"));
+        assertEquals("1 ID-IMAG ID-IMAG ID-IMAG ID-IMAG", metadata.get("grobid:tei:affiliation"));
         assertEquals("[Affiliation {orgName=ID-IMAG ID-IMAG ID-IMAG ID-IMAG , " +
                         "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                         "Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
@@ -69,6 +70,6 @@ public class TEITest extends TikaTest {
                         "address=Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                         "Montbonnot Saint-Martin, Montbonnot Saint-Martin, " +
                         "null 38330, 38330, 38330, 38330 France, France, France, France}]",
-                metadata.get("FullAffiliations"));
+                metadata.get("grobid:tei:full-affiliations"));
     }
 }

@@ -105,6 +105,7 @@ public class MSOneStoreParser {
     }
 
     public MSOneStorePackage parse(DataElementPackage dataElementPackage) throws IOException {
+        storageIndexHashTab.clear();
         MSOneStorePackage msOneStorePackage = new MSOneStorePackage();
         objectGroupsByDataElementId.clear();
 

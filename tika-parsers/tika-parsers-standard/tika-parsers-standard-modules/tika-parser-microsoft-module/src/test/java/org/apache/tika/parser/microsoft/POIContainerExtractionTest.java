@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.detect.microsoft.POIFSContainerDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -155,7 +156,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             List<Metadata> list = getRecursiveMetadata("testMSChart-govdocs-428996." + suffix);
             boolean found = false;
             for (Metadata m : list) {
-                if (m.get(Metadata.CONTENT_TYPE)
+                if (m.get(HttpHeaders.CONTENT_TYPE)
                         .equals(POIFSContainerDetector.MS_GRAPH_CHART.toString())) {
                     found = true;
                 }
@@ -170,7 +171,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         //file derives from govdocs1 863534.doc
         List<Metadata> metadataList = getRecursiveMetadata("testMSEquation-govdocs-863534.doc");
         assertEquals(3, metadataList.size());
-        assertEquals("application/vnd.ms-equation", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-equation", metadataList.get(2).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -197,7 +198,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
             int i = 0;
             for (Metadata m : metadataList) {
                 if (i++ > 0) {
-                    found.add(m.get(Metadata.CONTENT_TYPE));
+                    found.add(m.get(HttpHeaders.CONTENT_TYPE));
                 }
             }
             Set<String> notFound = new HashSet<>();

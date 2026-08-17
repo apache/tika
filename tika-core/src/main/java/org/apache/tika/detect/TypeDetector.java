@@ -17,6 +17,7 @@
 package org.apache.tika.detect;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -45,7 +46,7 @@ public class TypeDetector implements Detector {
     @Override
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext context) {
         // Look for a type hint in the input metadata
-        String hint = metadata.get(Metadata.CONTENT_TYPE);
+        String hint = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (hint != null) {
             MediaType type = MediaType.parse(hint);
             if (type != null) {

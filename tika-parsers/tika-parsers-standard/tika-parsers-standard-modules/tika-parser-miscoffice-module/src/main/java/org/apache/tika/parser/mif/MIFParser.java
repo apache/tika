@@ -32,6 +32,7 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -68,9 +69,9 @@ public class MIFParser extends AbstractEncodingDetectorParser {
                 metadata, getEncodingDetector(context))) {
 
             Charset charset = reader.getCharset();
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
             Optional<MediaType> firstElement = SUPPORTED_TYPES.stream().findFirst();
-            metadata.set(Metadata.CONTENT_TYPE, firstElement.get().toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, firstElement.get().toString());
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();

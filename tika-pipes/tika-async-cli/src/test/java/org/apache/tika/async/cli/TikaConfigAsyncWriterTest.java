@@ -17,11 +17,14 @@
 package org.apache.tika.async.cli;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -47,5 +50,37 @@ public class TikaConfigAsyncWriterTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tmp);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         assertEquals("-Xmx1g", pipesConfig.getForkedJvmArgs().get(0));
+    }
+
+    /**
+     * -T is the total-task cap, not the stall detector, and it must merge into a
+     * configured timeout-limits block rather than replace it.
+     */
+    @Test
+    public void testTimeoutMillisMapsToTotalAndMerges(@TempDir Path dir) throws Exception {
+        Path config = dir.resolve("config.json");
+        Files.writeString(config, """
+                {
+                  "parse-context": {
+                    "timeout-limits": {
+                      "progressTimeoutMillis": 60000,
+                      "throwOnDeadline": true
+                    }
+                  }
+                }
+                """);
+        SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
+                10000L, null, null, config.toAbsolutePath().toString().replace("\\", "/"),
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+
+        Path tmp = Files.createTempFile(dir, "plugins-", ".json");
+        new PluginsWriter(simpleAsyncConfig, null).write(tmp);
+
+        JsonNode timeouts = new ObjectMapper().readTree(tmp.toFile())
+                .path("parse-context").path("timeout-limits");
+        assertEquals(10000L, timeouts.path("totalTaskTimeoutMillis").asLong());
+        assertEquals(60000L, timeouts.path("progressTimeoutMillis").asLong());
+        assertTrue(timeouts.path("throwOnDeadline").asBoolean());
     }
 }

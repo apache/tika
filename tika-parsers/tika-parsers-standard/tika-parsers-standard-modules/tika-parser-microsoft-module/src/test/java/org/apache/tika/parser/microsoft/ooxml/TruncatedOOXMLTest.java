@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -49,7 +50,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("This is the header", content);
         assertContains("This is the footer text", content);
         assertContains("Suddenly some Japanese", content);
@@ -67,7 +68,7 @@ public class TruncatedOOXMLTest extends TikaTest {
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("This is the header", content);
         assertContains("Suddenly some Japanese", content);
     }

@@ -28,6 +28,7 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -262,7 +263,7 @@ public class FilenameUtilsTest {
 
     private Metadata getMetadata(String name, String contentType) {
         Metadata metadata = getMetadata(name);
-        metadata.set(Metadata.CONTENT_TYPE, contentType);
+        metadata.set(HttpHeaders.CONTENT_TYPE, contentType);
         return metadata;
     }
 

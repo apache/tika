@@ -34,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
@@ -54,7 +55,7 @@ public class OpenAIImageEmbeddingParserTest {
         config = new ImageEmbeddingConfig();
         config.setBaseUrl(server.url());
         config.setModel("jina-clip-v2");
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         parser = new OpenAIImageEmbeddingParser(config);
     }
@@ -72,7 +73,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{(byte) 0x89, 'P', 'N', 'G'};
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/ocr-png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -103,7 +104,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{1, 2, 3};
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/ocr-png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-png");
         metadata.set(TikaPagedText.PAGE_NUMBER, 7);
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
@@ -127,7 +128,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{1, 2, 3};
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/ocr-jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -151,7 +152,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -169,7 +170,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] fakeImage = new byte[]{1, 2};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -187,7 +188,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] tinyImage = new byte[]{1, 2, 3, 4};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(tinyImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -204,7 +205,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
@@ -220,7 +221,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         // Pre-populate with a text chunk (simulating text chunker ran first)
         Chunk textChunk = new Chunk("existing text", 0, 13);
@@ -280,7 +281,7 @@ public class OpenAIImageEmbeddingParserTest {
 
         byte[] fakeImage = new byte[]{1};
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());

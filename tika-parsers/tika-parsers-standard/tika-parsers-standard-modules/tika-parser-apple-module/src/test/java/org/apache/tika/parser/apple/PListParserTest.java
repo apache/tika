@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -36,7 +37,7 @@ public class PListParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testBPList.bplist");
         assertEquals(21, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-bplist-itunes", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bplist-itunes", m.get(HttpHeaders.CONTENT_TYPE));
         String content = m.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("<key>Application Version</key><string>9.0", content);
 

@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -61,7 +62,7 @@ public class SpeexParser extends OggAudioParser {
     public void parse(TikaInputStream tis, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
-        metadata.set(Metadata.CONTENT_TYPE, SPEEX_AUDIO.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, SPEEX_AUDIO.toString());
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "Speex");
 
         // Open and process the files
@@ -88,7 +89,8 @@ public class SpeexParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, SpeexInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Speex " + info.getVersionId() + " - " + info.getVersionString());
+        metadata.add(CODEC_VERSION,
+                "Speex " + info.getVersionId() + " - " + info.getVersionString());
 
         extractChannelInfo(metadata, info);
     }

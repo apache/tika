@@ -68,11 +68,4 @@ public interface OfficeOpenXMLCore {
     Property VERSION = Property.externalText(
             PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "version");
 
-    /**
-     * The document's subject.  Also populates {@link DublinCore#SUBJECT}
-     */
-    @Deprecated
-    Property SUBJECT = Property.composite(Property.externalText(
-            PREFIX + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "subject"),
-            new Property[]{DublinCore.SUBJECT,});
 }

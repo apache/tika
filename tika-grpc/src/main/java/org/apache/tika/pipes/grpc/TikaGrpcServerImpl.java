@@ -245,6 +245,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             return;
         }
         fetchAndParseImpl(request, responseObserver);
+        responseObserver.onCompleted();
     }
 
     @Override

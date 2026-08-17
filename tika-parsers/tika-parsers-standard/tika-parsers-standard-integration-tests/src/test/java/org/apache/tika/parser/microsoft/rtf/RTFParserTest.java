@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -85,7 +86,7 @@ public class RTFParserTest extends TikaTest {
                     FilenameUtils.getName(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
 
             // When tesseract is available, image types may get an "ocr-" prefix
-            String actualType = metadata.get(Metadata.CONTENT_TYPE);
+            String actualType = metadata.get(HttpHeaders.CONTENT_TYPE);
             if (p.mimeType.startsWith("image/")) {
                 String ocrVariant = p.mimeType.replace("image/", "image/ocr-");
                 assertTrue(p.mimeType.equals(actualType) || ocrVariant.equals(actualType),

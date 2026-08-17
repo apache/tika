@@ -25,6 +25,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Google;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 
@@ -39,7 +40,7 @@ public class MotionPhotoXmpTest extends TikaTest {
     @Test
     public void testMotionPhotoXmpIsExposed() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis =
                      getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg")) {
             new JpegParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -62,7 +63,7 @@ public class MotionPhotoXmpTest extends TikaTest {
     @Test
     public void testCanonicalPrefixIsStable() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         try (TikaInputStream tis =
                      getResourceAsStream("/test-documents/testJPEG_MicroVideo.jpg")) {
             new JpegParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());

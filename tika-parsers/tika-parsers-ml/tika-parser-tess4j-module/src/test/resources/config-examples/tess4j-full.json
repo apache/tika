@@ -8,7 +8,7 @@
         "pageSegMode": 1,
         "ocrEngineMode": 3,
         "poolSize": 4,
-        "timeoutSeconds": 120,
+        "timeoutMillis": 120000,
         "dpi": 300,
         "minFileSizeToOcr": 0,
         "maxFileSizeToOcr": 2147483647,

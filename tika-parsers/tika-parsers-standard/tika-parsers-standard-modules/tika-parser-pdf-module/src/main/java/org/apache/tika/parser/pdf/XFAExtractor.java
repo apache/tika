@@ -17,7 +17,10 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -82,9 +85,9 @@ class XFAExtractor {
         // body in try/finally so the open is always paired with a close.
         xhtml.startElement("div", "class", "xfa_content");
         try {
-            //TODO - replace this with multivalued map? This isn't
-            //actually metadata, just a handy data structure.
-            Metadata pdfObjRToValues = new Metadata();
+            //not actually metadata, just a handy multi-valued data structure
+            //(field local names are document-derived, so this must not be a real Metadata)
+            Map<String, List<String>> pdfObjRToValues = new LinkedHashMap<>();
 
             //for now, store and dump the fields in insertion order
             Map<String, XFAField> namedFields = new LinkedHashMap<>();
@@ -129,9 +132,10 @@ class XFAExtractor {
                 String displayFieldName =
                         (field.toolTip == null || field.toolTip.isBlank()) ? fieldName :
                                 field.toolTip;
-                String[] fieldValues = pdfObjRToValues.getValues(fieldName);
-                if (fieldValues.length == 0) {
-                    fieldValues = new String[]{""};
+                List<String> fieldValues = pdfObjRToValues.getOrDefault(fieldName,
+                        Collections.emptyList());
+                if (fieldValues.isEmpty()) {
+                    fieldValues = Collections.singletonList("");
                 }
                 for (String fieldValue : fieldValues) {
                     AttributesImpl attrs = new AttributesImpl();
@@ -225,7 +229,7 @@ class XFAExtractor {
         return buffer.toString();
     }
 
-    private void loadData(XMLStreamReader reader, Metadata pdfObjRToValues)
+    private void loadData(XMLStreamReader reader, Map<String, List<String>> pdfObjRToValues)
             throws XMLStreamException {
         //reader is at the "xfa:data" element
         //scrape the contents from the text containing nodes
@@ -249,7 +253,8 @@ class XFAExtractor {
                 case (XMLStreamConstants.END_ELEMENT):
                     if (buffer.length() > 0) {
                         String localName = reader.getLocalName();
-                        pdfObjRToValues.add(localName, buffer.toString());
+                        pdfObjRToValues.computeIfAbsent(localName, k -> new ArrayList<>())
+                                .add(buffer.toString());
                         buffer.setLength(0);
                     }
                     if (XFA_DATA.equals(reader.getName())) {

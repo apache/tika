@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.TaggedInputStream;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -120,7 +121,7 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     public static TikaInputStream get(byte[] data, Metadata metadata) throws IOException {
-        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(data.length));
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new ByteArraySource(data, tmp);
@@ -135,7 +136,7 @@ public class TikaInputStream extends TaggedInputStream {
         if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
         }
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(Files.size(path)));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new FileSource(path);
@@ -148,7 +149,7 @@ public class TikaInputStream extends TaggedInputStream {
         if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
         }
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
         TikaInputSource inputSource = new FileSource(path);
         return new TikaInputStream(inputSource, tmp, ext);
@@ -170,7 +171,7 @@ public class TikaInputStream extends TaggedInputStream {
         long length = -1;
         try {
             length = blob.length();
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         } catch (SQLException ignore) {
         }
 
@@ -225,17 +226,17 @@ public class TikaInputStream extends TaggedInputStream {
 
         String type = connection.getContentType();
         if (type != null) {
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         }
 
         String encoding = connection.getContentEncoding();
         if (encoding != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+            metadata.set(HttpHeaders.CONTENT_ENCODING, encoding);
         }
 
         int length = connection.getContentLength();
         if (length >= 0) {
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(length));
         }
 
         String ext = getExtension(metadata);
@@ -250,7 +251,7 @@ public class TikaInputStream extends TaggedInputStream {
         TikaInputStream tis = TikaInputStream.get(new byte[0], metadata);
         tis.setOpenContainer(openContainer);
         tis.setLength(length);
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         return tis;
     }
 

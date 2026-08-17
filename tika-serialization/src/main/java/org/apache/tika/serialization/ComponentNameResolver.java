@@ -34,7 +34,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.ContentHandlerDecoratorFactory;

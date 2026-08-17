@@ -39,6 +39,7 @@ import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DefaultParser;
@@ -237,27 +238,27 @@ public class TesseractOCRParserTest extends TikaTest {
 
         //jpg
         m = getXML("testOCR.jpg").metadata;
-        assertEquals("136", m.get(Metadata.IMAGE_WIDTH));
-        assertEquals("66", m.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", m.get(Metadata.BITS_PER_SAMPLE));
-        assertEquals(null, m.get(Metadata.SAMPLES_PER_PIXEL));
+        assertEquals("136", m.get(TIFF.IMAGE_WIDTH));
+        assertEquals("66", m.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", m.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(null, m.get(TIFF.SAMPLES_PER_PIXEL));
         assertContains("This is a test Apache Tika imag", m.get(TikaCoreProperties.COMMENTS));
 
         //bmp
         m = getXML("testBMP.bmp").metadata;
-        assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
+        assertEquals("100", m.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", m.get(TIFF.IMAGE_LENGTH));
 
         //png
         m = getXML("testPNG.png").metadata;
-        assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
+        assertEquals("100", m.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", m.get(TIFF.IMAGE_LENGTH));
         assertEquals("UnsignedIntegral", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Data SampleFormat"));
 
         //tiff
         m = getXML("testTIFF.tif").metadata;
-        assertEquals("100", m.get(Metadata.IMAGE_WIDTH));
-        assertEquals("75", m.get(Metadata.IMAGE_LENGTH));
+        assertEquals("100", m.get(TIFF.IMAGE_WIDTH));
+        assertEquals("75", m.get(TIFF.IMAGE_LENGTH));
         assertEquals("72 dots per inch", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Y Resolution"));
     }
 

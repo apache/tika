@@ -47,7 +47,7 @@ public class RegexNERecogniserTest extends TikaTest {
                 TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
 
-        Set<String> days = new HashSet<>(Arrays.asList(md.getValues("NER_WEEK_DAY")));
+        Set<String> days = new HashSet<>(Arrays.asList(md.getValues("ner:WEEK_DAY")));
         assertTrue(days.contains("Sunday"));
         assertTrue(days.contains("MONDAY"));
         assertTrue(days.contains("Saturday"));

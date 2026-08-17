@@ -215,7 +215,7 @@ public abstract class CXFTestBase {
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
-                    inputTempDirectory, getUnpackEmitterBasePath(), isReturnStackTrace());
+                    inputTempDirectory, getUnpackEmitterBasePath());
 
             tikaResource = new TikaResource(tika, new ServerStatus(), pipesParsingHelper, isAllowPerRequestConfig());
         } finally {
@@ -374,14 +374,6 @@ public abstract class CXFTestBase {
      * this to return true, otherwise the config part is rejected with 403.
      */
     protected boolean isAllowPerRequestConfig() {
-        return false;
-    }
-
-    /**
-     * Mirrors TikaServerConfig.isReturnStackTrace(); defaults to false (production
-     * default). Override in tests that exercise exception-detail visibility.
-     */
-    protected boolean isReturnStackTrace() {
         return false;
     }
 

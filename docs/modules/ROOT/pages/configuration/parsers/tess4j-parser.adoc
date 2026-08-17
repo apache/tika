@@ -181,10 +181,11 @@ libraries. Prepended to `jna.library.path` at initialization time.
 threads that will call the parser concurrently. Each instance consumes
 native memory.
 
-|`timeoutSeconds`
-|`120`
-|Maximum time (seconds) to wait for a pooled `Tesseract` instance before
-throwing an exception.
+|`timeoutMillis`
+|`120000`
+|Timeout (milliseconds) applied both to waiting for a pooled `Tesseract`
+instance and to each image's OCR call. Each is budgeted separately up to this
+value, clipped to whatever remains of the task's total budget.
 
 |`dpi`
 |`300`

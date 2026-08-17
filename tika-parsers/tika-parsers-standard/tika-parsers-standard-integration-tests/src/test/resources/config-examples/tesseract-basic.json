@@ -3,7 +3,7 @@
     {
       "tesseract-ocr-parser": {
         "language": "eng",
-        "timeoutSeconds": 120
+        "timeoutMillis": 120000
       }
     },
     {

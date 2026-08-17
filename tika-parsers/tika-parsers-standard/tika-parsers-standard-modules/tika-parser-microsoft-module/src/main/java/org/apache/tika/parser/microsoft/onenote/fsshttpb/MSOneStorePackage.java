@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
-import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +45,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
@@ -315,11 +314,11 @@ public class MSOneStorePackage {
             metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
         }
         if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
+            metadata.set(OneNote.MOST_RECENT_AUTHORS,
                     mostRecentAuthors.toArray(new String[]{}));
         }
         if (!originalAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
+            metadata.set(OneNote.ORIGINAL_AUTHORS,
                     originalAuthors.toArray(new String[]{}));
         }
     }
@@ -368,7 +367,7 @@ public class MSOneStorePackage {
      * Walks the section object space (the data root cell) and collects the object space (cell)
      * references in document order - this is the order of the pages in the section.
      */
-    private List<CellID> collectSectionReferencedCells() {
+    private List<CellID> collectSectionReferencedCells() throws TikaException {
         List<CellID> orderedCellIds = new ArrayList<>();
         if (dataRootCell == null) {
             return orderedCellIds;
@@ -464,6 +463,10 @@ public class MSOneStorePackage {
                                Metadata metadata, XHTMLContentHandler xhtml, int depth,
                                EmbeddedResourceInfo inheritedResourceInfo)
             throws SAXException, TikaException, IOException {
+        if (depth > MAX_TRAVERSAL_DEPTH) {
+            throw new TikaException("OneNote object graph exceeds maximum depth of " +
+                    MAX_TRAVERSAL_DEPTH);
+        }
         if (object == null) {
             return false;
         }
@@ -798,7 +801,7 @@ public class MSOneStorePackage {
             if (instant.isAfter(lastModifiedTimestamp)) {
                 lastModifiedTimestamp = instant;
             }
-            metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
+            metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
                     String.valueOf(lastModifiedTimestamp.toEpochMilli()));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
             // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
@@ -808,7 +811,7 @@ public class MSOneStorePackage {
             if (creationTs < creationTimestamp) {
                 creationTimestamp = creationTs;
             }
-            metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
+            metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(creationTimestamp));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
             // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
             // 1970

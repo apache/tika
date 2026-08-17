@@ -38,6 +38,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -115,7 +116,7 @@ public class WACZParser implements Parser {
         Metadata metadata = Metadata.newInstance(context);
         metadata.set(TikaCoreProperties.INTERNAL_PATH, zae.getName());
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(zae.getSize()));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(zae.getSize()));
         try (TikaInputStream tis = TikaInputStream.get(getMaybeGzipInputStream(TikaInputStream.get(zais)))) {
             if (ex.shouldParseEmbedded(metadata)) {
                 ex.parseEmbedded(tis, xhtml, metadata, context, true);

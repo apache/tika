@@ -19,6 +19,12 @@ package org.apache.tika.pipes.core;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -30,19 +36,35 @@ public class PipesConfig {
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
-    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
+    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS = 300000;
 
-    public static final int DEFAULT_NUM_CLIENTS = 4;
+    /** Past this, worker count becomes a memory decision, and memory is not visible here. */
+    public static final int MAX_AUTO_NUM_CLIENTS = 4;
+
+    private static final int PARENT_RESERVED_CORES = 2;
+    private static final int MIN_CORES_PER_CLIENT = 2;
+
+    /**
+     * Worker count when the operator has not chosen one. CPU-derived, so the default
+     * satisfies Tika's own sizing rule on any host; a fixed 4 needs 10 cores and would
+     * warn about itself on smaller ones. Memory cannot participate -- no Java SE API
+     * exposes container memory -- so each fork checks its own heap at startup instead.
+     */
+    public static int defaultNumClients() {
+        int hostCores = Runtime.getRuntime().availableProcessors();
+        int byCores = (hostCores - PARENT_RESERVED_CORES) / MIN_CORES_PER_CLIENT;
+        return Math.max(1, Math.min(byCores, MAX_AUTO_NUM_CLIENTS));
+    }
 
     public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
 
-    public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MS = 60000;
+    public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS = 60000;
 
-    public static final long DEFAULT_SOCKET_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_SOCKET_TIMEOUT_MILLIS = 60000;
 
-    public static final long DEFAULT_STARTUP_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_STARTUP_TIMEOUT_MILLIS = 60000;
 
-    public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
+    public static final long DEFAULT_HEARTBEAT_INTERVAL_MILLIS = 1000;
 
     public static final boolean DEFAULT_USE_SHARED_SERVER = false;
 
@@ -61,19 +83,24 @@ public class PipesConfig {
 
     private int maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
 
-    private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
-    private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
-    private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
+    private long socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
+    private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
+    private long heartbeatIntervalMillis = DEFAULT_HEARTBEAT_INTERVAL_MILLIS;
 
-    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
-    private int numClients = DEFAULT_NUM_CLIENTS;
+    public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
 
-    private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MS;
+    /**
+     * Ceiling for request-supplied {@code TimeoutLimits}, so a client cannot disable the
+     * forked server's self-termination. Limits in the server's own tika-config
+     * {@code parse-context} are trusted and not capped.
+     */
+    private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
+
+    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLIS;
+    private int numClients = defaultNumClients();
+
+    private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS;
     private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
-    public static final int DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS = 600;
-    private int staleFetcherTimeoutSeconds = DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS;
-    public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
-    private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
 
     // Async-specific fields (used by AsyncProcessor, ignored by PipesServer)
     public static final long DEFAULT_EMIT_WITHIN_MILLIS = 10000;
@@ -136,7 +163,7 @@ public class PipesConfig {
      * This configuration is used by both PipesServer (forking process) and
      * AsyncProcessor (async processing). Some fields are specific to each:
      * <ul>
-     *   <li>PipesServer uses: numClients, socketTimeoutMs, directEmitThresholdBytes, etc.</li>
+     *   <li>PipesServer uses: numClients, socketTimeoutMillis, directEmitThresholdBytes, etc.</li>
      *   <li>AsyncProcessor uses: emitWithinMillis, queueSize, numEmitters, etc.</li>
      * </ul>
      * Unused fields in each context are simply ignored.
@@ -151,11 +178,33 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
+        // Carry the config-default limits to the client (for its backstop) without full
+        // parse-context resolution -- the client JVM may lack the plugin classes it needs.
+        JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
+        if (!limitsNode.isMissingNode()) {
+            try {
+                config.defaultTimeoutLimits =
+                        new ObjectMapper().treeToValue(limitsNode, TimeoutLimits.class);
+            } catch (JsonProcessingException e) {
+                throw new TikaConfigException("problem parsing parse-context.timeout-limits", e);
+            }
+        }
         return config;
     }
 
-    public long getSocketTimeoutMs() {
-        return socketTimeoutMs;
+    private TimeoutLimits defaultTimeoutLimits = new TimeoutLimits();
+
+    /**
+     * The config-level {@code parse-context.timeout-limits} defaults -- what the forked
+     * server enforces when a request carries no {@link TimeoutLimits} of its own.
+     */
+    @JsonIgnore
+    public TimeoutLimits getDefaultTimeoutLimits() {
+        return defaultTimeoutLimits;
+    }
+
+    public long getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
     /**
@@ -163,40 +212,52 @@ public class PipesConfig {
      * If no data is received within this time, the connection is considered timed out.
      * This is distinct from the parse/processing timeout, which lives on
      * {@link org.apache.tika.config.TimeoutLimits} under {@code parse-context.timeout-limits}.
-     * @param socketTimeoutMs
+     * @param socketTimeoutMillis
      */
-    public void setSocketTimeoutMs(long socketTimeoutMs) {
-        this.socketTimeoutMs = socketTimeoutMs;
+    public void setSocketTimeoutMillis(long socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
     }
 
-    public long getStartupTimeoutMs() {
-        return startupTimeoutMs;
+    public long getMaxTotalTaskTimeoutMillis() {
+        return maxTotalTaskTimeoutMillis;
+    }
+
+    public void setMaxTotalTaskTimeoutMillis(long maxTotalTaskTimeoutMillis) {
+        if (maxTotalTaskTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("maxTotalTaskTimeoutMillis must be > 0, was " +
+                    maxTotalTaskTimeoutMillis + "; use Long.MAX_VALUE for no cap");
+        }
+        this.maxTotalTaskTimeoutMillis = maxTotalTaskTimeoutMillis;
+    }
+
+    public long getStartupTimeoutMillis() {
+        return startupTimeoutMillis;
     }
 
     /**
      * Timeout in milliseconds for the forked server to start up and send its READY handshake.
-     * Distinct from {@link #getSocketTimeoutMs()}: cold-starting the forked JVM (loading config,
+     * Distinct from {@link #getSocketTimeoutMillis()}: cold-starting the forked JVM (loading config,
      * parsers and plugins) can take far longer than a normal per-read timeout, so the handshake
-     * gets its own generous budget. Once the server is ready, reads switch to {@code socketTimeoutMs}.
-     * @param startupTimeoutMs
+     * gets its own generous budget. Once the server is ready, reads switch to {@code socketTimeoutMillis}.
+     * @param startupTimeoutMillis
      */
-    public void setStartupTimeoutMs(long startupTimeoutMs) {
-        this.startupTimeoutMs = startupTimeoutMs;
+    public void setStartupTimeoutMillis(long startupTimeoutMillis) {
+        this.startupTimeoutMillis = startupTimeoutMillis;
     }
 
-    public long getHeartbeatIntervalMs() {
-        return heartbeatIntervalMs;
+    public long getHeartbeatIntervalMillis() {
+        return heartbeatIntervalMillis;
     }
 
     /**
      * Interval in milliseconds between heartbeat messages sent from server to client.
-     * Should be significantly less than socketTimeoutMs to ensure the client doesn't timeout.
-     * WARNING: Setting this >= socketTimeoutMs will cause socket timeouts during normal processing.
+     * Should be significantly less than socketTimeoutMillis to ensure the client doesn't timeout.
+     * WARNING: Setting this >= socketTimeoutMillis will cause socket timeouts during normal processing.
      * This only exists for testing. We encourage you never to use it.
-     * @param heartbeatIntervalMs
+     * @param heartbeatIntervalMillis
      */
-    public void setHeartbeatIntervalMs(long heartbeatIntervalMs) {
-        this.heartbeatIntervalMs = heartbeatIntervalMs;
+    public void setHeartbeatIntervalMillis(long heartbeatIntervalMillis) {
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
     }
 
     public long getShutdownClientAfterMillis() {
@@ -218,6 +279,10 @@ public class PipesConfig {
     }
 
     public void setNumClients(int numClients) {
+        // Without this, 0 surfaces at startup as ArrayBlockingQueue's message-less IAE.
+        if (numClients <= 0) {
+            throw new IllegalArgumentException("numClients must be > 0, was " + numClients);
+        }
         this.numClients = numClients;
     }
 
@@ -266,22 +331,6 @@ public class PipesConfig {
      */
     public void setEmitStrategy(EmitStrategyConfig emitStrategy) {
         this.emitStrategy = emitStrategy;
-    }
-
-    public int getStaleFetcherTimeoutSeconds() {
-        return staleFetcherTimeoutSeconds;
-    }
-
-    public void setStaleFetcherTimeoutSeconds(int staleFetcherTimeoutSeconds) {
-        this.staleFetcherTimeoutSeconds = staleFetcherTimeoutSeconds;
-    }
-
-    public int getStaleFetcherDelaySeconds() {
-        return staleFetcherDelaySeconds;
-    }
-
-    public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
-        this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
     }
 
     public long getMaxWaitForClientMillis() {

@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -186,6 +187,36 @@ public class TikaCLITest {
     @Test
     public void testTextOutput() throws Exception {
         String content = getParamOutContent("-t", resourcePrefix + "alice.cli.test");
+        assertTrue(content.contains("finished off the cake"));
+    }
+
+    /**
+     * TIKA-4813 follow-up: --fork-timeout was removed in 4.0 (its meaning was ambiguous
+     * between the total per-file budget and the stall detector) in favor of
+     * --task-timeout/--progress-timeout. It must fail loudly with a migration hint rather
+     * than silently falling through to an "unknown option" / file-not-found error.
+     */
+    @Test
+    public void testForkTimeoutFlagRemoved() {
+        IllegalArgumentException e = assertThrows(
+                IllegalArgumentException.class,
+                () -> TikaCLI.main(new String[]{"--fork-timeout=60000", resourcePrefix + "alice.cli.test"}));
+        assertTrue(e.getMessage().contains("--task-timeout"));
+        assertTrue(e.getMessage().contains("--progress-timeout"));
+    }
+
+    /**
+     * TIKA-4813 follow-up: --task-timeout and --progress-timeout must be recognized
+     * arguments (not fall through to the generic "Unknown option" error) and not disturb
+     * a normal parse. Exercised without --fork here since fork mode needs a built
+     * plugins directory that this test module doesn't set up (no other test in this
+     * class runs fork mode either); the values' actual effect on fork mode's
+     * TimeoutLimits is covered directly at the pipes layer.
+     */
+    @Test
+    public void testTaskAndProgressTimeoutFlagsAreRecognized() throws Exception {
+        String content = getParamOutContent("-t", "--task-timeout=30000",
+                "--progress-timeout=10000", resourcePrefix + "alice.cli.test");
         assertTrue(content.contains("finished off the cake"));
     }
 
@@ -546,10 +577,10 @@ public class TikaCLITest {
     @Test
     public void testMultiValuedMetadata() throws Exception {
         String content = getParamOutContent("-m", resourcePrefix + "testMultipleSheets.numbers");
-        assertTrue(content.contains("sheetNames: Checking"));
-        assertTrue(content.contains("sheetNames: Secon sheet"));
-        assertTrue(content.contains("sheetNames: Logical Sheet 3"));
-        assertTrue(content.contains("sheetNames: Sheet 4"));
+        assertTrue(content.contains("sheet-names: Checking"));
+        assertTrue(content.contains("sheet-names: Secon sheet"));
+        assertTrue(content.contains("sheet-names: Logical Sheet 3"));
+        assertTrue(content.contains("sheet-names: Sheet 4"));
     }
 
     // TIKA-1031

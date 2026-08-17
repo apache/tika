@@ -43,8 +43,8 @@ public class InferenceConfig implements Serializable {
     /** Optional API key. Empty means no auth. */
     private String apiKey = "";
 
-    /** HTTP read timeout in seconds. */
-    private int timeoutSeconds = 120;
+    /** HTTP read timeout in millis. */
+    private long timeoutMillis = 120_000;
 
     // ---- chunking settings ------------------------------------------------
 
@@ -136,12 +136,12 @@ public class InferenceConfig implements Serializable {
         this.apiKey = apiKey;
     }
 
-    public int getTimeoutSeconds() {
-        return timeoutSeconds;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public int getMaxChunkChars() {

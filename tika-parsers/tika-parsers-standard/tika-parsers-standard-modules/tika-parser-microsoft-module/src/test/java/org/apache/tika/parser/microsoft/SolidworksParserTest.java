@@ -24,6 +24,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -43,7 +44,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-04-18T10:27:29Z", metadata.get(TikaCoreProperties.CREATED));
@@ -70,7 +71,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-04-18T10:27:29Z", metadata.get(TikaCoreProperties.CREATED));
@@ -97,7 +98,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-04-25T09:51:38Z", metadata.get(TikaCoreProperties.CREATED));
@@ -124,7 +125,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-04-25T09:51:38Z", metadata.get(TikaCoreProperties.CREATED));
@@ -151,7 +152,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-07-03T12:05:29Z", metadata.get(TikaCoreProperties.CREATED));
@@ -178,7 +179,7 @@ public class SolidworksParserTest extends TikaTest {
             new OfficeParser().parse(tis, handler, metadata, new ParseContext());
 
             //Check content type
-            assertEquals("application/sldworks", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/sldworks", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             //Check properties
             assertEquals("2012-07-03T12:05:29Z", metadata.get(TikaCoreProperties.CREATED));

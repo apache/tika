@@ -31,6 +31,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.StandardExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -158,7 +159,7 @@ public class AutoDetectParser extends CompositeParser {
         MediaType type = detector.detect(tis, metadata, context);
         // Normalize OCR routing types (e.g., image/ocr-png -> image/png) so they
         // don't leak into CONTENT_TYPE
-        metadata.set(Metadata.CONTENT_TYPE,
+        metadata.set(HttpHeaders.CONTENT_TYPE,
                 EmbeddedDocumentUtil.normalizeMediaType(type.toString()));
         // Metadata-only pseudo-parse: register the entry, skip the content parse.
         if (context.get(MetadataOnlyParse.class) != null) {

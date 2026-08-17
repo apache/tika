@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -59,8 +60,8 @@ public class XMLParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-            metadata.set(Metadata.CONTENT_TYPE, "application/xml");
+        if (metadata.get(HttpHeaders.CONTENT_TYPE) == null) {
+            metadata.set(HttpHeaders.CONTENT_TYPE, "application/xml");
         }
 
         final XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

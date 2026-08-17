@@ -39,13 +39,14 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -78,7 +79,23 @@ public class GDALParser implements Parser {
     private static final long serialVersionUID = -3869130527323941401L;
     private static final Logger LOG = LoggerFactory.getLogger(GDALParser.class);
 
-    public static final long DEFAULT_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_TIMEOUT_MILLIS = 60000;
+
+    // gdalinfo output keys from extractMetFromOutput's "key=value" lines (open-ended).
+    private static final KeyPrefix GDAL = KeyPrefix.file("gdal:", "gdalinfo output keys");
+
+    // gdalinfo's small fixed-vocabulary patterns (getPatterns()) namespaced to gdal: + kebab-case
+    // (TIKA-4816 rename batch). The *label* each pattern matches against is gdalinfo's own literal
+    // output text ("Driver:", "Size is", "Upper Left ("...) and is independent of the Property's
+    // key -- see getPatterns(), which passes both.
+    private static final Property DRIVER = Property.externalText("gdal:driver");
+    private static final Property FILES = Property.externalText("gdal:files");
+    private static final Property SIZE = Property.externalText("gdal:size");
+    private static final Property COORDINATE_SYSTEM = Property.externalText("gdal:coordinate-system");
+    private static final Property UPPER_LEFT = Property.externalText("gdal:upper-left");
+    private static final Property LOWER_LEFT = Property.externalText("gdal:lower-left");
+    private static final Property UPPER_RIGHT = Property.externalText("gdal:upper-right");
+    private static final Property LOWER_RIGHT = Property.externalText("gdal:lower-right");
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(MediaType.application("x-netcdf"), MediaType.application("vrt"),
@@ -148,7 +165,7 @@ public class GDALParser implements Parser {
 
     private int maxStdOut = 100000;
 
-    private long timeoutMs = DEFAULT_TIMEOUT_MS;
+    private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
 
     public GDALParser() {
         setCommand("gdalinfo ${INPUT_FILE}");
@@ -194,13 +211,12 @@ public class GDALParser implements Parser {
 
         String[] runCommand = processCommand(tis).split("\\s+", -1);
 
-        long localTimeoutMillis = TimeoutLimits.getProcessTimeoutMillis(context, timeoutMs);
-        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand),
-                localTimeoutMillis, maxStdOut, maxStdErr);
+        FileProcessResult result = ProcessUtils.execute(new ProcessBuilder(runCommand), context,
+                timeoutMillis, maxStdOut, maxStdErr);
 
         metadata.set(ExternalProcess.IS_TIMEOUT, result.isTimeout());
         metadata.set(ExternalProcess.EXIT_VALUE, result.getExitValue());
-        TikaProgressTracker.update(context);
+        ParseTimeout.checkpoint(context);
         metadata.set(ExternalProcess.STD_OUT_LENGTH, result.getStdoutLength());
         metadata.set(ExternalProcess.STD_OUT_IS_TRUNCATED, result.isStdoutTruncated());
         metadata.set(ExternalProcess.STD_ERR_LENGTH, result.getStderrLength());
@@ -229,30 +245,31 @@ public class GDALParser implements Parser {
         processOutput(handler, metadata, output, context);
     }
 
-    private Map<Pattern, String> getPatterns() {
-        Map<Pattern, String> patterns = new HashMap<>();
-        this.addPatternWithColon("Driver", patterns);
-        this.addPatternWithColon("Files", patterns);
-        this.addPatternWithIs("Size", patterns);
-        this.addPatternWithIs("Coordinate System", patterns);
-        this.addBoundingBoxPattern("Upper Left", patterns);
-        this.addBoundingBoxPattern("Lower Left", patterns);
-        this.addBoundingBoxPattern("Upper Right", patterns);
-        this.addBoundingBoxPattern("Lower Right", patterns);
+    private Map<Pattern, Property> getPatterns() {
+        Map<Pattern, Property> patterns = new HashMap<>();
+        this.addPatternWithColon("Driver", DRIVER, patterns);
+        this.addPatternWithColon("Files", FILES, patterns);
+        this.addPatternWithIs("Size", SIZE, patterns);
+        this.addPatternWithIs("Coordinate System", COORDINATE_SYSTEM, patterns);
+        this.addBoundingBoxPattern("Upper Left", UPPER_LEFT, patterns);
+        this.addBoundingBoxPattern("Lower Left", LOWER_LEFT, patterns);
+        this.addBoundingBoxPattern("Upper Right", UPPER_RIGHT, patterns);
+        this.addBoundingBoxPattern("Lower Right", LOWER_RIGHT, patterns);
         return patterns;
     }
 
-    private void addPatternWithColon(String name, Map<Pattern, String> patterns) {
-        patterns.put(Pattern.compile(name + "\\:\\s*([A-Za-z0-9/ _\\-\\.]+)\\s*"), name);
+    // label is gdalinfo's own output text (unrelated to the Property's key -- see the constants above).
+    private void addPatternWithColon(String label, Property property, Map<Pattern, Property> patterns) {
+        patterns.put(Pattern.compile(label + "\\:\\s*([A-Za-z0-9/ _\\-\\.]+)\\s*"), property);
     }
 
-    private void addPatternWithIs(String name, Map<Pattern, String> patterns) {
-        patterns.put(Pattern.compile(name + " is ([A-Za-z0-9\\.,\\s`']+)"), name);
+    private void addPatternWithIs(String label, Property property, Map<Pattern, Property> patterns) {
+        patterns.put(Pattern.compile(label + " is ([A-Za-z0-9\\.,\\s`']+)"), property);
     }
 
-    private void addBoundingBoxPattern(String name, Map<Pattern, String> patterns) {
-        patterns.put(Pattern.compile(
-                name + "\\s*\\(\\s*([0-9]+\\.[0-9]+\\s*,\\s*[0-9]+\\.[0-9]+\\s*)\\)\\s*"), name);
+    private void addBoundingBoxPattern(String label, Property property, Map<Pattern, Property> patterns) {
+        patterns.put(Pattern.compile(label +
+                "\\s*\\(\\s*([0-9]+\\.[0-9]+\\s*,\\s*[0-9]+\\.[0-9]+\\s*)\\)\\s*"), property);
     }
 
     private void extractMetFromOutput(String output, Metadata met) {
@@ -265,7 +282,7 @@ public class GDALParser implements Parser {
                 if (line.contains("=") || hasHeadings(line, headings)) {
                     if (currentKey != null) {
                         // time to flush this key and met val
-                        met.add(currentKey, metVal.toString());
+                        met.add(GDAL, currentKey, metVal.toString());
                     }
                     metVal.setLength(0);
 
@@ -296,17 +313,18 @@ public class GDALParser implements Parser {
     }
 
     private void applyPatternsToOutput(String output, Metadata metadata,
-                                       Map<Pattern, String> metadataPatterns) {
+                                       Map<Pattern, Property> metadataPatterns) {
         try (Scanner scanner = new Scanner(output)) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 for (Pattern p : metadataPatterns.keySet()) {
                     Matcher m = p.matcher(line);
                     if (m.find()) {
-                        if (metadataPatterns.get(p) != null && !metadataPatterns.get(p).equals("")) {
-                            metadata.add(metadataPatterns.get(p), m.group(1));
+                        Property property = metadataPatterns.get(p);
+                        if (property != null) {
+                            metadata.add(property, m.group(1));
                         } else {
-                            metadata.add(m.group(1), m.group(2));
+                            metadata.add(GDAL, m.group(1), m.group(2));
                         }
                     }
                 }
@@ -332,8 +350,12 @@ public class GDALParser implements Parser {
 
     }
 
-    public void setTimeoutMs(long timeoutMs) {
-        this.timeoutMs = timeoutMs;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
+    }
+
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
     public void setMaxStdErr(int maxStdErr) {

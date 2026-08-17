@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -231,7 +232,7 @@ public class MimeDetectionTest {
         }
 
         Metadata typehint = new Metadata();
-        typehint.set(Metadata.CONTENT_TYPE, "text/plain");
+        typehint.set(HttpHeaders.CONTENT_TYPE, "text/plain");
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
             assertEquals(MediaType.TEXT_PLAIN,
                     MIME_TYPES.detect(tis, typehint, new ParseContext()));

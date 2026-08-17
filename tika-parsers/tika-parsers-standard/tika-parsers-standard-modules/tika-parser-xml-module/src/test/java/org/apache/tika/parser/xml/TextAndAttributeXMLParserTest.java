@@ -29,6 +29,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -45,7 +46,7 @@ public class TextAndAttributeXMLParserTest extends TikaTest {
             new TextAndAttributeXMLParser().parse(tis, handler, metadata, context);
             String output = writer.toString();
 
-            assertEquals("application/xml", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("application/xml", metadata.get(HttpHeaders.CONTENT_TYPE));
             assertTrue(output.contains("document type Microsoft Word 2003/2004"));
             assertTrue(output.contains("doc_property type title Title test"));
             assertTrue(output.contains("doc_property type subject Subject test"));

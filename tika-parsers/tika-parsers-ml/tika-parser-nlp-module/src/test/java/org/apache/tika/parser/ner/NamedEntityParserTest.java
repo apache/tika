@@ -59,19 +59,19 @@ public class NamedEntityParserTest extends TikaTest {
         assumeTrue(set.contains(NamedEntityParser.class.getName()));
 
         set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_PERSON")));
+        set.addAll(Arrays.asList(md.getValues("ner:PERSON")));
         assumeTrue(set.contains("John McKay"));
 
         set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_LOCATION")));
+        set.addAll(Arrays.asList(md.getValues("ner:LOCATION")));
         assumeTrue(set.contains("Los Angeles"));
 
         set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_ORGANIZATION")));
+        set.addAll(Arrays.asList(md.getValues("ner:ORGANIZATION")));
         assumeTrue(set.contains("University of Southern California"));
 
         set.clear();
-        set.addAll(Arrays.asList(md.getValues("NER_DATE")));
+        set.addAll(Arrays.asList(md.getValues("ner:DATE")));
         assumeTrue(set.contains("1960 - 1975"));
     }
 
@@ -89,7 +89,7 @@ public class NamedEntityParserTest extends TikaTest {
                 TikaInputStream.get(text.getBytes(StandardCharsets.UTF_8)),
                 parser, new Metadata()).metadata;
         HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
-        assertTrue(keys.contains("NER_WEEK_DAY"));
-        assumeTrue(keys.contains("NER_LOCATION"));
+        assertTrue(keys.contains("ner:WEEK_DAY"));
+        assumeTrue(keys.contains("ner:LOCATION"));
     }
 }

@@ -26,7 +26,9 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.XMPMM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -41,14 +43,14 @@ public class PSDParserTest extends TikaTest {
     @Test
     public void testPSD() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-psd");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testPSD.psd")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
 
-        assertEquals("537", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("51", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("537", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("51", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
     }
 
     /**
@@ -58,13 +60,13 @@ public class PSDParserTest extends TikaTest {
     @Test
     public void testOddPSD() throws Exception {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-psd");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testPSD2.psd")) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
-        assertEquals("69", metadata.get(Metadata.IMAGE_WIDTH));
-        assertEquals("70", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("69", metadata.get(TIFF.IMAGE_WIDTH));
+        assertEquals("70", metadata.get(TIFF.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
     }
 
     @Test
@@ -82,7 +84,7 @@ public class PSDParserTest extends TikaTest {
                         getConfigPath(PSDParserTest.class, "tika-config-TIKA-3243.json"))
                 .loadParsers();
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-psd");
         assertThrows(TikaException.class, () -> {
             getXML("testPSD_xmp.psd", p, metadata);
         });

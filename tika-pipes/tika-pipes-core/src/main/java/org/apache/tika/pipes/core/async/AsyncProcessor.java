@@ -247,6 +247,15 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.remainingCapacity();
     }
 
+    /**
+     * Long-running callers (tika-server) set true so one bad tuple
+     * (unknown fetcher, init failure) can't halt the shared workers;
+     * fatal errors always stop processing.
+     */
+    public void setStopOnlyOnFatal(boolean stopOnlyOnFatal) {
+        asyncConfig.setStopOnlyOnFatal(stopOnlyOnFatal);
+    }
+
     public boolean offer(FetchEmitTuple t, long offerMs)
             throws PipesException, InterruptedException {
         if (fetchEmitTuples == null) {
@@ -463,8 +472,15 @@ public class AsyncProcessor implements Closeable {
 
         private boolean shouldEmit(PipesResult result) {
 
-            if (result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
-                    result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION) {
+            // emitData is null for SUCCESS statuses where the server already emitted
+            // directly (EMIT_SUCCESS*) or deliberately skipped emission
+            // (PARSE_EXCEPTION_NO_EMIT) -- PARTIAL_TIMEOUT can wrap either of those (see
+            // EmitHandler.emitParseData), so the status check alone isn't enough to tell
+            // "please batch-emit this" apart from "already handled server-side."
+            if ((result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
+                    result.status() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION ||
+                    result.status() == PipesResult.RESULT_STATUS.PARTIAL_TIMEOUT) &&
+                    result.emitData() != null) {
                 return true;
             }
             // Emit intermediate results on any non-success if configured

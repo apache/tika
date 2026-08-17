@@ -19,6 +19,7 @@ package org.apache.tika.parser.dwg;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,8 +39,10 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DWG;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.CompositeParser;
@@ -165,7 +168,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata,new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertEquals("The quick brown fox jumps over the lazy dog",
                     metadata.get(TikaCoreProperties.TITLE));
@@ -193,7 +196,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata,new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertNull(metadata.get(TikaCoreProperties.TITLE));
             assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -215,7 +218,7 @@ public class DWGParserTest extends TikaTest {
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(tis, handler, metadata, new ParseContext());
 
-            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("image/vnd.dwg", metadata.get(HttpHeaders.CONTENT_TYPE));
 
             assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Test Subject", metadata.get(TikaCoreProperties.DESCRIPTION));
@@ -315,7 +318,10 @@ public class DWGParserTest extends TikaTest {
                 () -> getText("architectural_-_annotation_scaling_and_multileaders.dwg", parser),
                 "Expected getText() to throw TikaException but it failed"
         );
-        assertTrue(thrown.getMessage().contains("Timeout setting exceeded current setting of"));
+        // DWGReadParser now throws TikaTimeoutException, whose message carries the
+        // requested/granted budget instead of the old literal string this test checked for.
+        assertInstanceOf(TikaTimeoutException.class, thrown);
+        assertTrue(thrown.getMessage().contains("timed out"));
     }
 
 }

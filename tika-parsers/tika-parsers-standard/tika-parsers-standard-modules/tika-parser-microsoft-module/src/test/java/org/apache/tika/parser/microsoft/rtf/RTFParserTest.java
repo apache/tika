@@ -36,6 +36,7 @@ import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -54,8 +55,8 @@ public class RTFParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String content = getText("testRTF.rtf", metadata);
 
-        assertEquals("application/rtf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals(1, metadata.getValues(Metadata.CONTENT_TYPE).length);
+        assertEquals("application/rtf", metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(1, metadata.getValues(HttpHeaders.CONTENT_TYPE).length);
         assertContains("Test", content);
         assertContains("indexation Word", content);
     }

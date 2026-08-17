@@ -256,48 +256,45 @@ since the parser last reported progress.
 
 |`totalTaskTimeoutMillis`
 |3600000 (1 hour)
-|Maximum wall-clock time in milliseconds for the entire parse task.
+|Maximum wall-clock time in milliseconds for the entire parse task, including all of
+its embedded documents. Every per-parser timeout is clipped to whatever remains of this
+budget, no matter how it is itself configured.
 
 |`progressTimeoutMillis`
 |120000 (2 minutes)
-|Maximum time in milliseconds since the parser last reported progress. Catches
-infinite loops and hung processes.
+|Maximum time in milliseconds the task may go silent before it is considered hung.
+Catches infinite loops and hung processes. Enforced (the task actually killed) only
+when the parse runs in a forked JVM -- Pipes mode or tika-app `--fork`; in plain
+in-process library use nothing kills the parsing thread.
+
+|`throwOnDeadline`
+|false
+|Whether a `totalTaskTimeoutMillis` exhaustion should throw `EmbeddedLimitReachedException`
+instead of skipping remaining embedded documents cleanly and reporting a
+`PARTIAL_TIMEOUT` result. See xref:pipes/timeouts.adoc#_throwondeadline_failing_hard_instead_of_partial[throwOnDeadline]
+for the pipes-mode caveat before enabling this.
 |===
 
 [IMPORTANT]
 ====
-Which bound actually applies depends on whether the parser reports progress.
-A parser that never calls `TikaProgressTracker.update()` never advances the
-timer, so it effectively gets `progressTimeoutMillis` as its total timeout —
-matching the single-timeout behavior of earlier versions.
+The two bounds are independent, not tiered: `progressTimeoutMillis` is a *stall
+detector*, not a ceiling on any single operation's runtime. A per-parser timeout (e.g.
+`tesseract-ocr-parser.timeoutMillis`) is honored up to `min(configured, time remaining
+in totalTaskTimeoutMillis)` — `progressTimeoutMillis` never enters that calculation.
 
-In practice only long-running parsers report progress: `TesseractOCRParser`,
-`Tess4JParser`, `ExternalParser`, `GDALParser`, the VLM and image-embedding
-parsers, and `StringsParser`. Everything else — including container parsing and
-embedded-document recursion — does not.
+While Tika waits on a bounded external call (an OCR process, an external parser), the
+wait itself checkpoints progress periodically, so a single legitimate call may run far
+longer than `progressTimeoutMillis` without tripping the stall detector — a 10-minute
+`readpst` invocation does not need `progressTimeoutMillis` raised to 10 minutes. The
+stall detector only fires on genuine silence: an in-JVM hang, or a wedged process that
+even checkpointing cannot report past.
 
-Those parsers report progress *after* each external-process invocation
-completes, not while one is running. So a document that needs many OCR calls
-can extend well past `progressTimeoutMillis`, because each finished page resets
-the timer — but a *single* call that runs longer than `progressTimeoutMillis`
-is still cut short.
+Budgets compose recursively regardless of nesting: a PDF inside a zip inside an email
+draws every operation, at any depth, from the same `totalTaskTimeoutMillis` budget for
+that top-level task.
 
-Because of this, `progressTimeoutMillis` also caps how long any single external
-process may run. Parsers that spawn processes size their own timeout via
-`TimeoutLimits.getProcessTimeoutMillis(context, ...)`, which never allows a
-value beyond `progressTimeoutMillis`, so the process is stopped just before the
-progress watchdog would fire.
-
-The shipped defaults are aligned: `progressTimeoutMillis` is 120 seconds and
-the bundled process-spawning parsers (OCR, strings, inference) each default to
-a 120-second per-process timeout, so those defaults are reachable. **If you
-raise a per-process timeout above 120 seconds, raise `progressTimeoutMillis`
-to match** — raising the parser's own timeout alone has no effect.
-
-For most documents — anything without one of the parsers above in the chain —
-the effective ceiling is `progressTimeoutMillis`, not `totalTaskTimeoutMillis`.
-Lower `totalTaskTimeoutMillis` if you need a hard ceiling on OCR-heavy or
-external-process work regardless of progress.
+For the full mental model, worked scenarios, and how each outcome is reported (metadata
+flags, result status, exception messages), see xref:pipes/timeouts.adoc[Timeouts].
 ====
 
 === JSON Configuration
@@ -321,6 +318,7 @@ Configuration file: `tika-serialization/src/test/resources/configs/timeout-limit
 [source,java]
 ----
 TimeoutLimits limits = new TimeoutLimits(7200000, 120000);
+limits.setThrowOnDeadline(false);
 context.set(TimeoutLimits.class, limits);
 
 // Helper method

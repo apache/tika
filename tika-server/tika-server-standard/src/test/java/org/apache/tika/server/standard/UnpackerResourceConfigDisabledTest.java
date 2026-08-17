@@ -66,7 +66,7 @@ public class UnpackerResourceConfigDisabledTest extends CXFTestBase {
         List<Object> providers = new ArrayList<>();
         providers.add(new TarWriter());
         providers.add(new ZipWriter());
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         sf.setProviders(providers);
     }
 

@@ -30,6 +30,7 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.emitter.EmitKey;
@@ -102,7 +103,7 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
         String fileName = flattenFileName(emitKey, id);
 
         // Get mediatype from metadata
-        String mediatype = metadata.get(Metadata.CONTENT_TYPE);
+        String mediatype = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mediatype == null) {
             mediatype = "application/octet-stream";
         }

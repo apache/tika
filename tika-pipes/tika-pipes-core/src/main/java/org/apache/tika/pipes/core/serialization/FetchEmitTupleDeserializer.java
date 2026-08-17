@@ -29,7 +29,9 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -46,9 +48,14 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
+    private static final Set<String> KNOWN_KEYS = Set.of(
+            ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
+            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
+
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
+        rejectUnknownKeys(root);
 
         String id = readVal(ID, root, null, true);
         String fetcherId = readVal(FETCHER, root, null, true);
@@ -68,6 +75,16 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, parseContext,
                 onParseException);
+    }
+
+    private static void rejectUnknownKeys(JsonNode root) throws IOException {
+        for (Iterator<String> it = root.fieldNames(); it.hasNext(); ) {
+            String name = it.next();
+            if (!KNOWN_KEYS.contains(name)) {
+                throw new IOException("Unrecognized FetchEmitTuple field '" + name
+                        + "'. Check for a typo; known fields are " + KNOWN_KEYS + ".");
+            }
+        }
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {

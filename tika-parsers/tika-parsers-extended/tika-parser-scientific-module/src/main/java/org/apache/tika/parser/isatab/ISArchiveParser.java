@@ -45,7 +45,9 @@ public class ISArchiveParser implements Parser {
      * Serial version UID
      */
     private static final long serialVersionUID = 3640809327541300229L;
-    private static String studyAssayFileNameField = "Study Assay File Name";
+    // Same isatab: KeyPrefix ISATabUtils writes these fields under -- must stay in sync with
+    // ISATabUtils.addMetadata/mapStudyToMetadata or these reads silently return nothing.
+    private static String studyAssayFileNameField = ISATabUtils.ISATAB.key("Study Assay File Name");
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-isatab"));
     private String location = null;
@@ -124,12 +126,13 @@ public class ISArchiveParser implements Parser {
         try (InputStream stream = TikaInputStream.get(new File(this.location + investigation).toPath())) {
             ISATabUtils.parseInvestigation(stream, xhtml, metadata, context, this.studyFileName);
         }
-        xhtml.element("h1", "INVESTIGATION " + metadata.get("Investigation Identifier"));
+        xhtml.element("h1",
+                "INVESTIGATION " + metadata.get(ISATabUtils.ISATAB.key("Investigation Identifier")));
     }
 
     private void parseStudy(InputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
                             ParseContext context) throws IOException, SAXException, TikaException {
-        xhtml.element("h2", "STUDY " + metadata.get("Study Identifier"));
+        xhtml.element("h2", "STUDY " + metadata.get(ISATabUtils.ISATAB.key("Study Identifier")));
 
         ISATabUtils.parseStudy(tis, xhtml, metadata, context);
     }

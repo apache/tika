@@ -29,8 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -47,7 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
@@ -57,7 +55,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -105,7 +103,7 @@ public class PipesServer implements AutoCloseable {
      *  tell the difference between "I crashed" and "my parent went away". */
     public static final int PARENT_GONE_EXIT_CODE = 23;
 
-    private final long heartbeatIntervalMs;
+    private final long heartbeatIntervalMillis;
     private final String pipesClientId;
 
     private Detector detector;
@@ -144,7 +142,7 @@ public class PipesServer implements AutoCloseable {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
             // Set socket timeout from config after loading PipesConfig
-            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
             socket.setTcpNoDelay(true);
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
@@ -187,20 +185,8 @@ public class PipesServer implements AutoCloseable {
         this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
-        this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-
-        // Validate heartbeat interval is less than socket timeout
-        if (heartbeatIntervalMs >= pipesConfig.getSocketTimeoutMs()) {
-            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
-                    "This configuration will cause socket timeouts during normal processing.",
-                    heartbeatIntervalMs, pipesConfig.getSocketTimeoutMs());
-
-            // Allow override for testing only
-            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
-                throw new TikaConfigException(msg);
-            }
-            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
-        }
+        this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
         this.protocolIO = new ServerProtocolIO(input, output);
@@ -246,6 +232,28 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
+     * Fails fast if heartbeatIntervalMillis >= socketTimeoutMillis: the client's liveness check
+     * ({@code PipesClient#waitForServer}) relies solely on the socket's own
+     * {@code SO_TIMEOUT}, so a too-slow heartbeat makes a healthy server look dead.
+     * Checked once at startup rather than left as a violable javadoc warning.
+     */
+    private static void validateHeartbeatInterval(PipesConfig pipesConfig) throws TikaConfigException {
+        long heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        long socketTimeoutMillis = pipesConfig.getSocketTimeoutMillis();
+        if (heartbeatIntervalMillis >= socketTimeoutMillis) {
+            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
+                    "This configuration will cause socket timeouts during normal processing.",
+                    heartbeatIntervalMillis, socketTimeoutMillis);
+
+            // Allow override for testing only
+            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
+                throw new TikaConfigException(msg);
+            }
+            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
+        }
+    }
+
+    /**
      * Runs the server in shared mode, accepting multiple client connections.
      * <p>
      * Each incoming connection must present a valid auth token (32 bytes) before
@@ -259,6 +267,7 @@ public class PipesServer implements AutoCloseable {
                                       byte[] expectedToken) throws Exception {
         TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+        validateHeartbeatInterval(pipesConfig);
 
         // Load shared resources
         SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
@@ -281,7 +290,7 @@ public class PipesServer implements AutoCloseable {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     java.net.Socket clientSocket = serverSocket.accept();
-                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
                     clientSocket.setTcpNoDelay(true);
 
                     // Validate auth token before creating handler
@@ -369,19 +378,29 @@ public class PipesServer implements AutoCloseable {
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
-                        // Create merged ParseContext: defaults from tika-config + request overrides
-                        ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                        // Resolve friendly-named configs in ParseContext to actual objects
-                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                        // Validate the effective (merged + resolved) context
-                        ServerProtocolIO.validateParseContext(mergedContext);
-                        TikaProgressTracker tracker = new TikaProgressTracker();
-                        mergedContext.set(TikaProgressTracker.class, tracker);
+                        ParseContext mergedContext;
+                        ParseTimeout parseTimeout;
+                        try {
+                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            ServerProtocolIO.validateParseContext(mergedContext);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        } catch (Exception e) {
+                            // write the reason to the client instead of a bare exit code
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
+                            break; // unreachable after handleCrash/exit, but needed for compilation
+                        }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
                         try {
-                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, tracker);
+                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
                         } catch (Throwable t) {
                             LOG.error("Serious problem processing request", t);
                         }
@@ -422,11 +441,24 @@ public class PipesServer implements AutoCloseable {
                 pipesConfig.getParseMode());
     }
 
+    /**
+     * Poll slice used before the intermediate result has been written. NO_PARSE never produces
+     * one, so this is the floor on every such request; the parsing modes add theirs immediately
+     * and then block on the latch released below, so they spin here only while pre-parse
+     * (digest + detect) runs. Kept short deliberately -- at 5ms /detect measured 14.6ms per
+     * request against 10.3ms here.
+     */
+    private static final long PRE_INTERMEDIATE_POLL_MS = 1;
+
+    /** Steady-state slice once the intermediate result is out of the way. */
+    private static final long COMPLETION_POLL_MS = 100;
+
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
-                               TikaProgressTracker tracker) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+                               ParseTimeout parseTimeout) throws InterruptedException, IOException {
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
@@ -436,7 +468,7 @@ public class PipesServer implements AutoCloseable {
         while (true) {
             // Check for intermediate result (pre-parse metadata)
             if (!wroteIntermediateResult) {
-                Metadata intermediate = intermediateResult.poll(100, TimeUnit.MILLISECONDS);
+                Metadata intermediate = intermediateResult.poll(PRE_INTERMEDIATE_POLL_MS, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
                     writeIntermediate(intermediate);
                     countDownLatch.countDown();
@@ -444,8 +476,11 @@ public class PipesServer implements AutoCloseable {
                 }
             }
 
-            // Check for task completion (can happen even without intermediate result if crash occurs early)
-            Future<PipesResult> future = executorCompletionService.poll(100, TimeUnit.MILLISECONDS);
+            // Check for task completion (can happen even without intermediate result if crash occurs early).
+            // Don't block here until the intermediate result is settled: NO_PARSE never produces one, so a
+            // long wait is pure latency on every request rather than an occasional cost.
+            Future<PipesResult> future = executorCompletionService.poll(
+                    wroteIntermediateResult ? COMPLETION_POLL_MS : 0, TimeUnit.MILLISECONDS);
             if (future != null) {
                 PipesResult pipesResult = null;
                 try {
@@ -469,25 +504,35 @@ public class PipesServer implements AutoCloseable {
             }
 
             // Send fire-and-forget heartbeat if we've waited long enough
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
-                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+            if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
+                PipesMessage.working().write(output);
                 heartbeatCounter++;
             }
 
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
             }
-            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
 
     }
 
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
-        if (elapsed > totalTaskTimeoutMillis) {
+    /**
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
+     */
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+        long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
+                ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
+        if (elapsed > graceDeadline) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
             return true;
@@ -495,8 +540,8 @@ public class PipesServer implements AutoCloseable {
         return false;
     }
 
-    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+    private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = parseTimeout.millisSinceLastProgress();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));
@@ -538,7 +583,7 @@ public class PipesServer implements AutoCloseable {
      * self-terminates promptly if its parent disappears. Without this, an
      * orphaned PipesServer would only notice the parent is gone when the
      * next socket read fails -- which can take up to
-     * {@code socketTimeoutMs} (default 60s) and doesn't fire at all while
+     * {@code socketTimeoutMillis} (default 60s) and doesn't fire at all while
      * the server is mid-parse. {@code System.exit} here lets the
      * {@code AbstractExternalProcessParser} shutdown hook run, killing any
      * in-flight external subprocess (e.g. tesseract) cleanly.
@@ -572,7 +617,26 @@ public class PipesServer implements AutoCloseable {
         LOG.info("watching parent pid {} for exit", parentPid);
     }
 
+    /** Below this, ordinary documents -- not just pathological ones -- start OOMing. */
+    private static final long MIN_USABLE_HEAP_BYTES = 256L * 1024 * 1024;
+
+    /** Checked here, not in the parent: the parent sizes forks by percentage and has no
+     *  portable way to resolve that to bytes. The child knows what it actually got. */
+    private static void checkUsableHeap() {
+        long maxHeapMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        LOG.info("forked JVM max heap: {} MB", maxHeapMb);
+        if (maxHeapMb < MIN_USABLE_HEAP_BYTES / (1024 * 1024)) {
+            LOG.warn("forked JVM max heap is {} MB, below the {} MB needed to parse " +
+                            "reliably. Lower pipes.numClients, raise the container memory " +
+                            "limit, or set -Xmx explicitly in forkedJvmArgs; otherwise " +
+                            "ordinary documents will fail with OOM.",
+                    maxHeapMb, MIN_USABLE_HEAP_BYTES / (1024 * 1024));
+        }
+    }
+
     protected void initializeResources() throws TikaException, IOException, SAXException {
+
+        checkUsableHeap();
 
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
