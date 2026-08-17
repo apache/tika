@@ -182,6 +182,11 @@ class CachingInputStream extends InputStream {
         cache.close();
     }
 
+    /** For the owner to close after a spill. */
+    InputStream getSource() {
+        return source;
+    }
+
     @Override
     public int available() throws IOException {
         // Return cached bytes available from current position

@@ -357,7 +357,7 @@ public class GeographicInformationParser implements Parser {
                     metadata.add(ISO19115.OTHER_CONSTRAINTS, s.toString());
                 }
                 for (Restriction r : c.getUseConstraints()) {
-                    metadata.add(ISO19115.USER_CONSTRAINTS, r.name());
+                    metadata.add(ISO19115.USE_CONSTRAINTS, r.name());
                 }
 
             }

@@ -15,13 +15,23 @@
 # limitations under the License.
 #
 
-name: main jdk17 windows build
+# The one Windows job. Two things it uniquely covers:
+#   - path handling: the checkout dir below deliberately contains a space
+#   - an alternate (non-en_US) locale
+#
+# Locale is set with -Duser.language/-Duser.country, NOT LANG/LC_ALL. Those env
+# vars are POSIX-only: the Windows JVM reads the OS locale via Win32 and ignores
+# them, and even on Linux the JVM silently falls back to en_US when the named
+# locale is not generated on the box. -D always applies.
+#
+# push-only, like the jdk21/jdk25 and tr_TR builds. This is the most expensive
+# job in CI -- a full reactor on a 2x-cost runner, ~48 min -- and it gated PR
+# wall clock all by itself while every Linux job finished in ~22. Windows-only
+# regressions are real but rare, so they are caught on main within the hour
+# rather than paid for on every PR push.
+name: main jdk17 windows build (de_DE)
 
 on:
-  pull_request:
-    branches: [ main ]
-    paths-ignore:
-      - 'docs/**'
   push:
     branches: [ main ]
     paths-ignore:
@@ -36,6 +46,7 @@ jobs:
         java: [ '17' ]
 
     steps:
+      # The space in this path is deliberate -- it is what catches path-quoting bugs.
       - uses: actions/checkout@v6
         with:
           path: 'tika build dir'
@@ -45,6 +56,9 @@ jobs:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
           cache: 'maven'
-      - name: Build with Maven
+      - name: Build with Maven (de_DE locale)
         working-directory: 'tika build dir'
-        run: mvn clean test install javadoc:aggregate -Pci -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        # The -Duser.* args MUST stay quoted: PowerShell splits an unquoted dotted
+        # -D property before it reaches mvn, so the locale silently never applies
+        # and the leftover fragment fails the build as an unknown lifecycle phase.
+        run: mvn clean test install javadoc:aggregate -Pci -Pe2e "-Duser.language=de" "-Duser.country=DE" -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"

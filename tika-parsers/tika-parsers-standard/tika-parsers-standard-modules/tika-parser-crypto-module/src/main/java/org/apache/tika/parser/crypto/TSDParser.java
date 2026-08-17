@@ -174,7 +174,7 @@ public class TSDParser implements Parser {
         CMSTimeStampedDataParser cmsTimeStampedDataParser = null;
         EmbeddedDocumentExtractor edx = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        if (edx.shouldParseEmbedded(metadata)) {
+        if (edx.shouldParseEmbedded(metadata, context)) {
             try (TemporaryResources tmp = new TemporaryResources()) {
                 cmsTimeStampedDataParser = new CMSTimeStampedDataParser(stream);
 

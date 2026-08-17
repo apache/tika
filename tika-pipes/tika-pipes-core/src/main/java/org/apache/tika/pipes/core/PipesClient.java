@@ -208,6 +208,13 @@ public class PipesClient implements Closeable {
         PipesResult result = null;
         try {
             maybeInit();
+        } catch (InterruptedException e) {
+            // Same invariant as the in-flight path below: an abandoned connection,
+            // here possibly half-established, must not be re-queued, and an
+            // abandoned per-client worker never dials back.
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
         } catch (ServerInitializationException e) {
             LOG.error("server initialization failed: {} ", t.getId(), e);
             closeConnection();
@@ -227,6 +234,11 @@ public class PipesClient implements Closeable {
             // Update server manager's file counter for maxFilesProcessedPerProcess tracking
             serverManager.incrementFilesProcessed(pipesConfig.getMaxFilesProcessedPerProcess());
         } catch (InterruptedException | SecurityException e) {
+            // A pooled client is re-queued right after this throw; the next borrower
+            // must not inherit a connection with a request still in flight, nor a
+            // per-client worker that will never dial back for a fresh connect.
+            serverManager.connectionAbandoned();
+            closeConnection();
             throw e;
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
@@ -420,6 +432,16 @@ public class PipesClient implements Closeable {
                         // Restore ParseContext from original FetchEmitTuple (not serialized back from server)
                         if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
                             emitDataImpl.setParseContext(t.getParseContext());
+                        }
+                        // The server's static PAYLOAD_LIMIT_EXCEEDED fallback frame carries null
+                        // emitData/emitKey. AsyncEmitter silently skips null-emitData results, so
+                        // the document would disappear from the audit trail. Rebuild with the
+                        // original emit key using what partial metadata we have.
+                        if (result.emitData() == null
+                                && result.status() == PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED) {
+                            return buildFatalResult(t.getId(), t.getEmitKey(),
+                                    PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                                    intermediateResult.get());
                         }
                         return result;
                     default:

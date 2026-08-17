@@ -1,5 +1,4 @@
-Welcome to Apache Tika  <https://tika.apache.org/>
-=================================================
+# Welcome to Apache Tika <https://tika.apache.org/>
 
 [![license](https://img.shields.io/github/license/apache/tika.svg?maxAge=2592000)](http://www.apache.org/licenses/LICENSE-2.0)
 [![Jenkins](https://img.shields.io/jenkins/s/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk17.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk17/)
@@ -12,8 +11,7 @@ Tika is a project of the [Apache Software Foundation](https://www.apache.org).
 
 Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project logo are trademarks of The Apache Software Foundation.
 
-Quick Start
-===========
+## Quick Start
 
 **Parse a file in Java:**
 
@@ -25,10 +23,13 @@ String text = tika.parseToString(new File("document.pdf"));
 System.out.println(text);
 ```
 
-**From the command line:**
+**From the command line** — unzip `tika-app-<version>.zip` into a directory (the zip
+has no top-level directory of its own) and run from inside it. The jar is a thin
+launcher that loads the parsers from the adjacent `lib/`; on its own it fails with
+`NoClassDefFoundError`.
 
 ```bash
-java -jar tika-app-*.jar --text document.pdf
+java -jar tika-app-<version>.jar --text document.pdf
 ```
 
 **Maven dependency:**
@@ -42,77 +43,79 @@ java -jar tika-app-*.jar --text document.pdf
 </dependency>
 ```
 
-Getting Started
-===============
-Pre-built binaries of Apache Tika standalone applications are available
-from https://tika.apache.org/download.html . Pre-built binaries of all the
-Tika jars can be fetched from Maven Central or your favourite Maven mirror.
+## Getting Started
 
-**Tika 2.X and support for Java 8 reached End of Life (EOL) in April, 2025. 
-See [Tika Roadmap 2.x, 3.x and beyond](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond).** 
+Pre-built binaries of the Apache Tika standalone applications are available from
+<https://tika.apache.org/download.html>. Pre-built binaries of all the Tika jars can be
+fetched from Maven Central or your favourite Maven mirror.
+
+Tika 2.x and support for Java 8 reached End of Life (EOL) in April 2025. See the
+[Tika Roadmap](https://cwiki.apache.org/confluence/display/TIKA/Tika+Roadmap+--+2.x%2C+3.x+and+Beyond)
+for the support schedule of each line.
+
+## Building from Source
 
 Tika is based on **Java 17** and uses the [Maven 3](https://maven.apache.org) build system.
-**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests. If Docker is not installed, those tests are skipped.
+The Maven wrapper (`mvnw`) is included in the repository and downloads the correct Maven
+version if needed; on Windows, use `mvnw.cmd` instead.
 
-To build Tika from source, use the following command in the main directory:
+**N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in
+tika-integration-tests. If Docker is not installed, those tests are skipped.
+
+Build everything from the main directory:
 
     ./mvnw clean install
 
-The Maven wrapper (`mvnw`) is included in the repository and will automatically download
-the correct Maven version if needed. On Windows, use `mvnw.cmd` instead.
-
-The build consists of a number of components, including a standalone runnable jar that you can use to try out Tika features. You can run it like this:
+That produces a runnable `tika-app` you can use to try out Tika features:
 
     java -jar tika-app/target/tika-app-*.jar --help
 
-
-To build a specific project (for example, tika-server-standard):
+To build a single project and its dependencies (for example, tika-server-standard):
 
     ./mvnw clean install -am -pl :tika-server-standard
 
-If the ossindex-maven-plugin is causing the build to fail because a dependency
-has now been discovered to have a vulnerability:
+If the ossindex-maven-plugin fails the build because a dependency has since been
+discovered to have a vulnerability:
 
     ./mvnw clean install -Dossindex.skip
 
+### Faster Builds
 
-Faster Builds
-=============
+* **Fast profile** — `-Pfast` skips tests, checkstyle, and spotless.
+* **Parallel builds** — `-T1C` builds with one thread per CPU core.
+* **[Maven Daemon](https://github.com/apache/maven-mvnd) (`mvnd`)** — keeps a warm JVM
+  running for 2-3x faster rebuilds and is otherwise a drop-in for `mvn`. On macOS:
+  `brew install mvndaemon/tap/mvnd`.
 
-**Fast profile** - Use `-Pfast` to skip tests, checkstyle, and spotless:
-
-    ./mvnw clean install -Pfast
-
-**Parallel builds** - Add `-T1C` to build with 1 thread per CPU core:
-
-    ./mvnw clean install -Pfast -T1C
-
-**Maven Daemon (mvnd)** - Keeps a warm JVM running for 2-3x faster rebuilds:
-
-```bash
-# Install: https://github.com/apache/maven-mvnd
-# macOS: brew install mvndaemon/tap/mvnd
-
-# Use exactly like mvn
-mvnd clean install -Pfast
-mvnd test -pl :tika-core
-```
-
-**Combine both** for maximum speed during development:
+Combine them for maximum speed during development:
 
     mvnd clean install -Pfast -T1C
 
+### Building a Specific Tag
 
-Reproducible Builds
-===================
+To build, say, the 3.0.1 tag:
 
-Apache Tika supports [reproducible builds](https://reproducible-builds.org/). This means
-that building the same source code with the same JDK version should produce
-byte-for-byte identical artifacts, regardless of the build machine or time.
+```bash
+git clone https://github.com/apache/tika.git
+cd tika
+git checkout 3.0.1
+./mvnw clean install
+```
 
-Key configuration:
-- `project.build.outputTimestamp` is set in `tika-parent/pom.xml`
-- All Maven plugins are configured to produce deterministic output
+If a new vulnerability has been discovered between the date of the tag and the date you
+are building it, add `-Dossindex.skip`.
+
+If a local test does not work in your environment, please notify the project at
+dev@tika.apache.org. As an immediate workaround, you can turn off individual tests:
+
+    ./mvnw clean install -Dtest=\!UnpackerResourceTest#testPDFImages
+
+### Reproducible Builds
+
+Apache Tika supports [reproducible builds](https://reproducible-builds.org/): building the
+same source code with the same JDK version produces byte-for-byte identical artifacts,
+regardless of the build machine or time. `project.build.outputTimestamp` is set in
+`tika-parent/pom.xml`, and all Maven plugins are configured to produce deterministic output.
 
 To verify the build plan supports reproducibility:
 
@@ -125,13 +128,11 @@ To verify two builds produce identical artifacts:
     ./mvnw clean install -DskipTests
     diff -r tika-build-1 ~/.m2/repository/org/apache/tika
 
+## Maven Dependencies
 
-Maven Dependencies
-==================
-
-Apache Tika provides *Bill of Material* (BOM) artifact to align Tika module versions and simplify version management. 
-To avoid convergence errors in your own project, import this
-bom or Tika's parent pom.xml in your dependency management section.
+Apache Tika provides a *Bill of Materials* (BOM) artifact that aligns Tika module versions.
+Import it (or Tika's parent pom.xml) in your dependency management section to avoid
+convergence errors in your own project.
 
 If you use Apache Maven:
 
@@ -153,8 +154,8 @@ If you use Apache Maven:
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers-standard-package</artifactId>
-      <type>pom</type>
       <!-- version not required since BOM included -->
+      <type>pom</type>
     </dependency>
   </dependencies>
 </project>
@@ -171,44 +172,37 @@ dependencies {
 }
 ```
 
-Migrating to 4.x
-================
-TBD
+## Migrating to 4.x
 
-Contributing
-============
-See [CONTRIBUTING.md](CONTRIBUTING.md) and https://tika.apache.org/contribute.html
+Upgrading from 3.x requires code and configuration changes: Java 17, `TikaInputStream` in
+the `Parser`/`Detector` SPI, JSON configuration instead of `tika-config.xml`, namespaced
+metadata keys, and Markdown as the default output format. Start with
+[Migrating to Tika 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-to-4x.adoc);
+tika-server users should also read
+[Migrating Tika Server to 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-tika-server-4x.adoc).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) and <https://tika.apache.org/contribute.html>.
 
 [![contributors](https://contributors-img.web.app/image?repo=apache/tika)](https://github.com/apache/tika/graphs/contributors)
 
-Building from a Specific Tag
-============================
-Let's assume that you want to build the 3.0.1 tag:
-```
-0. Download and install hub.github.com
-1. git clone https://github.com/apache/tika.git
-2. cd tika
-3. git checkout 3.0.1
-4. ./mvnw clean install
-```
+## Mailing Lists
 
-If a new vulnerability has been discovered between the date of the
-tag and the date you are building the tag, you may need to build with:
+* user@tika.apache.org - About using Tika
+* dev@tika.apache.org - About developing Tika
 
-```
-4. ./mvnw clean install -Dossindex.skip
-```
+Subscribe by sending a message to `{list}-subscribe@tika.apache.org`.
 
-If a local test is not working in your environment, please notify
- the project at dev@tika.apache.org. As an immediate workaround,
- you can turn off individual tests with e.g.:
+## Issue Tracker
 
-```
-4. ./mvnw clean install -Dossindex.skip -Dtest=\!UnpackerResourceTest#testPDFImages
-```
+<https://issues.apache.org/jira/browse/TIKA>
 
-License (see also LICENSE.txt)
-==============================
+## Security
+
+See [SECURITY.md](SECURITY.md) and <https://tika.apache.org/security.html>.
+
+## License (see also LICENSE.txt)
 
 Collective work: Copyright 2011 The Apache Software Foundation.
 
@@ -220,8 +214,7 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 Apache Tika includes a number of subcomponents with separate copyright notices and license terms. Your use of these subcomponents is subject to the terms and conditions of the licenses listed in the LICENSE.txt file.
 
-Export Control
-==============
+## Export Control
 
 This distribution includes cryptographic software.  The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software.  BEFORE using any encryption software, please  check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to  see if this is permitted.  See <http://www.wassenaar.org/> for more information.
 
@@ -229,22 +222,4 @@ The U.S. Government Department of Commerce, Bureau of Industry and Security (BIS
 
 The following provides more details on the included cryptographic software:
 
-Apache Tika uses the Bouncy Castle generic encryption libraries for extracting text content and metadata from encrypted PDF files.  See <http://www.bouncycastle.org/> for more details on Bouncy Castle.  
-
-Mailing Lists
-=============
-
-* user@tika.apache.org - About using Tika
-* dev@tika.apache.org - About developing Tika
-
-Subscribe by sending a message to `{list}-subscribe@tika.apache.org`.
-
-Issue Tracker
-=============
-
-https://issues.apache.org/jira/browse/TIKA
-
-Security
-========
-
-See [SECURITY.md](SECURITY.md) and https://tika.apache.org/security.html
+Apache Tika uses the Bouncy Castle generic encryption libraries for extracting text content and metadata from encrypted PDF files.  See <http://www.bouncycastle.org/> for more details on Bouncy Castle.

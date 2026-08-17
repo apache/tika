@@ -55,8 +55,16 @@ public class MboxParserTest extends TikaTest {
     public void testOverrideDetector() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
 
+        // A configured Parser+Detector must be present for MboxParser to parse the embedded
+        // rfc822 message at all (TIKA-4819: a bare ParseContext now silently skips embedded
+        // content instead of SPI-loading a parser). It must be the *default* detector chain,
+        // not the class's own TypeDetector-based autoDetectParser field: only DefaultDetector's
+        // CompositeDetector honors CONTENT_TYPE_PARSER_OVERRIDE (TypeDetector ignores it and
+        // just trusts whatever the mbox's own "Content-Type: text/html" header already wrote
+        // into metadata).
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, new AutoDetectParser());
         try (TikaInputStream tis = getResourceAsStream("/test-documents/single_mail.mbox")) {
             mboxParser.parse(tis, handler, metadata, context);
         }

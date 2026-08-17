@@ -38,21 +38,24 @@ for that.
 
 == How it works
 
-The scorer uses a per-script byte-bigram log-probability model trained on clean
-Wikipedia and MADLAD-400 text.  For each input it:
+The model is trained on clean Wikipedia and MADLAD-400 text.  For each input it:
 
-1. **Identifies the dominant Unicode script** (Latin, Cyrillic, Arabic, Han, etc.)
-   by histogramming `Character.UnicodeScript` over all codepoints.
-2. **Looks up the script's bigram table** — a 256×256 matrix of
-   `log P(byte_b | byte_a)` values trained on clean text for that script.
-3. **Computes a mean log-probability** across all consecutive byte pairs in the
-   UTF-8 encoding of the input.
-4. **Z-scores the result** against calibration statistics (mean and standard
-   deviation measured on a held-out set of clean text for the same script).
+1. **Buckets every codepoint bigram to its Unicode script** (Latin, Cyrillic,
+   Arabic, Han, …), folding COMMON/INHERITED glue into the adjacent script, and
+   scores each against that script's own codepoint-bigram table.  Per-script
+   scores are combined count-weighted, so mixed-script text is scored fairly
+   rather than by picking one script.
+2. **Adds document-level features**: Unicode block transitions, control-byte
+   fraction, script transitions, letter-adjacent-to-mark ratio,
+   replacement-character ratio, script density, coherence, and alternation.
+3. **Combines them with one global linear combiner** into a single score.
 
-The z-score is the primary output: a score of 0 means "exactly as expected for
-clean text of this script"; a score of −3 means "three standard deviations worse
-than clean"; a score of −10 means "almost certainly garbled."
+The combined score is the primary output, and it is a *logit*, not a
+per-script z-score: positive means clean, negative means junk, and the natural
+threshold is 0.  `getPClean()` is `sigmoid(score)`.
+
+See xref:advanced/junk-detection-build.adoc[Building the Junk Detector] for the
+feature list, calibration, and model format.
 
 == Using the API
 
@@ -62,12 +65,12 @@ the Java `ServiceLoader` mechanism.
 
 Add the dependency to your project:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-ml-junkdetect</artifactId>
-  <version>${tika.version}</version>
+  <version>{tika-version}</version>
 </dependency>
 ----
 
@@ -92,46 +95,41 @@ at application startup.
 [source,java]
 ----
 TextQualityScore score = detector.score("The quick brown fox jumps over the lazy dog.");
-System.out.println(score.getZScore());   // e.g. -0.74 — within normal range
-System.out.println(score.getPClean());   // e.g. 0.32  — P(clean) via sigmoid
+System.out.println(score.getZScore());   // combiner logit; > 0 means clean
+System.out.println(score.getPClean());   // sigmoid of the same value
 ----
 
 === Interpreting the score
 
 [cols="1,3"]
 |===
-| Z-score range | Interpretation
+| Score | Interpretation
 
 | > 0
-| Better than average clean text — high-quality, well-formed natural language.
+| Clean.  The natural decision boundary.
 
-| −1 to 0
-| Within normal range for clean text.  Most real documents fall here.
-
-| −1 to −2
-| Mildly degraded.  May indicate noisy OCR, code-heavy text, or unusual domain
-  language.  Not necessarily junk.
+| 0 to −2
+| Leaning junk but not decisively.  Noisy OCR, code-heavy text, or unusual domain
+  language lands here.
 
 | < −2
-| Two or more standard deviations below clean.  Worth investigating.
-  A reasonable threshold for triggering re-OCR or re-encoding.
+| A conservative junk threshold.  Reasonable trigger for re-OCR or re-decoding.
 
 | < −5
-| Almost certainly garbled.  Wrong charset decoding, byte-reversed content,
-  or heavy corruption.
+| Almost certainly garbled: wrong charset, reversed content, or heavy corruption.
 |===
 
 The `TextQualityScore` also carries:
 
-* `getPClean()` — `sigmoid(z)`, a rough probability estimate in [0, 1] that the
-  text is clean.  Useful for ranking candidates; the absolute value is not
-  calibrated as a true probability.
-* `getCiLow()` / `getCiHigh()` — 95% confidence interval on the z-score.  Narrow
-  on long texts, wide on short ones.  Use these when making threshold decisions on
-  short strings.
-* `getDominantScript()` — the Unicode script name used for scoring (e.g. `"LATIN"`,
-  `"CYRILLIC"`, `"ARABIC"`, `"HAN"`).  If `isUnknown()` is true, the dominant
-  script had no model and scoring was not possible.
+* `getPClean()` — `sigmoid(score)`.  The combiner is a fitted logistic, so this is
+  usable for ranking; do not read it as a precisely calibrated probability.
+* `getCiLow()` / `getCiHigh()` — the score plus/minus
+  `1.96 × sigma / sqrt(bigrams)` for the dominant script.  Narrow on long texts,
+  wide on short ones; use them for threshold decisions on short strings.
+* `getDominantScript()` — the Unicode script name that carried the scoring (e.g.
+  `"LATIN"`, `"CYRILLIC"`, `"HAN"`), or `"NONE"` when no scoreable letter was
+  found.  When `isUnknown()` is true, no script in the input had a model and no
+  score is available.
 
 === Comparing two candidates
 
@@ -152,16 +150,19 @@ String ascp1251 = new String(rawBytes, Charset.forName("cp1251"));
 
 TextQualityComparison result = detector.compare("cp1252", ascp1252, "cp1251", ascp1251);
 
-System.out.println(result.winner());  // "A" or "B"
-System.out.println(result.delta());   // z-score separation between the two
+System.out.println(result.winner());  // the winning label: "cp1252" or "cp1251"
+System.out.println(result.delta());   // score separation between the two
 
-if (result.winner().equals("B") && result.delta() > 1.0) {
+if ("cp1251".equals(result.winner()) && result.delta() > 1.0) {
     // cp1251 is confidently the better decoding
 }
 ----
 
-The `delta()` is the absolute difference in z-scores between the two candidates.
-As a rough guide:
+An `isUnknown()` candidate is treated as neutral (0), not `-∞`: a decoding whose
+script the model does not know must not lose to a garbled-but-recognisable one.
+
+`delta()` is the absolute score difference between the two candidates.  As a rough
+guide:
 
 [cols="1,3"]
 |===
@@ -183,50 +184,41 @@ As a rough guide:
 
 === Listing known scripts
 
-[source,java]
-----
-detector.knownScripts();  // returns Set<String>
-// e.g. [ARABIC, ARMENIAN, BENGALI, CYRILLIC, DEVANAGARI, GEORGIAN,
-//        GREEK, GUJARATI, GURMUKHI, HAN, HANGUL, HEBREW, HIRAGANA,
-//        KANNADA, KHMER, LAO, LATIN, MALAYALAM, MYANMAR, ORIYA,
-//        SINHALA, TAMIL, TELUGU, THAANA, THAI, TIBETAN, ...]
-----
-
-If the dominant script of an input is not in this set, `score()` returns a
-`TextQualityScore` where `isUnknown()` is true and no z-score is available.
+`JunkDetector.knownScripts()` returns the `Set<String>` of scripts with a trained
+table — 72 in the bundled model, covering the major living scripts plus a long
+tail of historic ones.  It is on `JunkDetector`, not on the `TextQualityDetector`
+interface, so reach for it only when you have the concrete class.  If none of an input's scripts is in that set, `score()`
+returns a `TextQualityScore` with `isUnknown()` true and no usable score.
 
 == Thresholds and operating points
 
-There is no universally correct threshold.  The right cutoff depends on your
-content and tolerance for false positives (flagging good text as junk).
+There is no universally correct threshold; it depends on your content and your
+tolerance for flagging good text as junk.  Starting points:
 
-**Starting points:**
+* **Trigger re-OCR**: score < −2.0.
+* **Charset tiebreaking**: take the higher-scoring candidate when
+  `delta() > 1.0`; abstain below 0.5.
+* **Training-data filtering**: score < −1.5 to strip mojibake and bot noise from
+  an NLP corpus.
 
-* **Trigger re-OCR**: z < −2.0 (catches ~95% of severe corruption while flagging
-  ~2–5% of legitimate text on average, more for short strings).
-* **Charset tiebreaking**: prefer the candidate with the higher z-score when
-  `delta() > 1.0`; abstain if `delta() < 0.5`.
-* **Training data filtering**: z < −1.5 to remove mojibake and bot-generated
-  noise from NLP corpora.
-
-For short text (under ~50 UTF-8 bytes), use `getCiLow()` rather than `getZScore()`
-for threshold decisions, since the confidence interval widens substantially.
+Under ~50 UTF-8 bytes, threshold on `getCiLow()` rather than `getZScore()` — the
+interval widens substantially there.
 
 == Limitations
 
-* **Script coverage**: only scripts with a trained model can be scored.  Unknown
-  scripts return `isUnknown() = true`.
-* **Short text**: scoring is unreliable below ~15 UTF-8 bytes.  The model needs
-  at least a few bigrams to produce a stable estimate.
-* **Closely related charsets in the same script pool**: the LATIN model is trained
-  across hundreds of languages, which dilutes the signal for closely related
-  Western European and Baltic encodings (e.g., cp1252 vs. cp1257 on Lithuanian
-  text).  The winner is usually correct, but delta may be small (< 0.5).
-* **Deliberately obfuscated text**: content designed to look like natural language
-  (e.g. by adversarial padding) is not detected.
+* **Script coverage** — only scripts with a trained table can be scored; others
+  return `isUnknown()`.
+* **Short text** — unreliable below ~15 UTF-8 bytes; there are too few bigrams for
+  a stable estimate.
+* **Closely related charsets within one script** — the LATIN table pools hundreds
+  of languages, which dilutes the signal between neighbours like cp1252 and cp1257
+  on Lithuanian text.  The winner is usually right, but `delta()` may be < 0.5.
+* **Deliberately obfuscated text** — content padded to look like natural language
+  is not detected.
 
 == Further reading
 
-For training methodology, model format, evaluation harness, and guidance on
-improving the model, see
-xref:advanced/junk-detection-build.adoc[Building the Junk Detector].
+* xref:advanced/junk-detection-build.adoc[Building the Junk Detector] — training,
+  model format, limitations
+* xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline] — where
+  `compare()` is used in production

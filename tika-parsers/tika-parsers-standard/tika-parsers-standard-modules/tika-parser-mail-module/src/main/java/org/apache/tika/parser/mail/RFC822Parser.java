@@ -118,8 +118,7 @@ public class RFC822Parser implements Parser {
         if (localDetector == null) {
             //lazily load this if necessary
             if (detector == null) {
-                EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
-                detector = embeddedDocumentUtil.getDetector();
+                detector = EmbeddedDocumentUtil.getDetector(context);
             }
             localDetector = detector;
         }

@@ -52,14 +52,17 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.serialization.ParseContextUtils;
@@ -84,6 +87,13 @@ public class TikaResource {
     // Enforced in setupMultipartConfig so every config-consuming endpoint honors it.
     private final boolean allowPerRequestConfig;
 
+    // Config-level parse-context defaults, resolved once at startup and kept as values rather
+    // than as a shared ParseContext. Requests carry only their own deltas (see
+    // createRequestContext); the forked worker loads these same defaults from the same config.
+    private final MetadataWriteLimiterFactory configMetadataWriteLimiterFactory;
+    private final OutputLimits configOutputLimits;
+    private final boolean configSuppliesContentHandlerFactory;
+
     /**
      * @param tikaLoader the Tika loader
      * @param serverStatus server status tracker
@@ -96,6 +106,12 @@ public class TikaResource {
         this.serverStatus = serverStatus;
         this.pipesParsingHelper = pipesParsingHelper;
         this.allowPerRequestConfig = allowPerRequestConfig;
+
+        ParseContext configDefaults = loadConfigDefaults();
+        this.configMetadataWriteLimiterFactory = configDefaults.get(MetadataWriteLimiterFactory.class);
+        this.configOutputLimits = OutputLimits.get(configDefaults);
+        this.configSuppliesContentHandlerFactory =
+                configDefaults.get(ContentHandlerFactory.class) != null;
     }
 
     /**
@@ -108,12 +124,11 @@ public class TikaResource {
     }
 
     /**
-     * Creates a new ParseContext with defaults loaded from tika-config.
-     * This loads components from "parse-context" such as DigesterFactory and MetadataWriteLimiterFactory.
-     *
-     * @return a new ParseContext with defaults applied
+     * Reads the config's {@code parse-context} section. Private and called once: the values we
+     * need are cached above, and a request must not carry these defaults (see
+     * {@link #createRequestContext()}).
      */
-    public ParseContext createParseContext() {
+    private ParseContext loadConfigDefaults() {
         try {
             return tikaLoader.loadParseContext();
         } catch (TikaConfigException e) {
@@ -121,6 +136,47 @@ public class TikaResource {
             LOG.warn("Failed to load ParseContext from config, using empty context", e);
             return new ParseContext();
         }
+    }
+
+    /**
+     * Creates a ParseContext holding only what this request itself specifies.
+     * <p>
+     * Config-level {@code parse-context} defaults are deliberately absent. The forked worker
+     * loads them from the same config and overlays the request on top, so sending them is
+     * redundant -- and worse than redundant at the trust boundary: the worker clamps
+     * request-supplied timeout limits but trusts its own config's, so a default that arrives
+     * as request data gets treated as caller input and clamped.
+     *
+     * @return an empty, request-scoped ParseContext
+     */
+    public ParseContext createRequestContext() {
+        return new ParseContext();
+    }
+
+    /**
+     * Creates request metadata bounded by the config's metadata write limiter.
+     * <p>
+     * The limiter no longer rides in the request context, so it is applied here instead. This
+     * metadata holds caller-supplied values (filename, headers), which is exactly what the
+     * limiter is meant to bound.
+     */
+    public Metadata newRequestMetadata() {
+        return configMetadataWriteLimiterFactory == null ? new Metadata()
+                : new Metadata(configMetadataWriteLimiterFactory.newInstance());
+    }
+
+    /**
+     * A fresh copy of the config's {@code unpack-config}, or null if none is declared.
+     * <p>
+     * The unpack path is the one place a config default must still travel: it is mutated
+     * per request (zip, suffix strategy, emitter) and so overrides whatever the worker would
+     * have loaded. Starting from a default-constructed instance instead would silently reset
+     * operator settings the request never touches -- {@code maxUnpackBytes}, for one. Re-read
+     * per call because the caller mutates the result; unpack requests are heavyweight enough
+     * that the config read does not register.
+     */
+    public UnpackConfig newConfigUnpackConfig() {
+        return loadConfigDefaults().get(UnpackConfig.class);
     }
 
 
@@ -286,9 +342,7 @@ public class TikaResource {
             }
         }
 
-        // Create TikaInputStream and spool to temp file immediately.
-        // This ensures the data is captured before any other processing
-        // and TikaInputStream handles temp file cleanup automatically.
+        // Lazy TikaInputStream: nothing is spooled until a consumer needs a file.
         TikaInputStream tis = TikaInputStream.get(fileAtt.getObject(InputStream.class));
         boolean handedOff = false;
         try {
@@ -361,7 +415,7 @@ public class TikaResource {
      * @param context the ParseContext to configure
      * @param handlerTypeName the handler type name (text, html, xml, ignore), may be null for default
      */
-    public static void setupContentHandlerFactory(ParseContext context, String handlerTypeName) {
+    public void setupContentHandlerFactory(ParseContext context, String handlerTypeName) {
         BasicContentHandlerFactory.HANDLER_TYPE type;
         try {
             type = BasicContentHandlerFactory.parseHandlerType(handlerTypeName, DEFAULT_HANDLER_TYPE);
@@ -369,8 +423,17 @@ public class TikaResource {
             // The name comes from the URL path, so this is the caller's typo, not our failure.
             throw new BadRequestException(e.getMessage());
         }
+        // Request-supplied limits (per-request config) win; the cached config defaults are the
+        // fallback. Neither can be left to OutputLimits.get(context) alone: it returns plain
+        // defaults when absent, so a deltas-only context would silently drop the operator's
+        // configured write limit -- and this factory is the one the worker honors.
+        OutputLimits limits = context.get(OutputLimits.class);
+        if (limits == null) {
+            limits = configOutputLimits;
+        }
         context.set(ContentHandlerFactory.class,
-                BasicContentHandlerFactory.newInstance(type, context));
+                new BasicContentHandlerFactory(type, limits.getWriteLimit(),
+                        limits.isThrowOnWriteLimit(), context));
     }
 
     /**
@@ -380,8 +443,12 @@ public class TikaResource {
      * @param context the ParseContext to configure
      * @param handlerTypeName the handler type name
      */
-    public static void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
-        if (context.get(ContentHandlerFactory.class) == null) {
+    public void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
+        // A config-declared factory still takes precedence; it is no longer visible in the
+        // request context, so leaving the context untouched lets the worker resolve it from
+        // the same config.
+        if (context.get(ContentHandlerFactory.class) == null
+                && !configSuppliesContentHandlerFactory) {
             setupContentHandlerFactory(context, handlerTypeName);
         }
     }
@@ -389,7 +456,7 @@ public class TikaResource {
     // ==================== GET ====================
 
     @GET
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     public String getMessage() {
         return GREETING;
     }
@@ -402,8 +469,7 @@ public class TikaResource {
     private Response putRaw(InputStream is, HttpHeaders httpHeaders, String handlerTypeName)
             throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            ParseContext context = createParseContext();
-            return produceRawOutput(tis, Metadata.newInstance(context),
+            return produceRawOutput(tis, newRequestMetadata(),
                     httpHeaders.getRequestHeaders(), handlerTypeName);
         }
     }
@@ -411,8 +477,7 @@ public class TikaResource {
     private Metadata putJson(InputStream is, HttpHeaders httpHeaders, String handlerTypeName)
             throws IOException {
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            ParseContext context = createParseContext();
-            return produceJson(tis, Metadata.newInstance(context),
+            return produceJson(tis, newRequestMetadata(),
                     httpHeaders.getRequestHeaders(), handlerTypeName);
         }
     }
@@ -423,7 +488,7 @@ public class TikaResource {
      */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     public Response getDefault(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
         return putRaw(is, httpHeaders, "md");
@@ -432,7 +497,7 @@ public class TikaResource {
     /** Parse document and return body-only plain text. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("text")
     public Response getText(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -442,7 +507,7 @@ public class TikaResource {
     /** Parse document and return HTML content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/html")
+    @Produces("text/html;charset=UTF-8")
     @Path("html")
     public Response getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -452,7 +517,7 @@ public class TikaResource {
     /** Parse document and return XML content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/xml")
+    @Produces("text/xml;charset=UTF-8")
     @Path("xml")
     public Response getXml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -462,7 +527,7 @@ public class TikaResource {
     /** Parse document and return Markdown content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("md")
     public Response getMarkdown(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -504,8 +569,8 @@ public class TikaResource {
 
     private Response postConfigured(List<Attachment> attachments, String handlerTypeName)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = createRequestContext();
+        Metadata metadata = newRequestMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             return produceRawOutput(tis, metadata, context, handlerTypeName);
         }
@@ -513,8 +578,8 @@ public class TikaResource {
 
     private Metadata postConfiguredJson(List<Attachment> attachments, String handlerTypeName)
             throws IOException, TikaConfigException {
-        ParseContext context = createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = createRequestContext();
+        Metadata metadata = newRequestMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
             return produceJson(tis, metadata, context, handlerTypeName);
         }
@@ -523,7 +588,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns Markdown unless the config names a handler. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config")
     public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -533,7 +598,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns body-only plain text. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config/text")
     public Response postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -543,7 +608,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns HTML. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/html")
+    @Produces("text/html;charset=UTF-8")
     @Path("config/html")
     public Response postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -553,7 +618,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns XML. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/xml")
+    @Produces("text/xml;charset=UTF-8")
     @Path("config/xml")
     public Response postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -563,7 +628,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns Markdown. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/plain")
+    @Produces("text/plain;charset=UTF-8")
     @Path("config/md")
     public Response postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -606,7 +671,7 @@ public class TikaResource {
                                               MultivaluedMap<String, String> httpHeaders,
                                               String handlerTypeName) throws IOException {
         fillMetadata(null, metadata, httpHeaders);
-        ParseContext context = createParseContext();
+        ParseContext context = createRequestContext();
         setupContentHandlerFactory(context, handlerTypeName);
         return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);
     }
@@ -685,7 +750,7 @@ public class TikaResource {
                                   MultivaluedMap<String, String> headers,
                                   String handlerTypeName) throws IOException {
         fillMetadata(null, metadata, headers);
-        ParseContext context = createParseContext();
+        ParseContext context = createRequestContext();
         setupContentHandlerFactory(context, handlerTypeName);
         return produceJsonWithContext(tis, metadata, context, handlerTypeName);
     }
@@ -714,7 +779,7 @@ public class TikaResource {
                 parseWithPipes(tis, metadata, context, ParseMode.CONCATENATE);
 
         if (metadataList.isEmpty()) {
-            return Metadata.newInstance(context);
+            return newRequestMetadata();
         }
         return metadataList.get(0);
     }

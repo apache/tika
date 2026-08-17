@@ -300,9 +300,14 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
         }
     }
 
+    /**
+     * An unresolvable exclusion stops the world (TIKA-3268): silently ignoring it
+     * would leave a deliberately disabled component enabled.
+     */
     @SuppressWarnings("unchecked")
     private Set<Class<? extends T>> parseExclusions(JsonNode configNode,
-                                                     LoaderContext context) {
+                                                     LoaderContext context)
+            throws TikaConfigException {
         Set<Class<? extends T>> exclusions = new HashSet<>();
 
         if (configNode == null || !configNode.isObject()) {
@@ -327,7 +332,12 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
                 exclusions.add((Class<? extends T>) clazz);
                 LOG.debug("Excluding {} from SPI: {}", sectionName, typeName);
             } catch (ClassNotFoundException e) {
-                LOG.warn("Unknown {} in exclude list: {}", sectionName, typeName);
+                throw new TikaConfigException(
+                        "Unknown " + sectionName + " in exclude list: '" + typeName + "'. "
+                                + "The exclusion cannot be applied, so the component would stay "
+                                + "enabled. In 4.x, components are named by their registered "
+                                + "component name (e.g. 'pdf-parser'), not by class name; see the "
+                                + "4.x migration guide if this config came from 3.x.", e);
             }
         }
 

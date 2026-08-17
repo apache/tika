@@ -90,7 +90,7 @@ public class CommonTokenGenerator {
         ex.add("knn"); // Konkani: 46.2% own accuracy; indistinguishable from Marathi
         ex.add("glk"); // Gilaki: 88.6% own accuracy; overlaps with Persian/Mazanderani
         ex.add("mkw"); // Kituba: 80.1% own accuracy; overlaps with Kongo/Lingala
-        // Wikipedia-era drops (March 2026) — see language-drop-decisions.md
+        // Wikipedia-era drops (March 2026)
         ex.add("hbs"); // Serbo-Croatian: F1@500=0.849, same language as hrv/srp/bos
         ex.add("mai"); // Maithili: F1@50=0.490, Devanagari contamination with hin/nep
         ex.add("koi"); // Komi-Permyak: F1@500=0.765, permanently confused with kpv
@@ -100,7 +100,7 @@ public class CommonTokenGenerator {
         ex.add("aym"); // Aymara: F1@500=0.837, mutually confused with que
         ex.add("pcd"); // Picard: F1@500=0.805, never separable from French
         ex.add("gor"); // Gorontalo: F1@500=0.801, F1@50=0.503, persistently poor
-        // v5 drops: bot-generated Wikipedia corpora (see language-drop-decisions.md)
+        // v5 drops: bot-generated Wikipedia corpora
         ex.add("arz"); // Egyptian Arabic: F1@500=0.999 Wikipedia, 5.3% FLORES — Lsjbot stubs
         ex.add("bug"); // Buginese: ~95% French municipality stubs
         ex.add("bpy"); // Bishnupriya Manipuri: Brazilian/US/South Asian location stubs

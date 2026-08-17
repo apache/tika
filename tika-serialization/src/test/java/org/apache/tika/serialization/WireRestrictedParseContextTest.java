@@ -76,6 +76,17 @@ public class WireRestrictedParseContextTest {
     }
 
     @Test
+    public void restrictedRejectsEmbeddedDocumentExtractorInjection() {
+        // EmbeddedDocumentExtractor controls which parser handles every embedded document --
+        // same exec/IO-control tier as Parser/Detector, must be refused from a wire parseContext.
+        String json = "{\"mock-embedded-document-extractor\":{}}";
+        Exception e = assertThrows(Exception.class,
+                () -> restrictedMapper().readValue(json, ParseContext.class));
+        assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
     public void restrictedAllowsFlatSelfConfiguringParserConfig() throws Exception {
         // Per-request tuning of an already-loaded self-configuring parser is config, not
         // instantiation: stored as an inert jsonConfig, never bound, so it must be allowed

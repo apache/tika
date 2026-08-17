@@ -24,20 +24,24 @@ and a starting point, but more work remains. Contributions and corrections are w
 The Apache Tika toolkit detects and extracts metadata and text from over a thousand
 different file types (such as PPT, XLS, and PDF). All of these file types can be parsed
 through a single interface, making Tika useful for search engine indexing, content
-analysis, translation, and much more.
+analysis, translation, and much more. Tika identifies a file's type from its bytes, so a
+missing or misleading extension does not change the result.
 
-== Features
+== Where to start
 
-* **Unified Interface** - Parse all supported file types through a single, consistent API
-* **Broad Format Support** - Over 1,000 different file types supported
-* **Metadata Extraction** - Automatically identify and extract document metadata
-* **Text Extraction** - Pull readable content from complex file formats
-* **Content Detection** - Identify file types regardless of file extension
-
-== Getting Started
-
-Use the navigation on the left to explore the documentation, or start with
-xref:using-tika/index.adoc[Using Tika] to choose your integration method.
+* xref:using-tika/index.adoc[Using Tika] -- choose an integration method: Java API,
+  command line, REST server, or gRPC.
+* xref:pipes/index.adoc[Pipes] -- process-isolated, fault-tolerant extraction at scale.
+* xref:configuration/index.adoc[Configuration] -- the JSON config file: parsers,
+  detectors, metadata filters.
+* xref:advanced/setting-limits.adoc[Setting Limits] and
+  xref:advanced/robustness.adoc[Robustness] -- bounding time, memory and output when
+  parsing content you do not control.
+* xref:security.adoc[Security] -- the trust model, and what to lock down before exposing
+  tika-server or tika-grpc.
+* xref:migration-to-4x/index.adoc[Migrating to 4.x] -- what changed since 3.x and what
+  you have to update.
+* xref:faq.adoc[FAQ] -- the questions upgraders ask most.
 
 Apache Tika is an Apache Software Foundation project, formerly a subproject of Apache Lucene.
 

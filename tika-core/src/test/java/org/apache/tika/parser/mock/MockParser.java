@@ -293,7 +293,7 @@ public class MockParser implements Parser {
             m.set(HttpHeaders.CONTENT_TYPE, contentType);
         }
         // Check if we should parse this embedded document (respects EmbeddedLimits)
-        if (!extractor.shouldParseEmbedded(m)) {
+        if (!extractor.shouldParseEmbedded(m, context)) {
             return;
         }
         try (TikaInputStream tis = TikaInputStream.get(embeddedText.getBytes(UTF_8))) {

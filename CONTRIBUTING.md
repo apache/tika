@@ -19,9 +19,7 @@
 
 # Contributing to Apache Tika
 
-Thank you for your interest in contributing to Apache Tika!
-
-For comprehensive contribution guidelines, please see: **https://tika.apache.org/contribute.html**
+Full guidelines: <https://tika.apache.org/contribute.html>
 
 ## Quick Start
 

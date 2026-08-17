@@ -15,14 +15,46 @@
 // limitations under the License.
 //
 
-= FAQ and Troubleshooting
+= FAQ
 
-This page covers frequently asked questions and common issues when using Apache Tika.
+The questions below are the ones that come up most often when moving to 4.x. For pipes and
+tika-server runtime problems, see xref:pipes/troubleshooting.adoc[Pipes Troubleshooting].
+For anything not answered here, ask on user@tika.apache.org.
 
-== Frequently Asked Questions
+== `java -jar tika-app.jar` fails with `NoClassDefFoundError`
 
-// TODO: Add FAQs
+The `tika-app` and `tika-server-standard` jars are thin launchers, not fat jars. Download the
+matching `.zip`, unzip it into a directory (it has no top-level directory of its own), and run the
+jar from inside that directory so that `lib/` and `plugins/` sit alongside it. See
+xref:migration-to-4x/migrating-to-4x.adoc#thin-launcher-zip[the migration guide].
 
-== Troubleshooting
+== Why is my extracted content Markdown instead of XHTML?
 
-// TODO: Add common issues and solutions
+Markdown is the default content handler in 4.x, in `tika-app`, `tika-server`, and the pipes
+CLI alike. Ask for another format explicitly -- `tika-app -x`, `/tika/xml`, `--handler x` --
+as described in
+xref:migration-to-4x/migrating-to-4x.adoc#default-handler-markdown[the migration guide].
+
+== My `tika-config.xml` no longer loads
+
+4.x configuration is JSON. Convert an existing XML config with
+`java -jar tika-app.jar --convert-config-xml-to-json=tika-config.xml > tika-config.json`,
+then review the result -- only the `parsers` section is converted. See
+xref:configuration/index.adoc[Configuration].
+
+== Where did `resourceName` and the `X-TIKA:*` keys go?
+
+Every Tika-asserted key now lives under `tk:` in kebab-case (`tk:resource-name`,
+`tk:content`, ...). To keep an unmigrated consumer working, enable the
+`legacy-key-migration-filter`, which rewrites keys at the emit edge in either direction. Both
+the full rename table and the filter are documented in
+xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x].
+
+== tika-server returns `429` under load that used to succeed
+
+`/tika`, `/rmeta`, `/meta`, and `/unpack` now parse in a fixed pool of `numClients` forked
+JVMs instead of on the request thread, so a saturated pool pushes back rather than queueing.
+The `429` is deliberate and distinguishable from a crashed fork's `503` -- see
+xref:migration-to-4x/migrating-tika-server-4x.adoc#backpressure[Backpressure] -- and the
+remedy is to size `numClients` for your request volume and core count
+(xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]).

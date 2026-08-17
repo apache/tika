@@ -88,6 +88,7 @@ public class KafkaEmitter extends AbstractEmitter {
         safePut(props, ProducerConfig.BUFFER_MEMORY_CONFIG, config.bufferMemory());
         safePut(props, ProducerConfig.CLIENT_ID_CONFIG, config.clientId());
         safePut(props, ProducerConfig.COMPRESSION_TYPE_CONFIG, config.compressionType());
+        safePut(props, ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, config.connectionsMaxIdleMs());
         safePut(props, ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, config.deliveryTimeoutMs());
         safePut(props, ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, config.enableIdempotence());
         safePut(props, ProducerConfig.INTERCEPTOR_CLASSES_CONFIG, config.interceptorClasses());

@@ -44,7 +44,7 @@
   "pipes-reporters": {
     "opensearch-pipes-reporter": {
       "openSearchUrl": "https://opensearch.example.com:9200/tika-status",
-      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION", "OOM", "TIMEOUT"],
+      "includes": ["PARSE_SUCCESS", "PARSE_EXCEPTION_NO_EMIT", "OOM", "TIMEOUT"],
       "keyPrefix": "tika_",
       "includeRouting": true,
       "httpClientConfig": {

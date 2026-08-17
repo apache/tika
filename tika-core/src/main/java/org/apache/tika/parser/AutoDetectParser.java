@@ -26,10 +26,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.extractor.StandardExtractorFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -180,7 +177,7 @@ public class AutoDetectParser extends CompositeParser {
         SecureContentHandler sch = handler != null ?
                 createSecureContentHandler(handler, tis, context) : null;
 
-        initializeEmbeddedDocumentExtractor(metadata, context);
+        initializeEmbeddedParserAndDetector(context);
         try {
             // Parse the document
             super.parse(tis, sch, metadata, context);
@@ -208,10 +205,14 @@ public class AutoDetectParser extends CompositeParser {
         return handler;
     }
 
-    private void initializeEmbeddedDocumentExtractor(Metadata metadata, ParseContext context) {
-        if (context.get(EmbeddedDocumentExtractor.class) != null) {
-            return;
-        }
+    /**
+     * Ensures embedded-document processing has a Parser and a Detector to fall back on,
+     * regardless of whether an EmbeddedDocumentExtractor is already bound in the context --
+     * every stock extractor (ParsingEmbeddedDocumentExtractor and its subclasses) reads
+     * Parser.class via DelegatingParser, so leaving it unset silently drops embedded content
+     * even when an extractor is present.
+     */
+    private void initializeEmbeddedParserAndDetector(ParseContext context) {
         // pass in self for embedded documents unless
         // the caller has specified a parser
         Parser p = context.get(Parser.class);
@@ -224,12 +225,6 @@ public class AutoDetectParser extends CompositeParser {
         if (d == null) {
             context.set(Detector.class, getDetector());
         }
-        EmbeddedDocumentExtractorFactory edxf = context.get(EmbeddedDocumentExtractorFactory.class);
-        if (edxf == null) {
-            edxf = new StandardExtractorFactory();
-        }
-        EmbeddedDocumentExtractor edx = edxf.newInstance(metadata, context);
-        context.set(EmbeddedDocumentExtractor.class, edx);
     }
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata)

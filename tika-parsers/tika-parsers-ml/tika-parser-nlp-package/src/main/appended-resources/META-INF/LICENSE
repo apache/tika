@@ -1,0 +1,152 @@
+APACHE TIKA SUBCOMPONENTS
+
+The `-shaded.jar` built from this module is an "uber" jar: it contains the
+classes and resources of its dependencies alongside Apache Tika's own.  Except
+for the components listed below, those dependencies are licensed under the
+Apache License, Version 2.0, whose terms appear above.  The components below
+are licensed under other terms, reproduced here as required.
+
+
+Bouncy Castle Licence
+
+    Applies to:
+        org.bouncycastle:bcjmail-jdk18on:1.85
+        org.bouncycastle:bcpkix-jdk18on:1.85
+        org.bouncycastle:bcprov-jdk18on:1.85.2
+        org.bouncycastle:bcutil-jdk18on:1.85
+
+    Copyright (c) 2000-2009 The Legion Of The Bouncy Castle
+    (http://www.bouncycastle.org)
+
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files
+    (the "Software"), to deal in the Software without restriction,
+    including without limitation the rights to use, copy, modify, merge,
+    publish, distribute, sublicense, and/or sell copies of the Software,
+    and to permit persons to whom the Software is furnished to do so,
+    subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+    THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+    OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+    ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+    OTHER DEALINGS IN THE SOFTWARE.
+
+
+Eclipse Distribution License, Version 1.0 (3-Clause BSD)
+
+    Applies to:
+        com.sun.istack:istack-commons-runtime:4.1.2
+        jakarta.activation:jakarta.activation-api:2.1.4
+        jakarta.xml.bind:jakarta.xml.bind-api:4.0.5
+        org.eclipse.angus:angus-activation:2.0.3
+        org.glassfish.jaxb:jaxb-core:4.0.9
+        org.glassfish.jaxb:jaxb-runtime:4.0.9
+        org.glassfish.jaxb:txw2:4.0.9
+
+    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions
+    are met:
+
+      - Redistributions of source code must retain the above copyright
+        notice, this list of conditions and the following disclaimer.
+
+      - Redistributions in binary form must reproduce the above copyright
+        notice, this list of conditions and the following disclaimer in the
+        documentation and/or other materials provided with the distribution.
+
+      - Neither the name of the Eclipse Foundation, Inc. nor the names of its
+        contributors may be used to endorse or promote products derived
+        from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
+Eclipse Public License, Version 2.0
+
+    Applies to:
+        jakarta.annotation:jakarta.annotation-api:3.0.0
+        jakarta.ws.rs:jakarta.ws.rs-api:4.0.0
+
+    This program and the accompanying materials are made available under the terms
+    of the Eclipse Public License 2.0 which is available at
+    http://www.eclipse.org/legal/epl-2.0
+
+    SPDX-License-Identifier: EPL-2.0
+
+    Secondary Licenses: when the conditions for such availability set forth in the
+    Eclipse Public License v. 2.0 are satisfied, the following Secondary Licenses
+    apply: GNU General Public License, version 2 with the GNU Classpath Exception,
+    which is available at https://www.gnu.org/software/classpath/license.html.
+
+
+GNU General Public License, Version 2, with the Classpath Exception
+
+    Applies to:
+        jakarta.annotation:jakarta.annotation-api:3.0.0
+        jakarta.ws.rs:jakarta.ws.rs-api:4.0.0
+
+    These components are available under the GNU General Public License, version 2,
+    with the Classpath Exception:
+
+      "Linking this library statically or dynamically with other modules is making
+       a combined work based on this library.  Thus, the terms and conditions of
+       the GNU General Public License cover the whole combination.
+
+       As a special exception, the copyright holders of this library give you
+       permission to link this library with independent modules to produce an
+       executable, regardless of the license terms of these independent modules,
+       and to copy and distribute the resulting executable under terms of your
+       choice, provided that you also meet, for each linked independent module,
+       the terms and conditions of the license of that module.  An independent
+       module is a module which is not derived from or based on this library.  If
+       you modify this library, you may extend this exception to your version of
+       the library, but you are not obliged to do so.  If you do not wish to do so,
+       delete this exception statement from your version."
+
+    These components are dual-licensed; Apache Tika redistributes them in binary
+    form relying on the Classpath Exception.
+
+
+The 2-Clause BSD License
+
+    Applies to:
+        org.codehaus.woodstox:stax2-api:4.3.0
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this
+       list of conditions and the following disclaimer.
+
+    2. Redistributions in binary form must reproduce the above copyright notice,
+       this list of conditions and the following disclaimer in the documentation
+       and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

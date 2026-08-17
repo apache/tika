@@ -1,0 +1,136 @@
+APACHE TIKA SUBCOMPONENTS
+
+This distribution bundles third-party libraries under lib/.  Except for the
+components listed below, those libraries are licensed under the Apache License,
+Version 2.0, whose terms appear above.  The components below are licensed under
+other terms, reproduced here as required.
+
+
+Eclipse Public License, Version 2.0
+
+    Applies to:
+        jakarta.annotation-api-3.0.0.jar
+
+    This program and the accompanying materials are made available under the terms
+    of the Eclipse Public License 2.0 which is available at
+    http://www.eclipse.org/legal/epl-2.0
+
+    The full text of the Eclipse Public License, Version 2.0 accompanies each such
+    component inside its own jar in this distribution, at META-INF/LICENSE (or
+    META-INF/LICENSE.md) within the jars named above under lib/.
+
+    SPDX-License-Identifier: EPL-2.0
+
+    Secondary Licenses: when the conditions for such availability set forth in the
+    Eclipse Public License v. 2.0 are satisfied, the following Secondary Licenses
+    apply: GNU General Public License, version 2 with the GNU Classpath Exception,
+    which is available at https://www.gnu.org/software/classpath/license.html.
+
+
+GNU General Public License, Version 2, with the Classpath Exception
+
+    Applies to:
+        jakarta.annotation-api-3.0.0.jar
+
+    This component is available under the GNU General Public License, version 2,
+    with the Classpath Exception:
+
+      "Linking this library statically or dynamically with other modules is making
+       a combined work based on this library.  Thus, the terms and conditions of
+       the GNU General Public License cover the whole combination.
+
+       As a special exception, the copyright holders of this library give you
+       permission to link this library with independent modules to produce an
+       executable, regardless of the license terms of these independent modules,
+       and to copy and distribute the resulting executable under terms of your
+       choice, provided that you also meet, for each linked independent module,
+       the terms and conditions of the license of that module.  An independent
+       module is a module which is not derived from or based on this library.  If
+       you modify this library, you may extend this exception to your version of
+       the library, but you are not obliged to do so.  If you do not wish to do so,
+       delete this exception statement from your version."
+
+    The full text of the GNU General Public License, version 2 accompanies each such
+    component inside its own jar in this distribution, at META-INF/LICENSE (or
+    META-INF/LICENSE.md) within the jars named above under lib/.  These components
+    are dual-licensed; Apache Tika redistributes them in binary form relying on the
+    Classpath Exception.
+
+
+Java Native Access (JNA) -- dual-licensed, used here under Apache-2.0
+
+    Applies to:
+        jna-5.19.1.jar
+
+    Java Native Access (JNA) is distributed under a choice of licenses.  Its own
+    META-INF/LICENSE declares:
+
+        SPDX-License-Identifier: Apache-2.0 OR LGPL-2.1-or-later
+
+        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or later,
+        or (from version 4.0 onward) the Apache License, version 2.0.
+        You can freely decide which license you want to apply to the project.
+
+    Apache Tika elects the Apache License, Version 2.0, whose terms appear at the
+    top of this file.  Note that JNA's Maven POM declares only the LGPL option, so
+    automated license scans may report this dependency as LGPL-2.1-or-later; the
+    dual license above governs.
+
+
+The MIT License
+
+    Applies to:
+        azure-core-1.58.1.jar
+        azure-core-http-netty-1.16.5.jar
+        azure-identity-1.18.4.jar
+        azure-json-1.5.1.jar
+        azure-xml-1.2.1.jar
+        jwks-rsa-0.24.1.jar
+        microsoft-graph-6.67.0.jar
+        microsoft-graph-core-3.6.6.jar
+        microsoft-kiota-abstractions-1.9.3.jar
+        microsoft-kiota-authentication-azure-1.9.3.jar
+        microsoft-kiota-http-okHttp-1.9.3.jar
+        microsoft-kiota-serialization-form-1.9.3.jar
+        microsoft-kiota-serialization-json-1.9.3.jar
+        microsoft-kiota-serialization-multipart-1.9.3.jar
+        microsoft-kiota-serialization-text-1.9.3.jar
+        msal4j-1.25.1.jar
+        msal4j-persistence-extension-1.3.0.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+
+The MIT No Attribution License (MIT-0)
+
+    Applies to:
+        reactive-streams-1.0.4.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of
+    this software and associated documentation files (the "Software"), to deal in
+    the Software without restriction, including without limitation the rights to
+    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+    the Software, and to permit persons to whom the Software is furnished to do so.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+    FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+    COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+    IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -129,7 +129,7 @@ public class OfficeParser extends AbstractOfficeParser {
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
             EmbeddedDocumentUtil.recordException(e, m);
-            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
                         TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, context, true);
@@ -144,7 +144,7 @@ public class OfficeParser extends AbstractOfficeParser {
             if (!StringUtils.isBlank(e.getKey())) {
                 m.set(TikaCoreProperties.RESOURCE_NAME_KEY, e.getKey());
             }
-            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
                 try (TikaInputStream tis = TikaInputStream.get(e.getValue().getBytes(StandardCharsets.UTF_8))) {
                     embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
                 }

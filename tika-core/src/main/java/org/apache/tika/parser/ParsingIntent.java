@@ -17,24 +17,17 @@
 package org.apache.tika.parser;
 
 /**
- * Marker class to indicate parsing intent in ParseContext.
+ * Parsing intent, set in the ParseContext before detection.
  * <p>
- * When set in the ParseContext before detection, this signals to detectors
- * that parsing will follow detection. Detectors can use this hint to perform
- * additional preparation (like salvaging corrupted ZIP files) that would
- * benefit the subsequent parse operation.
+ * {@link #WILL_PARSE} signals detectors that parsing will follow, so they may
+ * prepare durable state for the parser (e.g. salvage a corrupted ZIP into the
+ * open container). Set automatically by {@link AutoDetectParser}.
  * <p>
- * This is automatically set by {@link AutoDetectParser} before calling
- * the detector.
+ * Consumers must compare against a specific constant, never test for mere
+ * presence, so that new intents can be added without changing their behavior.
  */
-public final class ParsingIntent {
+public enum ParsingIntent {
 
-    /**
-     * Singleton instance indicating that parsing will follow detection.
-     */
-    public static final ParsingIntent WILL_PARSE = new ParsingIntent();
-
-    private ParsingIntent() {
-        // Private constructor for singleton
-    }
+    /** Parsing will follow detection. */
+    WILL_PARSE
 }

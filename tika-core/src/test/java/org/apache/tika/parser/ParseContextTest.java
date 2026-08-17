@@ -87,6 +87,27 @@ public class ParseContextTest {
                 "copyFrom should use source's resolvedConfig when source has one");
     }
 
+    /** One key resolves into a validation-only subclass and into the real config class. */
+    @Test
+    public void testResolvedConfigsAreKeyedByClassAsWellAsName() {
+        ParseContext context = new ParseContext();
+        Object base = new Object();
+        StringBuilder subtype = new StringBuilder();
+
+        context.setResolvedConfig("my-component", Object.class, base);
+        context.setResolvedConfig("my-component", StringBuilder.class, subtype);
+
+        assertEquals(base, context.getResolvedConfig("my-component", Object.class));
+        assertEquals(subtype, context.getResolvedConfig("my-component", StringBuilder.class));
+        assertNull(context.getResolvedConfig("my-component", Integer.class));
+        assertNotNull(context.getResolvedConfig("my-component"),
+                "the name-only lookup remains a presence check");
+
+        context.setJsonConfig("my-component", (String) null);
+        assertNull(context.getResolvedConfig("my-component", Object.class));
+        assertNull(context.getResolvedConfig("my-component", StringBuilder.class));
+    }
+
     @Test
     public void testCopyFromEmptySourcePreservesDefaults() {
         ParseContext defaults = new ParseContext();

@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.serialization;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +58,8 @@ public class JsonPipesIpc {
         // Add pipes-specific serializers
         SimpleModule pipesModule = new SimpleModule();
         pipesModule.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
-        pipesModule.addDeserializer(FetchEmitTuple.class, new FetchEmitTupleDeserializer());
+        // Parent-to-child IPC: the host builds these tuples itself and they name __ components.
+        pipesModule.addDeserializer(FetchEmitTuple.class, FetchEmitTupleDeserializer.internal());
         pipesModule.addSerializer(EmitData.class, new EmitDataSerializer());
         pipesModule.addDeserializer(EmitDataImpl.class, new EmitDataDeserializer());
         pipesModule.addSerializer(PipesResult.class, new PipesResultSerializer());
@@ -70,6 +72,16 @@ public class JsonPipesIpc {
      */
     public static byte[] toBytes(Object obj) throws IOException {
         return OBJECT_MAPPER.writeValueAsBytes(obj);
+    }
+
+    /**
+     * Serialize an object to Smile binary format, writing directly into {@code out}.
+     * Any {@link IOException} thrown by {@code out} (e.g. from a size-capped stream)
+     * propagates unchanged, letting callers distinguish payload-limit aborts from
+     * genuine I/O errors.
+     */
+    public static void toStream(Object obj, OutputStream out) throws IOException {
+        OBJECT_MAPPER.writeValue(out, obj);
     }
 
     /**

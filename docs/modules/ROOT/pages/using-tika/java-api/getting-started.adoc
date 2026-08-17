@@ -17,54 +17,31 @@
 
 = Getting Started with the Java API
 
-== Before You Start
+== Consider a service first
 
-Before embedding Tika directly in your Java application, consider whether a
-client-server architecture would better suit your needs.
+For most use cases, run Tika as a separate service rather than embedding it:
+xref:using-tika/server/index.adoc[tika-server] (REST) or
+xref:using-tika/grpc/index.adoc[tika-grpc]. A parser crash then cannot affect your application,
+you deploy from the official https://hub.docker.com/r/apache/tika[Docker images], you can call it
+from any language, and you upgrade Tika independently of your own release cycle.
 
-=== Recommended: Use tika-server or tika-grpc
+Embed the Java API when you need tight integration with Tika internals, cannot run a network
+service, or have customization requirements a service cannot express.
 
-For most use cases, we recommend running Tika as a separate service rather than
-embedding it directly:
+== PipesForkParser
 
-* **xref:using-tika/server/index.adoc[tika-server]** - REST API, language-agnostic
-* **xref:using-tika/grpc/index.adoc[tika-grpc]** - High-performance gRPC protocol
+If you do embed Tika, use `PipesForkParser` from `tika-pipes-fork-parser`. It parses in a separate
+JVM — process isolation, automatic restart after a crash, configurable timeouts — and is
+thread-safe, so one instance serves many threads.
 
-**Why?**
-
-* **Process isolation** - Parser crashes don't affect your application
-* **Easier deployment** - Use official Docker images
-* **Language flexibility** - Call from any language, not just Java
-* **Simpler upgrades** - Update Tika independently of your application
-
-Docker images are available at https://hub.docker.com/r/apache/tika[Docker Hub].
-
-=== When to Use the Java API
-
-The Java API is appropriate when you:
-
-* Need tight integration with Tika internals
-* Cannot use a network service
-* Have specific customization requirements
-
-== Using PipesForkParser (Recommended)
-
-If you must use Tika as a library, use `PipesForkParser` from the
-`tika-pipes-fork-parser` module. It provides process isolation to protect your
-application from parser crashes, memory leaks, and infinite loops.
-
-=== Maven Dependency
-
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-fork-parser</artifactId>
-    <version>${tika.version}</version>
+    <version>{tika-version}</version>
 </dependency>
 ----
-
-=== Basic Example
 
 [source,java]
 ----
@@ -86,45 +63,18 @@ try (PipesForkParser parser = new PipesForkParser()) {
 }
 ----
 
-=== Key Features
-
-* **Process isolation** - Parsing runs in a separate JVM
-* **Automatic restart** - If the forked process crashes, it restarts automatically
-* **Configurable timeouts** - Prevent infinite loops
-* **Thread-safe** - Reuse across multiple threads
-
-=== Complete Examples
-
 See
 https://github.com/apache/tika/blob/main/tika-example/src/main/java/org/apache/tika/example/PipesForkParserExample.java[PipesForkParserExample.java]
-in the `tika-example` module for comprehensive examples including:
+in the `tika-example` module for embedded documents, custom configuration, error handling and batch
+processing.
 
-* Basic parsing
-* Handling embedded documents
-* Custom configuration
-* Error handling
-* Batch processing
+== Without process isolation
 
-== Without Pipes: Understanding the Risks
+WARNING: Calling parsers directly — `AutoDetectParser` and friends — on untrusted content can
+cause OutOfMemoryErrors, infinite loops, and crashes that take down your whole application. Never
+run Tika in the same JVM as critical infrastructure.
 
-If you choose not to use `PipesForkParser` and instead use Tika's parsers directly
-(e.g., `AutoDetectParser`), you are responsible for handling the risks of parsing
-untrusted content.
-
-WARNING: Running parsers directly on untrusted data can cause OutOfMemoryErrors,
-infinite loops, and crashes that will affect your entire application.
-
-Before proceeding without process isolation, read:
-
-* xref:advanced/robustness.adoc[The Robustness of Apache Tika] - Understanding parser risks and mitigations
-* https://tika.apache.org/security-model.html[Apache Tika Security Model] - Trust boundaries and assumptions
-
-If you still need to use parsers directly, your application is responsible for
-implementing its own process isolation so that you can:
-
-* Set parse timeouts (Tika cannot enforce timeouts without process isolation)
-* Configure memory limits (requires separate JVM)
-* Kill runaway processes
-* Recover from crashes
-
-Never run Tika in the same JVM as critical infrastructure.
+If you go that route, your application owns the isolation: Tika cannot enforce a parse timeout, a
+memory limit, a process kill, or a crash recovery without a separate process. Read
+xref:advanced/robustness.adoc[The Robustness of Apache Tika] and the
+https://tika.apache.org/security-model.html[Apache Tika Security Model] first.

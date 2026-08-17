@@ -62,23 +62,22 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.DeleteFetcherReply;
-import org.apache.tika.DeleteFetcherRequest;
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.GetFetcherConfigJsonSchemaReply;
-import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
-import org.apache.tika.GetFetcherReply;
-import org.apache.tika.GetFetcherRequest;
-import org.apache.tika.ListFetchersReply;
-import org.apache.tika.ListFetchersRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.SavePipesIteratorReply;
-import org.apache.tika.SavePipesIteratorRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.api.PipesResult;
-import org.apache.tika.pipes.fetcher.fs.FileSystemFetcher;
+import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
+import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.GetFetcherConfigJsonSchemaReply;
+import org.apache.tika.pipes.grpc.proto.GetFetcherConfigJsonSchemaRequest;
+import org.apache.tika.pipes.grpc.proto.GetFetcherReply;
+import org.apache.tika.pipes.grpc.proto.GetFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.ListFetchersReply;
+import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherReply;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.SavePipesIteratorReply;
+import org.apache.tika.pipes.grpc.proto.SavePipesIteratorRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 
 @ExtendWith(GrpcCleanupExtension.class)
@@ -226,7 +225,8 @@ public class TikaGrpcServerTest {
 
     @NotNull
     private static String createFetcherId(int i) {
-        return "nick" + i + ":is:cool:super/" + FileSystemFetcher.class;
+        // ComponentIds restricts ids to letters, digits, '.', '_' and '-'
+        return "nick" + i + ".is.cool.super-fs";
     }
 
     @Test

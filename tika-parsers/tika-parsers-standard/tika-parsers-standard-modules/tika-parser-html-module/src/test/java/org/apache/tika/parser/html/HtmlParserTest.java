@@ -1410,10 +1410,4 @@ public class HtmlParserTest extends TikaTest {
         assertContains("this is content", xml);
     }
 
-
-    @Test
-    @Disabled("until we upgrade jsoup to >= 1.21.1 ")
-    public void testJsoupUnknownSelfCloseableTags() throws Exception {
-        //TODO -- figure out how to test this.
-    }
 }

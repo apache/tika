@@ -39,8 +39,11 @@ public interface PDF {
     // byte offsets: integral; was REAL only to satisfy the old REAL-only getLongValues
     Property EOF_OFFSETS = Property.externalIntegerSequence(PDF_PREFIX + "eof-offsets");
 
-    /** Trapped flag from the XMP {@code pdf:} schema; docinfo counterpart {@link #DOC_INFO_TRAPPED}. */
-    Property TRAPPED = Property.internalText(PDF_PREFIX + "Trapped");
+    /**
+     * Trapped flag from the docinfo dictionary or the XMP {@code pdf:} schema; the
+     * docinfo value is also recorded under {@link #DOC_INFO_TRAPPED}.
+     */
+    Property TRAPPED = Property.internalText(PDF_PREFIX + "trapped");
 
     /**
      * Prefix to be used for properties that record what was stored

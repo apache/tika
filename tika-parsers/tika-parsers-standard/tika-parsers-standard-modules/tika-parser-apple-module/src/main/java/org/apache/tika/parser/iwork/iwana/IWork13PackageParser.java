@@ -194,7 +194,7 @@ public class IWork13PackageParser implements Parser {
             embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
-            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor, parseContext);
         } else if (streamName.equals("preview-micro.jpg") ||
                 streamName.equals("preview-web.jpg")
                 || streamName.endsWith(".iwa")) {
@@ -202,7 +202,7 @@ public class IWork13PackageParser implements Parser {
         } else {
             Metadata embeddedMetadata = Metadata.newInstance(parseContext);
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, streamName);
-            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor);
+            handleEmbedded(tis, embeddedMetadata, xhtml, embeddedDocumentExtractor, parseContext);
         }
     }
 
@@ -210,10 +210,11 @@ public class IWork13PackageParser implements Parser {
 
     private void handleEmbedded(TikaInputStream tis, Metadata embeddedMetadata,
                                 XHTMLContentHandler xhtml,
-                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
+                                EmbeddedDocumentExtractor embeddedDocumentExtractor,
+                                ParseContext parseContext)
             throws IOException, SAXException, TikaException {
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
-            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, new ParseContext(), true);
+        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, embeddedMetadata, parseContext, true);
         }
     }
 

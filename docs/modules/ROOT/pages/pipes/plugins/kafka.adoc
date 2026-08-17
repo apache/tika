@@ -46,7 +46,9 @@ include::example$pipes-kafka-emitter.json[]
 
 === Configuration
 
-Most fields map directly to standard Kafka producer settings; the defaults listed here match Kafka's own defaults unless noted.
+Fields map onto standard Kafka producer settings. Tika supplies no values of its own: an
+absent field is omitted from the producer properties, so the Kafka client's own default
+applies. The Default column below is therefore the Kafka client's default.
 
 [cols="1,1,3"]
 |===
@@ -62,51 +64,51 @@ Most fields map directly to standard Kafka producer settings; the defaults liste
 
 |`acks`
 |`all`
-|Producer acks setting: `0`, `1`, or `all`.
+|Producer acks: `0`, `1`, or `all`.
 
 |`lingerMs`
-|`5000`
-|Producer linger in milliseconds.
+|`5`
+|Producer linger, ms.
 
 |`batchSize`
 |`16384`
-|Producer batch size in bytes.
+|Producer batch size, bytes.
 
 |`bufferMemory`
 |`33554432`
-|Producer buffer memory in bytes (32 MiB).
+|Producer buffer memory, bytes (32 MiB).
 
 |`compressionType`
 |`none`
 |One of `none`, `gzip`, `snappy`, `lz4`, `zstd`.
 
 |`connectionsMaxIdleMs`
-|`540000`
-|Producer connection idle timeout.
+|_ignored_
+|Accepted by the config parser but never passed to the producer, so it has no effect. Kafka's own `connections.max.idle.ms` default of `540000` always applies.
 
 |`deliveryTimeoutMs`
 |`120000`
-|End-to-end delivery timeout.
+|End-to-end delivery timeout. Must be at least `lingerMs + requestTimeoutMs`.
 
 |`enableIdempotence`
-|`false`
-|Enable the idempotent producer. Requires `acks=all` and `maxInFlightRequestsPerConnection<=5`.
+|`true`
+|Idempotent producer. Requires `acks=all` and `maxInFlightRequestsPerConnection` of at most 5.
 
 |`interceptorClasses`
-|_no default_
+|_none_
 |Comma-separated list of producer interceptor class names.
 
 |`maxBlockMs`
 |`60000`
-|How long the producer blocks on `send()` when the buffer is full.
+|How long `send()` blocks when the buffer is full.
 
 |`maxInFlightRequestsPerConnection`
 |`5`
-|In-flight requests per connection.
+|In-flight requests per connection. Must be at least `1`; `0` fails producer construction.
 
 |`maxRequestSize`
 |`1048576`
-|Maximum request size in bytes (1 MiB).
+|Maximum request size, bytes (1 MiB).
 
 |`metadataMaxAgeMs`
 |`300000`
@@ -118,7 +120,7 @@ Most fields map directly to standard Kafka producer settings; the defaults liste
 
 |`retries`
 |`2147483647`
-|Producer retries. Default is `Integer.MAX_VALUE`; capped by `deliveryTimeoutMs`.
+|Producer retries, capped in practice by `deliveryTimeoutMs`.
 
 |`retryBackoffMs`
 |`100`
@@ -126,19 +128,19 @@ Most fields map directly to standard Kafka producer settings; the defaults liste
 
 |`transactionTimeoutMs`
 |`60000`
-|Transaction timeout (only meaningful with `transactionalId`).
+|Transaction timeout; only meaningful with `transactionalId`.
 
 |`transactionalId`
-|_no default_
-|Set to enable transactional producer.
+|_none_
+|Set to enable the transactional producer.
 
 |`clientId`
-|_no default_
-|`client.id` to send with each request.
+|_none_
+|`client.id` sent with each request.
 
 |`keySerializer` / `valueSerializer`
-|_no default_
-|Fully-qualified serializer class names. Leave unset to use the plugin's defaults (string keys, JSON values).
+|`StringSerializer`
+|Fully-qualified serializer class names. Unset (or unloadable) falls back to `StringSerializer` for both.
 |===
 
 [#kafka-iterator]
@@ -153,6 +155,8 @@ include::example$pipes-kafka-iterator.json[]
 
 === Configuration
 
+In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
+
 [cols="1,1,3"]
 |===
 |Field |Default |Description
@@ -166,12 +170,12 @@ include::example$pipes-kafka-iterator.json[]
 |Broker list.
 
 |`groupId`
-|_optional_
+|_none_
 |Kafka consumer group ID. Strongly recommended in production for failover and partition reassignment.
 
 |`keySerializer` / `valueSerializer`
-|_optional_
-|Custom (de)serializer class names.
+|`StringDeserializer`
+|Consumer deserializer class names. Unset (or unloadable) falls back to `StringDeserializer` for both.
 
 |`autoOffsetReset`
 |`earliest`
@@ -188,16 +192,12 @@ include::example$pipes-kafka-iterator.json[]
 |`groupInitialRebalanceDelayMs`
 |`3000`
 |Initial rebalance delay for the consumer group.
-
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
 |===
 
 [#kafka-pipeline]
 == Complete Pipeline Example
 
-The example below wires the Kafka iterator (consuming fetch requests) with a filesystem fetcher and a Kafka emitter (publishing parsed results). Common for stream-processing-style document pipelines.
+A Kafka iterator (consuming fetch requests), a filesystem fetcher, and a Kafka emitter (publishing parsed results) — the stream-processing shape.
 
 [source,json]
 ----

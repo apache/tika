@@ -97,7 +97,7 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
             }
         });
 
-        ParsingEmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+        ParsingEmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
         ContentHandler handler = new DefaultHandler();
 
         // First embedded document: its own operation times out.
@@ -144,10 +144,10 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
             }
         });
 
-        ParsingEmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+        ParsingEmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
         ContentHandler handler = new DefaultHandler();
 
-        assertFalse(extractor.shouldParseEmbedded(new Metadata()));
+        assertFalse(extractor.shouldParseEmbedded(new Metadata(), context));
 
         ParseRecord parseRecord = context.get(ParseRecord.class);
         assertTrue(parseRecord.isTaskDeadlineReached());
@@ -167,10 +167,10 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
         ParseContext context = contextWithExhaustedBudget();
         context.get(ParseRecord.class).setThrowOnDeadline(true);
 
-        ParsingEmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+        ParsingEmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
 
         EmbeddedLimitReachedException ex = assertThrows(EmbeddedLimitReachedException.class,
-                () -> extractor.shouldParseEmbedded(new Metadata()));
+                () -> extractor.shouldParseEmbedded(new Metadata(), context));
         assertEquals(EmbeddedLimitReachedException.LimitType.DEADLINE, ex.getLimitType());
     }
 
@@ -185,14 +185,14 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
     public void testThrowOnDeadlineThrowsForEverySiblingOnceLimitHit() {
         ParseContext context = contextWithExhaustedBudget();
         context.get(ParseRecord.class).setThrowOnDeadline(true);
-        ParsingEmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+        ParsingEmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
 
         EmbeddedLimitReachedException first = assertThrows(EmbeddedLimitReachedException.class,
-                () -> extractor.shouldParseEmbedded(new Metadata()));
+                () -> extractor.shouldParseEmbedded(new Metadata(), context));
         assertEquals(EmbeddedLimitReachedException.LimitType.DEADLINE, first.getLimitType());
 
         EmbeddedLimitReachedException second = assertThrows(EmbeddedLimitReachedException.class,
-                () -> extractor.shouldParseEmbedded(new Metadata()),
+                () -> extractor.shouldParseEmbedded(new Metadata(), context),
                 "a second sibling must also throw, not silently skip just because a " +
                         "different embedded doc already recorded the deadline");
         assertEquals(EmbeddedLimitReachedException.LimitType.DEADLINE, second.getLimitType());
@@ -211,14 +211,14 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
         context.set(ParseRecord.class, parseRecord);
         context.set(ParseTimeout.class, ParseTimeout.start(new TimeoutLimits(60_000, 60_000)));
 
-        ParsingEmbeddedDocumentExtractor extractor = new ParsingEmbeddedDocumentExtractor(context);
+        ParsingEmbeddedDocumentExtractor extractor = ParsingEmbeddedDocumentExtractor.INSTANCE;
 
         EmbeddedLimitReachedException first = assertThrows(EmbeddedLimitReachedException.class,
-                () -> extractor.shouldParseEmbedded(new Metadata()));
+                () -> extractor.shouldParseEmbedded(new Metadata(), context));
         assertEquals(EmbeddedLimitReachedException.LimitType.MAX_COUNT, first.getLimitType());
 
         EmbeddedLimitReachedException second = assertThrows(EmbeddedLimitReachedException.class,
-                () -> extractor.shouldParseEmbedded(new Metadata()),
+                () -> extractor.shouldParseEmbedded(new Metadata(), context),
                 "a second sibling must also throw once the count limit is hit, not " +
                         "silently skip just because a different embedded doc noticed first");
         assertEquals(EmbeddedLimitReachedException.LimitType.MAX_COUNT, second.getLimitType());
@@ -259,7 +259,7 @@ public class ParsingEmbeddedDocumentExtractorTimeoutTest {
                               ParseContext context) throws TikaException {
                 // Mirrors what a real container parser (ZipParser, MockParser, etc.)
                 // does for each entry it finds.
-                new ParsingEmbeddedDocumentExtractor(context).shouldParseEmbedded(new Metadata());
+                ParsingEmbeddedDocumentExtractor.INSTANCE.shouldParseEmbedded(new Metadata(), context);
             }
         };
 

@@ -171,12 +171,12 @@ public class SevenZParser extends AbstractArchiveParser {
                 xhtml,
                 context);
 
-        if (extractor.shouldParseEmbedded(entrydata)) {
+        if (extractor.shouldParseEmbedded(entrydata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tis = TikaInputStream.get(
                         new SevenZEntryInputStream(sevenZFile), tmp, entrydata);
-                extractor.parseEmbedded(tis, xhtml, entrydata, new ParseContext(), true);
+                extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
             } finally {
                 tmp.dispose();
             }

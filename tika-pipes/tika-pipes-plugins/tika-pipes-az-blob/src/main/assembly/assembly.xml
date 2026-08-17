@@ -43,6 +43,14 @@
   </dependencySets>
   <fileSets>
     <fileSet>
+      <directory>${project.build.directory}/maven-shared-archive-resources/META-INF</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+        <include>LICENSE</include>
+        <include>NOTICE</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.build.directory}/lib</directory>
       <outputDirectory>/lib</outputDirectory>
     </fileSet>
@@ -54,7 +62,7 @@
       </includes>
     </fileSet>
     <fileSet>
-      <directory>${project.basedir}/src/main/resources</directory>
+      <directory>${project.build.outputDirectory}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>plugin.properties</include>

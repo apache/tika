@@ -19,7 +19,7 @@
 
 These files build the official Docker images for Apache Tika Server published as [apache/tika](https://hub.docker.com/r/apache/tika) on DockerHub by the [Apache Tika](http://tika.apache.org) Dev team.
 
-The images create a functional Apache Tika Server instance that contains the latest Ubuntu running the appropriate version's server on Port 9998 using Java 8 (until version 1.20), Java 11 (1.21 and 1.24.1), Java 14 (until 1.27/2.0.0), Java 16 (for 2.1.0), and Java 17 LTS for newer versions.
+The images create a functional Apache Tika Server instance that contains the latest Ubuntu running the appropriate version's server on Port 9998 using Java 8 (until version 1.20), Java 11 (1.21 and 1.24.1), Java 14 (until 1.27/2.0.0), Java 16 (for 2.1.0), Java 17 LTS (2.2.0 through the 3.x line), and Java 25 for the 4.x images (`ARG JRE` in the Dockerfiles here). The separate `apache/tika-grpc` image (see `tika-grpc/docker-build/Dockerfile`) runs on Java 21.
 
 There is a minimal version, which contains only Apache Tika and it's core dependencies, and a full version, which also includes dependencies for the GDAL and Tesseract OCR parsers. To balance showing functionality versus the size of the full image, this file by default installs the language packs for the following languages:
 * English
@@ -33,26 +33,25 @@ To install more languages, set the build argument `LANGUAGES` or include your ow
 
 ## Available Tags
 
-Each 4.x release publishes three tags per image, all pointing at the same
-manifest digest:
-
-- `apache/tika:<version>` — mutable, rolls forward on Docker-only rebuilds for the same Tika version.
-- `apache/tika:<version>-<N>` — immutable, never reassigned. Pin to this if you want stability across rebuilds. `N=1` is the initial build; `N=2,3,...` for subsequent rebuilds (CVE fixes, base-image refresh, etc.).
-- `apache/tika:latest` — rolling pointer to the newest **stable** release. Stays on 3.x until 4.0.0 GA; preview tags (`-alpha`, `-BETA`, `-RC`) do **not** displace it.
-
-(Same scheme applies to the `-full` variants and to `apache/tika-grpc`, with
-the caveat that `apache/tika-grpc:latest` always tracks the newest 4.x release
-since there's no 3.x incumbent.)
+Each 4.x release publishes three tags per image — `<version>` (mutable, rolls
+forward on Docker-only rebuilds), `<version>-<N>` (immutable, what to pin), and
+`latest` (newest **stable** release) — all pointing at the same manifest digest.
+The tag scheme, the image variants, and which platforms each image is built for
+are documented in full in the Tika documentation, `Running Tika in Docker`
+(source: `docs/modules/ROOT/pages/using-tika/docker.adoc`); the release-side
+procedure is in `docs/modules/ROOT/pages/maintainers/release-guides/docker.adoc`.
 
 Most recent tags:
-- `latest`, `latest-full`: Apache Tika Server 3.3.0 (currently — moves to 4.0.0 at GA)
-- `4.0.0-alpha-1`, `4.0.0-alpha-1-1`: Apache Tika Server 4.0.0-alpha-1 (Minimal, 4.x preview)
-- `4.0.0-alpha-1-full`, `4.0.0-alpha-1-1-full`: Apache Tika Server 4.0.0-alpha-1 (Full, 4.x preview)
+- `latest`, `latest-full`: Apache Tika Server 3.3.1 (currently — moves to 4.0.0 at GA)
+- `4.0.0-beta-1`, `4.0.0-beta-1-full`: Apache Tika Server 4.0.0-beta-1 (4.x preview)
+- `4.0.0-alpha-1`, `4.0.0-alpha-1-full`: Apache Tika Server 4.0.0-alpha-1 (4.x preview)
 
 Legacy 3.x and earlier tags use the `<version>.<docker-build-number>`
-convention (e.g. `3.3.0.0`, `3.2.3.0`). Those tags are immutable and still
+convention (e.g. `3.3.1.0`, `3.3.0.0`). Those tags are immutable and still
 pullable.
 
+- `3.3.1.0`, `3.3.1.0`: Apache Tika Server 3.3.1.0 (Minimal)
+- `3.3.1.0`, `3.3.1.0-full`: Apache Tika Server 3.3.1.0 (Full)
 - `3.3.0.0`, `3.3.0.0`: Apache Tika Server 3.3.0.0 (Minimal)
 - `3.3.0.0`, `3.3.0.0-full`: Apache Tika Server 3.3.0.0 (Full)
 - `3.2.3.0`, `3.2.3.0`: Apache Tika Server 3.2.3.0 (Minimal)

@@ -7,7 +7,7 @@
     }
   },
   "emitters": {
-    "unpack-emitter": {
+    "__unpack": {
       "file-system-emitter": {
         "basePath": "UNPACK_EMITTER_BASE_PATH",
         "onExists": "REPLACE"

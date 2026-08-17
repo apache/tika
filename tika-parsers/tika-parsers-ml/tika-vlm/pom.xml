@@ -75,6 +75,13 @@
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- vlm-pdf-parsing.json excludes 'pdf-parser', which must resolve (TIKA-3268) -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-pdf-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.s3;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -31,11 +30,31 @@ public record S3EmitterConfig(
         String secretKey,
         String endpointConfigurationService,
         String prefix,
-        @JsonProperty(defaultValue = "json") String fileExtension,
-        @JsonProperty(defaultValue = "true") boolean spoolToTemp,
-        @JsonProperty(defaultValue = "50") int maxConnections,
-        @JsonProperty(defaultValue = "false") boolean pathStyleAccessEnabled
+        String fileExtension,
+        Boolean spoolToTemp,
+        Integer maxConnections,
+        boolean pathStyleAccessEnabled
 ) {
+
+    private static final String DEFAULT_FILE_EXTENSION = "json";
+    private static final boolean DEFAULT_SPOOL_TO_TEMP = true;
+    private static final int DEFAULT_MAX_CONNECTIONS = 50;
+
+    /**
+     * Boxed so an absent value is distinguishable from an explicit one. maxConnections in
+     * particular reaches ApacheHttpClient, which rejects zero.
+     */
+    public S3EmitterConfig {
+        if (fileExtension == null) {
+            fileExtension = DEFAULT_FILE_EXTENSION;
+        }
+        if (spoolToTemp == null) {
+            spoolToTemp = DEFAULT_SPOOL_TO_TEMP;
+        }
+        if (maxConnections == null) {
+            maxConnections = DEFAULT_MAX_CONNECTIONS;
+        }
+    }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 

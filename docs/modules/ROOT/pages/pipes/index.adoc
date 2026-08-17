@@ -22,8 +22,10 @@ This section covers Tika Pipes for scalable, fault-tolerant document processing.
 == Overview
 
 Tika Pipes provides a framework for fault-tolerant, scalable document processing.
-Each document is parsed in a forked JVM with configurable timeouts and memory limits,
-so a single malformed file cannot crash or hang your application.
+Each document is parsed in a **forked JVM** -- a child process the parent starts, feeds over a
+socket and restarts when it dies, called a *fork* throughout these docs -- with configurable
+timeouts and memory limits, so a single malformed file cannot crash or hang your application.
+`numClients` sets how many forks run at once.
 
 While Tika Pipes has a programmatic Java API, it is best used through:
 
@@ -34,24 +36,31 @@ While Tika Pipes has a programmatic Java API, it is best used through:
 See xref:advanced/robustness.adoc[Robustness] for details on how Tika Pipes protects
 against problematic files.
 
-=== Key Components
+=== The four roles
 
-* **Fetchers** — retrieve documents from various sources (filesystem, S3, HTTP, etc.)
-* **Emitters** — send parsed results to various destinations (filesystem, OpenSearch, ES-compatible, Solr, etc.)
-* **Pipelines** — configure processing workflows
+A pipeline is assembled from four kinds of pluggable component. Each is named in the JSON config
+and documented on its own page:
+
+* **Iterator** — enumerates the documents to process (directory walk, S3 listing, CSV, JDBC, Kafka)
+* **Fetcher** — retrieves one document's bytes from its source (filesystem, S3, HTTP, GCS, Azure)
+* **Emitter** — writes the parsed result to a destination (filesystem, OpenSearch, Elasticsearch, Solr, S3, Kafka)
+* **Reporter** — records per-document processing status
 
 == Topics
 
 * xref:pipes/getting-started.adoc[Getting Started] -- complete working example with tika-app
+* xref:pipes/configuration.adoc[Pipeline Configuration] -- numClients, timeouts, JVM args, parse modes, emit batching
 * xref:pipes/fetchers.adoc[Fetchers] -- all available document sources (filesystem, S3, HTTP, GCS, Azure, etc.)
 * xref:pipes/emitters.adoc[Emitters] -- all available output destinations (filesystem, ES, OpenSearch, Solr, S3, Kafka, etc.)
 * xref:pipes/iterators.adoc[Iterators] -- document enumeration (directory walk, S3 listing, CSV, JDBC, Kafka, etc.)
 * xref:pipes/reporters.adoc[Reporters] -- track per-document processing status
-* xref:pipes/configuration.adoc[Pipeline Configuration] -- numClients, timeouts, JVM args, parse modes, emit batching
 * xref:pipes/parse-modes.adoc[Parse Modes] -- control how documents are parsed and emitted (`RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`)
 * xref:pipes/unpack-config.adoc[Extracting Embedded Bytes] -- extract raw bytes from embedded documents
-* xref:pipes/timeouts.adoc[Timeouts] -- two-tier timeout system for handling long-running and hung parsers
+* xref:pipes/timeouts.adoc[Timeouts] -- the timeout model for handling long-running and hung parsers
+* xref:pipes/plugins/index.adoc[Plugins] -- the PF4J-packaged fetchers, emitters and iterators, and how they are loaded
 
 == Advanced Topics
 
-* xref:pipes/shared-server-mode.adoc[Shared Server Mode] - Experimental mode for reduced memory usage
+* xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing] -- how `numClients` divides the host's cores and memory among the forks
+* xref:pipes/shared-server-mode.adoc[Shared Server Mode] -- experimental mode for reduced memory usage
+* xref:pipes/troubleshooting.adoc[Troubleshooting] -- forks that will not start, and reading fork logs

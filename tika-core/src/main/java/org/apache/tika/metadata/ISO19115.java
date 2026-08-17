@@ -66,7 +66,7 @@ public interface ISO19115 {
 
     Property OTHER_CONSTRAINTS = Property.externalTextBag("iso19115:other-constraints");
 
-    Property USER_CONSTRAINTS = Property.externalTextBag("iso19115:user-constraints");
+    Property USE_CONSTRAINTS = Property.externalTextBag("iso19115:use-constraints");
 
     Property GEOGRAPHIC_IDENTIFIER_CODE = Property.externalTextBag("iso19115:geographic-identifier-code");
 

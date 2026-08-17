@@ -1,0 +1,31 @@
+APACHE TIKA SUBCOMPONENTS
+
+The `-shaded.jar` built from this module is an "uber" jar: it contains the
+classes and resources of its dependencies alongside Apache Tika's own.  Except
+for the components listed below, those dependencies are licensed under the
+Apache License, Version 2.0, whose terms appear above.  The components below
+are licensed under other terms, reproduced here as required.
+
+
+SQLite (public domain)
+
+    Applies to:
+        the SQLite sources and native libraries embedded in
+        org.xerial:sqlite-jdbc:3.53.2.1
+
+    The sqlite-jdbc driver itself is licensed under the Apache License,
+    Version 2.0.  It embeds the SQLite database engine, which its authors have
+    dedicated to the public domain:
+
+        All of the code and documentation in SQLite has been dedicated to the
+        public domain by the authors.  All code authors, and representatives of
+        the companies they work for, have signed affidavits dedicating their
+        contributions to the public domain and originals of those signed
+        affidavits are stored in a firesafe at the main offices of Hwaci.  All
+        contributors are citizens of countries that allow creative works to be
+        dedicated into the public domain.  Anyone is free to copy, modify,
+        publish, use, compile, sell, or distribute the original SQLite code,
+        either in source code form or as a compiled binary, for any purpose,
+        commercial or non-commercial, and by any means.
+
+    For details see https://www.sqlite.org/copyright.html

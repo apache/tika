@@ -226,7 +226,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     thumbnailMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
 
-                    if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
+                    if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata, context)) {
                         try (TikaInputStream tis = TikaInputStream.get(tStream)) {
                             embeddedExtractor.parseEmbedded(tis,
                                     new EmbeddedContentHandler(handler), thumbnailMetadata, context, false);
@@ -404,7 +404,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 updateMetadata(metadata, embeddedPartMetadata);
 
                 tis = TikaInputStream.get(fs.createDocumentInputStream(packageEntryName));
-                if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+                if (embeddedExtractor.shouldParseEmbedded(metadata, context)) {
                     embeddedExtractor
                             .parseEmbedded(tis, xhtml, metadata, context, true);
                 }
@@ -425,7 +425,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     tis = TikaInputStream.get(data);
                 }
 
-                if (tis != null && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                if (tis != null && embeddedExtractor.shouldParseEmbedded(metadata, context)) {
                     embeddedExtractor
                             .parseEmbedded(tis, xhtml, metadata, context, true);
                 }
@@ -508,7 +508,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         applyEmbeddedAnchorMetadata(part, metadata);
 
         // Call the recursing handler
-        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+        if (embeddedExtractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(part.getInputStream())) {
                 embeddedExtractor
                         .parseEmbedded(tis, xhtml, metadata, context, true);

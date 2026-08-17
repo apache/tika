@@ -16,22 +16,23 @@
 //
 
 = Design Notes for Tika 4.x
+:toc:
 
 This document captures the design decisions and architectural changes in Apache Tika 4.x.
 
 == Metadata Keys
 
-The design addresses security concerns by implementing namespaced metadata keys. This prevents
-user-controlled data from potentially overwriting existing metadata values in the Metadata object.
-
-See link:migrating-to-4x.html[Migrating to Tika 4.x] for details on specific
-metadata key changes.
+Namespacing every metadata key keeps user-controlled data from overwriting values Tika
+itself asserts. See xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x]
+for the key-by-key consequences.
 
 == Fat Jars and Maven Shade Strategy
 
-Tika 4.x moves away from fat jar/shaded artifacts. The `tika-app` and `tika-server` now use
-separate `lib` and `plugins` directories alongside the jar file, enabling standard `java -jar`
-execution.
+Tika 4.x moves away from fat jar/shaded artifacts. The `tika-app` and `tika-server` jars are now
+thin launchers that resolve their dependencies from `lib/` (and plugins from `plugins/`) via the
+manifest `Class-Path`. The trade-off is that the jar is no longer self-contained: it must be run
+from inside the unzipped distribution, not pulled from Maven Central on its own. See
+xref:migration-to-4x/migrating-to-4x.adoc[the migration guide].
 
 == Plugins and PF4J Framework
 
@@ -61,26 +62,10 @@ IMPORTANT: We tried to have as few Tika dependencies in the plugins as possible.
 
 === Security Model
 
-Configuration files at initialization are treated as trusted sources. Component
-instantiation from JSON is restricted to classes registered at compile time by
-the `@TikaComponent` annotation processor (`META-INF/tika/*.idx` files); unknown
-class names are rejected, and there is no Jackson default typing.
-
-Untrusted per-request configuration (tika-server requests, pipes
-`FetchEmitTuple`s) is deserialized in a restricted mode that additionally applies
-a fail-closed allowlist of context-key types: only metadata/output-shaping
-components (e.g. `MetadataFilter`, `ContentHandlerFactory`, `DigesterFactory`)
-may be bound from the wire; `Parser`, `Detector`, `Renderer`, and similar are
-blocked before anything is constructed. See
-xref:developers/serialization.adoc[Serialization and Configuration].
-
-Note the boundary: the allowlist blocks *binding a component* from the wire, not
-*configuring one that is already loaded*. Self-configuring components — every
-`Parser` among them — have their config subtree passed through unscanned, so a
-per-request config can still set parser options (including ones that spawn
-external processes, such as OCR). This is why `allowPerRequestConfig` is a
-separate gate and is off by default; the allowlist alone does not make
-per-request configuration safe to expose.
+Trusted config files at initialization, a registry-restricted instantiation path, and a
+fail-closed allowlist for anything arriving on the wire. See
+xref:migration-to-4x/serialization-4x.adoc#serialization-security[Serialization: security
+model] for the rules and their boundary.
 
 === Implementation Challenges
 
@@ -99,14 +84,6 @@ The `@TikaComponent` annotation handles:
 * Manual name overrides via `name` attribute
 * Optional `spi=false` setting for non-service-file registration
 
-== Migration Strategy
-
-The plan is to stabilize 4.x structures before backporting capabilities to 3.x and deprecating
-`TikaConfig` and `tika-config.xml`.
-
-A converter tool for transforming `tika-config.xml` to `tika-config.json` is planned, with
-support focused on components in `tika-parsers-standard-modules`.
-
 == Development Tips
 
 === Common Issues
@@ -117,18 +94,18 @@ support focused on components in `tika-parsers-standard-modules`.
 
 === Recommended Build Commands
 
-For faster builds during development:
+Build one module and its dependencies, skipping tests, checkstyle, and spotless:
 
 [source,bash]
 ----
-mvn clean install -am -pl :tika-app -Pfast
+./mvnw clean install -am -pl :tika-app -Pfast
 ----
 
-To apply formatting and build:
+Apply formatting, then build:
 
 [source,bash]
 ----
-mvn clean spotless:apply install
+./mvnw clean spotless:apply install
 ----
 
 == Outstanding Tasks
@@ -137,5 +114,5 @@ mvn clean spotless:apply install
 * Enable friendly name usage throughout the codebase
 * Fix external renderer byte-passing in open containers
 * Simplify and strengthen serialization code
-* Consider relocating `TikaConfig` and `ForkParser` to legacy module
-* Complete CLI integration for `tika-app` config dump (`--dump-minimal-config`, `--dump-current-config`, `--dump-static-config`, `--dump-static-full-config` are stubbed but not yet wired)
+* Complete the `tika-app` config-dump CLI integration
+  (xref:migration-to-4x/index.adoc#not-yet-in-4x[Not Yet in 4.x])
