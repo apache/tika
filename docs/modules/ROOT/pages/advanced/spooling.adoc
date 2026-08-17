@@ -64,7 +64,9 @@ File file = tis.getFile();
 * **Initialized with `Path`**: The file is used directly for random access. No spooling needed.
 * **Initialized with `byte[]`**: The bytes are kept in memory. Spooling only on demand.
 * **Initialized with `InputStream`**: `getPath()` or `getFile()` spools the stream to a
-  temporary file, which is automatically cleaned up when the stream is closed.
+  temporary file, which is automatically cleaned up when the stream is closed. Spooling
+  requires position 0 (or a prior `enableRewind()` at position 0); reading first and
+  spooling later throws.
 
 ==== Benefits of Decentralized Spooling
 

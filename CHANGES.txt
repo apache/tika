@@ -126,7 +126,11 @@ Release 4.0.0 - ???
      TikaInputStream. Every third-party Parser, Detector or
      EmbeddedDocumentExtractor implementation must be updated; callers can wrap
      with TikaInputStream.get(...). The Tika facade (Tika.parse/parseToString)
-     still accepts an InputStream and is unaffected
+     still accepts an InputStream and is unaffected. Tika.detect(InputStream, ...)
+     no longer resets the stream to its original position: detection now reads
+     ahead through a TikaInputStream, so on return the caller's stream must be
+     treated as consumed. It still does not close the caller's stream, and any
+     temporary file spooled during detection is deleted before it returns
      (TIKA-4399, TIKA-4541, TIKA-4569).
 
    * TikaConfig and the org.apache.tika.config XML-configuration API are
@@ -195,7 +199,7 @@ Release 4.0.0 - ???
      AmazonTranscribeConfig, MagikaDetector/SiegfriedDetector configs)
      (TIKA-4758).
 
-   * TikaInputStream no longer buffers by default. A stream is consumed in
+   * TikaInputStream no longer caches by default. A stream is consumed in
      passthrough mode unless enableRewind() is called at position 0;
      rewind()/getFile()/getPath() after reading without enableRewind() throw
      instead of silently spooling. Digesters call enableRewind() themselves

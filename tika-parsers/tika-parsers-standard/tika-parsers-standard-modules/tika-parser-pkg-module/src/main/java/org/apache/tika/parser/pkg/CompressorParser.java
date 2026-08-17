@@ -229,6 +229,7 @@ public class CompressorParser implements Parser {
         tis.setCloseShield();
 
         CompressorInputStream cis;
+        boolean detected = false;
         try {
             CompressorParserOptions options =
                     context.get(CompressorParserOptions.class,
@@ -272,17 +273,18 @@ public class CompressorParser implements Parser {
                     metadata.set(CONTENT_TYPE, type.toString());
                 }
             }
+            detected = true;
         } catch (CompressorException e) {
-            tis.removeCloseShield();
             if (e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
             throw new TikaException("Unable to uncompress document stream", e);
-        } catch (IOException e) {
-            //the pack200 workaround (getPath()/Files.newInputStream) can throw IOException;
-            //make sure the close shield is removed before propagating
-            tis.removeCloseShield();
-            throw e;
+        } finally {
+            // covers unchecked escapes too (e.g. InaccessibleObjectException from the
+            // pack200 reflection), which used to leave the shield stuck on
+            if (!detected) {
+                tis.removeCloseShield();
+            }
         }
 
 

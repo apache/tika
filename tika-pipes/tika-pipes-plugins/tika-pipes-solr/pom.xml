@@ -32,16 +32,9 @@
   <properties>
     <!-- You want to make sure you don't load competing dependencies in your plugin or your classloading is going
      to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
-    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-api</artifactId>
@@ -116,8 +109,6 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

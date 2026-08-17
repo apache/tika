@@ -197,7 +197,7 @@ IdentificationInfoTopicCategory-->	iso19115:identification-info-topic-category
 ThesaurusNameDate 	iso19115:thesaurus-name-date
 AccessContraints 	iso19115:access-constraints
 OtherConstraints 	iso19115:other-constraints
-UserConstraints 	iso19115:user-constraints
+UserConstraints 	iso19115:use-constraints
 GeographicIdentifierCode 	iso19115:geographic-identifier-code
 GeographicIdentifierAuthorityTitle 	iso19115:geographic-identifier-authority-title
 GeographicIdentifierAuthorityAlternativeTitle 	iso19115:geographic-identifier-authority-alternative-title

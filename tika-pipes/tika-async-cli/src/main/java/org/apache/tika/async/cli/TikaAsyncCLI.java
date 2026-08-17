@@ -350,9 +350,7 @@ public class TikaAsyncCLI {
         if (asyncConfig == null) {
             return;
         }
-        if (asyncConfig.getHandlerType() == BasicContentHandlerFactory.HANDLER_TYPE.TEXT) {
-            return;
-        }
+        // no TEXT early-return: the default handler is MARKDOWN, not TEXT
         ContentHandlerFactory factory = new BasicContentHandlerFactory(asyncConfig.getHandlerType(), -1);
         t.getParseContext().set(ContentHandlerFactory.class, factory);
     }

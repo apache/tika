@@ -30,6 +30,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
@@ -129,12 +130,14 @@ public class Tika {
      * in which case only the given document metadata is used for type
      * detection.
      * <p>
-     * If the document stream supports the
-     * {@link InputStream#markSupported() mark feature}, then the stream is
-     * marked and reset to the original position before this method returns.
-     * Only a limited number of bytes are read from the stream.
+     * The given document stream is <em>not</em> closed by this method, and any
+     * temporary file spooled during detection is deleted before it returns.
      * <p>
-     * The given document stream is <em>not</em> closed by this method.
+     * The stream <em>is</em> consumed: detection reads ahead through a
+     * {@link TikaInputStream}, so on return the caller's stream must be treated as
+     * advanced, not rewound. Callers that need to read the document afterwards should
+     * pass a {@link TikaInputStream} they own (which they can
+     * {@link TikaInputStream#rewind() rewind}) or re-open the source.
      * <p>
      * Unlike in the {@link #parse(InputStream, Metadata)} method, the
      * given document metadata is <em>not</em> modified by this method.
@@ -148,7 +151,10 @@ public class Tika {
         if (stream == null) {
             return detector.detect(null, metadata, new ParseContext()).toString();
         }
-        try (TikaInputStream tis = TikaInputStream.get(stream)) {
+        // Dispose only what detection spooled, never the caller's stream. Closing the
+        // TikaInputStream would also dispose a caller-supplied one (get() returns it as-is).
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
             return detector.detect(tis, metadata, new ParseContext()).toString();
         }
     }
@@ -158,12 +164,14 @@ public class Tika {
      * based on the content of the given document stream and the name of the
      * document.
      * <p>
-     * If the document stream supports the
-     * {@link InputStream#markSupported() mark feature}, then the stream is
-     * marked and reset to the original position before this method returns.
-     * Only a limited number of bytes are read from the stream.
+     * The given document stream is <em>not</em> closed by this method, and any
+     * temporary file spooled during detection is deleted before it returns.
      * <p>
-     * The given document stream is <em>not</em> closed by this method.
+     * The stream <em>is</em> consumed: detection reads ahead through a
+     * {@link TikaInputStream}, so on return the caller's stream must be treated as
+     * advanced, not rewound. Callers that need to read the document afterwards should
+     * pass a {@link TikaInputStream} they own (which they can
+     * {@link TikaInputStream#rewind() rewind}) or re-open the source.
      *
      * @param stream the document stream
      * @param name   document name
@@ -182,12 +190,14 @@ public class Tika {
      * Detects the media type of the given document. The type detection is
      * based on the content of the given document stream.
      * <p>
-     * If the document stream supports the
-     * {@link InputStream#markSupported() mark feature}, then the stream is
-     * marked and reset to the original position before this method returns.
-     * Only a limited number of bytes are read from the stream.
+     * The given document stream is <em>not</em> closed by this method, and any
+     * temporary file spooled during detection is deleted before it returns.
      * <p>
-     * The given document stream is <em>not</em> closed by this method.
+     * The stream <em>is</em> consumed: detection reads ahead through a
+     * {@link TikaInputStream}, so on return the caller's stream must be treated as
+     * advanced, not rewound. Callers that need to read the document afterwards should
+     * pass a {@link TikaInputStream} they own (which they can
+     * {@link TikaInputStream#rewind() rewind}) or re-open the source.
      *
      * @param stream the document stream
      * @return detected media type

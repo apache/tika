@@ -19,6 +19,7 @@ package org.apache.tika.config.loader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -250,6 +252,19 @@ public class TikaLoaderTest {
         assertTrue(!compositeParser.getSupportedTypes(context)
                         .contains(MediaType.parse("application/test+minimal")),
                 "Should NOT support application/test+minimal");
+    }
+
+    /** TIKA-3268: an unresolvable exclusion must fail loudly, not warn. */
+    @Test
+    public void testUnknownExclusionFailsLoudly() throws Exception {
+        URL configUrl =
+                getClass().getResource("/configs/test-default-parser-unknown-exclusion.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> TikaLoader.load(configPath).get(Parser.class));
+        assertTrue(e.getMessage().contains("no-such-parser"),
+                "the message must name the unresolvable entry, got: " + e.getMessage());
     }
 
     @Test

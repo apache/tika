@@ -43,6 +43,8 @@ class CachingSource extends InputStream implements TikaInputSource {
 
     private final TemporaryResources tmp;
     private final Metadata metadata;
+    // temp-file suffix for threshold spills, which precede any getPath(suffix) call
+    private final String suffix;
     private long length;
 
     // Passthrough mode: just a BufferedInputStream
@@ -56,11 +58,16 @@ class CachingSource extends InputStream implements TikaInputSource {
     private Path spilledPath;
     private InputStream fileStream;
     private long filePosition;  // Track position in file mode
+    // Retained after a spill so close() can still close it; not closed at spill
+    // time because an archive stream may still be in use.
+    private InputStream spilledSource;
 
-    CachingSource(InputStream source, TemporaryResources tmp, long length, Metadata metadata) {
+    CachingSource(InputStream source, TemporaryResources tmp, long length, Metadata metadata,
+                  String suffix) {
         this.tmp = tmp;
         this.length = length;
         this.metadata = metadata;
+        this.suffix = suffix;
         // Start in passthrough mode
         this.passthroughStream = source instanceof BufferedInputStream
                 ? (BufferedInputStream) source
@@ -178,20 +185,20 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() {
+    public void enableRewind() throws IOException {
         // Already in caching or file mode - no-op
         if (cachingStream != null || fileStream != null) {
             return;
         }
 
         if (passthroughPosition != 0) {
-            throw new IllegalStateException(
+            throw new IOException(
                     "Cannot enable rewind: position is " + passthroughPosition +
                             ", must be 0. Call enableRewind() before reading.");
         }
 
         // Switch to caching mode
-        StreamCache cache = new StreamCache(tmp);
+        StreamCache cache = new StreamCache(tmp, suffix);
         cachingStream = new CachingInputStream(passthroughStream, cache);
         passthroughStream = null;
     }
@@ -246,7 +253,8 @@ class CachingSource extends InputStream implements TikaInputSource {
             // Get current position before closing cache
             long currentPosition = cachingStream.getPosition();
 
-            // Close only the cache, not the source stream (for archive support)
+            // close only the cache; close() releases the source later
+            spilledSource = cachingStream.getSource();
             cachingStream.closeCacheOnly();
 
             // Open file stream at current position
@@ -256,11 +264,9 @@ class CachingSource extends InputStream implements TikaInputSource {
             }
             filePosition = currentPosition;
 
-            // Update length from file size
-            long fileSize = Files.size(spilledPath);
-            if (length == -1 || fileSize > 0) {
-                length = fileSize;
-            }
+            // The spooled size is ground truth, even when it is 0 and a
+            // Content-Length claimed otherwise
+            length = Files.size(spilledPath);
 
             // Update metadata if not already set
             if (metadata != null &&
@@ -288,6 +294,9 @@ class CachingSource extends InputStream implements TikaInputSource {
         }
         if (passthroughStream != null) {
             passthroughStream.close();
+        }
+        if (spilledSource != null) {
+            spilledSource.close();
         }
     }
 }

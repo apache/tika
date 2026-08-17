@@ -30,16 +30,9 @@
   <name>Apache Tika Pipes CSV</name>
   <url>https://tika.apache.org/</url>
   <properties>
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core,tika-pipes-iterator-commons</plugin.excluded.artifactIds>
-    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-commons</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
@@ -70,8 +63,6 @@
             <configuration>
               <outputDirectory>target/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

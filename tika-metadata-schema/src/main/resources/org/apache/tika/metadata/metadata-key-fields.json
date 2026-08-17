@@ -231,7 +231,7 @@
   {"class":"org.apache.tika.metadata.ISO19115","field":"TRANSFER_OPTIONS_ONLINE_NAME","key":"iso19115:transfer-options-online-name"},
   {"class":"org.apache.tika.metadata.ISO19115","field":"TRANSFER_OPTIONS_ONLINE_PROFILE","key":"iso19115:transfer-options-online-profile"},
   {"class":"org.apache.tika.metadata.ISO19115","field":"TRANSFER_OPTIONS_ONLINE_PROTOCOL","key":"iso19115:transfer-options-online-protocol"},
-  {"class":"org.apache.tika.metadata.ISO19115","field":"USER_CONSTRAINTS","key":"iso19115:user-constraints"},
+  {"class":"org.apache.tika.metadata.ISO19115","field":"USE_CONSTRAINTS","key":"iso19115:use-constraints"},
   {"class":"org.apache.tika.metadata.MAPI","field":"ATTACH_CONTENT_ID","key":"mapi:attach:content-id"},
   {"class":"org.apache.tika.metadata.MAPI","field":"ATTACH_CONTENT_LOCATION","key":"mapi:attach:content-location"},
   {"class":"org.apache.tika.metadata.MAPI","field":"ATTACH_DISPLAY_NAME","key":"mapi:attach:display-name"},

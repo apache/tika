@@ -56,11 +56,20 @@ try (TikaInputStream tis = TikaInputStream.get(myInputStream)) {
 ----
 
 The `Tika` facade (`Tika#parse`, `Tika#parseToString`, `Tika#detect`) still accepts a plain
-`InputStream` and is unaffected — if you only use the facade, nothing changes.
+`InputStream`. One behavior change: `Tika#detect(InputStream, ...)` no longer resets the stream
+to its original position — treat the stream as consumed after the call. It still does not close
+the caller's stream.
 
 Why: passing `TikaInputStream` explicitly makes the spooling and rewind contract visible in the
 signature instead of leaving every implementation to wrap defensively. See
 xref:advanced/spooling.adoc[spooling] for the stream contract.
+
+`TikaInputStream` itself dropped several members in 4.0: `isTikaInputStream`, `cast`,
+`getPath(int)`, `get(InputStreamFactory)` (both overloads), `hasInputStreamFactory`,
+`getInputStreamFactory`, and `setOpenContainer(Object, long)` — along with the
+`InputStreamFactory` class. `get(byte[])` and `getFromContainer` no longer declare
+`IOException`. `enableRewind()` now throws a checked `IOException` when bytes have
+already been read.
 
 [#thin-launcher-zip]
 == `tika-app` and `tika-server` distributions: jar -> zip

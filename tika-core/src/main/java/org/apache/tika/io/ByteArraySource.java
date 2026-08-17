@@ -58,6 +58,10 @@ class ByteArraySource extends InputStream implements TikaInputSource {
 
     @Override
     public int read(byte[] b, int off, int len) {
+        // InputStream contract: a zero-length read returns 0, even at EOF
+        if (len == 0) {
+            return 0;
+        }
         if (position >= length) {
             return -1;
         }
@@ -116,7 +120,7 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() {
+    public void enableRewind() throws IOException {
         // No-op: byte array is always rewindable
     }
 

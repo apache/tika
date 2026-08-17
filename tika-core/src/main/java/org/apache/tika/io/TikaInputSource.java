@@ -64,5 +64,5 @@ interface TikaInputSource extends Closeable {
      *
      * @throws IllegalStateException if position is not 0
      */
-    void enableRewind();
+    void enableRewind() throws IOException;
 }

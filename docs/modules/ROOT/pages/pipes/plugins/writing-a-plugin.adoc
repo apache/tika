@@ -219,16 +219,10 @@ If that file is missing or empty, the plugin loads and contributes nothing.
 
 === Collecting runtime dependencies
 
-`maven-dependency-plugin` copies runtime dependencies to `target/lib`, minus the boundary
-artifacts:
-
-[source,xml]
-----
-<properties>
-  <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
-  <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
-</properties>
-----
+`maven-dependency-plugin` copies runtime dependencies to `target/lib`. There is no
+exclusion list to maintain: every boundary artifact is declared `provided`, and
+`includeScope=runtime` excludes `provided` by definition. A boundary artifact can
+only end up in `lib/` if a pom re-declares it at compile scope -- do not.
 
 [source,xml]
 ----
@@ -243,8 +237,6 @@ artifacts:
       <configuration>
         <outputDirectory>${project.build.directory}/lib</outputDirectory>
         <includeScope>runtime</includeScope>
-        <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-        <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
       </configuration>
     </execution>
   </executions>
@@ -276,7 +268,7 @@ A plugin's classloader prefers the plugin's own classes over the host's. So if y
 `MyFetcherFactory` implements a `FetcherFactory` that is a *different* `Class` object from the
 host's. The host then finds no extensions, or fails casting one.
 
-That is what the `plugin.excluded.artifactIds` property above prevents, and it is the usual cause
+That is what the `provided` scoping above prevents, and it is the usual cause
 of a plugin that loads cleanly and then behaves as if it were not there — or of a
 `NoClassDefFoundError` / `ClassCastException` naming a Tika type.
 
@@ -372,7 +364,8 @@ java -Dtika.plugin.dev.mode=true ...
 * `plugin.properties` at the zip root, with `plugin.id` and `plugin.class`.
 * `@Extension` on the factory, never on the fetcher or emitter.
 * `META-INF/extensions.idx` non-empty in `target/classes` after compiling.
-* `tika-core`, `tika-pipes-api`, `tika-plugins-core`, `tika-serialization`, `pf4j` and the logging
+* `tika-core`, `tika-pipes-api`, `tika-plugins-core`, `tika-serialization`,
+  `tika-pipes-core`, `tika-pipes-iterator-commons`, `pf4j` and the logging
   implementations `provided`, and absent from `lib/`.
 * The zip — not an unpacked directory — dropped in a `plugin-roots` directory.
 * `getName()` unique against every other loaded plugin.

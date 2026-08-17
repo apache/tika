@@ -286,4 +286,42 @@ public class ConfigDeserializerTest {
         assertTrue(ParseContextConfig.hasConfig(context, "parser-a"));
         assertFalse(ParseContextConfig.hasConfig(context, "parser-b"));
     }
+
+    /**
+     * Components with distinct config keys may share one config class (the VLM
+     * parsers all bind VLMOCRConfig). Resolving one key must never leak that
+     * config -- base URL, API key -- to another key's component.
+     */
+    @Test
+    public void testSharedConfigClassDoesNotCrossContaminate() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("provider-a", "{\"name\":\"a\",\"value\":1}");
+        context.setJsonConfig("provider-b", "{\"name\":\"b\",\"value\":2}");
+
+        TestConfig a = ParseContextConfig.getConfig(
+                context, "provider-a", TestConfig.class, new TestConfig());
+        TestConfig b = ParseContextConfig.getConfig(
+                context, "provider-b", TestConfig.class, new TestConfig());
+
+        assertEquals("a", a.getName());
+        assertEquals("b", b.getName());
+        assertEquals(2, b.getValue());
+
+        // and the second lookup of each key returns its own cached instance
+        assertEquals("a", ParseContextConfig.getConfig(
+                context, "provider-a", TestConfig.class, new TestConfig()).getName());
+    }
+
+    /** A programmatic class-keyed override still applies when a key has no JSON config. */
+    @Test
+    public void testProgrammaticClassOverrideStillHonored() throws Exception {
+        ParseContext context = new ParseContext();
+        TestConfig mine = new TestConfig();
+        mine.setName("programmatic");
+        context.set(TestConfig.class, mine);
+
+        TestConfig got = ParseContextConfig.getConfig(
+                context, "no-json-for-this-key", TestConfig.class, new TestConfig());
+        assertEquals("programmatic", got.getName());
+    }
 }

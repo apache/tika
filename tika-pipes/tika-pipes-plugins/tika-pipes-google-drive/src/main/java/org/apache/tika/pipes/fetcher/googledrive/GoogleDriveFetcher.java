@@ -106,7 +106,8 @@ public class GoogleDriveFetcher extends AbstractTikaExtension implements Fetcher
                     TemporaryResources tmp = new TemporaryResources();
                     Path tmpPath = tmp.createTempFile(metadata);
                     FileUtils.copyInputStreamToFile(is, tmpPath.toFile());
-                    return TikaInputStream.get(tmpPath);
+                    // the 3-arg form registers tmp for cleanup
+                    return TikaInputStream.get(tmpPath, metadata, tmp);
                 }
                 return TikaInputStream.get(is);
 

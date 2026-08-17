@@ -286,9 +286,7 @@ public class TikaResource {
             }
         }
 
-        // Create TikaInputStream and spool to temp file immediately.
-        // This ensures the data is captured before any other processing
-        // and TikaInputStream handles temp file cleanup automatically.
+        // Lazy TikaInputStream: nothing is spooled until a consumer needs a file.
         TikaInputStream tis = TikaInputStream.get(fileAtt.getObject(InputStream.class));
         boolean handedOff = false;
         try {
@@ -442,7 +440,7 @@ public class TikaResource {
     /** Parse document and return HTML content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/html")
+    @Produces("text/html;charset=UTF-8")
     @Path("html")
     public Response getHtml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -452,7 +450,7 @@ public class TikaResource {
     /** Parse document and return XML content. */
     @PUT
     @Consumes("*/*")
-    @Produces("text/xml")
+    @Produces("text/xml;charset=UTF-8")
     @Path("xml")
     public Response getXml(final InputStream is, @Context HttpHeaders httpHeaders)
             throws IOException {
@@ -543,7 +541,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns HTML. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/html")
+    @Produces("text/html;charset=UTF-8")
     @Path("config/html")
     public Response postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
@@ -553,7 +551,7 @@ public class TikaResource {
     /** Multipart document with optional config; returns XML. */
     @POST
     @Consumes("multipart/form-data")
-    @Produces("text/xml")
+    @Produces("text/xml;charset=UTF-8")
     @Path("config/xml")
     public Response postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {

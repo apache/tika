@@ -120,7 +120,7 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() {
+    public void enableRewind() throws IOException {
         // No-op: file is always rewindable
     }
 

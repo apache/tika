@@ -56,10 +56,12 @@
       <!-- !!! VERY IMPORTANT -->
       <scope>provided</scope>
     </dependency>
+    <!-- provided: bundling the plugin/host boundary yields duplicate Class objects -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -71,6 +73,45 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-plugins-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- parent-loaded: on every host via tika-pipes-core; bundling duplicates PipesIteratorBase -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-iterator-commons</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- logging is host-supplied -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>

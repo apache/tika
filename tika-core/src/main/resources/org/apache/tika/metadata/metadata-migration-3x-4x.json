@@ -71,7 +71,7 @@
 {"v3":"TransferOptionsOnlineProtocol ","v4":"iso19115:transfer-options-online-protocol"},
 {"v3":"Upper Left","v4":"gdal:upper-left"},
 {"v3":"Upper Right","v4":"gdal:upper-right"},
-{"v3":"UserConstraints ","v4":"iso19115:user-constraints"},
+{"v3":"UserConstraints ","v4":"iso19115:use-constraints"},
 {"v3":"X-TIKA:EXCEPTION:container_exception","v4":"tk:exception:container-exception"},
 {"v3":"X-TIKA:EXCEPTION:embedded_bytes_exception","v4":"tk:exception:embedded-bytes-exception"},
 {"v3":"X-TIKA:EXCEPTION:embedded_exception","v4":"tk:exception:embedded-exception"},

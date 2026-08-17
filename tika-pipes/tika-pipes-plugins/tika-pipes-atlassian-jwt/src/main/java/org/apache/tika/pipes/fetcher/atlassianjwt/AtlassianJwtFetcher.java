@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Timer;
@@ -237,9 +238,12 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
     private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
+        boolean handedOff = false;
+        try {
         Path tmpFile = tmp.createTempFile(metadata);
         if (config.getMaxSpoolSize() < 0) {
-            Files.copy(content, tmpFile);
+            // createTempFile already created the file
+            Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
         } else {
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
                 long totalRead = IOUtils.copyLarge(content, os, 0, config.getMaxSpoolSize());
@@ -250,7 +254,15 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
         }
         long elapsed = System.currentTimeMillis() - start;
         LOG.debug("took {} ms to copy to local tmp file", elapsed);
-        return TikaInputStream.get(tmpFile);
+        TikaInputStream tis = TikaInputStream.get(tmpFile, metadata, tmp);
+        handedOff = true;
+        return tis;
+        } finally {
+            // a failed copy must not orphan the temp file
+            if (!handedOff) {
+                tmp.close();
+            }
+        }
     }
 
     private void updateMetadata(String url, HttpResponse response, HttpClientContext context,

@@ -41,18 +41,27 @@ class StreamCache implements Closeable {
     private int memorySize;
 
     // File storage (null until spill)
+    private String suffix;
     private Path spillFile;
+    // one long-lived read handle; opening per read cost ~37x on byte-at-a-time readers
+    private RandomAccessFile reader;
     private OutputStream spillOutputStream;
     private long totalSize;
 
     private boolean closed;
 
     StreamCache(TemporaryResources tmp) {
-        this(tmp, DEFAULT_MEMORY_THRESHOLD);
+        this(tmp, null, DEFAULT_MEMORY_THRESHOLD);
     }
 
-    StreamCache(TemporaryResources tmp, int memoryThreshold) {
+    /** Suffix up front: a threshold spill precedes any getPath(suffix) call (TIKA-3903). */
+    StreamCache(TemporaryResources tmp, String suffix) {
+        this(tmp, suffix, DEFAULT_MEMORY_THRESHOLD);
+    }
+
+    StreamCache(TemporaryResources tmp, String suffix, int memoryThreshold) {
         this.tmp = tmp;
+        this.suffix = suffix;
         this.memoryThreshold = memoryThreshold;
         this.memoryBuffer = new byte[Math.min(memoryThreshold, 8192)];
         this.memorySize = 0;
@@ -116,8 +125,6 @@ class StreamCache implements Closeable {
         memoryBuffer = newBuffer;
     }
 
-    private String suffix;
-
     private void spillToFile() throws IOException {
         if (spillFile != null) {
             return; // Already spilled
@@ -148,10 +155,9 @@ class StreamCache implements Closeable {
             return memoryBuffer[(int) position] & 0xFF;
         } else {
             flushSpillStream();
-            try (RandomAccessFile raf = new RandomAccessFile(spillFile.toFile(), "r")) {
-                raf.seek(position);
-                return raf.read();
-            }
+            RandomAccessFile raf = reader();
+            raf.seek(position);
+            return raf.read();
         }
     }
 
@@ -170,10 +176,9 @@ class StreamCache implements Closeable {
             return available;
         } else {
             flushSpillStream();
-            try (RandomAccessFile raf = new RandomAccessFile(spillFile.toFile(), "r")) {
-                raf.seek(position);
-                return raf.read(b, off, available);
-            }
+            RandomAccessFile raf = reader();
+            raf.seek(position);
+            return raf.read(b, off, available);
         }
     }
 
@@ -182,6 +187,13 @@ class StreamCache implements Closeable {
      */
     InputStream getInputStreamFrom(long offset) throws IOException {
         return new CacheInputStream(offset);
+    }
+
+    private RandomAccessFile reader() throws IOException {
+        if (reader == null) {
+            reader = new RandomAccessFile(spillFile.toFile(), "r");
+        }
+        return reader;
     }
 
     private void flushSpillStream() throws IOException {
@@ -241,6 +253,10 @@ class StreamCache implements Closeable {
         if (spillOutputStream != null) {
             spillOutputStream.close();
             spillOutputStream = null;
+        }
+        if (reader != null) {
+            reader.close();
+            reader = null;
         }
         // spillFile cleanup is handled by TemporaryResources
     }

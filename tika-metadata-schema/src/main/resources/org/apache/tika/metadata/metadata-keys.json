@@ -243,7 +243,7 @@
   {"key":"iso19115:transfer-options-online-name","namespace":"iso19115","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"iso19115:transfer-options-online-profile","namespace":"iso19115","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"iso19115:transfer-options-online-protocol","namespace":"iso19115","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
-  {"key":"iso19115:user-constraints","namespace":"iso19115","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
+  {"key":"iso19115:use-constraints","namespace":"iso19115","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"iwork:build-version-history","namespace":"iwork","valueType":"TEXT","cardinality":"BAG","module":"tika-parser-apple-module"},
   {"key":"iwork:document-id","namespace":"iwork","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-parser-apple-module"},
   {"key":"keynote:slides-height","namespace":"keynote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-parser-apple-module"},

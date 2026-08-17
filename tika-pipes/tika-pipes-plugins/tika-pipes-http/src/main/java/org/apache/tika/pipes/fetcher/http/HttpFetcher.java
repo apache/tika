@@ -342,6 +342,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
+        boolean handedOff = false;
+        try {
         Path tmpFile = tmp.createTempFile(metadata);
         if (httpFetcherConfig.getMaxSpoolSize() < 0) {
             Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
@@ -355,7 +357,15 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         }
         long elapsed = System.currentTimeMillis() - start;
         LOG.debug("took {} ms to copy to local tmp file", elapsed);
-        return TikaInputStream.get(tmpFile, metadata, tmp);
+        TikaInputStream tis = TikaInputStream.get(tmpFile, metadata, tmp);
+        handedOff = true;
+        return tis;
+        } finally {
+            // a failed copy must not orphan the temp file
+            if (!handedOff) {
+                tmp.close();
+            }
+        }
     }
 
     private void updateMetadata(String url, HttpResponse response, HttpClientContext context, Metadata metadata) {

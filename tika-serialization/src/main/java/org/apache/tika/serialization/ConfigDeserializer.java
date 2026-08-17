@@ -97,11 +97,10 @@ public class ConfigDeserializer {
         // Deserialize and merge with default
         T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
 
-        // Cache in resolved configs
+        // Cache per key only. A class-keyed write would leak this config to every
+        // component sharing the class (e.g. the three VLM parsers all bind VLMOCRConfig,
+        // so one provider's base URL and API key would reach the others).
         context.setResolvedConfig(configKey, config);
-
-        // Also set in main context so other components can find it via parseContext.get(configClass)
-        context.set(configClass, config);
 
         return config;
     }
