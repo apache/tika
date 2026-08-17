@@ -2,14 +2,20 @@ Release 4.0.0 - ???
 
   BREAKING CHANGES
 
-   * tika-app: the inline short forms -eX (output encoding), -pX (document
-     password) and -c<uri> (network client) were removed from standard mode.
-     Use --encoding=X, --password=X and --client=<uri>. These were the only
-     short flags that consumed an inline value, and matching them by prefix
-     meant a long name written with one dash was silently swallowed:
-     -config=tika.json set the network-client URI to "onfig=tika.json" and
-     loaded no config file, with no error. Every single-dash long name is now
-     rejected with a message naming the two-dash form (TIKA-4808).
+   * tika-app: the inline short forms -eX (output encoding) and -pX (document
+     password) were removed from standard mode. Use --encoding=X and
+     --password=X. These were the only short flags that consumed an inline
+     value, and matching them by prefix meant a long name written with one
+     dash was silently swallowed: -config=tika.json set the password to
+     "onfig=tika.json" and loaded no config file, with no error. Every
+     single-dash long name is now rejected with a message naming the
+     two-dash form (TIKA-4808).
+
+   * tika-core/tika-app: NetworkParser and tika-app's -c/--client=<uri>
+     network-client mode were removed. It dispatched raw sockets
+     (including a bare telnet:// scheme) to an arbitrary user-supplied
+     host with no auth or TLS enforcement; use tika-server instead
+     (TIKA-4808).
 
    * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a trust
      boundary for String-keyed writes. A String write to a reserved key throws

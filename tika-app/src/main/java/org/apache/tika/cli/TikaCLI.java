@@ -32,7 +32,6 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -91,7 +90,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -136,7 +134,6 @@ public class TikaCLI {
     private TikaLoader tikaLoader;
     private String configFilePath;
     private boolean recursiveJSON = false;
-    private URI networkURI = null;
     /**
      * Output character encoding, or <code>null</code> for platform default
      */
@@ -447,8 +444,13 @@ public class TikaCLI {
         }
 
         if (args.length == 2) {
-            if (Files.isDirectory(Paths.get(args[0]))) {
-                return true;
+            try {
+                if (Files.isDirectory(Paths.get(args[0]))) {
+                    return true;
+                }
+            } catch (InvalidPathException e) {
+                // Not a valid path (e.g. a URL passed as a raw single-dash
+                // arg on Windows) -- fall through to the other checks.
             }
         }
 
@@ -607,8 +609,6 @@ public class TikaCLI {
             maxEmbeddedCount = Integer.parseInt(arg.substring("--maxEmbeddedCount=".length()));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
-        } else if (arg.startsWith("--client=")) {
-            networkURI = new URI(arg.substring("--client=".length()));
         } else {
             // Any arg that reaches here is either "-" (stdin), an existing
             // file, a URL, or an unknown/typo'd flag. The default fallthrough
@@ -1023,11 +1023,7 @@ public class TikaCLI {
                 Files.deleteIfExists(tempConfig);
             }
         }
-        if (networkURI != null) {
-            parser = new NetworkParser(networkURI);
-        } else {
-            parser = tikaLoader.loadAutoDetectParser();
-        }
+        parser = tikaLoader.loadAutoDetectParser();
 
         // Load configs from tika-config.json and merge into existing context
         // (preserves EmbeddedDocumentExtractor and other items set before configure())
