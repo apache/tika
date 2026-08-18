@@ -281,14 +281,14 @@
   </contributors>
 
   <properties>
-    <revision>4.0.1-SNAPSHOT</revision>
+    <revision>4.0.0-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-08-18T17:53:14Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-06-29T15:00:41Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
