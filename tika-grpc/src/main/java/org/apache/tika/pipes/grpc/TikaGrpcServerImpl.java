@@ -19,6 +19,7 @@ package org.apache.tika.pipes.grpc;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -256,9 +257,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     private boolean denyPerRequestConfig(FetchAndParseRequest request,
                                          StreamObserver<?> responseObserver) {
+        return denyPerRequestConfig(request.getAdditionalFetchConfigJson(),
+                request.getParseContextJson(), responseObserver);
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: reject per-request config unless the operator
+     * has opted in. Returns {@code true} when the call was closed with
+     * {@code PERMISSION_DENIED}.
+     */
+    boolean denyPerRequestConfig(String additionalFetchConfigJson, String parseContextJson,
+                                 StreamObserver<?> responseObserver) {
         boolean hasPerRequestConfig =
-                StringUtils.isNotBlank(request.getAdditionalFetchConfigJson())
-                        || StringUtils.isNotBlank(request.getParseContextJson());
+                StringUtils.isNotBlank(additionalFetchConfigJson)
+                        || StringUtils.isNotBlank(parseContextJson);
         if (!hasPerRequestConfig || tikaGrpcConfig.isAllowPerRequestConfig()) {
             return false;
         }
@@ -343,8 +355,19 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
      */
     private ParseContext buildRequestParseContext(FetchAndParseRequest request,
                                                   StreamObserver<?> responseObserver) {
+        return buildRequestParseContext(request.getFetcherId(),
+                request.getAdditionalFetchConfigJson(), request.getParseContextJson(),
+                responseObserver);
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: see {@link #buildRequestParseContext(FetchAndParseRequest,
+     * StreamObserver)}.
+     */
+    ParseContext buildRequestParseContext(String fetcherId, String additionalFetchConfigJson,
+                                          String parseContextJson,
+                                          StreamObserver<?> responseObserver) {
         ParseContext parseContext = new ParseContext();
-        String parseContextJson = request.getParseContextJson();
         if (StringUtils.isNotBlank(parseContextJson)) {
             try {
                 parseContext = ParseContextDeserializer.readParseContext(
@@ -357,63 +380,118 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 return null;
             }
         }
-        String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
         if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
             // The fork reads this jsonConfig by the fetcher's registered component name
             // (e.g. "http-fetcher"). An unregistered key fails the fork's resolveAll and a
             // wire-blocked one is refused by its restricted tuple deserialization -- both
             // exit the worker. Enforce here: a 400, not a JVM restart per request.
-            var info = ComponentNameResolver.getComponentInfo(request.getFetcherId());
+            var info = ComponentNameResolver.getComponentInfo(fetcherId);
             if (info.isEmpty() || ComponentNameResolver.isWireBlocked(
                     ComponentNameResolver.determineContextKey(info.get()))) {
                 responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
                         .withDescription("additional_fetch_config_json requires fetcher_id to "
                                 + "be a registered, wire-allowed component name; got '"
-                                + request.getFetcherId() + "'")
+                                + fetcherId + "'")
                         .asRuntimeException());
                 return null;
             }
-            parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
+            parseContext.setJsonConfig(fetcherId, additionalFetchConfigJson);
         }
         return parseContext;
     }
 
     private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
+        FetchParseOutcome outcome = runFetchAndParse(
+                request.getFetcherId(), request.getFetchKey(), parseContext);
+        if (outcome == null) {
+            return;
+        }
+        FetchAndParseReply.Builder fetchReplyBuilder =
+                FetchAndParseReply.newBuilder()
+                        .setFetchKey(outcome.fetchKey())
+                        .setStatus(outcome.status())
+                        .putAllFields(outcome.fields());
+        if (outcome.errorMessage() != null) {
+            fetchReplyBuilder.setErrorMessage(outcome.errorMessage());
+        }
+        responseObserver.onNext(fetchReplyBuilder.build());
+    }
+
+    /**
+     * Shared pipes round-trip used by the v1 {@code fields}-map reply and the v2 typed
+     * {@code Document} reply. {@code parseContext} is the per-request context already
+     * validated by {@link #buildRequestParseContext}. Returns primary metadata as
+     * {@code null} when the pipes result carried no metadata list (so the v2 builder can
+     * distinguish empty output from an empty {@link Metadata} object).
+     */
+    FetchParseOutcome runFetchAndParse(String fetcherId, String fetchKey,
+                                       ParseContext parseContext) {
         Fetcher fetcher;
         try {
-            fetcher = fetcherManager.getFetcher(request.getFetcherId());
+            fetcher = fetcherManager.getFetcher(fetcherId);
         } catch (TikaException | IOException e) {
-            throw new RuntimeException("Could not find fetcher with name " + request.getFetcherId(), e);
+            throw new RuntimeException("Could not find fetcher with name " + fetcherId, e);
         }
 
         Metadata tikaMetadata = new Metadata();
+        // Times the whole pipesParser.parse() round trip: fetch and parse both happen
+        // inside the forked pipes worker, so this is fetch+parse latency, not parse-only.
+        long fetchParseStart = System.nanoTime();
         try {
-            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
-                    new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            FetchAndParseReply.Builder fetchReplyBuilder =
-                    FetchAndParseReply.newBuilder()
-                                      .setFetchKey(request.getFetchKey())
-                            .setStatus(pipesResult.status().name());
-            if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
-                fetchReplyBuilder.setErrorMessage(pipesResult.message());
-            }
+            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(
+                    fetchKey,
+                    new FetchKey(fetcher.getExtensionConfig().id(), fetchKey),
+                    new EmitKey(),
+                    tikaMetadata,
+                    parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            long fetchParseTimeMs = (System.nanoTime() - fetchParseStart) / 1_000_000L;
+            Map<String, String> fields = new LinkedHashMap<>();
+            Metadata primary = null;
             if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
                 for (Metadata metadata : pipesResult.emitData().getMetadataList()) {
                     for (String name : metadata.names()) {
                         String value = metadata.get(name);
                         if (value != null) {
-                            fetchReplyBuilder.putFields(name, value);
+                            fields.put(name, value);
                         }
                     }
                 }
+                if (!pipesResult.emitData().getMetadataList().isEmpty()) {
+                    primary = pipesResult.emitData().getMetadataList().get(0);
+                }
             }
-            responseObserver.onNext(fetchReplyBuilder.build());
+            String errorMessage = null;
+            if (pipesResult.status().equals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION)) {
+                errorMessage = pipesResult.message();
+            }
+            return new FetchParseOutcome(
+                    fetchKey,
+                    pipesResult.status().name(),
+                    errorMessage,
+                    fields,
+                    primary,
+                    fetchParseTimeMs);
         } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return null;
         }
+    }
+
+    /**
+     * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
+     * {@code null} means the calling thread was interrupted before a reply could be built.
+     */
+    record FetchParseOutcome(
+            String fetchKey,
+            String status,
+            String errorMessage,
+            Map<String, String> fields,
+            Metadata primary,
+            long fetchParseTimeMs) {
     }
 
     @SuppressWarnings("raw")
