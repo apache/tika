@@ -56,9 +56,11 @@ try (TikaInputStream tis = TikaInputStream.get(myInputStream)) {
 ----
 
 The `Tika` facade (`Tika#parse`, `Tika#parseToString`, `Tika#detect`) still accepts a plain
-`InputStream`. One behavior change: `Tika#detect(InputStream, ...)` no longer resets the stream
-to its original position — treat the stream as consumed after the call. It still does not close
-the caller's stream.
+`InputStream`. One behavior change: `Tika#detect(InputStream, ...)` no longer returns the
+caller's stream at its original position. The detector still resets the `TikaInputStream` it
+reads — but that read-ahead is buffered inside an internal wrapper that `detect()` discards, so
+the caller's own stream comes back advanced. Pass a `TikaInputStream` you own (and rewind it),
+or re-open the source. The stream is still not closed for you.
 
 Why: passing `TikaInputStream` explicitly makes the spooling and rewind contract visible in the
 signature instead of leaving every implementation to wrap defensively. See
