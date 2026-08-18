@@ -130,6 +130,22 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     @Test
+    public void testMaxPreviewLength() throws Exception {
+        Parser parser = TikaLoader
+                .load(getConfigPath(RawTiffParserTest.class,
+                        "tika-config-raw-preview-max-length.json"))
+                .loadParsers();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testNEF.nef");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-raw-nikon");
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testNEF.nef", parser, metadata, new ParseContext(), false);
+
+        //the preview is larger than the configured limit and is skipped
+        assertEquals(1, metadataList.size());
+    }
+
+    @Test
     public void testExtractPreviewsDisabled() throws Exception {
         Parser parser = TikaLoader
                 .load(getConfigPath(RawTiffParserTest.class, "tika-config-raw-previews-off.json"))

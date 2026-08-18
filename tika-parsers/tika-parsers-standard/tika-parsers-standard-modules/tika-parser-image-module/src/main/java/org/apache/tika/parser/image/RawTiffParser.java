@@ -97,8 +97,11 @@ public class RawTiffParser extends TiffParser {
 
     private static final int MAX_IFDS = 32;
     private static final int MAX_ENTRIES_PER_IFD = 1024;
+    // at most MAX_IFDS are ever processed; cap the pending queue so a crafted
+    // file packed with SubIFD pointers cannot grow it without bound
+    private static final int MAX_PENDING_IFDS = 1024;
     //previews are camera-generated JPEGs, tens of MB is already generous
-    private static final long MAX_PREVIEW_LENGTH_BYTES = 100 * 1024 * 1024;
+    private static final long DEFAULT_MAX_PREVIEW_LENGTH_BYTES = 100 * 1024 * 1024;
 
     private final RawTiffParserConfig defaultConfig;
 
@@ -122,7 +125,6 @@ public class RawTiffParser extends TiffParser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        tis.getFile();
         extractMetadata(tis, handler, metadata, context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -230,7 +232,7 @@ public class RawTiffParser extends TiffParser {
                 long valueCount = readUInt32(raf, bigEndian);
                 if (tag == TAG_SUB_IFDS) {
                     for (long subIfdOffset : readLongValues(raf, bigEndian, type, valueCount)) {
-                        toVisit.add(subIfdOffset);
+                        enqueue(toVisit, subIfdOffset);
                     }
                 } else if (tag == TAG_JPEG_INTERCHANGE_FORMAT && valueCount == 1) {
                     long[] v = readLongValues(raf, bigEndian, type, valueCount);
@@ -253,14 +255,15 @@ public class RawTiffParser extends TiffParser {
                 }
             }
             raf.seek(ifdOffset + 2 + numEntries * 12L);
-            toVisit.add(readUInt32(raf, bigEndian));
+            enqueue(toVisit, readUInt32(raf, bigEndian));
 
             if (jpegOffset < 0 && isDisplayableJpegStrip(compression, photometric, bitsPerSample,
                     stripOffsets, stripByteCounts)) {
                 jpegOffset = stripOffsets[0];
                 jpegLength = stripByteCounts[0];
             }
-            if (jpegOffset > 0 && jpegLength > 4 && jpegLength <= MAX_PREVIEW_LENGTH_BYTES &&
+            if (jpegOffset > 0 && jpegLength > 4 &&
+                    jpegLength <= defaultConfig.getMaxPreviewLengthBytes() &&
                     jpegOffset + jpegLength <= fileLength) {
                 raf.seek(jpegOffset);
                 //require the JPEG SOI marker
@@ -303,6 +306,12 @@ public class RawTiffParser extends TiffParser {
             }
         }
         return true;
+    }
+
+    private static void enqueue(Deque<Long> toVisit, long offset) {
+        if (toVisit.size() < MAX_PENDING_IFDS) {
+            toVisit.add(offset);
+        }
     }
 
     /**
@@ -363,6 +372,7 @@ public class RawTiffParser extends TiffParser {
      */
     public static class RawTiffParserConfig {
         private boolean extractPreviews = true;
+        private long maxPreviewLengthBytes = DEFAULT_MAX_PREVIEW_LENGTH_BYTES;
 
         public boolean isExtractPreviews() {
             return extractPreviews;
@@ -370,6 +380,14 @@ public class RawTiffParser extends TiffParser {
 
         public void setExtractPreviews(boolean extractPreviews) {
             this.extractPreviews = extractPreviews;
+        }
+
+        public long getMaxPreviewLengthBytes() {
+            return maxPreviewLengthBytes;
+        }
+
+        public void setMaxPreviewLengthBytes(long maxPreviewLengthBytes) {
+            this.maxPreviewLengthBytes = maxPreviewLengthBytes;
         }
     }
 }
