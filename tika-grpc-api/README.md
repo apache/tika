@@ -1,6 +1,8 @@
 # Apache Tika gRPC API
 
-Typed protobuf messages for Tika parse output under `org.apache.tika.grpc.v2`.
+Typed protobuf messages and service stubs for Tika parse output under
+`org.apache.tika.grpc.v2`. This module owns that whole Java package (one package =
+one module, the reactor-wide JPMS invariant).
 
 This is the experimental v2 document contract. The existing `tika.Tika` gRPC service
 (legacy `fields` map replies) is unchanged and lives outside this module.
@@ -11,6 +13,9 @@ This is the experimental v2 document contract. The existing `tika.Tika` gRPC ser
   an envelope (content type, origin, parse status), typed common metadata
   (`DocumentMetadata`), and a tagged metadata tail (`extra`) that losslessly carries
   everything else.
+- **TikaV2 service** (`tika_v2.proto`) — the v2 fetch-and-parse RPCs returning
+  `Document`, with generated gRPC stubs. The server implementation lives in
+  `tika-grpc`.
 - **Bundled descriptors** — `META-INF/org.apache.tika.grpc.v2.descriptors` in the
   published jar.
 

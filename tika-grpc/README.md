@@ -48,7 +48,7 @@ Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
 
 | Module | Role |
 |--------|------|
-| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v2`: `document.proto`), generated Java stubs, bundled `FileDescriptorSet` under `META-INF/` |
+| `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v2`: `document.proto`, `tika_v2.proto`), generated message and service stubs, bundled `FileDescriptorSet` under `META-INF/` |
 | `tika-grpc-mapper` | Maps Tika `Metadata` to `Document` via `DocumentTransformer`s (code, not schema) |
 | `tika-grpc` | gRPC service implementation (this module): v1 + v2 |
 
